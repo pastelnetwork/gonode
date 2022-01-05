@@ -65,8 +65,45 @@ func (s *DHT) parseNode(extP2P string, selfAddr, extKey string) (*Node, error) {
 	}, nil
 }
 
+// setBootstrapNodesFromConfigVar parses config.BootstrapIPs and sets them
+// as the bootstrap nodes - As of now, this is only supposed to be used for testing
+func (s *DHT) setBootstrapNodesFromConfigVar(ctx context.Context, bootstrapIPs string) error {
+	nodes := []*Node{}
+	ips := strings.Split(bootstrapIPs, ",")
+	for _, ip := range ips {
+		addr := strings.Split(ip, ":")
+		if len(addr) != 2 {
+			return errors.New("setBootstrapNodesFromConfigVar: wrong number of field")
+		}
+
+		ip := addr[0]
+
+		if ip == "" {
+			return errors.New("setBootstrapNodesFromConfigVar: empty ip")
+		}
+
+		port, err := strconv.Atoi(addr[1])
+		if err != nil {
+			return errors.New("setBootstrapNodesFromConfigVar: invalid port")
+		}
+
+		nodes = append(nodes, &Node{
+			IP:   ip,
+			Port: port,
+		})
+	}
+	s.options.BootstrapNodes = nodes
+	log.P2P().WithContext(ctx).WithField("bootstrap_nodes", nodes).Info("Bootstrap IPs set from config var")
+
+	return nil
+}
+
 // ConfigureBootstrapNodes connects with pastel client & gets p2p boostrap ip & port
-func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
+func (s *DHT) ConfigureBootstrapNodes(ctx context.Context, bootstrapIPs string) error {
+	if bootstrapIPs != "" {
+		return s.setBootstrapNodesFromConfigVar(ctx, bootstrapIPs)
+	}
+
 	selfAddress, err := s.getExternalIP()
 	if err != nil {
 		return fmt.Errorf("get external ip addr: %s", err)
@@ -126,10 +163,10 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 
 // Bootstrap attempts to bootstrap the network using the BootstrapNodes provided
 // to the Options struct
-func (s *DHT) Bootstrap(ctx context.Context) error {
+func (s *DHT) Bootstrap(ctx context.Context, bootstrapIPs string) error {
 	if len(s.options.BootstrapNodes) == 0 {
 		time.AfterFunc(bootstrapRetryInterval*time.Minute, func() {
-			s.retryBootstrap(ctx)
+			s.retryBootstrap(ctx, bootstrapIPs)
 		})
 
 		return nil
@@ -168,6 +205,9 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 				log.P2P().WithContext(ctx).Debugf("ping response: %v", response.String())
 
 				// add the node to the route table
+				log.P2P().WithContext(ctx).WithField("sender-id", response.Sender.ID).
+					WithField("sender-ip", response.Sender.IP).
+					WithField("sender-port", response.Sender.Port).Info("add-node params")
 				s.addNode(ctx, response.Sender)
 			}()
 		}
@@ -185,20 +225,21 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 		}
 	} else {
 		time.AfterFunc(bootstrapRetryInterval*time.Minute, func() {
-			s.retryBootstrap(ctx)
+			s.retryBootstrap(ctx, bootstrapIPs)
 		})
 	}
 
 	return nil
 }
 
-func (s *DHT) retryBootstrap(ctx context.Context) {
-	if err := s.ConfigureBootstrapNodes(ctx); err != nil {
+func (s *DHT) retryBootstrap(ctx context.Context, bootstrapIPs string) {
+	if err := s.ConfigureBootstrapNodes(ctx, bootstrapIPs); err != nil {
 		log.P2P().WithContext(ctx).WithError(err).Error("retry failed to get bootstap ip")
+		return
 	}
 
 	// join the kademlia network if bootstrap nodes is set
-	if err := s.Bootstrap(ctx); err != nil {
+	if err := s.Bootstrap(ctx, bootstrapIPs); err != nil {
 		log.P2P().WithContext(ctx).WithError(err).Error("retry failed - bootstrap the node.")
 	}
 }

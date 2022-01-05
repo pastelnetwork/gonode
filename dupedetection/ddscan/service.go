@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -74,20 +75,28 @@ func toFloat64Array(data []float32) []float64 {
 // Run starts task
 func (s *service) Run(ctx context.Context) error {
 	for {
-		if err := s.run(ctx); err != nil {
-			if utils.IsContextErr(err) {
-				return err
-			}
-			log.DD().WithContext(ctx).WithError(err).Error("Failed to start dd-scan service, retrying.")
-		} else {
+		select {
+		case <-ctx.Done():
 			return nil
+		case <-time.After(5 * time.Second):
+			if err := s.run(ctx); err != nil {
+				if utils.IsContextErr(err) {
+					return err
+				}
+
+				log.DD().WithContext(ctx).WithError(err).Error("failed to run ddscan, retrying.")
+			} else {
+				return nil
+			}
 		}
 	}
 }
 
 func (s *service) run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, "dd-scan")
-	defer s.db.Close()
+	if _, err := os.Stat(s.config.DataFile); os.IsNotExist(err) {
+		return errors.Errorf("dataFile dd service not found: %w", err)
+	}
 
 	if err := s.waitSynchronization(ctx); err != nil {
 		log.DD().WithContext(ctx).WithError(err).Error("Failed to initial wait synchronization")
@@ -448,13 +457,21 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	return stats, nil
 }
 
-// NewService return a new Service instance
 func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client) (Service, error) {
-	if _, err := os.Stat(config.DataFile); os.IsNotExist(err) {
+	file := config.DataFile
+	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
+		tmpfile, err := ioutil.TempFile("", "dupe_detection_image_fingerprint_database.sqlite")
+		if err != nil {
+			panic(err.Error())
+		}
+		file = tmpfile.Name()
+	}
+
+	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return nil, errors.Errorf("database dd service not found: %w", err)
 	}
 
-	db, err := db.Open(config.DataFile, true)
+	db, err := db.Open(file, true)
 	if err != nil {
 		return nil, errors.Errorf("open dd-service database: %w", err)
 	}

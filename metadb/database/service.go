@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"strings"
+	"time"
 
 	"text/template"
 
@@ -160,13 +161,19 @@ func (db *Ops) run(ctx context.Context) error {
 // Run run the rqlite database service
 func (db *Ops) Run(ctx context.Context) error {
 	for {
-		if err := db.run(ctx); err != nil {
-			if utils.IsContextErr(err) {
-				return err
-			}
-			log.MetaDB().WithContext(ctx).WithError(err).Error("error in starting rqlite database service, retrying.")
-		} else {
+		select {
+		case <-ctx.Done():
 			return nil
+		case <-time.After(5 * time.Second):
+			if err := db.run(ctx); err != nil {
+				if utils.IsContextErr(err) {
+					return err
+				}
+
+				log.MetaDB().WithContext(ctx).WithError(err).Error("failed to run metadb database, retrying.")
+			} else {
+				return nil
+			}
 		}
 	}
 }
