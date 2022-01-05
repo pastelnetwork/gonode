@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/otrv4/ed448"
@@ -278,7 +279,7 @@ func (ts *testSuite) TestStartDHTNode() {
 	}
 
 	// do the bootstrap
-	if err := dht.Bootstrap(ts.ctx); err != nil {
+	if err := dht.Bootstrap(ts.ctx, ""); err != nil {
 		ts.T().Fatalf("do bootstrap: %v", err)
 	}
 
@@ -305,7 +306,7 @@ func (ts *testSuite) TestStoreAndRetrieveWithMemStore() {
 	}
 
 	// do the bootstrap
-	if err := dht.Bootstrap(ts.ctx); err != nil {
+	if err := dht.Bootstrap(ts.ctx, ""); err != nil {
 		ts.T().Fatalf("do bootstrap: %v", err)
 	}
 
@@ -358,7 +359,7 @@ func (ts *testSuite) TestStoreWithTwoNodes() {
 	}
 
 	// do the bootstrap
-	if err := dht.Bootstrap(ts.ctx); err != nil {
+	if err := dht.Bootstrap(ts.ctx, ""); err != nil {
 		ts.T().Fatalf("do bootstrap: %v", err)
 	}
 
@@ -402,7 +403,7 @@ func (ts *testSuite) startNodes(start, end int) ([]*DHT, error) {
 		}
 
 		// do the bootstrap
-		if err := dht.Bootstrap(ts.ctx); err != nil {
+		if err := dht.Bootstrap(ts.ctx, ""); err != nil {
 			return nil, errors.Errorf("do bootstrap: %w", err)
 		}
 

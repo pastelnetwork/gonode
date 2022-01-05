@@ -2,6 +2,7 @@ package metadb
 
 import (
 	"context"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -57,14 +58,19 @@ func New(config *Config, nodeID string, pastelClient pastel.Client) MetaDB {
 // Run starts the rqlite server
 func (s *service) Run(ctx context.Context) error {
 	for {
-		if err := s.startServer(ctx); err != nil {
-			if utils.IsContextErr(err) {
-				return err
-			}
-			log.MetaDB().WithContext(ctx).WithError(err).Error("error starting metadb server,retrying.")
-			s.ready = make(chan struct{}, 5)
-		} else {
+		select {
+		case <-ctx.Done():
 			return nil
+		case <-time.After(5 * time.Second):
+			if err := s.startServer(ctx); err != nil {
+				if utils.IsContextErr(err) {
+					return err
+				}
+
+				log.MetaDB().WithContext(ctx).WithError(err).Error("failed to run metadb, retrying.")
+			} else {
+				return nil
+			}
 		}
 	}
 }

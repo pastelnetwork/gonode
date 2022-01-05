@@ -2,6 +2,7 @@ package userdataprocess
 
 import (
 	"context"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/utils"
 
@@ -30,15 +31,20 @@ type Service struct {
 // Run starts task
 func (service *Service) Run(ctx context.Context) error {
 	for {
-		if err := service.run(ctx); err != nil {
-			if utils.IsContextErr(err) {
-				return err
-			}
-
-			service.Worker = task.NewWorker()
-			log.WithContext(ctx).WithError(err).Error("failed to run userdata process, retrying.")
-		} else {
+		select {
+		case <-ctx.Done():
 			return nil
+		case <-time.After(5 * time.Second):
+			if err := service.run(ctx); err != nil {
+				if utils.IsContextErr(err) {
+					return err
+				}
+
+				service.Worker = task.NewWorker()
+				log.WithContext(ctx).WithError(err).Error("failed to run userdata process, retrying.")
+			} else {
+				return nil
+			}
 		}
 	}
 }
