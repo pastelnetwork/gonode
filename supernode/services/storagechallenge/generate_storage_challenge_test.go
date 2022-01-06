@@ -19,15 +19,18 @@ import (
 func Test_service_GenerateStorageChallenges(t *testing.T) {
 	var (
 		mockBlkHeight                 int32 = 1
-		mockMerkleRoot                      = "1"
-		mockChallengingNodeID               = "mn1"
-		mockRespondingNodeID                = "mn2"
-		mockCurrentNodeID                   = ""
-		mockMasternodeList                  = []string{mockChallengingNodeID, mockRespondingNodeID, mockCurrentNodeID}
-		mockChallengeRQSymbolFileHash       = "key1"
-		mockRQSymbolFileHashes              = []string{mockChallengeRQSymbolFileHash}
 		mockNumberOfChallengeReplicas       = 3
-		mockError                           = errors.New("mock error")
+
+		mockMerkleRoot                = "1"
+		mockChallengingNodeID         = "mn1"
+		mockRespondingNodeID          = "mn2"
+		mockCurrentNodeID             = ""
+		mockChallengeRQSymbolFileHash = "key1"
+
+		mockMasternodeList     = []string{mockChallengingNodeID, mockRespondingNodeID, mockCurrentNodeID}
+		mockRQSymbolFileHashes = []string{mockChallengeRQSymbolFileHash}
+
+		mockError = errors.New("mock error")
 	)
 
 	type mockFields struct {
@@ -117,7 +120,7 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 			},
 			assertion: assert.NoError,
 		},
-		"getblkcount-err": {
+		"get-block-count-err": {
 			fields: mockFields{
 				pclient: func(t *testing.T) (pastel.Client, func()) {
 
@@ -140,7 +143,7 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 			},
 			assertion: assert.Error,
 		},
-		"getblockverbose1-err": {
+		"get-block-verbose-1-err": {
 			fields: mockFields{
 				pclient: func(t *testing.T) (pastel.Client, func()) {
 
@@ -165,7 +168,7 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 			},
 			assertion: assert.Error,
 		},
-		"getmnlist-err": {
+		"get-mn-list-err": {
 			fields: mockFields{
 				pclient: func(t *testing.T) (pastel.Client, func()) {
 
@@ -199,7 +202,7 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 			},
 			assertion: assert.Error,
 		},
-		"getchallengemn-err": {
+		"get-challenging-mn-err": {
 			fields: mockFields{
 				pclient: func(t *testing.T) (pastel.Client, func()) {
 
@@ -235,7 +238,7 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 			},
 			assertion: assert.Error,
 		},
-		"listrqsymbol-err": {
+		"list-rq-symbol-file-hash-err": {
 			fields: mockFields{
 				pclient: func(t *testing.T) (pastel.Client, func()) {
 
@@ -273,7 +276,7 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 			},
 			assertion: assert.Error,
 		},
-		"getsymbolfile-err": {
+		"get-symbol-file-bey-key-err": {
 			fields: mockFields{
 				pclient: func(t *testing.T) (pastel.Client, func()) {
 
@@ -319,7 +322,7 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 			},
 			assertion: assert.NoError,
 		},
-		"emptyrqsymbolfilevalue-err": {
+		"empty-rq-symbol-file-value-err": {
 			fields: mockFields{
 				pclient: func(t *testing.T) (pastel.Client, func()) {
 
@@ -365,7 +368,7 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 			},
 			assertion: assert.NoError,
 		},
-		"mnextra-err": {
+		"mn-extra-err": {
 			fields: mockFields{
 				pclient: func(t *testing.T) (pastel.Client, func()) {
 
@@ -420,7 +423,7 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 			},
 			assertion: assert.NoError,
 		},
-		"mnnotfoundinlist-err": {
+		"mn-not-found-in-list-err": {
 			fields: mockFields{
 				pclient: func(t *testing.T) (pastel.Client, func()) {
 
@@ -488,7 +491,11 @@ func Test_service_GenerateStorageChallenges(t *testing.T) {
 
 	for name, tt := range tests {
 
+		name := name
+		tt := tt
+
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 
 			actor, actorAssertion := tt.fields.actor(t)
 			pclient, pclientAssertion := tt.fields.pclient(t)
