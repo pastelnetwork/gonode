@@ -47,9 +47,14 @@ const (
 
 	// UploadImageWithThumbnailMethod represent UploadImageWithThumbnail method
 	UploadImageWithThumbnailMethod = "UploadImageWithThumbnail"
+	// DownloadMethod represent Download name method
+	DownloadMethod = "Download"
 
 	// SendArtTicketSignatureMethod represent SendArtTicketSignature method
 	SendArtTicketSignatureMethod = "SendArtTicketSignature"
+
+	// SendSignedDDAndFingerprintsMethod represent SendSignedDDAndFingerprints method
+	SendSignedDDAndFingerprintsMethod = "SendSignedDDAndFingerprints"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -73,6 +78,13 @@ func NewMockClient(t *testing.T) *Client {
 // ListenOnRegisterArtwork listening RegisterArtwork call
 func (client *Client) ListenOnRegisterArtwork() *Client {
 	client.Connection.On(RegisterArtworkMethod).Return(client.RegisterArtwork)
+	return client
+}
+
+// ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
+func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
+	client.RegisterArtwork.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 	return client
 }
 
@@ -153,6 +165,12 @@ func (client *Client) ListenOnSession(returnErr error) *Client {
 // ListenOnSendArtTicketSignature listens on send art ticket signature
 func (client *Client) ListenOnSendArtTicketSignature(returnErr error) *Client {
 	client.RegisterArtwork.On(SendArtTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
+	return client
+}
+
+// ListenOnSendSignedDDAndFingerprints listens on send art ticket signature
+func (client *Client) ListenOnSendSignedDDAndFingerprints(returnErr error) *Client {
+	client.RegisterArtwork.On(SendSignedDDAndFingerprintsMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 

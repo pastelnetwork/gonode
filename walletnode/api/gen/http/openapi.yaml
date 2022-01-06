@@ -1026,34 +1026,32 @@ definitions:
     properties:
       artist_name:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Name of the artist
+        example: Leonardo da Vinci
+        maxLength: 256
       artist_pastelid:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
       artist_pastelid_passphrase:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Passphrase of the artist's PastelID
+        example: qwerasdf1234
       artist_website_url:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Artist website URL
+        example: https://www.leonardodavinci.net
+        maxLength: 256
       description:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Description of the artwork
+        example: The Mona Lisa is an oil painting by Italian artist, inventor, and
+          writer Leonardo da Vinci. Likely completed in 1506, the piece features a
+          portrait of a seated woman set against an imaginary landscape.
+        maxLength: 1024
       green:
         type: boolean
         description: To donate 2% of the sale proceeds on every sale to TeamTrees
@@ -1069,10 +1067,9 @@ definitions:
         maximum: 1000
       keywords:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Keywords
+        example: Renaissance, sfumato, portrait
+        maxLength: 256
       maximum_fee:
         type: number
         description: Used to find a suitable masternode with a fee equal or less
@@ -1081,57 +1078,59 @@ definitions:
         minimum: 1e-05
       name:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Name of the artwork
+        example: Mona Lisa
+        maxLength: 256
       royalty:
         type: number
-        description: Used to find a suitable masternode with a fee equal or less
-        default: 1
-        example: 100
-        minimum: 1e-05
+        description: Percentage the artist received in future sales. If set to 0%
+          he only get paids for the first sale on each copy of the NFT
+        default: 0
+        example: 12
+        minimum: 0
+        maximum: 100
       series_name:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Series name
+        example: Famous artist
+        maxLength: 256
       spendable_address:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Spendable address
+        example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 35
+        maxLength: 35
       thumbnail_coordinate:
         $ref: '#/definitions/ThumbnailcoordinateResponse'
       youtube_url:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Artwork creation video youtube URL
+        example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        maxLength: 128
     description: Ticket of the registration artwork
     example:
-      artist_name: n6Qn6TFM
-      artist_pastelid: n6Qn6TFM
-      artist_pastelid_passphrase: n6Qn6TFM
-      artist_website_url: n6Qn6TFM
-      description: n6Qn6TFM
+      artist_name: Leonardo da Vinci
+      artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      artist_pastelid_passphrase: qwerasdf1234
+      artist_website_url: https://www.leonardodavinci.net
+      description: The Mona Lisa is an oil painting by Italian artist, inventor, and
+        writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
+        of a seated woman set against an imaginary landscape.
       green: false
       issued_copies: 1
-      keywords: n6Qn6TFM
+      keywords: Renaissance, sfumato, portrait
       maximum_fee: 100
-      name: n6Qn6TFM
-      royalty: 100
-      series_name: n6Qn6TFM
-      spendable_address: n6Qn6TFM
+      name: Mona Lisa
+      royalty: 12
+      series_name: Famous artist
+      spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
       thumbnail_coordinate:
-        bottom_right_x: 0
-        bottom_right_y: 0
+        bottom_right_x: 640
+        bottom_right_y: 480
         top_left_x: 0
         top_left_y: 0
-      youtube_url: n6Qn6TFM
+      youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
     required:
     - artist_name
     - name
@@ -1146,34 +1145,32 @@ definitions:
     properties:
       artist_name:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Name of the artist
+        example: Leonardo da Vinci
+        maxLength: 256
       artist_pastelid:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
       artist_pastelid_passphrase:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Passphrase of the artist's PastelID
+        example: qwerasdf1234
       artist_website_url:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Artist website URL
+        example: https://www.leonardodavinci.net
+        maxLength: 256
       description:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Description of the artwork
+        example: The Mona Lisa is an oil painting by Italian artist, inventor, and
+          writer Leonardo da Vinci. Likely completed in 1506, the piece features a
+          portrait of a seated woman set against an imaginary landscape.
+        maxLength: 1024
       green:
         type: boolean
         description: To donate 2% of the sale proceeds on every sale to TeamTrees
@@ -1189,10 +1186,9 @@ definitions:
         maximum: 1000
       keywords:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Keywords
+        example: Renaissance, sfumato, portrait
+        maxLength: 256
       maximum_fee:
         type: number
         description: Used to find a suitable masternode with a fee equal or less
@@ -1201,57 +1197,59 @@ definitions:
         minimum: 1e-05
       name:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Name of the artwork
+        example: Mona Lisa
+        maxLength: 256
       royalty:
         type: number
-        description: Used to find a suitable masternode with a fee equal or less
-        default: 1
-        example: 100
-        minimum: 1e-05
+        description: Percentage the artist received in future sales. If set to 0%
+          he only get paids for the first sale on each copy of the NFT
+        default: 0
+        example: 12
+        minimum: 0
+        maximum: 100
       series_name:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Series name
+        example: Famous artist
+        maxLength: 256
       spendable_address:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Spendable address
+        example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 35
+        maxLength: 35
       thumbnail_coordinate:
         $ref: '#/definitions/ThumbnailcoordinateResponseBody'
       youtube_url:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Artwork creation video youtube URL
+        example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        maxLength: 128
     description: Ticket of the registration artwork
     example:
-      artist_name: n6Qn6TFM
-      artist_pastelid: n6Qn6TFM
-      artist_pastelid_passphrase: n6Qn6TFM
-      artist_website_url: n6Qn6TFM
-      description: n6Qn6TFM
+      artist_name: Leonardo da Vinci
+      artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      artist_pastelid_passphrase: qwerasdf1234
+      artist_website_url: https://www.leonardodavinci.net
+      description: The Mona Lisa is an oil painting by Italian artist, inventor, and
+        writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
+        of a seated woman set against an imaginary landscape.
       green: false
       issued_copies: 1
-      keywords: n6Qn6TFM
+      keywords: Renaissance, sfumato, portrait
       maximum_fee: 100
-      name: n6Qn6TFM
-      royalty: 100
-      series_name: n6Qn6TFM
-      spendable_address: n6Qn6TFM
+      name: Mona Lisa
+      royalty: 12
+      series_name: Famous artist
+      spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
       thumbnail_coordinate:
-        bottom_right_x: 0
-        bottom_right_y: 0
+        bottom_right_x: 640
+        bottom_right_y: 480
         top_left_x: 0
         top_left_y: 0
-      youtube_url: n6Qn6TFM
+      youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
     required:
     - artist_name
     - name
@@ -1266,16 +1264,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -1286,13 +1286,13 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: artSearch_BadRequest_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -1309,16 +1309,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -1329,14 +1331,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: artSearch_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -1517,16 +1519,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -1537,13 +1541,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: artworkGet_BadRequest_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -1560,16 +1564,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -1580,14 +1586,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: artworkGet_InternalServerError_response_body result type (default
       view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: false
@@ -1604,16 +1610,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -1624,13 +1632,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: artworkGet_NotFound_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -1993,16 +2001,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2013,13 +2023,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: download_InternalServerError_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -2036,16 +2046,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2056,13 +2068,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: download_NotFound_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -2119,16 +2131,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2139,13 +2153,13 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: register_BadRequest_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -2162,16 +2176,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2182,13 +2198,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: register_InternalServerError_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -2346,16 +2362,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2366,14 +2384,14 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: registerTask_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -2390,16 +2408,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2410,13 +2430,13 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: registerTask_NotFound_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: false
@@ -2453,18 +2473,33 @@ definitions:
           status: Task Started
       status:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Status of the registration process
+        example: Task Started
+        enum:
+        - Task Started
+        - Connected
+        - Image Probed
+        - Image And Thumbnail Uploaded
+        - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
+        - Ticket Accepted
+        - Ticket Registered
+        - Ticket Activated
+        - Error Insufficient Fee
+        - Error Signatures Dont Match
+        - Error Fingerprints Dont Match
+        - Error ThumbnailHashes Dont Match
+        - Error GenRaptorQ Symbols Failed
+        - Task Rejected
+        - Task Completed
       ticket:
         $ref: '#/definitions/ArtworkTicketResponseBody'
       txid:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: txid
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        minLength: 64
+        maxLength: 64
     description: RegisterTaskResponseBody result type (default view)
     example:
       id: n6Qn6TFM
@@ -2477,28 +2512,30 @@ definitions:
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
-      status: n6Qn6TFM
+      status: Task Started
       ticket:
-        artist_name: n6Qn6TFM
-        artist_pastelid: n6Qn6TFM
-        artist_pastelid_passphrase: n6Qn6TFM
-        artist_website_url: n6Qn6TFM
-        description: n6Qn6TFM
+        artist_name: Leonardo da Vinci
+        artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        artist_pastelid_passphrase: qwerasdf1234
+        artist_website_url: https://www.leonardodavinci.net
+        description: The Mona Lisa is an oil painting by Italian artist, inventor,
+          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+          a portrait of a seated woman set against an imaginary landscape.
         green: false
         issued_copies: 1
-        keywords: n6Qn6TFM
+        keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
-        name: n6Qn6TFM
-        royalty: 100
-        series_name: n6Qn6TFM
-        spendable_address: n6Qn6TFM
+        name: Mona Lisa
+        royalty: 12
+        series_name: Famous artist
+        spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         thumbnail_coordinate:
-          bottom_right_x: 0
-          bottom_right_y: 0
+          bottom_right_x: 640
+          bottom_right_y: 480
           top_left_x: 0
           top_left_y: 0
-        youtube_url: n6Qn6TFM
-      txid: n6Qn6TFM
+        youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     required:
     - id
     - status
@@ -2509,16 +2546,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2529,14 +2568,14 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: registerTaskState_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -2553,16 +2592,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2573,13 +2614,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: registerTaskState_NotFound_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: false
@@ -2631,16 +2672,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2651,14 +2694,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: registerTasks_InternalServerError_response_body result type (default
       view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -2686,28 +2729,30 @@ definitions:
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
-      status: n6Qn6TFM
+      status: Task Started
       ticket:
-        artist_name: n6Qn6TFM
-        artist_pastelid: n6Qn6TFM
-        artist_pastelid_passphrase: n6Qn6TFM
-        artist_website_url: n6Qn6TFM
-        description: n6Qn6TFM
+        artist_name: Leonardo da Vinci
+        artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        artist_pastelid_passphrase: qwerasdf1234
+        artist_website_url: https://www.leonardodavinci.net
+        description: The Mona Lisa is an oil painting by Italian artist, inventor,
+          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+          a portrait of a seated woman set against an imaginary landscape.
         green: false
         issued_copies: 1
-        keywords: n6Qn6TFM
+        keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
-        name: n6Qn6TFM
-        royalty: 100
-        series_name: n6Qn6TFM
-        spendable_address: n6Qn6TFM
+        name: Mona Lisa
+        royalty: 12
+        series_name: Famous artist
+        spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         thumbnail_coordinate:
-          bottom_right_x: 0
-          bottom_right_y: 0
+          bottom_right_x: 640
+          bottom_right_y: 480
           top_left_x: 0
           top_left_y: 0
-        youtube_url: n6Qn6TFM
-      txid: n6Qn6TFM
+        youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     - id: n6Qn6TFM
       states:
       - date: 2006-01-02T15:04:05Z07:00
@@ -2716,28 +2761,30 @@ definitions:
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
-      status: n6Qn6TFM
+      status: Task Started
       ticket:
-        artist_name: n6Qn6TFM
-        artist_pastelid: n6Qn6TFM
-        artist_pastelid_passphrase: n6Qn6TFM
-        artist_website_url: n6Qn6TFM
-        description: n6Qn6TFM
+        artist_name: Leonardo da Vinci
+        artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        artist_pastelid_passphrase: qwerasdf1234
+        artist_website_url: https://www.leonardodavinci.net
+        description: The Mona Lisa is an oil painting by Italian artist, inventor,
+          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+          a portrait of a seated woman set against an imaginary landscape.
         green: false
         issued_copies: 1
-        keywords: n6Qn6TFM
+        keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
-        name: n6Qn6TFM
-        royalty: 100
-        series_name: n6Qn6TFM
-        spendable_address: n6Qn6TFM
+        name: Mona Lisa
+        royalty: 12
+        series_name: Famous artist
+        spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         thumbnail_coordinate:
-          bottom_right_x: 0
-          bottom_right_y: 0
+          bottom_right_x: 640
+          bottom_right_y: 480
           top_left_x: 0
           top_left_y: 0
-        youtube_url: n6Qn6TFM
-      txid: n6Qn6TFM
+        youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     - id: n6Qn6TFM
       states:
       - date: 2006-01-02T15:04:05Z07:00
@@ -2746,44 +2793,48 @@ definitions:
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
-      status: n6Qn6TFM
+      status: Task Started
       ticket:
-        artist_name: n6Qn6TFM
-        artist_pastelid: n6Qn6TFM
-        artist_pastelid_passphrase: n6Qn6TFM
-        artist_website_url: n6Qn6TFM
-        description: n6Qn6TFM
+        artist_name: Leonardo da Vinci
+        artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        artist_pastelid_passphrase: qwerasdf1234
+        artist_website_url: https://www.leonardodavinci.net
+        description: The Mona Lisa is an oil painting by Italian artist, inventor,
+          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+          a portrait of a seated woman set against an imaginary landscape.
         green: false
         issued_copies: 1
-        keywords: n6Qn6TFM
+        keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
-        name: n6Qn6TFM
-        royalty: 100
-        series_name: n6Qn6TFM
-        spendable_address: n6Qn6TFM
+        name: Mona Lisa
+        royalty: 12
+        series_name: Famous artist
+        spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         thumbnail_coordinate:
-          bottom_right_x: 0
-          bottom_right_y: 0
+          bottom_right_x: 640
+          bottom_right_y: 480
           top_left_x: 0
           top_left_y: 0
-        youtube_url: n6Qn6TFM
-      txid: n6Qn6TFM
+        youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
   ArtworksUploadImageBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2794,13 +2845,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: uploadImage_BadRequest_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -2817,16 +2868,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2837,14 +2890,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -2950,10 +3003,9 @@ definitions:
     properties:
       expires_in:
         type: string
-        description: Uploaded image ID
-        example: VK7mpAqZ
-        minLength: 8
-        maxLength: 8
+        description: Image expiration
+        example: 2006-01-02T15:04:05Z07:00
+        format: date-time
       image_id:
         type: string
         description: Uploaded image ID
@@ -2962,7 +3014,7 @@ definitions:
         maxLength: 8
     description: UploadImageResponseBody result type (default view)
     example:
-      expires_in: VK7mpAqZ
+      expires_in: 2006-01-02T15:04:05Z07:00
       image_id: VK7mpAqZ
     required:
     - image_id
@@ -2973,16 +3025,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -2993,13 +3047,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: actionDetails_BadRequest_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -3016,16 +3070,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3036,14 +3092,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: actionDetails_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -3108,16 +3164,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3128,14 +3186,14 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: registerTaskState_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -3152,16 +3210,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3172,13 +3232,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: registerTaskState_NotFound_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -3230,16 +3290,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3250,13 +3312,13 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: startProcessing_BadRequest_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -3273,16 +3335,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3293,14 +3357,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: startProcessing_InternalServerError_response_body result type (default
       view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -3355,16 +3419,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3375,13 +3441,13 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: uploadImage_BadRequest_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -3398,16 +3464,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3418,14 +3486,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -3534,10 +3602,9 @@ definitions:
     properties:
       expires_in:
         type: string
-        description: Uploaded image ID
-        example: VK7mpAqZ
-        minLength: 8
-        maxLength: 8
+        description: Image expiration
+        example: 2006-01-02T15:04:05Z07:00
+        format: date-time
       image_id:
         type: string
         description: Uploaded image ID
@@ -3546,7 +3613,7 @@ definitions:
         maxLength: 8
     description: UploadImageResponseBody result type (default view)
     example:
-      expires_in: VK7mpAqZ
+      expires_in: 2006-01-02T15:04:05Z07:00
       image_id: VK7mpAqZ
     required:
     - image_id
@@ -3598,16 +3665,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3618,13 +3687,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: actionDetails_BadRequest_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -3641,16 +3710,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3661,14 +3732,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: actionDetails_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -3733,16 +3804,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3753,14 +3826,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: registerTaskState_InternalServerError_response_body result type (default
       view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -3777,16 +3850,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3797,13 +3872,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: registerTaskState_NotFound_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -3855,16 +3930,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3875,13 +3952,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: startProcessing_BadRequest_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -3898,16 +3975,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -3918,14 +3997,14 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: startProcessing_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: false
@@ -3980,16 +4059,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -4000,13 +4081,13 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: uploadImage_BadRequest_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: false
@@ -4023,16 +4104,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -4043,14 +4126,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -4151,10 +4234,9 @@ definitions:
     properties:
       expires_in:
         type: string
-        description: Uploaded image ID
-        example: VK7mpAqZ
-        minLength: 8
-        maxLength: 8
+        description: Image expiration
+        example: 2006-01-02T15:04:05Z07:00
+        format: date-time
       image_id:
         type: string
         description: Uploaded image ID
@@ -4163,7 +4245,7 @@ definitions:
         maxLength: 8
     description: UploadImageResponseBody result type (default view)
     example:
-      expires_in: VK7mpAqZ
+      expires_in: 2006-01-02T15:04:05Z07:00
       image_id: VK7mpAqZ
     required:
     - image_id
@@ -4180,43 +4262,60 @@ definitions:
         maxLength: 8
       status:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: Status of the registration process
+        example: Task Started
+        enum:
+        - Task Started
+        - Connected
+        - Image Probed
+        - Image And Thumbnail Uploaded
+        - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
+        - Ticket Accepted
+        - Ticket Registered
+        - Ticket Activated
+        - Error Insufficient Fee
+        - Error Signatures Dont Match
+        - Error Fingerprints Dont Match
+        - Error ThumbnailHashes Dont Match
+        - Error GenRaptorQ Symbols Failed
+        - Task Rejected
+        - Task Completed
       ticket:
         $ref: '#/definitions/ArtworkTicketResponse'
       txid:
         type: string
-        description: JOb ID of the registration process
-        example: n6Qn6TFM
-        minLength: 8
-        maxLength: 8
+        description: txid
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        minLength: 64
+        maxLength: 64
     description: TaskResponse result type (tiny view) (default view)
     example:
       id: n6Qn6TFM
-      status: n6Qn6TFM
+      status: Task Started
       ticket:
-        artist_name: n6Qn6TFM
-        artist_pastelid: n6Qn6TFM
-        artist_pastelid_passphrase: n6Qn6TFM
-        artist_website_url: n6Qn6TFM
-        description: n6Qn6TFM
+        artist_name: Leonardo da Vinci
+        artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        artist_pastelid_passphrase: qwerasdf1234
+        artist_website_url: https://www.leonardodavinci.net
+        description: The Mona Lisa is an oil painting by Italian artist, inventor,
+          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+          a portrait of a seated woman set against an imaginary landscape.
         green: false
         issued_copies: 1
-        keywords: n6Qn6TFM
+        keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
-        name: n6Qn6TFM
-        royalty: 100
-        series_name: n6Qn6TFM
-        spendable_address: n6Qn6TFM
+        name: Mona Lisa
+        royalty: 12
+        series_name: Famous artist
+        spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         thumbnail_coordinate:
-          bottom_right_x: 0
-          bottom_right_y: 0
+          bottom_right_x: 640
+          bottom_right_y: 480
           top_left_x: 0
           top_left_y: 0
-        youtube_url: n6Qn6TFM
-      txid: n6Qn6TFM
+        youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     required:
     - id
     - status
@@ -4262,15 +4361,15 @@ definitions:
     properties:
       bottom_right_x:
         type: integer
-        description: X coordinate of the thumbnail's top left conner
+        description: X coordinate of the thumbnail's bottom right conner
         default: 0
-        example: 0
+        example: 640
         format: int64
       bottom_right_y:
         type: integer
-        description: X coordinate of the thumbnail's top left conner
+        description: Y coordinate of the thumbnail's bottom right conner
         default: 0
-        example: 0
+        example: 480
         format: int64
       top_left_x:
         type: integer
@@ -4280,14 +4379,14 @@ definitions:
         format: int64
       top_left_y:
         type: integer
-        description: X coordinate of the thumbnail's top left conner
+        description: Y coordinate of the thumbnail's top left conner
         default: 0
         example: 0
         format: int64
     description: Coordinate of the thumbnail (default view)
     example:
-      bottom_right_x: 0
-      bottom_right_y: 0
+      bottom_right_x: 640
+      bottom_right_y: 480
       top_left_x: 0
       top_left_y: 0
     required:
@@ -4301,15 +4400,15 @@ definitions:
     properties:
       bottom_right_x:
         type: integer
-        description: X coordinate of the thumbnail's top left conner
+        description: X coordinate of the thumbnail's bottom right conner
         default: 0
-        example: 0
+        example: 640
         format: int64
       bottom_right_y:
         type: integer
-        description: X coordinate of the thumbnail's top left conner
+        description: Y coordinate of the thumbnail's bottom right conner
         default: 0
-        example: 0
+        example: 480
         format: int64
       top_left_x:
         type: integer
@@ -4319,14 +4418,14 @@ definitions:
         format: int64
       top_left_y:
         type: integer
-        description: X coordinate of the thumbnail's top left conner
+        description: Y coordinate of the thumbnail's top left conner
         default: 0
         example: 0
         format: int64
-    description: Coordinate of the thumbnail (default view)
+    description: Coordinate of the thumbnail
     example:
-      bottom_right_x: 0
-      bottom_right_y: 0
+      bottom_right_x: 640
+      bottom_right_y: 480
       top_left_x: 0
       top_left_y: 0
     required:
@@ -4340,15 +4439,15 @@ definitions:
     properties:
       bottom_right_x:
         type: integer
-        description: X coordinate of the thumbnail's top left conner
+        description: X coordinate of the thumbnail's bottom right conner
         default: 0
-        example: 0
+        example: 640
         format: int64
       bottom_right_y:
         type: integer
-        description: X coordinate of the thumbnail's top left conner
+        description: Y coordinate of the thumbnail's bottom right conner
         default: 0
-        example: 0
+        example: 480
         format: int64
       top_left_x:
         type: integer
@@ -4358,14 +4457,14 @@ definitions:
         format: int64
       top_left_y:
         type: integer
-        description: X coordinate of the thumbnail's top left conner
+        description: Y coordinate of the thumbnail's top left conner
         default: 0
         example: 0
         format: int64
-    description: Coordinate of the thumbnail (default view)
+    description: Coordinate of the thumbnail
     example:
-      bottom_right_x: 0
-      bottom_right_y: 0
+      bottom_right_x: 640
+      bottom_right_y: 480
       top_left_x: 0
       top_left_y: 0
     required:
@@ -4419,16 +4518,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -4439,13 +4540,13 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: createUserdata_BadRequest_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: false
@@ -4462,16 +4563,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -4482,14 +4585,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: createUserdata_InternalServerError_response_body result type (default
       view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -4665,16 +4768,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -4685,13 +4790,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: getUserdata_BadRequest_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: false
@@ -4708,16 +4813,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -4728,14 +4835,14 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: getUserdata_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
@@ -4752,16 +4859,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -4772,13 +4881,13 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: getUserdata_NotFound_response_body result type (default view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: false
@@ -4874,16 +4983,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: false
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -4894,13 +5005,13 @@ definitions:
         example: true
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: false
     description: updateUserdata_BadRequest_response_body result type (default view)
     example:
       fault: true
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
       timeout: true
@@ -4917,16 +5028,18 @@ definitions:
     properties:
       fault:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
       message:
         type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
       name:
         type: string
         description: Name is the name of this class of errors.
@@ -4937,14 +5050,14 @@ definitions:
         example: false
       timeout:
         type: boolean
-        description: Is the error temporary?
+        description: Is the error a timeout?
         example: true
     description: updateUserdata_InternalServerError_response_body result type (default
       view)
     example:
       fault: false
-      id: bad_request
-      message: bad_request
+      id: 123abc
+      message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true

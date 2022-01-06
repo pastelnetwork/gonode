@@ -237,7 +237,7 @@ func TestTaskRun(t *testing.T) {
 				Task:    task.New(StatusTaskStarted),
 				Service: service,
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
 			err := task.Run(ctx)
 			testCase.assertion(t, err)
