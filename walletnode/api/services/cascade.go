@@ -18,7 +18,7 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
-// cascade - cascade service
+// Cascade - cascade service
 type Cascade struct {
 	*Common
 	register *cascaderegister.Service

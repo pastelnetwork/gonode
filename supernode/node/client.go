@@ -4,6 +4,7 @@
 //go:generate mockery --name=ProcessUserdata
 //go:generate mockery --name=RegisterSense
 //go:generate mockery --name=RegisterCascade
+
 package node
 
 import (

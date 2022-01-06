@@ -363,7 +363,7 @@ func (task *Task) ProbeImage(ctx context.Context, file *artwork.File) ([]byte, e
 	return task.calculatedDDAndFingerprints.ZstdCompressedFingerprint, nil
 }
 
-func (task *Task) validateDdFpIds(ctx context.Context, dd []byte) error {
+func (task *Task) validateDdFpIds(_ context.Context, _ []byte) error {
 	// FIXME: add Cascade sequences
 	// validate := func(ctx context.Context, data []byte, ic uint32, max uint32, ids []string) error {
 	// 	length := 4
