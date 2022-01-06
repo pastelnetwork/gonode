@@ -308,74 +308,83 @@ paths:
                 $ref: '#/components/schemas/TaskResponseTinyCollection'
               example:
               - id: n6Qn6TFM
-                status: n6Qn6TFM
+                status: Task Started
                 ticket:
-                  artist_name: n6Qn6TFM
-                  artist_pastelid: n6Qn6TFM
-                  artist_pastelid_passphrase: n6Qn6TFM
-                  artist_website_url: n6Qn6TFM
-                  description: n6Qn6TFM
+                  artist_name: Leonardo da Vinci
+                  artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_pastelid_passphrase: qwerasdf1234
+                  artist_website_url: https://www.leonardodavinci.net
+                  description: The Mona Lisa is an oil painting by Italian artist,
+                    inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                    the piece features a portrait of a seated woman set against an
+                    imaginary landscape.
                   green: false
                   issued_copies: 1
-                  keywords: n6Qn6TFM
+                  keywords: Renaissance, sfumato, portrait
                   maximum_fee: 100
-                  name: n6Qn6TFM
-                  royalty: 100
-                  series_name: n6Qn6TFM
-                  spendable_address: n6Qn6TFM
+                  name: Mona Lisa
+                  royalty: 12
+                  series_name: Famous artist
+                  spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   thumbnail_coordinate:
-                    bottom_right_x: 0
-                    bottom_right_y: 0
+                    bottom_right_x: 640
+                    bottom_right_y: 480
                     top_left_x: 0
                     top_left_y: 0
-                  youtube_url: n6Qn6TFM
-                txid: n6Qn6TFM
+                  youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
               - id: n6Qn6TFM
-                status: n6Qn6TFM
+                status: Task Started
                 ticket:
-                  artist_name: n6Qn6TFM
-                  artist_pastelid: n6Qn6TFM
-                  artist_pastelid_passphrase: n6Qn6TFM
-                  artist_website_url: n6Qn6TFM
-                  description: n6Qn6TFM
+                  artist_name: Leonardo da Vinci
+                  artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_pastelid_passphrase: qwerasdf1234
+                  artist_website_url: https://www.leonardodavinci.net
+                  description: The Mona Lisa is an oil painting by Italian artist,
+                    inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                    the piece features a portrait of a seated woman set against an
+                    imaginary landscape.
                   green: false
                   issued_copies: 1
-                  keywords: n6Qn6TFM
+                  keywords: Renaissance, sfumato, portrait
                   maximum_fee: 100
-                  name: n6Qn6TFM
-                  royalty: 100
-                  series_name: n6Qn6TFM
-                  spendable_address: n6Qn6TFM
+                  name: Mona Lisa
+                  royalty: 12
+                  series_name: Famous artist
+                  spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   thumbnail_coordinate:
-                    bottom_right_x: 0
-                    bottom_right_y: 0
+                    bottom_right_x: 640
+                    bottom_right_y: 480
                     top_left_x: 0
                     top_left_y: 0
-                  youtube_url: n6Qn6TFM
-                txid: n6Qn6TFM
+                  youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
               - id: n6Qn6TFM
-                status: n6Qn6TFM
+                status: Task Started
                 ticket:
-                  artist_name: n6Qn6TFM
-                  artist_pastelid: n6Qn6TFM
-                  artist_pastelid_passphrase: n6Qn6TFM
-                  artist_website_url: n6Qn6TFM
-                  description: n6Qn6TFM
+                  artist_name: Leonardo da Vinci
+                  artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_pastelid_passphrase: qwerasdf1234
+                  artist_website_url: https://www.leonardodavinci.net
+                  description: The Mona Lisa is an oil painting by Italian artist,
+                    inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                    the piece features a portrait of a seated woman set against an
+                    imaginary landscape.
                   green: false
                   issued_copies: 1
-                  keywords: n6Qn6TFM
+                  keywords: Renaissance, sfumato, portrait
                   maximum_fee: 100
-                  name: n6Qn6TFM
-                  royalty: 100
-                  series_name: n6Qn6TFM
-                  spendable_address: n6Qn6TFM
+                  name: Mona Lisa
+                  royalty: 12
+                  series_name: Famous artist
+                  spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   thumbnail_coordinate:
-                    bottom_right_x: 0
-                    bottom_right_y: 0
+                    bottom_right_x: 640
+                    bottom_right_y: 480
                     top_left_x: 0
                     top_left_y: 0
-                  youtube_url: n6Qn6TFM
-                txid: n6Qn6TFM
+                  youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         "500":
           description: Internal Server Error response.
           content:
@@ -487,28 +496,31 @@ paths:
                   status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
                   status: Task Started
-                status: n6Qn6TFM
+                status: Task Started
                 ticket:
-                  artist_name: n6Qn6TFM
-                  artist_pastelid: n6Qn6TFM
-                  artist_pastelid_passphrase: n6Qn6TFM
-                  artist_website_url: n6Qn6TFM
-                  description: n6Qn6TFM
+                  artist_name: Leonardo da Vinci
+                  artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_pastelid_passphrase: qwerasdf1234
+                  artist_website_url: https://www.leonardodavinci.net
+                  description: The Mona Lisa is an oil painting by Italian artist,
+                    inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                    the piece features a portrait of a seated woman set against an
+                    imaginary landscape.
                   green: false
                   issued_copies: 1
-                  keywords: n6Qn6TFM
+                  keywords: Renaissance, sfumato, portrait
                   maximum_fee: 100
-                  name: n6Qn6TFM
-                  royalty: 100
-                  series_name: n6Qn6TFM
-                  spendable_address: n6Qn6TFM
+                  name: Mona Lisa
+                  royalty: 12
+                  series_name: Famous artist
+                  spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   thumbnail_coordinate:
-                    bottom_right_x: 0
-                    bottom_right_y: 0
+                    bottom_right_x: 640
+                    bottom_right_y: 480
                     top_left_x: 0
                     top_left_y: 0
-                  youtube_url: n6Qn6TFM
-                txid: n6Qn6TFM
+                  youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         "404":
           description: Not Found response.
           content:
@@ -2164,34 +2176,32 @@ components:
       properties:
         artist_name:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Name of the artist
+          example: Leonardo da Vinci
+          maxLength: 256
         artist_pastelid:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Artist's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
         artist_pastelid_passphrase:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Passphrase of the artist's PastelID
+          example: qwerasdf1234
         artist_website_url:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Artist website URL
+          example: https://www.leonardodavinci.net
+          maxLength: 256
         description:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Description of the artwork
+          example: The Mona Lisa is an oil painting by Italian artist, inventor, and
+            writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
+          maxLength: 1024
         green:
           type: boolean
           description: To donate 2% of the sale proceeds on every sale to TeamTrees
@@ -2207,10 +2217,9 @@ components:
           maximum: 1000
         keywords:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Keywords
+          example: Renaissance, sfumato, portrait
+          maxLength: 256
         maximum_fee:
           type: number
           description: Used to find a suitable masternode with a fee equal or less
@@ -2219,57 +2228,59 @@ components:
           minimum: 1e-05
         name:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Name of the artwork
+          example: Mona Lisa
+          maxLength: 256
         royalty:
           type: number
-          description: Used to find a suitable masternode with a fee equal or less
-          default: 1
-          example: 100
-          minimum: 1e-05
+          description: Percentage the artist received in future sales. If set to 0%
+            he only get paids for the first sale on each copy of the NFT
+          default: 0
+          example: 12
+          minimum: 0
+          maximum: 100
         series_name:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Series name
+          example: Famous artist
+          maxLength: 256
         spendable_address:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Spendable address
+          example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 35
+          maxLength: 35
         thumbnail_coordinate:
-          $ref: '#/components/schemas/ThumbnailcoordinateResponseBody'
+          $ref: '#/components/schemas/Thumbnailcoordinate2'
         youtube_url:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Artwork creation video youtube URL
+          example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+          maxLength: 128
       description: Ticket of the registration artwork
       example:
-        artist_name: n6Qn6TFM
-        artist_pastelid: n6Qn6TFM
-        artist_pastelid_passphrase: n6Qn6TFM
-        artist_website_url: n6Qn6TFM
-        description: n6Qn6TFM
+        artist_name: Leonardo da Vinci
+        artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        artist_pastelid_passphrase: qwerasdf1234
+        artist_website_url: https://www.leonardodavinci.net
+        description: The Mona Lisa is an oil painting by Italian artist, inventor,
+          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+          a portrait of a seated woman set against an imaginary landscape.
         green: false
         issued_copies: 1
-        keywords: n6Qn6TFM
+        keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
-        name: n6Qn6TFM
-        royalty: 100
-        series_name: n6Qn6TFM
-        spendable_address: n6Qn6TFM
+        name: Mona Lisa
+        royalty: 12
+        series_name: Famous artist
+        spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         thumbnail_coordinate:
-          bottom_right_x: 0
-          bottom_right_y: 0
+          bottom_right_x: 640
+          bottom_right_y: 480
           top_left_x: 0
           top_left_y: 0
-        youtube_url: n6Qn6TFM
+        youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       required:
       - artist_name
       - name
@@ -2681,18 +2692,33 @@ components:
             status: Task Started
         status:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Status of the registration process
+          example: Task Started
+          enum:
+          - Task Started
+          - Connected
+          - Image Probed
+          - Image And Thumbnail Uploaded
+          - Status Gen ReptorQ Symbols
+          - Preburn Registration Fee
+          - Ticket Accepted
+          - Ticket Registered
+          - Ticket Activated
+          - Error Insufficient Fee
+          - Error Signatures Dont Match
+          - Error Fingerprints Dont Match
+          - Error ThumbnailHashes Dont Match
+          - Error GenRaptorQ Symbols Failed
+          - Task Rejected
+          - Task Completed
         ticket:
           $ref: '#/components/schemas/ArtworkTicket'
         txid:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: txid
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
       description: RegisterTaskResponseBody result type (default view)
       example:
         id: n6Qn6TFM
@@ -2703,28 +2729,30 @@ components:
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
-        status: n6Qn6TFM
+        status: Task Started
         ticket:
-          artist_name: n6Qn6TFM
-          artist_pastelid: n6Qn6TFM
-          artist_pastelid_passphrase: n6Qn6TFM
-          artist_website_url: n6Qn6TFM
-          description: n6Qn6TFM
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
           green: false
           issued_copies: 1
-          keywords: n6Qn6TFM
+          keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
-          name: n6Qn6TFM
-          royalty: 100
-          series_name: n6Qn6TFM
-          spendable_address: n6Qn6TFM
+          name: Mona Lisa
+          royalty: 12
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           thumbnail_coordinate:
-            bottom_right_x: 0
-            bottom_right_y: 0
+            bottom_right_x: 640
+            bottom_right_y: 480
             top_left_x: 0
             top_left_y: 0
-          youtube_url: n6Qn6TFM
-        txid: n6Qn6TFM
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       required:
       - id
       - status
@@ -2775,43 +2803,60 @@ components:
           maxLength: 8
         status:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: Status of the registration process
+          example: Task Started
+          enum:
+          - Task Started
+          - Connected
+          - Image Probed
+          - Image And Thumbnail Uploaded
+          - Status Gen ReptorQ Symbols
+          - Preburn Registration Fee
+          - Ticket Accepted
+          - Ticket Registered
+          - Ticket Activated
+          - Error Insufficient Fee
+          - Error Signatures Dont Match
+          - Error Fingerprints Dont Match
+          - Error ThumbnailHashes Dont Match
+          - Error GenRaptorQ Symbols Failed
+          - Task Rejected
+          - Task Completed
         ticket:
           $ref: '#/components/schemas/ArtworkTicket'
         txid:
           type: string
-          description: JOb ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
+          description: txid
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
       description: TaskResponse result type (tiny view)
       example:
         id: n6Qn6TFM
-        status: n6Qn6TFM
+        status: Task Started
         ticket:
-          artist_name: n6Qn6TFM
-          artist_pastelid: n6Qn6TFM
-          artist_pastelid_passphrase: n6Qn6TFM
-          artist_website_url: n6Qn6TFM
-          description: n6Qn6TFM
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
           green: false
           issued_copies: 1
-          keywords: n6Qn6TFM
+          keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
-          name: n6Qn6TFM
-          royalty: 100
-          series_name: n6Qn6TFM
-          spendable_address: n6Qn6TFM
+          name: Mona Lisa
+          royalty: 12
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           thumbnail_coordinate:
-            bottom_right_x: 0
-            bottom_right_y: 0
+            bottom_right_x: 640
+            bottom_right_y: 480
             top_left_x: 0
             top_left_y: 0
-          youtube_url: n6Qn6TFM
-        txid: n6Qn6TFM
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       required:
       - id
       - status
@@ -2824,97 +2869,105 @@ components:
         (tiny view)
       example:
       - id: n6Qn6TFM
-        status: n6Qn6TFM
+        status: Task Started
         ticket:
-          artist_name: n6Qn6TFM
-          artist_pastelid: n6Qn6TFM
-          artist_pastelid_passphrase: n6Qn6TFM
-          artist_website_url: n6Qn6TFM
-          description: n6Qn6TFM
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
           green: false
           issued_copies: 1
-          keywords: n6Qn6TFM
+          keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
-          name: n6Qn6TFM
-          royalty: 100
-          series_name: n6Qn6TFM
-          spendable_address: n6Qn6TFM
+          name: Mona Lisa
+          royalty: 12
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           thumbnail_coordinate:
-            bottom_right_x: 0
-            bottom_right_y: 0
+            bottom_right_x: 640
+            bottom_right_y: 480
             top_left_x: 0
             top_left_y: 0
-          youtube_url: n6Qn6TFM
-        txid: n6Qn6TFM
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       - id: n6Qn6TFM
-        status: n6Qn6TFM
+        status: Task Started
         ticket:
-          artist_name: n6Qn6TFM
-          artist_pastelid: n6Qn6TFM
-          artist_pastelid_passphrase: n6Qn6TFM
-          artist_website_url: n6Qn6TFM
-          description: n6Qn6TFM
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
           green: false
           issued_copies: 1
-          keywords: n6Qn6TFM
+          keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
-          name: n6Qn6TFM
-          royalty: 100
-          series_name: n6Qn6TFM
-          spendable_address: n6Qn6TFM
+          name: Mona Lisa
+          royalty: 12
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           thumbnail_coordinate:
-            bottom_right_x: 0
-            bottom_right_y: 0
+            bottom_right_x: 640
+            bottom_right_y: 480
             top_left_x: 0
             top_left_y: 0
-          youtube_url: n6Qn6TFM
-        txid: n6Qn6TFM
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       - id: n6Qn6TFM
-        status: n6Qn6TFM
+        status: Task Started
         ticket:
-          artist_name: n6Qn6TFM
-          artist_pastelid: n6Qn6TFM
-          artist_pastelid_passphrase: n6Qn6TFM
-          artist_website_url: n6Qn6TFM
-          description: n6Qn6TFM
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
           green: false
           issued_copies: 1
-          keywords: n6Qn6TFM
+          keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
-          name: n6Qn6TFM
-          royalty: 100
-          series_name: n6Qn6TFM
-          spendable_address: n6Qn6TFM
+          name: Mona Lisa
+          royalty: 12
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           thumbnail_coordinate:
-            bottom_right_x: 0
-            bottom_right_y: 0
+            bottom_right_x: 640
+            bottom_right_y: 480
             top_left_x: 0
             top_left_y: 0
-          youtube_url: n6Qn6TFM
-        txid: n6Qn6TFM
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       - id: n6Qn6TFM
-        status: n6Qn6TFM
+        status: Task Started
         ticket:
-          artist_name: n6Qn6TFM
-          artist_pastelid: n6Qn6TFM
-          artist_pastelid_passphrase: n6Qn6TFM
-          artist_website_url: n6Qn6TFM
-          description: n6Qn6TFM
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
           green: false
           issued_copies: 1
-          keywords: n6Qn6TFM
+          keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
-          name: n6Qn6TFM
-          royalty: 100
-          series_name: n6Qn6TFM
-          spendable_address: n6Qn6TFM
+          name: Mona Lisa
+          royalty: 12
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           thumbnail_coordinate:
-            bottom_right_x: 0
-            bottom_right_y: 0
+            bottom_right_x: 640
+            bottom_right_y: 480
             top_left_x: 0
             top_left_y: 0
-          youtube_url: n6Qn6TFM
-        txid: n6Qn6TFM
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     TaskState:
       type: object
       properties:
@@ -2937,6 +2990,7 @@ components:
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
+          - Error Signatures Dont Match
           - Error Fingerprints Dont Match
           - Error ThumbnailHashes Dont Match
           - Error GenRaptorQ Symbols Failed
@@ -2986,20 +3040,20 @@ components:
       - top_left_y
       - bottom_right_x
       - bottom_right_y
-    ThumbnailcoordinateResponseBody:
+    Thumbnailcoordinate2:
       type: object
       properties:
         bottom_right_x:
           type: integer
-          description: X coordinate of the thumbnail's top left conner
+          description: X coordinate of the thumbnail's bottom right conner
           default: 0
-          example: 0
+          example: 640
           format: int64
         bottom_right_y:
           type: integer
-          description: X coordinate of the thumbnail's top left conner
+          description: Y coordinate of the thumbnail's bottom right conner
           default: 0
-          example: 0
+          example: 480
           format: int64
         top_left_x:
           type: integer
@@ -3009,14 +3063,14 @@ components:
           format: int64
         top_left_y:
           type: integer
-          description: X coordinate of the thumbnail's top left conner
+          description: Y coordinate of the thumbnail's top left conner
           default: 0
           example: 0
           format: int64
-      description: Coordinate of the thumbnail (default view)
+      description: Coordinate of the thumbnail
       example:
-        bottom_right_x: 0
-        bottom_right_y: 0
+        bottom_right_x: 640
+        bottom_right_y: 480
         top_left_x: 0
         top_left_y: 0
       required:
