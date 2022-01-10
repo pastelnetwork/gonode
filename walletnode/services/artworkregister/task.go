@@ -222,6 +222,7 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 	if err != nil {
 		return errors.Errorf("failed to marshal dd-data: %w", err)
 	}
+	task.fingerprint = ddDataJSON
 
 	ddEncoded := utils.B64Encode(ddDataJSON)
 
