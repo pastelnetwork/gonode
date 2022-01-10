@@ -210,5 +210,5 @@ var RegisterSense_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "supernode/register_sense.proto",
+	Metadata: "register_sense.proto",
 }

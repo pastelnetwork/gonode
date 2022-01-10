@@ -296,5 +296,5 @@ var ProcessUserdata_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "walletnode/process_userdata_walletnode.proto",
+	Metadata: "process_userdata_walletnode.proto",
 }
