@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	pb "github.com/pastelnetwork/gonode/proto/supernode/process_userdata"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
 func Test_pbToWriteCommand(t *testing.T) {

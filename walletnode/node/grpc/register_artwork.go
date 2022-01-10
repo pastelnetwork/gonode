@@ -12,7 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
-	pb "github.com/pastelnetwork/gonode/proto/walletnode/register_artwork"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"golang.org/x/crypto/sha3"

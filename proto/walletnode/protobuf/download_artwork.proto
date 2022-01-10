@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/pastelnetwork/gonode/proto/walletnode/download_artwork";
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
 
-package download_artwork;
+package walletnode;
 
 service DownloadArtwork {
     // Download downloads artwork by given txid, timestamp and signature.
@@ -16,6 +16,7 @@ message DownloadRequest {
     string signature = 3;
     string ttxid = 4;
 }
+
 message DownloadReply {
     bytes file = 1;
 }
@@ -23,6 +24,7 @@ message DownloadReply {
 message DownloadThumbnailRequest {
     bytes key = 1;
 }
+
 message DownloadThumbnailReply {
     bytes thumbnail = 1;
 }

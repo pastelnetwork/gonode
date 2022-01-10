@@ -11,7 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
-	pb "github.com/pastelnetwork/gonode/proto/walletnode/register_sense"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -189,7 +189,7 @@ func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.Fil
 		}
 
 		req := &pb.ProbeImageRequest{
-			Image: buffer[:n],
+			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
 			return nil, true, errors.Errorf("send image data: %w", err)

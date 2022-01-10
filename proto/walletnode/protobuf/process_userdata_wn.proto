@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-option go_package =
-    "github.com/pastelnetwork/gonode/proto/walletnode/process_userdata";
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
 
-package process_userdata;
+import "common_wn.proto";
+package walletnode;
 
 service ProcessUserdata {
   // Session informs the supernode its position (primary/secondary).
@@ -27,21 +27,6 @@ service ProcessUserdata {
   // or detail on error.
   rpc ReceiveUserdata(RetrieveRequest) returns(UserdataRequest);
 }
-
-message SessionRequest { bool is_primary = 1; }
-message SessionReply { string sessID = 1; }
-
-message AcceptedNodesRequest {}
-message AcceptedNodesReply {
-  message Peer { string nodeID = 1; }
-  repeated Peer peers = 1;
-}
-
-message ConnectToRequest {
-  string sessID = 1;
-  string nodeID = 2;
-}
-message ConnectToReply {}
 
 message UserdataRequest {
   // Real name of the user

@@ -6,7 +6,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	pb "github.com/pastelnetwork/gonode/proto/supernode/register_sense"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 	"google.golang.org/grpc"

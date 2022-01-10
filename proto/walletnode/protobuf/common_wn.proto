@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
+
+package walletnode;
+
+message SessionRequest {
+    bool is_primary = 1;
+}
+
+message SessionReply {
+    string sessID = 1;
+}
+
+message AcceptedNodesRequest {}
+
+message AcceptedNodesReply {
+    message Peer {
+        string nodeID = 1;
+    }
+    repeated Peer peers = 1;
+}
+
+message ConnectToRequest {
+    string sessID = 1;
+    string nodeID = 2;
+}
+
+message ConnectToReply {}
+
+message MeshNodesRequest {
+    message Node  {
+     string sessID = 1;
+     string nodeID = 2;
+    }
+
+    repeated Node nodes = 1;
+}
+
+message MeshNodesReply {}
+
+message SendRegMetadataRequest {
+    string creatorPastelID = 1;
+    string blockHash = 2;
+    string burn_txid = 3;
+}
+
+message SendRegMetadataReply {}
+
+message ProbeImageRequest {
+    bytes payload = 1;
+}
+
+message ProbeImageReply {
+    bytes compressedSignedDDAndFingerprints = 1;
+    bool is_valid_burn_txid = 2;
+}

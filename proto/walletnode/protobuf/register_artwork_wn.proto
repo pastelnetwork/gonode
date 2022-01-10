@@ -1,8 +1,9 @@
 syntax = "proto3";
 
-option go_package = "github.com/pastelnetwork/gonode/proto/walletnode/register_artwork";
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
+import "common_wn.proto";
 
-package register_artwork;
+package walletnode;
 
 service RegisterArtwork {
     // Session informs the supernode its position (primary/secondary).
@@ -38,55 +39,6 @@ service RegisterArtwork {
     rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
 }
 
-message SessionRequest {
-    bool is_primary = 1;
-}
-message SessionReply {
-    string sessID = 1;
-}
-
-message AcceptedNodesRequest {
-}
-message AcceptedNodesReply {
-    message Peer {
-        string nodeID = 1;
-    }
-    repeated Peer peers = 1;
-}
-
-message ConnectToRequest {
-    string sessID = 1;
-    string nodeID = 2;
-}
-message ConnectToReply {
-}
-
-message MeshNodesRequest {
-    message Node  {
-     string sessID = 1;
-     string nodeID = 2;
-    }
-
-    repeated Node nodes = 1;
-}
-message MeshNodesReply {
-}
-
-message SendRegMetadataRequest {
-    string creatorPastelID = 1;
-    string blockHash = 2;
-}
-message SendRegMetadataReply {
-
-}
-
-message ProbeImageRequest {
-    bytes payload = 1;
-}
-message ProbeImageReply {
-    bytes compressedSignedDDAndFingerprints = 1;
-}
-
 message EncoderParameters {
   bytes oti = 1;   //12 bytes
 }
@@ -108,6 +60,7 @@ message SendSignedNFTTicketReply {
 message SendPreBurntFeeTxidRequest {
     string txid = 1;
 }
+
 message SendPreBurntFeeTxidReply {
     string NFT_reg_txid = 1;
 }
@@ -120,6 +73,7 @@ message SendTicketRequest {
     string fee_txid = 5;
     bytes thumbnail = 6;
 }
+
 message SendTicketReply {
     string ticket_txid = 1;
 }

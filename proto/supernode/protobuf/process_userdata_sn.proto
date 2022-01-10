@@ -1,9 +1,11 @@
 syntax = "proto3";
 
-option go_package =
-    "github.com/pastelnetwork/gonode/proto/supernode/process_userdata";
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode";
 
-package process_userdata;
+import "common_sn.proto";
+
+package supernode;
+
 
 service ProcessUserdata {
   // Session informs primary supernode about its `nodeID` and `sessID` it wants
@@ -18,9 +20,6 @@ service ProcessUserdata {
   // SendUserdataToLeader send final userdata to supernode contain rqlite leader
   rpc SendUserdataToLeader(UserdataRequest) returns(SuperNodeReply);
 }
-
-message SessionRequest { string nodeID = 1; }
-message SessionReply { string sessID = 1; }
 
 message SuperNodeRequest {
   // UserdataHash represents UserdataProcessRequest's hash value, to make sure

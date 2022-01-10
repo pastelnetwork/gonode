@@ -9,7 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
-	pb "github.com/pastelnetwork/gonode/proto/walletnode/register_sense"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 	"google.golang.org/grpc"
@@ -204,7 +204,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 				return errors.Errorf("receive ProbeImage: %w", err)
 			}
 
-			if _, subErr := wr.Write(req.Image); subErr != nil {
+			if _, subErr := wr.Write(req.Payload); subErr != nil {
 				return errors.Errorf("write to file %q: %w", file.Name(), err)
 			}
 		}
