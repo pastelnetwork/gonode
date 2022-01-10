@@ -22,7 +22,7 @@ const (
 	logPrefix = "sense"
 )
 
-// Service represent artwork service.
+// Service represent sense service.
 type Service struct {
 	*task.Worker
 	*artwork.Storage
