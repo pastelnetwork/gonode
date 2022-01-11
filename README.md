@@ -2,15 +2,39 @@
 
 `gonode` contains two main applications, `walletnode` and `supernode`. These are designed to register NFTs (artworks) on the [Pastel](http://pastel.wiki/en/home) blockchain. Neither `walletnode` nor `supernode`  interact directly with the blockchain; instead, they use Pastel's RPC API to communicate with Pastel's [cNode](https://github.com/pastelnetwork/pastel) which handles the blockchain itself.
 
-### Main Apps
+### Walletnode
 
-[`walletnode`](walletnode/README.md) is a command line client application (i.e., there is no graphical interface); the main purpose of the app is to provide a REST API on the client side.
+[`walletnode`](walletnode/README.md) is an API server that provides REST APIs on the client side. The APIs allow the user to search, view & download artworks as well as enable the users to register their own artworks. In addition, it also allows end-users or other applications to use Pastel Network's duplication detection system for the images as well as a storage system. 
 
-[`supernode`](supernode/README.md) is a server application for `walletnode` and actually does all the work of registering and searching for NFTs (artworks).
+### Supernode
 
-### Tools
+[`supernode`](supernode/README.md) is a server application for `walletnode` and its responsible for communication with the blockchain, duplication detection server, storage and other services.
+
+## Getting started
+- Get started with [`golang`](https://go.dev/doc/) & install the latest version.
+- In order to generate mocks, [`mockery`](https://github.com/vektra/mockery) needs to be installed.
+- In order to generate proto, protoc compiler needs to be installed as well as protoc-gen-go & protoc-gen-go-grpc
+
+```
+ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+
+```
+
+## Tools
 
 [`pastel-api`](tools/pastel-api/README.md) simulates the Pastel RPC API which is provided by [cNode](https://github.com/pastelnetwork/pastel) and is used for local testing of walletnode and supernode.
+
+
+### Makefile tool
+
+- `make sn-unit-tests` execute sn unit tests including packages that it uses
+- `make wn-unit-tests` execute wn-unit tests including packages that it uses
+- `make integration-tests` execute integration tests
+- `make build` verify if WN & SN are able to build
+- `make gen-mocks` remove existing mocks & generates all mocks for interfaces throughout gonode (mocks are used in unit tests)
+- `make gen-proto` generate all protobuf models & services
+- `make clean-proto` removes all protobuf models & services
 
 ### Local testing
 1. Clone [`regtest-network`](https://github.com/pastelnetwork/mock-networks)
