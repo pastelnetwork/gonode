@@ -417,6 +417,153 @@ paths:
             $ref: '#/definitions/ArtworksArtSearchInternalServerErrorResponseBody'
       schemes:
       - ws
+  /openapi/sense/details/{image_id}:
+    post:
+      tags:
+      - sense
+      summary: Provides action details
+      description: Provide action details
+      operationId: sense#actionDetails
+      parameters:
+      - name: image_id
+        in: path
+        description: Uploaded image ID
+        required: true
+        type: string
+        maxLength: 8
+        minLength: 8
+      - name: ActionDetailsRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/SenseActionDetailsRequestBody'
+          required:
+          - app_pastelid
+          - action_data_hash
+          - action_data_signature
+      responses:
+        "201":
+          description: Created response.
+          schema:
+            $ref: '#/definitions/SenseActionDetailsResponseBody'
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/SenseActionDetailsBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/SenseActionDetailsInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /openapi/sense/start/{image_id}:
+    post:
+      tags:
+      - sense
+      summary: Starts processing the image
+      description: Start processing the image
+      operationId: sense#startProcessing
+      parameters:
+      - name: image_id
+        in: path
+        description: Uploaded image ID
+        required: true
+        type: string
+        maxLength: 8
+        minLength: 8
+      - name: app_pastelid_passphrase
+        in: header
+        description: Passphrase of the App PastelID
+        required: true
+        type: string
+      - name: StartProcessingRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/SenseStartProcessingRequestBody'
+          required:
+          - burn_txid
+          - app_pastelid
+      responses:
+        "201":
+          description: Created response.
+          schema:
+            $ref: '#/definitions/SenseStartProcessingResponseBody'
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/SenseStartProcessingBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/SenseStartProcessingInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /openapi/sense/start/{taskId}/state:
+    get:
+      tags:
+      - sense
+      summary: Streams state by task ID
+      description: Streams the state of the registration process.
+      operationId: sense#registerTaskState
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the registration process
+        required: true
+        type: string
+        maxLength: 8
+        minLength: 8
+      responses:
+        "101":
+          description: Switching Protocols response.
+          schema:
+            $ref: '#/definitions/SenseRegisterTaskStateResponseBody'
+            required:
+            - date
+            - status
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/SenseRegisterTaskStateNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/SenseRegisterTaskStateInternalServerErrorResponseBody'
+      schemes:
+      - ws
+  /openapi/sense/upload:
+    post:
+      tags:
+      - sense
+      summary: Uploads Action Data (Image)
+      description: Upload the image
+      operationId: sense#uploadImage
+      consumes:
+      - multipart/form-data
+      parameters:
+      - name: UploadImageRequestBody
+        in: formData
+        required: true
+        schema:
+          $ref: '#/definitions/SenseUploadImageRequestBody'
+          required:
+          - file
+      responses:
+        "201":
+          description: Created response.
+          schema:
+            $ref: '#/definitions/SenseUploadImageResponseBody'
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/SenseUploadImageBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/SenseUploadImageInternalServerErrorResponseBody'
+      schemes:
+      - http
   /userdatas/{pastelid}:
     get:
       tags:
@@ -577,52 +724,7 @@ definitions:
         type: string
         description: Thumbnail_1 image
         example:
-        - 77
-        - 105
-        - 110
-        - 117
-        - 115
-        - 32
-        - 110
-        - 111
-        - 115
-        - 116
-        - 114
-        - 117
-        - 109
-        - 32
-        - 101
-        - 97
-        - 32
-        - 118
-        - 101
-        - 114
-        - 105
-        - 116
-        - 97
-        - 116
-        - 105
-        - 115
-        - 32
-        - 115
-        - 101
-        - 113
-        - 117
-        - 105
-        - 46
-        format: byte
-      thumbnail_2:
-        type: string
-        description: Thumbnail_2 image
-        example:
-        - 77
-        - 97
-        - 120
-        - 105
-        - 109
-        - 101
-        - 32
-        - 101
+        - 69
         - 118
         - 101
         - 110
@@ -651,6 +753,42 @@ definitions:
         - 109
         - 101
         - 116
+        - 32
+        - 100
+        - 101
+        - 98
+        - 105
+        - 116
+        - 105
+        - 115
+        - 46
+        format: byte
+      thumbnail_2:
+        type: string
+        description: Thumbnail_2 image
+        example:
+        - 65
+        - 112
+        - 101
+        - 114
+        - 105
+        - 97
+        - 109
+        - 32
+        - 115
+        - 117
+        - 115
+        - 99
+        - 105
+        - 112
+        - 105
+        - 116
+        - 32
+        - 114
+        - 101
+        - 114
+        - 117
+        - 109
         - 46
         format: byte
       title:
@@ -682,39 +820,6 @@ definitions:
       series_name: Famous artist
       thumbnail_1:
       - 86
-      - 101
-      - 108
-      - 105
-      - 116
-      - 32
-      - 97
-      - 112
-      - 101
-      - 114
-      - 105
-      - 97
-      - 109
-      - 32
-      - 115
-      - 117
-      - 115
-      - 99
-      - 105
-      - 112
-      - 105
-      - 116
-      - 32
-      - 114
-      - 101
-      - 114
-      - 117
-      - 109
-      - 32
-      - 101
-      - 115
-      - 116
-      - 32
-      - 118
       - 105
       - 116
       - 97
@@ -723,32 +828,24 @@ definitions:
       - 101
       - 117
       - 109
+      - 32
+      - 97
+      - 117
+      - 116
+      - 32
+      - 110
+      - 111
+      - 115
+      - 116
+      - 114
+      - 117
+      - 109
+      - 32
+      - 105
+      - 110
       - 46
       thumbnail_2:
-      - 78
-      - 111
-      - 115
-      - 116
-      - 114
-      - 117
-      - 109
-      - 32
-      - 105
-      - 110
-      - 32
-      - 100
-      - 105
-      - 103
-      - 110
-      - 105
-      - 115
-      - 115
-      - 105
-      - 109
-      - 111
-      - 115
-      - 32
-      - 115
+      - 83
       - 105
       - 110
       - 116
@@ -773,6 +870,28 @@ definitions:
       - 105
       - 97
       - 101
+      - 32
+      - 113
+      - 117
+      - 105
+      - 100
+      - 101
+      - 109
+      - 32
+      - 100
+      - 111
+      - 108
+      - 111
+      - 114
+      - 105
+      - 98
+      - 117
+      - 115
+      - 32
+      - 113
+      - 117
+      - 111
+      - 100
       - 46
       title: Mona Lisa
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1047,11 +1166,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: artSearch_BadRequest_response_body result type (default view)
     example:
       fault: false
@@ -1074,7 +1193,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1096,16 +1215,16 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: artSearch_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -1123,7 +1242,7 @@ definitions:
         type: integer
         description: Sort index of the match based on score.This must be used to sort
           results on UI.
-        example: 6547466617067624756
+        example: 5330761874689937150
         format: int64
       matches:
         type: array
@@ -1131,20 +1250,18 @@ definitions:
           $ref: '#/definitions/FuzzyMatchResponseBody'
         description: Match result details
         example:
-        - field_type: series
+        - field_type: keyword
           matched_indexes:
-          - 428534624021342475
-          - 7636056011211397649
-          - 2926345857488496302
-          score: 3231062264282873716
-          str: Cum harum illum velit veniam.
-        - field_type: series
+          - 3296871063441268122
+          - 1275827989906040522
+          score: 153082285827655130
+          str: Tempora non culpa voluptatibus rerum est.
+        - field_type: keyword
           matched_indexes:
-          - 428534624021342475
-          - 7636056011211397649
-          - 2926345857488496302
-          score: 3231062264282873716
-          str: Cum harum illum velit veniam.
+          - 3296871063441268122
+          - 1275827989906040522
+          score: 153082285827655130
+          str: Tempora non culpa voluptatibus rerum est.
     example:
       artwork:
         artist_name: Leonardo da Vinci
@@ -1157,86 +1274,83 @@ definitions:
         keywords: Renaissance, sfumato, portrait
         series_name: Famous artist
         thumbnail_1:
-        - 82
+        - 81
+        - 117
+        - 105
+        - 97
+        - 32
         - 101
+        - 105
+        - 117
+        - 115
+        - 32
+        - 99
+        - 117
+        - 109
+        - 32
+        - 104
+        - 97
         - 114
         - 117
         - 109
         - 32
-        - 118
-        - 111
+        - 105
+        - 108
         - 108
         - 117
-        - 112
-        - 116
-        - 97
-        - 116
-        - 101
+        - 109
         - 32
-        - 110
-        - 105
-        - 104
-        - 105
+        - 118
+        - 101
         - 108
+        - 105
+        - 116
         - 46
         thumbnail_2:
-        - 65
-        - 99
-        - 99
-        - 117
-        - 115
+        - 70
         - 97
+        - 99
+        - 101
+        - 114
+        - 101
+        - 32
         - 110
-        - 116
-        - 105
-        - 117
-        - 109
-        - 32
-        - 105
-        - 112
-        - 115
-        - 117
-        - 109
-        - 32
-        - 116
         - 111
-        - 116
-        - 97
-        - 109
-        - 32
-        - 101
-        - 115
-        - 116
-        - 32
-        - 117
         - 110
-        - 100
-        - 101
         - 32
         - 113
         - 117
         - 105
+        - 98
+        - 117
+        - 115
+        - 100
         - 97
+        - 109
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-      match_index: 7679525897524679310
+      match_index: 5869169039146088596
       matches:
-      - field_type: series
+      - field_type: keyword
         matched_indexes:
-        - 428534624021342475
-        - 7636056011211397649
-        - 2926345857488496302
-        score: 3231062264282873716
-        str: Cum harum illum velit veniam.
-      - field_type: series
+        - 3296871063441268122
+        - 1275827989906040522
+        score: 153082285827655130
+        str: Tempora non culpa voluptatibus rerum est.
+      - field_type: keyword
         matched_indexes:
-        - 428534624021342475
-        - 7636056011211397649
-        - 2926345857488496302
-        score: 3231062264282873716
-        str: Cum harum illum velit veniam.
+        - 3296871063441268122
+        - 1275827989906040522
+        score: 153082285827655130
+        str: Tempora non culpa voluptatibus rerum est.
+      - field_type: keyword
+        matched_indexes:
+        - 3296871063441268122
+        - 1275827989906040522
+        score: 153082285827655130
+        str: Tempora non culpa voluptatibus rerum est.
     required:
     - artwork
     - matches
@@ -1248,7 +1362,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1270,7 +1384,7 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: artworkGet_BadRequest_response_body result type (default view)
     example:
       fault: false
@@ -1323,8 +1437,8 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
-      timeout: false
+      temporary: false
+      timeout: true
     required:
     - name
     - id
@@ -1357,18 +1471,18 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
         example: true
     description: artworkGet_NotFound_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -1442,7 +1556,7 @@ definitions:
       green_address:
         type: boolean
         description: Green address
-        example: true
+        example: false
       hentai_nsfw_score:
         type: number
         description: nsfw score
@@ -1480,63 +1594,7 @@ definitions:
         maximum: 1
       preview_thumbnail:
         type: string
-        description: preview_ image
-        example:
-        - 73
-        - 112
-        - 115
-        - 97
-        - 32
-        - 116
-        - 111
-        - 116
-        - 97
-        - 109
-        - 46
-        format: byte
-      rareness_score:
-        type: number
-        description: pastel rareness score
-        example: 1
-        minimum: 0
-        maximum: 1
-      royalty:
-        type: number
-        description: how much artist should get on all future resales
-        example: 0.0528951229142366
-        format: double
-      series_name:
-        type: string
-        description: Series name
-        example: Famous artist
-        maxLength: 256
-      sexy_nsfw_score:
-        type: number
-        description: nsfw score
-        example: 1
-        minimum: 0
-        maximum: 1
-      storage_fee:
-        type: integer
-        description: Storage fee %
-        example: 100
-        format: int64
-      thumbnail_1:
-        type: string
-        description: Thumbnail_1 image
-        example:
-        - 73
-        - 100
-        - 32
-        - 113
-        - 117
-        - 105
-        - 97
-        - 46
-        format: byte
-      thumbnail_2:
-        type: string
-        description: Thumbnail_2 image
+        description: Preview Image
         example:
         - 73
         - 109
@@ -1579,6 +1637,117 @@ definitions:
         - 101
         - 46
         format: byte
+      rareness_score:
+        type: number
+        description: pastel rareness score
+        example: 1
+        minimum: 0
+        maximum: 1
+      royalty:
+        type: number
+        description: how much artist should get on all future resales
+        example: 0.356131402063653
+        format: double
+      series_name:
+        type: string
+        description: Series name
+        example: Famous artist
+        maxLength: 256
+      sexy_nsfw_score:
+        type: number
+        description: nsfw score
+        example: 1
+        minimum: 0
+        maximum: 1
+      storage_fee:
+        type: integer
+        description: Storage fee %
+        example: 100
+        format: int64
+      thumbnail_1:
+        type: string
+        description: Thumbnail_1 image
+        example:
+        - 69
+        - 118
+        - 101
+        - 110
+        - 105
+        - 101
+        - 116
+        - 32
+        - 117
+        - 116
+        - 32
+        - 101
+        - 120
+        - 112
+        - 101
+        - 100
+        - 105
+        - 116
+        - 97
+        - 32
+        - 99
+        - 117
+        - 109
+        - 113
+        - 117
+        - 101
+        - 32
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 101
+        - 115
+        - 116
+        - 46
+        format: byte
+      thumbnail_2:
+        type: string
+        description: Thumbnail_2 image
+        example:
+        - 69
+        - 115
+        - 116
+        - 32
+        - 105
+        - 112
+        - 115
+        - 97
+        - 109
+        - 32
+        - 109
+        - 97
+        - 120
+        - 105
+        - 109
+        - 101
+        - 32
+        - 101
+        - 118
+        - 101
+        - 110
+        - 105
+        - 101
+        - 116
+        - 32
+        - 99
+        - 117
+        - 108
+        - 112
+        - 97
+        - 32
+        - 110
+        - 111
+        - 110
+        - 32
+        - 101
+        - 97
+        - 46
+        format: byte
       title:
         type: string
         description: Name of the artwork
@@ -1609,7 +1778,7 @@ definitions:
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
       drawing_nsfw_score: 1
-      green_address: true
+      green_address: false
       hentai_nsfw_score: 1
       internet_rareness_score: 1
       keywords: Renaissance, sfumato, portrait
@@ -1618,91 +1787,109 @@ definitions:
       porn_nsfw_score: 1
       preview_thumbnail:
       - 69
-      - 120
-      - 112
-      - 101
-      - 100
-      - 105
-      - 116
       - 97
+      - 113
+      - 117
+      - 101
       - 32
+      - 108
+      - 97
+      - 98
+      - 111
+      - 114
+      - 105
+      - 111
+      - 115
+      - 97
+      - 109
+      - 32
+      - 113
+      - 117
+      - 105
+      - 115
+      - 113
+      - 117
+      - 97
+      - 109
+      - 32
+      - 97
+      - 99
       - 99
       - 117
-      - 109
-      - 113
-      - 117
-      - 101
-      - 32
-      - 113
-      - 117
+      - 115
       - 97
       - 109
+      - 117
+      - 115
       - 46
       rareness_score: 1
-      royalty: 0.6928076742537396
+      royalty: 0.5419404027606691
       series_name: Famous artist
       sexy_nsfw_score: 1
       storage_fee: 100
       thumbnail_1:
-      - 80
-      - 111
-      - 115
-      - 115
-      - 105
-      - 109
-      - 117
-      - 115
-      - 32
+      - 68
       - 101
       - 115
+      - 101
+      - 114
+      - 117
+      - 110
       - 116
       - 32
+      - 113
+      - 117
       - 105
-      - 112
+      - 32
+      - 100
+      - 101
       - 115
-      - 97
-      - 109
-      - 32
-      - 109
-      - 97
-      - 120
-      - 105
-      - 109
       - 101
-      - 32
-      - 101
-      - 118
-      - 101
+      - 114
+      - 117
       - 110
-      - 105
-      - 101
       - 116
       - 46
       thumbnail_2:
-      - 78
-      - 111
-      - 110
-      - 32
+      - 80
       - 101
-      - 97
-      - 32
-      - 110
-      - 105
-      - 104
-      - 105
-      - 108
-      - 32
-      - 118
-      - 111
-      - 108
-      - 117
+      - 114
+      - 115
       - 112
-      - 116
+      - 105
+      - 99
+      - 105
       - 97
+      - 116
+      - 105
       - 115
       - 32
-      - 117
+      - 101
       - 116
+      - 32
+      - 105
+      - 115
+      - 116
+      - 101
+      - 32
+      - 97
+      - 99
+      - 99
+      - 117
+      - 115
+      - 97
+      - 110
+      - 116
+      - 105
+      - 117
+      - 109
+      - 32
+      - 97
+      - 32
+      - 101
+      - 105
+      - 117
+      - 115
       - 46
       title: Mona Lisa
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1742,14 +1929,14 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
         example: true
     description: download_InternalServerError_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -1787,18 +1974,18 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: download_NotFound_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: false
     required:
     - name
@@ -1815,76 +2002,59 @@ definitions:
         type: string
         description: File downloaded
         example:
-        - 69
-        - 105
-        - 117
+        - 65
         - 115
-        - 32
-        - 101
-        - 97
-        - 113
-        - 117
-        - 101
-        - 32
-        - 100
-        - 111
-        - 108
-        - 111
-        - 114
-        - 32
-        - 105
-        - 108
-        - 108
+        - 115
         - 117
         - 109
+        - 101
+        - 110
+        - 100
+        - 97
         - 32
-        - 113
-        - 117
+        - 115
+        - 97
+        - 101
+        - 112
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
         - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 117
+        - 110
+        - 100
+        - 101
+        - 32
+        - 97
+        - 98
+        - 32
+        - 105
+        - 110
         - 46
         format: byte
     example:
       file:
-      - 76
-      - 97
-      - 98
-      - 111
-      - 114
-      - 101
-      - 32
-      - 113
-      - 117
-      - 111
-      - 32
-      - 115
-      - 97
-      - 101
-      - 112
-      - 101
+      - 83
+      - 105
+      - 110
+      - 116
       - 32
       - 99
       - 111
-      - 110
-      - 115
-      - 101
-      - 113
-      - 117
-      - 97
-      - 116
-      - 117
-      - 114
-      - 32
-      - 114
-      - 101
-      - 112
-      - 117
+      - 109
+      - 109
+      - 111
       - 100
       - 105
-      - 97
-      - 110
-      - 100
-      - 97
-      - 101
       - 46
     required:
     - file
@@ -1913,7 +2083,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -1924,7 +2094,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: false
     required:
     - name
@@ -1940,7 +2110,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2126,7 +2296,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2144,11 +2314,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTask_InternalServerError_response_body result type (default
       view)
     example:
@@ -2172,7 +2342,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2190,18 +2360,18 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTask_NotFound_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -2232,8 +2402,6 @@ definitions:
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
       status:
         type: string
         description: Status of the registration process
@@ -2244,10 +2412,12 @@ definitions:
         - Image Probed
         - Image And Thumbnail Uploaded
         - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
+        - Error Signatures Dont Match
         - Error Fingerprints Dont Match
         - Error ThumbnailHashes Dont Match
         - Error GenRaptorQ Symbols Failed
@@ -2265,6 +2435,8 @@ definitions:
     example:
       id: n6Qn6TFM
       states:
+      - date: 2006-01-02T15:04:05Z07:00
+        status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
@@ -2332,11 +2504,11 @@ definitions:
     description: registerTaskState_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: false
     required:
     - name
@@ -2352,7 +2524,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2370,18 +2542,18 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTaskState_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -2408,10 +2580,12 @@ definitions:
         - Image Probed
         - Image And Thumbnail Uploaded
         - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
+        - Error Signatures Dont Match
         - Error Fingerprints Dont Match
         - Error ThumbnailHashes Dont Match
         - Error GenRaptorQ Symbols Failed
@@ -2430,7 +2604,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2452,11 +2626,11 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: registerTasks_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -2621,7 +2795,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2666,7 +2840,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2684,7 +2858,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -2697,7 +2871,7 @@ definitions:
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -2713,47 +2887,44 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 83
-        - 111
-        - 108
+        - 81
         - 117
-        - 116
-        - 97
-        - 32
-        - 109
-        - 97
-        - 103
-        - 110
-        - 97
-        - 109
-        - 32
-        - 117
-        - 116
-        - 32
-        - 101
-        - 117
-        - 109
-        - 32
-        - 101
-        - 108
         - 105
-        - 103
+        - 32
+        - 97
+        - 115
+        - 115
+        - 117
+        - 109
         - 101
         - 110
         - 100
-        - 105
+        - 97
         - 32
-        - 118
-        - 101
-        - 108
-        - 105
-        - 116
-        - 32
+        - 110
+        - 111
         - 115
-        - 101
-        - 113
+        - 116
+        - 114
         - 117
+        - 109
+        - 32
+        - 109
         - 105
+        - 110
+        - 117
+        - 115
+        - 32
+        - 110
+        - 111
+        - 115
+        - 116
+        - 114
+        - 117
+        - 109
+        - 32
+        - 101
+        - 97
         - 46
         format: byte
       filename:
@@ -2761,46 +2932,22 @@ definitions:
         description: For internal use
     example:
       file:
-      - 69
-      - 97
-      - 32
+      - 83
       - 101
-      - 116
-      - 32
       - 113
       - 117
       - 105
       - 32
-      - 109
-      - 105
-      - 110
-      - 105
-      - 109
-      - 97
-      - 32
-      - 101
-      - 120
-      - 99
-      - 101
+      - 118
+      - 111
+      - 108
+      - 117
       - 112
       - 116
-      - 117
-      - 114
-      - 105
-      - 32
-      - 113
-      - 117
-      - 105
-      - 32
       - 97
-      - 115
-      - 115
-      - 117
-      - 109
+      - 116
       - 101
-      - 110
-      - 100
-      - 97
+      - 109
       - 46
     required:
     - file
@@ -2844,28 +2991,640 @@ definitions:
         type: array
         items:
           type: integer
-          example: 5622738984618586276
+          example: 7394052911326624750
           format: int64
         description: The indexes of matched characters. Useful for highlighting matches
         example:
-        - 2751306702279417540
-        - 7394052911326624750
+        - 3443314961496485335
+        - 1359507437102536265
+        - 4008581283873467619
+        - 4649323458023906464
       score:
         type: integer
         description: Score used to rank matches
-        example: 1469702366552700833
+        example: 576952885438216633
         format: int64
       str:
         type: string
         description: String that is matched
-        example: Quod voluptatem deserunt culpa vel.
+        example: Culpa vel odio sed aliquam.
     example:
-      field_type: series
+      field_type: artist_name
       matched_indexes:
-      - 9091578646799100466
-      - 4446497757712369110
-      score: 2024031100413952952
-      str: Et nisi provident adipisci.
+      - 1215297699271328573
+      - 4771960422190605602
+      score: 1915557611931404356
+      str: Qui modi possimus labore at.
+  SenseActionDetailsBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: actionDetails_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseActionDetailsInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: actionDetails_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseActionDetailsRequestBody:
+    title: SenseActionDetailsRequestBody
+    type: object
+    properties:
+      action_data_hash:
+        type: string
+        description: Hash (SHA3-256) of the Action Data
+        example: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
+        pattern: ^[a-fA-F0-9]
+        minLength: 64
+        maxLength: 64
+      action_data_signature:
+        type: string
+        description: The signature (base64) of the Action Data
+        example: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
+        pattern: ^[a-zA-Z0-9\/+]
+        minLength: 152
+        maxLength: 152
+      app_pastelid:
+        type: string
+        description: 3rd party app's PastelID
+        example: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
+        pattern: ^[a-zA-Z0-9]
+        minLength: 86
+        maxLength: 86
+    example:
+      action_data_hash: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
+      action_data_signature: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
+      app_pastelid: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
+    required:
+    - app_pastelid
+    - action_data_hash
+    - action_data_signature
+  SenseActionDetailsResponseBody:
+    title: 'Mediatype identifier: application/sense.start-action; view=default'
+    type: object
+    properties:
+      estimated_fee:
+        type: number
+        description: Estimated fee
+        default: 1
+        example: 100
+        minimum: 1e-05
+    description: ActionDetailsResponseBody result type (default view)
+    example:
+      estimated_fee: 100
+    required:
+    - estimated_fee
+  SenseRegisterTaskStateInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: registerTaskState_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseRegisterTaskStateNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: registerTaskState_NotFound_response_body result type (default view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseRegisterTaskStateResponseBody:
+    title: SenseRegisterTaskStateResponseBody
+    type: object
+    properties:
+      date:
+        type: string
+        description: Date of the status creation
+        example: 2006-01-02T15:04:05Z07:00
+      status:
+        type: string
+        description: Status of the registration process
+        example: Task Started
+        enum:
+        - Task Started
+        - Connected
+        - Image Probed
+        - Image And Thumbnail Uploaded
+        - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
+        - Ticket Accepted
+        - Ticket Registered
+        - Ticket Activated
+        - Error Insufficient Fee
+        - Error Signatures Dont Match
+        - Error Fingerprints Dont Match
+        - Error ThumbnailHashes Dont Match
+        - Error GenRaptorQ Symbols Failed
+        - Task Rejected
+        - Task Completed
+    example:
+      date: 2006-01-02T15:04:05Z07:00
+      status: Task Started
+    required:
+    - date
+    - status
+  SenseStartProcessingBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: startProcessing_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseStartProcessingInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: startProcessing_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseStartProcessingRequestBody:
+    title: SenseStartProcessingRequestBody
+    type: object
+    properties:
+      app_pastelid:
+        type: string
+        description: App PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+      burn_txid:
+        type: string
+        description: Burn transaction ID
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        minLength: 64
+        maxLength: 64
+    example:
+      app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+    required:
+    - burn_txid
+    - app_pastelid
+  SenseStartProcessingResponseBody:
+    title: 'Mediatype identifier: application/sense.start-processing; view=default'
+    type: object
+    properties:
+      task_id:
+        type: string
+        description: Task ID of processing task
+        example: VK7mpAqZ
+        minLength: 8
+        maxLength: 8
+    description: StartProcessingResponseBody result type (default view)
+    example:
+      task_id: VK7mpAqZ
+    required:
+    - task_id
+  SenseUploadImageBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: uploadImage_BadRequest_response_body result type (default view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseUploadImageInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: uploadImage_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseUploadImageRequestBody:
+    title: SenseUploadImageRequestBody
+    type: object
+    properties:
+      file:
+        type: string
+        description: File to upload
+        example:
+        - 69
+        - 117
+        - 109
+        - 32
+        - 109
+        - 97
+        - 103
+        - 110
+        - 105
+        - 32
+        - 97
+        - 108
+        - 105
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 109
+        - 111
+        - 108
+        - 108
+        - 105
+        - 116
+        - 105
+        - 97
+        - 32
+        - 102
+        - 117
+        - 103
+        - 105
+        - 97
+        - 116
+        - 32
+        - 105
+        - 100
+        - 32
+        - 100
+        - 101
+        - 98
+        - 105
+        - 116
+        - 105
+        - 115
+        - 46
+        format: byte
+      filename:
+        type: string
+        description: For internal use
+    example:
+      file:
+      - 86
+      - 111
+      - 108
+      - 117
+      - 112
+      - 116
+      - 97
+      - 116
+      - 101
+      - 32
+      - 99
+      - 117
+      - 109
+      - 32
+      - 114
+      - 101
+      - 114
+      - 117
+      - 109
+      - 32
+      - 97
+      - 108
+      - 105
+      - 113
+      - 117
+      - 97
+      - 109
+      - 32
+      - 111
+      - 99
+      - 99
+      - 97
+      - 101
+      - 99
+      - 97
+      - 116
+      - 105
+      - 32
+      - 97
+      - 117
+      - 116
+      - 46
+    required:
+    - file
+  SenseUploadImageResponseBody:
+    title: 'Mediatype identifier: application/vnd.artwork.upload-image; view=default'
+    type: object
+    properties:
+      expires_in:
+        type: string
+        description: Image expiration
+        example: 2006-01-02T15:04:05Z07:00
+        format: date-time
+      image_id:
+        type: string
+        description: Uploaded image ID
+        example: VK7mpAqZ
+        minLength: 8
+        maxLength: 8
+    description: UploadImageResponseBody result type (default view)
+    example:
+      expires_in: 2006-01-02T15:04:05Z07:00
+      image_id: VK7mpAqZ
+    required:
+    - image_id
+    - expires_in
   TaskResponseTiny:
     title: 'Mediatype identifier: application/vnd.artwork.register.task; view=default'
     type: object
@@ -2886,10 +3645,12 @@ definitions:
         - Image Probed
         - Image And Thumbnail Uploaded
         - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
+        - Error Signatures Dont Match
         - Error Fingerprints Dont Match
         - Error ThumbnailHashes Dont Match
         - Error GenRaptorQ Symbols Failed
@@ -2952,10 +3713,12 @@ definitions:
         - Image Probed
         - Image And Thumbnail Uploaded
         - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
+        - Error Signatures Dont Match
         - Error Fingerprints Dont Match
         - Error ThumbnailHashes Dont Match
         - Error GenRaptorQ Symbols Failed
@@ -3149,18 +3912,18 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
         example: true
     description: createUserdata_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -3194,11 +3957,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: createUserdata_InternalServerError_response_body result type (default
       view)
     example:
@@ -3206,7 +3969,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: false
     required:
     - name
@@ -3399,18 +4162,18 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
         example: false
     description: getUserdata_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -3426,7 +4189,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3444,15 +4207,15 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: getUserdata_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -3472,7 +4235,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3490,11 +4253,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: getUserdata_NotFound_response_body result type (default view)
     example:
       fault: true
@@ -3614,14 +4377,14 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
         example: true
     description: updateUserdata_BadRequest_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -3641,7 +4404,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3663,16 +4426,16 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: updateUserdata_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
-      timeout: false
+      temporary: false
+      timeout: true
     required:
     - name
     - id

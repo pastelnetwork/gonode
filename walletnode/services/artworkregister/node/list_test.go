@@ -9,7 +9,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_register"
 	"github.com/stretchr/testify/assert"
 )
 

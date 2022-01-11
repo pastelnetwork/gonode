@@ -153,7 +153,7 @@ type ArtworkGetResponseBody struct {
 	PornNsfwScore *float32 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
 	// nsfw score
 	HentaiNsfwScore *float32 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
-	// preview_ image
+	// Preview Image
 	PreviewThumbnail []byte `form:"preview_thumbnail,omitempty" json:"preview_thumbnail,omitempty" xml:"preview_thumbnail,omitempty"`
 	// Thumbnail_1 image
 	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`

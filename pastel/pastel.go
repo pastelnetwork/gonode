@@ -109,11 +109,29 @@ type Client interface {
 	// Command `gettotalstoragefee ...`
 	GetRegisterNFTFee(ctx context.Context, request GetRegisterNFTFeeRequest) (int64, error)
 
+	// GetActionFee return fee of action
+	// Command: `getactionfee getactionfees <ImgSizeInMb>`
+	GetActionFee(ctx context.Context, ImgSizeInMb int64) (*GetActionFeesResult, error)
+
 	// RegisterNFTTicket register an NFT ticket
 	// Refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 18
 	// Command `tickets register NFT ...`
 	// Return txid of transaction
 	RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error)
+
+	// RegisterActionTicket register an action ticket
+	// Refer :
+	// -https://pastel.wiki/en/Architecture/OpenAPI/Sense
+	// - https://pastel.wiki/en/Architecture/Components/PastelOpenAPITicketStructures#sense-api-ticket
+	// Command `tickets register action ...`
+	// Return txid of transaction
+	RegisterActionTicket(ctx context.Context, request RegisterActionRequest) (string, error)
+
+	// ActivateActionTicket activate an action ticket
+	// Refer: https://pastel.wiki/en/Architecture/Components/PastelOpenAPITicketStructures
+	// Command `tickets activate action ...`
+	// Return txid of transaction
+	ActivateActionTicket(ctx context.Context, request ActivateActionRequest) (string, error)
 
 	// RegisterActTicket activates an registered NFT ticket
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
@@ -123,6 +141,10 @@ type Client interface {
 	// FindTicketByID returns the register ticket of pastelid
 	// Command `tickets find id <pastelid>`
 	FindTicketByID(ctx context.Context, pastelid string) (*IDTicket, error)
+
+	// FindActionActByActionRegTxid returns the action activation ticket by ActionReg ticket txid
+	// Command `tickets find action-act <action-reg-ticket-txid>`
+	FindActionActByActionRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error)
 
 	// GetBalance returns the amount of PSL stored at address
 	// Command `z_getbalance address`

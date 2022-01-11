@@ -31,7 +31,7 @@ import (
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
-	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_register"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

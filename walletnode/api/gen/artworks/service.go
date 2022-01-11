@@ -277,7 +277,7 @@ type ArtworkDetail struct {
 	PornNsfwScore *float32
 	// nsfw score
 	HentaiNsfwScore *float32
-	// preview_ image
+	// Preview Image
 	PreviewThumbnail []byte
 	// Thumbnail_1 image
 	Thumbnail1 []byte

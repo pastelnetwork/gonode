@@ -64,7 +64,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 		return err
 	}
 
-	resp := &pb.MDLSessionReply{
+	resp := &pb.SessionReply{
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {

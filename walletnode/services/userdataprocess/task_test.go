@@ -13,7 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-	nodeTest "github.com/pastelnetwork/gonode/walletnode/node/test"
+	nodeTest "github.com/pastelnetwork/gonode/walletnode/node/test/process_userdata"
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess/node"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

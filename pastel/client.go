@@ -359,7 +359,7 @@ func (client *client) GetRegisterNFTFee(ctx context.Context, request GetRegister
 
 	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
 
-	signatures, err := EncodeSignatures(*request.Signatures)
+	signatures, err := EncodeRegSignatures(*request.Signatures)
 	if err != nil {
 		return 0, errors.Errorf("failed to encode signatures: %w", err)
 	}
@@ -382,6 +382,20 @@ func (client *client) GetRegisterNFTFee(ctx context.Context, request GetRegister
 	return totalStorageFee.TotalStorageFee, nil
 }
 
+func (client *client) GetActionFee(ctx context.Context, ImgSizeInMb int64) (*GetActionFeesResult, error) {
+	actionFees := &GetActionFeesResult{}
+
+	params := []interface{}{}
+	params = append(params, "getactionfees")
+	params = append(params, ImgSizeInMb)
+
+	if err := client.callFor(ctx, &actionFees, "storagefee", params...); err != nil {
+		return nil, errors.Errorf("failed to call storagefee getactionfees: %w", err)
+	}
+
+	return actionFees, nil
+}
+
 func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error) {
 	var txID struct {
 		TxID string `json:"txid"`
@@ -393,7 +407,7 @@ func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFT
 	}
 	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
 
-	signatures, err := EncodeSignatures(*request.Signatures)
+	signatures, err := EncodeRegSignatures(*request.Signatures)
 	if err != nil {
 		return "", errors.Errorf("failed to encode signatures: %w", err)
 	}
@@ -414,6 +428,76 @@ func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFT
 		return "", errors.Errorf("failed to call register NFT ticket: %w", err)
 	}
 	return txID.TxID, nil
+}
+
+func (client *client) RegisterActionTicket(ctx context.Context, request RegisterActionRequest) (string, error) {
+	var txID struct {
+		TxID string `json:"txid"`
+	}
+
+	ticket, err := EncodeActionTicket(request.Ticket)
+	if err != nil {
+		return "", errors.Errorf("failed to encode ticket: %w", err)
+	}
+	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
+
+	signatures, err := EncodeActionSignatures(*request.Signatures)
+	if err != nil {
+		return "", errors.Errorf("failed to encode signatures: %w", err)
+	}
+
+	params := []interface{}{}
+	params = append(params, "register")
+	params = append(params, "action")
+	params = append(params, string(ticketBlob))
+	params = append(params, string(signatures))
+	params = append(params, request.Mn1PastelID)
+	params = append(params, request.Passphrase)
+	params = append(params, request.Key1)
+	params = append(params, request.Key2)
+	params = append(params, fmt.Sprint(request.Fee))
+
+	// command : tickets register action "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee"
+	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call register NFT ticket: %w", err)
+	}
+	return txID.TxID, nil
+}
+
+func (client *client) ActivateActionTicket(ctx context.Context, request ActivateActionRequest) (string, error) {
+	var txID struct {
+		TxID string `json:"txid"`
+	}
+
+	params := []interface{}{}
+	params = append(params, "activate")
+	params = append(params, "action")
+	params = append(params, request.RegTxID)
+	params = append(params, fmt.Sprint(request.BlockNum))
+	params = append(params, fmt.Sprint(request.Fee))
+	params = append(params, request.PastelID)
+	params = append(params, request.Passphrase)
+
+	// command : tickets activate action "txid-of-action-reg-ticket" called_at_height-from_action-reg-ticket fee "PastelID-of-the-caller" "passphrase"
+	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call activate action ticket: %w", err)
+	}
+	return txID.TxID, nil
+}
+
+func (client *client) FindActionActByActionRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error) {
+	ticket := IDTicket{}
+
+	params := []interface{}{}
+	params = append(params, "find")
+	params = append(params, "action-act")
+	params = append(params, actionRegTxid)
+
+	if err := client.callFor(ctx, &ticket, "tickets", params...); err != nil {
+		return nil, errors.Errorf("failed to call find action-act <actionRegTxid> : %w", err)
+	}
+
+	return &ticket, nil
 }
 
 func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error) {

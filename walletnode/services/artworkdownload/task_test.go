@@ -10,7 +10,7 @@ import (
 	taskMock "github.com/pastelnetwork/gonode/common/service/task/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_download"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload/node"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

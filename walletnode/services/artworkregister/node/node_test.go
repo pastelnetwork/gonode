@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_register"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

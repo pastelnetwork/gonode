@@ -33,6 +33,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
 
@@ -225,6 +226,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
+	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 
 	ddScanConfig := ddscan.NewConfig()
 	ddScanConfig.SetWorkDir(config.DdWorkDir)
@@ -255,6 +257,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		secInfo,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
+		walletnode.NewRegisterSense(senseRegister),
+		supernode.NewRegisterSense(senseRegister),
 		walletnode.NewDownloadArtwork(artworkDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
@@ -263,5 +267,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, ddScan, database, userdataProcess, statsMngr, debugSerivce)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, senseRegister, ddScan, database, userdataProcess, statsMngr, debugSerivce)
 }
