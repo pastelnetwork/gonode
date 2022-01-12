@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"math/rand"
 	"sync"
 	"time"
@@ -29,6 +30,10 @@ import (
 // Task is the task of registering new artwork.
 type Task struct {
 	task.Task
+	common.CommonTasks
+	common.SenseTasks
+	common.SuperNodesTasks
+
 	*Service
 
 	Request *Request

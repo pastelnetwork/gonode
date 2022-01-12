@@ -11,7 +11,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/walletnode/api"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
@@ -126,7 +125,7 @@ func (service *Sense) RegisterTaskState(ctx context.Context, p *sense.RegisterTa
 				Status: status.String(),
 			}
 			if err := stream.Send(res); err != nil {
-				return artworks.MakeInternalServerError(err)
+				return sense.MakeInternalServerError(err)
 			}
 
 			if status.IsFinal() {

@@ -3,3 +3,5 @@
 **/mocks/
 **/vendor/
 proto/github.com/
+.idea
+go.sum
