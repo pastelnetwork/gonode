@@ -150,7 +150,7 @@ func TestNewFileStorage(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want storage.FileStorage
+		want storage.FileStorageInterface
 	}{
 		{
 			args: args{"./"},

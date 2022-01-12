@@ -83,7 +83,7 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client, rqClient rqnode.Client, ddClient ddclient.DDServerClient) *Service {
+func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client, rqClient rqnode.Client, ddClient ddclient.DDServerClient) *Service {
 	return &Service{
 		config:       config,
 		pastelClient: pastelClient,

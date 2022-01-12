@@ -100,7 +100,7 @@ func (service *Service) AddTask(ticket *Request) string {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client, raptorqClient rqnode.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.Client, raptorqClient rqnode.Client) *Service {
 	return &Service{
 		config:       config,
 		db:           db,

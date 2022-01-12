@@ -18,8 +18,8 @@ type FS struct {
 	dir string
 }
 
-// Open implements storage.FileStorage.Open
-func (fs *FS) Open(filename string) (storage.File, error) {
+// Open implements storage.FileStorageInterface.Open
+func (fs *FS) Open(filename string) (storage.FileInterface, error) {
 	filename = filepath.Join(fs.dir, filename)
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -33,8 +33,8 @@ func (fs *FS) Open(filename string) (storage.File, error) {
 	return file, nil
 }
 
-// Create implements storage.FileStorage.Create
-func (fs *FS) Create(filename string) (storage.File, error) {
+// Create implements storage.FileStorageInterface.Create
+func (fs *FS) Create(filename string) (storage.FileInterface, error) {
 	filename = filepath.Join(fs.dir, filename)
 
 	if _, err := os.Stat(filename); !os.IsNotExist(err) {
@@ -50,7 +50,7 @@ func (fs *FS) Create(filename string) (storage.File, error) {
 	return file, nil
 }
 
-// Remove implements storage.FileStorage.Remove
+// Remove implements storage.FileStorageInterface.Remove
 func (fs *FS) Remove(filename string) error {
 	filename = filepath.Join(fs.dir, filename)
 
@@ -80,7 +80,7 @@ func (fs *FS) Rename(oldname, newname string) error {
 }
 
 // NewFileStorage returns new FS instance. Where `dir` is the path for storing files.
-func NewFileStorage(dir string) storage.FileStorage {
+func NewFileStorage(dir string) storage.FileStorageInterface {
 	return &FS{
 		dir: dir,
 	}

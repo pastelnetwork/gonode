@@ -16,14 +16,14 @@ var (
 	ErrFileExists = errors.New("file exists")
 )
 
-// FileStorage represents a file storage.
-type FileStorage interface {
+// FileStorageInterface represents a file storage.
+type FileStorageInterface interface {
 	// Open opens a file and returns file descriptor.
 	// If name is not found, ErrFileNotFound is returned.
-	Open(name string) (file File, err error)
+	Open(name string) (file FileInterface, err error)
 
 	// Create creates a new file with the given name and returns file descriptor.
-	Create(name string) (file File, err error)
+	Create(name string) (file FileInterface, err error)
 
 	// Remove removes a file by the given name.
 	Remove(name string) error
@@ -33,7 +33,7 @@ type FileStorage interface {
 }
 
 // File represents a file.
-type File interface {
+type FileInterface interface {
 	io.Closer
 	io.Reader
 	io.ReaderAt

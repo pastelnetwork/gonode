@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// FileStorage implementing storage.FileStorage mock for testing purpose
+// FileStorage implementing storage.FileStorageInterface mock for testing purpose
 type FileStorage struct {
 	*mocks.FileStorage
 }
@@ -19,13 +19,13 @@ func NewMockFileStorage() *FileStorage {
 }
 
 // ListenOnOpen listening Open call and returns file and error from args
-func (f *FileStorage) ListenOnOpen(file storage.File, err error) *FileStorage {
+func (f *FileStorage) ListenOnOpen(file storage.FileInterface, err error) *FileStorage {
 	f.On("Open", mock.AnythingOfType("string")).Return(file, err)
 	return f
 }
 
 // ListenOnCreate listening Create call and returns file and error from args
-func (f *FileStorage) ListenOnCreate(file storage.File, err error) *FileStorage {
+func (f *FileStorage) ListenOnCreate(file storage.FileInterface, err error) *FileStorage {
 	f.On("Create", mock.AnythingOfType("string")).Return(file, err)
 	return f
 }

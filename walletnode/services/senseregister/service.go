@@ -197,7 +197,7 @@ func (service *Service) GetEstimatedFee(ctx context.Context, ImgSizeInMb int64) 
 // NewService returns a new Service instance
 func NewService(
 	config *Config,
-	fileStorage storage.FileStorage,
+	fileStorage storage.FileStorageInterface,
 	pastelClient pastel.Client,
 	nodeClient node.Client,
 	db storage.KeyValue,

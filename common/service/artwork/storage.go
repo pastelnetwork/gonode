@@ -12,7 +12,7 @@ import (
 
 // Storage represents a file srorage.
 type Storage struct {
-	storage.FileStorage
+	storage.FileStorageInterface
 
 	idCounter int64
 	prefix    string
@@ -70,11 +70,11 @@ func (storage *Storage) Update(oldname, newname string, file *File) error {
 }
 
 // NewStorage returns a new Storage instance.
-func NewStorage(storage storage.FileStorage) *Storage {
+func NewStorage(storage storage.FileStorageInterface) *Storage {
 	prefix, _ := random.String(8, random.Base62Chars)
 
 	return &Storage{
-		FileStorage: storage,
+		FileStorageInterface: storage,
 
 		prefix: prefix,
 		files:  make(map[string]*File),

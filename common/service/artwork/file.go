@@ -24,7 +24,7 @@ type File struct {
 	fmt.Stringer
 	sync.Mutex
 
-	storage.File
+	storage.FileInterface
 	storage *Storage
 
 	// if a file was created during the process, it should be deleted at the end.
@@ -80,7 +80,7 @@ func (file *File) Format() Format {
 
 // Open opens a file and returns file descriptor.
 // If file is not found, storage.ErrFileNotFound is returned.
-func (file *File) Open() (storage.File, error) {
+func (file *File) Open() (storage.FileInterface, error) {
 	file.Lock()
 	defer file.Unlock()
 
@@ -88,7 +88,7 @@ func (file *File) Open() (storage.File, error) {
 }
 
 // Create creates a file and returns file descriptor.
-func (file *File) Create() (storage.File, error) {
+func (file *File) Create() (storage.FileInterface, error) {
 	file.Lock()
 	defer file.Unlock()
 
@@ -256,7 +256,9 @@ func (file *File) Thumbnail(coordinate ThumbnailCoordinate) (*File, error) {
 	if f == nil {
 		return nil, errors.Errorf("create new file for thumbnail-of-%q", file.Name())
 	}
-	f.SetFormat(file.Format())
+	if err := f.SetFormat(file.Format()); err != nil {
+		return nil, errors.Errorf("set format for thumbnail-of-%q", file.Name())
+	}
 
 	img, err := file.LoadImage()
 	if err != nil {
