@@ -1,4 +1,4 @@
-package artwork
+package files
 
 import (
 	"os"

@@ -3,13 +3,13 @@ package grpc
 import (
 	"context"
 	"encoding/base64"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"fmt"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
@@ -155,7 +155,7 @@ func (service *registerArtwork) SendRegMetadata(ctx context.Context, regMetadata
 }
 
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, error) {
+func (service *registerArtwork) ProbeImage(ctx context.Context, image *files.File) ([]byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -195,7 +195,7 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
-func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
+func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 

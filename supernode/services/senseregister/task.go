@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -29,7 +29,7 @@ type Task struct {
 
 	nftRegMetadata *types.ActionRegMetadata
 	Ticket         *pastel.ActionTicket
-	Artwork        *artwork.File
+	Artwork        *files.File
 
 	meshedNodes []types.MeshedSuperNode
 
@@ -233,7 +233,7 @@ func (task *Task) compressSignedDDAndFingerprints(ctx context.Context, ddData *p
 }
 
 // ProbeImage uploads the resampled image compute and return a compression of pastel.DDAndFingerprints
-func (task *Task) ProbeImage(ctx context.Context, file *artwork.File) ([]byte, error) {
+func (task *Task) ProbeImage(ctx context.Context, file *files.File) ([]byte, error) {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		log.WithContext(ctx).WithField("CurrentStatus", task.Status()).Error("ProbeImage() failed with non-satisfied task status")
 		return nil, err
@@ -783,7 +783,7 @@ func (task *Task) storeIDFiles(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (*pastel.DDAndFingerprints, error) {
+func (task *Task) genFingerprintsData(ctx context.Context, file *files.File) (*pastel.DDAndFingerprints, error) {
 	img, err := file.Bytes()
 	if err != nil {
 		return nil, errors.Errorf("get content of image %s: %w", file.Name(), err)
@@ -942,7 +942,7 @@ func (task *Task) context(ctx context.Context) context.Context {
 }
 
 func (task *Task) removeArtifacts() {
-	removeFn := func(file *artwork.File) {
+	removeFn := func(file *files.File) {
 		if file != nil {
 			log.Debugf("remove file: %s", file.Name())
 			if err := file.Remove(); err != nil {

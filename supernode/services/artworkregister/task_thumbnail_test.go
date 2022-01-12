@@ -2,6 +2,7 @@ package artworkregister
 
 import (
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"image"
 	"image/png"
 	"os"
@@ -9,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/tj/assert"
@@ -123,7 +123,7 @@ func TestMaxInt(t *testing.T) {
 	}
 }
 
-func newTestImageFile(stg *artwork.Storage) (*artwork.File, error) {
+func newTestImageFile(stg *files.Storage) (*files.File, error) {
 	imgFile := stg.NewFile()
 
 	f, err := imgFile.Create()
@@ -167,7 +167,7 @@ func TestCreateAndHashThumbnail(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 			t.Parallel()
 
-			stg := artwork.NewStorage(fs.NewFileStorage(os.TempDir()))
+			stg := files.NewStorage(fs.NewFileStorage(os.TempDir()))
 
 			tc.args.task.Storage = stg
 			file, err := newTestImageFile(stg)
@@ -224,14 +224,14 @@ func TestCreateAndHashThumbnails(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 			t.Parallel()
 
-			stg := artwork.NewStorage(fs.NewFileStorage(os.TempDir()))
+			stg := files.NewStorage(fs.NewFileStorage(os.TempDir()))
 
 			tc.args.task.Storage = stg
 			file, err := newTestImageFile(stg)
 			assert.Nil(t, err)
 			tc.args.task.Artwork = file
 
-			coordinate := artwork.ThumbnailCoordinate{
+			coordinate := files.ThumbnailCoordinate{
 				TopLeftX:     0,
 				TopLeftY:     0,
 				BottomRightX: 400,

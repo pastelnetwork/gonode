@@ -1,4 +1,4 @@
-package artwork
+package files
 
 import (
 	"bytes"
@@ -106,7 +106,7 @@ func (file *File) Remove() error {
 	file.Lock()
 	defer file.Unlock()
 
-	delete(file.storage.files, file.name)
+	delete(file.storage.filesMap, file.name)
 
 	if !file.isCreated {
 		return nil

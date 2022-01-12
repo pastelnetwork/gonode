@@ -2,13 +2,13 @@ package grpc
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"fmt"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
@@ -165,7 +165,7 @@ func (service *registerSense) SendActionAct(ctx context.Context, actionRegTxid s
 }
 
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, bool, error) {
+func (service *registerSense) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 

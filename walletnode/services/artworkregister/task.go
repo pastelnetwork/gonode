@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"math/rand"
 	"sync"
 	"time"
@@ -16,7 +17,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -41,7 +41,7 @@ type Task struct {
 	creatorBlockHash             string
 	fingerprintAndScores         *pastel.DDAndFingerprints
 	fingerprint                  []byte
-	imageEncodedWithFingerprints *artwork.File
+	imageEncodedWithFingerprints *files.File
 	previewHash                  []byte
 	mediumThumbnailHash          []byte
 	smallThumbnailHash           []byte
@@ -322,7 +322,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 	}
 }
 
-func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
+func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *files.File) error {
 	// Sign fingerprint
 	ed448PubKey, err := getPubKey(task.Request.ArtistPastelID)
 	if err != nil {
@@ -894,7 +894,7 @@ func (task *Task) preburntRegistrationFee(ctx context.Context) error {
 }
 
 func (task *Task) removeArtifacts() {
-	removeFn := func(file *artwork.File) {
+	removeFn := func(file *files.File) {
 		if file != nil {
 			log.Debugf("remove file: %s", file.Name())
 			if err := file.Remove(); err != nil {

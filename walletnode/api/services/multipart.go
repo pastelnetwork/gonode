@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
 	goa "goa.design/goa/v3/pkg"
@@ -48,7 +48,7 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 }
 
 // handleUploadImage -- save image to service storage
-func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *artwork.Storage) (string, string, error) {
+func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *files.Storage) (string, string, error) {
 	var filename string
 
 	for {

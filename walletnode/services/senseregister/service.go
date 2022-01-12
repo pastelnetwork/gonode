@@ -3,6 +3,7 @@ package senseregister
 import (
 	"bytes"
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"image"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -32,7 +32,7 @@ const (
 // Service represents a service for the registration artwork.
 type Service struct {
 	*task.Worker
-	*artwork.Storage
+	*files.Storage
 
 	config       *Config
 	pastelClient pastel.Client
@@ -208,7 +208,7 @@ func NewService(
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
 		Worker:       task.NewWorker(),
-		Storage:      artwork.NewStorage(fileStorage),
+		Storage:      files.NewStorage(fileStorage),
 		imageTTL:     defaultImageTTL,
 	}
 }

@@ -3,10 +3,9 @@ package senseregister
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"testing"
 	"time"
-
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -113,7 +112,7 @@ func TestServiceRun(t *testing.T) {
 				p2pClient:    p2pClient.Client,
 				rqClient:     raptorQClient.Client,
 				Worker:       task.NewWorker(),
-				Storage:      artwork.NewStorage(nil),
+				Storage:      files.NewStorage(nil),
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
 			defer cancel()

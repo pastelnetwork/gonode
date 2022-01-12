@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"sync"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -30,8 +30,8 @@ type Task struct {
 
 	nftRegMetadata   *types.NftRegMetadata
 	Ticket           *pastel.NFTTicket
-	ResampledArtwork *artwork.File
-	Artwork          *artwork.File
+	ResampledArtwork *files.File
+	Artwork          *files.File
 	imageSizeBytes   int
 
 	meshedNodes []types.MeshedSuperNode
@@ -43,9 +43,9 @@ type Task struct {
 	allSignedDDAndFingerprintsReceivedChn chan struct{}
 	ddMtx                                 sync.Mutex
 
-	PreviewThumbnail *artwork.File
-	MediumThumbnail  *artwork.File
-	SmallThumbnail   *artwork.File
+	PreviewThumbnail *files.File
+	MediumThumbnail  *files.File
+	SmallThumbnail   *files.File
 
 	acceptedMu sync.Mutex
 	accepted   Nodes
@@ -246,7 +246,7 @@ func (task *Task) compressSignedDDAndFingerprints(ctx context.Context, ddData *p
 }
 
 // ProbeImage uploads the resampled image compute and return a compression of pastel.DDAndFingerprints
-func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, error) {
+func (task *Task) ProbeImage(_ context.Context, file *files.File) ([]byte, error) {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		return nil, err
 	}
@@ -816,7 +816,7 @@ func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
 }
 
 func (task *Task) storeThumbnails(ctx context.Context) error {
-	storeFn := func(ctx context.Context, artwork *artwork.File) (string, error) {
+	storeFn := func(ctx context.Context, artwork *files.File) (string, error) {
 		data, err := artwork.Bytes()
 		if err != nil {
 			return "", errors.Errorf("get data from artwork %s", artwork.Name())
@@ -859,7 +859,7 @@ func (task *Task) storeIDFiles(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (*pastel.DDAndFingerprints, error) {
+func (task *Task) genFingerprintsData(ctx context.Context, file *files.File) (*pastel.DDAndFingerprints, error) {
 	img, err := file.Bytes()
 	if err != nil {
 		return nil, errors.Errorf("get content of image %s: %w", file.Name(), err)
@@ -943,7 +943,7 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 // UploadImageWithThumbnail uploads the image that contained image with pqsignature
 // generate the image thumbnail from the coordinate provided for user and return
 // the hash for the genreated thumbnail
-func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File, coordinate artwork.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
+func (task *Task) UploadImageWithThumbnail(_ context.Context, file *files.File, coordinate files.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageProbed); err != nil {
 		return nil, nil, nil, errors.Errorf("require status %s not satisfied", StatusImageProbed)
@@ -1107,7 +1107,7 @@ func (task *Task) context(ctx context.Context) context.Context {
 }
 
 func (task *Task) removeArtifacts() {
-	removeFn := func(file *artwork.File) {
+	removeFn := func(file *files.File) {
 		if file != nil {
 			log.Debugf("remove file: %s", file.Name())
 			if err := file.Remove(); err != nil {

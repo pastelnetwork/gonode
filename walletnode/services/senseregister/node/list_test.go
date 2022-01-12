@@ -3,11 +3,11 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"strings"
 	"sync"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/pastel"
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/register_sense"
 	"github.com/stretchr/testify/assert"
@@ -183,7 +183,7 @@ func TestNodesSendImage(t *testing.T) {
 
 	type args struct {
 		ctx  context.Context
-		file *artwork.File
+		file *files.File
 	}
 
 	type nodeAttribute struct {
@@ -274,14 +274,14 @@ func TestNodesSendImage(t *testing.T) {
 	}{
 		{
 			nodes:                     []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
-			args:                      args{context.Background(), &artwork.File{}},
+			args:                      args{context.Background(), &files.File{}},
 			err:                       nil,
 			compressedFingersAndScore: testCompressedFingerAndScores,
 			numberProbeImageCall:      1,
 		},
 		{
 			nodes:                     []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", fmt.Errorf("failed to open stream")}},
-			args:                      args{context.Background(), &artwork.File{}},
+			args:                      args{context.Background(), &files.File{}},
 			err:                       fmt.Errorf("failed to open stream"),
 			compressedFingersAndScore: testCompressedFingerAndScores,
 			numberProbeImageCall:      1,

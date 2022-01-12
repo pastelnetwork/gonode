@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"time"
 
 	"github.com/pastelnetwork/gonode/pastel"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
@@ -26,7 +26,7 @@ func safeStr(p *string) string {
 }
 
 func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Request {
-	thumbnail := artwork.ThumbnailCoordinate{
+	thumbnail := files.ThumbnailCoordinate{
 		TopLeftX:     payload.ThumbnailCoordinate.TopLeftX,
 		TopLeftY:     payload.ThumbnailCoordinate.TopLeftY,
 		BottomRightX: payload.ThumbnailCoordinate.BottomRightX,

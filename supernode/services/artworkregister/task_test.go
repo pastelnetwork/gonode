@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"io"
 	"math/rand"
 	"os"
@@ -20,7 +21,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	ddMock "github.com/pastelnetwork/gonode/dupedetection/ddclient/test"
@@ -322,8 +322,8 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			storage := artwork.NewStorage(fsMock)
-			file := artwork.NewFile(storage, "test")
+			storage := files.NewStorage(fsMock)
+			file := files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
 			pastelClientMock := pastelMock.NewMockClient(t)
@@ -497,8 +497,8 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			storage := artwork.NewStorage(fsMock)
-			tc.args.task.Artwork = artwork.NewFile(storage, "test")
+			storage := files.NewStorage(fsMock)
+			tc.args.task.Artwork = files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
 			err := tc.args.task.compareRQSymbolID(context.Background())
@@ -638,8 +638,8 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			storage := artwork.NewStorage(fsMock)
-			tc.args.task.Artwork = artwork.NewFile(storage, "test")
+			storage := files.NewStorage(fsMock)
+			tc.args.task.Artwork = files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
 			err = tc.args.task.storeRaptorQSymbols(context.Background())
@@ -721,11 +721,11 @@ func TestTaskStoreThumbnails(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			storage := artwork.NewStorage(fsMock)
+			storage := files.NewStorage(fsMock)
 
-			tc.args.task.SmallThumbnail = artwork.NewFile(storage, "test-small")
-			tc.args.task.MediumThumbnail = artwork.NewFile(storage, "test-medium")
-			tc.args.task.PreviewThumbnail = artwork.NewFile(storage, "test-preview")
+			tc.args.task.SmallThumbnail = files.NewFile(storage, "test-small")
+			tc.args.task.MediumThumbnail = files.NewFile(storage, "test-medium")
+			tc.args.task.PreviewThumbnail = files.NewFile(storage, "test-preview")
 
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
@@ -1095,8 +1095,8 @@ func TestTaskProbeImage(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			storage := artwork.NewStorage(fsMock)
-			file := artwork.NewFile(storage, "test")
+			storage := files.NewStorage(fsMock)
+			file := files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
 			ddmock := ddMock.NewMockClient(t)
@@ -1494,14 +1494,14 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 
 			go tc.args.task.RunAction(ctx)
 
-			stg := artwork.NewStorage(fs.NewFileStorage(os.TempDir()))
+			stg := files.NewStorage(fs.NewFileStorage(os.TempDir()))
 
 			tc.args.task.Storage = stg
 			file, err := newTestImageFile(stg)
 			assert.Nil(t, err)
 			tc.args.task.Artwork = file
 
-			coordinate := artwork.ThumbnailCoordinate{
+			coordinate := files.ThumbnailCoordinate{
 				TopLeftX:     0,
 				TopLeftY:     0,
 				BottomRightX: 400,

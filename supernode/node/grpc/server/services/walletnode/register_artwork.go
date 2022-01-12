@@ -5,12 +5,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"io"
 	"runtime/debug"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
@@ -262,7 +262,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	imageWriter := bufio.NewWriter(imageFile)
 
 	imageSize := int64(0)
-	thumbnail := artwork.ThumbnailCoordinate{}
+	thumbnail := files.ThumbnailCoordinate{}
 	hash := make([]byte, 0)
 
 	err = func() error {

@@ -1,12 +1,11 @@
 package artworkregister
 
 import (
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"image"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
-
 	"github.com/pastelnetwork/gonode/common/log"
 
 	"github.com/disintegration/imaging"
@@ -80,7 +79,7 @@ func determineSmallQuality(size int) float32 {
 	return determineMediumQuality(size) / 2
 }
 
-func (task *Task) createAndHashThumbnails(coordinate artwork.ThumbnailCoordinate) (preview []byte, medium []byte, small []byte, err error) {
+func (task *Task) createAndHashThumbnails(coordinate files.ThumbnailCoordinate) (preview []byte, medium []byte, small []byte, err error) {
 	srcImg, err := task.Artwork.LoadImage()
 	if err != nil {
 		err = errors.Errorf("load image from artwork %s %w", task.Artwork.Name(), err)

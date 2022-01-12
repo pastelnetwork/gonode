@@ -2,6 +2,7 @@ package artworkregister
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -9,7 +10,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
@@ -26,7 +26,7 @@ const (
 // Service represent artwork service.
 type Service struct {
 	*task.Worker
-	*artwork.Storage
+	*files.Storage
 
 	config       *Config
 	pastelClient pastel.Client
@@ -98,6 +98,6 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		rqClient:     rqClient,
 		ddClient:     ddClient,
 		Worker:       task.NewWorker(),
-		Storage:      artwork.NewStorage(fileStorage),
+		Storage:      files.NewStorage(fileStorage),
 	}
 }

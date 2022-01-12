@@ -1,4 +1,4 @@
-package artwork
+package files
 
 import (
 	"context"
@@ -16,7 +16,7 @@ type Storage struct {
 
 	idCounter int64
 	prefix    string
-	files     map[string]*File
+	filesMap  map[string]*File
 }
 
 // Run removes all files when the context is canceled.
@@ -24,7 +24,7 @@ func (storage *Storage) Run(ctx context.Context) error {
 	<-ctx.Done()
 
 	var errs error
-	for _, file := range storage.files {
+	for _, file := range storage.filesMap {
 		if err := file.Remove(); err != nil {
 			errs = errors.Append(errs, err)
 		}
@@ -39,14 +39,14 @@ func (storage *Storage) NewFile() *File {
 	name := fmt.Sprintf("%s-%d", storage.prefix, id)
 
 	file := NewFile(storage, name)
-	storage.files[name] = file
+	storage.filesMap[name] = file
 
 	return file
 }
 
 // File returns File by the given name.
 func (storage *Storage) File(name string) (*File, error) {
-	file, ok := storage.files[name]
+	file, ok := storage.filesMap[name]
 	if !ok {
 		return nil, errors.New("image not found")
 	}
@@ -55,7 +55,7 @@ func (storage *Storage) File(name string) (*File, error) {
 
 // Update changes the key to identify a *File to a new key
 func (storage *Storage) Update(oldname, newname string, file *File) error {
-	f, ok := storage.files[oldname]
+	f, ok := storage.filesMap[oldname]
 	if !ok {
 		return errors.New("file not found")
 	}
@@ -64,8 +64,8 @@ func (storage *Storage) Update(oldname, newname string, file *File) error {
 		return errors.New("not the same file")
 	}
 
-	delete(storage.files, oldname)
-	storage.files[newname] = file
+	delete(storage.filesMap, oldname)
+	storage.filesMap[newname] = file
 	return nil
 }
 
@@ -76,7 +76,7 @@ func NewStorage(storage storage.FileStorageInterface) *Storage {
 	return &Storage{
 		FileStorageInterface: storage,
 
-		prefix: prefix,
-		files:  make(map[string]*File),
+		prefix:   prefix,
+		filesMap: make(map[string]*File),
 	}
 }

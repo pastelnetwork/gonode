@@ -1,4 +1,4 @@
-package artwork
+package files
 
 // ThumbnailCoordinate contains coordinate of region crop by user
 type ThumbnailCoordinate struct {

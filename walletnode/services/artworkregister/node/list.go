@@ -3,12 +3,12 @@ package node
 import (
 	"bytes"
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -104,7 +104,7 @@ func (nodes *List) SendRegMetadata(ctx context.Context, regMetadata *types.NftRe
 }
 
 // ProbeImage sends the image to supernodes for image analysis, such as fingerprint, raraness score, NSWF.
-func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
+func (nodes *List) ProbeImage(ctx context.Context, file *files.File) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
@@ -145,7 +145,7 @@ func (nodes *List) FingerAndScores() *pastel.DDAndFingerprints {
 }
 
 // UploadImageWithThumbnail uploads the image with pqsignatured appended and thumbnail's coordinate to super nodes
-func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *artwork.File, thumbnail artwork.ThumbnailCoordinate) error {
+func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *files.File, thumbnail files.ThumbnailCoordinate) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node

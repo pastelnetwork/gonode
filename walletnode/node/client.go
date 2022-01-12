@@ -9,9 +9,9 @@ package node
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/common/types"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -54,7 +54,7 @@ type RegisterSense interface {
 	// SendRegMetadata send metadata of registration to SNs for next steps
 	SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error
 	// ProbeImage uploads image to supernode.
-	ProbeImage(ctx context.Context, image *artwork.File) (compressedDDAndFingerprints []byte, isValidBurnTxID bool, err error)
+	ProbeImage(ctx context.Context, image *files.File) (compressedDDAndFingerprints []byte, isValidBurnTxID bool, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFpFile []byte) (string, error)
 	// SendActionAct send action act to SNs for next steps
@@ -76,9 +76,9 @@ type RegisterArtwork interface {
 	// SendRegMetadata send metadata of registration to SNs for next steps
 	SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error
 	// ProbeImage uploads image to supernode.
-	ProbeImage(ctx context.Context, image *artwork.File) (compressedDDAndFingerprints []byte, err error)
+	ProbeImage(ctx context.Context, image *files.File) (compressedDDAndFingerprints []byte, err error)
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
-	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) (previewHash []byte, mediumThumbnailHash []byte, smallThumbnailHash []byte, err error)
+	UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) (previewHash []byte, mediumThumbnailHash []byte, smallThumbnailHash []byte, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdisFile []byte, ddFpFile []byte, encoderParams rqnode.EncoderParameters) (int64, error)
 	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"math/rand"
 	"sync"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -659,7 +659,7 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 }
 
 func (task *Task) removeArtifacts() {
-	removeFn := func(file *artwork.File) {
+	removeFn := func(file *files.File) {
 		if file != nil {
 			log.Debugf("remove file: %s", file.Name())
 			if err := file.Remove(); err != nil {

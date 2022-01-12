@@ -1,4 +1,4 @@
-package artwork
+package files
 
 import (
 	"github.com/pastelnetwork/gonode/common/errors"

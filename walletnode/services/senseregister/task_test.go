@@ -3,6 +3,7 @@ package senseregister
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"image"
 	"image/png"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	stateMock "github.com/pastelnetwork/gonode/common/service/task/test"
@@ -45,8 +45,8 @@ func pullPastelAddressIDNodes(nodes node.List) []string {
 	return v
 }
 
-func newTestImageFile() (*artwork.File, error) {
-	imageStorage := artwork.NewStorage(fs.NewFileStorage(os.TempDir()))
+func newTestImageFile() (*files.File, error) {
+	imageStorage := files.NewStorage(fs.NewFileStorage(os.TempDir()))
 	imgFile := imageStorage.NewFile()
 
 	f, err := imgFile.Create()
@@ -162,7 +162,7 @@ func TestTaskRun(t *testing.T) {
 					ListenOnClose(nil)
 
 				//need to remove generate thumbnail file
-				customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.DDAndFingerprints {
+				customProbeImageFunc := func(ctx context.Context, file *files.File) *pastel.DDAndFingerprints {
 					file.Remove()
 					return &pastel.DDAndFingerprints{ZstdCompressedFingerprint: testCase.args.fingerPrint}
 				}
@@ -231,7 +231,7 @@ func TestTaskRun(t *testing.T) {
 				nodeClient.AssertSessIDCall(testCase.numSessIDCall)
 				nodeClient.AssertSessionCall(testCase.numSessionCall, mock.Anything, false)
 				nodeClient.AssertConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
-				nodeClient.AssertProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
+				nodeClient.AssertProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&files.File{}))
 			})
 		}
 	})
@@ -986,7 +986,7 @@ func TestTaskProbeImage(t *testing.T) {
 			assert.NoError(t, err)
 
 			//need to remove generate thumbnail file
-			customProbeImageFunc := func(ctx context.Context, file *artwork.File) []byte {
+			customProbeImageFunc := func(ctx context.Context, file *files.File) []byte {
 				file.Remove()
 				return testCompressedFingerAndScores
 			}

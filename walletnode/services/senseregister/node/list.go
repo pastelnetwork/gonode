@@ -2,11 +2,11 @@ package node
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -101,7 +101,7 @@ func (nodes *List) SendRegMetadata(ctx context.Context, regMetadata *types.Actio
 }
 
 // ProbeImage sends the image to supernodes for image analysis, such as fingerprint, raraness score, NSWF.
-func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
+func (nodes *List) ProbeImage(ctx context.Context, file *files.File) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node

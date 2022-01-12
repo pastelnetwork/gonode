@@ -3,11 +3,11 @@ package artworkregister
 import (
 	"context"
 	"encoding/json"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
@@ -24,7 +24,7 @@ const (
 // Service represents a service for the registration artwork.
 type Service struct {
 	*task.Worker
-	*artwork.Storage
+	*files.Storage
 
 	config       *Config
 	db           storage.KeyValue
@@ -49,8 +49,8 @@ func (service *Service) Run(ctx context.Context) error {
 
 		if imagePath := ticket.ImagePath; imagePath != nil {
 			baseDir, filename := filepath.Split(*imagePath)
-			imageStorage := artwork.NewStorage(fs.NewFileStorage(baseDir))
-			ticket.Image = artwork.NewFile(imageStorage, filename)
+			imageStorage := files.NewStorage(fs.NewFileStorage(baseDir))
+			ticket.Image = files.NewFile(imageStorage, filename)
 			if err := ticket.Image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
 				return err
 			}
@@ -108,6 +108,6 @@ func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileSto
 		nodeClient:   nodeClient,
 		rqClient:     raptorqClient,
 		Worker:       task.NewWorker(),
-		Storage:      artwork.NewStorage(fileStorage),
+		Storage:      files.NewStorage(fileStorage),
 	}
 }

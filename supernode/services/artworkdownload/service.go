@@ -2,12 +2,12 @@ package artworkdownload
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -22,7 +22,7 @@ const (
 // Service represent artwork service.
 type Service struct {
 	*task.Worker
-	*artwork.Storage
+	*files.Storage
 
 	config        *Config
 	pastelClient  pastel.Client

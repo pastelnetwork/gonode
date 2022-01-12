@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"io"
 	"strings"
 	"sync"
@@ -17,7 +18,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	ddMock "github.com/pastelnetwork/gonode/dupedetection/ddclient/test"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -319,8 +319,8 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			storage := artwork.NewStorage(fsMock)
-			file := artwork.NewFile(storage, "test")
+			storage := files.NewStorage(fsMock)
+			file := files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
 			pastelClientMock := pastelMock.NewMockClient(t)
@@ -776,8 +776,8 @@ func TestTaskProbeImage(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			storage := artwork.NewStorage(fsMock)
-			file := artwork.NewFile(storage, "test")
+			storage := files.NewStorage(fsMock)
+			file := files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
 			ddmock := ddMock.NewMockClient(t)
