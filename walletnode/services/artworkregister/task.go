@@ -86,7 +86,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
 		return err
 	} else if !ok {
-		task.UpdateStatus(common.ErrorInsufficientFee)
+		task.UpdateStatus(common.StatusErrorInsufficientFee)
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Request.MaximumFee)
 	}
 
@@ -654,7 +654,7 @@ func (task *NftRegistrationTask) connectToTopRankNodes(ctx context.Context) erro
 	}
 
 	if len(topNodes) < task.config.NumberSuperNodes {
-		task.UpdateStatus(common.ErrorInsufficientFee)
+		task.UpdateStatus(common.StatusErrorInsufficientFee)
 		return errors.New("unable to find enough Supernodes with acceptable storage fee")
 	}
 
@@ -805,7 +805,7 @@ func (task *NftRegistrationTask) uploadImage(ctx context.Context) error {
 	}
 	// Match thumbnail hashes receiveed from supernodes
 	if err := task.nodes.MatchThumbnailHashes(); err != nil {
-		task.UpdateStatus(common.StatusErrorThumbnailHashsesNotMatch)
+		task.UpdateStatus(common.StatusErrorThumbnailHashesNotMatch)
 		return errors.Errorf("thumbnail hash returns by supenodes not mached: %w", err)
 	}
 	task.UpdateStatus(common.StatusImageAndThumbnailUploaded)

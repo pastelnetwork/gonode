@@ -4,7 +4,7 @@ package userdataprocess
 const (
 	StatusTaskStarted Status = iota
 	StatusConnected
-	StatusTaskFailure
+	StatusTaskFailed
 	StatusTaskCompleted
 	ErrorNotEnoughMasterNode
 	StatusErrorNotEnoughMasterNode
@@ -13,7 +13,7 @@ const (
 var statusNames = map[Status]string{
 	StatusTaskStarted:              "Task Started",
 	StatusConnected:                "Connected",
-	StatusTaskFailure:              "Task Failed",
+	StatusTaskFailed:               "Task Failed",
 	StatusTaskCompleted:            "Task Completed",
 	StatusErrorNotEnoughMasterNode: "Error not enough Master Node to send data",
 }
@@ -30,12 +30,12 @@ func (status Status) String() string {
 
 // IsFinal returns true if the status is the final.
 func (status Status) IsFinal() bool {
-	return status == StatusTaskCompleted || status == StatusTaskFailure
+	return status == StatusTaskCompleted || status == StatusTaskFailed
 }
 
 // IsFailure returns true if the task failed due to an error
 func (status Status) IsFailure() bool {
-	return status == StatusTaskFailure || status == StatusErrorNotEnoughMasterNode
+	return status == StatusTaskFailed || status == StatusErrorNotEnoughMasterNode
 }
 
 // StatusNames returns a sorted list of status names.

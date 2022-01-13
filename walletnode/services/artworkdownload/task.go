@@ -56,7 +56,7 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 		return errors.Errorf("get top rank nodes: %w", err)
 	}
 	if len(topNodes) < task.config.NumberSuperNodes {
-		task.UpdateStatus(StatusErrorNotEnoughSuperNode)
+		task.UpdateStatus(common.StatusErrorNotEnoughSuperNode)
 		return errors.New("unable to find enough supernodes")
 	}
 
@@ -74,7 +74,7 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	downloadErrs, err := topNodes.Download(ctx, task.Ticket.Txid, timestamp, string(signature), ttxid, task.config.connectToNodeTimeout, secInfo)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Ticket.Txid).Error("Could not download files")
-		task.UpdateStatus(StatusErrorDownloadFailed)
+		task.UpdateStatus(common.StatusErrorDownloadFailed)
 		return errors.Errorf("download files from supernodes: %w", err)
 	}
 
@@ -82,11 +82,11 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 
 	if len(nodes) < task.config.NumberSuperNodes {
 		log.WithContext(ctx).WithField("DownloadedNodes", len(nodes)).Info("Not enough number of downloaded node")
-		task.UpdateStatus(StatusErrorNotEnoughFiles)
+		task.UpdateStatus(common.StatusErrorNotEnoughFiles)
 		return errors.Errorf("could not download enough files from %d supernodes: %v", task.config.NumberSuperNodes, downloadErrs)
 	}
 
-	task.UpdateStatus(StatusDownloaded)
+	task.UpdateStatus(common.StatusDownloaded)
 
 	// Disconnect supernodes that did not return file.
 	topNodes.DisconnectInactive()
@@ -94,7 +94,7 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	// Check files are the same
 	err = nodes.MatchFiles()
 	if err != nil {
-		task.UpdateStatus(StatusErrorFilesNotMatch)
+		task.UpdateStatus(common.StatusErrorFilesNotMatch)
 		return errors.Errorf("files are different between supernodes: %w", err)
 	}
 

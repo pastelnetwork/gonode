@@ -109,7 +109,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 	if err := task.sendSignedTicket(ctx); err != nil {
 		return errors.Errorf("send signed sense ticket: %w", err)
 	}
-	task.UpdateStatus(StatusTicketAccepted)
+	task.UpdateStatus(common.StatusTicketAccepted)
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
@@ -118,7 +118,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 
-	task.UpdateStatus(StatusTicketRegistered)
+	task.UpdateStatus(common.StatusTicketRegistered)
 
 	// activate reg-art ticket at previous step
 	activateTxID, err := task.activateActionTicket(newCtx)
@@ -134,7 +134,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 		task.closeSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait activate txid valid: %w", err)
 	}
-	task.UpdateStatus(StatusTicketActivated)
+	task.UpdateStatus(common.StatusTicketActivated)
 	log.Debugf("Active txid is confirmed")
 
 	// Send ActionAct request to primary node
@@ -449,7 +449,7 @@ func (task *SenseRegisterTask) connectToTopRankNodes(ctx context.Context) error 
 	}
 
 	if len(topNodes) < task.config.NumberSuperNodes {
-		task.UpdateStatus(StatusErrorFindTopNodes)
+		task.UpdateStatus(common.StatusErrorNotEnoughSuperNode)
 		return errors.New("unable to find enough Supernodes with acceptable storage fee")
 	}
 
@@ -461,7 +461,7 @@ func (task *SenseRegisterTask) connectToTopRankNodes(ctx context.Context) error 
 	// Connect to top nodes to find 3SN and validate their infor
 	err = task.validateMNsInfo(ctx, topNodes)
 	if err != nil {
-		task.UpdateStatus(StatusErrorFindResponsdingSNs)
+		task.UpdateStatus(common.StatusErrorFindRespondingSNs)
 		return errors.Errorf("validate MNs info: %v", err)
 	}
 
@@ -494,7 +494,7 @@ func (task *SenseRegisterTask) connectToTopRankNodes(ctx context.Context) error 
 	nodes.Activate()
 
 	// Cancel context when any connection is broken.
-	task.UpdateStatus(StatusConnected)
+	task.UpdateStatus(common.StatusConnected)
 
 	// Send all meshed supernode info to nodes - that will be used to node send info to other nodes
 	meshedSNInfo := []types.MeshedSuperNode{}
@@ -580,7 +580,7 @@ func (task *SenseRegisterTask) probeImage(ctx context.Context) error {
 	for i := 0; i < len(task.nodes); i++ {
 		// Validate burn_txid transaction with SNs
 		if !task.nodes.ValidBurnTxID() {
-			task.UpdateStatus(StatsuErrorInvalidBurnTxID)
+			task.UpdateStatus(common.StatusErrorInvalidBurnTxID)
 			return errors.New("invalid burn txid")
 		}
 
@@ -591,7 +591,7 @@ func (task *SenseRegisterTask) probeImage(ctx context.Context) error {
 		}
 
 		if !verified {
-			task.UpdateStatus(StatusErrorSignaturesNotMatch)
+			task.UpdateStatus(common.StatusErrorSignaturesNotMatch)
 			return errors.Errorf("node[%s] signature doesn't match", task.nodes[i].PastelID())
 		}
 
@@ -601,12 +601,12 @@ func (task *SenseRegisterTask) probeImage(ctx context.Context) error {
 
 	// Match fingerprints received from supernodes.
 	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
-		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
+		task.UpdateStatus(common.StatusErrorFingerprintsNotMatch)
 		return errors.Errorf("fingerprints aren't matched :%w", err)
 	}
 
 	task.fingerprintAndScores = task.nodes.FingerAndScores()
-	task.UpdateStatus(StatusImageProbed)
+	task.UpdateStatus(common.StatusImageProbed)
 
 	return nil
 }

@@ -46,7 +46,7 @@ func (task *Task) Run(ctx context.Context) error {
 
 	if err := task.run(ctx); err != nil {
 		task.err = err
-		task.UpdateStatus(StatusTaskFailure)
+		task.UpdateStatus(StatusTaskFailed)
 		log.WithContext(ctx).WithError(err).Warn("Task failed")
 
 		return nil
