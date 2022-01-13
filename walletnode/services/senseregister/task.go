@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"math/rand"
 	"sync"
@@ -17,21 +16,15 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister/node"
 )
 
-// Task is the task of registering new artwork.
-type Task struct {
-	task.Task
-	common.CommonTasks
-	common.SenseTasks
-	common.SuperNodesTasks
-
+// SenseRegisterTask is the task of registering new artwork.
+type SenseRegisterTask struct {
+	*common.WalletNodeTask
 	*Service
 
 	Request *Request
@@ -64,28 +57,11 @@ type Task struct {
 }
 
 // Run starts the task
-func (task *Task) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
-
-	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status).Debug("States updated")
-	})
-
-	log.WithContext(ctx).Debug("Start task")
-	defer log.WithContext(ctx).Debug("End task")
-
-	defer task.removeArtifacts()
-	if err := task.run(ctx); err != nil {
-		task.UpdateStatus(StatusTaskRejected)
-		log.WithContext(ctx).WithErrorStack(err).Error("Task is rejected")
-		return nil
-	}
-
-	task.UpdateStatus(StatusTaskCompleted)
-	return nil
+func (task *SenseRegisterTask) Run(ctx context.Context) error {
+	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
-func (task *Task) run(ctx context.Context) error {
+func (task *SenseRegisterTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -171,7 +147,7 @@ func (task *Task) run(ctx context.Context) error {
 	return err
 }
 
-func (task *Task) closeSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
+func (task *SenseRegisterTask) closeSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
 	var err error
 
 	close(nodesDone)
@@ -191,7 +167,7 @@ func (task *Task) closeSNsConnections(ctx context.Context, nodesDone chan struct
 }
 
 // generateDDAndFingerprintsIDs generates redundant IDs and assigns to task.redundantIDs
-func (task *Task) generateDDAndFingerprintsIDs() error {
+func (task *SenseRegisterTask) generateDDAndFingerprintsIDs() error {
 	ddDataJSON, err := json.Marshal(task.fingerprintAndScores)
 	if err != nil {
 		return errors.Errorf("failed to marshal dd-data: %w", err)
@@ -224,7 +200,7 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 	return nil
 }
 
-func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, interval time.Duration) error {
+func (task *SenseRegisterTask) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, interval time.Duration) error {
 	log.WithContext(ctx).Debugf("Need %d confirmation for txid %s", expectedConfirms, txID)
 	blockTracker := blocktracker.New(task.pastelClient)
 	baseBlkCnt, err := blockTracker.GetBlockCount()
@@ -275,7 +251,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 }
 
 // meshNodes establishes communication between supernodes.
-func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex int) (node.List, error) {
+func (task *SenseRegisterTask) meshNodes(ctx context.Context, nodes node.List, primaryIndex int) (node.List, error) {
 	var meshNodes node.List
 	secInfo := &alts.SecInfo{
 		PastelID:   task.Request.AppPastelID,
@@ -365,7 +341,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	return meshNodes, nil
 }
 
-func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
+func (task *SenseRegisterTask) pastelTopNodes(ctx context.Context) (node.List, error) {
 	var nodes node.List
 
 	mns, err := task.pastelClient.MasterNodesTop(ctx)
@@ -390,7 +366,7 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 }
 
 // determine current block height & hash of it
-func (task *Task) getBlock(ctx context.Context) error {
+func (task *SenseRegisterTask) getBlock(ctx context.Context) error {
 	// Get block num
 	blockNum, err := task.pastelClient.GetBlockCount(ctx)
 	task.creatorBlockHeight = int(blockNum)
@@ -413,7 +389,7 @@ func (task *Task) getBlock(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) createSenseTicket(_ context.Context) error {
+func (task *SenseRegisterTask) createSenseTicket(_ context.Context) error {
 	if task.datahash == nil {
 		return errEmptyDatahash
 	}
@@ -437,7 +413,7 @@ func (task *Task) createSenseTicket(_ context.Context) error {
 	return nil
 }
 
-func (task *Task) signTicket(ctx context.Context) error {
+func (task *SenseRegisterTask) signTicket(ctx context.Context) error {
 	data, err := pastel.EncodeActionTicket(task.ticket)
 	if err != nil {
 		return errors.Errorf("encode sense ticket %w", err)
@@ -450,7 +426,7 @@ func (task *Task) signTicket(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) activateActionTicket(ctx context.Context) (string, error) {
+func (task *SenseRegisterTask) activateActionTicket(ctx context.Context) (string, error) {
 	request := pastel.ActivateActionRequest{
 		RegTxID:    task.regSenseTxid,
 		BlockNum:   task.creatorBlockHeight,
@@ -462,17 +438,8 @@ func (task *Task) activateActionTicket(ctx context.Context) (string, error) {
 	return task.pastelClient.ActivateActionTicket(ctx, request)
 }
 
-// NewTask returns a new Task instance.
-func NewTask(service *Service, Ticket *Request) *Task {
-	return &Task{
-		Task:    task.New(StatusTaskStarted),
-		Service: service,
-		Request: Ticket,
-	}
-}
-
 // connectToTopRankNodes - find 3 supesnodes and create mesh of 3 nodes
-func (task *Task) connectToTopRankNodes(ctx context.Context) error {
+func (task *SenseRegisterTask) connectToTopRankNodes(ctx context.Context) error {
 
 	/* Step 3. Select 3 SNs */
 	// Retrieve supernodes with highest ranks.
@@ -548,7 +515,7 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) sendActionMetadata(ctx context.Context) error {
+func (task *SenseRegisterTask) sendActionMetadata(ctx context.Context) error {
 	if task.creatorBlockHash == "" {
 		return errors.New("empty current block hash")
 	}
@@ -567,7 +534,7 @@ func (task *Task) sendActionMetadata(ctx context.Context) error {
 }
 
 // validateMNsInfo - validate MNs info, until found at least 3 valid MNs
-func (task *Task) validateMNsInfo(ctx context.Context, nnondes node.List) error {
+func (task *SenseRegisterTask) validateMNsInfo(ctx context.Context, nnondes node.List) error {
 	var nodes node.List
 	count := 0
 
@@ -600,7 +567,7 @@ func (task *Task) validateMNsInfo(ctx context.Context, nnondes node.List) error 
 	return nil
 }
 
-func (task *Task) probeImage(ctx context.Context) error {
+func (task *SenseRegisterTask) probeImage(ctx context.Context) error {
 	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debug("probe image")
 
 	// Send image to supernodes for probing.
@@ -644,7 +611,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) sendSignedTicket(ctx context.Context) error {
+func (task *SenseRegisterTask) sendSignedTicket(ctx context.Context) error {
 	buf, err := pastel.EncodeActionTicket(task.ticket)
 	if err != nil {
 		return errors.Errorf("marshal ticket: %w", err)
@@ -663,16 +630,17 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) removeArtifacts() {
-	removeFn := func(file *files.File) {
-		if file != nil {
-			log.Debugf("remove file: %s", file.Name())
-			if err := file.Remove(); err != nil {
-				log.Debugf("remove file failed: %s", err.Error())
-			}
-		}
-	}
+func (task *SenseRegisterTask) removeArtifacts() {
 	if task.Request != nil {
-		removeFn(task.Request.Image)
+		task.RemoveFile(task.Request.Image)
+	}
+}
+
+// NewSenseRegisterTask returns a new SenseRegisterTask instance.
+func NewSenseRegisterTask(service *Service, Ticket *Request) *SenseRegisterTask {
+	return &SenseRegisterTask{
+		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
+		Service:        service,
+		Request:        Ticket,
 	}
 }

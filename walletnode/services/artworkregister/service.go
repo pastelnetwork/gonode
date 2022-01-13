@@ -75,25 +75,25 @@ func (service *Service) Run(ctx context.Context) error {
 }
 
 // Tasks returns all tasks.
-func (service *Service) Tasks() []*Task {
-	var tasks []*Task
+func (service *Service) Tasks() []*NftRegistrationTask {
+	var tasks []*NftRegistrationTask
 	for _, task := range service.Worker.Tasks() {
-		tasks = append(tasks, task.(*Task))
+		tasks = append(tasks, task.(*NftRegistrationTask))
 	}
 	return tasks
 }
 
 // Task returns the task of the registration artwork by the given id.
-func (service *Service) Task(id string) *Task {
+func (service *Service) GetTask(id string) *NftRegistrationTask {
 	if t := service.Worker.Task(id); t != nil {
-		return t.(*Task)
+		return t.(*NftRegistrationTask)
 	}
 	return nil
 }
 
 // AddTask runs a new task of the registration artwork and returns its taskID.
 func (service *Service) AddTask(ticket *Request) string {
-	task := NewTask(service, ticket)
+	task := NewNFTRegistrationTask(service, ticket)
 	service.Worker.AddTask(task)
 
 	return task.ID()

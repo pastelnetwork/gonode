@@ -33,25 +33,25 @@ func (service *Service) Run(ctx context.Context) error {
 }
 
 // Tasks returns all tasks.
-func (service *Service) Tasks() []*Task {
-	var tasks []*Task
+func (service *Service) Tasks() []*NftDownloadTask {
+	var tasks []*NftDownloadTask
 	for _, task := range service.Worker.Tasks() {
-		tasks = append(tasks, task.(*Task))
+		tasks = append(tasks, task.(*NftDownloadTask))
 	}
 	return tasks
 }
 
 // Task returns the task of the artwork downloading by the given id.
-func (service *Service) Task(id string) *Task {
+func (service *Service) GetTask(id string) *NftDownloadTask {
 	if t := service.Worker.Task(id); t != nil {
-		return t.(*Task)
+		return t.(*NftDownloadTask)
 	}
 	return nil
 }
 
 // AddTask adds a new task of the artwork downloading and returns its taskID.
 func (service *Service) AddTask(ticket *Ticket) string {
-	task := NewTask(service, ticket)
+	task := NewNftDownloadTask(service, ticket)
 	service.Worker.AddTask(task)
 
 	return task.ID()

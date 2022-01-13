@@ -108,7 +108,7 @@ func (service *Sense) StartProcessing(_ context.Context, p *sense.StartProcessin
 func (service *Sense) RegisterTaskState(ctx context.Context, p *sense.RegisterTaskStatePayload, stream sense.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
-	task := service.register.Task(p.TaskID)
+	task := service.register.GetTask(p.TaskID)
 	if task == nil {
 		return sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}

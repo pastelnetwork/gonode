@@ -3,6 +3,7 @@ package artworkdownload
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"testing"
 	"time"
 
@@ -33,17 +34,17 @@ func TestNewTask(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *Task
+		want *NftDownloadTask
 	}{
 		{
 			args: args{
 				service: service,
 				Ticket:  ticket,
 			},
-			want: &Task{
-				Task:    task.New(StatusTaskStarted),
-				Service: service,
-				Ticket:  ticket,
+			want: &NftDownloadTask{
+				WalletNodeTask: common.NewWalletNodeTask(logPrefix),
+				Service:        service,
+				Ticket:         ticket,
 			},
 		},
 	}
@@ -53,7 +54,7 @@ func TestNewTask(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			// t.Parallel()
 
-			task := NewTask(testCase.args.service, testCase.args.Ticket)
+			task := NewNftDownloadTask(testCase.args.service, testCase.args.Ticket)
 			assert.Equal(t, testCase.want.Service, task.Service)
 			assert.Equal(t, testCase.want.Ticket, task.Ticket)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
@@ -122,8 +123,11 @@ func TestTaskPastelTopNodes(t *testing.T) {
 				pastelClient: pastelClient.Client,
 			}
 
-			task := &Task{
-				Task:    testCase.fields.Task,
+			task := &NftDownloadTask{
+				WalletNodeTask: &common.WalletNodeTask{
+					Task:      testCase.fields.Task,
+					LogPrefix: logPrefix,
+				},
 				Service: service,
 				Ticket:  testCase.fields.Ticket,
 			}
@@ -416,8 +420,11 @@ func TestTaskRun(t *testing.T) {
 				ListenOnUpdateStatus().
 				ListenOnSetStatusNotifyFunc()
 
-			task := &Task{
-				Task:    taskClient.Task,
+			task := &NftDownloadTask{
+				WalletNodeTask: &common.WalletNodeTask{
+					Task:      taskClient.Task,
+					LogPrefix: logPrefix,
+				},
 				Service: service,
 				Ticket:  testCase.fields.Ticket,
 			}

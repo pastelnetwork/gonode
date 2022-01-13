@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"image"
 	"image/png"
 	"io"
@@ -159,7 +160,7 @@ func TestTaskRun(t *testing.T) {
 			testCase.args.fingerPrint = compressedFg
 
 			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-				var task *Task
+				var task *NftRegistrationTask
 
 				nodeClient := test.NewMockClient(t)
 				nodeClient.
@@ -232,8 +233,11 @@ func TestTaskRun(t *testing.T) {
 				Request := testCase.fields.Request
 				Request.Image = artworkFile
 				Request.MaximumFee = 100
-				task = &Task{
-					Task:    taskClient.Task,
+				task = &NftRegistrationTask{
+					WalletNodeTask: &common.WalletNodeTask{
+						Task:      taskClient.Task,
+						LogPrefix: logPrefix,
+					},
 					Service: service,
 					Request: Request,
 				}
@@ -368,7 +372,7 @@ func TestTaskMeshNodes(t *testing.T) {
 				config: NewConfig(),
 			}
 
-			task := &Task{Service: service, Request: &Request{}}
+			task := &NftRegistrationTask{Service: service, Request: &Request{}}
 			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 
 			testCase.assertion(t, err)
@@ -449,7 +453,7 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 				pastelClient: pastelClient.Client,
 			}
 
-			task := &Task{
+			task := &NftRegistrationTask{
 				Service: service,
 				Request: testCase.fields.Request,
 			}
@@ -571,8 +575,11 @@ func TestTaskPastelTopNodes(t *testing.T) {
 				pastelClient: pastelClient.Client,
 			}
 
-			task := &Task{
-				Task:    testCase.fields.Task,
+			task := &NftRegistrationTask{
+				WalletNodeTask: &common.WalletNodeTask{
+					Task:      testCase.fields.Task,
+					LogPrefix: logPrefix,
+				},
 				Service: service,
 				Request: testCase.fields.Request,
 			}
@@ -601,17 +608,17 @@ func TestNewTask(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *Task
+		want *NftRegistrationTask
 	}{
 		{
 			args: args{
 				service: service,
 				Request: Request,
 			},
-			want: &Task{
-				Task:    task.New(StatusTaskStarted),
-				Service: service,
-				Request: Request,
+			want: &NftRegistrationTask{
+				WalletNodeTask: common.NewWalletNodeTask(logPrefix),
+				Service:        service,
+				Request:        Request,
 			},
 		},
 	}
@@ -621,7 +628,7 @@ func TestNewTask(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			task := NewTask(testCase.args.service, testCase.args.Request)
+			task := NewNFTRegistrationTask(testCase.args.service, testCase.args.Request)
 			assert.Equal(t, testCase.want.Service, task.Service)
 			assert.Equal(t, testCase.want.Request, task.Request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
@@ -633,7 +640,7 @@ func TestTaskCreateTicket(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		task *Task
+		task *NftRegistrationTask
 	}
 
 	testCases := map[string]struct {
@@ -643,7 +650,7 @@ func TestTaskCreateTicket(t *testing.T) {
 	}{
 		"fingerprint-error": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					smallThumbnailHash:  []byte{},
 					mediumThumbnailHash: []byte{},
 					previewHash:         []byte{},
@@ -662,7 +669,7 @@ func TestTaskCreateTicket(t *testing.T) {
 		},
 		"data-hash-error": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					fingerprint:         []byte{},
 					previewHash:         []byte{},
 					smallThumbnailHash:  []byte{},
@@ -681,7 +688,7 @@ func TestTaskCreateTicket(t *testing.T) {
 		},
 		"preview-hash-error": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					fingerprint:         []byte{},
 					datahash:            []byte{},
 					smallThumbnailHash:  []byte{},
@@ -700,7 +707,7 @@ func TestTaskCreateTicket(t *testing.T) {
 		},
 		"medium-thumbnail-error": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					fingerprint:        []byte{},
 					previewHash:        []byte{},
 					datahash:           []byte{},
@@ -719,7 +726,7 @@ func TestTaskCreateTicket(t *testing.T) {
 		},
 		"small-thumbnail-error": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					fingerprint:         []byte{},
 					mediumThumbnailHash: []byte{},
 					previewHash:         []byte{},
@@ -738,7 +745,7 @@ func TestTaskCreateTicket(t *testing.T) {
 		},
 		"raptorQ-symbols-error": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					fingerprint:         []byte{},
 					smallThumbnailHash:  []byte{},
 					mediumThumbnailHash: []byte{},
@@ -758,7 +765,7 @@ func TestTaskCreateTicket(t *testing.T) {
 		},
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					fingerprint:          []byte{},
 					smallThumbnailHash:   []byte{},
 					mediumThumbnailHash:  []byte{},
@@ -834,7 +841,7 @@ func TestTaskGetBlock(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		task            *Task
+		task            *NftRegistrationTask
 		blockCountErr   error
 		blockVerboseErr error
 		blockNum        int32
@@ -849,7 +856,7 @@ func TestTaskGetBlock(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -865,7 +872,7 @@ func TestTaskGetBlock(t *testing.T) {
 		},
 		"block-count-err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -882,7 +889,7 @@ func TestTaskGetBlock(t *testing.T) {
 		},
 		"block-verbose-err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -930,7 +937,7 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 
 	testErrStr := "test-err"
 	type args struct {
-		task    *Task
+		task    *NftRegistrationTask
 		signErr error
 		inFile  rqnode.RawSymbolIDFile
 	}
@@ -943,7 +950,7 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -963,7 +970,7 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 		},
 		"error": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -1012,7 +1019,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 	assert.NoError(t, err)
 
 	type args struct {
-		task                *Task
+		task                *NftRegistrationTask
 		connectErr          error
 		encodeInfoReturns   *rqnode.EncodeInfo
 		findTicketIDReturns *pastel.IDTicket
@@ -1026,8 +1033,8 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
+				task: &NftRegistrationTask{
+					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1055,8 +1062,8 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		},
 		"connect-error": {
 			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
+				task: &NftRegistrationTask{
+					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1079,8 +1086,8 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 
 		"encode-info-error": {
 			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
+				task: &NftRegistrationTask{
+					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1102,8 +1109,8 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		},
 		"read-error": {
 			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
+				task: &NftRegistrationTask{
+					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1121,8 +1128,8 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		},
 		"sign-err": {
 			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
+				task: &NftRegistrationTask{
+					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1192,7 +1199,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 
 func TestTaskEncodeFingerprint(t *testing.T) {
 	type args struct {
-		task                *Task
+		task                *NftRegistrationTask
 		fingerprint         []byte
 		img                 *files.File
 		signReturns         []byte
@@ -1206,7 +1213,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 					},
@@ -1290,7 +1297,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 
 func TestTaskSignTicket(t *testing.T) {
 	type args struct {
-		task        *Task
+		task        *NftRegistrationTask
 		signErr     error
 		signReturns []byte
 	}
@@ -1301,7 +1308,7 @@ func TestTaskSignTicket(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1315,7 +1322,7 @@ func TestTaskSignTicket(t *testing.T) {
 		},
 		"err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1353,7 +1360,7 @@ func TestTaskSignTicket(t *testing.T) {
 
 func TestWaitTxnValid(t *testing.T) {
 	type args struct {
-		task                            *Task
+		task                            *NftRegistrationTask
 		getRawTransactionVerbose1RetErr error
 		getRawTransactionVerbose1Ret    *pastel.GetRawTransactionVerbose1Result
 		ctxDone                         bool
@@ -1365,7 +1372,7 @@ func TestWaitTxnValid(t *testing.T) {
 	}{
 		"ctx-done-err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1379,7 +1386,7 @@ func TestWaitTxnValid(t *testing.T) {
 		},
 		"get-raw-transaction-err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1394,7 +1401,7 @@ func TestWaitTxnValid(t *testing.T) {
 		},
 		"insufficient-confirmations": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1409,7 +1416,7 @@ func TestWaitTxnValid(t *testing.T) {
 		},
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1460,7 +1467,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 	}
 
 	type args struct {
-		task                  *Task
+		task                  *NftRegistrationTask
 		sendFromAddressRetErr error
 		burnTxnIDRet          string
 		preBurntFeeRetTxID    string
@@ -1474,7 +1481,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 	}{
 		"reg-fee-err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1488,7 +1495,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 		},
 		"send-from-address-err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1505,7 +1512,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 		"send-preburnt-fee-err": {
 			args: args{
 				preBurntFeeRetErr: errors.New("test"),
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1528,7 +1535,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 			args: args{
 				preBurntFeeRetTxID: "test-id",
 				preBurntFeeRetErr:  nil,
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1547,7 +1554,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 			args: args{
 				preBurntFeeRetTxID: "test-id",
 				preBurntFeeRetErr:  nil,
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1614,7 +1621,7 @@ func TestTaskUploadImage(t *testing.T) {
 		pastelID string
 	}
 	type args struct {
-		task                    *Task
+		task                    *NftRegistrationTask
 		nodes                   []nodeArg
 		findTicketIDReturns     *pastel.IDTicket
 		previewHash             []byte
@@ -1629,7 +1636,7 @@ func TestTaskUploadImage(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 					},
@@ -1653,7 +1660,7 @@ func TestTaskUploadImage(t *testing.T) {
 		},
 		"upload-err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 					},
@@ -1691,7 +1698,8 @@ func TestTaskUploadImage(t *testing.T) {
 			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			tc.args.task.Task = task.New(&state.Status{})
+			newT := task.New(&state.Status{})
+			tc.args.task.Task = newT
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
@@ -1800,7 +1808,7 @@ func TestTaskProbeImage(t *testing.T) {
 		pastelID string
 	}
 	type args struct {
-		task        *Task
+		task        *NftRegistrationTask
 		nodes       []nodeArg
 		probeImgErr error
 	}
@@ -1811,7 +1819,7 @@ func TestTaskProbeImage(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Service: &Service{
 						config: &Config{
 							thumbnailSize: 224,
@@ -1832,7 +1840,7 @@ func TestTaskProbeImage(t *testing.T) {
 		},
 		"probe-img-err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Service: &Service{
 						config: &Config{
 							thumbnailSize: 224,
@@ -1909,7 +1917,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 		pastelID string
 	}
 	type args struct {
-		task                   *Task
+		task                   *NftRegistrationTask
 		sendSignedTicketRet    int64
 		sendSignedTicketRetErr error
 		preBurntFeeRetTxID     string
@@ -1924,7 +1932,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1942,7 +1950,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 		},
 		"reg-fee-err": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 						MaximumFee:     -1,
@@ -2008,7 +2016,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 		pastelID string
 	}
 	type args struct {
-		task              *Task
+		task              *NftRegistrationTask
 		nodes             []nodeArg
 		masterNodesTopErr error
 		masterNodes       pastel.MasterNodes
@@ -2026,7 +2034,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					pastel.MasterNode{Fee: 0.3, ExtAddress: "127.0.0.1:4446", ExtKey: "3"},
 					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4447", ExtKey: "4"},
 				},
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 						MaximumFee:     1,
@@ -2046,7 +2054,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 		"master-nodes-err": {
 			args: args{
 				masterNodesTopErr: errors.New("test"),
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -2065,7 +2073,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 		"insufficient-sns-err": {
 			args: args{
 				masterNodesTopErr: nil,
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -2141,7 +2149,7 @@ func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		task *Task
+		task *NftRegistrationTask
 	}
 
 	testCases := map[string]struct {
@@ -2150,7 +2158,7 @@ func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &Task{
+				task: &NftRegistrationTask{
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},

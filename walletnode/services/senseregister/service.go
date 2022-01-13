@@ -59,18 +59,18 @@ func (service *Service) Run(ctx context.Context) error {
 }
 
 // Tasks returns all tasks.
-func (service *Service) Tasks() []*Task {
-	var tasks []*Task
+func (service *Service) Tasks() []*SenseRegisterTask {
+	var tasks []*SenseRegisterTask
 	for _, task := range service.Worker.Tasks() {
-		tasks = append(tasks, task.(*Task))
+		tasks = append(tasks, task.(*SenseRegisterTask))
 	}
 	return tasks
 }
 
-// Task returns the task of the registration artwork by the given id.
-func (service *Service) Task(id string) *Task {
+// SenseRegisterTask returns the task of the registration artwork by the given id.
+func (service *Service) GetTask(id string) *SenseRegisterTask {
 	if t := service.Worker.Task(id); t != nil {
-		return t.(*Task)
+		return t.(*SenseRegisterTask)
 	}
 	return nil
 }
@@ -163,7 +163,7 @@ func (service *Service) AddTask(p *sense.StartProcessingPayload) (string, error)
 	}
 	ticket.Image = file
 
-	task := NewTask(service, ticket)
+	task := NewSenseRegisterTask(service, ticket)
 	service.Worker.AddTask(task)
 
 	return task.ID(), nil

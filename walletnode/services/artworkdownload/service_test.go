@@ -139,7 +139,7 @@ func TestServiceAddTask(t *testing.T) {
 			defer cancel()
 			go service.Run(ctx)
 			taskID := service.AddTask(testCase.args.ticket)
-			task := service.Task(taskID)
+			task := service.GetTask(taskID)
 			assert.Equal(t, testCase.want, task.Ticket)
 		})
 	}
@@ -187,10 +187,10 @@ func TestServiceGetTask(t *testing.T) {
 			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
-			task := NewTask(service, testCase.args.ticket)
+			task := NewNftDownloadTask(service, testCase.args.ticket)
 			service.Worker.AddTask(task)
 			taskID := task.ID()
-			addedTask := service.Task(taskID)
+			addedTask := service.GetTask(taskID)
 			assert.Equal(t, testCase.want, addedTask.Ticket)
 			time.Sleep(time.Second)
 		})
@@ -247,7 +247,7 @@ func TestServiceListTasks(t *testing.T) {
 			}
 
 			for i := range listTaskID {
-				task := service.Task(listTaskID[i])
+				task := service.GetTask(listTaskID[i])
 				assert.Equal(t, testCase.want[i], task.Ticket)
 			}
 		})

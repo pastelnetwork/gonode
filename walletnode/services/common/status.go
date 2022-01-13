@@ -1,4 +1,4 @@
-package artworkregister
+package common
 
 // List of task statuses.
 const (

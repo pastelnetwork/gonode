@@ -1,11 +1,10 @@
 package design
 
 import (
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"time"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
-
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
@@ -336,8 +335,8 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 		})
 		Attribute("status", String, func() {
 			Description("Status of the registration process")
-			Example(artworkregister.StatusNames()[0])
-			Enum(InterfaceSlice(artworkregister.StatusNames())...)
+			Example(common.StatusNames()[0])
+			Enum(InterfaceSlice(common.StatusNames())...)
 		})
 		Attribute("states", ArrayOf(ArtworkRegisterTaskState), func() {
 			Description("List of states from the very beginning of the process")
@@ -369,8 +368,8 @@ var ArtworkRegisterTaskState = Type("TaskState", func() {
 	})
 	Attribute("status", String, func() {
 		Description("Status of the registration process")
-		Example(artworkregister.StatusNames()[0])
-		Enum(InterfaceSlice(artworkregister.StatusNames())...)
+		Example(common.StatusNames()[0])
+		Enum(InterfaceSlice(common.StatusNames())...)
 	})
 	Required("date", "status")
 })

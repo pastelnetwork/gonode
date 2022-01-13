@@ -3,6 +3,7 @@ package artworksearch
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"sync"
 
 	"sort"
@@ -10,14 +11,13 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
 )
 
-// Task is the task of searching for artwork.
-type Task struct {
-	task.Task
+// NftSearchTask is the task of searching for artwork.
+type NftSearchTask struct {
+	*common.WalletNodeTask
 	*Service
 
 	searchResult   []*RegTicketSearch
@@ -30,28 +30,14 @@ type Task struct {
 }
 
 // Run starts the task
-func (task *Task) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
-
-	log.WithContext(ctx).Debug("Start task")
-	defer log.WithContext(ctx).Debug("End task")
+func (task *NftSearchTask) Run(ctx context.Context) error {
 	defer close(task.resultChan)
 	defer task.thumbnailHelper.Close()
-
-	if err := task.run(ctx); err != nil {
-		task.err = err
-		task.UpdateStatus(StatusTaskFailure)
-		log.WithContext(ctx).WithError(err).Warn("Task failed")
-
-		return nil
-	}
-
-	task.UpdateStatus(StatusTaskCompleted)
-
+	task.err = task.RunHelper(ctx, task.run, task.removeArtifacts)
 	return nil
 }
 
-func (task *Task) run(ctx context.Context) error {
+func (task *NftSearchTask) run(ctx context.Context) error {
 	actTickets, err := task.pastelClient.ActTickets(ctx, pastel.ActTicketAll, task.request.MinBlock)
 	if err != nil {
 		return fmt.Errorf("act ticket: %s", err)
@@ -154,7 +140,7 @@ func (task *Task) run(ctx context.Context) error {
 }
 
 // filterRegTicket filters ticket against request params & checks if its a match
-func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
+func (task *NftSearchTask) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
 	// --------- WIP: PSL-142------------------
 	/* if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore),
 		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
@@ -184,7 +170,7 @@ func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketS
 }
 
 // addMatchedResult adds to search result
-func (task *Task) addMatchedResult(res *RegTicketSearch) {
+func (task *NftSearchTask) addMatchedResult(res *RegTicketSearch) {
 	task.searchResMutex.Lock()
 	defer task.searchResMutex.Unlock()
 
@@ -192,20 +178,23 @@ func (task *Task) addMatchedResult(res *RegTicketSearch) {
 }
 
 // Error returns task err
-func (task *Task) Error() error {
+func (task *NftSearchTask) Error() error {
 	return task.err
 }
 
 // SubscribeSearchResult returns a new search resultof the state.
-func (task *Task) SubscribeSearchResult() <-chan *RegTicketSearch {
+func (task *NftSearchTask) SubscribeSearchResult() <-chan *RegTicketSearch {
 
 	return task.resultChan
 }
 
-// NewTask returns a new Task instance.
-func NewTask(service *Service, request *ArtSearchRequest) *Task {
-	return &Task{
-		Task:            task.New(StatusTaskStarted),
+func (task *NftSearchTask) removeArtifacts() {
+}
+
+// NewNftSearchTask returns a new NftSearchTask instance.
+func NewNftSearchTask(service *Service, request *ArtSearchRequest) *NftSearchTask {
+	return &NftSearchTask{
+		WalletNodeTask:  common.NewWalletNodeTask(logPrefix),
 		Service:         service,
 		request:         request,
 		resultChan:      make(chan *RegTicketSearch),

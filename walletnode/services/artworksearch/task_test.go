@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"sort"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/pastel"
 
-	"github.com/pastelnetwork/gonode/common/service/task"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	nodeMock "github.com/pastelnetwork/gonode/walletnode/node/test"
 	thumbnail "github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
@@ -175,7 +175,7 @@ func TestRunTask(t *testing.T) {
 				config:       NewConfig(),
 			}
 
-			task := NewTask(service, testCase.args.req)
+			task := NewNftSearchTask(service, testCase.args.req)
 			resultChan := task.SubscribeSearchResult()
 
 			go task.Run(ctx)
@@ -230,15 +230,15 @@ func TestNewTask(t *testing.T) {
 
 	testCases := map[string]struct {
 		args args
-		want *Task
+		want *NftSearchTask
 	}{
 		"new-task": {
 			args: args{
 				service: service,
 				req:     req,
 			},
-			want: &Task{
-				Task:            task.New(StatusTaskStarted),
+			want: &NftSearchTask{
+				WalletNodeTask:  common.NewWalletNodeTask(logPrefix),
 				Service:         service,
 				request:         req,
 				thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
@@ -251,7 +251,7 @@ func TestNewTask(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 			t.Parallel()
 
-			task := NewTask(testCase.args.service, testCase.args.req)
+			task := NewNftSearchTask(testCase.args.service, testCase.args.req)
 			assert.Equal(t, testCase.want.Service, task.Service)
 			assert.Equal(t, testCase.want.request, task.request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)

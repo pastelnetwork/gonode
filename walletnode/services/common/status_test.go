@@ -1,4 +1,4 @@
-package artworkregister
+package common
 
 import (
 	"fmt"

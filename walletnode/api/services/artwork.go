@@ -43,7 +43,7 @@ type Artwork struct {
 func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.RegisterTaskStatePayload, stream artworks.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
-	task := service.register.Task(p.TaskID)
+	task := service.register.GetTask(p.TaskID)
 	if task == nil {
 		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
@@ -72,7 +72,7 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 
 // RegisterTask returns a single task.
 func (service *Artwork) RegisterTask(_ context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
-	task := service.register.Task(p.TaskID)
+	task := service.register.GetTask(p.TaskID)
 	if task == nil {
 		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
@@ -151,7 +151,7 @@ func (service *Artwork) Download(ctx context.Context, p *artworks.ArtworkDownloa
 	defer log.WithContext(ctx).Info("Finished downloading")
 	ticket := fromDownloadPayload(p)
 	taskID := service.download.AddTask(ticket)
-	task := service.download.Task(taskID)
+	task := service.download.GetTask(taskID)
 	defer task.Cancel()
 
 	sub := task.SubscribeStatus()
@@ -204,7 +204,7 @@ func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPa
 
 	searchReq := fromArtSearchRequest(req)
 	taskID := service.search.AddTask(searchReq)
-	task := service.search.Task(taskID)
+	task := service.search.GetTask(taskID)
 
 	resultChan := task.SubscribeSearchResult()
 	for {

@@ -2,20 +2,18 @@ package artworkdownload
 
 import (
 	"context"
-	"fmt"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload/node"
 )
 
 // Task is the task of downloading artwork.
-type Task struct {
-	task.Task
+type NftDownloadTask struct {
+	*common.WalletNodeTask
 	*Service
 
 	Ticket *Ticket
@@ -24,33 +22,17 @@ type Task struct {
 }
 
 // Run starts the task
-func (task *Task) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
-
-	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status).Debug("States updated")
-	})
-
-	log.WithContext(ctx).Debug("Start task")
-	defer log.WithContext(ctx).Debug("End task")
-
-	if err := task.run(ctx); err != nil {
-		task.err = err
-		task.UpdateStatus(StatusTaskRejected)
-		log.WithContext(ctx).WithErrorStack(err).Warn("Task is rejected")
-		return nil
-	}
-
-	task.UpdateStatus(StatusTaskCompleted)
+func (task *NftDownloadTask) Run(ctx context.Context) error {
+	task.err = task.RunHelper(ctx, task.run, task.removeArtifacts)
 	return nil
 }
 
 // Error returns the error after running task
-func (task *Task) Error() error {
+func (task *NftDownloadTask) Error() error {
 	return task.err
 }
 
-func (task *Task) run(ctx context.Context) error {
+func (task *NftDownloadTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -126,7 +108,7 @@ func (task *Task) run(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
+func (task *NftDownloadTask) pastelTopNodes(ctx context.Context) (node.List, error) {
 	var nodes node.List
 
 	mns, err := task.pastelClient.MasterNodesTop(ctx)
@@ -140,11 +122,14 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 	return nodes, nil
 }
 
-// NewTask returns a new Task instance.
-func NewTask(service *Service, ticket *Ticket) *Task {
-	return &Task{
-		Task:    task.New(StatusTaskStarted),
-		Service: service,
-		Ticket:  ticket,
+func (task *NftDownloadTask) removeArtifacts() {
+}
+
+// NewNftDownloadTask returns a new Task instance.
+func NewNftDownloadTask(service *Service, ticket *Ticket) *NftDownloadTask {
+	return &NftDownloadTask{
+		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
+		Service:        service,
+		Ticket:         ticket,
 	}
 }
