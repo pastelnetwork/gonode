@@ -1,5 +1,5 @@
-//go:generate mockery --name=FileStorage
-//go:generate mockery --name=File
+//go:generate mockery --name=FileStorageInterface
+//go:generate mockery --name=FileInterface
 
 package storage
 

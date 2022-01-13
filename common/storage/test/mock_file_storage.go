@@ -8,13 +8,13 @@ import (
 
 // FileStorage implementing storage.FileStorageInterface mock for testing purpose
 type FileStorage struct {
-	*mocks.FileStorage
+	*mocks.FileStorageInterface
 }
 
 // NewMockFileStorage new FileStorage instance
 func NewMockFileStorage() *FileStorage {
 	return &FileStorage{
-		FileStorage: &mocks.FileStorage{},
+		FileStorageInterface: &mocks.FileStorageInterface{},
 	}
 }
 

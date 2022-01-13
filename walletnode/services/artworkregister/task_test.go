@@ -1698,8 +1698,11 @@ func TestTaskUploadImage(t *testing.T) {
 			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			newT := task.New(&state.Status{})
-			tc.args.task.Task = newT
+			newT := &common.WalletNodeTask{
+				Task:      task.New(&state.Status{}),
+				LogPrefix: logPrefix,
+			}
+			tc.args.task.WalletNodeTask = newT
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
@@ -1879,7 +1882,11 @@ func TestTaskProbeImage(t *testing.T) {
 
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			tc.args.task.Task = task.New(&state.Status{})
+			newT := &common.WalletNodeTask{
+				Task:      task.New(&state.Status{}),
+				LogPrefix: logPrefix,
+			}
+			tc.args.task.WalletNodeTask = newT
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
@@ -2107,7 +2114,11 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			//need to remove generate thumbnail file
-			tc.args.task.Task = task.New(&state.Status{})
+			newT := &common.WalletNodeTask{
+				Task:      task.New(&state.Status{}),
+				LogPrefix: logPrefix,
+			}
+			tc.args.task.WalletNodeTask = newT
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
