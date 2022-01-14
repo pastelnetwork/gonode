@@ -25,7 +25,7 @@ func safeStr(p *string) string {
 	return ""
 }
 
-func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Request {
+func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.NftRegisterRequest {
 	thumbnail := files.ThumbnailCoordinate{
 		TopLeftX:     payload.ThumbnailCoordinate.TopLeftX,
 		TopLeftY:     payload.ThumbnailCoordinate.TopLeftY,
@@ -33,7 +33,7 @@ func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Req
 		BottomRightY: payload.ThumbnailCoordinate.BottomRightY,
 	}
 
-	return &artworkregister.Request{
+	return &artworkregister.NftRegisterRequest{
 		Name:                     payload.Name,
 		Description:              payload.Description,
 		Keywords:                 payload.Keywords,
@@ -52,7 +52,7 @@ func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Req
 	}
 }
 
-func toArtworkTicket(ticket *artworkregister.Request) *artworks.ArtworkTicket {
+func toArtworkTicket(ticket *artworkregister.NftRegisterRequest) *artworks.ArtworkTicket {
 	thumbnail := artworks.Thumbnailcoordinate{
 		TopLeftX:     ticket.Thumbnail.TopLeftX,
 		TopLeftY:     ticket.Thumbnail.TopLeftY,

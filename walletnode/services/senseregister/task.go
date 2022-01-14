@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/DataDog/zstd"
-	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -27,7 +26,7 @@ type SenseRegisterTask struct {
 	*common.WalletNodeTask
 	*Service
 
-	Request *Request
+	Request *SenseRegisterRequest
 
 	// information of 3 nodes
 	nodes node.List
@@ -40,20 +39,22 @@ type SenseRegisterTask struct {
 	datahash             []byte
 
 	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
-	signatures          [][]byte
-	ddAndFingerprintsIc uint32
+	signatures [][]byte
+
 	// ddAndFingerprintsIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
 	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
 	ddAndFingerprintsIDs []string
 	// ddAndFpFile is Base64(compressed(Base64(dd_and_fingerprints).Base64(signatureSN1).Base64(signatureSN3)))
-	ddAndFpFile []byte
-
-	// TODO: call cNodeAPI to get the following info
-	regSenseTxid string
+	ddAndFpFile         []byte
+	ddAndFingerprintsIc uint32
 
 	// ticket
 	creatorSignature []byte
 	ticket           *pastel.ActionTicket
+
+	// TODO: call cNodeAPI to get the following info
+	regSenseTxid string
+	//registrationFee int64
 }
 
 // Run starts the task
@@ -113,7 +114,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.waitTxidValid(newCtx, task.regSenseTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
+	if err := task.PastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
 		task.closeSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
@@ -129,7 +130,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 	log.Debugf("Active action ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
-	err = task.waitTxidValid(newCtx, activateTxID, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
+	err = task.PastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
 	if err != nil {
 		task.closeSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait activate txid valid: %w", err)
@@ -198,56 +199,6 @@ func (task *SenseRegisterTask) generateDDAndFingerprintsIDs() error {
 	task.ddAndFpFile = utils.B64Encode(comp)
 
 	return nil
-}
-
-func (task *SenseRegisterTask) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, interval time.Duration) error {
-	log.WithContext(ctx).Debugf("Need %d confirmation for txid %s", expectedConfirms, txID)
-	blockTracker := blocktracker.New(task.pastelClient)
-	baseBlkCnt, err := blockTracker.GetBlockCount()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Warn("failed to get block count")
-		return err
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return errors.Errorf("context done: %w", ctx.Err())
-		case <-time.After(interval):
-			checkConfirms := func() error {
-				subCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
-				defer cancel()
-
-				result, err := task.pastelClient.GetRawTransactionVerbose1(subCtx, txID)
-				if err != nil {
-					return errors.Errorf("get transaction: %w", err)
-				}
-
-				if result.Confirmations >= expectedConfirms {
-					return nil
-				}
-
-				return errors.Errorf("not enough confirmations: expected %d, got %d", expectedConfirms, result.Confirmations)
-			}
-
-			err := checkConfirms()
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Warn("check confirmations failed")
-			} else {
-				return nil
-			}
-
-			currentBlkCnt, err := blockTracker.GetBlockCount()
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Warn("failed to get block count")
-				continue
-			}
-
-			if currentBlkCnt-baseBlkCnt >= int32(expectedConfirms)+2 {
-				return errors.Errorf("timeout when wating for confirmation of transaction %s", txID)
-			}
-		}
-	}
 }
 
 // meshNodes establishes communication between supernodes.
@@ -637,7 +588,7 @@ func (task *SenseRegisterTask) removeArtifacts() {
 }
 
 // NewSenseRegisterTask returns a new SenseRegisterTask instance.
-func NewSenseRegisterTask(service *Service, Ticket *Request) *SenseRegisterTask {
+func NewSenseRegisterTask(service *Service, Ticket *SenseRegisterRequest) *SenseRegisterTask {
 	return &SenseRegisterTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 		Service:        service,

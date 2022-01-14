@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/DataDog/zstd"
-	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
@@ -25,12 +24,12 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 )
 
-// Task is the task of registering new artwork.
+// NftRegistrationTask is the task of registering new artwork.
 type NftRegistrationTask struct {
 	*common.WalletNodeTask
 	*Service
 
-	Request *Request
+	Request *NftRegisterRequest
 
 	// information of nodes
 	nodes node.List
@@ -51,26 +50,25 @@ type NftRegistrationTask struct {
 	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
 	signatures [][]byte
 
-	ddAndFingerprintsIc uint32
-	rqIDsIc             uint32
-
 	// ddAndFingerprintsIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
 	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
 	ddAndFingerprintsIDs []string
-
 	// ddAndFpFile is Base64(compressed(Base64(dd_and_fingerprints).Base64(signatureSN1).Base64(signatureSN3)))
-	ddAndFpFile []byte
+	ddAndFpFile         []byte
+	ddAndFingerprintsIc uint32
+
 	// rqIDsFile is Base64(compress(Base64(rq_ids).Base64(signature)))
 	rqIDsFile []byte
+	rqIDsIc   uint32
+
+	// ticket
+	creatorSignature []byte
+	ticket           *pastel.NFTTicket
 
 	// TODO: call cNodeAPI to get the following info
 	burnTxid        string
 	regNFTTxid      string
 	registrationFee int64
-
-	// ticket
-	creatorSignature []byte
-	ticket           *pastel.NFTTicket
 }
 
 // Run starts the task
@@ -175,7 +173,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.waitTxidValid(newCtx, task.regNFTTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
+	if err := task.PastelHandler.WaitTxidValid(newCtx, task.regNFTTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 
@@ -189,7 +187,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	log.Debugf("reg-act-txid: %s", actTxid)
 
 	// Wait until actTxid is valid
-	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
+	err = task.PastelHandler.WaitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
 	if err != nil {
 		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
@@ -253,56 +251,6 @@ func (task *NftRegistrationTask) checkCurrentBalance(ctx context.Context, regist
 	}
 
 	return nil
-}
-
-func (task *NftRegistrationTask) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, interval time.Duration) error {
-	log.WithContext(ctx).Debugf("Need %d confirmation for txid %s", expectedConfirms, txID)
-	blockTracker := blocktracker.New(task.pastelClient)
-	baseBlkCnt, err := blockTracker.GetBlockCount()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Warn("failed to get block count")
-		return err
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return errors.Errorf("context done: %w", ctx.Err())
-		case <-time.After(interval):
-			checkConfirms := func() error {
-				subCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
-				defer cancel()
-
-				result, err := task.pastelClient.GetRawTransactionVerbose1(subCtx, txID)
-				if err != nil {
-					return errors.Errorf("get transaction: %w", err)
-				}
-
-				if result.Confirmations >= expectedConfirms {
-					return nil
-				}
-
-				return errors.Errorf("not enough confirmations: expected %d, got %d", expectedConfirms, result.Confirmations)
-			}
-
-			err := checkConfirms()
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Warn("check confirmations failed")
-			} else {
-				return nil
-			}
-
-			currentBlkCnt, err := blockTracker.GetBlockCount()
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Warn("failed to get block count")
-				continue
-			}
-
-			if currentBlkCnt-baseBlkCnt >= int32(expectedConfirms)+2 {
-				return errors.Errorf("timeout when wating for confirmation of transaction %s", txID)
-			}
-		}
-	}
 }
 
 func (task *NftRegistrationTask) encodeFingerprint(ctx context.Context, fingerprint []byte, img *files.File) error {
@@ -421,6 +369,7 @@ func (task *NftRegistrationTask) meshNodes(ctx context.Context, nodes node.List,
 
 	secondariesMtx.Lock()
 	defer secondariesMtx.Unlock()
+
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
 
@@ -430,6 +379,7 @@ func (task *NftRegistrationTask) meshNodes(ctx context.Context, nodes node.List,
 		}
 		meshNodes.Add(node)
 	}
+
 	return meshNodes, nil
 }
 
@@ -658,20 +608,6 @@ func (task *NftRegistrationTask) connectToTopRankNodes(ctx context.Context) erro
 		return errors.New("unable to find enough Supernodes with acceptable storage fee")
 	}
 
-	// For testing
-	// // TODO: Remove this when releaset because in localnet there is no need to start 10 gonode
-	// // and chase the log
-	// pinned := []string{"127.0.0.1:4444", "127.0.0.1:4445", "127.0.0.1:4446"}
-	// pinnedMn := make([]*node.Node, 0)
-	// for i := range topNodes {
-	// 	for j := range pinned {
-	// 		if topNodes[i].Address() == pinned[j] {
-	// 			pinnedMn = append(pinnedMn, topNodes[i])
-	// 		}
-	// 	}
-	// }
-	// log.WithContext(ctx).Debugf("%v", pinnedMn)
-
 	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
 	var nodes node.List
 	var errs error
@@ -875,7 +811,7 @@ func (task *NftRegistrationTask) removeArtifacts() {
 }
 
 // NewNFTRegistrationTask returns a new Task instance.
-func NewNFTRegistrationTask(service *Service, Ticket *Request) *NftRegistrationTask {
+func NewNFTRegistrationTask(service *Service, Ticket *NftRegisterRequest) *NftRegistrationTask {
 	return &NftRegistrationTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 		Service:        service,

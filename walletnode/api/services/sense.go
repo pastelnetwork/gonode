@@ -2,9 +2,6 @@ package services
 
 import (
 	"context"
-	"io"
-	"io/ioutil"
-	"mime/multipart"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -36,7 +33,7 @@ func (service *Sense) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Serv
 		nil,
 		&websocket.Upgrader{},
 		nil,
-		SenseUploadImageDecoderFunc,
+		SenseUploadImageDecoderFunc(ctx, service),
 	)
 	server.Mount(mux, srv)
 
@@ -52,18 +49,23 @@ func (service *Sense) UploadImage(ctx context.Context, p *sense.UploadImagePaylo
 		return nil, sense.MakeBadRequest(errors.New("file not specified"))
 	}
 
-	res, err = service.register.StoreImage(ctx, p)
+	id, expiry, err := service.register.ImageHandler.StoreFileNameIntoStorage(ctx, p.Filename)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
+	}
+
+	res = &sense.Image{
+		ImageID:   id,
+		ExpiresIn: expiry,
 	}
 
 	return res, nil
 }
 
-// ActionDetails - Starts a action data task
+// ActionDetails - Starts an action data task
 func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
 	// get imageData from storage based on imageID
-	imgData, err := service.register.GetImgData(p.ImageID)
+	imgData, err := service.register.ImageHandler.GetImgData(p.ImageID)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(errors.Errorf("get image data: %w", err))
 	}
@@ -71,12 +73,12 @@ func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsP
 	ImgSizeInMb := int64(len(imgData)) / (1024 * 1024)
 
 	// Validate image signature
-	err = service.register.VerifyImageSignature(ctx, imgData, p.ActionDataSignature, p.PastelID)
+	err = service.register.PastelHandler.VerifySignature(ctx, imgData, p.ActionDataSignature, p.PastelID)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}
 
-	fee, err := service.register.GetEstimatedFee(ctx, ImgSizeInMb)
+	fee, err := service.register.PastelHandler.GetEstimatedFee(ctx, ImgSizeInMb)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}
@@ -141,34 +143,4 @@ func NewSense(register *senseregister.Service) *Sense {
 		Common:   NewCommon(),
 		register: register,
 	}
-}
-
-// SenseUploadImageDecoderFunc implements the multipart decoder function for the UploadImage service
-func SenseUploadImageDecoderFunc(reader *multipart.Reader, p **sense.UploadImagePayload) error {
-	var res sense.UploadImagePayload
-
-	for {
-		part, err := reader.NextPart()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		filename := part.FileName()
-		if filename != "" {
-			slurp, err := ioutil.ReadAll(part)
-			if err != nil {
-				return errors.Errorf("read file: %w", err)
-			}
-
-			res.Filename = &filename
-			res.Bytes = slurp
-			break
-		}
-	}
-
-	*p = &res
-	return nil
 }

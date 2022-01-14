@@ -158,7 +158,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient, rqClient)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
 	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, nodeClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
 
@@ -167,7 +167,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 
 	// Sense services
-	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, db)
+	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
 
 	// api service
 	server := api.NewServer(config.API,

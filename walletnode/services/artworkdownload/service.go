@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	logPrefix = "artwork"
+	logPrefix = "nft-download"
 )
 
-// Service represents a service for the registration artwork.
+// Service represents a service for the registration NFT.
 type Service struct {
 	*task.Worker
 
@@ -41,7 +41,7 @@ func (service *Service) Tasks() []*NftDownloadTask {
 	return tasks
 }
 
-// Task returns the task of the artwork downloading by the given id.
+// GetTask returns the task of the NFT downloading by the given id.
 func (service *Service) GetTask(id string) *NftDownloadTask {
 	if t := service.Worker.Task(id); t != nil {
 		return t.(*NftDownloadTask)
@@ -49,7 +49,7 @@ func (service *Service) GetTask(id string) *NftDownloadTask {
 	return nil
 }
 
-// AddTask adds a new task of the artwork downloading and returns its taskID.
+// AddTask adds a new task of the NFT downloading and returns its taskID.
 func (service *Service) AddTask(ticket *Ticket) string {
 	task := NewNftDownloadTask(service, ticket)
 	service.Worker.AddTask(task)

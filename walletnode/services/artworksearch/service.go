@@ -14,15 +14,16 @@ import (
 )
 
 const (
-	logPrefix = "artwork"
+	logPrefix = "nft-search"
 )
 
-// Service represents a service for the artwork search.
+// Service represents a service for the NFT search.
 type Service struct {
 	*task.Worker
+
+	config       *Config
 	pastelClient pastel.Client
 	nodeClient   node.Client
-	config       *Config
 }
 
 // Run starts worker.
@@ -32,7 +33,6 @@ func (service *Service) Run(ctx context.Context) error {
 	group.Go(func() error {
 		return service.Worker.Run(ctx)
 	})
-
 	return group.Wait()
 }
 
@@ -45,12 +45,15 @@ func (service *Service) Tasks() []*NftSearchTask {
 	return tasks
 }
 
-// NftSearchTask returns the task of the artwork search by the given id.
+// GetTask returns the task of the NFT search by the given id.
 func (service *Service) GetTask(id string) *NftSearchTask {
-	return service.Worker.Task(id).(*NftSearchTask)
+	if t := service.Worker.Task(id); t != nil {
+		return t.(*NftSearchTask)
+	}
+	return nil
 }
 
-// AddTask runs a new task of the artwork search and returns its taskID.
+// AddTask runs a new task of the NFT search and returns its taskID.
 func (service *Service) AddTask(request *ArtSearchRequest) string {
 	task := NewNftSearchTask(service, request)
 	service.Worker.AddTask(task)
@@ -59,11 +62,14 @@ func (service *Service) AddTask(request *ArtSearchRequest) string {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config,
+	pastelClient pastel.Client,
+	nodeClient node.Client,
+) *Service {
 	return &Service{
+		Worker:       task.NewWorker(),
 		config:       config,
 		pastelClient: pastelClient,
-		Worker:       task.NewWorker(),
 		nodeClient:   nodeClient,
 	}
 }

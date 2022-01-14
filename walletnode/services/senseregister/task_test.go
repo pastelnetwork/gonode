@@ -68,7 +68,7 @@ func TestTaskRun(t *testing.T) {
 	t.Skip()
 
 	type fields struct {
-		Request *Request
+		Request *SenseRegisterRequest
 	}
 
 	type args struct {
@@ -97,7 +97,7 @@ func TestTaskRun(t *testing.T) {
 		numProbeImageCall int
 	}{
 		{
-			fields: fields{&Request{BurnTxID: "1", AppPastelID: "1", AppPastelIDPassphrase: "2"}},
+			fields: fields{&SenseRegisterRequest{BurnTxID: "1", AppPastelID: "1", AppPastelIDPassphrase: "2"}},
 			args: args{
 				taskID:     "1",
 				ctx:        context.Background(),
@@ -340,7 +340,7 @@ func TestTaskMeshNodes(t *testing.T) {
 				config: NewConfig(),
 			}
 
-			task := &SenseRegisterTask{Service: service, Request: &Request{}}
+			task := &SenseRegisterTask{Service: service, Request: &SenseRegisterRequest{}}
 			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 
 			testCase.assertion(t, err)
@@ -362,7 +362,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 
 	type fields struct {
 		Task    task.Task
-		Request *Request
+		Request *SenseRegisterRequest
 	}
 
 	type args struct {
@@ -380,7 +380,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 	}{
 		{
 			fields: fields{
-				Request: &Request{
+				Request: &SenseRegisterRequest{
 					BurnTxID: "xdxdf",
 				},
 			},
@@ -400,7 +400,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			assertion: assert.NoError,
 		}, {
 			fields: fields{
-				Request: &Request{
+				Request: &SenseRegisterRequest{
 					BurnTxID: "xdxdf",
 				},
 			},
@@ -469,11 +469,11 @@ func TestNewTask(t *testing.T) {
 
 	type args struct {
 		service *Service
-		Request *Request
+		Request *SenseRegisterRequest
 	}
 
 	service := &Service{}
-	Request := &Request{}
+	Request := &SenseRegisterRequest{}
 
 	testCases := []struct {
 		args args
@@ -520,7 +520,7 @@ func TestTaskCreateTicket(t *testing.T) {
 		"data-hash-error": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
 					Service: &Service{
@@ -537,7 +537,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					fingerprint:          []byte{},
 					datahash:             []byte{},
 					fingerprintAndScores: &pastel.DDAndFingerprints{},
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID:           "test-id",
 						AppPastelIDPassphrase: "test-name",
 					},
@@ -609,7 +609,7 @@ func TestTaskGetBlock(t *testing.T) {
 		"success": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
 					Service: &Service{},
@@ -625,7 +625,7 @@ func TestTaskGetBlock(t *testing.T) {
 		"block-count-err": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
 					Service: &Service{},
@@ -642,7 +642,7 @@ func TestTaskGetBlock(t *testing.T) {
 		"block-verbose-err": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
 					Service: &Service{},
@@ -698,7 +698,7 @@ func TestTaskSignTicket(t *testing.T) {
 		"success": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					Service: &Service{
@@ -712,7 +712,7 @@ func TestTaskSignTicket(t *testing.T) {
 		"err": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					Service: &Service{
@@ -762,7 +762,7 @@ func TestWaitTxnValid(t *testing.T) {
 		"ctx-done-err": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					Service: &Service{
@@ -776,7 +776,7 @@ func TestWaitTxnValid(t *testing.T) {
 		"get-raw-transaction-err": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					Service: &Service{
@@ -791,7 +791,7 @@ func TestWaitTxnValid(t *testing.T) {
 		"insufficient-confirmations": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					Service: &Service{
@@ -806,7 +806,7 @@ func TestWaitTxnValid(t *testing.T) {
 		"success": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					Service: &Service{
@@ -947,7 +947,7 @@ func TestTaskProbeImage(t *testing.T) {
 							thumbnailSize: 224,
 						},
 					},
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					ticket: &pastel.ActionTicket{},
@@ -969,7 +969,7 @@ func TestTaskProbeImage(t *testing.T) {
 							thumbnailSize: 224,
 						},
 					},
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					ticket: &pastel.ActionTicket{},
@@ -1060,7 +1060,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 			args: args{
 				sendSignedTicketRet: "test",
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID:           "testid",
 						AppPastelIDPassphrase: "testpassphrase",
 					},
@@ -1143,7 +1143,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4447", ExtKey: "4"},
 				},
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID:           "testid",
 						AppPastelIDPassphrase: "testpassphrase",
 					},
@@ -1163,7 +1163,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			args: args{
 				masterNodesTopErr: errors.New("test"),
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					Service: &Service{
@@ -1182,7 +1182,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			args: args{
 				masterNodesTopErr: nil,
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
 					Service: &Service{
@@ -1273,7 +1273,7 @@ func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
 		"success": {
 			args: args{
 				task: &SenseRegisterTask{
-					Request: &Request{
+					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
 					Service: &Service{

@@ -10,7 +10,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -37,6 +36,74 @@ type Artwork struct {
 	download *artworkdownload.Service
 	db       storage.KeyValue
 	imageTTL time.Duration
+}
+
+// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+func (service *Artwork) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
+	return ctx, nil
+}
+
+// Mount configures the mux to serve the artworks endpoints.
+func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+	endpoints := artworks.NewEndpoints(service)
+	srv := server.New(
+		endpoints,
+		mux,
+		goahttp.RequestDecoder,
+		goahttp.ResponseEncoder,
+		api.ErrorHandler,
+		nil,
+		&websocket.Upgrader{},
+		nil,
+		NftRegUploadImageDecoderFunc(ctx, service),
+	)
+	server.Mount(mux, srv)
+
+	for _, m := range srv.Mounts {
+		log.WithContext(ctx).Infof("%q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+	}
+	return srv
+}
+
+// --- Register NFT ---
+// UploadImage uploads an image and return unique image id.
+func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
+	if p.Filename == nil {
+		return nil, artworks.MakeBadRequest(errors.New("file not specified"))
+	}
+
+	id, expiry, err := service.register.ImageHandler.StoreFileNameIntoStorage(ctx, p.Filename)
+	if err != nil {
+		return nil, artworks.MakeInternalServerError(err)
+	}
+
+	res = &artworks.Image{
+		ImageID:   id,
+		ExpiresIn: expiry,
+	}
+	return res, nil
+}
+
+// Register runs registers process for the new NFT.
+func (service *Artwork) Register(_ context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
+	ticket := fromRegisterPayload(p)
+
+	filename, err := service.db.Get(p.ImageID)
+	if err != nil {
+		return nil, artworks.MakeInternalServerError(err)
+	}
+
+	file, err := service.register.ImageHandler.FileStorage.File(string(filename))
+	if err != nil {
+		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
+	}
+	ticket.Image = file
+
+	taskID := service.register.AddTask(ticket)
+	res = &artworks.RegisterResult{
+		TaskID: taskID,
+	}
+	return res, nil
 }
 
 // RegisterTaskState streams the state of the registration process.
@@ -99,53 +166,7 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 	return res, nil
 }
 
-// Register runs registers process for the new artwork.
-func (service *Artwork) Register(_ context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
-	ticket := fromRegisterPayload(p)
-
-	filename, err := service.db.Get(p.ImageID)
-	if err != nil {
-		return nil, artworks.MakeInternalServerError(err)
-	}
-
-	file, err := service.register.Storage.File(string(filename))
-	if err != nil {
-		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
-	}
-	ticket.Image = file
-
-	taskID := service.register.AddTask(ticket)
-	res = &artworks.RegisterResult{
-		TaskID: taskID,
-	}
-	return res, nil
-}
-
-// UploadImage uploads an image and return unique image id.
-func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
-	if p.Filename == nil {
-		return nil, artworks.MakeBadRequest(errors.New("file not specified"))
-	}
-
-	id, _ := random.String(8, random.Base62Chars)
-	if err := service.db.Set(id, []byte(*p.Filename)); err != nil {
-		return nil, artworks.MakeInternalServerError(err)
-	}
-
-	file, err := service.register.Storage.File(*p.Filename)
-	if err != nil {
-		return nil, artworks.MakeInternalServerError(err)
-	}
-	file.RemoveAfter(service.imageTTL)
-
-	res = &artworks.Image{
-		ImageID:   id,
-		ExpiresIn: time.Now().Add(service.imageTTL).Format(time.RFC3339),
-	}
-	return res, nil
-}
-
-// Download registered artwork.
+// --- Download registered NFT ---
 func (service *Artwork) Download(ctx context.Context, p *artworks.ArtworkDownloadPayload) (res *artworks.DownloadResult, err error) {
 	log.WithContext(ctx).Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
@@ -181,24 +202,8 @@ func (service *Artwork) Download(ctx context.Context, p *artworks.ArtworkDownloa
 	}
 }
 
-// APIKeyAuth implements the authorization logic for the APIKey security scheme.
-func (service *Artwork) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
-	return ctx, nil
-}
-
-// Mount configures the mux to serve the artworks endpoints.
-func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
-	endpoints := artworks.NewEndpoints(service)
-	srv := server.New(endpoints, mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc(ctx, service))
-	server.Mount(mux, srv)
-
-	for _, m := range srv.Mounts {
-		log.WithContext(ctx).Infof("%q mounted on %s %s", m.Method, m.Verb, m.Pattern)
-	}
-	return srv
-}
-
-// ArtSearch searches for artwork & streams the result based on filters
+// --- Search registered NFTs and return details ---
+// ArtSearch searches for NFT & streams the result based on filters
 func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
 	defer stream.Close()
 
@@ -228,7 +233,7 @@ func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPa
 	}
 }
 
-// ArtworkGet returns artowrk detail
+// ArtworkGet returns NFT detail
 func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPayload) (res *artworks.ArtworkDetail, err error) {
 	ticket, err := service.search.RegTicket(ctx, p.Txid)
 	if err != nil {

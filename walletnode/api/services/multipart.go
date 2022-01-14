@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -13,8 +14,9 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
+	nftreg "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	nftsrv "github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
+	sensrv "github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
 	goa "goa.design/goa/v3/pkg"
 
 	mdlserver "github.com/pastelnetwork/gonode/walletnode/api/gen/http/userdatas/server"
@@ -26,13 +28,31 @@ const (
 	imagePartName     = "file"
 )
 
-// UploadImageDecoderFunc implements the multipart decoder for service "artworks" endpoint "UploadImage".
+// NftRegUploadImageDecoderFunc implements the multipart decoder for service "nftreg" endpoint "UploadImage".
 // The decoder must populate the argument p after encoding.
-func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.ArtworksUploadImageDecoderFunc {
-	return func(reader *multipart.Reader, p **artworks.UploadImagePayload) error {
-		var res artworks.UploadImagePayload
+func NftRegUploadImageDecoderFunc(ctx context.Context, service *Artwork) nftsrv.ArtworksUploadImageDecoderFunc {
+	return func(reader *multipart.Reader, p **nftreg.UploadImagePayload) error {
+		var res nftreg.UploadImagePayload
 
-		filename, errType, err := handleUploadImage(ctx, reader, service.register.Storage)
+		filename, errType, err := handleUploadImage(ctx, reader, service.register.FileStorage)
+		if err != nil {
+			return &goa.ServiceError{
+				Name:    errType,
+				ID:      goa.NewErrorID(),
+				Message: err.Error(),
+			}
+		}
+
+		res.Filename = &filename
+		*p = &res
+		return nil
+	}
+}
+func SenseUploadImageDecoderFunc(ctx context.Context, service *Sense) sensrv.SenseUploadImageDecoderFunc {
+	return func(reader *multipart.Reader, p **sense.UploadImagePayload) error {
+		var res sense.UploadImagePayload
+
+		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage)
 		if err != nil {
 			return &goa.ServiceError{
 				Name:    errType,

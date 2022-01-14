@@ -4,8 +4,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/files"
 )
 
-// Request represents artwork registration request.
-type Request struct {
+// NftRegisterRequest represents artwork registration request.
+type NftRegisterRequest struct {
 	Image                    *files.File               `json:"image"`
 	Name                     string                    `json:"name"`
 	Description              *string                   `json:"description"`
