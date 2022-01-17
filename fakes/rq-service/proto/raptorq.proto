@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/fakes/rq-service/proto";
+
+package proto;
+
+service RaptorQ {
+  // Get list of symbol ids and encoder parameter
+  //
+  // Performs encoding, but doesn't return actual symbols, instead returns list of symbol's identifiers
+  //
+  // Input:
+  //      EncodeMetaDataRequest
+  //          path            - location of the input file
+  //          files_number    - how many ID files to create, can be 0
+  //          block_hash      - block_hash of the Registration ticket
+  //          pastel_id       - PastelID used to sign the Registration ticket
+  //
+  // Output:
+  //      EncodeMetaDataReply
+  //          encoder_parameters  - Object Transmission Information (12 bytes array)
+  //          path                - path to the location of ID files
+  //          symbols_count       - number of symbols
+  //
+  rpc EncodeMetaData(EncodeMetaDataRequest) returns(EncodeMetaDataReply);
+
+  // Encode input data blob into symbols
+  //
+  // Performs encoding, and returns actual symbols as gRPC stream
+  //
+  // Input:
+  //      EncodeRequest
+  //          path            - location of the input file
+  //
+  // Output:
+  //      EncodeReply
+  //          path            - location of the output symbol files
+  //          symbols_count   - number of created symbol files
+  //
+  rpc Encode(EncodeRequest) returns(EncodeReply);
+
+  // Decode symbols back into original data blob
+  //
+  // Performs decoding, and returns original data blob
+  //
+  // Input:
+  //      DecodeRequest
+  //          encoder_parameters  - Object Transmission Information (12 bytes array)
+  //          path                - location of the input file
+  //
+  // Output:
+  //      Data blob
+  //
+  rpc Decode(DecodeRequest) returns(DecodeReply);
+}
+
+message EncodeMetaDataRequest {
+  string path = 1;
+  uint32 files_number = 2;
+  string block_hash = 3;
+  string pastel_id = 4;
+}
+
+message EncodeMetaDataReply {
+  bytes encoder_parameters = 1;
+  uint32 symbols_count = 2;
+  string path = 3;
+}
+
+message EncodeRequest {
+  string path = 1;
+}
+
+message EncodeReply {
+  bytes encoder_parameters = 1;
+  uint32 symbols_count = 2;
+  string path = 3;
+}
+
+message DecodeRequest {
+  bytes encoder_parameters = 1;
+  string path = 2;
+}
+
+message DecodeReply {
+  string path = 1;
+}

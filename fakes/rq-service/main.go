@@ -11,8 +11,8 @@ import (
 	_ "github.com/jnewmano/grpc-json-proxy/codec"
 	"github.com/pastelnetwork/gonode/fakes/common/register"
 	"github.com/pastelnetwork/gonode/fakes/common/storage"
-	"github.com/pastelnetwork/gonode/fakes/dd-server/dupedetection"
-	"github.com/pastelnetwork/gonode/fakes/dd-server/server"
+	"github.com/pastelnetwork/gonode/fakes/rq-service/raptorq"
+	"github.com/pastelnetwork/gonode/fakes/rq-service/server"
 )
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 
 	// Start Server
 	go func() {
-		if err := router.Run(":9998"); err != nil {
+		if err := router.Run(":9997"); err != nil {
 			fmt.Printf("Run Server Failed: err %v\n", err)
 			return
 		}
@@ -43,7 +43,7 @@ func main() {
 
 	grpc := server.New(server.NewConfig(),
 		"service",
-		dupedetection.NewDDService(store),
+		raptorq.NewRQService(store),
 	)
 
 	if err := grpc.Run(context.Background()); err != nil {
@@ -54,6 +54,6 @@ func main() {
 
 func healthGET() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, "fake-dd-server")
+		c.JSON(http.StatusOK, "fake-rq-service")
 	}
 }
