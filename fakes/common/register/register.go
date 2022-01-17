@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pastelnetwork/gonode/fakes/pasteld/storage"
+	"github.com/pastelnetwork/gonode/fakes/common/storage"
 )
 
 // Register is suppoed to provider handler functions to register mock
