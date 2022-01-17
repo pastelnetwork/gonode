@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/bitwurx/jrpc2"
-	"github.com/pastelnetwork/gonode/fakes/pasteld/storage"
+	"github.com/pastelnetwork/gonode/fakes/common/storage"
 )
 
 // Handler handles rpc requests to this fake pasteld server
@@ -15,19 +15,19 @@ type Handler interface {
 }
 
 type rpcHandler struct {
-	storage.Store
+	store storage.Store
 }
 
 // New returns new instance of rpcHandler
 func New(store storage.Store) Handler {
 	return &rpcHandler{
-		Store: store,
+		store: store,
 	}
 }
 
 func (h *rpcHandler) handle(method string, params []string) (interface{}, error) {
 	key := method + "*" + strings.Join(params, "*")
-	data, err := h.Get(key)
+	data, err := h.store.Get(key)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch data: %w", err)
 	}

@@ -1,21 +1,22 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/bitwurx/jrpc2"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	_ "github.com/jnewmano/grpc-json-proxy/codec"
 	"github.com/pastelnetwork/gonode/fakes/common/register"
 	"github.com/pastelnetwork/gonode/fakes/common/storage"
-	"github.com/pastelnetwork/gonode/fakes/pasteld/handler"
+	"github.com/pastelnetwork/gonode/fakes/dd-server/dupedetection"
+	"github.com/pastelnetwork/gonode/fakes/dd-server/server"
 )
 
 func main() {
 	store := storage.New(1*time.Minute, 2*time.Minute)
-	rpcHandler := handler.New(store)
 	registrationHandler := register.New(store)
 
 	gin.SetMode(gin.DebugMode)
@@ -34,20 +35,21 @@ func main() {
 
 	// Start Server
 	go func() {
-		if err := router.Run(":9999"); err != nil {
+		if err := router.Run(":9998"); err != nil {
 			fmt.Printf("Run Server Failed: err %v\n", err)
 			return
 		}
 	}()
 
-	// create a new server instance
-	s := jrpc2.NewServer(":29932", "/", nil)
+	grpc := server.New(server.NewConfig(),
+		"service",
+		dupedetection.NewDDService(store),
+	)
 
-	// register the add method
-	s.Register("masternode", jrpc2.Method{Method: rpcHandler.HandleMasternode})
+	if err := grpc.Run(context.Background()); err != nil {
+		panic("unable to run grpc server")
+	}
 
-	// start the server instance
-	s.Start()
 }
 
 func healthGET() gin.HandlerFunc {
