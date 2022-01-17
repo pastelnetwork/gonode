@@ -1,7 +1,6 @@
 package services
 
 import (
-	"github.com/pastelnetwork/gonode/common/storage/files"
 	"time"
 
 	"github.com/pastelnetwork/gonode/pastel"
@@ -10,12 +9,10 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
-
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 )
 
 func safeStr(p *string) string {
@@ -23,59 +20,6 @@ func safeStr(p *string) string {
 		return *p
 	}
 	return ""
-}
-
-func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.NftRegisterRequest {
-	thumbnail := files.ThumbnailCoordinate{
-		TopLeftX:     payload.ThumbnailCoordinate.TopLeftX,
-		TopLeftY:     payload.ThumbnailCoordinate.TopLeftY,
-		BottomRightX: payload.ThumbnailCoordinate.BottomRightX,
-		BottomRightY: payload.ThumbnailCoordinate.BottomRightY,
-	}
-
-	return &artworkregister.NftRegisterRequest{
-		Name:                     payload.Name,
-		Description:              payload.Description,
-		Keywords:                 payload.Keywords,
-		SeriesName:               payload.SeriesName,
-		IssuedCopies:             payload.IssuedCopies,
-		YoutubeURL:               payload.YoutubeURL,
-		ArtistPastelID:           payload.ArtistPastelID,
-		ArtistPastelIDPassphrase: payload.ArtistPastelIDPassphrase,
-		ArtistName:               payload.ArtistName,
-		ArtistWebsiteURL:         payload.ArtistWebsiteURL,
-		SpendableAddress:         payload.SpendableAddress,
-		MaximumFee:               payload.MaximumFee,
-		Green:                    payload.Green,
-		Royalty:                  payload.Royalty,
-		Thumbnail:                thumbnail,
-	}
-}
-
-func toArtworkTicket(ticket *artworkregister.NftRegisterRequest) *artworks.ArtworkTicket {
-	thumbnail := artworks.Thumbnailcoordinate{
-		TopLeftX:     ticket.Thumbnail.TopLeftX,
-		TopLeftY:     ticket.Thumbnail.TopLeftY,
-		BottomRightY: ticket.Thumbnail.BottomRightX,
-		BottomRightX: ticket.Thumbnail.BottomRightY,
-	}
-	return &artworks.ArtworkTicket{
-		Name:                     ticket.Name,
-		Description:              ticket.Description,
-		Keywords:                 ticket.Keywords,
-		SeriesName:               ticket.SeriesName,
-		IssuedCopies:             ticket.IssuedCopies,
-		YoutubeURL:               ticket.YoutubeURL,
-		ArtistPastelID:           ticket.ArtistPastelID,
-		ArtistPastelIDPassphrase: ticket.ArtistPastelIDPassphrase,
-		ArtistName:               ticket.ArtistName,
-		ArtistWebsiteURL:         ticket.ArtistWebsiteURL,
-		SpendableAddress:         ticket.SpendableAddress,
-		MaximumFee:               ticket.MaximumFee,
-		Green:                    ticket.Green,
-		Royalty:                  ticket.Royalty,
-		ThumbnailCoordinate:      &thumbnail,
-	}
 }
 
 func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
@@ -90,6 +34,7 @@ func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
 	return states
 }
 
+// NFT Search
 func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSearchResult {
 	ticketData := srch.RegTicketData.NFTTicketData.AppTicketData
 	res := &artworks.ArtworkSearchResult{
@@ -183,6 +128,7 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 	}
 }
 
+// NFT Download
 func fromDownloadPayload(payload *artworks.ArtworkDownloadPayload) *artworkdownload.Ticket {
 	return &artworkdownload.Ticket{
 		Txid:               payload.Txid,
@@ -191,6 +137,7 @@ func fromDownloadPayload(payload *artworks.ArtworkDownloadPayload) *artworkdownl
 	}
 }
 
+// NFT User Data
 // fromUserdataCreateRequest convert the request receive from swagger api to request object that will send to super nodes
 func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.ProcessRequest {
 	request := &userdata.ProcessRequest{}

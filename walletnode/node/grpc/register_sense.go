@@ -232,7 +232,7 @@ func (service *registerSense) SendSignedTicket(ctx context.Context, ticket []byt
 	return rsp.ActionRegTxid, nil
 }
 
-func newRegisterSense(conn *clientConn) node.RegisterSense {
+func newRegisterSense(conn *clientConn) node.RegisterSenseInterface {
 	return &registerSense{
 		conn:   conn,
 		client: pb.NewRegisterSenseClient(conn),

@@ -23,7 +23,7 @@ type Service struct {
 
 	config       *Config
 	pastelClient pastel.Client
-	nodeClient   node.Client
+	nodeClient   node.ClientInterface
 }
 
 // Run starts worker.
@@ -64,7 +64,7 @@ func (service *Service) AddTask(request *ArtSearchRequest) string {
 // NewService returns a new Service instance.
 func NewService(config *Config,
 	pastelClient pastel.Client,
-	nodeClient node.Client,
+	nodeClient node.ClientInterface,
 ) *Service {
 	return &Service{
 		Worker:       task.NewWorker(),

@@ -18,7 +18,7 @@ func TestNewService(t *testing.T) {
 	type args struct {
 		config       *Config
 		pastelClient pastel.Client
-		nodeClient   node.Client
+		nodeClient   node.ClientInterface
 	}
 
 	config := &Config{}

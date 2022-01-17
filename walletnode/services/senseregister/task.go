@@ -156,7 +156,7 @@ func (task *SenseRegisterTask) closeSNsConnections(ctx context.Context, nodesDon
 	log.WithContext(ctx).Debug("close connections to supernodes")
 
 	for i := range task.nodes {
-		if err := task.nodes[i].Connection.Close(); err != nil {
+		if err := task.nodes[i].ConnectionInterface.Close(); err != nil {
 			log.WithContext(ctx).WithFields(log.Fields{
 				"pastelId": task.nodes[i].PastelID(),
 				"addr":     task.nodes[i].String(),

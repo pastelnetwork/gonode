@@ -30,7 +30,7 @@ type Service struct {
 	*task.Worker
 	config *Config
 
-	nodeClient    node.Client
+	nodeClient    node.ClientInterface
 	ImageHandler  *common.ImageHandler
 	PastelHandler *common.PastelHandler
 }
@@ -69,11 +69,7 @@ func (service *Service) GetTask(id string) *SenseRegisterTask {
 
 // AddTask create ticket request and start a new task with the given payload
 func (service *Service) AddTask(p *sense.StartProcessingPayload) (string, error) {
-	ticket := &SenseRegisterRequest{
-		BurnTxID:              p.BurnTxid,
-		AppPastelID:           p.AppPastelID,
-		AppPastelIDPassphrase: p.AppPastelidPassphrase,
-	}
+	ticket := FromSenseRegisterPayload(p)
 
 	// get image filename from storage based on image_id
 	filename, err := service.ImageHandler.FileDb.Get(p.ImageID)
@@ -98,7 +94,7 @@ func (service *Service) AddTask(p *sense.StartProcessingPayload) (string, error)
 func NewService(
 	config *Config,
 	pastelClient pastel.Client,
-	nodeClient node.Client,
+	nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface,
 	db storage.KeyValue,
 ) *Service {

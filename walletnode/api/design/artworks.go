@@ -14,12 +14,12 @@ import (
 	cors "goa.design/plugins/v3/cors/dsl"
 )
 
-var _ = Service("artworks", func() {
-	Description("Pastel Artwork")
+var _ = Service("nft", func() {
+	Description("Pastel NFT")
 
 	cors.Origin("localhost")
 	HTTP(func() {
-		Path("/artworks")
+		Path("/nfts")
 	})
 
 	Error("BadRequest", ErrorResult)
@@ -27,11 +27,11 @@ var _ = Service("artworks", func() {
 	Error("InternalServerError", ErrorResult)
 
 	Method("register", func() {
-		Description("Runs a new registration process for the new artwork.")
-		Meta("swagger:summary", "Registers a new artwork")
+		Description("Runs a new registration process for the new NFT.")
+		Meta("swagger:summary", "Registers a new NFT")
 
 		Payload(func() {
-			Extend(ArtworkTicket)
+			Extend(NftRegisterPayload)
 			Attribute("image_id", String, func() {
 				Description("Uploaded image ID")
 				MinLength(8)
@@ -40,7 +40,7 @@ var _ = Service("artworks", func() {
 			})
 			Required("image_id")
 		})
-		Result(ArtworkRegisterResult)
+		Result(NftRegisterResult)
 
 		HTTP(func() {
 			POST("/register")
@@ -57,7 +57,7 @@ var _ = Service("artworks", func() {
 		Payload(func() {
 			Extend(RegisterTaskPayload)
 		})
-		StreamingResult(ArtworkRegisterTaskState)
+		StreamingResult(NftRegisterTaskState)
 
 		HTTP(func() {
 			GET("/register/{taskId}/state")
@@ -74,7 +74,7 @@ var _ = Service("artworks", func() {
 		Payload(func() {
 			Extend(RegisterTaskPayload)
 		})
-		Result(ArtworkRegisterTaskResult, func() {
+		Result(NftRegisterTaskResult, func() {
 			View("default")
 		})
 
@@ -90,7 +90,7 @@ var _ = Service("artworks", func() {
 		Description("List of all tasks.")
 		Meta("swagger:summary", "Returns list of tasks")
 
-		Result(CollectionOf(ArtworkRegisterTaskResult), func() {
+		Result(CollectionOf(NftRegisterTaskResult), func() {
 			View("tiny")
 		})
 
@@ -102,7 +102,7 @@ var _ = Service("artworks", func() {
 	})
 
 	Method("uploadImage", func() {
-		Description("Upload the image that is used when registering a new artwork.")
+		Description("Upload the image that is used when registering a new NFT.")
 		Meta("swagger:summary", "Uploads an image")
 
 		Payload(func() {
@@ -122,11 +122,11 @@ var _ = Service("artworks", func() {
 	})
 
 	Method("artSearch", func() {
-		Description("Streams the search result for artwork")
-		Meta("swagger:summary", "Streams the search result for Artwork")
+		Description("Streams the search result for NFT")
+		Meta("swagger:summary", "Streams the search result for NFT")
 
-		Payload(SearchArtworkParams)
-		StreamingResult(ArtworkSearchResult)
+		Payload(SearchNftParams)
+		StreamingResult(NftSearchResult)
 
 		HTTP(func() {
 			GET("/search")
@@ -158,12 +158,12 @@ var _ = Service("artworks", func() {
 		})
 	})
 
-	Method("artworkGet", func() {
-		Description("Gets the Artwork detail")
-		Meta("swagger:summary", "Returns the detail of Artwork")
+	Method("nftGet", func() {
+		Description("Gets the NFT detail")
+		Meta("swagger:summary", "Returns the detail of NFT")
 
-		Payload(ArtworkGetParams)
-		Result(ArtworkDetail)
+		Payload(NftGetParams)
+		Result(NftDetail)
 
 		HTTP(func() {
 			GET("/{txid}")
@@ -177,13 +177,13 @@ var _ = Service("artworks", func() {
 		})
 	})
 	Method("download", func() {
-		Description("Download registered artwork.")
-		Meta("swagger:summary", "Downloads artwork")
+		Description("Download registered NFT.")
+		Meta("swagger:summary", "Downloads NFT")
 
 		Security(APIKeyAuth)
 
-		Payload(ArtworkDownloadPayload)
-		Result(ArtworkDownloadResult)
+		Payload(NftDownloadPayload)
+		Result(NftDownloadResult)
 
 		HTTP(func() {
 			GET("/download")
@@ -197,12 +197,12 @@ var _ = Service("artworks", func() {
 	})
 })
 
-// ArtworkSearchResult is artwork search result.
-var ArtworkSearchResult = Type("ArtworkSearchResult", func() {
-	Description("Result of artwork search call")
+// NftSearchResult is NFT search result.
+var NftSearchResult = Type("NftSearchResult", func() {
+	Description("Result of NFT search call")
 
-	Attribute("artwork", ArtworkSummary, func() {
-		Description("Artwork data")
+	Attribute("NFT", NftSummary, func() {
+		Description("NFT data")
 	})
 
 	Attribute("match_index", Int, func() {
@@ -212,20 +212,20 @@ var ArtworkSearchResult = Type("ArtworkSearchResult", func() {
 		Description("Match result details")
 	})
 
-	Required("artwork", "matches", "match_index")
+	Required("NFT", "matches", "match_index")
 })
 
-// ArtworkTicket is artwork register payload.
-var ArtworkTicket = Type("ArtworkTicket", func() {
-	Description("Ticket of the registration artwork")
+// NftRegisterPayload is NFT register payload.
+var NftRegisterPayload = Type("NftRegisterPayload", func() {
+	Description("Ticket of the registration NFT")
 
 	Attribute("name", String, func() {
-		Description("Name of the artwork")
+		Description("Name of the NFT")
 		MaxLength(256)
 		Example("Mona Lisa")
 	})
 	Attribute("description", String, func() {
-		Description("Description of the artwork")
+		Description("Description of the NFT")
 		MaxLength(1024)
 		Example("The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.")
 	})
@@ -247,7 +247,7 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Example(1)
 	})
 	Attribute("youtube_url", String, func() {
-		Description("Artwork creation video youtube URL")
+		Description("NFT creation video youtube URL")
 		MaxLength(128)
 		Example("https://www.youtube.com/watch?v=0xl6Ufo4ZX0")
 	})
@@ -309,8 +309,8 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
 
-// ArtworkRegisterResult is artwork registeration result.
-var ArtworkRegisterResult = ResultType("application/vnd.artwork.register", func() {
+// NftRegisterResult is NFT registeration result.
+var NftRegisterResult = ResultType("application/vnd.nft.register", func() {
 	TypeName("RegisterResult")
 	Attributes(func() {
 		Attribute("task_id", String, func() {
@@ -323,8 +323,8 @@ var ArtworkRegisterResult = ResultType("application/vnd.artwork.register", func(
 	Required("task_id")
 })
 
-// ArtworkRegisterTaskResult is task streaming of the artwork registration.
-var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.task", func() {
+// NftRegisterTaskResult is task streaming of the NFT registration.
+var NftRegisterTaskResult = ResultType("application/vnd.nft.register.task", func() {
 	TypeName("Task")
 	Attributes(func() {
 		Attribute("id", String, func() {
@@ -338,7 +338,7 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 			Example(common.StatusNames()[0])
 			Enum(InterfaceSlice(common.StatusNames())...)
 		})
-		Attribute("states", ArrayOf(ArtworkRegisterTaskState), func() {
+		Attribute("states", ArrayOf(NftRegisterTaskState), func() {
 			Description("List of states from the very beginning of the process")
 		})
 		Attribute("txid", String, func() {
@@ -347,7 +347,7 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 			MaxLength(64)
 			Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
 		})
-		Attribute("ticket", ArtworkTicket)
+		Attribute("ticket", NftRegisterPayload)
 	})
 
 	View("tiny", func() {
@@ -360,8 +360,8 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 	Required("id", "status", "ticket")
 })
 
-// ArtworkRegisterTaskState is task streaming of the artwork registration.
-var ArtworkRegisterTaskState = Type("TaskState", func() {
+// NftRegisterTaskState is task streaming of the NFT registration.
+var NftRegisterTaskState = Type("TaskState", func() {
 	Attribute("date", String, func() {
 		Description("Date of the status creation")
 		Example(time.RFC3339)
@@ -389,7 +389,7 @@ var ImageUploadPayload = Type("ImageUploadPayload", func() {
 })
 
 // ImageUploadResult is image upload result.
-var ImageUploadResult = ResultType("application/vnd.artwork.upload-image", func() {
+var ImageUploadResult = ResultType("application/vnd.nft.upload-image", func() {
 	TypeName("Image")
 	Attributes(func() {
 		Attribute("image_id", String, func() {
@@ -425,7 +425,7 @@ var FuzzyMatch = Type("FuzzyMatch", func() {
 	})
 	Attribute("field_type", String, func() {
 		Description("Field that is matched")
-		Enum(InterfaceSlice(artworksearch.ArtSearchQueryFields)...)
+		Enum(InterfaceSlice(artworksearch.ArtSearchQueryFields)...) //TODO: Rename after renaming package
 	})
 	Attribute("matched_indexes", ArrayOf(Int), func() {
 		Description("The indexes of matched characters. Useful for highlighting matches")
@@ -435,8 +435,8 @@ var FuzzyMatch = Type("FuzzyMatch", func() {
 	})
 })
 
-// ArtworkGetParams are request params to artworkGet Params
-var ArtworkGetParams = func() {
+// NftGetParams are request params to nftGet Params
+var NftGetParams = func() {
 	Attribute("txid", String, func() {
 		Description("txid")
 		MinLength(64)
@@ -459,8 +459,8 @@ var ArtworkGetParams = func() {
 	Required("txid", "user_pastelid", "user_passphrase")
 }
 
-// SearchArtworkParams are query params to searchArtwork request
-var SearchArtworkParams = func() {
+// SearchNftParams are query params to searchNft request
+var SearchNftParams = func() {
 	Attribute("artist", String, func() {
 		Description("Artist PastelID or special value; mine")
 		MaxLength(256)
@@ -480,11 +480,11 @@ var SearchArtworkParams = func() {
 		Default(true)
 	})
 	Attribute("art_title", Boolean, func() {
-		Description("Title of artwork")
+		Description("Title of NFT")
 		Default(true)
 	})
 	Attribute("series", Boolean, func() {
-		Description("Artwork series name")
+		Description("NFT series name")
 		Default(true)
 	})
 	Attribute("descr", Boolean, func() {
@@ -492,7 +492,7 @@ var SearchArtworkParams = func() {
 		Default(true)
 	})
 	Attribute("keyword", Boolean, func() {
-		Description("Keyword that Artist assigns to Artwork")
+		Description("Keyword that Artist assigns to NFT")
 		Default(true)
 	})
 	Attribute("min_block", Int, func() {
@@ -567,9 +567,9 @@ var SearchArtworkParams = func() {
 	Required("query")
 }
 
-// ArtworkSummary is part of artwork search response.
-var ArtworkSummary = Type("ArtworkSummary", func() {
-	Description("Artwork response")
+// NftSummary is part of NFT search response.
+var NftSummary = Type("NftSummary", func() {
+	Description("NFT response")
 
 	Attribute("thumbnail_1", Bytes, func() {
 		Description("Thumbnail_1 image")
@@ -587,12 +587,12 @@ var ArtworkSummary = Type("ArtworkSummary", func() {
 	})
 
 	Attribute("title", String, func() {
-		Description("Name of the artwork")
+		Description("Name of the NFT")
 		MaxLength(256)
 		Example("Mona Lisa")
 	})
 	Attribute("description", String, func() {
-		Description("Description of the artwork")
+		Description("Description of the NFT")
 		MaxLength(1024)
 		Example("The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.")
 	})
@@ -614,7 +614,7 @@ var ArtworkSummary = Type("ArtworkSummary", func() {
 		Example(1)
 	})
 	Attribute("youtube_url", String, func() {
-		Description("Artwork creation video youtube URL")
+		Description("NFT creation video youtube URL")
 		MaxLength(128)
 		Example("https://www.youtube.com/watch?v=0xl6Ufo4ZX0")
 	})
@@ -642,11 +642,11 @@ var ArtworkSummary = Type("ArtworkSummary", func() {
 	Required("title", "description", "artist_name", "copies", "artist_pastelid", "txid")
 })
 
-// ArtworkDetail is artwork get response.
-var ArtworkDetail = Type("ArtworkDetail", func() {
-	Description("Artwork detail response")
+// NftDetail is NFT get response.
+var NftDetail = Type("NftDetail", func() {
+	Description("NFT detail response")
 
-	Extend(ArtworkSummary)
+	Extend(NftSummary)
 
 	Attribute("version", Int, func() {
 		Description("version")
@@ -750,8 +750,8 @@ var ThumbnailCoordinate = ResultType("ThumbnailCoordinate", func() {
 	Required("top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y")
 })
 
-// ArtworkDownloadPayload is artwork download payload.
-var ArtworkDownloadPayload = Type("ArtworkDownloadPayload", func() {
+// NftDownloadPayload is NFT download payload.
+var NftDownloadPayload = Type("NftDownloadPayload", func() {
 	Attribute("txid", String, func() {
 		Description("Art Registration Ticket transaction ID")
 		MinLength(64)
@@ -778,9 +778,9 @@ var APIKeyAuth = APIKeySecurity("api_key", func() {
 	Description("Art Owner's passphrase to authenticate")
 })
 
-// ArtworkDownloadResult is artwork download result.
-var ArtworkDownloadResult = Type("DownloadResult", func() {
-	Description("Artwork download response")
+// NftDownloadResult is NFT download result.
+var NftDownloadResult = Type("DownloadResult", func() {
+	Description("NFT download response")
 	Attribute("file", Bytes, func() {
 		Description("File downloaded")
 	})

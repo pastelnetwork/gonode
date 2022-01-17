@@ -17,7 +17,7 @@ func TestNodesAdd(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		node *Node
+		node *SenseRegisterNode
 	}
 	testCases := []struct {
 		nodes List
@@ -26,9 +26,9 @@ func TestNodesAdd(t *testing.T) {
 	}{
 		{
 			nodes: List{},
-			args:  args{node: &Node{address: "127.0.0.1"}},
+			args:  args{node: &SenseRegisterNode{address: "127.0.0.1"}},
 			want: List{
-				&Node{address: "127.0.0.1"},
+				&SenseRegisterNode{address: "127.0.0.1"},
 			},
 		},
 	}
@@ -53,8 +53,8 @@ func TestNodesActivate(t *testing.T) {
 	}{
 		{
 			nodes: List{
-				&Node{address: "127.0.0.1"},
-				&Node{address: "127.0.0.2"},
+				&SenseRegisterNode{address: "127.0.0.1"},
+				&SenseRegisterNode{address: "127.0.0.2"},
 			},
 		},
 	}
@@ -114,10 +114,10 @@ func TestNodesDisconnectInactive(t *testing.T) {
 			for _, c := range testCase.conn {
 				c.client.ListenOnClose(nil)
 
-				node := &Node{
-					Connection: c.client.Connection,
-					activated:  c.activated,
-					mtx:        &sync.RWMutex{},
+				node := &SenseRegisterNode{
+					ConnectionInterface: c.client.Connection,
+					activated:           c.activated,
+					mtx:                 &sync.RWMutex{},
 				}
 
 				testCase.nodes = append(testCase.nodes, node)
@@ -148,19 +148,19 @@ func TestNodesFindByPastelID(t *testing.T) {
 	testCases := []struct {
 		nodes List
 		args  args
-		want  *Node
+		want  *SenseRegisterNode
 	}{
 		{
 			nodes: List{
-				&Node{pastelID: "1"},
-				&Node{pastelID: "2"},
+				&SenseRegisterNode{pastelID: "1"},
+				&SenseRegisterNode{pastelID: "2"},
 			},
 			args: args{"2"},
-			want: &Node{pastelID: "2"},
+			want: &SenseRegisterNode{pastelID: "2"},
 		}, {
 			nodes: List{
-				&Node{pastelID: "1"},
-				&Node{pastelID: "2"},
+				&SenseRegisterNode{pastelID: "1"},
+				&SenseRegisterNode{pastelID: "2"},
 			},
 			args: args{"3"},
 			want: nil,
@@ -304,9 +304,9 @@ func TestNodesSendImage(t *testing.T) {
 				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.validBurnTxID, testCase.err)
 				clients = append(clients, client)
 
-				nodes.Add(&Node{
-					address:       a.address,
-					RegisterSense: client.RegisterSense,
+				nodes.Add(&SenseRegisterNode{
+					address:                a.address,
+					RegisterSenseInterface: client.RegisterSense,
 				})
 			}
 

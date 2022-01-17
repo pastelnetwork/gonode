@@ -44,7 +44,7 @@ func appendStr(b []byte, s string) []byte {
 	return b
 }
 
-func newTestNode(address, pastelID string) *node.Node {
+func newTestNode(address, pastelID string) *node.NftRegisterNode {
 	return node.NewNode(nil, address, pastelID)
 }
 

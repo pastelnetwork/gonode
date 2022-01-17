@@ -9,51 +9,27 @@ import (
 )
 
 // Node represent supernode connection.
-type Node struct {
-	node.Client
-	node.DownloadArtwork
-	node.Connection
+type NftDownloadNode struct {
+	node.BaseNode
+	node.DownloadNftInterface
 
-	activated bool
-	done      bool
-	file      []byte
-
-	address  string
-	pastelID string
-}
-
-func (node Node) String() string {
-	return node.address
-}
-
-// PastelID returns pastelID
-func (node Node) PastelID() string {
-	return node.pastelID
+	done bool
+	file []byte
 }
 
 // Connect connects to supernode.
-func (node *Node) Connect(ctx context.Context, timeout time.Duration, secSign *alts.SecInfo) error {
-	if node.Connection != nil {
-		return nil
-	}
-
-	connCtx, connCancel := context.WithTimeout(ctx, timeout)
-	defer connCancel()
-
-	conn, err := node.Client.Connect(connCtx, node.address, secSign)
+func (node *NftDownloadNode) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo) error {
+	conn, err := node.BaseNode.Connect(ctx, timeout, secInfo)
 	if err != nil {
 		return err
 	}
-	node.Connection = conn
-	node.DownloadArtwork = conn.DownloadArtwork()
+	node.DownloadNftInterface = conn.DownloadArtwork()
 	return nil
 }
 
 // NewNode returns a new Node instance.
-func NewNode(client node.Client, address, pastelID string) *Node {
-	return &Node{
-		Client:   client,
-		address:  address,
-		pastelID: pastelID,
+func NewNode(client node.ClientInterface, address, pastelID string) *NftDownloadNode {
+	return &NftDownloadNode{
+		BaseNode: *node.NewBaseNode(client, address, pastelID),
 	}
 }

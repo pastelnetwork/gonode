@@ -13,17 +13,17 @@ type clientConn struct {
 	id string
 }
 
-// RegisterArtwork implements node.Connection.RegisterArtwork()
+// RegisterArtwork implements node.ConnectionInterface.RegisterArtwork()
 func (conn *clientConn) RegisterArtwork() node.RegisterArtwork {
 	return newRegisterArtwork(conn)
 }
 
-// RegisterSense implements node.Connection.RegisterSense()
+// RegisterSense implements node.ConnectionInterface.RegisterSense()
 func (conn *clientConn) RegisterSense() node.RegisterSense {
 	return newRegisterSense(conn)
 }
 
-// ProcessUserdata implements node.Connection.ProcessUserdata()
+// ProcessUserdata implements node.ConnectionInterface.ProcessUserdata()
 func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
 	return newProcessUserdata(conn)
 }

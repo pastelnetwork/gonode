@@ -11,9 +11,9 @@ import (
 
 // Node represent supernode connection.
 type Node struct {
-	node.Client
-	node.Connection
-	node.ProcessUserdata
+	node.ClientInterface
+	node.ConnectionInterface
+	node.ProcessUserdataInterface
 	activated bool
 	address   string
 	pastelID  string
@@ -33,27 +33,27 @@ func (node *Node) PastelID() string {
 
 // Connect connects to supernode.
 func (node *Node) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo) error {
-	if node.Connection != nil {
+	if node.ConnectionInterface != nil {
 		return nil
 	}
 
 	connCtx, connCancel := context.WithTimeout(ctx, timeout)
 	defer connCancel()
 
-	conn, err := node.Client.Connect(connCtx, node.address, secInfo)
+	conn, err := node.ClientInterface.Connect(connCtx, node.address, secInfo)
 	if err != nil {
 		return err
 	}
-	node.Connection = conn
-	node.ProcessUserdata = conn.ProcessUserdata()
+	node.ConnectionInterface = conn
+	node.ProcessUserdataInterface = conn.ProcessUserdata()
 	return nil
 }
 
 // NewNode returns a new Node instance.
-func NewNode(client node.Client, address, pastelID string) *Node {
+func NewNode(client node.ClientInterface, address, pastelID string) *Node {
 	return &Node{
-		Client:   client,
-		address:  address,
-		pastelID: pastelID,
+		ClientInterface: client,
+		address:         address,
+		pastelID:        pastelID,
 	}
 }

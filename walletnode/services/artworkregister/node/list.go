@@ -15,10 +15,10 @@ import (
 )
 
 // List represents multiple Node.
-type List []*Node
+type List []*NftRegisterNode
 
 // Add adds a new node to the list.
-func (nodes *List) Add(node *Node) {
+func (nodes *List) Add(node *NftRegisterNode) {
 	*nodes = append(*nodes, node)
 }
 
@@ -26,18 +26,18 @@ func (nodes *List) Add(node *Node) {
 // Since any node can be present in the same time in several List and Node is a pointer, this is reflected in all lists.
 func (nodes *List) Activate() {
 	for _, node := range *nodes {
-		node.activated = true
+		node.SetActive(true)
 	}
 }
 
 // DisconnectInactive disconnects nodes which were not marked as activated.
 func (nodes *List) DisconnectInactive() {
 	for _, node := range *nodes {
-		node.mtx.RLock()
-		defer node.mtx.RUnlock()
+		node.RLock()
+		defer node.RUnlock()
 
-		if node.Connection != nil && !node.activated {
-			node.Connection.Close()
+		if node.ConnectionInterface != nil && !node.IsActive() {
+			node.ConnectionInterface.Close()
 		}
 	}
 }
@@ -45,11 +45,11 @@ func (nodes *List) DisconnectInactive() {
 // DisconnectAll disconnects all nodes
 func (nodes *List) DisconnectAll() {
 	for _, node := range *nodes {
-		node.mtx.RLock()
-		defer node.mtx.RUnlock()
+		node.RLock()
+		defer node.RUnlock()
 
-		if node.Connection != nil {
-			node.Connection.Close()
+		if node.ConnectionInterface != nil {
+			node.ConnectionInterface.Close()
 		}
 	}
 }
@@ -64,7 +64,7 @@ func (nodes *List) WaitConnClose(ctx context.Context, done <-chan struct{}) erro
 			select {
 			case <-ctx.Done():
 				return nil
-			case <-node.Connection.Done():
+			case <-node.ConnectionInterface.Done():
 				return errors.Errorf("%q unexpectedly closed the connection", node)
 			case <-done:
 				return nil
@@ -76,9 +76,9 @@ func (nodes *List) WaitConnClose(ctx context.Context, done <-chan struct{}) erro
 }
 
 // FindByPastelID returns node by its patstelID.
-func (nodes *List) FindByPastelID(id string) *Node {
+func (nodes *List) FindByPastelID(id string) *NftRegisterNode {
 	for _, node := range *nodes {
-		if node.pastelID == id {
+		if node.PastelID() == id {
 			return node
 		}
 	}
@@ -223,7 +223,7 @@ func (nodes *List) SendPreBurntFeeTxid(ctx context.Context, txid string) error {
 				return err
 			}
 			if !node.IsPrimary() && ticketTxid != "" {
-				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, node.pastelID)
+				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, node.PastelID())
 			}
 
 			node.regNFTTxid = ticketTxid
@@ -261,7 +261,7 @@ func (nodes *List) SmallThumbnailHash() []byte {
 // RegArtTicketID return txid of RegArt ticket
 func (nodes *List) RegArtTicketID() string {
 	for i := range *nodes {
-		if (*nodes)[i].isPrimary {
+		if (*nodes)[i].IsPrimary() {
 			return (*nodes)[i].regNFTTxid
 		}
 	}

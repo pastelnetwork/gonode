@@ -95,7 +95,7 @@ var _ = Service("sense", func() {
 		Payload(func() {
 			Extend(RegisterTaskPayload)
 		})
-		StreamingResult(ArtworkRegisterTaskState)
+		StreamingResult(NftRegisterTaskState)
 
 		HTTP(func() {
 			GET("/start/{taskId}/state")

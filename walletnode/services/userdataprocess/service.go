@@ -19,7 +19,7 @@ type Service struct {
 	*task.Worker
 	config       *Config
 	pastelClient pastel.Client
-	nodeClient   node.Client
+	nodeClient   node.ClientInterface
 }
 
 // Run starts worker.
@@ -56,7 +56,7 @@ func (service *Service) AddTask(request *userdata.ProcessRequest, retrieve strin
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *Service {
 	return &Service{
 		config:       config,
 		pastelClient: pastelClient,

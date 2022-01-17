@@ -12,19 +12,19 @@ import (
 )
 
 // List represents multiple Node.
-type List []*Node
+type List []*NftDownloadNode
 
 // Add adds a new node to the list.
-func (nodes *List) Add(node *Node) {
+func (nodes *List) Add(node *NftDownloadNode) {
 	*nodes = append(*nodes, node)
 }
 
 // Active marks all nodes as activated.
 // Since any node can be present in the same time in several List and Node is a pointer, this is reflected in all lists.
-func (nodes *List) Active() List {
+func (nodes *List) Activate() List {
 	activeNodes := List{}
 	for _, node := range *nodes {
-		if node.activated {
+		if node.IsActive() {
 			activeNodes = append(activeNodes, node)
 		}
 	}
@@ -34,8 +34,8 @@ func (nodes *List) Active() List {
 // DisconnectInactive disconnects nodes which were not marked as activated.
 func (nodes *List) DisconnectInactive() {
 	for _, node := range *nodes {
-		if node.Connection != nil && !node.activated {
-			node.Connection.Close()
+		if node.ConnectionInterface != nil && !node.IsActive() {
+			node.ConnectionInterface.Close()
 		}
 	}
 }
@@ -43,8 +43,8 @@ func (nodes *List) DisconnectInactive() {
 // Disconnect disconnects all nodes.
 func (nodes *List) Disconnect() {
 	for _, node := range *nodes {
-		if node.Connection != nil {
-			node.Connection.Close()
+		if node.ConnectionInterface != nil {
+			node.ConnectionInterface.Close()
 			node.done = true
 		}
 	}
@@ -60,7 +60,7 @@ func (nodes *List) WaitConnClose(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 				return nil
-			case <-node.Connection.Done():
+			case <-node.ConnectionInterface.Done():
 				if node.done {
 					return nil
 				}
@@ -112,7 +112,7 @@ func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttx
 				errChan <- subErr
 			} else {
 				log.WithContext(ctx).WithField("address", subNode.String()).Info("Downloaded from supernode")
-				subNode.activated = true
+				subNode.SetActive(true)
 			}
 			return nil
 		})

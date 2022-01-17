@@ -18,29 +18,29 @@ import (
 )
 
 // Client represents a base connection interface.
-type Client interface {
+type ClientInterface interface {
 	// Connect connects to the server at the given address.
-	Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (Connection, error)
+	Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (ConnectionInterface, error)
 }
 
-// Connection represents a client connection
-type Connection interface {
+// ConnectionInterface represents a client connection
+type ConnectionInterface interface {
 	// Close closes connection.
 	Close() error
 	// Done returns a channel that's closed when connection is shutdown.
 	Done() <-chan struct{}
 	// RegisterArtwork returns a new RegisterArtwork stream.
-	RegisterArtwork() RegisterArtwork
+	RegisterArtwork() RegisterNftInterface
 	// DownloadArtwork returns a new DownloadArtwork stream.
-	DownloadArtwork() DownloadArtwork
+	DownloadArtwork() DownloadNftInterface
 	// ProcessUserdata returns a new ProcessUserdata stream.
-	ProcessUserdata() ProcessUserdata
+	ProcessUserdata() ProcessUserdataInterface
 	// RegisterSense returns new RegisterSense stream
-	RegisterSense() RegisterSense
+	RegisterSense() RegisterSenseInterface
 }
 
 // RegisterSense contains methods for sense register
-type RegisterSense interface {
+type RegisterSenseInterface interface {
 	// SessID returns the sessID received from the server during the handshake.
 	SessID() (sessID string)
 	// Session sets up an initial connection with supernode, with given supernode mode primary/secondary.
@@ -62,7 +62,7 @@ type RegisterSense interface {
 }
 
 // RegisterArtwork contains methods for registering artwork.
-type RegisterArtwork interface {
+type RegisterNftInterface interface {
 	// SessID returns the sessID received from the server during the handshake.
 	SessID() (sessID string)
 	// Session sets up an initial connection with supernode, with given supernode mode primary/secondary.
@@ -86,14 +86,14 @@ type RegisterArtwork interface {
 }
 
 // DownloadArtwork contains methods for downloading artwork.
-type DownloadArtwork interface {
+type DownloadNftInterface interface {
 	// Download sends image downloading request to supernode.
 	Download(ctx context.Context, txid, timestamp, signature, ttxid string) (file []byte, err error)
 	DownloadThumbnail(ctx context.Context, key []byte) (file []byte, err error)
 }
 
 // ProcessUserdata contains methods for processing userdata.
-type ProcessUserdata interface {
+type ProcessUserdataInterface interface {
 	// SessID returns the sessID received from the server during the handshake.
 	SessID() (sessID string)
 	// Session sets up an initial connection with supernode, with given supernode mode primary/secondary.

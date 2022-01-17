@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"strings"
 	"time"
 
@@ -86,20 +87,11 @@ func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImage
 
 // Register runs registers process for the new NFT.
 func (service *Artwork) Register(_ context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
-	ticket := fromRegisterPayload(p)
-
-	filename, err := service.db.Get(p.ImageID)
+	taskID, err := service.register.AddTask(p)
 	if err != nil {
-		return nil, artworks.MakeInternalServerError(err)
+		return nil, sense.MakeInternalServerError(err)
 	}
 
-	file, err := service.register.ImageHandler.FileStorage.File(string(filename))
-	if err != nil {
-		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
-	}
-	ticket.Image = file
-
-	taskID := service.register.AddTask(ticket)
 	res = &artworks.RegisterResult{
 		TaskID: taskID,
 	}
@@ -147,7 +139,7 @@ func (service *Artwork) RegisterTask(_ context.Context, p *artworks.RegisterTask
 	res = &artworks.Task{
 		ID:     p.TaskID,
 		Status: task.Status().String(),
-		Ticket: toArtworkTicket(task.Request),
+		Ticket: artworkregister.ToNftRegisterTicket(task.Request),
 		States: toArtworkStates(task.StatusHistory()),
 	}
 	return res, nil
@@ -160,7 +152,7 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 		res = append(res, &artworks.Task{
 			ID:     task.ID(),
 			Status: task.Status().String(),
-			Ticket: toArtworkTicket(task.Request),
+			Ticket: artworkregister.ToNftRegisterTicket(task.Request),
 		})
 	}
 	return res, nil

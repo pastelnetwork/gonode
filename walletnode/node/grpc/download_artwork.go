@@ -74,7 +74,7 @@ func (service *downloadArtwork) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newDownloadArtwork(conn *clientConn) node.DownloadArtwork {
+func newDownloadArtwork(conn *clientConn) node.DownloadNftInterface {
 	return &downloadArtwork{
 		conn:   conn,
 		client: pb.NewDownloadArtworkClient(conn),

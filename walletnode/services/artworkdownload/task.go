@@ -78,7 +78,7 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 		return errors.Errorf("download files from supernodes: %w", err)
 	}
 
-	nodes = topNodes.Active()
+	nodes = topNodes.Activate()
 
 	if len(nodes) < task.config.NumberSuperNodes {
 		log.WithContext(ctx).WithField("DownloadedNodes", len(nodes)).Info("Not enough number of downloaded node")

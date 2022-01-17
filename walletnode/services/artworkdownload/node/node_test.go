@@ -17,20 +17,20 @@ func TestNodeNewNode(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		client   node.Client
+		client   node.ClientInterface
 		address  string
 		pastelID string
 	}
 	testCases := []struct {
 		args args
-		want *Node
+		want *NftDownloadNode
 	}{
 		{
 			args: args{nil, "127.0.0.1:4444", "testID"},
-			want: &Node{
-				Client:   nil,
-				address:  "127.0.0.1:4444",
-				pastelID: "testID",
+			want: &NftDownloadNode{
+				ClientInterface: nil,
+				address:         "127.0.0.1:4444",
+				pastelID:        "testID",
 			},
 		},
 	}
@@ -51,11 +51,11 @@ func TestNodeString(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		node *Node
+		node *NftDownloadNode
 		want string
 	}{
 		{
-			node: &Node{address: "127.0.0.1:4444"},
+			node: &NftDownloadNode{address: "127.0.0.1:4444"},
 			want: "127.0.0.1:4444",
 		},
 	}
@@ -80,7 +80,7 @@ func TestNodeConnect(t *testing.T) {
 	}
 
 	testCases := []struct {
-		node                      *Node
+		node                      *NftDownloadNode
 		address                   string
 		args                      args
 		err                       error
@@ -89,7 +89,7 @@ func TestNodeConnect(t *testing.T) {
 		assertion                 assert.ErrorAssertionFunc
 	}{
 		{
-			node:                      &Node{address: "127.0.0.1:4444"},
+			node:                      &NftDownloadNode{address: "127.0.0.1:4444"},
 			address:                   "127.0.0.1:4444",
 			args:                      args{context.Background()},
 			err:                       nil,
@@ -97,7 +97,7 @@ func TestNodeConnect(t *testing.T) {
 			numberDownloadArtWorkCall: 1,
 			assertion:                 assert.NoError,
 		}, {
-			node:                      &Node{address: "127.0.0.1:4445"},
+			node:                      &NftDownloadNode{address: "127.0.0.1:4445"},
 			address:                   "127.0.0.1:4445",
 			args:                      args{context.Background()},
 			err:                       fmt.Errorf("connection timeout"),
@@ -120,7 +120,7 @@ func TestNodeConnect(t *testing.T) {
 			clientMock.ListenOnConnect(testCase.address, testCase.err).ListenOnDownloadArtwork()
 
 			//set up node client only
-			testCase.node.Client = clientMock.Client
+			testCase.node.ClientInterface = clientMock.Client
 
 			//assertion error
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))

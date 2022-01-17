@@ -32,7 +32,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestNode(address, pastelID string) *node.Node {
+func newTestNode(address, pastelID string) *node.SenseRegisterNode {
 	return node.NewNode(nil, address, pastelID)
 }
 

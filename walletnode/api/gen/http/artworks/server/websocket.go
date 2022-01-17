@@ -76,7 +76,7 @@ func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 // endpoint websocket connection.
 func (s *RegisterTaskStateServerStream) Send(v *artworks.TaskState) error {
 	var err error
-	// Upgrade the HTTP connection to a websocket connection only once. Connection
+	// Upgrade the HTTP connection to a websocket connection only once. ConnectionInterface
 	// upgrade is done here so that authorization logic in the endpoint is executed
 	// before calling the actual service method which may call Send().
 	s.once.Do(func() {
@@ -118,7 +118,7 @@ func (s *RegisterTaskStateServerStream) Close() error {
 // endpoint websocket connection.
 func (s *ArtSearchServerStream) Send(v *artworks.ArtworkSearchResult) error {
 	var err error
-	// Upgrade the HTTP connection to a websocket connection only once. Connection
+	// Upgrade the HTTP connection to a websocket connection only once. ConnectionInterface
 	// upgrade is done here so that authorization logic in the endpoint is executed
 	// before calling the actual service method which may call Send().
 	s.once.Do(func() {

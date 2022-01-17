@@ -333,7 +333,7 @@ func (service *registerArtwork) SendPreBurntFeeTxid(ctx context.Context, txid st
 	return rsp.NFTRegTxid, nil
 }
 
-func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {
+func newRegisterArtwork(conn *clientConn) node.RegisterNftInterface {
 	return &registerArtwork{
 		conn:   conn,
 		client: pb.NewRegisterArtworkClient(conn),

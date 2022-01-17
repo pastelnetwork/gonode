@@ -28,7 +28,7 @@ type Helper interface {
 
 type thumbnailHelper struct {
 	pastelClient pastel.Client
-	nodeClient   nodeClient.Client
+	nodeClient   nodeClient.ClientInterface
 
 	reqCh      chan request
 	timeOut    time.Duration
@@ -38,7 +38,7 @@ type thumbnailHelper struct {
 }
 
 // New returns a new instance of thumbnailHelper as Helper
-func New(pastelClient pastel.Client, nodeClient nodeClient.Client, timeout time.Duration) Helper {
+func New(pastelClient pastel.Client, nodeClient nodeClient.ClientInterface, timeout time.Duration) Helper {
 	return &thumbnailHelper{
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
@@ -91,7 +91,7 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint, secInfo
 		go func() {
 			t.listen(ctx, node)
 			t.Close()
-			if err := node.Connection.Close(); err != nil {
+			if err := node.ConnectionInterface.Close(); err != nil {
 				log.WithContext(ctx).WithError(err).Error("ThumbnailPuller.Start-Close node connection")
 			}
 		}()
@@ -105,7 +105,7 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint, secInfo
 	return nil
 }
 
-func (t *thumbnailHelper) listen(ctx context.Context, n *node.Node) {
+func (t *thumbnailHelper) listen(ctx context.Context, n *node.NftSearchNode) {
 	for {
 		select {
 		case <-ctx.Done():

@@ -78,7 +78,7 @@ func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsP
 		return nil, sense.MakeInternalServerError(err)
 	}
 
-	fee, err := service.register.PastelHandler.GetEstimatedFee(ctx, ImgSizeInMb)
+	fee, err := service.register.PastelHandler.GetEstimatedActionFee(ctx, ImgSizeInMb)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}

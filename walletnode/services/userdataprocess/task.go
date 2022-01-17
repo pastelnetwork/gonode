@@ -192,7 +192,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	// close the connections
 	for i := range nodes {
-		if err := nodes[i].Connection.Close(); err != nil {
+		if err := nodes[i].ConnectionInterface.Close(); err != nil {
 			log.WithContext(ctx).WithError(err).Debugf("failed to close connection to node %s", task.nodes[i].PastelID())
 		}
 	}

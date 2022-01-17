@@ -27,8 +27,8 @@ func (nodes *List) Activate() {
 // DisconnectInactive disconnects nodes which were not marked as activated.
 func (nodes *List) DisconnectInactive() {
 	for _, node := range *nodes {
-		if node.Connection != nil && !node.activated {
-			node.Connection.Close()
+		if node.ConnectionInterface != nil && !node.activated {
+			node.ConnectionInterface.Close()
 		}
 	}
 }
@@ -43,7 +43,7 @@ func (nodes *List) WaitConnClose(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 				return nil
-			case <-node.Connection.Done():
+			case <-node.ConnectionInterface.Done():
 				return errors.Errorf("%q unexpectedly closed the connection", node)
 			}
 		})

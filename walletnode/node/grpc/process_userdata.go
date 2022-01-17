@@ -231,7 +231,7 @@ func (service *processUserdata) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newProcessUserdata(conn *clientConn) node.ProcessUserdata {
+func newProcessUserdata(conn *clientConn) node.ProcessUserdataInterface {
 	return &processUserdata{
 		conn:   conn,
 		client: pb.NewProcessUserdataClient(conn),

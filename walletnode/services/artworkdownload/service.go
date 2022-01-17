@@ -19,7 +19,7 @@ type Service struct {
 
 	config       *Config
 	pastelClient pastel.Client
-	nodeClient   node.Client
+	nodeClient   node.ClientInterface
 }
 
 // Run starts worker.
@@ -58,7 +58,7 @@ func (service *Service) AddTask(ticket *Ticket) string {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *Service {
 	return &Service{
 		config:       config,
 		pastelClient: pastelClient,
