@@ -2,7 +2,7 @@ package server
 
 const (
 	defaultListenAddresses = "0.0.0.0"
-	defaultPort            = 24444
+	defaultPort            = 50052
 )
 
 // Config contains settings of the supernode server.

@@ -14,7 +14,9 @@ COPY raptorq/ /raptorq/
 COPY /integration/configs/sn1.yml /supernode/sn1.yml
 COPY /integration/configs/sn2.yml /supernode/sn2.yml
 COPY /integration/configs/sn3.yml /supernode/sn3.yml
-COPY /integration/configs/pastel.conf /supernode/pastel.conf
+COPY /integration/configs/p1.conf /supernode/p1.conf
+COPY /integration/configs/p2.conf /supernode/p2.conf
+COPY /integration/configs/p3.conf /supernode/p3.conf
 
 WORKDIR /supernode
 RUN go mod download
@@ -28,7 +30,10 @@ RUN mkdir configs
 COPY --from=builder /supernode/sn1.yml /configs/sn1.yml
 COPY --from=builder /supernode/sn2.yml /configs/sn2.yml
 COPY --from=builder /supernode/sn3.yml /configs/sn3.yml
-COPY --from=builder /supernode/pastel.conf /configs/pastel.conf
+COPY --from=builder /supernode/p1.conf /configs/p1.conf
+COPY --from=builder /supernode/p2.conf /configs/p2.conf
+COPY --from=builder /supernode/p3.conf /configs/p3.conf
+
 
 EXPOSE 9090
 CMD [ "./app" ]

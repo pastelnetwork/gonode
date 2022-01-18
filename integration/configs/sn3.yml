@@ -38,10 +38,10 @@ metadb:
   block_interval: 48
 
 raptorq:
-  host: "localhost"
+  host: "rq-server-3"
   port: 50051
 
 dd-server:
-  host: "localhost"
+  host: "rq-server-3"
   port: 50052
   dd-temp-file-dir: "dd-server"

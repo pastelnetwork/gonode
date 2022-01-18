@@ -34,14 +34,14 @@ func main() {
 
 	// Start Server
 	go func() {
-		if err := router.Run(":9999"); err != nil {
+		if err := router.Run(":29932"); err != nil {
 			fmt.Printf("Run Server Failed: err %v\n", err)
 			return
 		}
 	}()
 
 	// create a new server instance
-	s := jrpc2.NewServer(":29932", "/", nil)
+	s := jrpc2.NewServer(":19932", "/", nil)
 
 	// register the add method
 	s.Register("masternode", jrpc2.Method{Method: rpcHandler.HandleMasternode})
