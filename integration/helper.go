@@ -4,8 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 	"time"
 )
 
@@ -83,4 +88,34 @@ func (h *ItHelper) Ping(uri string) error {
 	}
 
 	return nil
+}
+
+// PostForm makes a http request
+func (h *ItHelper) UploadFile(filename, uri string) (resp []byte, status int, err error) {
+	fileDir, _ := os.Getwd()
+	filePath := path.Join(fileDir, filename)
+
+	file, _ := os.Open(filePath)
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, _ := writer.CreateFormFile("file", filepath.Base(file.Name()))
+	io.Copy(part, file)
+	writer.Close()
+
+	r, _ := http.NewRequest("POST", uri, body)
+	r.Header.Add("Content-Type", writer.FormDataContentType())
+
+	response, err := h.client.Do(r)
+	if err != nil {
+		return resp, 0, err
+	}
+
+	resp, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		return resp, 0, err
+	}
+
+	return resp, response.StatusCode, nil
 }
