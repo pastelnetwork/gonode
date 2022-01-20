@@ -33,16 +33,10 @@ func main() {
 		return
 	}
 
-	fmt.Println("Encode Results:")
-	fmt.Println(res1)
-
 	res2, err := service.EncodeInfo(context.Background(), data, 2, "block_hash", "pastelID")
 
 	if err != nil {
 		fmt.Printf("EncodeInfo error:%v\n", err)
 		return
 	}
-	fmt.Println("EncodeInfo Results:")
-	fmt.Println(res2)
-
 }

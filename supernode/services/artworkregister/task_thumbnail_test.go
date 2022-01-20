@@ -175,9 +175,6 @@ func TestCreateAndHashThumbnail(t *testing.T) {
 			tc.args.task.Artwork = file
 
 			srcImg, err := tc.args.task.Artwork.LoadImage()
-			if err != nil {
-				fmt.Println("errrr: ", err.Error())
-			}
 			assert.Nil(t, err)
 
 			originalW := srcImg.Bounds().Dx()

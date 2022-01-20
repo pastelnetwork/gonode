@@ -1,65 +1,79 @@
-package integration_test
+package main_test
 
 import (
 	"encoding/json"
 	"net/http"
+	"path/filepath"
+	"strings"
+
+	"github.com/pastelnetwork/gonode/integration/fakes/common/testconst"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	it "github.com/pastelnetwork/gonode/integration"
-	"github.com/pastelnetwork/gonode/integration/nft"
+	helper "github.com/pastelnetwork/gonode/integration/helper"
+	"github.com/pastelnetwork/gonode/integration/mock"
 )
 
 var _ = Describe("NFTRegistration", func() {
 	var (
-		helper           = it.NewItHelper()
-		uploadImageReq   *nft.UploadImageReq
-		uploadImageReply *nft.UploadImageResp
-		regReq           *nft.RegistrationReq
-		regReply         *nft.RegistrationResp
+		itHelper         = helper.NewItHelper()
+		uploadImageReq   *helper.UploadImageReq
+		uploadImageReply *helper.UploadImageResp
+		regReq           *helper.RegistrationReq
+		regReply         *helper.RegistrationResp
+		mocker           *mock.Mocker
 	)
 
 	BeforeEach(func() {
-		uploadImageReq = &nft.UploadImageReq{
-			Filename: "/nft/test.jpg",
+		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, itHelper)
+
+		uploadImageReq = &helper.UploadImageReq{
+			Filename: filepath.Join(filepath.Dir("."), "testdata", "test.jpg"),
 		}
 
-		uploadImageReply = &nft.UploadImageResp{}
-		regReq = &nft.RegistrationReq{
-			ArtistPastelid:           "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
+		uploadImageReply = &helper.UploadImageResp{}
+		regReq = &helper.RegistrationReq{
+			ArtistPastelid:           testconst.ArtistPastelID,
 			ArtistPastelidPassphrase: "passphrase",
 			ArtistWebsiteURL:         "www.example.com",
 			ArtistName:               "integration-test",
 			Description:              "sample-description",
 			MaximumFee:               500,
-			IssuesCopies:             5,
+			IssuedCopies:             5,
 			Keywords:                 "key,word",
 			Name:                     "test-nft",
-			SpendableAddress:         "tPoXb35ABswxqMCw3gD8K7PvzRTcZLdpNEY",
+			SpendableAddress:         testconst.RegSpendableAddress,
 			Royalty:                  10,
-			ThumbnailCoordinate: nft.ThumbnailCoordinate{
+			ThumbnailCoordinate: helper.ThumbnailCoordinate{
 				BottomRightX: 640,
 				BottomRightY: 480,
 				TopLeftX:     0,
-				TopLeftY:     480,
+				TopLeftY:     0,
 			},
 			YoutubeURL: "www.youtube.com",
 		}
-		regReply = &nft.RegistrationResp{}
+		regReply = &helper.RegistrationResp{}
 	})
 
 	Context("when registering a valid nft", func() {
 		It("should registered successfully", func() {
-			resp, status, err := helper.UploadFile(uploadImageReq.Filename, nft.GetUploadImageURI(it.WNBaseURI))
+			Expect(mocker.MockAllRegExpections()).To(Succeed())
+			resp, err := itHelper.HTTPCurlUploadFile(helper.HttpPost, helper.GetUploadImageURI(it.WNBaseURI), uploadImageReq.Filename, "test-img")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(status).To(Equal(http.StatusCreated))
+
 			Expect(json.Unmarshal(resp, uploadImageReply)).To(Succeed())
+			Expect(uploadImageReply.ImageID).NotTo(BeEmpty())
 
 			regReq.ImageID = uploadImageReply.ImageID
-			regResp, status, err := helper.Request(it.HttpPost, regReq, nft.GetRegistrationURI(it.WNBaseURI))
+			regResp, status, err := itHelper.Request(helper.HttpPost, regReq, helper.GetRegistrationURI(it.WNBaseURI), nil)
 			Expect(err).NotTo(HaveOccurred())
+
 			Expect(status).To(Equal(http.StatusCreated))
-			Expect(json.Unmarshal(regResp, regReply)).To(Succeed())
+			Expect(json.Unmarshal(regResp, regReply))
+
+			Expect(itHelper.DoWebSocketReq(strings.TrimPrefix(it.WNBaseURI, "http://"), helper.GetTaskStatePath(regReply.TaskID),
+				"status", "Task Completed")).To(Succeed())
 		})
 	})
 

@@ -1,4 +1,4 @@
-package integration_test
+package main_test
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	it "github.com/pastelnetwork/gonode/integration"
+	helper "github.com/pastelnetwork/gonode/integration/helper"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
@@ -33,31 +34,36 @@ func TestIntegration(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	composeFilePath := filepath.Join(filepath.Dir("."), "docker-compose.yml")
+	composeFilePath := filepath.Join(filepath.Dir("."), "infra", "docker-compose.yml")
 	identifier := strings.ToLower(uuid.New().String())
 	compose = tc.NewLocalDockerCompose([]string{composeFilePath}, identifier)
 
 	Expect(compose.WithCommand([]string{"up", "-d", "--build"}).Invoke().Error).To(Succeed())
 
 	// Backoff wait for api-server container to be available
-	helper := it.NewItHelper()
+	helper := helper.NewItHelper()
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 30 * time.Second
 	b.InitialInterval = 200 * time.Millisecond
 
-	pingSN1 := func() error {
-		return helper.Ping(fmt.Sprintf("%v/%v", it.SN1BaseURI, "health"))
-	}
-	pingSN2 := func() error {
-		return helper.Ping(fmt.Sprintf("%v/%v", it.SN2BaseURI, "health"))
-	}
-	pingSN3 := func() error {
-		return helper.Ping(fmt.Sprintf("%v/%v", it.SN3BaseURI, "health"))
+	pingServers := func() error {
+		servers := append(it.SNServers, it.RQServers...)
+		servers = append(servers, it.DDServers...)
+		servers = append(servers, it.PasteldServers...)
+		for _, addr := range servers {
+			backoff.Retry(backoff.Operation(func() error {
+				if err := helper.Ping(fmt.Sprintf("%v/%v", it.SN1BaseURI, "health")); err != nil {
+					return fmt.Errorf("err reaching server: %s - err: %w", addr, err)
+				}
+
+				return nil
+			}), b)
+		}
+
+		return nil
 	}
 
-	Expect(backoff.Retry(backoff.Operation(pingSN1), b)).To(Succeed())
-	Expect(backoff.Retry(backoff.Operation(pingSN2), b)).To(Succeed())
-	Expect(backoff.Retry(backoff.Operation(pingSN3), b)).To(Succeed())
+	Expect(pingServers()).To(Succeed())
 	time.Sleep(10 * time.Second)
 })
 
