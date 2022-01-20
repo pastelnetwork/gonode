@@ -25,19 +25,19 @@ const (
 	uploadImageBufferSize = 32 * 1024
 )
 
-type registerArtwork struct {
+type registerNft struct {
 	conn   *clientConn
 	client pb.RegisterArtworkClient
 
 	sessID string
 }
 
-func (service *registerArtwork) SessID() string {
+func (service *registerNft) SessID() string {
 	return service.sessID
 }
 
 // Session implements node.RegisterArtwork.Session()
-func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) error {
+func (service *registerNft) Session(ctx context.Context, isPrimary bool) error {
 	ctx = service.contextWithLogPrefix(ctx)
 
 	stream, err := service.client.Session(ctx)
@@ -81,7 +81,7 @@ func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) err
 }
 
 // AcceptedNodes implements node.RegisterArtwork.AcceptedNodes()
-func (service *registerArtwork) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
+func (service *registerNft) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -102,7 +102,7 @@ func (service *registerArtwork) AcceptedNodes(ctx context.Context) (pastelIDs []
 }
 
 // ConnectTo implements node.RegisterArtwork.ConnectTo()
-func (service *registerArtwork) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
+func (service *registerNft) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -122,7 +122,7 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, primaryNode types
 }
 
 // MeshNodes informs SNs which SNs are connected to do NFT request
-func (service *registerArtwork) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
+func (service *registerNft) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 	request := &pb.MeshNodesRequest{
@@ -142,7 +142,7 @@ func (service *registerArtwork) MeshNodes(ctx context.Context, meshedNodes []typ
 }
 
 // SendRegMetadata send metadata of registration to SNs for next steps
-func (service *registerArtwork) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
+func (service *registerNft) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 	request := &pb.SendRegMetadataRequest{
@@ -155,19 +155,19 @@ func (service *registerArtwork) SendRegMetadata(ctx context.Context, regMetadata
 }
 
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerArtwork) ProbeImage(ctx context.Context, image *files.File) ([]byte, error) {
+func (service *registerNft) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return nil, errors.Errorf("open stream: %w", err)
+		return nil, false, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, errors.Errorf("open file %q: %w", file.Name(), err)
+		return nil, false, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -182,20 +182,20 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *files.Fil
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
-			return nil, errors.Errorf("send image data: %w", err)
+			return nil, false, errors.Errorf("send image data: %w", err)
 		}
 	}
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, errors.Errorf("receive image response: %w", err)
+		return nil, false, errors.Errorf("receive image response: %w", err)
 	}
 
-	return resp.CompressedSignedDDAndFingerprints, nil
+	return resp.CompressedSignedDDAndFingerprints, false, nil
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
-func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
+func (service *registerNft) UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -281,17 +281,17 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	return resp.PreviewThumbnailHash, resp.MediumThumbnailHash, resp.SmallThumbnailHash, nil
 }
 
-func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {
+func (service *registerNft) contextWithMDSessID(ctx context.Context) context.Context {
 	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
-func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
+func (service *registerNft) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
 // SendSignedTicket
-func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids []byte, ddFp []byte, encoderParams rqnode.EncoderParameters) (int64, error) {
+func (service *registerNft) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids []byte, ddFp []byte, encoderParams rqnode.EncoderParameters) (int64, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -315,7 +315,7 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 	return rsp.RegistrationFee, nil
 }
 
-func (service *registerArtwork) SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error) {
+func (service *registerNft) SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -334,7 +334,7 @@ func (service *registerArtwork) SendPreBurntFeeTxid(ctx context.Context, txid st
 }
 
 func newRegisterArtwork(conn *clientConn) node.RegisterNftInterface {
-	return &registerArtwork{
+	return &registerNft{
 		conn:   conn,
 		client: pb.NewRegisterArtworkClient(conn),
 	}

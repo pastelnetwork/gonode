@@ -98,8 +98,8 @@ func (server *Server) Run(ctx context.Context) error {
 	return <-errCh
 }
 
-// NewServer returns a new Server instance.
-func NewServer(config *Config, services ...service) *Server {
+// NewAPIServer returns a new Server instance.
+func NewAPIServer(config *Config, services ...service) *Server {
 	return &Server{
 		config:          config,
 		shutdownTimeout: defaultShutdownTimeout,

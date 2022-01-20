@@ -142,7 +142,7 @@ func main() {
 	}
 	client := doHTTP("http", "localhost:8080", 100, true)
 
-	fmt.Println("****************Register Ticket*************************")
+	fmt.Println("****************Register Request*************************")
 	taskId, err := registerTicket(client, *artistId, *passphrase, *addr, *imageId)
 	if err != nil {
 		fmt.Println(fmt.Errorf("error register ticket: %v", err))

@@ -155,7 +155,7 @@ func TestGetThumbnail(t *testing.T) {
 			nodeClientMock := nodeMock.NewMockClient(t)
 			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
 
-			service := &Service{
+			service := &NftSearchService{
 				pastelClient: pastelClientMock.Client,
 				nodeClient:   nodeClientMock,
 				config:       NewConfig(),

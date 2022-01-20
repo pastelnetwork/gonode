@@ -20,7 +20,7 @@ func TestNodeConnect(t *testing.T) {
 	}
 
 	testCases := []struct {
-		node                      *NftSearchNode
+		node                      *NftSearchNodeClient
 		address                   string
 		args                      args
 		err                       error
@@ -29,14 +29,14 @@ func TestNodeConnect(t *testing.T) {
 		assertion                 assert.ErrorAssertionFunc
 	}{
 		{
-			node:              &NftSearchNode{address: "127.0.0.1:4444"},
+			node:              &NftSearchNodeClient{address: "127.0.0.1:4444"},
 			address:           "127.0.0.1:4444",
 			args:              args{context.Background()},
 			err:               nil,
 			numberConnectCall: 1,
 			assertion:         assert.NoError,
 		}, {
-			node:              &NftSearchNode{address: "127.0.0.1:4445"},
+			node:              &NftSearchNodeClient{address: "127.0.0.1:4445"},
 			address:           "127.0.0.1:4445",
 			args:              args{context.Background()},
 			err:               fmt.Errorf("connection timeout"),

@@ -27,7 +27,7 @@ func TestNewService(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *Service
+		want *NftDownloadService
 	}{
 		{
 			args: args{
@@ -35,7 +35,7 @@ func TestNewService(t *testing.T) {
 				pastelClient: pastelClient.Client,
 				nodeClient:   nodeClient.Client,
 			},
-			want: &Service{
+			want: &NftDownloadService{
 				config:       config,
 				pastelClient: pastelClient.Client,
 				nodeClient:   nodeClient.Client,
@@ -82,7 +82,7 @@ func TestServiceRun(t *testing.T) {
 			config := &Config{}
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
-			service := &Service{
+			service := &NftDownloadService{
 				config:       config,
 				pastelClient: pastelClient.Client,
 				nodeClient:   nodeClient.Client,
@@ -99,9 +99,9 @@ func TestServiceRun(t *testing.T) {
 func TestServiceAddTask(t *testing.T) {
 	type args struct {
 		ctx    context.Context
-		ticket *Ticket
+		ticket *NftDownloadRequest
 	}
-	ticket := &Ticket{
+	ticket := &NftDownloadRequest{
 		Txid:               "txid",
 		PastelID:           "pastelid",
 		PastelIDPassphrase: "passphrase",
@@ -109,7 +109,7 @@ func TestServiceAddTask(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *Ticket
+		want *NftDownloadRequest
 	}{
 		{
 			args: args{
@@ -129,7 +129,7 @@ func TestServiceAddTask(t *testing.T) {
 			config := &Config{}
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
-			service := &Service{
+			service := &NftDownloadService{
 				config:       config,
 				pastelClient: pastelClient.Client,
 				nodeClient:   nodeClient.Client,
@@ -140,7 +140,7 @@ func TestServiceAddTask(t *testing.T) {
 			go service.Run(ctx)
 			taskID := service.AddTask(testCase.args.ticket)
 			task := service.GetTask(taskID)
-			assert.Equal(t, testCase.want, task.Ticket)
+			assert.Equal(t, testCase.want, task.Request)
 		})
 	}
 }
@@ -148,9 +148,9 @@ func TestServiceAddTask(t *testing.T) {
 func TestServiceGetTask(t *testing.T) {
 	type args struct {
 		ctx    context.Context
-		ticket *Ticket
+		ticket *NftDownloadRequest
 	}
-	ticket := &Ticket{
+	ticket := &NftDownloadRequest{
 		Txid:               "txid",
 		PastelID:           "pastelid",
 		PastelIDPassphrase: "passphrase",
@@ -158,7 +158,7 @@ func TestServiceGetTask(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *Ticket
+		want *NftDownloadRequest
 	}{
 		{
 			args: args{
@@ -178,7 +178,7 @@ func TestServiceGetTask(t *testing.T) {
 			config := &Config{}
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
-			service := &Service{
+			service := &NftDownloadService{
 				config:       config,
 				pastelClient: pastelClient.Client,
 				nodeClient:   nodeClient.Client,
@@ -191,7 +191,7 @@ func TestServiceGetTask(t *testing.T) {
 			service.Worker.AddTask(task)
 			taskID := task.ID()
 			addedTask := service.GetTask(taskID)
-			assert.Equal(t, testCase.want, addedTask.Ticket)
+			assert.Equal(t, testCase.want, addedTask.Request)
 			time.Sleep(time.Second)
 		})
 	}
@@ -200,19 +200,19 @@ func TestServiceGetTask(t *testing.T) {
 func TestServiceListTasks(t *testing.T) {
 	type args struct {
 		ctx     context.Context
-		tickets []*Ticket
+		tickets []*NftDownloadRequest
 	}
-	ticket := &Ticket{
+	ticket := &NftDownloadRequest{
 		Txid:               "txid",
 		PastelID:           "pastelid",
 		PastelIDPassphrase: "passphrase",
 	}
-	var tickets []*Ticket
+	var tickets []*NftDownloadRequest
 	tickets = append(tickets, ticket)
 
 	testCases := []struct {
 		args args
-		want []*Ticket
+		want []*NftDownloadRequest
 	}{
 		{
 			args: args{
@@ -232,7 +232,7 @@ func TestServiceListTasks(t *testing.T) {
 			config := &Config{}
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
-			service := &Service{
+			service := &NftDownloadService{
 				config:       config,
 				pastelClient: pastelClient.Client,
 				nodeClient:   nodeClient.Client,
@@ -248,7 +248,7 @@ func TestServiceListTasks(t *testing.T) {
 
 			for i := range listTaskID {
 				task := service.GetTask(listTaskID[i])
-				assert.Equal(t, testCase.want[i], task.Ticket)
+				assert.Equal(t, testCase.want[i], task.Request)
 			}
 		})
 	}

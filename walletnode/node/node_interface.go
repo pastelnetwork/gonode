@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-type NodeInterface interface {
+type SuperNodeInterface interface {
 	String() string
 	PastelID() string
 	Address() string
@@ -16,11 +16,10 @@ type NodeInterface interface {
 	RUnlock()
 }
 
-type NodeCollectionInterface interface {
-	Add(node *NodeInterface)
+type SuperNodeCollectionInterface interface {
+	AddNewNode(client ClientInterface, address string, pastelID string)
 	Activate()
 	DisconnectInactive()
 	DisconnectAll()
 	WaitConnClose(ctx context.Context, done <-chan struct{}) error
-	FindByPastelID(id string) *NodeInterface
 }

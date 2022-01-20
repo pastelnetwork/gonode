@@ -169,7 +169,7 @@ func TestRunTask(t *testing.T) {
 				pastelClientMock.ListenOnRegTicket(ticket.ActTicketData.RegTXID, testCase.args.regTickets[i], testCase.args.regTicketErr)
 			}
 
-			service := &Service{
+			service := &NftSearchService{
 				pastelClient: pastelClientMock.Client,
 				nodeClient:   nodeClientMock,
 				config:       NewConfig(),
@@ -218,11 +218,11 @@ func TestNewTask(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		service *Service
+		service *NftSearchService
 		req     *ArtSearchRequest
 	}
 
-	service := &Service{
+	service := &NftSearchService{
 		config: NewConfig(),
 	}
 
@@ -238,10 +238,10 @@ func TestNewTask(t *testing.T) {
 				req:     req,
 			},
 			want: &NftSearchTask{
-				WalletNodeTask:  common.NewWalletNodeTask(logPrefix),
-				Service:         service,
-				request:         req,
-				thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
+				WalletNodeTask:   common.NewWalletNodeTask(logPrefix),
+				NftSearchService: service,
+				request:          req,
+				thumbnailHelper:  thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
 			},
 		},
 	}
@@ -252,7 +252,7 @@ func TestNewTask(t *testing.T) {
 			t.Parallel()
 
 			task := NewNftSearchTask(testCase.args.service, testCase.args.req)
-			assert.Equal(t, testCase.want.Service, task.Service)
+			assert.Equal(t, testCase.want.NftSearchService, task.NftSearchService)
 			assert.Equal(t, testCase.want.request, task.request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 		})

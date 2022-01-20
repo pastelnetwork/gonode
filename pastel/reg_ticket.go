@@ -47,7 +47,7 @@ type RegTicketData struct {
 	NFTTicketData  NFTTicket           `json:"-"`
 }
 
-// NFTTicket is Pastel NFT Ticket
+// NFTTicket is Pastel NFT Request
 type NFTTicket struct {
 	Version       int       `json:"nft_ticket_version"`
 	Author        string    `json:"author"`
@@ -121,7 +121,7 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 
 	appTicket := b85.Encode(appTicketBytes)
 
-	// NFTTicket is Pastel Art Ticket
+	// NFTTicket is Pastel Art Request
 	nftTicket := internalNFTTicket{
 		Version:   ticket.Version,
 		Author:    ticket.Author,

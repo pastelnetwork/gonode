@@ -1198,7 +1198,7 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 						config: &Config{},
 					},
 					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
-					Ticket: &pastel.NFTTicket{
+					Request: &pastel.NFTTicket{
 						Author: "author-id-b",
 						AppTicketData: pastel.AppTicket{
 							CreatorName: "Andy",

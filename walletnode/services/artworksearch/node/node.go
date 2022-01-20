@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
@@ -9,26 +10,26 @@ import (
 )
 
 // Node represent supernode connection.
-type NftSearchNode struct {
-	node.BaseNode
+type NftSearchNodeClient struct {
+	common.SuperNodeClient
 	node.DownloadNftInterface
 
 	fingerprint []byte
 }
 
 // Connect connects to supernode.
-func (node *NftSearchNode) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo) error {
-	conn, err := node.BaseNode.Connect(ctx, timeout, secInfo)
+func (node *NftSearchNodeClient) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo) error {
+	err := node.SuperNodeClient.Connect(ctx, timeout, secInfo)
 	if err != nil {
 		return err
 	}
-	node.DownloadNftInterface = conn.DownloadArtwork()
+	node.DownloadNftInterface = node.DownloadArtwork()
 	return nil
 }
 
 // NewNode returns a new Node instance.
-func NewNode(client node.ClientInterface, address, pastelID string) *NftSearchNode {
-	return &NftSearchNode{
-		BaseNode: *node.NewBaseNode(client, address, pastelID),
+func NewNode(client node.ClientInterface, address, pastelID string) *NftSearchNodeClient {
+	return &NftSearchNodeClient{
+		SuperNodeClient: *common.NewSuperNode(client, address, pastelID),
 	}
 }

@@ -18,7 +18,7 @@ import (
 // NftSearchTask is the task of searching for artwork.
 type NftSearchTask struct {
 	*common.WalletNodeTask
-	*Service
+	*NftSearchService
 
 	searchResult   []*RegTicketSearch
 	searchResMutex sync.Mutex
@@ -58,7 +58,7 @@ func (task *NftSearchTask) run(ctx context.Context) error {
 		group.Go(func() error {
 			regTicket, err := task.RegTicket(gctx, ticket.ActTicketData.RegTXID)
 			if err != nil {
-				log.WithContext(ctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg Ticket")
+				log.WithContext(ctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg Request")
 
 				return fmt.Errorf("reg ticket - txid: %s - err: %s", ticket.TXID, err)
 			}
@@ -192,12 +192,12 @@ func (task *NftSearchTask) removeArtifacts() {
 }
 
 // NewNftSearchTask returns a new NftSearchTask instance.
-func NewNftSearchTask(service *Service, request *ArtSearchRequest) *NftSearchTask {
+func NewNftSearchTask(service *NftSearchService, request *ArtSearchRequest) *NftSearchTask {
 	return &NftSearchTask{
-		WalletNodeTask:  common.NewWalletNodeTask(logPrefix),
-		Service:         service,
-		request:         request,
-		resultChan:      make(chan *RegTicketSearch),
-		thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
+		WalletNodeTask:   common.NewWalletNodeTask(logPrefix),
+		NftSearchService: service,
+		request:          request,
+		resultChan:       make(chan *RegTicketSearch),
+		thumbnailHelper:  thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
 	}
 }

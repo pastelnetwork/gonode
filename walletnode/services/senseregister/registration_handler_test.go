@@ -1,4 +1,4 @@
-package node
+package senseregister
 
 import (
 	"context"
@@ -17,7 +17,7 @@ func TestNodesAdd(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		node *SenseRegisterNode
+		node *SenseRegisterNodeClient
 	}
 	testCases := []struct {
 		nodes List
@@ -26,9 +26,9 @@ func TestNodesAdd(t *testing.T) {
 	}{
 		{
 			nodes: List{},
-			args:  args{node: &SenseRegisterNode{address: "127.0.0.1"}},
+			args:  args{node: &SenseRegisterNodeClient{address: "127.0.0.1"}},
 			want: List{
-				&SenseRegisterNode{address: "127.0.0.1"},
+				&SenseRegisterNodeClient{address: "127.0.0.1"},
 			},
 		},
 	}
@@ -53,8 +53,8 @@ func TestNodesActivate(t *testing.T) {
 	}{
 		{
 			nodes: List{
-				&SenseRegisterNode{address: "127.0.0.1"},
-				&SenseRegisterNode{address: "127.0.0.2"},
+				&SenseRegisterNodeClient{address: "127.0.0.1"},
+				&SenseRegisterNodeClient{address: "127.0.0.2"},
 			},
 		},
 	}
@@ -114,7 +114,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 			for _, c := range testCase.conn {
 				c.client.ListenOnClose(nil)
 
-				node := &SenseRegisterNode{
+				node := &SenseRegisterNodeClient{
 					ConnectionInterface: c.client.Connection,
 					activated:           c.activated,
 					mtx:                 &sync.RWMutex{},
@@ -148,19 +148,19 @@ func TestNodesFindByPastelID(t *testing.T) {
 	testCases := []struct {
 		nodes List
 		args  args
-		want  *SenseRegisterNode
+		want  *SenseRegisterNodeClient
 	}{
 		{
 			nodes: List{
-				&SenseRegisterNode{pastelID: "1"},
-				&SenseRegisterNode{pastelID: "2"},
+				&SenseRegisterNodeClient{pastelID: "1"},
+				&SenseRegisterNodeClient{pastelID: "2"},
 			},
 			args: args{"2"},
-			want: &SenseRegisterNode{pastelID: "2"},
+			want: &SenseRegisterNodeClient{pastelID: "2"},
 		}, {
 			nodes: List{
-				&SenseRegisterNode{pastelID: "1"},
-				&SenseRegisterNode{pastelID: "2"},
+				&SenseRegisterNodeClient{pastelID: "1"},
+				&SenseRegisterNodeClient{pastelID: "2"},
 			},
 			args: args{"3"},
 			want: nil,
@@ -304,7 +304,7 @@ func TestNodesSendImage(t *testing.T) {
 				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.validBurnTxID, testCase.err)
 				clients = append(clients, client)
 
-				nodes.Add(&SenseRegisterNode{
+				nodes.Add(&SenseRegisterNodeClient{
 					address:                a.address,
 					RegisterSenseInterface: client.RegisterSense,
 				})

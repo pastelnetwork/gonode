@@ -14,14 +14,14 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
-// Sense - Sense service
-type Sense struct {
+// SenseApiHandler - SenseApiHandler service
+type SenseApiHandler struct {
 	*Common
-	register *senseregister.Service
+	register *senseregister.SenseRegisterService
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
-func (service *Sense) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+func (service *SenseApiHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := sense.NewEndpoints(service)
 
 	srv := server.New(
@@ -44,12 +44,12 @@ func (service *Sense) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Serv
 }
 
 // UploadImage - Uploads an image and return unique image id
-func (service *Sense) UploadImage(ctx context.Context, p *sense.UploadImagePayload) (res *sense.Image, err error) {
+func (service *SenseApiHandler) UploadImage(ctx context.Context, p *sense.UploadImagePayload) (res *sense.Image, err error) {
 	if p.Filename == nil {
 		return nil, sense.MakeBadRequest(errors.New("file not specified"))
 	}
 
-	id, expiry, err := service.register.ImageHandler.StoreFileNameIntoStorage(ctx, p.Filename)
+	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}
@@ -63,22 +63,9 @@ func (service *Sense) UploadImage(ctx context.Context, p *sense.UploadImagePaylo
 }
 
 // ActionDetails - Starts an action data task
-func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
-	// get imageData from storage based on imageID
-	imgData, err := service.register.ImageHandler.GetImgData(p.ImageID)
-	if err != nil {
-		return nil, sense.MakeInternalServerError(errors.Errorf("get image data: %w", err))
-	}
+func (service *SenseApiHandler) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
 
-	ImgSizeInMb := int64(len(imgData)) / (1024 * 1024)
-
-	// Validate image signature
-	err = service.register.PastelHandler.VerifySignature(ctx, imgData, p.ActionDataSignature, p.PastelID)
-	if err != nil {
-		return nil, sense.MakeInternalServerError(err)
-	}
-
-	fee, err := service.register.PastelHandler.GetEstimatedActionFee(ctx, ImgSizeInMb)
+	fee, err := service.register.GetActionRegistrationDetails(ctx, p.ImageID, p.ActionDataSignature, p.PastelID)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}
@@ -92,8 +79,7 @@ func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsP
 }
 
 // StartProcessing - Starts a processing image task
-func (service *Sense) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
-
+func (service *SenseApiHandler) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
@@ -107,7 +93,7 @@ func (service *Sense) StartProcessing(_ context.Context, p *sense.StartProcessin
 }
 
 // RegisterTaskState - Registers a task state
-func (service *Sense) RegisterTaskState(ctx context.Context, p *sense.RegisterTaskStatePayload, stream sense.RegisterTaskStateServerStream) (err error) {
+func (service *SenseApiHandler) RegisterTaskState(ctx context.Context, p *sense.RegisterTaskStatePayload, stream sense.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
 	task := service.register.GetTask(p.TaskID)
@@ -137,9 +123,9 @@ func (service *Sense) RegisterTaskState(ctx context.Context, p *sense.RegisterTa
 	}
 }
 
-// NewSense returns the swagger OpenAPI implementation.
-func NewSense(register *senseregister.Service) *Sense {
-	return &Sense{
+// NewSenseApiHandler returns the swagger OpenAPI implementation.
+func NewSenseApiHandler(register *senseregister.SenseRegisterService) *SenseApiHandler {
+	return &SenseApiHandler{
 		Common:   NewCommon(),
 		register: register,
 	}

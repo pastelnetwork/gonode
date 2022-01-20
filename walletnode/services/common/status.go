@@ -16,7 +16,7 @@ const (
 	// NFT Download
 	StatusDownloaded
 
-	// Ticket
+	// Request
 	StatusTicketAccepted
 	StatusTicketRegistered
 	StatusTicketActivated
@@ -55,9 +55,9 @@ var statusNames = map[Status]string{
 	// NFT Download
 	StatusDownloaded: "Downloaded",
 
-	StatusTicketAccepted:   "Ticket Accepted",
-	StatusTicketRegistered: "Ticket Registered",
-	StatusTicketActivated:  "Ticket Activated",
+	StatusTicketAccepted:   "Request Accepted",
+	StatusTicketRegistered: "Request Registered",
+	StatusTicketActivated:  "Request Activated",
 
 	// Errors
 	StatusErrorInsufficientFee:         "Error Insufficient Fee",

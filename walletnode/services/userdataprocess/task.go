@@ -310,27 +310,6 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	return meshNodes, nil
 }
 
-// pastelTopNodes retrieve the top super nodes we want to send userdata to, limit by maxNode
-func (task *Task) pastelTopNodes(ctx context.Context, maxNode int) (node.List, error) {
-	var nodes node.List
-
-	mns, err := task.pastelClient.MasterNodesTop(ctx)
-	if err != nil {
-		return nil, err
-	}
-	count := 0
-	for _, mn := range mns {
-		count++
-		if count <= maxNode {
-			nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
-		} else {
-			break
-		}
-	}
-
-	return nodes, nil
-}
-
 // Error returns task err
 func (task *Task) Error() error {
 	return task.err

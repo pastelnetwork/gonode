@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 	"math/rand"
 	"sync"
 	"time"
@@ -27,48 +28,38 @@ import (
 // NftRegistrationTask is the task of registering new artwork.
 type NftRegistrationTask struct {
 	*common.WalletNodeTask
-	*Service
 
+	service *NftRegisterService
 	Request *NftRegisterRequest
 
-	// information of nodes
-	nodes node.List
+	meshHandler *mixins.MeshHandler
+	fpHandler   *mixins.FingerprintsHandler
 
 	// task data to create RegArt ticket
 	creatorBlockHeight           int
 	creatorBlockHash             string
-	fingerprintAndScores         *pastel.DDAndFingerprints
-	fingerprint                  []byte
 	imageEncodedWithFingerprints *files.File
 	previewHash                  []byte
 	mediumThumbnailHash          []byte
 	smallThumbnailHash           []byte
 	datahash                     []byte
-	rqids                        []string
-	rqEncodeParams               rqnode.EncoderParameters
 
 	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
 	signatures [][]byte
 
-	// ddAndFingerprintsIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
-	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
-	ddAndFingerprintsIDs []string
-	// ddAndFpFile is Base64(compressed(Base64(dd_and_fingerprints).Base64(signatureSN1).Base64(signatureSN3)))
-	ddAndFpFile         []byte
-	ddAndFingerprintsIc uint32
-
-	// rqIDsFile is Base64(compress(Base64(rq_ids).Base64(signature)))
-	rqIDsFile []byte
-	rqIDsIc   uint32
+	rqids          []string
+	rqEncodeParams rqnode.EncoderParameters
+	rqIDsFile      []byte
+	rqIDsIc        uint32
 
 	// ticket
 	creatorSignature []byte
 	ticket           *pastel.NFTTicket
 
 	// TODO: call cNodeAPI to get the following info
-	burnTxid        string
-	regNFTTxid      string
-	registrationFee int64
+	//burnTxid        string
+	//regNFTTxid      string
+	//registrationFee int64
 }
 
 // Run starts the task
@@ -103,9 +94,12 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	})
 
 	// get block height + hash
-	if err := task.getBlock(ctx); err != nil {
-		return errors.Errorf("get current block heigth: %w", err)
+	blockNum, blockHash, err := task.GetBlock(ctx)
+	if err != nil {
+		return errors.Errorf("get current block heigth: %v", err)
 	}
+	task.creatorBlockHeight = blockNum
+	task.creatorBlockHash = blockHash
 
 	// send registration metadata
 	if err := task.sendRegMetadata(ctx); err != nil {
@@ -147,7 +141,10 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	}
 
 	// validate if address has enough psl
-	if err := task.checkCurrentBalance(ctx, float64(task.registrationFee)); err != nil {
+	if err := task.CheckRegistrationFee(ctx,
+		task.Request.SpendableAddress,
+		float64(task.registrationFee),
+		task.Request.MaximumFee); err != nil {
 		return errors.Errorf("check current balance: %w", err)
 	}
 
@@ -232,27 +229,6 @@ func (task *NftRegistrationTask) generateDDAndFingerprintsIDs() error {
 	return nil
 }
 
-func (task *NftRegistrationTask) checkCurrentBalance(ctx context.Context, registrationFee float64) error {
-	if registrationFee == 0 {
-		return errors.Errorf("invalid registration fee: %f", registrationFee)
-	}
-
-	if registrationFee > task.Request.MaximumFee {
-		return errors.Errorf("registration fee is to expensive - maximum-fee (%f) < registration-fee(%f)", task.Request.MaximumFee, registrationFee)
-	}
-
-	balance, err := task.pastelClient.GetBalance(ctx, task.Request.SpendableAddress)
-	if err != nil {
-		return errors.Errorf("get balance of address(%s): %w", task.Request.SpendableAddress, err)
-	}
-
-	if balance < registrationFee {
-		return errors.Errorf("not enough PSL - balance(%f) < registration-fee(%f)", balance, registrationFee)
-	}
-
-	return nil
-}
-
 func (task *NftRegistrationTask) encodeFingerprint(ctx context.Context, fingerprint []byte, img *files.File) error {
 	// Sign fingerprint
 	ed448PubKey, err := getPubKey(task.Request.ArtistPastelID)
@@ -260,17 +236,25 @@ func (task *NftRegistrationTask) encodeFingerprint(ctx context.Context, fingerpr
 		return fmt.Errorf("encodeFingerprint: %v", err)
 	}
 
-	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
+	ed448Signature, err := task.PastelClient.Sign(ctx,
+		fingerprint,
+		task.Request.ArtistPastelID,
+		task.Request.ArtistPastelIDPassphrase,
+		pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign fingerprint: %w", err)
 	}
 
-	ticket, err := task.pastelClient.FindTicketByID(ctx, task.Request.ArtistPastelID)
+	ticket, err := task.PastelClient.FindTicketByID(ctx, task.Request.ArtistPastelID)
 	if err != nil {
 		return errors.Errorf("find register ticket of artist pastel id(%s):%w", task.Request.ArtistPastelID, err)
 	}
 
-	pqSignature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmLegRoast)
+	pqSignature, err := task.PastelClient.Sign(ctx,
+		fingerprint,
+		task.Request.ArtistPastelID,
+		task.Request.ArtistPastelIDPassphrase,
+		pastel.SignAlgorithmLegRoast)
 	if err != nil {
 		return errors.Errorf("sign fingerprint with legroats: %w", err)
 	}
@@ -384,63 +368,11 @@ func (task *NftRegistrationTask) meshNodes(ctx context.Context, nodes node.List,
 }
 
 func (task *NftRegistrationTask) isSuitableStorageFee(ctx context.Context) (bool, error) {
-	fee, err := task.pastelClient.StorageNetworkFee(ctx)
+	fee, err := task.PastelClient.StorageNetworkFee(ctx)
 	if err != nil {
 		return false, err
 	}
 	return fee <= task.Request.MaximumFee, nil
-}
-
-func (task *NftRegistrationTask) pastelTopNodes(ctx context.Context) (node.List, error) {
-	var nodes node.List
-
-	mns, err := task.pastelClient.MasterNodesTop(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, mn := range mns {
-		if mn.Fee > task.Request.MaximumFee {
-			continue
-		}
-
-		if mn.ExtKey == "" || mn.ExtAddress == "" {
-			continue
-		}
-
-		// Ensures that the PastelId(mn.ExtKey) of MN node is registered
-		_, err = task.pastelClient.FindTicketByID(ctx, mn.ExtKey)
-		if err != nil {
-			log.WithContext(ctx).WithField("mn", mn).Warn("FindTicketByID() failed")
-			continue
-		}
-		nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
-	}
-
-	return nodes, nil
-}
-
-// determine current block height & hash of it
-func (task *NftRegistrationTask) getBlock(ctx context.Context) error {
-	// Get block num
-	blockNum, err := task.pastelClient.GetBlockCount(ctx)
-	task.creatorBlockHeight = int(blockNum)
-	if err != nil {
-		return errors.Errorf("get block num: %w", err)
-	}
-
-	// Get block hash string
-	blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
-	if err != nil {
-		return errors.Errorf("get block info blocknum=%d: %w", blockNum, err)
-	}
-
-	// Decode hash string to byte
-	task.creatorBlockHash = blockInfo.Hash
-	if err != nil {
-		return errors.Errorf("convert hash string %s to bytes: %w", blockInfo.Hash, err)
-	}
-
-	return nil
 }
 
 func (task *NftRegistrationTask) genRQIdentifiersFiles(ctx context.Context) error {
@@ -457,7 +389,7 @@ func (task *NftRegistrationTask) genRQIdentifiersFiles(ctx context.Context) erro
 	}
 
 	rqService := conn.RaptorQ(&rqnode.Config{
-		RqFilesDir: task.Service.config.RqFilesDir,
+		RqFilesDir: task.NftRegisterService.config.RqFilesDir,
 	})
 
 	// FIXME :
@@ -492,7 +424,11 @@ func (task *NftRegistrationTask) generateRQIDs(ctx context.Context, rawFile rqno
 		return fmt.Errorf("marshal rqID file")
 	}
 
-	signature, err := task.pastelClient.Sign(ctx, file, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
+	signature, err := task.PastelClient.Sign(ctx,
+		file,
+		task.Request.ArtistPastelID,
+		task.Request.ArtistPastelIDPassphrase,
+		pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign identifiers file: %w", err)
 	}
@@ -585,7 +521,7 @@ func (task *NftRegistrationTask) signTicket(ctx context.Context) error {
 		return errors.Errorf("encode ticket %w", err)
 	}
 
-	task.creatorSignature, err = task.pastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
+	task.creatorSignature, err = task.PastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign ticket %w", err)
 	}
@@ -593,12 +529,19 @@ func (task *NftRegistrationTask) signTicket(ctx context.Context) error {
 }
 
 func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string, error) {
-	return task.pastelClient.RegisterActTicket(ctx, task.regNFTTxid, task.creatorBlockHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+	return task.PastelClient.RegisterActTicket(ctx,
+		task.regNFTTxid,
+		task.creatorBlockHeight,
+		task.registrationFee,
+		task.Request.ArtistPastelID,
+		task.Request.ArtistPastelIDPassphrase)
 }
 
 func (task *NftRegistrationTask) connectToTopRankNodes(ctx context.Context) error {
 	// Retrieve supernodes with highest ranks.
-	topNodes, err := task.pastelTopNodes(ctx)
+
+	var topNodes node.List
+	err := task.GetTopNodes(ctx, &topNodes, task.NftRegisterService.nodeClient, 0)
 	if err != nil {
 		return errors.Errorf("call masternode top: %w", err)
 	}
@@ -688,7 +631,11 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context) error {
 	signatures := [][]byte{}
 	// Match signatures received from supernodes.
 	for i := 0; i < len(task.nodes); i++ {
-		verified, err := task.pastelClient.Verify(ctx, task.nodes[i].FingerprintAndScoresBytes, string(task.nodes[i].Signature), task.nodes[i].PastelID(), pastel.SignAlgorithmED448)
+		verified, err := task.PastelClient.Verify(ctx,
+			task.nodes[i].FingerprintAndScoresBytes,
+			string(task.nodes[i].Signature),
+			task.nodes[i].PastelID(),
+			pastel.SignAlgorithmED448)
 		if err != nil {
 			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
 		}
@@ -785,7 +732,7 @@ func (task *NftRegistrationTask) preburntRegistrationFee(ctx context.Context) er
 	}
 
 	burnedAmount := float64(task.registrationFee) / 10
-	burnTxid, err := task.pastelClient.SendFromAddress(ctx, task.Request.SpendableAddress, task.config.BurnAddress, burnedAmount)
+	burnTxid, err := task.PastelClient.SendFromAddress(ctx, task.Request.SpendableAddress, task.config.BurnAddress, burnedAmount)
 	if err != nil {
 		return errors.Errorf("burn 10 percent of transaction fee: %w", err)
 	}
@@ -811,10 +758,11 @@ func (task *NftRegistrationTask) removeArtifacts() {
 }
 
 // NewNFTRegistrationTask returns a new Task instance.
-func NewNFTRegistrationTask(service *Service, Ticket *NftRegisterRequest) *NftRegistrationTask {
+func NewNFTRegistrationTask(service *NftRegisterService, request *NftRegisterRequest) *NftRegistrationTask {
 	return &NftRegistrationTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-		Service:        service,
-		Request:        Ticket,
+		service:        service,
+		Request:        request,
+		meshHandler:    mixins.NewMeshHandler(service.nodeClient),
 	}
 }

@@ -14,11 +14,11 @@ import (
 // Task is the task of downloading artwork.
 type NftDownloadTask struct {
 	*common.WalletNodeTask
-	*Service
+	*NftDownloadService
 
-	Ticket *Ticket
-	File   []byte
-	err    error
+	Request *NftDownloadRequest
+	File    []byte
+	err     error
 }
 
 // Run starts the task
@@ -36,17 +36,17 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	ttxid, err := task.pastelClient.TicketOwnership(ctx, task.Ticket.Txid, task.Ticket.PastelID, task.Ticket.PastelIDPassphrase)
+	ttxid, err := task.pastelClient.TicketOwnership(ctx, task.Request.Txid, task.Request.PastelID, task.Request.PastelIDPassphrase)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("txid", task.Ticket.Txid).WithField("pastelid", task.Ticket.PastelID).Error("Could not get ticket ownership")
+		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("pastelid", task.Request.PastelID).Error("Could not get ticket ownership")
 		return errors.Errorf("get ticket ownership: %w", err)
 	}
 
 	// Sign current-timestamp with PsstelID passed in request
 	timestamp := time.Now().Format(time.RFC3339)
-	signature, err := task.pastelClient.Sign(ctx, []byte(timestamp), task.Ticket.PastelID, task.Ticket.PastelIDPassphrase, "ed448")
+	signature, err := task.pastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, "ed448")
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Ticket.PastelID).Error("Could not sign timestamp")
+		log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
 		return errors.Errorf("sign timestamp: %w", err)
 	}
 
@@ -63,17 +63,17 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	//var connectedNodes node.List
 	//var errs error
 	secInfo := &alts.SecInfo{
-		PastelID:   task.Ticket.PastelID,
-		PassPhrase: task.Ticket.PastelIDPassphrase,
+		PastelID:   task.Request.PastelID,
+		PassPhrase: task.Request.PastelIDPassphrase,
 		Algorithm:  "ed448",
 	}
 
 	// Send download request to all top supernodes.
 	var nodes node.List
 
-	downloadErrs, err := topNodes.Download(ctx, task.Ticket.Txid, timestamp, string(signature), ttxid, task.config.connectToNodeTimeout, secInfo)
+	downloadErrs, err := topNodes.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.config.connectToNodeTimeout, secInfo)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("txid", task.Ticket.Txid).Error("Could not download files")
+		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not download files")
 		task.UpdateStatus(common.StatusErrorDownloadFailed)
 		return errors.Errorf("download files from supernodes: %w", err)
 	}
@@ -108,28 +108,14 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	return nil
 }
 
-func (task *NftDownloadTask) pastelTopNodes(ctx context.Context) (node.List, error) {
-	var nodes node.List
-
-	mns, err := task.pastelClient.MasterNodesTop(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, mn := range mns {
-		nodes.Add(node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
-	}
-
-	return nodes, nil
-}
-
 func (task *NftDownloadTask) removeArtifacts() {
 }
 
 // NewNftDownloadTask returns a new Task instance.
-func NewNftDownloadTask(service *Service, ticket *Ticket) *NftDownloadTask {
+func NewNftDownloadTask(service *NftDownloadService, request *NftDownloadRequest) *NftDownloadTask {
 	return &NftDownloadTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-		Service:        service,
-		Ticket:         ticket,
+		WalletNodeTask:     common.NewWalletNodeTask(logPrefix),
+		NftDownloadService: service,
+		Request:            request,
 	}
 }

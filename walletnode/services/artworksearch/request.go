@@ -1,5 +1,7 @@
 package artworksearch
 
+import "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+
 // ArtSearchQueryField represents artsearch query-able field
 type ArtSearchQueryField string
 
@@ -68,4 +70,35 @@ type ArtSearchRequest struct {
 	UserPastelID string
 	//UserPastelID
 	UserPassphrase string
+}
+
+func FromArtSearchRequest(req *artworks.ArtSearchPayload) *ArtSearchRequest {
+	rq := &ArtSearchRequest{
+		Artist:           req.Artist,
+		Limit:            req.Limit,
+		Query:            req.Query,
+		ArtistName:       req.ArtistName,
+		ArtTitle:         req.ArtTitle,
+		Series:           req.Series,
+		Descr:            req.Descr,
+		Keyword:          req.Keyword,
+		MinBlock:         req.MinBlock,
+		MaxBlock:         req.MaxBlock,
+		MinCopies:        req.MinCopies,
+		MaxCopies:        req.MaxCopies,
+		MinNsfwScore:     req.MinNsfwScore,
+		MaxNsfwScore:     req.MaxNsfwScore,
+		MinRarenessScore: req.MinRarenessScore,
+		MaxRarenessScore: req.MaxRarenessScore,
+	}
+
+	if req.UserPastelid != nil {
+		rq.UserPastelID = *req.UserPastelid
+	}
+
+	if req.UserPassphrase != nil {
+		rq.UserPassphrase = *req.UserPassphrase
+	}
+
+	return rq
 }

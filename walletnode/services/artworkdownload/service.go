@@ -2,6 +2,8 @@ package artworkdownload
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -14,16 +16,16 @@ const (
 )
 
 // Service represents a service for the registration NFT.
-type Service struct {
+type NftDownloadService struct {
 	*task.Worker
 
-	config       *Config
-	pastelClient pastel.Client
-	nodeClient   node.ClientInterface
+	config        *Config
+	pastelHandler *mixins.PastelHandler
+	nodeClient    node.ClientInterface
 }
 
 // Run starts worker.
-func (service *Service) Run(ctx context.Context) error {
+func (service *NftDownloadService) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
@@ -33,7 +35,7 @@ func (service *Service) Run(ctx context.Context) error {
 }
 
 // Tasks returns all tasks.
-func (service *Service) Tasks() []*NftDownloadTask {
+func (service *NftDownloadService) Tasks() []*NftDownloadTask {
 	var tasks []*NftDownloadTask
 	for _, task := range service.Worker.Tasks() {
 		tasks = append(tasks, task.(*NftDownloadTask))
@@ -42,7 +44,7 @@ func (service *Service) Tasks() []*NftDownloadTask {
 }
 
 // GetTask returns the task of the NFT downloading by the given id.
-func (service *Service) GetTask(id string) *NftDownloadTask {
+func (service *NftDownloadService) GetTask(id string) *NftDownloadTask {
 	if t := service.Worker.Task(id); t != nil {
 		return t.(*NftDownloadTask)
 	}
@@ -50,19 +52,21 @@ func (service *Service) GetTask(id string) *NftDownloadTask {
 }
 
 // AddTask adds a new task of the NFT downloading and returns its taskID.
-func (service *Service) AddTask(ticket *Ticket) string {
-	task := NewNftDownloadTask(service, ticket)
+func (service *NftDownloadService) AddTask(p *artworks.ArtworkDownloadPayload) string {
+	request := FromDownloadPayload(p)
+
+	task := NewNftDownloadTask(service, request)
 	service.Worker.AddTask(task)
 
 	return task.ID()
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *Service {
-	return &Service{
-		config:       config,
-		pastelClient: pastelClient,
-		nodeClient:   nodeClient,
-		Worker:       task.NewWorker(),
+func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *NftDownloadService {
+	return &NftDownloadService{
+		config:        config,
+		pastelHandler: mixins.NewPastelHandler(pastelClient),
+		nodeClient:    nodeClient,
+		Worker:        task.NewWorker(),
 	}
 }

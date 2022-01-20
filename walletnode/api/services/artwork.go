@@ -29,23 +29,23 @@ const (
 	defaultImageTTL = time.Second * 3600 // 1 hour
 )
 
-// Artwork represents services for artworks endpoints.
-type Artwork struct {
+// NftApiHandler represents services for artworks endpoints.
+type NftApiHandler struct {
 	*Common
-	register *artworkregister.Service
-	search   *artworksearch.Service
-	download *artworkdownload.Service
+	register *artworkregister.NftRegisterService
+	search   *artworksearch.NftSearchService
+	download *artworkdownload.NftDownloadService
 	db       storage.KeyValue
 	imageTTL time.Duration
 }
 
 // APIKeyAuth implements the authorization logic for the APIKey security scheme.
-func (service *Artwork) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
+func (service *NftApiHandler) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
 	return ctx, nil
 }
 
 // Mount configures the mux to serve the artworks endpoints.
-func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+func (service *NftApiHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := artworks.NewEndpoints(service)
 	srv := server.New(
 		endpoints,
@@ -68,12 +68,12 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 
 // --- Register NFT ---
 // UploadImage uploads an image and return unique image id.
-func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
+func (service *NftApiHandler) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
 	if p.Filename == nil {
 		return nil, artworks.MakeBadRequest(errors.New("file not specified"))
 	}
 
-	id, expiry, err := service.register.ImageHandler.StoreFileNameIntoStorage(ctx, p.Filename)
+	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
@@ -86,7 +86,7 @@ func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImage
 }
 
 // Register runs registers process for the new NFT.
-func (service *Artwork) Register(_ context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
+func (service *NftApiHandler) Register(_ context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
@@ -99,7 +99,7 @@ func (service *Artwork) Register(_ context.Context, p *artworks.RegisterPayload)
 }
 
 // RegisterTaskState streams the state of the registration process.
-func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.RegisterTaskStatePayload, stream artworks.RegisterTaskStateServerStream) (err error) {
+func (service *NftApiHandler) RegisterTaskState(ctx context.Context, p *artworks.RegisterTaskStatePayload, stream artworks.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
 	task := service.register.GetTask(p.TaskID)
@@ -130,7 +130,7 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 }
 
 // RegisterTask returns a single task.
-func (service *Artwork) RegisterTask(_ context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
+func (service *NftApiHandler) RegisterTask(_ context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
 		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
@@ -146,7 +146,7 @@ func (service *Artwork) RegisterTask(_ context.Context, p *artworks.RegisterTask
 }
 
 // RegisterTasks returns list of all tasks.
-func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskCollection, err error) {
+func (service *NftApiHandler) RegisterTasks(_ context.Context) (res artworks.TaskCollection, err error) {
 	tasks := service.register.Tasks()
 	for _, task := range tasks {
 		res = append(res, &artworks.Task{
@@ -159,11 +159,10 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 }
 
 // --- Download registered NFT ---
-func (service *Artwork) Download(ctx context.Context, p *artworks.ArtworkDownloadPayload) (res *artworks.DownloadResult, err error) {
+func (service *NftApiHandler) Download(ctx context.Context, p *artworks.ArtworkDownloadPayload) (res *artworks.DownloadResult, err error) {
 	log.WithContext(ctx).Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
-	ticket := fromDownloadPayload(p)
-	taskID := service.download.AddTask(ticket)
+	taskID := service.download.AddTask(p)
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
 
@@ -196,11 +195,10 @@ func (service *Artwork) Download(ctx context.Context, p *artworks.ArtworkDownloa
 
 // --- Search registered NFTs and return details ---
 // ArtSearch searches for NFT & streams the result based on filters
-func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
+func (service *NftApiHandler) ArtSearch(ctx context.Context, p *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
 	defer stream.Close()
 
-	searchReq := fromArtSearchRequest(req)
-	taskID := service.search.AddTask(searchReq)
+	taskID := service.search.AddTask(p)
 	task := service.search.GetTask(taskID)
 
 	resultChan := task.SubscribeSearchResult()
@@ -226,7 +224,7 @@ func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPa
 }
 
 // ArtworkGet returns NFT detail
-func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPayload) (res *artworks.ArtworkDetail, err error) {
+func (service *NftApiHandler) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPayload) (res *artworks.ArtworkDetail, err error) {
 	ticket, err := service.search.RegTicket(ctx, p.Txid)
 	if err != nil {
 		return nil, artworks.MakeBadRequest(err)
@@ -245,9 +243,9 @@ func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPa
 	return res, nil
 }
 
-// NewArtwork returns the artworks Artwork implementation.
-func NewArtwork(register *artworkregister.Service, search *artworksearch.Service, download *artworkdownload.Service) *Artwork {
-	return &Artwork{
+// NewNftApiHandler returns the artworks NftApiHandler implementation.
+func NewNftApiHandler(register *artworkregister.NftRegisterService, search *artworksearch.NftSearchService, download *artworkdownload.NftDownloadService) *NftApiHandler {
+	return &NftApiHandler{
 		Common:   NewCommon(),
 		register: register,
 		search:   search,

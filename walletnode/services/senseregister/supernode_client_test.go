@@ -1,4 +1,4 @@
-package node
+package senseregister
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func TestNodeConnect(t *testing.T) {
 	}
 
 	testCases := []struct {
-		node                      *SenseRegisterNode
+		node                      *SenseRegisterNodeClient
 		address                   string
 		args                      args
 		err                       error
@@ -30,7 +30,7 @@ func TestNodeConnect(t *testing.T) {
 		assertion                 assert.ErrorAssertionFunc
 	}{
 		{
-			node:                      &SenseRegisterNode{address: "127.0.0.1:4444", mtx: &sync.RWMutex{}},
+			node:                      &SenseRegisterNodeClient{address: "127.0.0.1:4444", mtx: &sync.RWMutex{}},
 			address:                   "127.0.0.1:4444",
 			args:                      args{context.Background()},
 			err:                       nil,
@@ -38,7 +38,7 @@ func TestNodeConnect(t *testing.T) {
 			numberRegisterArtWorkCall: 1,
 			assertion:                 assert.NoError,
 		}, {
-			node:                      &SenseRegisterNode{address: "127.0.0.1:4445", mtx: &sync.RWMutex{}},
+			node:                      &SenseRegisterNodeClient{address: "127.0.0.1:4445", mtx: &sync.RWMutex{}},
 			address:                   "127.0.0.1:4445",
 			args:                      args{context.Background()},
 			err:                       fmt.Errorf("connection timeout"),

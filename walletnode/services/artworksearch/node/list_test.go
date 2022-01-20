@@ -12,7 +12,7 @@ func TestNodesAdd(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		node *NftSearchNode
+		node *NftSearchNodeClient
 	}
 	testCases := []struct {
 		nodes List
@@ -21,9 +21,9 @@ func TestNodesAdd(t *testing.T) {
 	}{
 		{
 			nodes: List{},
-			args:  args{node: &NftSearchNode{address: "127.0.0.1"}},
+			args:  args{node: &NftSearchNodeClient{address: "127.0.0.1"}},
 			want: List{
-				&NftSearchNode{address: "127.0.0.1"},
+				&NftSearchNodeClient{address: "127.0.0.1"},
 			},
 		},
 	}
@@ -48,8 +48,8 @@ func TestNodesActivate(t *testing.T) {
 	}{
 		{
 			nodes: List{
-				&NftSearchNode{address: "127.0.0.1"},
-				&NftSearchNode{address: "127.0.0.2"},
+				&NftSearchNodeClient{address: "127.0.0.1"},
+				&NftSearchNodeClient{address: "127.0.0.2"},
 			},
 		},
 	}
@@ -109,7 +109,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 			for _, c := range testCase.conn {
 				c.client.ListenOnClose(nil)
 
-				node := &NftSearchNode{
+				node := &NftSearchNodeClient{
 					ConnectionInterface: c.client.Connection,
 					activated:           c.activated,
 				}
@@ -142,19 +142,19 @@ func TestNodesFindByPastelID(t *testing.T) {
 	testCases := []struct {
 		nodes List
 		args  args
-		want  *NftSearchNode
+		want  *NftSearchNodeClient
 	}{
 		{
 			nodes: List{
-				&NftSearchNode{pastelID: "1"},
-				&NftSearchNode{pastelID: "2"},
+				&NftSearchNodeClient{pastelID: "1"},
+				&NftSearchNodeClient{pastelID: "2"},
 			},
 			args: args{"2"},
-			want: &NftSearchNode{pastelID: "2"},
+			want: &NftSearchNodeClient{pastelID: "2"},
 		}, {
 			nodes: List{
-				&NftSearchNode{pastelID: "1"},
-				&NftSearchNode{pastelID: "2"},
+				&NftSearchNodeClient{pastelID: "1"},
+				&NftSearchNodeClient{pastelID: "2"},
 			},
 			args: args{"3"},
 			want: nil,

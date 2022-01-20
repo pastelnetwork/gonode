@@ -11,12 +11,12 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
-type downloadArtwork struct {
+type downloadNft struct {
 	conn   *clientConn
 	client pb.DownloadArtworkClient
 }
 
-func (service *downloadArtwork) Download(ctx context.Context, txid, timestamp, signature, ttxid string) (file []byte, err error) {
+func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signature, ttxid string) (file []byte, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 
 	in := &pb.DownloadRequest{
@@ -51,7 +51,7 @@ func (service *downloadArtwork) Download(ctx context.Context, txid, timestamp, s
 	return
 }
 
-func (service *downloadArtwork) DownloadThumbnail(ctx context.Context, key []byte) (file []byte, err error) {
+func (service *downloadNft) DownloadThumbnail(ctx context.Context, key []byte) (file []byte, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	in := &pb.DownloadThumbnailRequest{
 		Key: key,
@@ -70,12 +70,12 @@ func (service *downloadArtwork) DownloadThumbnail(ctx context.Context, key []byt
 	return res.Thumbnail, nil
 }
 
-func (service *downloadArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
+func (service *downloadNft) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
 func newDownloadArtwork(conn *clientConn) node.DownloadNftInterface {
-	return &downloadArtwork{
+	return &downloadNft{
 		conn:   conn,
 		client: pb.NewDownloadArtworkClient(conn),
 	}

@@ -134,7 +134,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	pastelClient := pastel.NewClient(config.Pastel)
 
 	// Business logic services
-	// ----Artwork Services----
+	// ----NftApiHandler Services----
 	nodeClient := grpc.NewClient(pastelClient)
 
 	db := memory.NewKeyValue()
@@ -162,18 +162,18 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, nodeClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
 
-	// ----Userdata Services----
+	// ----UserdataApiHandler Services----
 	userdataNodeClient := grpc.NewClient(pastelClient)
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 
-	// Sense services
+	// SenseApiHandler services
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
 
 	// api service
-	server := api.NewServer(config.API,
-		services.NewArtwork(artworkRegister, artworkSearch, artworkDownload),
-		services.NewUserdata(userdataProcess),
-		services.NewSense(senseRegister),
+	server := api.NewAPIServer(config.API,
+		services.NewNftApiHandler(artworkRegister, artworkSearch, artworkDownload),
+		services.NewUserdataApiHandler(userdataProcess),
+		services.NewSenseApiHandler(senseRegister),
 		services.NewSwagger(),
 	)
 

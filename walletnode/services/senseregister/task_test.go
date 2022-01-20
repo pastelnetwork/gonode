@@ -32,7 +32,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestNode(address, pastelID string) *node.SenseRegisterNode {
+func newTestNode(address, pastelID string) *node.SenseRegisterNodeClient {
 	return node.NewNode(nil, address, pastelID)
 }
 
@@ -186,7 +186,7 @@ func TestTaskRun(t *testing.T) {
 				rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 				rqClientMock.ListenOnConnect(testCase.args.connectErr)
 
-				service := &Service{
+				service := &SenseRegisterService{
 					pastelClient: pastelClientMock.Client,
 					nodeClient:   nodeClient.Client,
 					config:       NewConfig(),
@@ -206,8 +206,8 @@ func TestTaskRun(t *testing.T) {
 						Task:      taskClient.Task,
 						LogPrefix: logPrefix,
 					},
-					Service: service,
-					Request: Request,
+					SenseRegisterService: service,
+					Request:              Request,
 				}
 
 				//create context with timeout to automatically end process after 1 sec
@@ -336,11 +336,11 @@ func TestTaskMeshNodes(t *testing.T) {
 				nodes.Add(node.NewNode(nodeClient.Client, n.address, n.pastelID))
 			}
 
-			service := &Service{
+			service := &SenseRegisterService{
 				config: NewConfig(),
 			}
 
-			task := &SenseRegisterTask{Service: service, Request: &SenseRegisterRequest{}}
+			task := &SenseRegisterTask{SenseRegisterService: service, Request: &SenseRegisterRequest{}}
 			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 
 			testCase.assertion(t, err)
@@ -440,7 +440,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 				pastelClient.ListenOnFindTicketByID(&pastel.IDTicket{}, testCase.args.returnFindIDErr)
 			}
 
-			service := &Service{
+			service := &SenseRegisterService{
 				pastelClient: pastelClient.Client,
 			}
 
@@ -449,10 +449,10 @@ func TestTaskPastelTopNodes(t *testing.T) {
 					Task:      testCase.fields.Task,
 					LogPrefix: logPrefix,
 				},
-				Service: service,
-				Request: testCase.fields.Request,
+				SenseRegisterService: service,
+				Request:              testCase.fields.Request,
 			}
-			got, err := task.pastelTopNodes(testCase.args.ctx)
+			got, err := task.GetTopNodes(testCase.args.ctx)
 			testCase.assertion(t, err)
 			assert.Equal(t, testCase.want, got)
 
@@ -468,11 +468,11 @@ func TestNewTask(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		service *Service
+		service *SenseRegisterService
 		Request *SenseRegisterRequest
 	}
 
-	service := &Service{}
+	service := &SenseRegisterService{}
 	Request := &SenseRegisterRequest{}
 
 	testCases := []struct {
@@ -485,9 +485,9 @@ func TestNewTask(t *testing.T) {
 				Request: Request,
 			},
 			want: &SenseRegisterTask{
-				WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-				Service:        service,
-				Request:        Request,
+				WalletNodeTask:       common.NewWalletNodeTask(logPrefix),
+				SenseRegisterService: service,
+				Request:              Request,
 			},
 		},
 	}
@@ -498,7 +498,7 @@ func TestNewTask(t *testing.T) {
 			t.Parallel()
 
 			task := NewSenseRegisterTask(testCase.args.service, testCase.args.Request)
-			assert.Equal(t, testCase.want.Service, task.Service)
+			assert.Equal(t, testCase.want.SenseRegisterService, task.SenseRegisterService)
 			assert.Equal(t, testCase.want.Request, task.Request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 		})
@@ -523,7 +523,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -541,7 +541,7 @@ func TestTaskCreateTicket(t *testing.T) {
 						AppPastelID:           "test-id",
 						AppPastelIDPassphrase: "test-name",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -560,7 +560,7 @@ func TestTaskCreateTicket(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnGetBlockCount(int32(blockNum), nil).
 				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
 
 			tc.want = &pastel.ActionTicket{
 				Version:    1,
@@ -612,7 +612,7 @@ func TestTaskGetBlock(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
-					Service: &Service{},
+					SenseRegisterService: &SenseRegisterService{},
 				},
 				blockNum: int32(10),
 				blockInfo: &pastel.GetBlockVerbose1Result{
@@ -628,7 +628,7 @@ func TestTaskGetBlock(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
-					Service: &Service{},
+					SenseRegisterService: &SenseRegisterService{},
 				},
 				blockNum: int32(10),
 				blockInfo: &pastel.GetBlockVerbose1Result{
@@ -645,7 +645,7 @@ func TestTaskGetBlock(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
-					Service: &Service{},
+					SenseRegisterService: &SenseRegisterService{},
 				},
 				blockNum: int32(10),
 				blockInfo: &pastel.GetBlockVerbose1Result{
@@ -667,11 +667,11 @@ func TestTaskGetBlock(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnGetBlockCount(tc.args.blockNum, tc.args.blockCountErr).
 				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
 
 			tc.wantArtistblockHash = tc.args.blockInfo.Hash
 
-			err := tc.args.task.getBlock(context.Background())
+			_, _, err := tc.args.task.GetBlock(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -701,7 +701,7 @@ func TestTaskSignTicket(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.ActionTicket{},
@@ -715,7 +715,7 @@ func TestTaskSignTicket(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.ActionTicket{},
@@ -733,7 +733,7 @@ func TestTaskSignTicket(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
 
 			err := tc.args.task.signTicket(context.Background())
 			if tc.wantErr != nil {
@@ -765,7 +765,7 @@ func TestWaitTxnValid(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
 				},
@@ -779,7 +779,7 @@ func TestWaitTxnValid(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
 				},
@@ -794,7 +794,7 @@ func TestWaitTxnValid(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
 				},
@@ -809,7 +809,7 @@ func TestWaitTxnValid(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
 				},
@@ -829,7 +829,7 @@ func TestWaitTxnValid(t *testing.T) {
 			pastelClientMock.ListenOnGetBlockCount(1, nil)
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.args.getRawTransactionVerbose1Ret,
 				tc.args.getRawTransactionVerbose1RetErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
 
 			ctx, cancel := context.WithCancel(context.Background())
 			if tc.args.ctxDone {
@@ -942,7 +942,7 @@ func TestTaskProbeImage(t *testing.T) {
 			args: args{
 				isValidBurnTxID: true,
 				task: &SenseRegisterTask{
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{
 							thumbnailSize: 224,
 						},
@@ -964,7 +964,7 @@ func TestTaskProbeImage(t *testing.T) {
 			args: args{
 				isValidBurnTxID: true,
 				task: &SenseRegisterTask{
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{
 							thumbnailSize: 224,
 						},
@@ -1000,7 +1000,7 @@ func TestTaskProbeImage(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(true, nil)
 
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
 
 			newT := &common.WalletNodeTask{
 				Task:      task.New(&state.Status{}),
@@ -1064,7 +1064,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 						AppPastelID:           "testid",
 						AppPastelIDPassphrase: "testpassphrase",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.ActionTicket{},
@@ -1147,7 +1147,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 						AppPastelID:           "testid",
 						AppPastelIDPassphrase: "testpassphrase",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.ActionTicket{},
@@ -1166,7 +1166,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.ActionTicket{},
@@ -1185,7 +1185,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: &Config{NumberSuperNodes: 1},
 					},
 					ticket: &pastel.ActionTicket{},
@@ -1214,7 +1214,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 				ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
 				ListenOnMasterNodesTop(tc.args.masterNodes, tc.args.masterNodesTopErr)
 
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
 
 			//need to remove generate thumbnail file
 			newT := &common.WalletNodeTask{
@@ -1235,7 +1235,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			if tc.wantErr == nil {
 				nodeClient.ListenOnMeshNodes(nil)
 			}
-			tc.args.task.Service.nodeClient = nodeClient
+			tc.args.task.SenseRegisterService.nodeClient = nodeClient
 
 			tc.args.task.Request.Image = artworkFile
 			nodes := node.List{}
@@ -1276,7 +1276,7 @@ func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "test-id",
 					},
-					Service: &Service{
+					SenseRegisterService: &SenseRegisterService{
 						config: NewConfig(),
 					},
 					signatures: make([][]byte, 3),

@@ -17,7 +17,7 @@ func TestNodesAdd(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		node *NftRegisterNode
+		node *NftRegisterNodeClient
 	}
 	testCases := []struct {
 		nodes List
@@ -26,9 +26,9 @@ func TestNodesAdd(t *testing.T) {
 	}{
 		{
 			nodes: List{},
-			args:  args{node: &NftRegisterNode{address: "127.0.0.1"}},
+			args:  args{node: &NftRegisterNodeClient{address: "127.0.0.1"}},
 			want: List{
-				&NftRegisterNode{address: "127.0.0.1"},
+				&NftRegisterNodeClient{address: "127.0.0.1"},
 			},
 		},
 	}
@@ -53,8 +53,8 @@ func TestNodesActivate(t *testing.T) {
 	}{
 		{
 			nodes: List{
-				&NftRegisterNode{address: "127.0.0.1"},
-				&NftRegisterNode{address: "127.0.0.2"},
+				&NftRegisterNodeClient{address: "127.0.0.1"},
+				&NftRegisterNodeClient{address: "127.0.0.2"},
 			},
 		},
 	}
@@ -114,7 +114,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 			for _, c := range testCase.conn {
 				c.client.ListenOnClose(nil)
 
-				node := &NftRegisterNode{
+				node := &NftRegisterNodeClient{
 					ConnectionInterface: c.client.Connection,
 					activated:           c.activated,
 					mtx:                 &sync.RWMutex{},
@@ -148,19 +148,19 @@ func TestNodesFindByPastelID(t *testing.T) {
 	testCases := []struct {
 		nodes List
 		args  args
-		want  *NftRegisterNode
+		want  *NftRegisterNodeClient
 	}{
 		{
 			nodes: List{
-				&NftRegisterNode{pastelID: "1"},
-				&NftRegisterNode{pastelID: "2"},
+				&NftRegisterNodeClient{pastelID: "1"},
+				&NftRegisterNodeClient{pastelID: "2"},
 			},
 			args: args{"2"},
-			want: &NftRegisterNode{pastelID: "2"},
+			want: &NftRegisterNodeClient{pastelID: "2"},
 		}, {
 			nodes: List{
-				&NftRegisterNode{pastelID: "1"},
-				&NftRegisterNode{pastelID: "2"},
+				&NftRegisterNodeClient{pastelID: "1"},
+				&NftRegisterNodeClient{pastelID: "2"},
 			},
 			args: args{"3"},
 			want: nil,
@@ -303,7 +303,7 @@ func TestNodesSendImage(t *testing.T) {
 				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.err)
 				clients = append(clients, client)
 
-				nodes.Add(&NftRegisterNode{
+				nodes.Add(&NftRegisterNodeClient{
 					address:              a.address,
 					RegisterNftInterface: client.RegisterArtwork,
 				})

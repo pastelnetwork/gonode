@@ -44,7 +44,7 @@ func appendStr(b []byte, s string) []byte {
 	return b
 }
 
-func newTestNode(address, pastelID string) *node.NftRegisterNode {
+func newTestNode(address, pastelID string) *node.NftRegisterNodeClient {
 	return node.NewNode(nil, address, pastelID)
 }
 
@@ -217,7 +217,7 @@ func TestTaskRun(t *testing.T) {
 				rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 				rqClientMock.ListenOnConnect(testCase.args.connectErr)
 
-				service := &Service{
+				service := &NftRegisterService{
 					pastelClient: pastelClientMock.Client,
 					nodeClient:   nodeClient.Client,
 					rqClient:     rqClientMock,
@@ -238,8 +238,8 @@ func TestTaskRun(t *testing.T) {
 						Task:      taskClient.Task,
 						LogPrefix: logPrefix,
 					},
-					Service: service,
-					Request: Request,
+					NftRegisterService: service,
+					Request:            Request,
 				}
 
 				//create context with timeout to automatically end process after 1 sec
@@ -368,11 +368,11 @@ func TestTaskMeshNodes(t *testing.T) {
 				nodes.Add(node.NewNode(nodeClient.Client, n.address, n.pastelID))
 			}
 
-			service := &Service{
+			service := &NftRegisterService{
 				config: NewConfig(),
 			}
 
-			task := &NftRegistrationTask{Service: service, Request: &NftRegisterRequest{}}
+			task := &NftRegistrationTask{NftRegisterService: service, Request: &NftRegisterRequest{}}
 			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 
 			testCase.assertion(t, err)
@@ -449,13 +449,13 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 			//create new mock service
 			pastelClient := pastelMock.NewMockClient(t)
 			pastelClient.ListenOnStorageNetworkFee(testCase.args.networkFee, testCase.args.returnErr)
-			service := &Service{
+			service := &NftRegisterService{
 				pastelClient: pastelClient.Client,
 			}
 
 			task := &NftRegistrationTask{
-				Service: service,
-				Request: testCase.fields.Request,
+				NftRegisterService: service,
+				Request:            testCase.fields.Request,
 			}
 
 			got, err := task.isSuitableStorageFee(testCase.args.ctx)
@@ -571,7 +571,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 				pastelClient.ListenOnFindTicketByID(&pastel.IDTicket{}, testCase.args.returnFindIDErr)
 			}
 
-			service := &Service{
+			service := &NftRegisterService{
 				pastelClient: pastelClient.Client,
 			}
 
@@ -580,10 +580,10 @@ func TestTaskPastelTopNodes(t *testing.T) {
 					Task:      testCase.fields.Task,
 					LogPrefix: logPrefix,
 				},
-				Service: service,
-				Request: testCase.fields.Request,
+				NftRegisterService: service,
+				Request:            testCase.fields.Request,
 			}
-			got, err := task.pastelTopNodes(testCase.args.ctx)
+			got, err := task.GetTopNodes(testCase.args.ctx)
 			testCase.assertion(t, err)
 			assert.Equal(t, testCase.want, got)
 
@@ -599,11 +599,11 @@ func TestNewTask(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		service *Service
+		service *NftRegisterService
 		Request *NftRegisterRequest
 	}
 
-	service := &Service{}
+	service := &NftRegisterService{}
 	Request := &NftRegisterRequest{}
 
 	testCases := []struct {
@@ -616,9 +616,9 @@ func TestNewTask(t *testing.T) {
 				Request: Request,
 			},
 			want: &NftRegistrationTask{
-				WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-				Service:        service,
-				Request:        Request,
+				WalletNodeTask:     common.NewWalletNodeTask(logPrefix),
+				NftRegisterService: service,
+				Request:            Request,
 			},
 		},
 	}
@@ -629,7 +629,7 @@ func TestNewTask(t *testing.T) {
 			t.Parallel()
 
 			task := NewNFTRegistrationTask(testCase.args.service, testCase.args.Request)
-			assert.Equal(t, testCase.want.Service, task.Service)
+			assert.Equal(t, testCase.want.NftRegisterService, task.NftRegisterService)
 			assert.Equal(t, testCase.want.Request, task.Request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 		})
@@ -659,7 +659,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -678,7 +678,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -697,7 +697,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -716,7 +716,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -735,7 +735,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -754,7 +754,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 					fingerprintAndScores: &pastel.DDAndFingerprints{},
@@ -778,7 +778,7 @@ func TestTaskCreateTicket(t *testing.T) {
 						ArtistName:     "test-name",
 						IssuedCopies:   10,
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -797,7 +797,7 @@ func TestTaskCreateTicket(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnGetBlockCount(int32(blockNum), nil).
 				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			tc.want = &pastel.NFTTicket{
 				Version:  1,
@@ -860,7 +860,7 @@ func TestTaskGetBlock(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					NftRegisterService: &NftRegisterService{},
 				},
 				blockNum: int32(10),
 				blockInfo: &pastel.GetBlockVerbose1Result{
@@ -876,7 +876,7 @@ func TestTaskGetBlock(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					NftRegisterService: &NftRegisterService{},
 				},
 				blockNum: int32(10),
 				blockInfo: &pastel.GetBlockVerbose1Result{
@@ -893,7 +893,7 @@ func TestTaskGetBlock(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					NftRegisterService: &NftRegisterService{},
 				},
 				blockNum: int32(10),
 				blockInfo: &pastel.GetBlockVerbose1Result{
@@ -915,11 +915,11 @@ func TestTaskGetBlock(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnGetBlockCount(tc.args.blockNum, tc.args.blockCountErr).
 				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			tc.wantArtistblockHash = tc.args.blockInfo.Hash
 
-			err := tc.args.task.getBlock(context.Background())
+			_, _, err := tc.args.task.GetBlock(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -954,7 +954,7 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -974,7 +974,7 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 				},
@@ -1000,7 +1000,7 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			err := tc.args.task.generateRQIDs(context.Background(), tc.args.inFile)
 
@@ -1038,7 +1038,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					imageEncodedWithFingerprints: artworkFile,
@@ -1067,7 +1067,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					imageEncodedWithFingerprints: artworkFile,
@@ -1091,7 +1091,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					imageEncodedWithFingerprints: artworkFile,
@@ -1114,7 +1114,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					imageEncodedWithFingerprints: artworkFile,
@@ -1133,7 +1133,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					imageEncodedWithFingerprints: artworkFile,
@@ -1166,14 +1166,14 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("test-signature"), tc.args.signErr)
 			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			rqClientMock := rqMock.NewMockClient(t)
 			rqClientMock.ListenOnEncodeInfo(tc.args.encodeInfoReturns, tc.args.encodeInfoErr)
 			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 			rqClientMock.ListenOnConnect(tc.args.connectErr)
 
-			tc.args.task.Service.rqClient = rqClientMock
+			tc.args.task.NftRegisterService.rqClient = rqClientMock
 
 			fsMock := storageMock.NewMockFileStorage()
 			fileMock := storageMock.NewMockFile()
@@ -1217,7 +1217,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 					},
-					Service: &Service{},
+					NftRegisterService: &NftRegisterService{},
 				},
 				img:         &files.File{},
 				signReturns: []byte("test-signature"),
@@ -1242,7 +1242,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
 			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
 
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			file, err := newTestImageFile()
 			if err != nil {
@@ -1312,7 +1312,7 @@ func TestTaskSignTicket(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -1326,7 +1326,7 @@ func TestTaskSignTicket(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -1344,7 +1344,7 @@ func TestTaskSignTicket(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			err := tc.args.task.signTicket(context.Background())
 			if tc.wantErr != nil {
@@ -1376,7 +1376,7 @@ func TestWaitTxnValid(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 				},
@@ -1390,7 +1390,7 @@ func TestWaitTxnValid(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 				},
@@ -1405,7 +1405,7 @@ func TestWaitTxnValid(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 				},
@@ -1420,7 +1420,7 @@ func TestWaitTxnValid(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 				},
@@ -1440,7 +1440,7 @@ func TestWaitTxnValid(t *testing.T) {
 			pastelClientMock.ListenOnGetBlockCount(1, nil)
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.args.getRawTransactionVerbose1Ret,
 				tc.args.getRawTransactionVerbose1RetErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			ctx, cancel := context.WithCancel(context.Background())
 			if tc.args.ctxDone {
@@ -1485,7 +1485,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -1499,7 +1499,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket:          &pastel.NFTTicket{},
@@ -1516,7 +1516,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket:          &pastel.NFTTicket{},
@@ -1539,7 +1539,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket:          &pastel.NFTTicket{},
@@ -1558,7 +1558,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket:          &pastel.NFTTicket{},
@@ -1582,7 +1582,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSendFromAddress(tc.args.burnTxnIDRet, tc.args.sendFromAddressRetErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
@@ -1640,7 +1640,7 @@ func TestTaskUploadImage(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -1664,7 +1664,7 @@ func TestTaskUploadImage(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -1696,7 +1696,7 @@ func TestTaskUploadImage(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("test-signature"), nil)
 			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			newT := &common.WalletNodeTask{
 				Task:      task.New(&state.Status{}),
@@ -1823,7 +1823,7 @@ func TestTaskProbeImage(t *testing.T) {
 		"success": {
 			args: args{
 				task: &NftRegistrationTask{
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{
 							thumbnailSize: 224,
 						},
@@ -1844,7 +1844,7 @@ func TestTaskProbeImage(t *testing.T) {
 		"probe-img-err": {
 			args: args{
 				task: &NftRegistrationTask{
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{
 							thumbnailSize: 224,
 						},
@@ -1880,7 +1880,7 @@ func TestTaskProbeImage(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(true, nil)
 
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			newT := &common.WalletNodeTask{
 				Task:      task.New(&state.Status{}),
@@ -1943,7 +1943,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -1962,7 +1962,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 						ArtistPastelID: "testid",
 						MaximumFee:     -1,
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -2046,7 +2046,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 						ArtistPastelID: "testid",
 						MaximumFee:     1,
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -2065,7 +2065,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -2084,7 +2084,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "testid",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: &Config{NumberSuperNodes: 1},
 					},
 					ticket: &pastel.NFTTicket{},
@@ -2111,7 +2111,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 				ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
 				ListenOnMasterNodesTop(tc.args.masterNodes, tc.args.masterNodesTopErr)
 
-			tc.args.task.Service.pastelClient = pastelClientMock
+			tc.args.task.NftRegisterService.pastelClient = pastelClientMock
 
 			//need to remove generate thumbnail file
 			newT := &common.WalletNodeTask{
@@ -2132,7 +2132,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			if tc.wantErr == nil {
 				nodeClient.ListenOnMeshNodes(nil)
 			}
-			tc.args.task.Service.nodeClient = nodeClient
+			tc.args.task.NftRegisterService.nodeClient = nodeClient
 
 			tc.args.task.Request.Image = artworkFile
 			nodes := node.List{}
@@ -2173,7 +2173,7 @@ func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
 					Request: &NftRegisterRequest{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{
+					NftRegisterService: &NftRegisterService{
 						config: NewConfig(),
 					},
 					signatures: make([][]byte, 3),

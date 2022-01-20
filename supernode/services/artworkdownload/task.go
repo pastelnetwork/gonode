@@ -101,7 +101,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 
 		log.WithContext(ctx).Debugf("Art ticket: %s", string(nftRegTicket.RegTicketData.NFTTicket))
 
-		// Decode Art Ticket
+		// Decode Art Request
 		err = task.decodeRegTicket(&nftRegTicket)
 		if err != nil {
 			task.UpdateStatus(StatusArtRegDecodingFailed)

@@ -217,7 +217,7 @@ var NftSearchResult = Type("NftSearchResult", func() {
 
 // NftRegisterPayload is NFT register payload.
 var NftRegisterPayload = Type("NftRegisterPayload", func() {
-	Description("Ticket of the registration NFT")
+	Description("Request of the registration NFT")
 
 	Attribute("name", String, func() {
 		Description("Name of the NFT")
@@ -753,7 +753,7 @@ var ThumbnailCoordinate = ResultType("ThumbnailCoordinate", func() {
 // NftDownloadPayload is NFT download payload.
 var NftDownloadPayload = Type("NftDownloadPayload", func() {
 	Attribute("txid", String, func() {
-		Description("Art Registration Ticket transaction ID")
+		Description("Art Registration Request transaction ID")
 		MinLength(64)
 		MaxLength(64)
 		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")

@@ -308,7 +308,7 @@ type ArtworkDetail struct {
 // ArtworkDownloadPayload is the payload type of the artworks service download
 // method.
 type ArtworkDownloadPayload struct {
-	// Art Registration Ticket transaction ID
+	// Art Registration Request transaction ID
 	Txid string
 	// Owner's PastelID
 	Pid string
@@ -334,7 +334,7 @@ type Thumbnailcoordinate struct {
 	BottomRightY int64
 }
 
-// Ticket of the registration artwork
+// Request of the registration artwork
 type ArtworkTicket struct {
 	// Name of the artwork
 	Name string

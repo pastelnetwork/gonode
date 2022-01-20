@@ -6,54 +6,43 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/walletnode/services/senseregister/node"
 )
 
 // SenseRegisterTask is the task of registering new artwork.
 type SenseRegisterTask struct {
 	*common.WalletNodeTask
-	*Service
 
+	senseHandler *SenseRegisterHandler
+
+	service *SenseRegisterService
 	Request *SenseRegisterRequest
 
-	// information of 3 nodes
-	nodes node.List
-
 	// task data to create RegArt ticket
-	creatorBlockHeight   int
-	creatorBlockHash     string
-	fingerprintAndScores *pastel.DDAndFingerprints
-	fingerprint          []byte
-	datahash             []byte
+	creatorBlockHeight int
+	creatorBlockHash   string
+	fingerprint        []byte
+	datahash           []byte
 
 	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
 	signatures [][]byte
-
-	// ddAndFingerprintsIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
-	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
-	ddAndFingerprintsIDs []string
-	// ddAndFpFile is Base64(compressed(Base64(dd_and_fingerprints).Base64(signatureSN1).Base64(signatureSN3)))
-	ddAndFpFile         []byte
-	ddAndFingerprintsIc uint32
 
 	// ticket
 	creatorSignature []byte
 	ticket           *pastel.ActionTicket
 
 	// TODO: call cNodeAPI to get the following info
-	regSenseTxid string
+	//regSenseTxid string
 	//registrationFee int64
 }
 
@@ -67,9 +56,12 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 	defer cancel()
 
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
-	if err := task.connectToTopRankNodes(ctx); err != nil {
+	creatorBlockHeight, creatorBlockHash, err := task.senseHandler.ConnectToTopRankNodes(ctx)
+	if err != nil {
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
+	task.creatorBlockHeight = creatorBlockHeight
+	task.creatorBlockHash = creatorBlockHash
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
@@ -77,7 +69,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 	groupConnClose, _ := errgroup.WithContext(ctx)
 	groupConnClose.Go(func() error {
 		defer cancel()
-		return task.nodes.WaitConnClose(ctx, nodesDone)
+		return task.senseHandler.Nodes.WaitConnClose(ctx, nodesDone)
 	})
 
 	/* Step 5: Send image, burn txid to SNs */
@@ -114,7 +106,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.PastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
+	if err := task.PastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
 		task.closeSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
@@ -130,7 +122,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 	log.Debugf("Active action ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
-	err = task.PastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
+	err = task.PastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.RegActTxMinConfirmations), 15*time.Second)
 	if err != nil {
 		task.closeSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait activate txid valid: %w", err)
@@ -146,6 +138,72 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 
 	err = task.closeSNsConnections(ctx, nodesDone)
 	return err
+}
+
+func (task *SenseRegisterTask) sendActionMetadata(ctx context.Context) error {
+	if task.creatorBlockHash == "" {
+		return errors.New("empty current block hash")
+	}
+
+	if task.Request.AppPastelID == "" {
+		return errors.New("empty creator pastelID")
+	}
+
+	regMetadata := &types.ActionRegMetadata{
+		BlockHash:       task.creatorBlockHash,
+		CreatorPastelID: task.Request.AppPastelID,
+		BurnTxID:        task.Request.BurnTxID,
+	}
+
+	return task.senseHandler.SendRegMetadata(ctx, regMetadata)
+}
+
+func (task *SenseRegisterTask) probeImage(ctx context.Context) error {
+	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debug("probe image")
+
+	// Send image to supernodes for probing.
+	if err := task.senseHandler.ProbeImage(ctx, task.Request.Image); err != nil {
+		return errors.Errorf("send image: %w", err)
+	}
+
+	var signatures [][]byte
+	// Match signatures received from supernodes.
+	for i := 0; i < len(task.senseHandler.Nodes); i++ {
+		// Validate burn_txid transaction with SNs
+		if !task.senseHandler.ValidBurnTxID() {
+			task.UpdateStatus(common.StatusErrorInvalidBurnTxID)
+			return errors.New("invalid burn txid")
+		}
+
+		// Validate signatures received from supernodes.
+		verified, err := task.PastelHandler.VerifySignature(ctx,
+			task.nodes[i].FingerprintAndScoresBytes,
+			string(task.nodes[i].Signature),
+			task.nodes[i].PastelID(),
+			pastel.SignAlgorithmED448)
+		if err != nil {
+			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
+		}
+
+		if !verified {
+			task.UpdateStatus(common.StatusErrorSignaturesNotMatch)
+			return errors.Errorf("node[%s] signature doesn't match", task.nodes[i].PastelID())
+		}
+
+		signatures = append(signatures, task.nodes[i].Signature)
+	}
+	task.signatures = signatures
+
+	// Match fingerprints received from supernodes.
+	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
+		task.UpdateStatus(common.StatusErrorFingerprintsNotMatch)
+		return errors.Errorf("fingerprints aren't matched :%w", err)
+	}
+
+	task.fingerprintAndScores = task.nodes.FingerAndScores()
+	task.UpdateStatus(common.StatusImageProbed)
+
+	return nil
 }
 
 func (task *SenseRegisterTask) closeSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
@@ -187,7 +245,7 @@ func (task *SenseRegisterTask) generateDDAndFingerprintsIDs() error {
 	ddFpFile := buffer.Bytes()
 
 	task.ddAndFingerprintsIc = rand.Uint32()
-	task.ddAndFingerprintsIDs, _, err = pastel.GetIDFiles(ddFpFile, task.ddAndFingerprintsIc, task.config.DDAndFingerprintsMax)
+	task.ddAndFingerprintsIDs, _, err = pastel.GetIDFiles(ddFpFile, task.ddAndFingerprintsIc, task.service.config.DDAndFingerprintsMax)
 	if err != nil {
 		return fmt.Errorf("get ID Files: %w", err)
 	}
@@ -197,145 +255,6 @@ func (task *SenseRegisterTask) generateDDAndFingerprintsIDs() error {
 		return errors.Errorf("compress: %w", err)
 	}
 	task.ddAndFpFile = utils.B64Encode(comp)
-
-	return nil
-}
-
-// meshNodes establishes communication between supernodes.
-func (task *SenseRegisterTask) meshNodes(ctx context.Context, nodes node.List, primaryIndex int) (node.List, error) {
-	var meshNodes node.List
-	secInfo := &alts.SecInfo{
-		PastelID:   task.Request.AppPastelID,
-		PassPhrase: task.Request.AppPastelIDPassphrase,
-		Algorithm:  "ed448",
-	}
-
-	primary := nodes[primaryIndex]
-	log.WithContext(ctx).Debugf("Trying to connect to primary node %q", primary)
-	if err := primary.Connect(ctx, task.config.ConnectToNodeTimeout, secInfo); err != nil {
-		return nil, err
-	}
-	if err := primary.Session(ctx, true); err != nil {
-		return nil, err
-	}
-
-	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
-	defer nextConnCancel()
-
-	// FIXME: ugly hack here. Need to make the Node and List to be safer
-	secondariesMtx := &sync.Mutex{}
-	var secondaries node.List
-	go func() {
-		for i, node := range nodes {
-			node := node
-
-			if i == primaryIndex {
-				continue
-			}
-
-			select {
-			case <-nextConnCtx.Done():
-				return
-			case <-time.After(task.config.connectToNextNodeDelay):
-				go func() {
-					defer errors.Recover(log.Fatal)
-
-					if err := node.Connect(ctx, task.config.ConnectToNodeTimeout, secInfo); err != nil {
-						return
-					}
-					if err := node.Session(ctx, false); err != nil {
-						return
-					}
-					// Should not run this code in go routine
-					func() {
-						secondariesMtx.Lock()
-						defer secondariesMtx.Unlock()
-						secondaries.Add(node)
-					}()
-
-					if err := node.ConnectTo(ctx, types.MeshedSuperNode{
-						NodeID: primary.PastelID(),
-						SessID: primary.SessID(),
-					}); err != nil {
-						return
-					}
-					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
-				}()
-			}
-		}
-	}()
-
-	acceptCtx, acceptCancel := context.WithTimeout(ctx, task.config.acceptNodesTimeout)
-	defer acceptCancel()
-
-	accepted, err := primary.AcceptedNodes(acceptCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	primary.SetPrimary(true)
-	meshNodes.Add(primary)
-
-	secondariesMtx.Lock()
-	defer secondariesMtx.Unlock()
-
-	for _, pastelID := range accepted {
-		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
-
-		node := secondaries.FindByPastelID(pastelID)
-		if node == nil {
-			return nil, errors.New("not found accepted node")
-		}
-		meshNodes.Add(node)
-	}
-
-	return meshNodes, nil
-}
-
-func (task *SenseRegisterTask) pastelTopNodes(ctx context.Context) (node.List, error) {
-	var nodes node.List
-
-	mns, err := task.pastelClient.MasterNodesTop(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, mn := range mns {
-		if mn.ExtKey == "" || mn.ExtAddress == "" {
-			continue
-		}
-
-		// Ensures that the PastelId(mn.ExtKey) of MN node is registered
-		_, err = task.pastelClient.FindTicketByID(ctx, mn.ExtKey)
-		if err != nil {
-			log.WithContext(ctx).WithField("mn", mn).Warn("FindTicketByID() failed")
-			continue
-		}
-		nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
-	}
-
-	return nodes, nil
-}
-
-// determine current block height & hash of it
-func (task *SenseRegisterTask) getBlock(ctx context.Context) error {
-	// Get block num
-	blockNum, err := task.pastelClient.GetBlockCount(ctx)
-	task.creatorBlockHeight = int(blockNum)
-	if err != nil {
-		return errors.Errorf("get block num: %w", err)
-	}
-
-	// Get block hash string
-	blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
-	if err != nil {
-		return errors.Errorf("get block info blocknum=%d: %w", blockNum, err)
-	}
-
-	// Decode hash string to byte
-	task.creatorBlockHash = blockInfo.Hash
-	if err != nil {
-		return errors.Errorf("convert hash string %s to bytes: %w", blockInfo.Hash, err)
-	}
 
 	return nil
 }
@@ -355,7 +274,7 @@ func (task *SenseRegisterTask) createSenseTicket(_ context.Context) error {
 		APITicketData: &pastel.APISenseTicket{
 			DataHash:             task.datahash,
 			DDAndFingerprintsIc:  task.ddAndFingerprintsIc,
-			DDAndFingerprintsMax: task.config.DDAndFingerprintsMax,
+			DDAndFingerprintsMax: task.service.config.DDAndFingerprintsMax,
 			DDAndFingerprintsIDs: task.ddAndFingerprintsIDs,
 		},
 	}
@@ -370,7 +289,7 @@ func (task *SenseRegisterTask) signTicket(ctx context.Context) error {
 		return errors.Errorf("encode sense ticket %w", err)
 	}
 
-	task.creatorSignature, err = task.pastelClient.Sign(ctx, data, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase, pastel.SignAlgorithmED448)
+	task.creatorSignature, err = task.PastelClient.Sign(ctx, data, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign sense ticket %w", err)
 	}
@@ -381,185 +300,12 @@ func (task *SenseRegisterTask) activateActionTicket(ctx context.Context) (string
 	request := pastel.ActivateActionRequest{
 		RegTxID:    task.regSenseTxid,
 		BlockNum:   task.creatorBlockHeight,
-		Fee:        task.Service.registrationFee,
+		Fee:        task.registrationFee,
 		PastelID:   task.Request.AppPastelID,
 		Passphrase: task.Request.AppPastelIDPassphrase,
 	}
 
-	return task.pastelClient.ActivateActionTicket(ctx, request)
-}
-
-// connectToTopRankNodes - find 3 supesnodes and create mesh of 3 nodes
-func (task *SenseRegisterTask) connectToTopRankNodes(ctx context.Context) error {
-
-	/* Step 3. Select 3 SNs */
-	// Retrieve supernodes with highest ranks.
-	topNodes, err := task.pastelTopNodes(ctx)
-	if err != nil {
-		return errors.Errorf("call masternode top: %w", err)
-	}
-
-	if len(topNodes) < task.config.NumberSuperNodes {
-		task.UpdateStatus(common.StatusErrorNotEnoughSuperNode)
-		return errors.New("unable to find enough Supernodes with acceptable storage fee")
-	}
-
-	// Get current block height & hash
-	if err := task.getBlock(ctx); err != nil {
-		return errors.Errorf("get block: %v", err)
-	}
-
-	// Connect to top nodes to find 3SN and validate their infor
-	err = task.validateMNsInfo(ctx, topNodes)
-	if err != nil {
-		task.UpdateStatus(common.StatusErrorFindRespondingSNs)
-		return errors.Errorf("validate MNs info: %v", err)
-	}
-
-	/* Step 4. Establish mesh with 3 SNs */
-	var nodes node.List
-	var errs error
-
-	for primaryRank := range task.nodes {
-		nodes, err = task.meshNodes(ctx, task.nodes, primaryRank)
-		if err != nil {
-			// close connected connections
-			task.nodes.DisconnectAll()
-
-			if errors.IsContextCanceled(err) {
-				return err
-			}
-			errs = errors.Append(errs, err)
-			log.WithContext(ctx).WithError(err).Warn("Could not create a mesh of the nodes")
-			continue
-		}
-		break
-	}
-	if len(nodes) < task.config.NumberSuperNodes {
-		// close connected connections
-		topNodes.DisconnectAll()
-		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
-	}
-
-	// Activate supernodes that are in the mesh.
-	nodes.Activate()
-
-	// Cancel context when any connection is broken.
-	task.UpdateStatus(common.StatusConnected)
-
-	// Send all meshed supernode info to nodes - that will be used to node send info to other nodes
-	meshedSNInfo := []types.MeshedSuperNode{}
-	for _, node := range nodes {
-		meshedSNInfo = append(meshedSNInfo, types.MeshedSuperNode{
-			NodeID: node.PastelID(),
-			SessID: node.SessID(),
-		})
-	}
-
-	for _, node := range nodes {
-		err = node.MeshNodes(ctx, meshedSNInfo)
-		if err != nil {
-			nodes.DisconnectAll()
-			return errors.Errorf("could not send info of meshed nodes: %w", err)
-		}
-	}
-	return nil
-}
-
-func (task *SenseRegisterTask) sendActionMetadata(ctx context.Context) error {
-	if task.creatorBlockHash == "" {
-		return errors.New("empty current block hash")
-	}
-
-	if task.Request.AppPastelID == "" {
-		return errors.New("empty creator pastelID")
-	}
-
-	regMetadata := &types.ActionRegMetadata{
-		BlockHash:       task.creatorBlockHash,
-		CreatorPastelID: task.Request.AppPastelID,
-		BurnTxID:        task.Request.BurnTxID,
-	}
-
-	return task.nodes.SendRegMetadata(ctx, regMetadata)
-}
-
-// validateMNsInfo - validate MNs info, until found at least 3 valid MNs
-func (task *SenseRegisterTask) validateMNsInfo(ctx context.Context, nnondes node.List) error {
-	var nodes node.List
-	count := 0
-
-	secInfo := &alts.SecInfo{
-		PastelID:   task.Request.AppPastelID,
-		PassPhrase: task.Request.AppPastelIDPassphrase,
-		Algorithm:  "ed448",
-	}
-
-	for _, node := range nnondes {
-		if err := node.Connect(ctx, task.config.ConnectToNodeTimeout, secInfo); err != nil {
-			continue
-		}
-
-		count++
-		nodes = append(nodes, node)
-		if count == task.config.NumberSuperNodes {
-			break
-		}
-	}
-
-	// Close all connected connections
-	nnondes.DisconnectAll()
-
-	if count < task.config.NumberSuperNodes {
-		return errors.Errorf("validate %d Supernodes from pastel network", task.config.NumberSuperNodes)
-	}
-
-	task.nodes = nodes
-	return nil
-}
-
-func (task *SenseRegisterTask) probeImage(ctx context.Context) error {
-	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debug("probe image")
-
-	// Send image to supernodes for probing.
-	if err := task.nodes.ProbeImage(ctx, task.Request.Image); err != nil {
-		return errors.Errorf("send image: %w", err)
-	}
-
-	signatures := [][]byte{}
-	// Match signatures received from supernodes.
-	for i := 0; i < len(task.nodes); i++ {
-		// Validate burn_txid transaction with SNs
-		if !task.nodes.ValidBurnTxID() {
-			task.UpdateStatus(common.StatusErrorInvalidBurnTxID)
-			return errors.New("invalid burn txid")
-		}
-
-		// Validate signatures received from supernodes.
-		verified, err := task.pastelClient.Verify(ctx, task.nodes[i].FingerprintAndScoresBytes, string(task.nodes[i].Signature), task.nodes[i].PastelID(), pastel.SignAlgorithmED448)
-		if err != nil {
-			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
-		}
-
-		if !verified {
-			task.UpdateStatus(common.StatusErrorSignaturesNotMatch)
-			return errors.Errorf("node[%s] signature doesn't match", task.nodes[i].PastelID())
-		}
-
-		signatures = append(signatures, task.nodes[i].Signature)
-	}
-	task.signatures = signatures
-
-	// Match fingerprints received from supernodes.
-	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
-		task.UpdateStatus(common.StatusErrorFingerprintsNotMatch)
-		return errors.Errorf("fingerprints aren't matched :%w", err)
-	}
-
-	task.fingerprintAndScores = task.nodes.FingerAndScores()
-	task.UpdateStatus(common.StatusImageProbed)
-
-	return nil
+	return task.PastelClient.ActivateActionTicket(ctx, request)
 }
 
 func (task *SenseRegisterTask) sendSignedTicket(ctx context.Context) error {
@@ -588,10 +334,23 @@ func (task *SenseRegisterTask) removeArtifacts() {
 }
 
 // NewSenseRegisterTask returns a new SenseRegisterTask instance.
-func NewSenseRegisterTask(service *Service, Ticket *SenseRegisterRequest) *SenseRegisterTask {
-	return &SenseRegisterTask{
+// TODO: make config interface and pass it instead of individual items
+func NewSenseRegisterTask(service *SenseRegisterService, request *SenseRegisterRequest) *SenseRegisterTask {
+	task := SenseRegisterTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-		Service:        service,
-		Request:        Ticket,
+		service:        service,
+		Request:        request,
 	}
+	meshHandler := mixins.NewMeshHandler(task.WalletNodeTask,
+		service.nodeClient, &SenseRegisterNodeMaker{},
+		service.pastelHandler,
+		request.AppPastelID, request.AppPastelIDPassphrase,
+		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
+		service.config.acceptNodesTimeout, service.config.connectToNextNodeDelay,
+	)
+
+	senseHandler := &SenseRegisterHandler{MeshHandler: meshHandler}
+
+	task.senseHandler = senseHandler
+	return &task
 }

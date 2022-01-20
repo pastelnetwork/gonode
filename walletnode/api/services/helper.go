@@ -1,6 +1,8 @@
 package services
 
 import (
+	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
 	"time"
 
 	"github.com/pastelnetwork/gonode/pastel"
@@ -9,10 +11,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 
-	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 )
 
 func safeStr(p *string) string {
@@ -70,37 +69,6 @@ func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSea
 	return res
 }
 
-func fromArtSearchRequest(req *artworks.ArtSearchPayload) *artworksearch.ArtSearchRequest {
-	rq := &artworksearch.ArtSearchRequest{
-		Artist:           req.Artist,
-		Limit:            req.Limit,
-		Query:            req.Query,
-		ArtistName:       req.ArtistName,
-		ArtTitle:         req.ArtTitle,
-		Series:           req.Series,
-		Descr:            req.Descr,
-		Keyword:          req.Keyword,
-		MinBlock:         req.MinBlock,
-		MaxBlock:         req.MaxBlock,
-		MinCopies:        req.MinCopies,
-		MaxCopies:        req.MaxCopies,
-		MinNsfwScore:     req.MinNsfwScore,
-		MaxNsfwScore:     req.MaxNsfwScore,
-		MinRarenessScore: req.MinRarenessScore,
-		MaxRarenessScore: req.MaxRarenessScore,
-	}
-
-	if req.UserPastelid != nil {
-		rq.UserPastelID = *req.UserPastelid
-	}
-
-	if req.UserPassphrase != nil {
-		rq.UserPassphrase = *req.UserPassphrase
-	}
-
-	return rq
-}
-
 func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 	return &artworks.ArtworkDetail{
 		Txid:             ticket.TXID,
@@ -125,15 +93,6 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 		//NeutralNsfwScore:      &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Neutral,
 		//PornNsfwScore:         &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Porn,
 		//SexyNsfwScore:         &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Sexy,
-	}
-}
-
-// NFT Download
-func fromDownloadPayload(payload *artworks.ArtworkDownloadPayload) *artworkdownload.Ticket {
-	return &artworkdownload.Ticket{
-		Txid:               payload.Txid,
-		PastelID:           payload.Pid,
-		PastelIDPassphrase: payload.Key,
 	}
 }
 

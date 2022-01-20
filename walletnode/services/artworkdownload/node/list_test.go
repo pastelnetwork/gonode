@@ -14,7 +14,7 @@ func TestNodesAdd(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		node *NftDownloadNode
+		node *NftDownloadNodeClient
 	}
 	testCases := []struct {
 		nodes List
@@ -23,9 +23,9 @@ func TestNodesAdd(t *testing.T) {
 	}{
 		{
 			nodes: List{},
-			args:  args{node: &NftDownloadNode{address: "127.0.0.1"}},
+			args:  args{node: &NftDownloadNodeClient{address: "127.0.0.1"}},
 			want: List{
-				&NftDownloadNode{address: "127.0.0.1"},
+				&NftDownloadNodeClient{address: "127.0.0.1"},
 			},
 		},
 	}
@@ -51,8 +51,8 @@ func TestNodesActive(t *testing.T) {
 	}{
 		{
 			nodes: List{
-				&NftDownloadNode{address: "127.0.0.1", activated: true},
-				&NftDownloadNode{address: "127.0.0.2", activated: false},
+				&NftDownloadNodeClient{address: "127.0.0.1", activated: true},
+				&NftDownloadNodeClient{address: "127.0.0.2", activated: false},
 			},
 			want: 1,
 		},
@@ -111,7 +111,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 			for _, c := range testCase.conn {
 				c.client.ListenOnClose(nil)
 
-				node := &NftDownloadNode{
+				node := &NftDownloadNodeClient{
 					ConnectionInterface: c.client.Connection,
 					activated:           c.activated,
 				}
@@ -144,11 +144,11 @@ func TestNodesMatchFiles(t *testing.T) {
 	}{
 		{
 			nodes: List{
-				&NftDownloadNode{
+				&NftDownloadNodeClient{
 					address: "127.0.0.1",
 					file:    []byte("1234"),
 				},
-				&NftDownloadNode{
+				&NftDownloadNodeClient{
 					address: "127.0.0.2",
 					file:    []byte("1234"),
 				},
@@ -157,11 +157,11 @@ func TestNodesMatchFiles(t *testing.T) {
 		},
 		{
 			nodes: List{
-				&NftDownloadNode{
+				&NftDownloadNodeClient{
 					address: "127.0.0.1",
 					file:    []byte("1234"),
 				},
-				&NftDownloadNode{
+				&NftDownloadNodeClient{
 					address: "127.0.0.2",
 					file:    []byte("1235"),
 				},
@@ -191,7 +191,7 @@ func TestNodesFiles(t *testing.T) {
 	}{
 		{
 			nodes: List{
-				&NftDownloadNode{
+				&NftDownloadNodeClient{
 					address: "127.0.0.1",
 					file:    []byte("1234"),
 				},
@@ -267,7 +267,7 @@ func TestNodesDownload(t *testing.T) {
 				client.ListenOnDownload(testCase.file, testCase.err)
 				clients = append(clients, client)
 
-				nodes.Add(&NftDownloadNode{
+				nodes.Add(&NftDownloadNodeClient{
 					address:              a.address,
 					DownloadNftInterface: client.DownloadArtwork,
 				})

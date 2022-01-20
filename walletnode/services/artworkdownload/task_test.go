@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestNode(address, pastelID string) *node.NftDownloadNode {
+func newTestNode(address, pastelID string) *node.NftDownloadNodeClient {
 	return node.NewNode(nil, address, pastelID)
 }
 
@@ -25,12 +25,12 @@ func TestNewTask(t *testing.T) {
 	// t.Parallel()
 
 	type args struct {
-		service *Service
-		Ticket  *Ticket
+		service *NftDownloadService
+		Ticket  *NftDownloadRequest
 	}
 
-	service := &Service{}
-	ticket := &Ticket{}
+	service := &NftDownloadService{}
+	ticket := &NftDownloadRequest{}
 
 	testCases := []struct {
 		args args
@@ -42,9 +42,9 @@ func TestNewTask(t *testing.T) {
 				Ticket:  ticket,
 			},
 			want: &NftDownloadTask{
-				WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-				Service:        service,
-				Ticket:         ticket,
+				WalletNodeTask:     common.NewWalletNodeTask(logPrefix),
+				NftDownloadService: service,
+				Request:            ticket,
 			},
 		},
 	}
@@ -55,8 +55,8 @@ func TestNewTask(t *testing.T) {
 			// t.Parallel()
 
 			task := NewNftDownloadTask(testCase.args.service, testCase.args.Ticket)
-			assert.Equal(t, testCase.want.Service, task.Service)
-			assert.Equal(t, testCase.want.Ticket, task.Ticket)
+			assert.Equal(t, testCase.want.NftDownloadService, task.NftDownloadService)
+			assert.Equal(t, testCase.want.Request, task.Request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 		})
 	}
@@ -67,7 +67,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 
 	type fields struct {
 		Task   task.Task
-		Ticket *Ticket
+		Ticket *NftDownloadRequest
 	}
 
 	type args struct {
@@ -84,7 +84,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 	}{
 		{
 			fields: fields{
-				Ticket: &Ticket{},
+				Ticket: &NftDownloadRequest{},
 			},
 			args: args{
 				ctx: context.Background(),
@@ -119,7 +119,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			//create new mock service
 			pastelClient := pastelMock.NewMockClient(t)
 			pastelClient.ListenOnMasterNodesTop(testCase.args.returnMn, testCase.args.returnErr)
-			service := &Service{
+			service := &NftDownloadService{
 				pastelClient: pastelClient.Client,
 			}
 
@@ -128,8 +128,8 @@ func TestTaskPastelTopNodes(t *testing.T) {
 					Task:      testCase.fields.Task,
 					LogPrefix: logPrefix,
 				},
-				Service: service,
-				Ticket:  testCase.fields.Ticket,
+				NftDownloadService: service,
+				Request:            testCase.fields.Ticket,
 			}
 			got, err := task.pastelTopNodes(testCase.args.ctx)
 			testCase.assertion(t, err)
@@ -163,7 +163,7 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	type fields struct {
-		Ticket *Ticket
+		Ticket *NftDownloadRequest
 	}
 
 	testCases := []struct {
@@ -181,7 +181,7 @@ func TestTaskRun(t *testing.T) {
 		numClose           int
 	}{
 		{
-			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 			args: args{
 				ctx:                context.Background(),
 				returnErr:          nil,
@@ -213,7 +213,7 @@ func TestTaskRun(t *testing.T) {
 			numClose:           3,
 		},
 		{
-			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 			args: args{
 				ctx:                context.Background(),
 				returnErr:          nil,
@@ -245,7 +245,7 @@ func TestTaskRun(t *testing.T) {
 			numClose:           0,
 		},
 		{
-			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 			args: args{
 				ctx:                context.Background(),
 				returnErr:          nil,
@@ -277,7 +277,7 @@ func TestTaskRun(t *testing.T) {
 			numClose:           0,
 		},
 		{
-			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 			args: args{
 				ctx:                context.Background(),
 				returnErr:          nil,
@@ -309,7 +309,7 @@ func TestTaskRun(t *testing.T) {
 			numClose:           0,
 		},
 		{
-			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 			args: args{
 				ctx:                context.Background(),
 				returnErr:          nil,
@@ -341,7 +341,7 @@ func TestTaskRun(t *testing.T) {
 			numClose:           0,
 		},
 		{
-			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 			args: args{
 				ctx:                context.Background(),
 				returnErr:          nil,
@@ -408,7 +408,7 @@ func TestTaskRun(t *testing.T) {
 				pastelClient.ListenOnSign(testCase.args.signature, testCase.args.signErr)
 			}
 
-			service := &Service{
+			service := &NftDownloadService{
 				pastelClient: pastelClient.Client,
 				nodeClient:   nodeClient.Client,
 				config:       NewConfig(),
@@ -425,8 +425,8 @@ func TestTaskRun(t *testing.T) {
 					Task:      taskClient.Task,
 					LogPrefix: logPrefix,
 				},
-				Service: service,
-				Ticket:  testCase.fields.Ticket,
+				NftDownloadService: service,
+				Request:            testCase.fields.Ticket,
 			}
 
 			//create context with timeout to automatically end process after 1 sec

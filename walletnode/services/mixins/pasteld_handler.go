@@ -1,4 +1,4 @@
-package common
+package mixins
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/walletnode/node"
 	"time"
 )
 
@@ -21,16 +20,16 @@ func NewPastelHandler(pastelClient pastel.Client) *PastelHandler {
 }
 
 // VerifySignature verifies the signature of the data
-func (pt *PastelHandler) VerifySignature(ctx context.Context, data []byte, signature string, pastelID string) error {
-	ok, err := pt.PastelClient.Verify(ctx, data, signature, pastelID, pastel.SignAlgorithmED448)
+func (pt *PastelHandler) VerifySignature(ctx context.Context, data []byte, signature string, pastelID string, algo string) (bool, error) {
+	ok, err := pt.PastelClient.Verify(ctx, data, signature, pastelID, algo)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !ok {
-		return errors.Errorf("signature verification failed")
+		return false, errors.Errorf("signature verification failed")
 	}
 
-	return nil
+	return true, nil
 }
 
 // GetEstimatedActionFee returns the estimated Action fee for the given image
@@ -42,33 +41,44 @@ func (pt *PastelHandler) GetEstimatedActionFee(ctx context.Context, ImgSizeInMb 
 	return actionFees.SenseFee, nil
 }
 
-// GetTopNodes get list of current top masternodes, validate them and return list of valid (in the order received from pasteld)
-func (pt *PastelHandler) GetTopNodes(ctx context.Context,
-	nodes node.NodeCollectionInterface,
-	nodeClient node.ClientInterface,
-	maximumFee float64,
-) error {
-
-	mns, err := pt.PastelClient.MasterNodesTop(ctx)
+// determine current block height & hash of it
+func (pt *PastelHandler) GetBlock(ctx context.Context) (int, string, error) {
+	// Get block num
+	blockNum, err := pt.PastelClient.GetBlockCount(ctx)
 	if err != nil {
-		return err
+		return -1, "", errors.Errorf("get block num: %w", err)
 	}
-	for _, mn := range mns {
-		if mn.Fee > maximumFee {
-			continue
-		}
-		if mn.ExtKey == "" || mn.ExtAddress == "" {
-			continue
-		}
 
-		// Ensures that the PastelId(mn.ExtKey) of MN node is registered
-		_, err = pt.PastelClient.FindTicketByID(ctx, mn.ExtKey)
-		if err != nil {
-			log.WithContext(ctx).WithField("mn", mn).Warn("FindTicketByID() failed")
-			continue
-		}
-		n := node.NewNode(nodeClient, mn.ExtAddress, mn.ExtKey)
-		nodes.Add(n)
+	// Get block hash string
+	blockInfo, err := pt.PastelClient.GetBlockVerbose1(ctx, blockNum)
+	if err != nil {
+		return -1, "", errors.Errorf("get block info blocknum=%d: %w", blockNum, err)
+	}
+
+	// Decode hash string to byte
+	if err != nil {
+		return -1, "", errors.Errorf("convert hash string %s to bytes: %w", blockInfo.Hash, err)
+	}
+
+	return int(blockNum), blockInfo.Hash, nil
+}
+
+func (pt *PastelHandler) CheckRegistrationFee(ctx context.Context, address string, fee float64, maxFee float64) error {
+	if fee == 0 {
+		return errors.Errorf("invalid fee amount to check: %f", fee)
+	}
+
+	if fee > maxFee {
+		return errors.Errorf("registration fee is to expensive - maximum-fee (%f) < registration-fee(%f)", maxFee, fee)
+	}
+
+	balance, err := pt.PastelClient.GetBalance(ctx, address)
+	if err != nil {
+		return errors.Errorf("get balance of address(%s): %w", address, err)
+	}
+
+	if balance < fee {
+		return errors.Errorf("not enough PSL - balance(%f) < registration-fee(%f)", balance, fee)
 	}
 
 	return nil

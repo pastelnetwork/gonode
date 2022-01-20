@@ -105,7 +105,7 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint, secInfo
 	return nil
 }
 
-func (t *thumbnailHelper) listen(ctx context.Context, n *node.NftSearchNode) {
+func (t *thumbnailHelper) listen(ctx context.Context, n *node.NftSearchNodeClient) {
 	for {
 		select {
 		case <-ctx.Done():

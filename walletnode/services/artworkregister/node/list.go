@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -15,10 +17,17 @@ import (
 )
 
 // List represents multiple Node.
-type List []*NftRegisterNode
+type List []*NftRegisterNodeClient
 
 // Add adds a new node to the list.
-func (nodes *List) Add(node *NftRegisterNode) {
+func (nodes *List) Add(node *NftRegisterNodeClient) {
+	*nodes = append(*nodes, node)
+}
+
+func (nodes *List) AddNewNode(client node.ClientInterface, address string, pastelID string) {
+	node := &NftRegisterNodeClient{
+		SuperNodeClient: *common.NewSuperNode(client, address, pastelID),
+	}
 	*nodes = append(*nodes, node)
 }
 
@@ -76,7 +85,7 @@ func (nodes *List) WaitConnClose(ctx context.Context, done <-chan struct{}) erro
 }
 
 // FindByPastelID returns node by its patstelID.
-func (nodes *List) FindByPastelID(id string) *NftRegisterNode {
+func (nodes *List) FindByPastelID(id string) *NftRegisterNodeClient {
 	for _, node := range *nodes {
 		if node.PastelID() == id {
 			return node

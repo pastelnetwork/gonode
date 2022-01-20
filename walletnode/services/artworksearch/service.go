@@ -3,6 +3,8 @@ package artworksearch
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -18,16 +20,16 @@ const (
 )
 
 // Service represents a service for the NFT search.
-type Service struct {
+type NftSearchService struct {
 	*task.Worker
 
-	config       *Config
-	pastelClient pastel.Client
-	nodeClient   node.ClientInterface
+	config        *Config
+	pastelHandler *mixins.PastelHandler
+	nodeClient    node.ClientInterface
 }
 
 // Run starts worker.
-func (service *Service) Run(ctx context.Context) error {
+func (service *NftSearchService) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
@@ -37,7 +39,7 @@ func (service *Service) Run(ctx context.Context) error {
 }
 
 // Tasks returns all tasks.
-func (service *Service) Tasks() []*NftSearchTask {
+func (service *NftSearchService) Tasks() []*NftSearchTask {
 	var tasks []*NftSearchTask
 	for _, task := range service.Worker.Tasks() {
 		tasks = append(tasks, task.(*NftSearchTask))
@@ -46,7 +48,7 @@ func (service *Service) Tasks() []*NftSearchTask {
 }
 
 // GetTask returns the task of the NFT search by the given id.
-func (service *Service) GetTask(id string) *NftSearchTask {
+func (service *NftSearchService) GetTask(id string) *NftSearchTask {
 	if t := service.Worker.Task(id); t != nil {
 		return t.(*NftSearchTask)
 	}
@@ -54,7 +56,9 @@ func (service *Service) GetTask(id string) *NftSearchTask {
 }
 
 // AddTask runs a new task of the NFT search and returns its taskID.
-func (service *Service) AddTask(request *ArtSearchRequest) string {
+func (service *NftSearchService) AddTask(p *artworks.ArtSearchPayload) string {
+
+	request := FromArtSearchRequest(p)
 	task := NewNftSearchTask(service, request)
 	service.Worker.AddTask(task)
 
@@ -65,18 +69,18 @@ func (service *Service) AddTask(request *ArtSearchRequest) string {
 func NewService(config *Config,
 	pastelClient pastel.Client,
 	nodeClient node.ClientInterface,
-) *Service {
-	return &Service{
-		Worker:       task.NewWorker(),
-		config:       config,
-		pastelClient: pastelClient,
-		nodeClient:   nodeClient,
+) *NftSearchService {
+	return &NftSearchService{
+		Worker:        task.NewWorker(),
+		config:        config,
+		pastelHandler: mixins.NewPastelHandler(pastelClient),
+		nodeClient:    nodeClient,
 	}
 }
 
 // RegTicket pull NFT registration ticket from cNode & decodes base64 encoded fields
-func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.RegTicket, error) {
-	regTicket, err := service.pastelClient.RegTicket(ctx, RegTXID)
+func (service *NftSearchService) RegTicket(ctx context.Context, RegTXID string) (*pastel.RegTicket, error) {
+	regTicket, err := service.pastelHandler.PastelClient.RegTicket(ctx, RegTXID)
 	if err != nil {
 		return nil, errors.Errorf("fetch: %w", err)
 	}
@@ -92,8 +96,8 @@ func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.
 }
 
 // GetThumbnail gets thumbnail
-func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket, secInfo *alts.SecInfo) (data []byte, err error) {
-	thumbnailHelper := thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout)
+func (service *NftSearchService) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket, secInfo *alts.SecInfo) (data []byte, err error) {
+	thumbnailHelper := thumbnail.New(service.pastelHandler.PastelClient, service.nodeClient, service.config.ConnectToNodeTimeout)
 
 	if err := thumbnailHelper.Connect(ctx, 1, secInfo); err != nil {
 		return data, fmt.Errorf("connect Thumbnail helper: %w", err)
