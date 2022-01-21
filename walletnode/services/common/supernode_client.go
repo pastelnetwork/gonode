@@ -30,43 +30,17 @@ func (node *SuperNodeClient) String() string {
 	return node.address
 }
 
-// Address returns address of node
-func (node *SuperNodeClient) Address() string {
-	return node.address
-}
-
 // PastelID returns pastelID
 func (node *SuperNodeClient) PastelID() string {
 	return node.pastelID
 }
 
-// PastelID returns pastelID
-func (node *SuperNodeClient) SetPastelID(pastelID string) {
-	node.pastelID = pastelID
+// Address returns address of node
+func (node *SuperNodeClient) Address() string {
+	return node.address
 }
 
-// Connect connects to supernode.
-func (node *SuperNodeClient) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo) error {
-	node.mtx.Lock()
-	defer node.mtx.Unlock()
-
-	if node.ConnectionInterface != nil {
-		return nil
-	}
-
-	connCtx, connCancel := context.WithTimeout(ctx, timeout)
-	defer connCancel()
-
-	conn, err := node.ClientInterface.Connect(connCtx, node.address, secInfo)
-	if err != nil {
-		return err
-	}
-	node.ConnectionInterface = conn
-	node.SuperNodeAPIInterface = node.MakeNode(conn)
-	return nil
-}
-
-// SetPrimary promotes a supernode to primary role which handle the writes to Kamedila
+// SetPrimary promotes a supernode to primary role which handle the writes to Kademila
 func (node *SuperNodeClient) SetPrimary(primary bool) {
 	node.isPrimary = primary
 }
@@ -104,6 +78,27 @@ func (node *SuperNodeClient) RLock() {
 // RUnLock set nodes active or not
 func (node *SuperNodeClient) RUnlock() {
 	node.mtx.RUnlock()
+}
+
+// Connect connects to supernode.
+func (node *SuperNodeClient) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo) error {
+	node.mtx.Lock()
+	defer node.mtx.Unlock()
+
+	if node.ConnectionInterface != nil {
+		return nil
+	}
+
+	connCtx, connCancel := context.WithTimeout(ctx, timeout)
+	defer connCancel()
+
+	conn, err := node.ClientInterface.Connect(connCtx, node.address, secInfo)
+	if err != nil {
+		return err
+	}
+	node.ConnectionInterface = conn
+	node.SuperNodeAPIInterface = node.MakeNode(conn)
+	return nil
 }
 
 // NewSuperNode returns a new Node instance.

@@ -8,12 +8,12 @@ type SuperNodeInterface interface {
 	String() string
 	PastelID() string
 	Address() string
-	SetPrimary(primary bool)
+	SetPrimary(bool)
 	IsPrimary() bool
-	SetActive(active bool)
+	SetActive(bool)
 	IsActive() bool
-	SetRemoteStatus() bool
-	IsRemoteStatus() bool
+	SetRemoteState(bool)
+	IsRemoteState() bool
 	RLock()
 	RUnlock()
 }

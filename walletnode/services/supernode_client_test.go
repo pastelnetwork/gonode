@@ -1,14 +1,17 @@
-package senseregister
+package services
 
 import (
 	"context"
 	"fmt"
-	"sync"
+	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
+
+	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 	"testing"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	test "github.com/pastelnetwork/gonode/walletnode/node/test/register_sense"
+	testSense "github.com/pastelnetwork/gonode/walletnode/node/test/register_sense"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -21,7 +24,7 @@ func TestNodeConnect(t *testing.T) {
 	}
 
 	testCases := []struct {
-		node                      *SenseRegisterNodeClient
+		node                      *common.SuperNodeClient
 		address                   string
 		args                      args
 		err                       error
@@ -30,7 +33,7 @@ func TestNodeConnect(t *testing.T) {
 		assertion                 assert.ErrorAssertionFunc
 	}{
 		{
-			node:                      &SenseRegisterNodeClient{address: "127.0.0.1:4444", mtx: &sync.RWMutex{}},
+			node:                      common.NewSuperNode(nil, "127.0.0.1:4444", "", nil),
 			address:                   "127.0.0.1:4444",
 			args:                      args{context.Background()},
 			err:                       nil,
@@ -38,7 +41,7 @@ func TestNodeConnect(t *testing.T) {
 			numberRegisterArtWorkCall: 1,
 			assertion:                 assert.NoError,
 		}, {
-			node:                      &SenseRegisterNodeClient{address: "127.0.0.1:4445", mtx: &sync.RWMutex{}},
+			node:                      common.NewSuperNode(nil, "127.0.0.1:4445", "", nil),
 			address:                   "127.0.0.1:4445",
 			args:                      args{context.Background()},
 			err:                       fmt.Errorf("connection timeout"),
@@ -55,20 +58,27 @@ func TestNodeConnect(t *testing.T) {
 			t.Parallel()
 
 			//create client mocks
-			clientMock := test.NewMockClient(t)
+			senseClientMock := testSense.NewMockClient(t)
 
 			//listen needed method
-			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterSense()
+			senseClientMock.ListenOnConnect("", testCase.err).ListenOnRegisterSense()
 
 			//set up node client only
-			testCase.node.ClientInterface = clientMock.Client
+			testCase.node.ClientInterface = senseClientMock.Client
 
-			//assertion error
-			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
-			//mock assertion
-			clientMock.Client.AssertExpectations(t)
-			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address, mock.Anything)
-			clientMock.AssertRegisterSenseCall(testCase.numberRegisterArtWorkCall)
+			makers := []node.NodeMaker{senseregister.SenseRegisterNodeMaker{}}
+
+			for _, m := range makers {
+
+				testCase.node.NodeMaker = m
+
+				//assertion error
+				testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
+				//mock assertion
+				senseClientMock.Client.AssertExpectations(t)
+				senseClientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address, mock.Anything)
+				senseClientMock.AssertRegisterSenseCall(testCase.numberRegisterArtWorkCall)
+			}
 		})
 	}
 }

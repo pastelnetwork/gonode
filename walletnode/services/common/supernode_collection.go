@@ -11,8 +11,8 @@ type SuperNodeList []*SuperNodeClient
 
 // AddNewNode created and adds a new node to the list.
 func (nodes *SuperNodeList) AddNewNode(client node.ClientInterface, address string, pastelID string, nodeMaker node.NodeMaker) {
-	node := NewSuperNode(client, address, pastelID, nodeMaker)
-	*nodes = append(*nodes, node)
+	someNode := NewSuperNode(client, address, pastelID, nodeMaker)
+	*nodes = append(*nodes, someNode)
 }
 
 // Add adds a new node to the list.
@@ -75,9 +75,9 @@ func (nodes *SuperNodeList) WaitConnClose(ctx context.Context, done <-chan struc
 
 // FindByPastelID returns node by its patstelID.
 func (nodes *SuperNodeList) FindByPastelID(id string) *SuperNodeClient {
-	for _, node := range *nodes {
-		if node.PastelID() == id {
-			return node
+	for _, someNode := range *nodes {
+		if someNode.PastelID() == id {
+			return someNode
 		}
 	}
 	return nil
