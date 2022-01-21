@@ -191,7 +191,7 @@ func (service *registerNft) ProbeImage(ctx context.Context, image *files.File) (
 		return nil, false, errors.Errorf("receive image response: %w", err)
 	}
 
-	return resp.CompressedSignedDDAndFingerprints, false, nil
+	return resp.CompressedSignedDDAndFingerprints, true, nil
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()

@@ -95,7 +95,7 @@ func (service *SenseRegisterService) StoreFile(ctx context.Context, fileName *st
 }
 
 // StoreFile stores file into walletnode file storage. //TODO: make common with the same from NftRegisterService
-func (service *SenseRegisterService) GetActionRegistrationDetails(ctx context.Context, fileID string, fileSignature string, pastelID string) (float64, error) {
+func (service *SenseRegisterService) ValidateDetailsAndCalculateFee(ctx context.Context, fileID string, fileSignature string, pastelID string) (float64, error) {
 	fileData, err := service.imageHandler.GetImgData(fileID)
 	if err != nil {
 		return 0.0, err

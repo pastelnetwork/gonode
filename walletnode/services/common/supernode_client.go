@@ -21,6 +21,8 @@ type SuperNodeClient struct {
 
 	isPrimary bool
 	activated bool
+
+	isRemoteState bool
 }
 
 // String returns node as string (address)
@@ -79,9 +81,19 @@ func (node *SuperNodeClient) SetActive(active bool) {
 	node.activated = active
 }
 
-// SetActive set nodes active or not
+// SetActive returns true if nodes is active
 func (node *SuperNodeClient) IsActive() bool {
 	return node.activated
+}
+
+// SetRemoteState set state returned by nodes
+func (node *SuperNodeClient) SetRemoteState(remote bool) {
+	node.isRemoteState = remote
+}
+
+// IsRemoteState returns true if remote nodes processing status is ok
+func (node *SuperNodeClient) IsRemoteState() bool {
+	return node.isRemoteState
 }
 
 // RLock set nodes active or not

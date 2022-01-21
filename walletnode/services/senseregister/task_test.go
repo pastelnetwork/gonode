@@ -535,7 +535,7 @@ func TestTaskCreateTicket(t *testing.T) {
 			args: args{
 				task: &SenseRegisterTask{
 					fingerprint:          []byte{},
-					datahash:             []byte{},
+					dataHash:             []byte{},
 					fingerprintAndScores: &pastel.DDAndFingerprints{},
 					Request: &SenseRegisterRequest{
 						AppPastelID:           "test-id",
@@ -569,7 +569,7 @@ func TestTaskCreateTicket(t *testing.T) {
 				BlockHash:  tc.args.task.creatorBlockHash,
 				ActionType: pastel.ActionTypeSense,
 				APITicketData: &pastel.APISenseTicket{
-					DataHash:             tc.args.task.datahash,
+					DataHash:             tc.args.task.dataHash,
 					DDAndFingerprintsIc:  tc.args.task.ddAndFingerprintsIc,
 					DDAndFingerprintsMax: tc.args.task.config.DDAndFingerprintsMax,
 					DDAndFingerprintsIDs: tc.args.task.ddAndFingerprintsIDs,
@@ -582,8 +582,8 @@ func TestTaskCreateTicket(t *testing.T) {
 				assert.Equal(t, tc.wantErr.Error(), err.Error())
 			} else {
 				assert.Nil(t, err)
-				assert.NotNil(t, tc.args.task.ticket)
-				assert.Equal(t, *tc.want, *tc.args.task.ticket)
+				assert.NotNil(t, tc.args.task.actionTicket)
+				assert.Equal(t, *tc.want, *tc.args.task.actionTicket)
 			}
 		})
 	}
@@ -704,7 +704,7 @@ func TestTaskSignTicket(t *testing.T) {
 					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
-					ticket: &pastel.ActionTicket{},
+					actionTicket: &pastel.ActionTicket{},
 				},
 			},
 			wantErr: nil,
@@ -718,7 +718,7 @@ func TestTaskSignTicket(t *testing.T) {
 					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
-					ticket: &pastel.ActionTicket{},
+					actionTicket: &pastel.ActionTicket{},
 				},
 				signErr: errors.New("test"),
 			},
@@ -950,7 +950,7 @@ func TestTaskProbeImage(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					ticket: &pastel.ActionTicket{},
+					actionTicket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -972,7 +972,7 @@ func TestTaskProbeImage(t *testing.T) {
 					Request: &SenseRegisterRequest{
 						AppPastelID: "testid",
 					},
-					ticket: &pastel.ActionTicket{},
+					actionTicket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1067,7 +1067,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
-					ticket: &pastel.ActionTicket{},
+					actionTicket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1150,7 +1150,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
-					ticket: &pastel.ActionTicket{},
+					actionTicket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1169,7 +1169,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					SenseRegisterService: &SenseRegisterService{
 						config: &Config{},
 					},
-					ticket: &pastel.ActionTicket{},
+					actionTicket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1188,7 +1188,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					SenseRegisterService: &SenseRegisterService{
 						config: &Config{NumberSuperNodes: 1},
 					},
-					ticket: &pastel.ActionTicket{},
+					actionTicket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},

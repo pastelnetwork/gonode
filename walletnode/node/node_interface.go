@@ -12,6 +12,8 @@ type SuperNodeInterface interface {
 	IsPrimary() bool
 	SetActive(active bool)
 	IsActive() bool
+	SetRemoteStatus() bool
+	IsRemoteStatus() bool
 	RLock()
 	RUnlock()
 }

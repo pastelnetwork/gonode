@@ -6,7 +6,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"sync"
@@ -15,9 +14,9 @@ import (
 
 type MeshHandler struct {
 	task          *common.WalletNodeTask
-	nodeMaker     node.NodeMaker
 	pastelHandler *PastelHandler
 
+	nodeMaker  node.NodeMaker
 	nodeClient node.ClientInterface
 
 	// TODO: make config interface and use it here instead of individual items
@@ -285,7 +284,8 @@ func (m *MeshHandler) findNodesForMesh(ctx context.Context, candidatesNodes comm
 	return meshedNodes, nil
 }
 
-func (m *MeshHandler) closeSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
+// CloseSNsConnections closes connections to all nodes
+func (m *MeshHandler) CloseSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
 	var err error
 
 	close(nodesDone)
@@ -304,43 +304,12 @@ func (m *MeshHandler) closeSNsConnections(ctx context.Context, nodesDone chan st
 	return err
 }
 
-func (m *MeshHandler) ProcessFingerprints(ctx context.Context) error {
-	var signatures [][]byte
-	// Match signatures received from supernodes.
-	for i := 0; i < len(m.Nodes); i++ {
-		// Validate burn_txid transaction with SNs
-		if !task.senseHandler.ValidBurnTxID() {
-			m.task.UpdateStatus(common.StatusErrorInvalidBurnTxID)
-			return errors.New("invalid burn txid")
+// ValidBurnTxID returns whether the burn txid is valid at ALL SNs
+func (m *MeshHandler) CheckSNReportedState() bool {
+	for _, someNode := range m.Nodes {
+		if !someNode.IsRemoteState() {
+			return false
 		}
-
-		// Validate signatures received from supernodes.
-		verified, err := task.PastelHandler.VerifySignature(ctx,
-			task.nodes[i].FingerprintAndScoresBytes,
-			string(task.nodes[i].Signature),
-			task.nodes[i].PastelID(),
-			pastel.SignAlgorithmED448)
-		if err != nil {
-			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
-		}
-
-		if !verified {
-			m.task.UpdateStatus(common.StatusErrorSignaturesNotMatch)
-			return errors.Errorf("node[%s] signature doesn't match", task.nodes[i].PastelID())
-		}
-
-		signatures = append(signatures, task.nodes[i].Signature)
 	}
-	task.signatures = signatures
-
-	// Match fingerprints received from supernodes.
-	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
-		m.task.UpdateStatus(common.StatusErrorFingerprintsNotMatch)
-		return errors.Errorf("fingerprints aren't matched :%w", err)
-	}
-
-	task.fingerprintAndScores = task.nodes.FingerAndScores()
-	m.task.UpdateStatus(common.StatusImageProbed)
-
-	return nil
+	return true
 }
