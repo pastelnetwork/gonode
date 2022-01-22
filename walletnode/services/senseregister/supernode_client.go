@@ -4,11 +4,11 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
-type SenseRegisterNodeMaker struct {
+type RegisterSenseNodeMaker struct {
 	node.NodeMaker
 }
 
-func (maker SenseRegisterNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
+func (maker RegisterSenseNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
 	return &SenseRegisterNode{RegisterSenseInterface: conn.RegisterSense()}
 }
 

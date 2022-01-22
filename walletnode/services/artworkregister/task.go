@@ -9,7 +9,6 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/DataDog/zstd"
@@ -17,23 +16,20 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 )
 
 // NftRegistrationTask is the task of registering new artwork.
 type NftRegistrationTask struct {
 	*common.WalletNodeTask
 
+	nftHandler *NftRegisterHandler
+
 	service *NftRegisterService
 	Request *NftRegisterRequest
-
-	meshHandler *mixins.MeshHandler
-	fpHandler   *mixins.FingerprintsHandler
 
 	// task data to create RegArt ticket
 	creatorBlockHeight           int
@@ -42,10 +38,8 @@ type NftRegistrationTask struct {
 	previewHash                  []byte
 	mediumThumbnailHash          []byte
 	smallThumbnailHash           []byte
-	datahash                     []byte
-
-	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
-	signatures [][]byte
+	dataHash                     []byte
+	registrationFee              int64
 
 	rqids          []string
 	rqEncodeParams rqnode.EncoderParameters
@@ -53,19 +47,15 @@ type NftRegistrationTask struct {
 	rqIDsIc        uint32
 
 	// ticket
-	creatorSignature []byte
-	ticket           *pastel.NFTTicket
+	creatorSignature      []byte
+	nftRegistrationTicket *pastel.NFTTicket
 
-	// TODO: call cNodeAPI to get the following info
-	//burnTxid        string
-	//regNFTTxid      string
-	//registrationFee int64
+	regNFTTxid string
 }
 
 // Run starts the task
 func (task *NftRegistrationTask) Run(ctx context.Context) error {
-	_ = task.RunHelper(ctx, task.run, task.removeArtifacts)
-	return nil
+	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
 func (task *NftRegistrationTask) run(ctx context.Context) error {
@@ -80,9 +70,12 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	}
 
 	// Retrieve supernodes with highest ranks.
-	if err := task.connectToTopRankNodes(ctx); err != nil {
+	creatorBlockHeight, creatorBlockHash, err := task.nftHandler.meshHandler.ConnectToTopRankNodes(ctx)
+	if err != nil {
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
+	task.creatorBlockHeight = creatorBlockHeight
+	task.creatorBlockHash = creatorBlockHash
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
@@ -90,29 +83,21 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	groupConnClose, _ := errgroup.WithContext(ctx)
 	groupConnClose.Go(func() error {
 		defer cancel()
-		return task.nodes.WaitConnClose(ctx, nodesDone)
+		return task.nftHandler.meshHandler.Nodes.WaitConnClose(ctx, nodesDone)
 	})
-
-	// get block height + hash
-	blockNum, blockHash, err := task.GetBlock(ctx)
-	if err != nil {
-		return errors.Errorf("get current block heigth: %v", err)
-	}
-	task.creatorBlockHeight = blockNum
-	task.creatorBlockHash = blockHash
 
 	// send registration metadata
 	if err := task.sendRegMetadata(ctx); err != nil {
 		return errors.Errorf("send registration metadata: %w", err)
 	}
 
-	// probe image for rareness, nsfw and seen score
-	if err := task.probeImage(ctx); err != nil {
+	// probe image for average rareness, nsfw and seen score
+	if err := task.nftHandler.ProbeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
 		return errors.Errorf("probe image: %w", err)
 	}
 
 	// generateDDAndFingerprintsIDs generates dd & fp IDs
-	if err := task.generateDDAndFingerprintsIDs(); err != nil {
+	if err := task.nftHandler.fpHandler.GenerateDDAndFingerprintsIDs(ctx, task.service.config.DDAndFingerprintsMax); err != nil {
 		return errors.Errorf("probe image: %w", err)
 	}
 
@@ -194,41 +179,6 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	return nil
 }
 
-// generateDDAndFingerprintsIDs generates redundant IDs and assigns to task.redundantIDs
-func (task *NftRegistrationTask) generateDDAndFingerprintsIDs() error {
-	ddDataJSON, err := json.Marshal(task.fingerprintAndScores)
-	if err != nil {
-		return errors.Errorf("failed to marshal dd-data: %w", err)
-	}
-	task.fingerprint = ddDataJSON
-
-	ddEncoded := utils.B64Encode(ddDataJSON)
-
-	var buffer bytes.Buffer
-	buffer.Write(ddEncoded)
-	buffer.WriteByte(pastel.SeparatorByte)
-	buffer.Write(task.signatures[0])
-	buffer.WriteByte(pastel.SeparatorByte)
-	buffer.Write(task.signatures[1])
-	buffer.WriteByte(pastel.SeparatorByte)
-	buffer.Write(task.signatures[2])
-	ddFpFile := buffer.Bytes()
-
-	task.ddAndFingerprintsIc = rand.Uint32()
-	task.ddAndFingerprintsIDs, _, err = pastel.GetIDFiles(ddFpFile, task.ddAndFingerprintsIc, task.config.DDAndFingerprintsMax)
-	if err != nil {
-		return fmt.Errorf("get ID Files: %w", err)
-	}
-
-	comp, err := zstd.CompressLevel(nil, ddFpFile, 22)
-	if err != nil {
-		return errors.Errorf("compress: %w", err)
-	}
-	task.ddAndFpFile = utils.B64Encode(comp)
-
-	return nil
-}
-
 func (task *NftRegistrationTask) encodeFingerprint(ctx context.Context, fingerprint []byte, img *files.File) error {
 	// Sign fingerprint
 	ed448PubKey, err := getPubKey(task.Request.ArtistPastelID)
@@ -236,7 +186,7 @@ func (task *NftRegistrationTask) encodeFingerprint(ctx context.Context, fingerpr
 		return fmt.Errorf("encodeFingerprint: %v", err)
 	}
 
-	ed448Signature, err := task.PastelClient.Sign(ctx,
+	ed448Signature, err := task.service.pastelHandler.PastelClient.Sign(ctx,
 		fingerprint,
 		task.Request.ArtistPastelID,
 		task.Request.ArtistPastelIDPassphrase,
@@ -245,12 +195,12 @@ func (task *NftRegistrationTask) encodeFingerprint(ctx context.Context, fingerpr
 		return errors.Errorf("sign fingerprint: %w", err)
 	}
 
-	ticket, err := task.PastelClient.FindTicketByID(ctx, task.Request.ArtistPastelID)
+	ticket, err := task.service.pastelHandler.PastelClient.FindTicketByID(ctx, task.Request.ArtistPastelID)
 	if err != nil {
 		return errors.Errorf("find register ticket of artist pastel id(%s):%w", task.Request.ArtistPastelID, err)
 	}
 
-	pqSignature, err := task.PastelClient.Sign(ctx,
+	pqSignature, err := task.service.pastelHandler.PastelClient.Sign(ctx,
 		fingerprint,
 		task.Request.ArtistPastelID,
 		task.Request.ArtistPastelIDPassphrase,
@@ -276,99 +226,8 @@ func (task *NftRegistrationTask) encodeFingerprint(ctx context.Context, fingerpr
 	return img.Encode(encSig)
 }
 
-// meshNodes establishes communication between supernodes.
-func (task *NftRegistrationTask) meshNodes(ctx context.Context, nodes node.List, primaryIndex int) (node.List, error) {
-	var meshNodes node.List
-	secInfo := &alts.SecInfo{
-		PastelID:   task.Request.ArtistPastelID,
-		PassPhrase: task.Request.ArtistPastelIDPassphrase,
-		Algorithm:  "ed448",
-	}
-
-	primary := nodes[primaryIndex]
-	log.WithContext(ctx).Debugf("Trying to connect to primary node %q", primary)
-	if err := primary.Connect(ctx, task.config.ConnectToNodeTimeout, secInfo); err != nil {
-		return nil, err
-	}
-	if err := primary.Session(ctx, true); err != nil {
-		return nil, err
-	}
-
-	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
-	defer nextConnCancel()
-
-	// FIXME: ugly hack here. Need to make the Node and List to be safer
-	secondariesMtx := &sync.Mutex{}
-	var secondaries node.List
-	go func() {
-		for i, node := range nodes {
-			node := node
-
-			if i == primaryIndex {
-				continue
-			}
-
-			select {
-			case <-nextConnCtx.Done():
-				return
-			case <-time.After(task.config.connectToNextNodeDelay):
-				go func() {
-					defer errors.Recover(log.Fatal)
-
-					if err := node.Connect(ctx, task.config.ConnectToNodeTimeout, secInfo); err != nil {
-						return
-					}
-					if err := node.Session(ctx, false); err != nil {
-						return
-					}
-					// Should not run this code in go routine
-					func() {
-						secondariesMtx.Lock()
-						defer secondariesMtx.Unlock()
-						secondaries.Add(node)
-					}()
-
-					if err := node.ConnectTo(ctx, types.MeshedSuperNode{
-						NodeID: primary.PastelID(),
-						SessID: primary.SessID(),
-					}); err != nil {
-						return
-					}
-					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
-				}()
-			}
-		}
-	}()
-
-	acceptCtx, acceptCancel := context.WithTimeout(ctx, task.config.acceptNodesTimeout)
-	defer acceptCancel()
-
-	accepted, err := primary.AcceptedNodes(acceptCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	primary.SetPrimary(true)
-	meshNodes.Add(primary)
-
-	secondariesMtx.Lock()
-	defer secondariesMtx.Unlock()
-
-	for _, pastelID := range accepted {
-		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
-
-		node := secondaries.FindByPastelID(pastelID)
-		if node == nil {
-			return nil, errors.New("not found accepted node")
-		}
-		meshNodes.Add(node)
-	}
-
-	return meshNodes, nil
-}
-
 func (task *NftRegistrationTask) isSuitableStorageFee(ctx context.Context) (bool, error) {
-	fee, err := task.PastelClient.StorageNetworkFee(ctx)
+	fee, err := task.service.pastelHandler.PastelClient.StorageNetworkFee(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -460,7 +319,7 @@ func (task *NftRegistrationTask) createArtTicket(_ context.Context) error {
 	if task.fingerprint == nil {
 		return errEmptyFingerprints
 	}
-	if task.datahash == nil {
+	if task.dataHash == nil {
 		return errEmptyDatahash
 	}
 	if task.previewHash == nil {
@@ -500,7 +359,7 @@ func (task *NftRegistrationTask) createArtTicket(_ context.Context) error {
 			PreviewHash:                task.previewHash,
 			Thumbnail1Hash:             task.mediumThumbnailHash,
 			Thumbnail2Hash:             task.smallThumbnailHash,
-			DataHash:                   task.datahash,
+			DataHash:                   task.dataHash,
 			DDAndFingerprintsIc:        task.ddAndFingerprintsIc,
 			DDAndFingerprintsMax:       task.config.DDAndFingerprintsMax,
 			DDAndFingerprintsIDs:       task.ddAndFingerprintsIDs,
@@ -511,17 +370,17 @@ func (task *NftRegistrationTask) createArtTicket(_ context.Context) error {
 		},
 	}
 
-	task.ticket = ticket
+	task.nftRegistrationTicket = ticket
 	return nil
 }
 
 func (task *NftRegistrationTask) signTicket(ctx context.Context) error {
-	data, err := pastel.EncodeNFTTicket(task.ticket)
+	data, err := pastel.EncodeNFTTicket(task.nftRegistrationTicket)
 	if err != nil {
 		return errors.Errorf("encode ticket %w", err)
 	}
 
-	task.creatorSignature, err = task.PastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
+	task.creatorSignature, err = task.service.pastelHandler.PastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign ticket %w", err)
 	}
@@ -529,79 +388,12 @@ func (task *NftRegistrationTask) signTicket(ctx context.Context) error {
 }
 
 func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string, error) {
-	return task.PastelClient.RegisterActTicket(ctx,
+	return task.service.pastelHandler.PastelClient.RegisterActTicket(ctx,
 		task.regNFTTxid,
 		task.creatorBlockHeight,
 		task.registrationFee,
 		task.Request.ArtistPastelID,
 		task.Request.ArtistPastelIDPassphrase)
-}
-
-func (task *NftRegistrationTask) connectToTopRankNodes(ctx context.Context) error {
-	// Retrieve supernodes with highest ranks.
-
-	var topNodes node.List
-	err := task.GetTopNodes(ctx, &topNodes, task.NftRegisterService.nodeClient, 0)
-	if err != nil {
-		return errors.Errorf("call masternode top: %w", err)
-	}
-
-	if len(topNodes) < task.config.NumberSuperNodes {
-		task.UpdateStatus(common.StatusErrorInsufficientFee)
-		return errors.New("unable to find enough Supernodes with acceptable storage fee")
-	}
-
-	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
-	var nodes node.List
-	var errs error
-
-	for primaryRank := range topNodes {
-		nodes, err = task.meshNodes(ctx, topNodes, primaryRank)
-		if err != nil {
-			// close connected connections
-			topNodes.DisconnectAll()
-
-			if errors.IsContextCanceled(err) {
-				return err
-			}
-			errs = errors.Append(errs, err)
-			log.WithContext(ctx).WithError(err).Warn("Could not create a mesh of the nodes")
-			continue
-		}
-		break
-	}
-	if len(nodes) < task.config.NumberSuperNodes {
-		// close connected connections
-		topNodes.DisconnectAll()
-		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
-	}
-
-	// Activate supernodes that are in the mesh.
-	nodes.Activate()
-	// Disconnect supernodes that are not involved in the process.
-	topNodes.DisconnectInactive()
-
-	// Cancel context when any connection is broken.
-	task.UpdateStatus(common.StatusConnected)
-	task.nodes = nodes
-
-	// Send all meshed supernode info to nodes - that will be used to node send info to other nodes
-	meshedSNInfo := []types.MeshedSuperNode{}
-	for _, node := range nodes {
-		meshedSNInfo = append(meshedSNInfo, types.MeshedSuperNode{
-			NodeID: node.PastelID(),
-			SessID: node.SessID(),
-		})
-	}
-
-	for _, node := range nodes {
-		err = node.MeshNodes(ctx, meshedSNInfo)
-		if err != nil {
-			nodes.DisconnectAll()
-			return errors.Errorf("could not send info of meshed nodes: %w", err)
-		}
-	}
-	return nil
 }
 
 func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
@@ -618,47 +410,7 @@ func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
 		CreatorPastelID: task.Request.ArtistPastelID,
 	}
 
-	return task.nodes.SendRegMetadata(ctx, regMetadata)
-}
-
-func (task *NftRegistrationTask) probeImage(ctx context.Context) error {
-	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debug("probe image")
-
-	// Send image to supernodes for probing.
-	if err := task.nodes.ProbeImage(ctx, task.Request.Image); err != nil {
-		return errors.Errorf("send image: %w", err)
-	}
-	signatures := [][]byte{}
-	// Match signatures received from supernodes.
-	for i := 0; i < len(task.nodes); i++ {
-		verified, err := task.PastelClient.Verify(ctx,
-			task.nodes[i].FingerprintAndScoresBytes,
-			string(task.nodes[i].Signature),
-			task.nodes[i].PastelID(),
-			pastel.SignAlgorithmED448)
-		if err != nil {
-			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
-		}
-
-		if !verified {
-			task.UpdateStatus(common.StatusErrorSignaturesNotMatch)
-			return errors.Errorf("node[%s] signature doesn't match", task.nodes[i].PastelID())
-		}
-
-		signatures = append(signatures, task.nodes[i].Signature)
-	}
-	task.signatures = signatures
-
-	// Match fingerprints received from supernodes.
-	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
-		task.UpdateStatus(common.StatusErrorFingerprintsNotMatch)
-		return errors.Errorf("fingerprints aren't matched :%w", err)
-	}
-
-	task.fingerprintAndScores = task.nodes.FingerAndScores()
-	task.UpdateStatus(common.StatusImageProbed)
-
-	return nil
+	return task.nftHandler.SendRegMetadata(ctx, regMetadata)
 }
 
 func (task *NftRegistrationTask) uploadImage(ctx context.Context) error {
@@ -678,7 +430,7 @@ func (task *NftRegistrationTask) uploadImage(ctx context.Context) error {
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
 
-	if task.datahash, err = utils.Sha3256hash(imgBytes); err != nil {
+	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
 		return errors.Errorf("hash encoded image: %w", err)
 	}
 
@@ -701,7 +453,7 @@ func (task *NftRegistrationTask) uploadImage(ctx context.Context) error {
 }
 
 func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
-	buf, err := pastel.EncodeNFTTicket(task.ticket)
+	buf, err := pastel.EncodeNFTTicket(task.nftRegistrationTicket)
 	if err != nil {
 		return errors.Errorf("marshal ticket: %w", err)
 	}

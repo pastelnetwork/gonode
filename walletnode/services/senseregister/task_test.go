@@ -26,7 +26,7 @@ import (
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
-	test "github.com/pastelnetwork/gonode/walletnode/node/test/register_sense"
+	test "github.com/pastelnetwork/gonode/walletnode/node/test/sense_register"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister/node"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

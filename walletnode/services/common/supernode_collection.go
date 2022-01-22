@@ -28,18 +28,6 @@ func (nodes *SuperNodeList) Activate() {
 	}
 }
 
-// DisconnectInactive disconnects nodes which were not marked as activated.
-func (nodes *SuperNodeList) DisconnectInactive() {
-	for _, node := range *nodes {
-		node.RLock()
-		defer node.RUnlock()
-
-		if node.ConnectionInterface != nil && !node.IsActive() {
-			node.ConnectionInterface.Close()
-		}
-	}
-}
-
 // DisconnectAll disconnects all nodes
 func (nodes *SuperNodeList) DisconnectAll() {
 	for _, node := range *nodes {

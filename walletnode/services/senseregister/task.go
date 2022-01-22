@@ -238,7 +238,7 @@ func NewSenseRegisterTask(service *SenseRegisterService, request *SenseRegisterR
 		Request:        request,
 	}
 	meshHandler := mixins.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &SenseRegisterNodeMaker{},
+		service.nodeClient, &RegisterSenseNodeMaker{},
 		service.pastelHandler,
 		request.AppPastelID, request.AppPastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,

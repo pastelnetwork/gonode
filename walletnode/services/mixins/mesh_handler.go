@@ -313,3 +313,26 @@ func (m *MeshHandler) CheckSNReportedState() bool {
 	}
 	return true
 }
+
+// DisconnectInactive disconnects nodes which were not marked as activated.
+func (m *MeshHandler) DisconnectInactiveNodes() {
+	for _, someNode := range m.Nodes {
+		someNode.RLock()
+		defer someNode.RUnlock()
+
+		if someNode.ConnectionInterface != nil && !someNode.IsActive() {
+			someNode.ConnectionInterface.Close()
+		}
+	}
+}
+
+func NewMeshHandlerSimple(nodeClient node.ClientInterface, nodeMaker node.NodeMaker) *MeshHandler {
+	return &MeshHandler{
+		nodeMaker:  nodeMaker,
+		nodeClient: nodeClient,
+	}
+}
+
+func (m *MeshHandler) AddNewNode(address string, pastelID string) {
+	m.Nodes.AddNewNode(m.nodeClient, address, pastelID, m.nodeMaker)
+}

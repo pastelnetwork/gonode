@@ -28,7 +28,8 @@ const (
 // Service represents a service for Sense Open API
 type SenseRegisterService struct {
 	*task.Worker
-	config        *Config
+	config *Config
+
 	imageHandler  *mixins.ImageHandler
 	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface

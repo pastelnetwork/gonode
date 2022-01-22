@@ -27,7 +27,7 @@ func NewSenseRegisterHandler(meshHandler *mixins.MeshHandler, fpHandler *mixins.
 func (h *SenseRegisterHandler) SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range h.meshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(SenseRegisterNode)
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegisterNode)
 		if !ok {
 			//TODO: use assert here
 			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
@@ -53,7 +53,7 @@ func (h *SenseRegisterHandler) ProbeImage(ctx context.Context, file *files.File,
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range h.meshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(SenseRegisterNode)
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegisterNode)
 		if !ok {
 			//TODO: use assert here
 			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
@@ -99,7 +99,7 @@ func (h *SenseRegisterHandler) UploadSignedTicket(ctx context.Context, ticket []
 	ddFpFile := h.fpHandler.DDAndFpFile
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range h.meshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(SenseRegisterNode)
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegisterNode)
 		if !ok {
 			//TODO: use assert here
 			return "", errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
@@ -134,7 +134,7 @@ func (h *SenseRegisterHandler) UploadActionAct(ctx context.Context, activateTxID
 	group, _ := errgroup.WithContext(ctx)
 
 	for _, someNode := range h.meshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(SenseRegisterNode)
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegisterNode)
 		if !ok {
 			//TODO: use assert here
 			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
