@@ -25,7 +25,7 @@ type NftRegisterService struct {
 	config *Config
 
 	nodeClient    node.ClientInterface
-	imageHandler  *mixins.ImageHandler
+	imageHandler  *mixins.FilesHandler
 	pastelHandler *mixins.PastelHandler
 
 	rqClient rqnode.Client
@@ -102,7 +102,7 @@ func NewService(
 		Worker:        task.NewWorker(),
 		config:        config,
 		nodeClient:    nodeClient,
-		imageHandler:  mixins.NewImageHandler(fileStorage, db, defaultImageTTL),
+		imageHandler:  mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
 		rqClient:      raptorqClient,
 	}

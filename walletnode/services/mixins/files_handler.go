@@ -9,17 +9,17 @@ import (
 	"time"
 )
 
-type ImageHandler struct {
+type FilesHandler struct {
 	FileStorage *files.Storage
 	FileDb      storage.KeyValue
 	imageTTL    time.Duration
 }
 
-func NewImageHandler(
+func NewFilesHandler(
 	fileStorage storage.FileStorageInterface,
 	db storage.KeyValue,
-	imageTTL time.Duration) *ImageHandler {
-	return &ImageHandler{
+	imageTTL time.Duration) *FilesHandler {
+	return &FilesHandler{
 		FileStorage: files.NewStorage(fileStorage),
 		FileDb:      db,
 		imageTTL:    imageTTL,
@@ -27,7 +27,7 @@ func NewImageHandler(
 }
 
 // StoreImage stores the image in the FileDb and storage and return image_id
-func (st *ImageHandler) StoreFileNameIntoStorage(ctx context.Context, fileName *string) (string, string, error) {
+func (st *FilesHandler) StoreFileNameIntoStorage(ctx context.Context, fileName *string) (string, string, error) {
 
 	id, err := random.String(8, random.Base62Chars)
 	if err := st.FileDb.Set(id, []byte(*fileName)); err != nil {
@@ -44,7 +44,7 @@ func (st *ImageHandler) StoreFileNameIntoStorage(ctx context.Context, fileName *
 }
 
 // GetImgData returns the image data from the storage
-func (st *ImageHandler) GetImgData(imageID string) ([]byte, error) {
+func (st *FilesHandler) GetImgData(imageID string) ([]byte, error) {
 	// get image filename from storage based on image_id
 	filename, err := st.FileDb.Get(imageID)
 	if err != nil {

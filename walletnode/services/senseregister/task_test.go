@@ -528,7 +528,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					},
 				},
 			},
-			wantErr: errEmptyDatahash,
+			wantErr: ErrEmptyDatahash,
 			want:    nil,
 		},
 		"success": {

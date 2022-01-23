@@ -30,7 +30,7 @@ type SenseRegisterService struct {
 	*task.Worker
 	config *Config
 
-	imageHandler  *mixins.ImageHandler
+	imageHandler  *mixins.FilesHandler
 	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface
 }
@@ -132,7 +132,7 @@ func NewService(
 		Worker:        task.NewWorker(),
 		config:        config,
 		nodeClient:    nodeClient,
-		imageHandler:  mixins.NewImageHandler(fileStorage, db, defaultImageTTL),
+		imageHandler:  mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
 	}
 }

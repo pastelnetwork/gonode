@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	errEmptyDatahash = errors.Errorf("empty data hash")
+	ErrEmptyDatahash = errors.Errorf("empty data hash")
 )

@@ -664,7 +664,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					},
 				},
 			},
-			wantErr: errEmptyFingerprints,
+			wantErr: common.ErrEmptyFingerprints,
 			want:    nil,
 		},
 		"data-hash-error": {
@@ -683,7 +683,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					},
 				},
 			},
-			wantErr: errEmptyDatahash,
+			wantErr: common.ErrEmptyDatahash,
 			want:    nil,
 		},
 		"preview-hash-error": {
@@ -702,7 +702,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					},
 				},
 			},
-			wantErr: errEmptyPreviewHash,
+			wantErr: common.ErrEmptyPreviewHash,
 			want:    nil,
 		},
 		"medium-thumbnail-error": {
@@ -721,7 +721,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					},
 				},
 			},
-			wantErr: errEmptyMediumThumbnailHash,
+			wantErr: common.ErrEmptyMediumThumbnailHash,
 			want:    nil,
 		},
 		"small-thumbnail-error": {
@@ -740,7 +740,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					},
 				},
 			},
-			wantErr: errEmptySmallThumbnailHash,
+			wantErr: common.ErrEmptySmallThumbnailHash,
 			want:    nil,
 		},
 		"raptorQ-symbols-error": {
@@ -760,7 +760,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					fingerprintAndScores: &pastel.DDAndFingerprints{},
 				},
 			},
-			wantErr: errEmptyRaptorQSymbols,
+			wantErr: common.ErrEmptyRaptorQSymbols,
 			want:    nil,
 		},
 		"success": {
@@ -1258,10 +1258,10 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 			} else {
 				assert.Nil(t, err)
 
-				ed448PubKey, err := getPubKey(tc.args.task.Request.ArtistPastelID)
+				ed448PubKey, err := common.GetPubKey(tc.args.task.Request.ArtistPastelID)
 				assert.Nil(t, err)
 
-				pqPubKey, err := getPubKey(tc.args.findTicketIDReturns.PqKey)
+				pqPubKey, err := common.GetPubKey(tc.args.findTicketIDReturns.PqKey)
 				assert.Nil(t, err)
 
 				decSig := qrsignature.New()

@@ -172,9 +172,11 @@ func TestNodesSendImage(t *testing.T) {
 			nodeTask := &common.WalletNodeTask{Task: taskClient}
 
 			fpHandler := mixins.NewFingerprintsHandler(nodeTask, pslHandler)
-			srvHandler := service.NewSenseRegisterHandler(meshHandler, fpHandler)
+			srvTask := service.SenseRegisterTask{WalletNodeTask: nodeTask}
+			srvTask.MeshHandler = meshHandler
+			srvTask.FingerprintsHandler = fpHandler
 
-			err := srvHandler.ProbeImage(testCase.args.ctx, testCase.args.file, "")
+			err := srvTask.ProbeImage(testCase.args.ctx, testCase.args.file, "")
 			if testCase.err != nil {
 				assert.True(t, strings.Contains(err.Error(), testCase.err.Error()))
 			} else {
