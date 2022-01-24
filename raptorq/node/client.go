@@ -43,8 +43,8 @@ type Decode struct {
 	File []byte
 }
 
-// Client represents a base connection interface.
-type Client interface {
+// ClientInterface represents a base connection interface.
+type ClientInterface interface {
 	// Connect connects to the server at the given address.
 	Connect(ctx context.Context, address string) (Connection, error)
 }

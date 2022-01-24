@@ -46,6 +46,6 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 }
 
 // NewClient returns a new client instance.
-func NewClient() node.Client {
+func NewClient() node.ClientInterface {
 	return &client{}
 }

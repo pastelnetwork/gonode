@@ -28,7 +28,7 @@ type NftRegisterService struct {
 	imageHandler  *mixins.FilesHandler
 	pastelHandler *mixins.PastelHandler
 
-	rqClient rqnode.Client
+	rqClient rqnode.ClientInterface
 }
 
 // Run starts worker. //TODO: make common with the same from SenseRegisterService
@@ -96,7 +96,7 @@ func NewService(
 	nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface,
 	db storage.KeyValue,
-	raptorqClient rqnode.Client,
+	raptorqClient rqnode.ClientInterface,
 ) *NftRegisterService {
 	return &NftRegisterService{
 		Worker:        task.NewWorker(),

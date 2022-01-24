@@ -144,3 +144,9 @@ func (h *FingerprintsHandler) GenerateDDAndFingerprintsIDs(_ context.Context, ma
 
 	return nil
 }
+
+func (h FingerprintsHandler) IsEmpty() bool {
+	return h.DDAndFingerprintsIDs == nil || len(h.DDAndFingerprintsIDs) == 0 ||
+		h.DDAndFpFile == nil || len(h.DDAndFpFile) == 0 ||
+		h.SNsSignatures == nil || len(h.SNsSignatures) == 0
+}

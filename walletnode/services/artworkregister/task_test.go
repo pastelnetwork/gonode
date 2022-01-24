@@ -823,7 +823,7 @@ func TestTaskCreateTicket(t *testing.T) {
 				},
 			}
 
-			err := tc.args.task.createArtTicket(context.Background())
+			err := tc.args.task.createNftTicket(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.Equal(t, tc.wantErr.Error(), err.Error())

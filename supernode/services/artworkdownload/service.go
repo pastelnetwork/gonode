@@ -27,7 +27,7 @@ type Service struct {
 	config        *Config
 	pastelClient  pastel.Client
 	p2pClient     p2p.Client
-	raptorQClient rqnode.Client
+	raptorQClient rqnode.ClientInterface
 }
 
 // Run starts task
@@ -75,7 +75,7 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, raptorQClient rqnode.Client) *Service {
+func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, raptorQClient rqnode.ClientInterface) *Service {
 	return &Service{
 		config:        config,
 		pastelClient:  pastelClient,

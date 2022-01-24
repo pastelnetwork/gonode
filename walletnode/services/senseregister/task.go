@@ -108,7 +108,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 	}
 
 	// UPLOAD signed ticket to supernodes to validate and register action with the network
-	if err := task.uploadSignedTicket(ctx, task.serializedTicket, task.creatorSignature); err != nil {
+	if err := task.uploadSignedTicket(ctx); err != nil {
 		return errors.Errorf("send signed sense ticket: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketAccepted)
@@ -272,9 +272,16 @@ func (task *SenseRegisterTask) signTicket(ctx context.Context) error {
 }
 
 // uploadSignedTicket uploads sense ticket  and its signature to super nodes
-func (task *SenseRegisterTask) uploadSignedTicket(ctx context.Context, ticket []byte, signature []byte) error {
+func (task *SenseRegisterTask) uploadSignedTicket(ctx context.Context) error {
+	if task.serializedTicket == nil {
+		return errors.Errorf("uploading ticket: serializedTicket is empty")
+	}
+	if task.creatorSignature == nil {
+		return errors.Errorf("uploading ticket: creatorSignature is empty")
+	}
 	var regSenseTxid string
 	ddFpFile := task.FingerprintsHandler.DDAndFpFile
+
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegisterNode)
@@ -283,7 +290,7 @@ func (task *SenseRegisterTask) uploadSignedTicket(ctx context.Context, ticket []
 			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
 		}
 		group.Go(func() error {
-			ticketTxid, err := senseRegNode.SendSignedTicket(ctx, ticket, signature, ddFpFile)
+			ticketTxid, err := senseRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, ddFpFile)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", senseRegNode).Error("send signed ticket failed")
 				return err

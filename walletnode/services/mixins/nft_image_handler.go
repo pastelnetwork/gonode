@@ -14,9 +14,9 @@ import (
 )
 
 type hashes struct {
-	PreviewHash         []byte
-	MediumThumbnailHash []byte
-	SmallThumbnailHash  []byte
+	previewHash         []byte
+	mediumThumbnailHash []byte
+	smallThumbnailHash  []byte
 	pastelID            string
 }
 
@@ -26,8 +26,10 @@ type NftImageHandler struct {
 
 	ImageEncodedWithFingerprints *files.File
 
-	received    []*hashes
-	FinalHashes hashes
+	received            []*hashes
+	PreviewHash         []byte
+	MediumThumbnailHash []byte
+	SmallThumbnailHash  []byte
 }
 
 // AddNew adds fingerprints info to 'received' array
@@ -44,11 +46,6 @@ func (h *NftImageHandler) AddNewHashes(preview []byte, mediumThumbnail []byte, s
 // ClearHashes clears stored SNs fingerprints info
 func (h *NftImageHandler) ClearHashes() {
 	h.received = nil
-}
-
-// NewImageHandler create new Image Handler
-func NewImageHandler(task *common.WalletNodeTask, pastelHandler *PastelHandler) *NftImageHandler {
-	return &NftImageHandler{task: task, pastelHandler: pastelHandler}
 }
 
 // EncodeFingerprintIntoImage - signs fingerprints and encode them into image
@@ -122,19 +119,19 @@ func (h *NftImageHandler) MatchThumbnailHashes() error {
 
 	first := h.received[0]
 	for _, some := range h.received[1:] {
-		if !bytes.Equal(first.PreviewHash, some.PreviewHash) {
+		if !bytes.Equal(first.previewHash, some.previewHash) {
 			return errors.Errorf("hash of preview thumbnail of nodes %q and %q didn't match", first.pastelID, some.pastelID)
 		}
-		if !bytes.Equal(first.MediumThumbnailHash, some.MediumThumbnailHash) {
+		if !bytes.Equal(first.mediumThumbnailHash, some.mediumThumbnailHash) {
 			return errors.Errorf("hash of medium thumbnail of nodes %q and %q didn't match", first.pastelID, some.pastelID)
 		}
-		if !bytes.Equal(first.SmallThumbnailHash, some.SmallThumbnailHash) {
+		if !bytes.Equal(first.smallThumbnailHash, some.smallThumbnailHash) {
 			return errors.Errorf("hash of small thumbnail of nodes %q and %q didn't match", first.pastelID, some.pastelID)
 		}
 	}
-	h.FinalHashes.PreviewHash = first.PreviewHash
-	h.FinalHashes.MediumThumbnailHash = first.MediumThumbnailHash
-	h.FinalHashes.SmallThumbnailHash = first.SmallThumbnailHash
+	h.PreviewHash = first.previewHash
+	h.MediumThumbnailHash = first.mediumThumbnailHash
+	h.SmallThumbnailHash = first.smallThumbnailHash
 	return nil
 }
 
@@ -149,4 +146,15 @@ func (h *NftImageHandler) GetHash() ([]byte, error) {
 		return nil, errors.Errorf("hash encoded image: %w", err)
 	}
 	return dataHash, nil
+}
+
+// NewImageHandler create new Image Handler
+func NewImageHandler(task *common.WalletNodeTask, pastelHandler *PastelHandler) *NftImageHandler {
+	return &NftImageHandler{task: task, pastelHandler: pastelHandler}
+}
+
+func (h NftImageHandler) IsEmpty() bool {
+	return h.PreviewHash == nil || len(h.PreviewHash) == 0 ||
+		h.MediumThumbnailHash == nil || len(h.MediumThumbnailHash) == 0 ||
+		h.SmallThumbnailHash == nil || len(h.SmallThumbnailHash) == 0
 }

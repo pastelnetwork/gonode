@@ -24,7 +24,7 @@ func TestNewService(t *testing.T) {
 		config        *Config
 		pastelClient  pastel.Client
 		p2pClient     p2p.Client
-		raptorQClient rqnode.Client
+		raptorQClient rqnode.ClientInterface
 	}
 
 	config := &Config{}

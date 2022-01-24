@@ -6,12 +6,10 @@ import (
 )
 
 var (
-	ErrEmptyFingerprints        = errors.Errorf("empty fingerprints")
-	ErrEmptyDatahash            = errors.Errorf("empty data hash")
-	ErrEmptyPreviewHash         = errors.Errorf("empty preview hash")
-	ErrEmptyMediumThumbnailHash = errors.Errorf("empty medium thumbnail hash")
-	ErrEmptySmallThumbnailHash  = errors.Errorf("empty small thumbnail hash")
-	ErrEmptyRaptorQSymbols      = errors.Errorf("empty RaptorQ symbols identifiers")
+	ErrEmptyDatahash       = errors.Errorf("empty data hash")
+	ErrEmptyFingerprints   = errors.Errorf("empty fingerprints")
+	ErrEmptyPreviewHash    = errors.Errorf("empty preview or thumbnail hashes")
+	ErrEmptyRaptorQSymbols = errors.Errorf("empty RaptorQ symbols identifiers")
 )
 
 // GetPubKey gets ED448 or PQ public key from base58 encoded key

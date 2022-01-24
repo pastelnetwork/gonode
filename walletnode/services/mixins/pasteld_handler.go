@@ -63,7 +63,7 @@ func (pt *PastelHandler) GetBlock(ctx context.Context) (int, string, error) {
 	return int(blockNum), blockInfo.Hash, nil
 }
 
-func (pt *PastelHandler) CheckRegistrationFee(ctx context.Context, address string, fee float64, maxFee float64) error {
+func (pt *PastelHandler) CheckBalanceToPayRegistrationFee(ctx context.Context, address string, fee float64, maxFee float64) error {
 	if fee == 0 {
 		return errors.Errorf("invalid fee amount to check: %f", fee)
 	}
@@ -82,6 +82,20 @@ func (pt *PastelHandler) CheckRegistrationFee(ctx context.Context, address strin
 	}
 
 	return nil
+}
+
+func (pt *PastelHandler) BurnSomeCoins(ctx context.Context, address string, amount int64, percentageOfAmountToBurn uint) (string, error) {
+	if amount <= 0 {
+		return "", errors.Errorf("invalid amount")
+	}
+
+	burnAmount := float64(amount) / float64(percentageOfAmountToBurn)
+	burnTxid, err := pt.PastelClient.SendFromAddress(ctx, address, task.config.BurnAddress, burnAmount)
+	if err != nil {
+		return "", errors.Errorf("burn %d percent of amount: %w", percentageOfAmountToBurn, err)
+	}
+	log.WithContext(ctx).Debugf("burn coins txid: %s", burnTxid)
+	return burnTxid, nil
 }
 
 // WaitTxidValid starts goroutine that wait for specified number of confirmations, but stop waiting after time interval

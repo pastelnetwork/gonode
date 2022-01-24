@@ -5,7 +5,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/pastel"
 )
 
 // List represents multiple Node.
@@ -31,31 +30,6 @@ func (nodes *List) SendPreBurntFeeTxid(ctx context.Context, txid string) error {
 		})
 	}
 	return group.Wait()
-}
-
-// RegistrationFee returns registration fee of the first node
-func (nodes *List) RegistrationFee() int64 {
-	return (*nodes)[0].registrationFee
-}
-
-// CompressedFingerAndScores returns compressed fingerprint and other scores
-func (nodes *List) CompressedFingerAndScores() *pastel.DDAndFingerprints {
-	return (*nodes)[0].FingerprintAndScores
-}
-
-// PreviewHash returns the hash of the preview thumbnail calculated by the first node
-func (nodes *List) PreviewHash() []byte {
-	return (*nodes)[0].previewHash
-}
-
-// MediumThumbnailHash returns the hash of the medium thumbnail calculated by the first node
-func (nodes *List) MediumThumbnailHash() []byte {
-	return (*nodes)[0].previewHash
-}
-
-// SmallThumbnailHash returns the hash of the small thumbnail calculated by the first node
-func (nodes *List) SmallThumbnailHash() []byte {
-	return (*nodes)[0].smallThumbnailHash
 }
 
 // RegArtTicketID return txid of RegArt ticket

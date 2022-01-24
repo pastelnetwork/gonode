@@ -1,24 +1,19 @@
 package artworkregister
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
+	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
-	"math/rand"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
 // NftRegistrationTask is the task of registering new artwork.
@@ -28,7 +23,7 @@ type NftRegistrationTask struct {
 	MeshHandler         *mixins.MeshHandler
 	FingerprintsHandler *mixins.FingerprintsHandler
 	ImageHandler        *mixins.NftImageHandler
-	//rqHandler           *mixins.RQHandler
+	RqHandler           *mixins.RQHandler
 
 	service *NftRegisterService
 	Request *NftRegisterRequest
@@ -39,14 +34,10 @@ type NftRegistrationTask struct {
 	dataHash           []byte
 	registrationFee    int64
 
-	rqids          []string
-	rqEncodeParams rqnode.EncoderParameters
-	rqIDsFile      []byte
-	rqIDsIc        uint32
-
 	// ticket
 	creatorSignature      []byte
 	nftRegistrationTicket *pastel.NFTTicket
+	serializedTicket      []byte
 
 	regNFTTxid string
 }
@@ -118,11 +109,12 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	}
 
 	// connect to rq serivce to get rq symbols identifier
-	if err := task.genRQIdentifiersFiles(ctx); err != nil {
+	if err := task.RqHandler.GenRQIdentifiersFiles(ctx, task.ImageHandler.ImageEncodedWithFingerprints,
+		task.creatorBlockHash, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase); err != nil {
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
 
-	if err := task.createArtTicket(ctx); err != nil {
+	if err := task.createNftTicket(ctx); err != nil {
 		return errors.Errorf("create ticket: %w", err)
 	}
 
@@ -137,7 +129,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	}
 
 	// validate if address has enough psl
-	if err := task.CheckRegistrationFee(ctx,
+	if err := task.service.pastelHandler.CheckBalanceToPayRegistrationFee(ctx,
 		task.Request.SpendableAddress,
 		float64(task.registrationFee),
 		task.Request.MaximumFee); err != nil {
@@ -318,105 +310,18 @@ func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, f
 	return group.Wait()
 }
 
-func (task *NftRegistrationTask) genRQIdentifiersFiles(ctx context.Context) error {
-	log.Debugf("Connect to %s", task.config.RaptorQServiceAddress)
-	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
-	if err != nil {
-		return errors.Errorf("connect to raptorQ: %w", err)
-	}
-	defer conn.Close()
-
-	content, err := task.imageEncodedWithFingerprints.Bytes()
-	if err != nil {
-		return errors.Errorf("read image content: %w", err)
-	}
-
-	rqService := conn.RaptorQ(&rqnode.Config{
-		RqFilesDir: task.NftRegisterService.config.RqFilesDir,
-	})
-
-	// FIXME :
-	// - check format of artis block hash should be base58 or not
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, task.creatorBlockHash, task.Request.ArtistPastelID)
-	if err != nil {
-		return errors.Errorf("generate RaptorQ symbols identifiers: %w", err)
-	}
-
-	files := 0
-	for _, rawSymbolIDFile := range encodeInfo.SymbolIDFiles {
-		err := task.generateRQIDs(ctx, rawSymbolIDFile)
-		if err != nil {
-			task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
-			return errors.Errorf("create rqids file :%w", err)
-		}
-		files++
-		break
-	}
-
-	if files != 1 {
-		return errors.Errorf("number of raptorq symbol identifiers files must be greater than 1")
-	}
-	task.rqEncodeParams = encodeInfo.EncoderParam
-
-	return nil
-}
-
-func (task *NftRegistrationTask) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDFile) error {
-	file, err := json.Marshal(rawFile)
-	if err != nil {
-		return fmt.Errorf("marshal rqID file")
-	}
-
-	signature, err := task.PastelClient.Sign(ctx,
-		file,
-		task.Request.ArtistPastelID,
-		task.Request.ArtistPastelIDPassphrase,
-		pastel.SignAlgorithmED448)
-	if err != nil {
-		return errors.Errorf("sign identifiers file: %w", err)
-	}
-
-	encfile := utils.B64Encode(file)
-
-	var buffer bytes.Buffer
-	buffer.Write(encfile)
-	buffer.WriteString(".")
-	buffer.Write(signature)
-	rqIDFile := buffer.Bytes()
-
-	task.rqIDsIc = rand.Uint32()
-	task.rqids, _, err = pastel.GetIDFiles(rqIDFile, task.rqIDsIc, task.config.RQIDsMax)
-	if err != nil {
-		return fmt.Errorf("get ID Files: %w", err)
-	}
-
-	comp, err := zstd.CompressLevel(nil, rqIDFile, 22)
-	if err != nil {
-		return errors.Errorf("compress: %w", err)
-	}
-	task.rqIDsFile = utils.B64Encode(comp)
-
-	return nil
-}
-
-func (task *NftRegistrationTask) createArtTicket(_ context.Context) error {
-	if task.fingerprint == nil {
-		return common.ErrEmptyFingerprints
-	}
+func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 	if task.dataHash == nil {
 		return common.ErrEmptyDatahash
 	}
-	if task.previewHash == nil {
-		return common.ErrEmptyPreviewHash
-	}
-	if task.mediumThumbnailHash == nil {
-		return common.ErrEmptyMediumThumbnailHash
-	}
-	if task.smallThumbnailHash == nil {
-		return common.ErrEmptySmallThumbnailHash
-	}
-	if task.rqids == nil {
+	if task.RqHandler.IsEmpty() {
 		return common.ErrEmptyRaptorQSymbols
+	}
+	if task.FingerprintsHandler.IsEmpty() {
+		return common.ErrEmptyFingerprints
+	}
+	if task.ImageHandler.IsEmpty() {
+		return common.ErrEmptyPreviewHash
 	}
 
 	nftType := pastel.NFTTypeImage
@@ -440,17 +345,17 @@ func (task *NftRegistrationTask) createArtTicket(_ context.Context) error {
 			NFTKeywordSet:              utils.SafeString(task.Request.Keywords),
 			NFTType:                    nftType,
 			TotalCopies:                task.Request.IssuedCopies,
-			PreviewHash:                task.previewHash,
-			Thumbnail1Hash:             task.mediumThumbnailHash,
-			Thumbnail2Hash:             task.smallThumbnailHash,
+			PreviewHash:                task.ImageHandler.PreviewHash,
+			Thumbnail1Hash:             task.ImageHandler.MediumThumbnailHash,
+			Thumbnail2Hash:             task.ImageHandler.SmallThumbnailHash,
 			DataHash:                   task.dataHash,
-			DDAndFingerprintsIc:        task.ddAndFingerprintsIc,
-			DDAndFingerprintsMax:       task.config.DDAndFingerprintsMax,
-			DDAndFingerprintsIDs:       task.ddAndFingerprintsIDs,
-			RQIc:                       task.rqIDsIc,
-			RQMax:                      task.config.RQIDsMax,
-			RQIDs:                      task.rqids,
-			RQOti:                      task.rqEncodeParams.Oti,
+			DDAndFingerprintsIc:        task.FingerprintsHandler.DDAndFingerprintsIc,
+			DDAndFingerprintsMax:       task.service.config.DDAndFingerprintsMax,
+			DDAndFingerprintsIDs:       task.FingerprintsHandler.DDAndFingerprintsIDs,
+			RQIc:                       task.RqHandler.RQIDsIc,
+			RQMax:                      task.service.config.RQIDsMax,
+			RQIDs:                      task.RqHandler.RQIDs,
+			RQOti:                      task.RqHandler.RQEncodeParams.Oti,
 		},
 	}
 
@@ -468,17 +373,25 @@ func (task *NftRegistrationTask) signTicket(ctx context.Context) error {
 	if err != nil {
 		return errors.Errorf("sign ticket %w", err)
 	}
+	task.serializedTicket = data
 	return nil
 }
 
-// UploadSignedTicket uploads regart ticket and its signature to super nodes
-func (h *NftRegisterHandler) UploadSignedTicket(ctx context.Context, ticket []byte, signature []byte /*, rqidsFile []byte, encoderParams rqnode.EncoderParameters*/) error {
-	ddFpFile := h.fpHandler.DDAndFpFile
-	rqidsFile := h.rqHandler.RQIdsFile
-	encoderParams := h.rqHandler.EncoderParams
+func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
+	if task.serializedTicket == nil {
+		return errors.Errorf("uploading ticket: serializedTicket is empty")
+	}
+	if task.creatorSignature == nil {
+		return errors.Errorf("uploading ticket: creatorSignature is empty")
+	}
 
+	ddFpFile := task.FingerprintsHandler.DDAndFpFile
+	rqidsFile := task.RqHandler.RQIDsFile
+	encoderParams := task.RqHandler.RQEncodeParams
+
+	var fees []int64
 	group, _ := errgroup.WithContext(ctx)
-	for _, someNode := range h.meshHandler.Nodes {
+	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegisterNode)
 		if !ok {
 			//TODO: use assert here
@@ -488,16 +401,31 @@ func (h *NftRegisterHandler) UploadSignedTicket(ctx context.Context, ticket []by
 		key1 := "key1-" + uuid.New().String()
 		key2 := "key2-" + uuid.New().String()
 		group.Go(func() error {
-			fee, err := nftRegNode.SendSignedTicket(ctx, ticket, signature, key1, key2, rqidsFile, ddFpFile, encoderParams)
+			fee, err := nftRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, key1, key2, rqidsFile, ddFpFile, encoderParams)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("send signed ticket failed")
 				return err
 			}
-			nftRegNode.registrationFee = fee
+			fees = append(fees, fee)
 			return nil
 		})
 	}
-	return group.Wait()
+	if err := group.Wait(); err != nil {
+		return errors.Errorf("uploading ticket has failed: %w", err)
+	}
+
+	if fees[0] != fees[1] || fees[0] != fees[2] || fees[1] != fees[2] {
+		return errors.Errorf("registration fees don't match")
+	}
+
+	// check if fee is over-expection
+	task.registrationFee = fees[0]
+
+	if task.registrationFee > int64(task.Request.MaximumFee) {
+		return errors.Errorf("fee too high: registration fee %d, maximum fee %d", task.registrationFee, int64(task.Request.MaximumFee))
+	}
+
+	return nil
 }
 
 func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string, error) {
@@ -509,44 +437,9 @@ func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string,
 		task.Request.ArtistPastelIDPassphrase)
 }
 
-func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
-	buf, err := pastel.EncodeNFTTicket(task.nftRegistrationTicket)
-	if err != nil {
-		return errors.Errorf("marshal ticket: %w", err)
-	}
-	log.Debug(string(buf))
-
-	if err := task.nodes.UploadSignedTicket(ctx, buf, task.creatorSignature, task.rqIDsFile, task.ddAndFpFile, task.rqEncodeParams); err != nil {
-		return errors.Errorf("upload signed ticket: %w", err)
-	}
-
-	if err := task.nodes.MatchRegistrationFee(); err != nil {
-		return errors.Errorf("registration fees don't matched: %w", err)
-	}
-
-	// check if fee is over-expection
-	task.registrationFee = task.nodes.RegistrationFee()
-
-	if task.registrationFee > int64(task.Request.MaximumFee) {
-		return errors.Errorf("fee too high: registration fee %d, maximum fee %d", task.registrationFee, int64(task.Request.MaximumFee))
-	}
-	task.registrationFee = task.nodes.RegistrationFee()
-
-	return nil
-}
-
 func (task *NftRegistrationTask) preburntRegistrationFee(ctx context.Context) error {
-	if task.registrationFee <= 0 {
-		return errors.Errorf("invalid registration fee")
-	}
 
-	burnedAmount := float64(task.registrationFee) / 10
-	burnTxid, err := task.PastelClient.SendFromAddress(ctx, task.Request.SpendableAddress, task.config.BurnAddress, burnedAmount)
-	if err != nil {
-		return errors.Errorf("burn 10 percent of transaction fee: %w", err)
-	}
-	task.burnTxid = burnTxid
-	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxid)
+	task.service.pastelHandler.BurnSomeCoins(ctx, task.Request.SpendableAddress, task.registrationFee, 10)
 
 	if err := task.nodes.SendPreBurntFeeTxid(ctx, task.burnTxid); err != nil {
 		return errors.Errorf("send pre-burn-txid: %s to supernode(s): %w", task.burnTxid, err)
@@ -573,6 +466,9 @@ func NewNFTRegistrationTask(service *NftRegisterService, request *NftRegisterReq
 		service:        service,
 		Request:        request,
 	}
+
+	task.ImageHandler = mixins.NewImageHandler(task.WalletNodeTask, service.pastelHandler)
+
 	task.MeshHandler = mixins.NewMeshHandler(task.WalletNodeTask,
 		service.nodeClient, &RegisterNftNodeMaker{},
 		service.pastelHandler,
@@ -580,5 +476,10 @@ func NewNFTRegistrationTask(service *NftRegisterService, request *NftRegisterReq
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
 		service.config.acceptNodesTimeout, service.config.connectToNextNodeDelay,
 	)
+	task.RqHandler = mixins.NewRQHandler(task.WalletNodeTask,
+		service.rqClient,
+		service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.config.RQIDsMax,
+		service.config.NumberRQIDSFiles)
 
+	return task
 }
