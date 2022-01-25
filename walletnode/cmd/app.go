@@ -131,7 +131,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel, config.BurnAddress)
 
 	// Business logic services
 	// ----NftApiHandler Services----
@@ -147,14 +147,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// burn address
 	// TODO: this should be hardcoded with format like Ptxxxxxxx
-	config.ArtworkRegister.BurnAddress = config.BurnAddress
+	//config.ArtworkRegister.BurnAddress =
 
-	if config.RegArtTxMinConfirmations > 0 {
-		config.ArtworkRegister.RegArtTxMinConfirmations = config.RegArtTxMinConfirmations
+	if config.RegTxMinConfirmations > 0 {
+		config.ArtworkRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
+		config.SenseRegister.SenseRegTxMinConfirmations = config.RegTxMinConfirmations
 	}
 
-	if config.RegActTxMinConfirmations > 0 {
-		config.ArtworkRegister.RegActTxMinConfirmations = config.RegActTxMinConfirmations
+	if config.ActTxMinConfirmations > 0 {
+		config.ArtworkRegister.NFTActTxMinConfirmations = config.ActTxMinConfirmations
+		config.SenseRegister.SenseActTxMinConfirmations = config.ActTxMinConfirmations
 	}
 
 	// business logic services

@@ -16,8 +16,8 @@ const (
 
 	defaultThumbnailSize = 224
 
-	defaultRegArtTxMinConfirmations = 12
-	defaultRegActTxMinConfirmations = 5
+	defaultNftRegTxMinConfirmations = 12
+	defaultNftActTxMinConfirmations = 5
 
 	defaultDDAndFingerprintsMax = 50
 	defaultRQIDsMax             = 50
@@ -35,11 +35,11 @@ type Config struct {
 	RaptorQServiceAddress string `mapstructure:"-" json:"-"`
 	RqFilesDir            string
 
-	// BurnAddress
-	BurnAddress string `mapstructure:"-" json:"burn_address,omitempty"`
+	//// BurnAddress
+	//BurnAddress string `mapstructure:"-" json:"burn_address,omitempty"`
 
-	RegArtTxMinConfirmations int `mapstructure:"-" json:"reg_art_tx_min_confirmations,omitempty"`
-	RegActTxMinConfirmations int `mapstructure:"-" json:"reg_act_tx_min_confirmations,omitempty"`
+	NFTRegTxMinConfirmations int `mapstructure:"-" json:"reg_art_tx_min_confirmations,omitempty"`
+	NFTActTxMinConfirmations int `mapstructure:"-" json:"reg_act_tx_min_confirmations,omitempty"`
 
 	DDAndFingerprintsMax uint32 `mapstructure:"dd_and_fingerprints_max" json:"dd_and_fingerprints_max,omitempty"`
 	RQIDsMax             uint32 `mapstructure:"rq_ids_max" json:"rq_ids_max,omitempty"`
@@ -56,8 +56,8 @@ func NewConfig() *Config {
 		Config:                   *common.NewConfig(),
 		NumberSuperNodes:         defaultNumberSuperNodes,
 		NumberRQIDSFiles:         defaultNumberRQIDSFiles,
-		RegArtTxMinConfirmations: defaultRegArtTxMinConfirmations,
-		RegActTxMinConfirmations: defaultRegActTxMinConfirmations,
+		NFTRegTxMinConfirmations: defaultNftRegTxMinConfirmations,
+		NFTActTxMinConfirmations: defaultNftActTxMinConfirmations,
 		connectToNextNodeDelay:   defaultConnectToNextNodeDelay,
 		acceptNodesTimeout:       defaultAcceptNodesTimeout,
 		thumbnailSize:            defaultThumbnailSize,

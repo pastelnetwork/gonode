@@ -3,8 +3,6 @@ package node
 import (
 	"bytes"
 	"context"
-	"github.com/pastelnetwork/gonode/walletnode/node"
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -12,75 +10,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 )
-
-// List represents multiple Node.
-type List []*NftDownloadNodeClient
-
-// Add adds a new node to the list.
-func (nodes *List) Add(node *NftDownloadNodeClient) {
-	*nodes = append(*nodes, node)
-}
-
-// AddNewNode created and adds a new node to the list.
-func (nodes *List) AddNewNode(client node.ClientInterface, address string, pastelID string) {
-	node := &NftDownloadNodeClient{
-		SuperNodeClient: *common.NewSuperNode(client, address, pastelID),
-	}
-	*nodes = append(*nodes, node)
-}
-
-// Active marks all nodes as activated.
-// Since any node can be present in the same time in several List and Node is a pointer, this is reflected in all lists.
-func (nodes *List) Activate() List {
-	activeNodes := List{}
-	for _, node := range *nodes {
-		if node.IsActive() {
-			activeNodes = append(activeNodes, node)
-		}
-	}
-	return activeNodes
-}
-
-// DisconnectInactive disconnects nodes which were not marked as activated.
-func (nodes *List) DisconnectInactive() {
-	for _, node := range *nodes {
-		if node.ConnectionInterface != nil && !node.IsActive() {
-			node.ConnectionInterface.Close()
-		}
-	}
-}
-
-// Disconnect disconnects all nodes.
-func (nodes *List) Disconnect() {
-	for _, node := range *nodes {
-		if node.ConnectionInterface != nil {
-			node.ConnectionInterface.Close()
-			node.done = true
-		}
-	}
-}
-
-// WaitConnClose waits for the connection closing by any supernodes.
-func (nodes *List) WaitConnClose(ctx context.Context) error {
-	group, ctx := errgroup.WithContext(ctx)
-
-	for _, node := range *nodes {
-		node := node
-		group.Go(func() error {
-			select {
-			case <-ctx.Done():
-				return nil
-			case <-node.ConnectionInterface.Done():
-				if node.done {
-					return nil
-				}
-				return errors.Errorf("%q unexpectedly closed the connection", node)
-			}
-		})
-	}
-
-	return group.Wait()
-}
 
 // MatchFiles matches files.
 func (nodes List) MatchFiles() error {

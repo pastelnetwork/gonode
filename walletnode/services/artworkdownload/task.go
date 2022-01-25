@@ -14,11 +14,12 @@ import (
 // Task is the task of downloading artwork.
 type NftDownloadTask struct {
 	*common.WalletNodeTask
-	*NftDownloadService
 
+	service *NftDownloadService
 	Request *NftDownloadRequest
-	File    []byte
-	err     error
+
+	File []byte
+	err  error
 }
 
 // Run starts the task
@@ -36,7 +37,7 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	ttxid, err := task.pastelClient.TicketOwnership(ctx, task.Request.Txid, task.Request.PastelID, task.Request.PastelIDPassphrase)
+	ttxid, err := task.service.pastelHandler.PastelClient.TicketOwnership(ctx, task.Request.Txid, task.Request.PastelID, task.Request.PastelIDPassphrase)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("pastelid", task.Request.PastelID).Error("Could not get ticket ownership")
 		return errors.Errorf("get ticket ownership: %w", err)
@@ -44,7 +45,7 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 
 	// Sign current-timestamp with PsstelID passed in request
 	timestamp := time.Now().Format(time.RFC3339)
-	signature, err := task.pastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, "ed448")
+	signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, "ed448")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
 		return errors.Errorf("sign timestamp: %w", err)
@@ -114,8 +115,8 @@ func (task *NftDownloadTask) removeArtifacts() {
 // NewNftDownloadTask returns a new Task instance.
 func NewNftDownloadTask(service *NftDownloadService, request *NftDownloadRequest) *NftDownloadTask {
 	return &NftDownloadTask{
-		WalletNodeTask:     common.NewWalletNodeTask(logPrefix),
-		NftDownloadService: service,
-		Request:            request,
+		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
+		service:        service,
+		Request:        request,
 	}
 }

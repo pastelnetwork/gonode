@@ -22,8 +22,8 @@ type Node struct {
 	UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
 	BurnAddress     string                 `mapstructure:"burn_address" json:"burn_address,omitempty"`
 
-	RegArtTxMinConfirmations int `mapstructure:"reg_art_tx_min_confirmations" json:"reg_art_tx_min_confirmation,omitempty"`
-	RegActTxMinConfirmations int `mapstructure:"reg_act_tx_min_confirmations" json:"reg_act_tx_min_confirmations,omitempty"`
+	RegTxMinConfirmations int `mapstructure:"reg_tx_min_confirmations" json:"reg_tx_min_confirmation,omitempty"`
+	ActTxMinConfirmations int `mapstructure:"act_tx_min_confirmations" json:"act_tx_min_confirmations,omitempty"`
 }
 
 // NewNode returns a new Node instance

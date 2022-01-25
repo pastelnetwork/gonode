@@ -90,7 +90,7 @@ func (pt *PastelHandler) BurnSomeCoins(ctx context.Context, address string, amou
 	}
 
 	burnAmount := float64(amount) / float64(percentageOfAmountToBurn)
-	burnTxid, err := pt.PastelClient.SendFromAddress(ctx, address, task.config.BurnAddress, burnAmount)
+	burnTxid, err := pt.PastelClient.SendFromAddress(ctx, address, pt.PastelClient.BurnAddress(), burnAmount)
 	if err != nil {
 		return "", errors.Errorf("burn %d percent of amount: %w", percentageOfAmountToBurn, err)
 	}

@@ -286,22 +286,20 @@ func (m *MeshHandler) findNodesForMesh(ctx context.Context, candidatesNodes comm
 
 // CloseSNsConnections closes connections to all nodes
 func (m *MeshHandler) CloseSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
-	var err error
-
 	close(nodesDone)
 
-	log.WithContext(ctx).Debug("close connections to supernodes")
+	log.WithContext(ctx).Debug("close connections to ALL supernodes")
 
-	for i := range m.Nodes {
-		if err := m.Nodes[i].ConnectionInterface.Close(); err != nil {
-			log.WithContext(ctx).WithFields(log.Fields{
-				"pastelId": m.Nodes[i].PastelID(),
-				"addr":     m.Nodes[i].String(),
-			}).WithError(err).Errorf("close supernode connection failed")
+	ok := true
+	for _, someNode := range m.Nodes {
+		if err := m.disconnectFromNode(ctx, someNode, false); err != nil {
+			ok = false
 		}
 	}
-
-	return err
+	if !ok {
+		return errors.New("errors while disconnecting from some SNs")
+	}
+	return nil
 }
 
 // ValidBurnTxID returns whether the burn txid is valid at ALL SNs
@@ -315,15 +313,44 @@ func (m *MeshHandler) CheckSNReportedState() bool {
 }
 
 // DisconnectInactive disconnects nodes which were not marked as activated.
-func (m *MeshHandler) DisconnectInactiveNodes() {
-	for _, someNode := range m.Nodes {
-		someNode.RLock()
-		defer someNode.RUnlock()
+func (m *MeshHandler) DisconnectInactiveNodes(ctx context.Context) error {
 
-		if someNode.ConnectionInterface != nil && !someNode.IsActive() {
-			someNode.ConnectionInterface.Close()
+	log.WithContext(ctx).Debug("close connections to inactive supernodes")
+
+	ok := true
+	for _, someNode := range m.Nodes {
+		if err := m.disconnectFromNode(ctx, someNode, true); err != nil {
+			ok = false
 		}
 	}
+	if !ok {
+		return errors.New("errors while disconnecting from some SNs")
+	}
+	return nil
+}
+
+func (m *MeshHandler) disconnectFromNode(ctx context.Context, someNode *common.SuperNodeClient, onlyIfInactive bool) error {
+	someNode.RLock()
+	defer someNode.RUnlock()
+
+	if onlyIfInactive && someNode.IsActive() {
+		return nil
+	}
+
+	var err error
+	if someNode.ConnectionInterface != nil {
+		if err = someNode.ConnectionInterface.Close(); err != nil {
+			log.WithContext(ctx).WithFields(log.Fields{
+				"pastelId": someNode.PastelID(),
+				"addr":     someNode.String(),
+			}).WithError(err).Errorf("close supernode connection failed: SN - %s", someNode.String())
+		}
+	}
+	return err
+}
+
+func (m *MeshHandler) AddNewNode(address string, pastelID string) {
+	m.Nodes.AddNewNode(m.nodeClient, address, pastelID, m.nodeMaker)
 }
 
 func NewMeshHandlerSimple(nodeClient node.ClientInterface, nodeMaker node.NodeMaker) *MeshHandler {
@@ -331,8 +358,4 @@ func NewMeshHandlerSimple(nodeClient node.ClientInterface, nodeMaker node.NodeMa
 		nodeMaker:  nodeMaker,
 		nodeClient: nodeClient,
 	}
-}
-
-func (m *MeshHandler) AddNewNode(address string, pastelID string) {
-	m.Nodes.AddNewNode(m.nodeClient, address, pastelID, m.nodeMaker)
 }

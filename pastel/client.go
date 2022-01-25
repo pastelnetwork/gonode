@@ -23,6 +23,7 @@ const (
 
 type client struct {
 	jsonrpc.RPCClient
+	burnAddress string
 }
 
 // MasterNodeConfig implements pastel.Client.MasterNodeConfig
@@ -550,8 +551,12 @@ func (client *client) callFor(ctx context.Context, object interface{}, method st
 	return client.CallForWithContext(ctx, object, method, params)
 }
 
+func (client *client) BurnAddress() string {
+	return client.burnAddress
+}
+
 // NewClient returns a new Client instance.
-func NewClient(config *Config) Client {
+func NewClient(config *Config, burnAddress string) Client {
 	endpoint := net.JoinHostPort(config.Hostname, strconv.Itoa(config.port()))
 	if !strings.Contains(endpoint, "//") {
 		endpoint = "http://" + endpoint
@@ -564,6 +569,7 @@ func NewClient(config *Config) Client {
 	}
 
 	return &client{
-		RPCClient: jsonrpc.NewClientWithOpts(endpoint, opts),
+		RPCClient:   jsonrpc.NewClientWithOpts(endpoint, opts),
+		burnAddress: burnAddress,
 	}
 }

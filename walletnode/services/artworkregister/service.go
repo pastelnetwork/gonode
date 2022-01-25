@@ -22,8 +22,8 @@ const (
 // Service represents a service for the registration NFT.
 type NftRegisterService struct {
 	*task.Worker
-	config *Config
 
+	config        *Config
 	nodeClient    node.ClientInterface
 	imageHandler  *mixins.FilesHandler
 	pastelHandler *mixins.PastelHandler

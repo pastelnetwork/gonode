@@ -115,7 +115,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
+	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations), 15*time.Second); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
@@ -130,7 +130,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 	log.Debugf("Active action ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
-	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.RegActTxMinConfirmations), 15*time.Second)
+	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.SenseActTxMinConfirmations), 15*time.Second)
 	if err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait activate txid valid: %w", err)
@@ -279,7 +279,6 @@ func (task *SenseRegisterTask) uploadSignedTicket(ctx context.Context) error {
 	if task.creatorSignature == nil {
 		return errors.Errorf("uploading ticket: creatorSignature is empty")
 	}
-	var regSenseTxid string
 	ddFpFile := task.FingerprintsHandler.DDAndFpFile
 
 	group, _ := errgroup.WithContext(ctx)
@@ -302,18 +301,12 @@ func (task *SenseRegisterTask) uploadSignedTicket(ctx context.Context) error {
 				if ticketTxid == "" {
 					return errors.Errorf("primary node - %s, returned empty txid", someNode.PastelID())
 				}
-				regSenseTxid = ticketTxid
+				task.regSenseTxid = ticketTxid
 			}
 			return nil
 		})
 	}
-	if err := group.Wait(); err != nil {
-		return errors.Errorf("uploading ticket has failed: %w", err)
-	}
-
-	task.regSenseTxid = regSenseTxid
-
-	return nil
+	return group.Wait()
 }
 
 func (task *SenseRegisterTask) activateActionTicket(ctx context.Context) (string, error) {

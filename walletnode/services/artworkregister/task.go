@@ -40,6 +40,7 @@ type NftRegistrationTask struct {
 	serializedTicket      []byte
 
 	regNFTTxid string
+	burnTxid   string
 }
 
 // Run starts the task
@@ -139,29 +140,20 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// send preburn-txid to master node(s)
 	// master node will create reg-art ticket and returns transaction id
 	task.UpdateStatus(common.StatusPreburntRegistrationFee)
-	if err := task.preburntRegistrationFee(ctx); err != nil {
+	if err := task.preburnRegistrationFeeGetTicketTxid(ctx); err != nil {
 		return errors.Errorf("pre-burnt ten percent of registration fee: %w", err)
 	}
 
 	task.UpdateStatus(common.StatusTicketAccepted)
 
-	log.WithContext(ctx).Debug("close connections to supernodes")
-	close(nodesDone)
-	for i := range task.nodes {
-		if err := task.nodes[i].ConnectionInterface.Close(); err != nil {
-			log.WithContext(ctx).WithFields(log.Fields{
-				"pastelId": task.nodes[i].PastelID(),
-				"addr":     task.nodes[i].String(),
-			}).WithError(err).Errorf("close supernode connection failed")
-		}
-	}
+	// do need SNs anymore
+	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.PastelHandler.WaitTxidValid(newCtx, task.regNFTTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
+	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regNFTTxid, int64(task.service.config.NFTRegTxMinConfirmations), 15*time.Second); err != nil {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
-
 	task.UpdateStatus(common.StatusTicketRegistered)
 
 	// activate reg-art ticket at previous step
@@ -172,7 +164,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	log.Debugf("reg-act-txid: %s", actTxid)
 
 	// Wait until actTxid is valid
-	err = task.PastelHandler.WaitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
+	err = task.service.pastelHandler.WaitTxidValid(newCtx, actTxid, int64(task.service.config.NFTActTxMinConfirmations), 15*time.Second)
 	if err != nil {
 		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
@@ -437,19 +429,36 @@ func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string,
 		task.Request.ArtistPastelIDPassphrase)
 }
 
-func (task *NftRegistrationTask) preburntRegistrationFee(ctx context.Context) error {
+func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context.Context) error {
 
 	task.service.pastelHandler.BurnSomeCoins(ctx, task.Request.SpendableAddress, task.registrationFee, 10)
 
-	if err := task.nodes.SendPreBurntFeeTxid(ctx, task.burnTxid); err != nil {
-		return errors.Errorf("send pre-burn-txid: %s to supernode(s): %w", task.burnTxid, err)
+	group, _ := errgroup.WithContext(ctx)
+	for _, someNode := range task.MeshHandler.Nodes {
+		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegisterNode)
+		if !ok {
+			//TODO: use assert here
+			return errors.Errorf("node %s is not NftRegisterNode", someNode.String())
+		}
+		group.Go(func() error {
+			ticketTxid, err := nftRegNode.SendPreBurntFeeTxid(ctx, task.burnTxid)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("send pre-burnt fee txid failed")
+				return err
+			}
+			if !someNode.IsPrimary() && ticketTxid != "" {
+				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, someNode.PastelID())
+			}
+			if someNode.IsPrimary() {
+				if ticketTxid == "" {
+					return errors.Errorf("primary node - %s, returned empty txid", someNode.PastelID())
+				}
+				task.regNFTTxid = ticketTxid
+			}
+			return nil
+		})
 	}
-	task.regNFTTxid = task.nodes.RegArtTicketID()
-	if task.regNFTTxid == "" {
-		return errors.Errorf("empty regNFTTxid")
-	}
-
-	return nil
+	return group.Wait()
 }
 
 func (task *NftRegistrationTask) removeArtifacts() {

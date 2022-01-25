@@ -20,8 +20,8 @@ type NftDownloadService struct {
 	*task.Worker
 
 	config        *Config
-	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface
+	pastelHandler *mixins.PastelHandler
 }
 
 // Run starts worker.
