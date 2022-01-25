@@ -201,7 +201,7 @@ var _ = Service("nft", func() {
 var NftSearchResult = Type("NftSearchResult", func() {
 	Description("Result of NFT search call")
 
-	Attribute("NFT", NftSummary, func() {
+	Attribute("nft", NftSummary, func() {
 		Description("NFT data")
 	})
 

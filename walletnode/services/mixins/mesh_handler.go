@@ -66,7 +66,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 	}
 
 	// Close all connected connections - setMesh will Connect again
-	candidatesNodes.DisconnectAll()
+	m.DisconnectNodes(ctx, candidatesNodes)
 
 	meshedNodes, err := m.setMesh(ctx, candidatesNodes, m.minNumberSuperNodes)
 	if err != nil {
@@ -123,7 +123,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes common.SuperN
 		meshedNodes, err = m.connectToPrimarySecondary(ctx, candidatesNodes, primaryRank)
 		if err != nil {
 			// close connected connections
-			candidatesNodes.DisconnectAll()
+			m.DisconnectNodes(ctx, candidatesNodes)
 
 			if errors.IsContextCanceled(err) {
 				return nil, err
@@ -136,7 +136,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes common.SuperN
 	}
 	if len(meshedNodes) < n {
 		// close connected connections
-		meshedNodes.DisconnectAll()
+		m.DisconnectNodes(ctx, meshedNodes)
 		return nil, errors.Errorf("Could not create a mesh of %d nodes: %w", n, errs)
 	}
 
@@ -152,7 +152,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes common.SuperN
 	for _, someNode := range meshedNodes {
 		err := someNode.MeshNodes(ctx, meshedSNInfo)
 		if err != nil {
-			meshedNodes.DisconnectAll()
+			m.DisconnectNodes(ctx, meshedNodes)
 			return nil, errors.Errorf("could not send info of meshed nodes: %w", err)
 		}
 	}
@@ -344,20 +344,26 @@ func (m *MeshHandler) CheckSNReportedState() bool {
 }
 
 // DisconnectInactive disconnects nodes which were not marked as activated.
-func (m *MeshHandler) DisconnectInactiveNodes(ctx context.Context) error {
-
+func (m *MeshHandler) DisconnectInactiveNodes(ctx context.Context) {
 	log.WithContext(ctx).Debug("close connections to inactive supernodes")
 
-	ok := true
 	for _, someNode := range m.Nodes {
-		if err := m.disconnectFromNode(ctx, someNode, true); err != nil {
-			ok = false
-		}
+		_ = m.disconnectFromNode(ctx, someNode, false)
 	}
-	if !ok {
-		return errors.New("errors while disconnecting from some SNs")
+}
+
+// DisconnectAll disconnects all nodes
+func (m *MeshHandler) DisconnectAll(ctx context.Context) {
+	for _, someNode := range m.Nodes {
+		_ = m.disconnectFromNode(ctx, someNode, false)
 	}
-	return nil
+}
+
+// DisconnectNodes disconnects all passed nodes
+func (m *MeshHandler) DisconnectNodes(ctx context.Context, nodes common.SuperNodeList) {
+	for _, someNode := range nodes {
+		_ = m.disconnectFromNode(ctx, someNode, false)
+	}
 }
 
 func (m *MeshHandler) disconnectFromNode(ctx context.Context, someNode *common.SuperNodeClient, onlyIfInactive bool) error {

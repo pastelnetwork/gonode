@@ -73,7 +73,7 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	task.UpdateStatus(common.StatusDownloaded)
 
 	// Disconnect supernodes that did not return file.
-	_ = task.MeshHandler.DisconnectInactiveNodes(ctx)
+	task.MeshHandler.DisconnectInactiveNodes(ctx)
 
 	// Check files are the same
 	err = task.MatchFiles()
@@ -86,7 +86,7 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	task.File = task.files[0].file
 
 	// Disconnect all noded after finished downloading.
-	task.MeshHandler.Nodes.DisconnectAll()
+	task.MeshHandler.DisconnectAll(ctx)
 
 	// Wait for all connections to disconnect.
 	return nil

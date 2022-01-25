@@ -60,7 +60,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 
 			meshHandler.Nodes = nodes
 
-			meshHandler.DisconnectInactiveNodes()
+			meshHandler.DisconnectInactiveNodes(ctx)
 
 			for j, c := range testCase.conn {
 				c := c

@@ -28,18 +28,6 @@ func (nodes *SuperNodeList) Activate() {
 	}
 }
 
-// DisconnectAll disconnects all nodes
-func (nodes *SuperNodeList) DisconnectAll() {
-	for _, someNode := range *nodes {
-		someNode.RLock()
-		defer someNode.RUnlock()
-
-		if someNode.ConnectionInterface != nil {
-			someNode.ConnectionInterface.Close()
-		}
-	}
-}
-
 // WaitConnClose waits for the connection closing by any supernodes.
 func (nodes *SuperNodeList) WaitConnClose(ctx context.Context, done <-chan struct{}) error {
 	group, ctx := errgroup.WithContext(ctx)

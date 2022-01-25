@@ -55,7 +55,7 @@ func (task *UserDataTask) run(ctx context.Context) error {
 		}
 
 	}
-	_ = task.MeshHandler.DisconnectInactiveNodes(ctx)
+	task.MeshHandler.DisconnectInactiveNodes(ctx)
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken

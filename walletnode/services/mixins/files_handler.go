@@ -12,17 +12,17 @@ import (
 type FilesHandler struct {
 	FileStorage *files.Storage
 	FileDb      storage.KeyValue
-	imageTTL    time.Duration
+	fileTTL     time.Duration
 }
 
 func NewFilesHandler(
 	fileStorage storage.FileStorageInterface,
 	db storage.KeyValue,
-	imageTTL time.Duration) *FilesHandler {
+	fileTTL time.Duration) *FilesHandler {
 	return &FilesHandler{
 		FileStorage: files.NewStorage(fileStorage),
 		FileDb:      db,
-		imageTTL:    imageTTL,
+		fileTTL:     fileTTL,
 	}
 }
 
@@ -38,9 +38,9 @@ func (st *FilesHandler) StoreFileNameIntoStorage(ctx context.Context, fileName *
 	if err != nil {
 		return "", "0", err
 	}
-	file.RemoveAfter(st.imageTTL)
+	file.RemoveAfter(st.fileTTL)
 
-	return id, time.Now().Add(st.imageTTL).Format(time.RFC3339), nil
+	return id, time.Now().Add(st.fileTTL).Format(time.RFC3339), nil
 }
 
 // GetImgData returns the image data from the storage

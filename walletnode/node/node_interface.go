@@ -21,7 +21,5 @@ type SuperNodeInterface interface {
 type SuperNodeCollectionInterface interface {
 	AddNewNode(client ClientInterface, address string, pastelID string)
 	Activate()
-	DisconnectInactive()
-	DisconnectAll()
 	WaitConnClose(ctx context.Context, done <-chan struct{}) error
 }
