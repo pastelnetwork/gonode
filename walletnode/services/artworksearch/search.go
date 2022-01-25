@@ -27,7 +27,7 @@ type Match struct {
 	Score int
 }
 
-// getSearchableFields checks request & returns list of data to be searched along with
+// getSearchableFields checks Request & returns list of data to be searched along with
 // a Map to record index of each field type in the list as fuzzy search returns index
 func (rs *RegTicketSearch) getSearchableFields(req *ArtSearchRequest) (data []string, mapper map[int]ArtSearchQueryField) {
 	fieldIdxMapper := make(map[int]ArtSearchQueryField)

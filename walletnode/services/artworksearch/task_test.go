@@ -240,7 +240,7 @@ func TestNewTask(t *testing.T) {
 			want: &NftSearchTask{
 				WalletNodeTask:   common.NewWalletNodeTask(logPrefix),
 				NftSearchService: service,
-				request:          req,
+				Request:          req,
 				thumbnailHelper:  thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
 			},
 		},
@@ -253,7 +253,7 @@ func TestNewTask(t *testing.T) {
 
 			task := NewNftSearchTask(testCase.args.service, testCase.args.req)
 			assert.Equal(t, testCase.want.NftSearchService, task.NftSearchService)
-			assert.Equal(t, testCase.want.request, task.request)
+			assert.Equal(t, testCase.want.Request, task.Request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 		})
 	}

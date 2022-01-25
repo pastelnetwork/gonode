@@ -59,8 +59,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Request.MaximumFee)
 	}
 
-	// Retrieve supernodes with highest ranks.
-	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.ConnectToTopRankNodes(ctx)
+	// Setup mesh with supernodes with the highest ranks.
+	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
 	if err != nil {
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}

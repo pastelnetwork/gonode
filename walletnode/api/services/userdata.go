@@ -18,7 +18,7 @@ import (
 // UserdataApiHandler represents services for userdatas endpoints.
 type UserdataApiHandler struct {
 	*Common
-	process *userdataprocess.Service
+	process *userdataprocess.UserDataService
 }
 
 // Mount configures the mux to serve the artworks endpoints.
@@ -105,7 +105,7 @@ func (service *UserdataApiHandler) GetUserdata(ctx context.Context, req *userdat
 }
 
 // NewUserdataApiHandler returns the UserdataApiHandler implementation.
-func NewUserdataApiHandler(process *userdataprocess.Service) *UserdataApiHandler {
+func NewUserdataApiHandler(process *userdataprocess.UserDataService) *UserdataApiHandler {
 	return &UserdataApiHandler{
 		Common:  NewCommon(),
 		process: process,

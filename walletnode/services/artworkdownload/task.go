@@ -1,36 +1,38 @@
 package artworkdownload
 
 import (
+	"bytes"
 	"context"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload/node"
 )
+
+type downFile struct {
+	file     []byte
+	paslteID string
+}
 
 // Task is the task of downloading artwork.
 type NftDownloadTask struct {
 	*common.WalletNodeTask
 
+	MeshHandler *mixins.MeshHandler
+
 	service *NftDownloadService
 	Request *NftDownloadRequest
 
-	File []byte
-	err  error
+	files []downFile
+	File  []byte
 }
 
 // Run starts the task
 func (task *NftDownloadTask) Run(ctx context.Context) error {
-	task.err = task.RunHelper(ctx, task.run, task.removeArtifacts)
-	return nil
-}
-
-// Error returns the error after running task
-func (task *NftDownloadTask) Error() error {
-	return task.err
+	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
 func (task *NftDownloadTask) run(ctx context.Context) error {
@@ -51,61 +53,87 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 		return errors.Errorf("sign timestamp: %w", err)
 	}
 
-	// Retrieve supernodes with highest ranks.
-	topNodes, err := task.pastelTopNodes(ctx)
-	if err != nil {
-		return errors.Errorf("get top rank nodes: %w", err)
-	}
-	if len(topNodes) < task.config.NumberSuperNodes {
-		task.UpdateStatus(common.StatusErrorNotEnoughSuperNode)
-		return errors.New("unable to find enough supernodes")
+	if err = task.MeshHandler.ConnectToNSuperNodes(ctx, task.service.config.NumberSuperNodes); err != nil {
+		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
 
-	//var connectedNodes node.List
-	//var errs error
-	secInfo := &alts.SecInfo{
-		PastelID:   task.Request.PastelID,
-		PassPhrase: task.Request.PastelIDPassphrase,
-		Algorithm:  "ed448",
-	}
-
-	// Send download request to all top supernodes.
-	var nodes node.List
-
-	downloadErrs, err := topNodes.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.config.connectToNodeTimeout, secInfo)
+	downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not download files")
 		task.UpdateStatus(common.StatusErrorDownloadFailed)
-		return errors.Errorf("download files from supernodes: %w", err)
+		return errors.Errorf("download files from supernodes: %w (%w)", err, downloadErrs)
 	}
 
-	nodes = topNodes.Activate()
-
-	if len(nodes) < task.config.NumberSuperNodes {
-		log.WithContext(ctx).WithField("DownloadedNodes", len(nodes)).Info("Not enough number of downloaded node")
+	if len(task.files) < task.service.config.NumberSuperNodes {
+		log.WithContext(ctx).WithField("DownloadedNodes", len(task.files)).Info("Not enough number of downloaded files")
 		task.UpdateStatus(common.StatusErrorNotEnoughFiles)
-		return errors.Errorf("could not download enough files from %d supernodes: %v", task.config.NumberSuperNodes, downloadErrs)
+		return errors.Errorf("could not download enough files from %d supernodes: %v", task.service.config.NumberSuperNodes, downloadErrs)
 	}
 
 	task.UpdateStatus(common.StatusDownloaded)
 
 	// Disconnect supernodes that did not return file.
-	topNodes.DisconnectInactive()
+	_ = task.MeshHandler.DisconnectInactiveNodes(ctx)
 
 	// Check files are the same
-	err = nodes.MatchFiles()
+	err = task.MatchFiles()
 	if err != nil {
 		task.UpdateStatus(common.StatusErrorFilesNotMatch)
 		return errors.Errorf("files are different between supernodes: %w", err)
 	}
 
 	// Store file to send to the caller
-	task.File = nodes.File()
+	task.File = task.files[0].file
 
 	// Disconnect all noded after finished downloading.
-	nodes.Disconnect()
+	task.MeshHandler.Nodes.DisconnectAll()
 
 	// Wait for all connections to disconnect.
+	return nil
+}
+
+// Download downloads image from supernodes.
+func (task *NftDownloadTask) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]error, error) {
+	group, _ := errgroup.WithContext(ctx)
+	errChan := make(chan error, len(task.MeshHandler.Nodes))
+
+	for _, someNode := range task.MeshHandler.Nodes {
+		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownload)
+		if !ok {
+			//TODO: use assert here
+			return nil, errors.Errorf("node %s is not NftRegisterNode", someNode.String())
+		}
+		group.Go(func() error {
+			file, subErr := nftDownNode.Download(ctx, txid, timestamp, signature, ttxid)
+			if subErr != nil {
+				log.WithContext(ctx).WithField("address", someNode.String()).WithError(subErr).Error("Could not download from supernode")
+				errChan <- subErr
+			} else {
+				log.WithContext(ctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
+			}
+			task.files = append(task.files, downFile{file: file, paslteID: someNode.PastelID()})
+			return nil
+		})
+	}
+	err := group.Wait()
+
+	close(errChan)
+
+	downloadErrors := []error{}
+	for subErr := range errChan {
+		downloadErrors = append(downloadErrors, subErr)
+	}
+
+	return downloadErrors, err
+}
+
+// MatchFiles matches files.
+func (task *NftDownloadTask) MatchFiles() error {
+	for _, someFile := range task.files[1:] {
+		if !bytes.Equal(task.files[0].file, someFile.file) {
+			return errors.Errorf("file of nodes %q and %q didn't match", task.files[0].paslteID, someFile.paslteID)
+		}
+	}
 	return nil
 }
 
@@ -114,9 +142,19 @@ func (task *NftDownloadTask) removeArtifacts() {
 
 // NewNftDownloadTask returns a new Task instance.
 func NewNftDownloadTask(service *NftDownloadService, request *NftDownloadRequest) *NftDownloadTask {
-	return &NftDownloadTask{
+	task := &NftDownloadTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 		service:        service,
 		Request:        request,
 	}
+
+	task.MeshHandler = mixins.NewMeshHandler(task.WalletNodeTask,
+		service.nodeClient, &NftDownloadNodeMaker{},
+		service.pastelHandler,
+		request.PastelID, request.PastelIDPassphrase,
+		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
+		service.config.acceptNodesTimeout, service.config.connectToNextNodeDelay,
+	)
+
+	return task
 }

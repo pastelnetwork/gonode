@@ -23,19 +23,19 @@ func (nodes *SuperNodeList) Add(node *SuperNodeClient) {
 // Activate marks all nodes as activated.
 // Since any node can be present in the same time in several List and Node is a pointer, this is reflected in all lists.
 func (nodes *SuperNodeList) Activate() {
-	for _, node := range *nodes {
-		node.SetActive(true)
+	for _, someNode := range *nodes {
+		someNode.SetActive(true)
 	}
 }
 
 // DisconnectAll disconnects all nodes
 func (nodes *SuperNodeList) DisconnectAll() {
-	for _, node := range *nodes {
-		node.RLock()
-		defer node.RUnlock()
+	for _, someNode := range *nodes {
+		someNode.RLock()
+		defer someNode.RUnlock()
 
-		if node.ConnectionInterface != nil {
-			node.ConnectionInterface.Close()
+		if someNode.ConnectionInterface != nil {
+			someNode.ConnectionInterface.Close()
 		}
 	}
 }

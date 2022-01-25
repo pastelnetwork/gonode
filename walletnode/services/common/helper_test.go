@@ -1,4 +1,4 @@
-package artworksearch
+package common
 
 import (
 	b64 "encoding/base64"
@@ -35,7 +35,7 @@ func TestInIntRange(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			got := inIntRange(tc.val, tc.min, tc.max)
+			got := InIntRange(tc.val, tc.min, tc.max)
 			assert.Equal(t, tc.inRange, got)
 		})
 	}
@@ -68,7 +68,7 @@ func TestInFloatRange(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			got := inFloatRange(tc.val, tc.min, tc.max)
+			got := InFloatRange(tc.val, tc.min, tc.max)
 			assert.Equal(t, tc.inRange, got)
 		})
 	}
@@ -104,7 +104,7 @@ func TestFromBase64(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			assert.Nil(t, fromBase64(tc.encodedStr, tc.out))
+			assert.Nil(t, FromBase64(tc.encodedStr, tc.out))
 			assert.Equal(t, tc.want.TestVarStr, tc.out.TestVarStr)
 			assert.Equal(t, tc.want.TestVarInt, tc.out.TestVarInt)
 		})

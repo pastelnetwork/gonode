@@ -18,14 +18,14 @@ import (
 // NftSearchTask is the task of searching for artwork.
 type NftSearchTask struct {
 	*common.WalletNodeTask
-	*NftSearchService
 
-	searchResult   []*RegTicketSearch
-	searchResMutex sync.Mutex
+	service *NftSearchService
+	Request *ArtSearchRequest
 
+	searchResult    []*RegTicketSearch
+	searchResMutex  sync.Mutex
 	resultChan      chan *RegTicketSearch
 	err             error
-	request         *ArtSearchRequest
 	thumbnailHelper thumbnail.Helper
 }
 
@@ -38,7 +38,7 @@ func (task *NftSearchTask) Run(ctx context.Context) error {
 }
 
 func (task *NftSearchTask) run(ctx context.Context) error {
-	actTickets, err := task.pastelClient.ActTickets(ctx, pastel.ActTicketAll, task.request.MinBlock)
+	actTickets, err := task.service.pastelHandler.PastelClient.ActTickets(ctx, pastel.ActTicketAll, task.Request.MinBlock)
 	if err != nil {
 		return fmt.Errorf("act ticket: %s", err)
 	}
@@ -47,23 +47,23 @@ func (task *NftSearchTask) run(ctx context.Context) error {
 	for _, ticket := range actTickets {
 		ticket := ticket
 
-		if !inIntRange(ticket.Height, nil, task.request.MaxBlock) {
+		if !common.InIntRange(ticket.Height, nil, task.Request.MaxBlock) {
 			continue
 		}
 
-		if task.request.Artist != nil && *task.request.Artist != ticket.ActTicketData.PastelID {
+		if task.Request.Artist != nil && *task.Request.Artist != ticket.ActTicketData.PastelID {
 			continue
 		}
 
 		group.Go(func() error {
-			regTicket, err := task.RegTicket(gctx, ticket.ActTicketData.RegTXID)
+			regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(gctx, ticket.ActTicketData.RegTXID)
 			if err != nil {
 				log.WithContext(ctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg Request")
 
 				return fmt.Errorf("reg ticket - txid: %s - err: %s", ticket.TXID, err)
 			}
 
-			if srch, isMatched := task.filterRegTicket(regTicket); isMatched {
+			if srch, isMatched := task.filterRegTicket(&regTicket); isMatched {
 				task.addMatchedResult(srch)
 			}
 
@@ -79,12 +79,12 @@ func (task *NftSearchTask) run(ctx context.Context) error {
 		return task.searchResult[i].MaxScore > task.searchResult[j].MaxScore
 	})
 
-	if len(task.searchResult) > task.request.Limit {
-		task.searchResult = task.searchResult[:task.request.Limit]
+	if len(task.searchResult) > task.Request.Limit {
+		task.searchResult = task.searchResult[:task.Request.Limit]
 	}
 
 	if len(task.searchResult) == 0 {
-		log.WithContext(ctx).WithField("request", task.request).Debug("No matching results")
+		log.WithContext(ctx).WithField("request", task.Request).Debug("No matching results")
 		return nil
 	}
 
@@ -94,8 +94,8 @@ func (task *NftSearchTask) run(ctx context.Context) error {
 	}
 
 	if err := task.thumbnailHelper.Connect(ctx, uint(pastelConnections), &alts.SecInfo{
-		PastelID:   task.request.UserPastelID,
-		PassPhrase: task.request.UserPassphrase,
+		PastelID:   task.Request.UserPastelID,
+		PassPhrase: task.Request.UserPassphrase,
 		Algorithm:  "ed448",
 	}); err != nil {
 		return fmt.Errorf("connect Thumbnail helper : %s", err)
@@ -139,26 +139,26 @@ func (task *NftSearchTask) run(ctx context.Context) error {
 	return group.Wait()
 }
 
-// filterRegTicket filters ticket against request params & checks if its a match
+// filterRegTicket filters ticket against Request params & checks if its a match
 func (task *NftSearchTask) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
 	// --------- WIP: PSL-142------------------
 	/* if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore),
-		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
+		task.Request.MinRarenessScore, task.Request.MaxRarenessScore) {
 		return srch, false
 	}
 
 		if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore),
-			task.request.MinNsfwScore, task.request.MaxNsfwScore) {
+			task.Request.MinNsfwScore, task.Request.MaxNsfwScore) {
 			return srch, false
 		}
 
 	if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore),
-		task.request.MinInternetRarenessScore, task.request.MaxInternetRarenessScore) {
+		task.Request.MinInternetRarenessScore, task.Request.MaxInternetRarenessScore) {
 		return srch, false
 	}*/
 
-	if !inIntRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.TotalCopies,
-		task.request.MinCopies, task.request.MaxCopies) {
+	if !common.InIntRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.TotalCopies,
+		task.Request.MinCopies, task.Request.MaxCopies) {
 		return srch, false
 	}
 
@@ -166,7 +166,7 @@ func (task *NftSearchTask) filterRegTicket(regTicket *pastel.RegTicket) (srch *R
 		RegTicket: regTicket,
 	}
 
-	return regSearch.Search(task.request)
+	return regSearch.Search(task.Request)
 }
 
 // addMatchedResult adds to search result
@@ -194,10 +194,10 @@ func (task *NftSearchTask) removeArtifacts() {
 // NewNftSearchTask returns a new NftSearchTask instance.
 func NewNftSearchTask(service *NftSearchService, request *ArtSearchRequest) *NftSearchTask {
 	return &NftSearchTask{
-		WalletNodeTask:   common.NewWalletNodeTask(logPrefix),
-		NftSearchService: service,
-		request:          request,
-		resultChan:       make(chan *RegTicketSearch),
-		thumbnailHelper:  thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
+		WalletNodeTask:  common.NewWalletNodeTask(logPrefix),
+		service:         service,
+		Request:         request,
+		resultChan:      make(chan *RegTicketSearch),
+		thumbnailHelper: thumbnail.New(service.pastelHandler.PastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
 	}
 }

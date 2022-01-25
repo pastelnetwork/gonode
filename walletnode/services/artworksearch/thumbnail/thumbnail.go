@@ -57,7 +57,7 @@ type request struct {
 	respCh chan *response
 }
 
-// Connect creates `conncetions` no. of connections with supernode & starts thumbnail request listeners
+// Connect creates `connections` no. of connections with supernode & starts thumbnail request listeners
 func (t *thumbnailHelper) Connect(ctx context.Context, connections uint, secInfo *alts.SecInfo) error {
 	if connections > maxConnections {
 		return errors.New(maxConnectionsErr)

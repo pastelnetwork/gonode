@@ -148,3 +148,20 @@ func (pt *PastelHandler) WaitTxidValid(ctx context.Context, txID string, expecte
 		}
 	}
 }
+
+// RegTicket pull NFT registration ticket from cNode & decodes base64 encoded fields
+func (pt *PastelHandler) RegTicket(ctx context.Context, RegTXID string) (*pastel.RegTicket, error) {
+	regTicket, err := pt.PastelClient.RegTicket(ctx, RegTXID)
+	if err != nil {
+		return nil, errors.Errorf("fetch: %w", err)
+	}
+
+	articketData, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
+	if err != nil {
+		return nil, errors.Errorf("convert NFT ticket: %w", err)
+	}
+
+	regTicket.RegTicketData.NFTTicketData = *articketData
+
+	return &regTicket, nil
+}

@@ -51,20 +51,8 @@ func NewMeshHandler(task *common.WalletNodeTask,
 	}
 }
 
-// ConnectToTopRankNodes - find 3 supernodes and create mesh of 3 nodes
-func (m *MeshHandler) ConnectToTopRankNodes(ctx context.Context) (int, string, error) {
-
-	// Retrieve supernodes with the highest ranks.
-	var tmpNodes common.SuperNodeList
-	candidatesNodes, err := m.getTopNodes(ctx, 0)
-	if err != nil {
-		return -1, "", errors.Errorf("call masternode top: %w", err)
-	}
-
-	if len(candidatesNodes) < m.minNumberSuperNodes {
-		m.task.UpdateStatus(common.StatusErrorNotEnoughSuperNode)
-		return -1, "", errors.New("unable to find enough Supernodes with acceptable storage fee")
-	}
+// SetupMeshOfNSupernodesNodes
+func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, string, error) {
 
 	// Get current block height & hash
 	blockNum, blockHash, err := m.pastelHandler.GetBlock(ctx)
@@ -72,25 +60,73 @@ func (m *MeshHandler) ConnectToTopRankNodes(ctx context.Context) (int, string, e
 		return -1, "", errors.Errorf("get block: %v", err)
 	}
 
-	// Connect to top nodes to find 3SN and validate their infor
-	err = m.validateMNsInfo(ctx)
+	candidatesNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes)
 	if err != nil {
-		m.task.UpdateStatus(common.StatusErrorFindRespondingSNs)
-		return -1, "", errors.Errorf("validate MNs info: %v", err)
+		return 0, "", err
 	}
 
-	/* Establish mesh with 3 SNs */
-	var meshedNodes common.SuperNodeList
-	var errs error
+	// Close all connected connections - setMesh will Connect again
+	candidatesNodes.DisconnectAll()
 
-	for primaryRank := range tmpNodes {
-		meshedNodes, err = m.findNodesForMesh(ctx, tmpNodes, primaryRank)
+	meshedNodes, err := m.setMesh(ctx, candidatesNodes, m.minNumberSuperNodes)
+	if err != nil {
+		return 0, "", err
+	}
+	m.Nodes = meshedNodes
+
+	return blockNum, blockHash, nil
+}
+
+func (m MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int) error {
+
+	connectedNodes, err := m.findNValidTopSuperNodes(ctx, n)
+	if err != nil {
+		return err
+	}
+	// Activate supernodes that are in the mesh.
+	connectedNodes.Activate()
+	// Cancel context when any connection is broken.
+	m.task.UpdateStatus(common.StatusConnected)
+	m.Nodes = connectedNodes
+	return nil
+}
+
+// ConnectToTopRankNodes - find N supernodes and create mesh of 3 nodes
+func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (common.SuperNodeList, error) {
+
+	// Retrieve supernodes with the highest ranks.
+	candidatesNodes, err := m.getTopNodes(ctx, 0)
+	if err != nil {
+		return nil, errors.Errorf("call masternode top: %w", err)
+	}
+
+	if len(candidatesNodes) < n {
+		m.task.UpdateStatus(common.StatusErrorNotEnoughSuperNode)
+		return nil, errors.New("unable to find enough Supernodes")
+	}
+
+	// Connect to top nodes to find 3SN and validate their info
+	candidatesNodes, err = m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n)
+	if err != nil {
+		m.task.UpdateStatus(common.StatusErrorFindRespondingSNs)
+		return nil, errors.Errorf("validate MNs info: %v", err)
+	}
+	return candidatesNodes, nil
+}
+
+func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes common.SuperNodeList, n int) (common.SuperNodeList, error) {
+	var errs error
+	var err error
+
+	var meshedNodes common.SuperNodeList
+	for primaryRank := range candidatesNodes {
+		meshedNodes, err = m.connectToPrimarySecondary(ctx, candidatesNodes, primaryRank)
 		if err != nil {
 			// close connected connections
-			tmpNodes.DisconnectAll()
+			candidatesNodes.DisconnectAll()
 
 			if errors.IsContextCanceled(err) {
-				return -1, "", err
+				return nil, err
 			}
 			errs = errors.Append(errs, err)
 			log.WithContext(ctx).WithError(err).Warn("Could not create a mesh of the nodes")
@@ -98,20 +134,13 @@ func (m *MeshHandler) ConnectToTopRankNodes(ctx context.Context) (int, string, e
 		}
 		break
 	}
-	if len(meshedNodes) < m.minNumberSuperNodes {
+	if len(meshedNodes) < n {
 		// close connected connections
 		meshedNodes.DisconnectAll()
-		return -1, "", errors.Errorf("Could not create a mesh of %d nodes: %w", m.minNumberSuperNodes, errs)
+		return nil, errors.Errorf("Could not create a mesh of %d nodes: %w", n, errs)
 	}
 
-	// Activate supernodes that are in the mesh.
-	meshedNodes.Activate()
-
-	// Cancel context when any connection is broken.
-	m.task.UpdateStatus(common.StatusConnected)
-	m.Nodes = meshedNodes
-
-	// Send all meshed supernode info to nodes - that will be used to node send info to other nodes
+	// Send all meshed supernode info to nodes - that will be used by each remote node to send info to other nodes
 	var meshedSNInfo []types.MeshedSuperNode
 	for _, someNode := range meshedNodes {
 		meshedSNInfo = append(meshedSNInfo, types.MeshedSuperNode{
@@ -121,13 +150,19 @@ func (m *MeshHandler) ConnectToTopRankNodes(ctx context.Context) (int, string, e
 	}
 
 	for _, someNode := range meshedNodes {
-		err = someNode.MeshNodes(ctx, meshedSNInfo)
+		err := someNode.MeshNodes(ctx, meshedSNInfo)
 		if err != nil {
 			meshedNodes.DisconnectAll()
-			return -1, "", errors.Errorf("could not send info of meshed nodes: %w", err)
+			return nil, errors.Errorf("could not send info of meshed nodes: %w", err)
 		}
 	}
-	return blockNum, blockHash, nil
+
+	// Activate supernodes that are in the mesh.
+	meshedNodes.Activate()
+	// Cancel context when any connection is broken.
+	m.task.UpdateStatus(common.StatusConnected)
+
+	return meshedNodes, nil
 }
 
 // GetTopNodes get list of current top masternodes and validate them (in the order received from pasteld)
@@ -158,8 +193,8 @@ func (m *MeshHandler) getTopNodes(ctx context.Context, maximumFee float64) (comm
 	return nodes, nil
 }
 
-// validateMNsInfo - validate MNs info, until found at least 3 valid MNs
-func (m *MeshHandler) validateMNsInfo(ctx context.Context) error {
+// validateMNsInfo - validate MNs info, until found at least N valid MNs
+func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candidatesNodes common.SuperNodeList, n int) (common.SuperNodeList, error) {
 	count := 0
 
 	secInfo := &alts.SecInfo{
@@ -169,31 +204,27 @@ func (m *MeshHandler) validateMNsInfo(ctx context.Context) error {
 	}
 
 	var nodes common.SuperNodeList
-	for _, someNode := range m.Nodes {
+	for _, someNode := range candidatesNodes {
 		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
 			continue
 		}
 
 		count++
 		nodes = append(nodes, someNode)
-		if count == m.minNumberSuperNodes {
+		if count == n {
 			break
 		}
 	}
 
-	// Close all connected connections
-	nodes.DisconnectAll()
-
-	if count < m.minNumberSuperNodes {
-		return errors.Errorf("validate %d Supernodes from pastel network", m.minNumberSuperNodes)
+	if count < n {
+		return nil, errors.Errorf("validate %d Supernodes from pastel network", n)
 	}
 
-	m.Nodes = nodes
-	return nil
+	return nodes, nil
 }
 
 // meshNodes establishes communication between supernodes.
-func (m *MeshHandler) findNodesForMesh(ctx context.Context, candidatesNodes common.SuperNodeList, primaryIndex int) (common.SuperNodeList, error) {
+func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesNodes common.SuperNodeList, primaryIndex int) (common.SuperNodeList, error) {
 
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
@@ -213,7 +244,7 @@ func (m *MeshHandler) findNodesForMesh(ctx context.Context, candidatesNodes comm
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
 
-	// FIXME: ugly hack here. Need to make the Node and List to be safer
+	// FIXME: ugly hack here
 	secondariesMtx := &sync.Mutex{}
 	var secondaries common.SuperNodeList
 	go func() {

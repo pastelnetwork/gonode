@@ -7,7 +7,6 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
-	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -76,23 +75,6 @@ func NewService(config *Config,
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
 		nodeClient:    nodeClient,
 	}
-}
-
-// RegTicket pull NFT registration ticket from cNode & decodes base64 encoded fields
-func (service *NftSearchService) RegTicket(ctx context.Context, RegTXID string) (*pastel.RegTicket, error) {
-	regTicket, err := service.pastelHandler.PastelClient.RegTicket(ctx, RegTXID)
-	if err != nil {
-		return nil, errors.Errorf("fetch: %w", err)
-	}
-
-	articketData, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
-	if err != nil {
-		return nil, errors.Errorf("convert NFT ticket: %w", err)
-	}
-
-	regTicket.RegTicketData.NFTTicketData = *articketData
-
-	return &regTicket, nil
 }
 
 // GetThumbnail gets thumbnail

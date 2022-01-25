@@ -49,7 +49,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 	defer cancel()
 
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
-	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.ConnectToTopRankNodes(ctx)
+	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
 	if err != nil {
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
@@ -236,7 +236,7 @@ func (task *SenseRegisterTask) ProbeImage(ctx context.Context, file *files.File,
 func (task *SenseRegisterTask) createSenseTicket(_ context.Context) error {
 	if task.dataHash == nil ||
 		task.FingerprintsHandler.DDAndFingerprintsIDs == nil {
-		return ErrEmptyDatahash
+		return common.ErrEmptyDatahash
 	}
 
 	ticket := &pastel.ActionTicket{
