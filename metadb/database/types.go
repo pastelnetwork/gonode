@@ -152,7 +152,7 @@ func (d *UserdataReadResult) ToUserData() userdata.ProcessRequest {
 			Content:  d.CoverPhotoImage,
 			Filename: d.CoverPhotoFilename,
 		},
-		ArtistPastelID:    d.ArtistPastelID,
+		UserPastelID:      d.ArtistPastelID,
 		Timestamp:         int64(d.Timestamp),
 		PreviousBlockHash: d.PreviousBlockHash,
 	}

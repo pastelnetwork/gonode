@@ -24,6 +24,7 @@ type Config struct {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
+		Config:                     *common.NewConfig(),
 		NumberConnectedNodes:       defaultNumberConnectedNodes,
 		PreburntTxMinConfirmations: defaultPreburntTxMinConfirmations,
 	}

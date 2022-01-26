@@ -14,9 +14,9 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	nftreg "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
-	nftsrv "github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
+	nftsrv "github.com/pastelnetwork/gonode/walletnode/api/gen/http/nft/server"
 	sensrv "github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
+	nftreg "github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	goa "goa.design/goa/v3/pkg"
 
 	mdlserver "github.com/pastelnetwork/gonode/walletnode/api/gen/http/userdatas/server"
@@ -30,7 +30,7 @@ const (
 
 // NftRegUploadImageDecoderFunc implements the multipart decoder for service "nftreg" endpoint "UploadImage".
 // The decoder must populate the argument p after encoding.
-func NftRegUploadImageDecoderFunc(ctx context.Context, service *NftApiHandler) nftsrv.ArtworksUploadImageDecoderFunc {
+func NftRegUploadImageDecoderFunc(ctx context.Context, service *NftApiHandler) nftsrv.NftUploadImageDecoderFunc {
 	return func(reader *multipart.Reader, p **nftreg.UploadImagePayload) error {
 		var res nftreg.UploadImagePayload
 
@@ -148,9 +148,9 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *UserdataApiHandl
 
 				switch part.FormName() {
 				case "artist_pastelid":
-					res.ArtistPastelID = string(buffer)
+					res.UserPastelID = string(buffer)
 				case "artist_pastelid_passphrase":
-					res.ArtistPastelIDPassphrase = string(buffer)
+					res.UserPastelIDPassphrase = string(buffer)
 				case "biography":
 					value := string(buffer)
 					res.Biography = &value
@@ -239,9 +239,9 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, _ *UserdataApiHandl
 
 				switch part.FormName() {
 				case "artist_pastelid":
-					res.ArtistPastelID = string(buffer)
+					res.UserPastelID = string(buffer)
 				case "artist_pastelid_passphrase":
-					res.ArtistPastelIDPassphrase = string(buffer)
+					res.UserPastelIDPassphrase = string(buffer)
 				case "biography":
 					value := string(buffer)
 					res.Biography = &value

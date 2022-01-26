@@ -103,8 +103,8 @@ func (task *UserDataTask) run(ctx context.Context) error {
 		task.request.PreviousBlockHash = blockHash
 
 		// Get the value of task.request.ArtistPastelIDPassphrase for sign data, then empty it in the request to make sure it not sent to supernodes
-		passphrase := task.request.ArtistPastelIDPassphrase
-		task.request.ArtistPastelIDPassphrase = ""
+		passphrase := task.request.UserPastelIDPassphrase
+		task.request.UserPastelIDPassphrase = ""
 		// Marshal task.request to byte array for signing
 		js, err := json.Marshal(task.request)
 		if err != nil {
@@ -118,7 +118,7 @@ func (task *UserDataTask) run(ctx context.Context) error {
 		}
 
 		// Sign request with Wallet Node's pastelID and passphrase
-		signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, hashvalue, task.request.ArtistPastelID, passphrase, "ed448")
+		signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, hashvalue, task.request.UserPastelID, passphrase, "ed448")
 		if err != nil {
 			return errors.Errorf("sign ticket %w", err)
 		}
@@ -245,7 +245,7 @@ func NewUserDataTask(service *UserDataService, request *userdata.ProcessRequest,
 	task.MeshHandler = mixins.NewMeshHandler(task.WalletNodeTask,
 		service.nodeClient, &UserDataNodeMaker{},
 		service.pastelHandler,
-		request.ArtistPastelID, request.ArtistPastelIDPassphrase,
+		request.UserPastelID, request.UserPastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
 		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
 	)

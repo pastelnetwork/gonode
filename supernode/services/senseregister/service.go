@@ -60,9 +60,9 @@ func (service *Service) Run(ctx context.Context) error {
 			if utils.IsContextErr(err) {
 				return err
 			}
-			service.Worker = task.NewWorker()
-			log.WithContext(ctx).WithError(err).Error("run artwork register failure, retrying")
 
+			service.Worker = task.NewWorker()
+			log.WithContext(ctx).WithError(err).Error("registration failed, retrying")
 		} else {
 			return nil
 		}

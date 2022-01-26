@@ -180,7 +180,7 @@ package senseregister
 //					ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
 //					ListenOnSendFromAddress("pre-burnt-txid", nil).
 //					ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 10}, nil).
-//					ListenOnRegisterNFTTicket("art-act-txid", nil)
+//					ListenOnRegisterNFTTicket("nft-act-txid", nil)
 //
 //				rqClientMock := rqMock.NewMockClient(t)
 //				rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)

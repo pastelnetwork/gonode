@@ -2,16 +2,15 @@ package services
 
 import (
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
 	"time"
 
 	"github.com/pastelnetwork/gonode/pastel"
 
-	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
+	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 
 	"github.com/pastelnetwork/gonode/common/service/task/state"
-
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 )
 
 func safeStr(p *string) string {
@@ -21,11 +20,11 @@ func safeStr(p *string) string {
 	return ""
 }
 
-func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
-	var states []*artworks.TaskState
+func toNftStates(statuses []*state.Status) []*nft.TaskState {
+	var states []*nft.TaskState
 
 	for _, status := range statuses {
-		states = append(states, &artworks.TaskState{
+		states = append(states, &nft.TaskState{
 			Date:   status.CreatedAt.Format(time.RFC3339),
 			Status: status.String(),
 		})
@@ -34,10 +33,10 @@ func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
 }
 
 // NFT Search
-func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSearchResult {
+func toArtSearchResult(srch *nftsearch.RegTicketSearch) *nft.NftSearchResult {
 	ticketData := srch.RegTicketData.NFTTicketData.AppTicketData
-	res := &artworks.ArtworkSearchResult{
-		Artwork: &artworks.ArtworkSummary{
+	res := &nft.NftSearchResult{
+		Nft: &nft.NftSummary{
 			Txid:       srch.TXID,
 			Thumbnail1: srch.Thumbnail,
 			Thumbnail2: srch.ThumbnailSecondry,
@@ -56,9 +55,9 @@ func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSea
 		MatchIndex: srch.MatchIndex,
 	}
 
-	res.Matches = []*artworks.FuzzyMatch{}
+	res.Matches = []*nft.FuzzyMatch{}
 	for _, match := range srch.Matches {
-		res.Matches = append(res.Matches, &artworks.FuzzyMatch{
+		res.Matches = append(res.Matches, &nft.FuzzyMatch{
 			Score:          &match.Score,
 			Str:            &match.Str,
 			FieldType:      &match.FieldType,
@@ -69,8 +68,8 @@ func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSea
 	return res
 }
 
-func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
-	return &artworks.ArtworkDetail{
+func toNftDetail(ticket *pastel.RegTicket) *nft.NftDetail {
+	return &nft.NftDetail{
 		Txid:             ticket.TXID,
 		Title:            ticket.RegTicketData.NFTTicketData.AppTicketData.NFTTitle,
 		Copies:           ticket.RegTicketData.NFTTicketData.Copies,
@@ -124,8 +123,8 @@ func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.P
 		request.CoverPhoto.Filename = safeStr(req.CoverPhoto.Filename)
 	}
 
-	request.ArtistPastelID = req.ArtistPastelID
-	request.ArtistPastelIDPassphrase = req.ArtistPastelIDPassphrase
+	request.UserPastelID = req.UserPastelID
+	request.UserPastelIDPassphrase = req.UserPastelIDPassphrase
 
 	request.Timestamp = time.Now().Unix() // The moment request is prepared to send to super nodes
 	request.PreviousBlockHash = ""        // PreviousBlockHash will be generated later when prepare to send
@@ -160,8 +159,8 @@ func fromUserdataUpdateRequest(req *userdatas.UpdateUserdataPayload) *userdata.P
 		request.CoverPhoto.Filename = safeStr(req.CoverPhoto.Filename)
 	}
 
-	request.ArtistPastelID = req.ArtistPastelID
-	request.ArtistPastelIDPassphrase = req.ArtistPastelIDPassphrase
+	request.UserPastelID = req.UserPastelID
+	request.UserPastelIDPassphrase = req.UserPastelIDPassphrase
 
 	request.Timestamp = time.Now().Unix() // The moment request is prepared to send to super nodes
 	request.PreviousBlockHash = ""        // PreviousBlockHash will be generated later when prepare to send
@@ -198,8 +197,8 @@ func toUserSpecifiedData(req *userdata.ProcessRequest) *userdatas.UserSpecifiedD
 	result.PrimaryLanguage = &req.PrimaryLanguage
 	result.Categories = &req.Categories
 	result.Biography = &req.Biography
-	result.ArtistPastelID = req.ArtistPastelID
-	result.ArtistPastelIDPassphrase = "" // No need to reture ArtistPastelIDPassphrase
+	result.UserPastelID = req.UserPastelID
+	result.UserPastelIDPassphrase = "" // No need to reture ArtistPastelIDPassphrase
 
 	if result.AvatarImage != nil {
 		if result.AvatarImage.Content != nil && len(result.AvatarImage.Content) > 0 {

@@ -127,7 +127,7 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 			Content:  finalUserdata.Userdata.CoverPhoto.Content,
 			Filename: finalUserdata.Userdata.CoverPhoto.Filename,
 		},
-		ArtistPastelID:    finalUserdata.Userdata.ArtistPastelID,
+		ArtistPastelID:    finalUserdata.Userdata.UserPastelID,
 		Timestamp:         finalUserdata.Userdata.Timestamp,
 		PreviousBlockHash: finalUserdata.Userdata.PreviousBlockHash,
 		UserdataHash:      finalUserdata.UserdataHash,

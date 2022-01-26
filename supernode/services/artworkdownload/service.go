@@ -30,6 +30,21 @@ type Service struct {
 	raptorQClient rqnode.ClientInterface
 }
 
+// run starts task
+func (service *Service) run(ctx context.Context) error {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	if service.config.PastelID == "" {
+		return errors.New("PastelID is not specified in the config file")
+	}
+
+	group, ctx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		return service.Worker.Run(ctx)
+	})
+	return group.Wait()
+}
+
 // Run starts task
 func (service *Service) Run(ctx context.Context) error {
 	for {
@@ -49,21 +64,6 @@ func (service *Service) Run(ctx context.Context) error {
 			}
 		}
 	}
-}
-
-// run starts task
-func (service *Service) run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, logPrefix)
-
-	if service.config.PastelID == "" {
-		return errors.New("PastelID is not specified in the config file")
-	}
-
-	group, ctx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return service.Worker.Run(ctx)
-	})
-	return group.Wait()
 }
 
 // NewTask runs a new task of the downloading artwork and returns its taskID.

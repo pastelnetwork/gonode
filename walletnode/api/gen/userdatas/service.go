@@ -56,10 +56,10 @@ type CreateUserdataPayload struct {
 	AvatarImage *UserImageUploadPayload
 	// Cover photo of the user
 	CoverPhoto *UserImageUploadPayload
-	// Artist's PastelID
-	ArtistPastelID string
-	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string
+	// User's PastelID
+	UserPastelID string
+	// Passphrase of the user's PastelID
+	UserPastelIDPassphrase string
 }
 
 // UserdataProcessResult is the result type of the userdatas service
@@ -114,10 +114,10 @@ type UpdateUserdataPayload struct {
 	AvatarImage *UserImageUploadPayload
 	// Cover photo of the user
 	CoverPhoto *UserImageUploadPayload
-	// Artist's PastelID
-	ArtistPastelID string
-	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string
+	// User's PastelID
+	UserPastelID string
+	// Passphrase of the user's PastelID
+	UserPastelIDPassphrase string
 }
 
 // GetUserdataPayload is the payload type of the userdatas service getUserdata
@@ -150,10 +150,10 @@ type UserSpecifiedData struct {
 	AvatarImage *UserImageUploadPayload
 	// Cover photo of the user
 	CoverPhoto *UserImageUploadPayload
-	// Artist's PastelID
-	ArtistPastelID string
-	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string
+	// User's PastelID
+	UserPastelID string
+	// Passphrase of the user's PastelID
+	UserPastelIDPassphrase string
 }
 
 // User image upload payload

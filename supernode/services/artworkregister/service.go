@@ -46,10 +46,10 @@ func (service *Service) run(ctx context.Context) error {
 
 	group, ctx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		return service.Storage.Run(ctx)
+		return service.Worker.Run(ctx)
 	})
 	group.Go(func() error {
-		return service.Worker.Run(ctx)
+		return service.Storage.Run(ctx)
 	})
 	return group.Wait()
 }
@@ -67,17 +67,12 @@ func (service *Service) Run(ctx context.Context) error {
 				}
 
 				service.Worker = task.NewWorker()
-				log.WithContext(ctx).WithError(err).Error("failed to run artwork register, retrying.")
+				log.WithContext(ctx).WithError(err).Error("registration failed, retrying")
 			} else {
 				return nil
 			}
 		}
 	}
-}
-
-// Task returns the task of the registration artwork by the given id.
-func (service *Service) Task(id string) *Task {
-	return service.Worker.Task(id).(*Task)
 }
 
 // NewTask runs a new task of the registration artwork and returns its taskID.
@@ -86,6 +81,11 @@ func (service *Service) NewTask() *Task {
 	service.Worker.AddTask(task)
 
 	return task
+}
+
+// Task returns the task of the registration artwork by the given id.
+func (service *Service) Task(id string) *Task {
+	return service.Worker.Task(id).(*Task)
 }
 
 // NewService returns a new Service instance.

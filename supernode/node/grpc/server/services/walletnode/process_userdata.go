@@ -168,7 +168,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 				Content:  req.CoverPhoto.Content,
 				Filename: req.CoverPhoto.Filename,
 			},
-			ArtistPastelID:    req.ArtistPastelID,
+			UserPastelID:      req.ArtistPastelID,
 			Timestamp:         req.Timestamp,
 			PreviousBlockHash: req.PreviousBlockHash,
 		},
@@ -320,7 +320,7 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pbwn.R
 			Content:  result.CoverPhoto.Content,
 			Filename: result.CoverPhoto.Filename,
 		},
-		ArtistPastelID:    result.ArtistPastelID,
+		ArtistPastelID:    result.UserPastelID,
 		Timestamp:         result.Timestamp,
 		PreviousBlockHash: result.PreviousBlockHash,
 	}

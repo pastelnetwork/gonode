@@ -15,7 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// SenseRegisterTask is the task of registering new artwork.
+// SenseRegisterTask is the task of registering new nft.
 type SenseRegisterTask struct {
 	*common.WalletNodeTask
 

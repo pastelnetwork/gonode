@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
+	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 
 	"github.com/pastelnetwork/gonode/common/cli"
@@ -25,8 +25,8 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/services"
 	"github.com/pastelnetwork/gonode/walletnode/configs"
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 )
 
@@ -156,9 +156,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
-	artworkSearch := artworksearch.NewNftSearchService(&config.ArtworkSearch, pastelClient, nodeClient)
-	artworkDownload := artworkdownload.NewNftFownloadService(&config.ArtworkDownload, pastelClient, nodeClient)
+	nftRegister := nftregister.NewService(&config.ArtworkRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
+	nftSearch := nftsearch.NewNftSearchService(&config.ArtworkSearch, pastelClient, nodeClient)
+	nftDownload := nftdownload.NewNftFownloadService(&config.ArtworkDownload, pastelClient, nodeClient)
 
 	// ----UserdataApiHandler Services----
 	userdataNodeClient := grpc.NewClient(pastelClient)
@@ -169,7 +169,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// api service
 	server := api.NewAPIServer(config.API,
-		services.NewNftApiHandler(artworkRegister, artworkSearch, artworkDownload),
+		services.NewNftApiHandler(nftRegister, nftSearch, nftDownload),
 		services.NewUserdataApiHandler(userdataProcess),
 		services.NewSenseApiHandler(senseRegister),
 		services.NewSwagger(),
@@ -177,5 +177,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload, userdataProcess, senseRegister)
+	return runServices(ctx, server, nftRegister, nftSearch, nftDownload, userdataProcess, senseRegister)
 }

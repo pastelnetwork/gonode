@@ -144,7 +144,7 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 			Content:  request.Userdata.CoverPhoto.Content,
 			Filename: request.Userdata.CoverPhoto.Filename,
 		},
-		ArtistPastelID:    request.Userdata.ArtistPastelID,
+		ArtistPastelID:    request.Userdata.UserPastelID,
 		Timestamp:         request.Userdata.Timestamp,
 		PreviousBlockHash: request.Userdata.PreviousBlockHash,
 		UserdataHash:      request.UserdataHash,
@@ -214,7 +214,7 @@ func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 		Biography:         resp.Biography,
 		AvatarImage:       avatarImage,
 		CoverPhoto:        coverPhoto,
-		ArtistPastelID:    resp.ArtistPastelID,
+		UserPastelID:      resp.ArtistPastelID,
 		Timestamp:         resp.Timestamp,
 		PreviousBlockHash: resp.PreviousBlockHash,
 	}

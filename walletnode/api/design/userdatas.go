@@ -176,7 +176,7 @@ var UserSpecifiedData = Type("UserSpecifiedData", func() {
 		Example("qwerasdf1234")
 	})
 
-	Required("artist_pastelid", "artist_pastelid_passphrase")
+	Required("user_pastelid", "user_pastelid_passphrase")
 })
 
 // UserdataProcessResult is result of process userdata

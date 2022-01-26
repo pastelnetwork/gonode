@@ -55,7 +55,7 @@ func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 // endpoint websocket connection.
 func (s *RegisterTaskStateServerStream) Send(v *sense.TaskState) error {
 	var err error
-	// Upgrade the HTTP connection to a websocket connection only once. ConnectionInterface
+	// Upgrade the HTTP connection to a websocket connection only once. Connection
 	// upgrade is done here so that authorization logic in the endpoint is executed
 	// before calling the actual service method which may call Send().
 	s.once.Do(func() {

@@ -37,10 +37,10 @@ type CreateUserdataRequestBody struct {
 	AvatarImage *UserImageUploadPayloadRequestBody `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
 	// Cover photo of the user
 	CoverPhoto *UserImageUploadPayloadRequestBody `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
-	// Artist's PastelID
-	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
-	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
+	// User's PastelID
+	UserPastelID string `form:"user_pastelid" json:"user_pastelid" xml:"user_pastelid"`
+	// Passphrase of the user's PastelID
+	UserPastelIDPassphrase string `form:"user_pastelid_passphrase" json:"user_pastelid_passphrase" xml:"user_pastelid_passphrase"`
 }
 
 // UpdateUserdataRequestBody is the type of the "userdatas" service
@@ -66,10 +66,10 @@ type UpdateUserdataRequestBody struct {
 	AvatarImage *UserImageUploadPayloadRequestBody `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
 	// Cover photo of the user
 	CoverPhoto *UserImageUploadPayloadRequestBody `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
-	// Artist's PastelID
-	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
-	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
+	// User's PastelID
+	UserPastelID string `form:"user_pastelid" json:"user_pastelid" xml:"user_pastelid"`
+	// Passphrase of the user's PastelID
+	UserPastelIDPassphrase string `form:"user_pastelid_passphrase" json:"user_pastelid_passphrase" xml:"user_pastelid_passphrase"`
 }
 
 // CreateUserdataResponseBody is the type of the "userdatas" service
@@ -153,10 +153,10 @@ type GetUserdataResponseBody struct {
 	AvatarImage *UserImageUploadPayloadResponseBody `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
 	// Cover photo of the user
 	CoverPhoto *UserImageUploadPayloadResponseBody `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
-	// Artist's PastelID
-	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
-	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
+	// User's PastelID
+	UserPastelID *string `form:"user_pastelid,omitempty" json:"user_pastelid,omitempty" xml:"user_pastelid,omitempty"`
+	// Passphrase of the user's PastelID
+	UserPastelIDPassphrase *string `form:"user_pastelid_passphrase,omitempty" json:"user_pastelid_passphrase,omitempty" xml:"user_pastelid_passphrase,omitempty"`
 }
 
 // CreateUserdataBadRequestResponseBody is the type of the "userdatas" service
@@ -310,16 +310,16 @@ type UserImageUploadPayloadResponseBody struct {
 // of the "createUserdata" endpoint of the "userdatas" service.
 func NewCreateUserdataRequestBody(p *userdatas.CreateUserdataPayload) *CreateUserdataRequestBody {
 	body := &CreateUserdataRequestBody{
-		RealName:                 p.RealName,
-		FacebookLink:             p.FacebookLink,
-		TwitterLink:              p.TwitterLink,
-		NativeCurrency:           p.NativeCurrency,
-		Location:                 p.Location,
-		PrimaryLanguage:          p.PrimaryLanguage,
-		Categories:               p.Categories,
-		Biography:                p.Biography,
-		ArtistPastelID:           p.ArtistPastelID,
-		ArtistPastelIDPassphrase: p.ArtistPastelIDPassphrase,
+		RealName:               p.RealName,
+		FacebookLink:           p.FacebookLink,
+		TwitterLink:            p.TwitterLink,
+		NativeCurrency:         p.NativeCurrency,
+		Location:               p.Location,
+		PrimaryLanguage:        p.PrimaryLanguage,
+		Categories:             p.Categories,
+		Biography:              p.Biography,
+		UserPastelID:           p.UserPastelID,
+		UserPastelIDPassphrase: p.UserPastelIDPassphrase,
 	}
 	if p.AvatarImage != nil {
 		body.AvatarImage = marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadRequestBody(p.AvatarImage)
@@ -334,16 +334,16 @@ func NewCreateUserdataRequestBody(p *userdatas.CreateUserdataPayload) *CreateUse
 // of the "updateUserdata" endpoint of the "userdatas" service.
 func NewUpdateUserdataRequestBody(p *userdatas.UpdateUserdataPayload) *UpdateUserdataRequestBody {
 	body := &UpdateUserdataRequestBody{
-		RealName:                 p.RealName,
-		FacebookLink:             p.FacebookLink,
-		TwitterLink:              p.TwitterLink,
-		NativeCurrency:           p.NativeCurrency,
-		Location:                 p.Location,
-		PrimaryLanguage:          p.PrimaryLanguage,
-		Categories:               p.Categories,
-		Biography:                p.Biography,
-		ArtistPastelID:           p.ArtistPastelID,
-		ArtistPastelIDPassphrase: p.ArtistPastelIDPassphrase,
+		RealName:               p.RealName,
+		FacebookLink:           p.FacebookLink,
+		TwitterLink:            p.TwitterLink,
+		NativeCurrency:         p.NativeCurrency,
+		Location:               p.Location,
+		PrimaryLanguage:        p.PrimaryLanguage,
+		Categories:             p.Categories,
+		Biography:              p.Biography,
+		UserPastelID:           p.UserPastelID,
+		UserPastelIDPassphrase: p.UserPastelIDPassphrase,
 	}
 	if p.AvatarImage != nil {
 		body.AvatarImage = marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadRequestBody(p.AvatarImage)
@@ -460,16 +460,16 @@ func NewUpdateUserdataInternalServerError(body *UpdateUserdataInternalServerErro
 // endpoint result from a HTTP "OK" response.
 func NewGetUserdataUserSpecifiedDataOK(body *GetUserdataResponseBody) *userdatas.UserSpecifiedData {
 	v := &userdatas.UserSpecifiedData{
-		RealName:                 body.RealName,
-		FacebookLink:             body.FacebookLink,
-		TwitterLink:              body.TwitterLink,
-		NativeCurrency:           body.NativeCurrency,
-		Location:                 body.Location,
-		PrimaryLanguage:          body.PrimaryLanguage,
-		Categories:               body.Categories,
-		Biography:                body.Biography,
-		ArtistPastelID:           *body.ArtistPastelID,
-		ArtistPastelIDPassphrase: *body.ArtistPastelIDPassphrase,
+		RealName:               body.RealName,
+		FacebookLink:           body.FacebookLink,
+		TwitterLink:            body.TwitterLink,
+		NativeCurrency:         body.NativeCurrency,
+		Location:               body.Location,
+		PrimaryLanguage:        body.PrimaryLanguage,
+		Categories:             body.Categories,
+		Biography:              body.Biography,
+		UserPastelID:           *body.UserPastelID,
+		UserPastelIDPassphrase: *body.UserPastelIDPassphrase,
 	}
 	if body.AvatarImage != nil {
 		v.AvatarImage = unmarshalUserImageUploadPayloadResponseBodyToUserdatasUserImageUploadPayload(body.AvatarImage)
@@ -663,11 +663,11 @@ func ValidateUpdateUserdataResponseBody(body *UpdateUserdataResponseBody) (err e
 // ValidateGetUserdataResponseBody runs the validations defined on
 // GetUserdataResponseBody
 func ValidateGetUserdataResponseBody(body *GetUserdataResponseBody) (err error) {
-	if body.ArtistPastelID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	if body.UserPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("user_pastelid", "body"))
 	}
-	if body.ArtistPastelIDPassphrase == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "body"))
+	if body.UserPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("user_pastelid_passphrase", "body"))
 	}
 	if body.RealName != nil {
 		if utf8.RuneCountInString(*body.RealName) > 256 {
@@ -719,17 +719,17 @@ func ValidateGetUserdataResponseBody(body *GetUserdataResponseBody) (err error) 
 			err = goa.MergeErrors(err, err2)
 		}
 	}
-	if body.ArtistPastelID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", *body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+	if body.UserPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.user_pastelid", *body.UserPastelID, "^[a-zA-Z0-9]+$"))
 	}
-	if body.ArtistPastelID != nil {
-		if utf8.RuneCountInString(*body.ArtistPastelID) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, true))
+	if body.UserPastelID != nil {
+		if utf8.RuneCountInString(*body.UserPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", *body.UserPastelID, utf8.RuneCountInString(*body.UserPastelID), 86, true))
 		}
 	}
-	if body.ArtistPastelID != nil {
-		if utf8.RuneCountInString(*body.ArtistPastelID) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, false))
+	if body.UserPastelID != nil {
+		if utf8.RuneCountInString(*body.UserPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", *body.UserPastelID, utf8.RuneCountInString(*body.UserPastelID), 86, false))
 		}
 	}
 	return

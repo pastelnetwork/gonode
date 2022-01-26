@@ -179,7 +179,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 
 // SupernodeProcessUserdata process the userdata send from Walletnode
 func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.ProcessRequestSigned) (userdata.ProcessResult, error) {
-	log.WithContext(ctx).Debugf("supernodeProcessUserdata on user PastelID: %s", req.Userdata.ArtistPastelID)
+	log.WithContext(ctx).Debugf("supernodeProcessUserdata on user PastelID: %s", req.Userdata.UserPastelID)
 
 	validateResult, err := task.validateUserdata(req.Userdata)
 	if err != nil {
@@ -193,7 +193,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 	// Validate user signature
 	signature, err := hex.DecodeString(req.Signature)
 	if err != nil {
-		log.WithContext(ctx).Debugf("failed to decode signature %s of user %s", req.Signature, req.Userdata.ArtistPastelID)
+		log.WithContext(ctx).Debugf("failed to decode signature %s of user %s", req.Signature, req.Userdata.UserPastelID)
 		return userdata.ProcessResult{
 			ResponseCode: userdata.ErrorVerifyUserdataFail,
 			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
@@ -202,16 +202,16 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 
 	userdatahash, err := hex.DecodeString(req.UserdataHash)
 	if err != nil {
-		log.WithContext(ctx).Debugf("failed to decode userdata hash %s of user %s", req.UserdataHash, req.Userdata.ArtistPastelID)
+		log.WithContext(ctx).Debugf("failed to decode userdata hash %s of user %s", req.UserdataHash, req.Userdata.UserPastelID)
 		return userdata.ProcessResult{
 			ResponseCode: userdata.ErrorVerifyUserdataFail,
 			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
 		}, nil
 	}
 
-	ok, err := task.pastelClient.Verify(ctx, userdatahash, string(signature), req.Userdata.ArtistPastelID, "ed448")
+	ok, err := task.pastelClient.Verify(ctx, userdatahash, string(signature), req.Userdata.UserPastelID, "ed448")
 	if err != nil || !ok {
-		log.WithContext(ctx).Debugf("failed to verify signature %s of user %s", req.Userdata.ArtistPastelID, req.Userdata.ArtistPastelID)
+		log.WithContext(ctx).Debugf("failed to verify signature %s of user %s", req.Userdata.UserPastelID, req.Userdata.UserPastelID)
 		return userdata.ProcessResult{
 			ResponseCode: userdata.ErrorVerifyUserdataFail,
 			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],

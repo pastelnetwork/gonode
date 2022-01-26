@@ -13,7 +13,7 @@ const (
 	defaultDDAndFingerprintsMax = 50
 )
 
-// Config contains settings of the registering artwork.
+// Config contains settings of the registering nft.
 type Config struct {
 	common.Config `mapstructure:",squash" json:"-"`
 

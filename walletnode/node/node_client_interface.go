@@ -64,13 +64,13 @@ type RegisterSenseInterface interface {
 	SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error
 	// ProbeImage uploads image to supernode.
 	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error)
-	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
+	// SendSignedTicket send a reg-nft ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFpFile []byte) (string, error)
 	// SendActionAct send action act to SNs for next steps
 	SendActionAct(ctx context.Context, actionRegTxid string) error
 }
 
-// RegisterNftInterface contains methods for registering artwork.
+// RegisterNftInterface contains methods for registering nft.
 type RegisterNftInterface interface {
 	SuperNodeAPIInterface
 
@@ -80,13 +80,13 @@ type RegisterNftInterface interface {
 	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error)
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
 	UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) ([]byte, []byte, []byte, error)
-	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
+	// SendSignedTicket send a reg-nft ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdisFile []byte, ddFpFile []byte, encoderParams rqnode.EncoderParameters) (int64, error)
 	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
 	SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error)
 }
 
-// DownloadNftInterface contains methods for downloading artwork.
+// DownloadNftInterface contains methods for downloading nft.
 type DownloadNftInterface interface {
 	SuperNodeAPIInterface
 

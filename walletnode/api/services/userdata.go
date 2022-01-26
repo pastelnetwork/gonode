@@ -21,7 +21,7 @@ type UserdataApiHandler struct {
 	process *userdataprocess.UserDataService
 }
 
-// Mount configures the mux to serve the artworks endpoints.
+// Mount configures the mux to serve the nfts endpoints.
 func (service *UserdataApiHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := userdatas.NewEndpoints(service)
 	srv := server.New(
