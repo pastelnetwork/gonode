@@ -20,7 +20,6 @@ type Node struct {
 	SenseRegister senseregister.Config `mapstructure:"sense_register" json:"sense_register,omitempty"`
 
 	UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
-	BurnAddress     string                 `mapstructure:"burn_address" json:"burn_address,omitempty"`
 
 	RegTxMinConfirmations int `mapstructure:"reg_tx_min_confirmations" json:"reg_tx_min_confirmation,omitempty"`
 	ActTxMinConfirmations int `mapstructure:"act_tx_min_confirmations" json:"act_tx_min_confirmations,omitempty"`
@@ -34,5 +33,6 @@ func NewNode() Node {
 		ArtworkDownload: *artworkdownload.NewConfig(),
 		API:             api.NewConfig(),
 		UserdataProcess: *userdataprocess.NewConfig(),
+		SenseRegister:   *senseregister.NewConfig(),
 	}
 }

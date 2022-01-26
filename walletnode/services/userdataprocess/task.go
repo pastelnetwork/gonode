@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 )
@@ -29,6 +30,8 @@ type UserDataTask struct {
 	resultChanGet chan *userdata.ProcessRequest
 
 	userdata []userdata.ProcessResult
+
+	err error
 }
 
 // Run starts the task
@@ -57,14 +60,7 @@ func (task *UserDataTask) run(ctx context.Context) error {
 	}
 	task.MeshHandler.DisconnectInactiveNodes(ctx)
 
-	// supervise the connection to top rank nodes
-	// cancel any ongoing context if the connections are broken
-	nodesDone := make(chan struct{})
-	groupConnClose, _ := errgroup.WithContext(ctx)
-	groupConnClose.Go(func() error {
-		defer cancel()
-		return task.MeshHandler.Nodes.WaitConnClose(ctx, nodesDone)
-	})
+	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 
 	if task.request == nil {
 		// PROCESS TO RETRIEVE USERDATA FROM METADATA LAYER
@@ -72,9 +68,14 @@ func (task *UserDataTask) run(ctx context.Context) error {
 			return errors.Errorf("receive userdata: %w", err)
 		}
 		// Post on result channel
-		node := nodes[0]
-		if node.ResultGet != nil {
-			task.resultChanGet <- node.ResultGet
+		node0 := task.MeshHandler.Nodes[0]
+		userDataNode, ok := node0.SuperNodeAPIInterface.(*UserDataNode)
+		if !ok {
+			//TODO: use assert here
+			return errors.Errorf("node %s is not SenseRegisterNode", node0.String())
+		}
+		if userDataNode.ResultGet != nil {
+			task.resultChanGet <- userDataNode.ResultGet
 		} else {
 			return errors.Errorf("receive userdata")
 		}
@@ -111,7 +112,7 @@ func (task *UserDataTask) run(ctx context.Context) error {
 		}
 
 		// Hash the request
-		hashvalue, err := userdata.Sha3256hash(js)
+		hashvalue, err := utils.Sha3256hash(js)
 		if err != nil {
 			return errors.Errorf("hash request %w", err)
 		}
@@ -129,11 +130,11 @@ func (task *UserDataTask) run(ctx context.Context) error {
 		}
 
 		// Send userdata to supernodes for storing in MDL's rqlite db.
-		if err := nodes.SendUserdata(ctx, userdata); err != nil {
+		if err := task.SendUserdata(ctx, userdata); err != nil {
 			return err
 		}
 
-		res, err := task.AggregateResult(ctx, nodes)
+		res, err := task.AggregateResult(ctx)
 		// Post on result channel
 		task.resultChan <- &res
 		if err != nil {
@@ -160,7 +161,7 @@ func (task *UserDataTask) SendUserdata(ctx context.Context, req *userdata.Proces
 		}
 		group.Go(func() (err error) {
 			res, err := userDataNode.SendUserdata(ctx, req)
-			node.Result = res
+			userDataNode.Result = res
 			return err
 		})
 	}
@@ -170,11 +171,15 @@ func (task *UserDataTask) SendUserdata(ctx context.Context, req *userdata.Proces
 // ReceiveUserdata retrieve the userdata from Metadata layer
 func (task *UserDataTask) ReceiveUserdata(ctx context.Context, pasteluserid string) error {
 	group, _ := errgroup.WithContext(ctx)
-	for _, node := range *nodes {
-		node := node
+	for _, someNode := range task.MeshHandler.Nodes {
+		userDataNode, ok := someNode.SuperNodeAPIInterface.(*UserDataNode)
+		if !ok {
+			//TODO: use assert here
+			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
+		}
 		group.Go(func() (err error) {
-			res, err := task.ReceiveUserdata(ctx, pasteluserid)
-			node.ResultGet = res
+			res, err := userDataNode.ReceiveUserdata(ctx, pasteluserid)
+			userDataNode.ResultGet = res
 			return err
 		})
 	}
@@ -182,17 +187,21 @@ func (task *UserDataTask) ReceiveUserdata(ctx context.Context, pasteluserid stri
 }
 
 // AggregateResult aggregate all results return by all supernode, and consider it valid or not
-func (task *UserDataTask) AggregateResult(_ context.Context, nodes node.List) (userdata.ProcessResult, error) {
+func (task *UserDataTask) AggregateResult(_ context.Context) (userdata.ProcessResult, error) {
 	// There is following common scenarios when supernodes response:
 	// 1. Secondary node and primary node both response userdata validation result error
 	// 2. Secondary node response userdata validation result success and primary node provide further processing result
 	// 3. Some node fail to response, or not in the 2 case above, then we need to aggregate result and consider what happen
 
 	// This part is for case 1 or 2 above, and we trust the primary node so we use its response
-	for _, node := range nodes {
-		node := node
-		if node.IsPrimary() {
-			result := node.Result
+	for _, someNode := range task.MeshHandler.Nodes {
+		userDataNode, ok := someNode.SuperNodeAPIInterface.(*UserDataNode)
+		if !ok {
+			//TODO: use assert here?
+			return userdata.ProcessResult{}, errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
+		}
+		if someNode.IsPrimary() {
+			result := userDataNode.Result
 			if result == nil {
 				return userdata.ProcessResult{}, errors.Errorf("Primary node have empty result")
 			}
@@ -223,6 +232,7 @@ func (task *UserDataTask) removeArtifacts() {
 
 // NewUserDataTask returns a new Task instance.
 func NewUserDataTask(service *UserDataService, request *userdata.ProcessRequest, userpastelid string) *UserDataTask {
+	// userpastelid is empty on createUserdata and updateUserdata; and not empty on getUserdata
 	task := &UserDataTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 		service:        service,
@@ -237,7 +247,7 @@ func NewUserDataTask(service *UserDataService, request *userdata.ProcessRequest,
 		service.pastelHandler,
 		request.ArtistPastelID, request.ArtistPastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.acceptNodesTimeout, service.config.connectToNextNodeDelay,
+		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
 	)
 
 	return task

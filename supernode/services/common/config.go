@@ -1,12 +1,20 @@
 package common
 
-// Config contains common configuration of the servcies.
+const (
+	defaultNumberSuperNodes = 10
+)
+
+// Config contains common configuration of the services.
 type Config struct {
 	PastelID   string `mapstructure:"pastel_id" json:"pastel_id,omitempty"`
 	PassPhrase string `mapstructure:"pass_phrase" json:"-"`
+
+	NumberSuperNodes int
 }
 
 // NewConfig returns a new Config instance
 func NewConfig() *Config {
-	return &Config{}
+	return &Config{
+		NumberSuperNodes: defaultNumberSuperNodes,
+	}
 }

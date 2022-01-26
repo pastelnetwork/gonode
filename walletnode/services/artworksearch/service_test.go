@@ -1,5 +1,11 @@
 package artworksearch
 
+import (
+	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
 //
 //import (
 //	"context"
@@ -91,7 +97,7 @@ package artworksearch
 //
 //			pastelClientMock.ListenOnRegTicket(testCase.args.regTicketID, testCase.want, testCase.args.regTicketErr)
 //
-//			service := NewService(NewConfig(), pastelClientMock, nodeClientMock)
+//			service := NewNftSearchService(NewConfig(), pastelClientMock, nodeClientMock)
 //
 //			result, err := service.RegTicket(ctx, testCase.args.regTicketID)
 //			assert.Equal(t, testCase.err, err)
@@ -169,8 +175,8 @@ package artworksearch
 //	}
 //}
 //
-//func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
-//	artTicketBytes, err := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
-//	assert.Nil(t, err)
-//	ticket.RegTicketData.NFTTicket = artTicketBytes
-//}
+func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
+	artTicketBytes, err := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
+	assert.Nil(t, err)
+	ticket.RegTicketData.NFTTicket = artTicketBytes
+}

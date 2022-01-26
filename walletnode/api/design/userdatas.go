@@ -162,17 +162,17 @@ var UserSpecifiedData = Type("UserSpecifiedData", func() {
 		Description("Cover photo of the user")
 	})
 
-	Attribute("artist_pastelid", String, func() {
-		Meta("struct:field:name", "ArtistPastelID")
-		Description("Artist's PastelID")
+	Attribute("user_pastelid", String, func() {
+		Meta("struct:field:name", "UserPastelID")
+		Description("User's PastelID")
 		MinLength(86)
 		MaxLength(86)
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
-	Attribute("artist_pastelid_passphrase", String, func() {
-		Meta("struct:field:name", "ArtistPastelIDPassphrase")
-		Description("Passphrase of the artist's PastelID")
+	Attribute("user_pastelid_passphrase", String, func() {
+		Meta("struct:field:name", "UserPastelIDPassphrase")
+		Description("Passphrase of the user's PastelID")
 		Example("qwerasdf1234")
 	})
 

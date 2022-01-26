@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/types"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -73,6 +74,25 @@ func (service *downloadNft) DownloadThumbnail(ctx context.Context, key []byte) (
 func (service *downloadNft) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
+
+//NON IMPLEMETED--->
+func (service *downloadNft) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
+	return nil
+}
+func (service *downloadNft) SessID() string {
+	return ""
+}
+func (service *downloadNft) Session(ctx context.Context, isPrimary bool) error {
+	return nil
+}
+func (service *downloadNft) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
+	return nil, nil
+}
+func (service *downloadNft) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
+	return nil
+}
+
+///<---
 
 func newDownloadArtwork(conn *clientConn) node.DownloadNftInterface {
 	return &downloadNft{

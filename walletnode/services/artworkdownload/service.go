@@ -61,12 +61,12 @@ func (service *NftDownloadService) AddTask(p *artworks.ArtworkDownloadPayload) s
 	return task.ID()
 }
 
-// NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *NftDownloadService {
+// NewNftFownloadService returns a new Service instance.
+func NewNftFownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *NftDownloadService {
 	return &NftDownloadService{
-		config:        config,
-		pastelHandler: mixins.NewPastelHandler(pastelClient),
-		nodeClient:    nodeClient,
 		Worker:        task.NewWorker(),
+		config:        config,
+		nodeClient:    nodeClient,
+		pastelHandler: mixins.NewPastelHandler(pastelClient),
 	}
 }

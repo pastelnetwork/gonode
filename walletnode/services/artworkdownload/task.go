@@ -28,11 +28,14 @@ type NftDownloadTask struct {
 
 	files []downFile
 	File  []byte
+
+	err error
 }
 
 // Run starts the task
 func (task *NftDownloadTask) Run(ctx context.Context) error {
-	return task.RunHelper(ctx, task.run, task.removeArtifacts)
+	task.err = task.RunHelper(ctx, task.run, task.removeArtifacts)
+	return nil
 }
 
 func (task *NftDownloadTask) run(ctx context.Context) error {
@@ -57,6 +60,10 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
 
+	// supervise the connection to top rank nodes
+	// cancel any ongoing context if the connections are broken
+	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
+
 	downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not download files")
@@ -72,8 +79,8 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 
 	task.UpdateStatus(common.StatusDownloaded)
 
-	// Disconnect supernodes that did not return file.
-	task.MeshHandler.DisconnectInactiveNodes(ctx)
+	// Disconnect all nodes after finished downloading.
+	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	// Check files are the same
 	err = task.MatchFiles()
@@ -85,9 +92,6 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	// Store file to send to the caller
 	task.File = task.files[0].file
 
-	// Disconnect all noded after finished downloading.
-	task.MeshHandler.DisconnectAll(ctx)
-
 	// Wait for all connections to disconnect.
 	return nil
 }
@@ -98,7 +102,7 @@ func (task *NftDownloadTask) Download(ctx context.Context, txid, timestamp, sign
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
 
 	for _, someNode := range task.MeshHandler.Nodes {
-		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownload)
+		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownloadNode)
 		if !ok {
 			//TODO: use assert here
 			return nil, errors.Errorf("node %s is not NftRegisterNode", someNode.String())
@@ -137,6 +141,11 @@ func (task *NftDownloadTask) MatchFiles() error {
 	return nil
 }
 
+// Error returns task err
+func (task *NftDownloadTask) Error() error {
+	return task.err
+}
+
 func (task *NftDownloadTask) removeArtifacts() {
 }
 
@@ -153,7 +162,7 @@ func NewNftDownloadTask(service *NftDownloadService, request *NftDownloadRequest
 		service.pastelHandler,
 		request.PastelID, request.PastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.acceptNodesTimeout, service.config.connectToNextNodeDelay,
+		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
 	)
 
 	return task

@@ -1,10 +1,9 @@
 package design
 
 import (
+	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"time"
-
-	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
@@ -121,7 +120,7 @@ var _ = Service("nft", func() {
 		})
 	})
 
-	Method("artSearch", func() {
+	Method("nftSearch", func() {
 		Description("Streams the search result for NFT")
 		Meta("swagger:summary", "Streams the search result for NFT")
 

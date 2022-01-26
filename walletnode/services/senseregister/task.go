@@ -58,12 +58,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
-	nodesDone := make(chan struct{})
-	groupConnClose, _ := errgroup.WithContext(ctx)
-	groupConnClose.Go(func() error {
-		defer cancel()
-		return task.MeshHandler.Nodes.WaitConnClose(ctx, nodesDone)
-	})
+	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 
 	/* Step 5: Send image, burn txid to SNs */
 
@@ -79,7 +74,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 
 	// generateDDAndFingerprintsIDs generates dd & fp IDs
 	if err := task.FingerprintsHandler.GenerateDDAndFingerprintsIDs(ctx, task.service.config.DDAndFingerprintsMax); err != nil {
-		return errors.Errorf("probe image: %w", err)
+		return errors.Errorf("generate dd and fp IDs: %w", err)
 	}
 
 	// calculate hash of data
@@ -359,7 +354,7 @@ func NewSenseRegisterTask(service *SenseRegisterService, request *SenseRegisterR
 		service.pastelHandler,
 		request.AppPastelID, request.AppPastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.acceptNodesTimeout, service.config.connectToNextNodeDelay,
+		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
 	)
 	task.FingerprintsHandler = mixins.NewFingerprintsHandler(task.WalletNodeTask, service.pastelHandler)
 

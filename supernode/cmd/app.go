@@ -179,7 +179,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
 	secInfo := &alts.SecInfo{
 		PastelID:   config.PastelID,
 		PassPhrase: config.PassPhrase,

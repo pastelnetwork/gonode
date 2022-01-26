@@ -2,16 +2,14 @@ package artworksearch
 
 import (
 	"context"
-	"fmt"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
-	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
 )
 
 const (
@@ -23,8 +21,8 @@ type NftSearchService struct {
 	*task.Worker
 
 	config        *Config
-	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface
+	pastelHandler *mixins.PastelHandler
 }
 
 // Run starts worker.
@@ -64,27 +62,50 @@ func (service *NftSearchService) AddTask(p *artworks.ArtSearchPayload) string {
 	return task.ID()
 }
 
-// NewService returns a new Service instance.
-func NewService(config *Config,
+// GetThumbnail gets thumbnail
+func (service *NftSearchService) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket, pastelID string, passphrase string) (data []byte, err error) {
+	nftGetSearchTask := NewNftGetSearchTask(service, pastelID, passphrase)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	if err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel); err != nil {
+		return nil, errors.Errorf("connect and setup fetchers: %w", err)
+	}
+	data, err = nftGetSearchTask.thumbnail.FetchOne(ctx, regTicket.RegTicketData.NFTTicketData.AppTicketData.PreviewHash)
+	if err != nil {
+		return nil, errors.Errorf("fetch multiple thumbnails: %w", err)
+	}
+
+	return data, nftGetSearchTask.thumbnail.CloseAll(ctx)
+}
+
+// RegTicket pull NFT registration ticket from cNode & decodes base64 encoded fields
+func (service *NftSearchService) RegTicket(ctx context.Context, RegTXID string) (*pastel.RegTicket, error) {
+	regTicket, err := service.pastelHandler.PastelClient.RegTicket(ctx, RegTXID)
+	if err != nil {
+		return nil, errors.Errorf("fetch: %w", err)
+	}
+
+	nftTicketData, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
+	if err != nil {
+		return nil, errors.Errorf("convert NFT ticket: %w", err)
+	}
+
+	regTicket.RegTicketData.NFTTicketData = *nftTicketData
+
+	return &regTicket, nil
+}
+
+// NewNftSearchService returns a new Service instance.
+func NewNftSearchService(config *Config,
 	pastelClient pastel.Client,
 	nodeClient node.ClientInterface,
 ) *NftSearchService {
 	return &NftSearchService{
 		Worker:        task.NewWorker(),
 		config:        config,
-		pastelHandler: mixins.NewPastelHandler(pastelClient),
 		nodeClient:    nodeClient,
+		pastelHandler: mixins.NewPastelHandler(pastelClient),
 	}
-}
-
-// GetThumbnail gets thumbnail
-func (service *NftSearchService) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket, secInfo *alts.SecInfo) (data []byte, err error) {
-	thumbnailHelper := thumbnail.New(service.pastelHandler.PastelClient, service.nodeClient, service.config.ConnectToNodeTimeout)
-
-	if err := thumbnailHelper.Connect(ctx, 1, secInfo); err != nil {
-		return data, fmt.Errorf("connect Thumbnail helper: %w", err)
-	}
-	defer thumbnailHelper.Close()
-
-	return thumbnailHelper.Fetch(ctx, regTicket.RegTicketData.NFTTicketData.AppTicketData.PreviewHash)
 }

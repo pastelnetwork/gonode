@@ -2,6 +2,7 @@ package mixins
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
@@ -66,7 +67,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 	}
 
 	// Close all connected connections - setMesh will Connect again
-	m.DisconnectNodes(ctx, candidatesNodes)
+	m.disconnectNodes(ctx, candidatesNodes)
 
 	meshedNodes, err := m.setMesh(ctx, candidatesNodes, m.minNumberSuperNodes)
 	if err != nil {
@@ -95,7 +96,7 @@ func (m MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int) error {
 func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (common.SuperNodeList, error) {
 
 	// Retrieve supernodes with the highest ranks.
-	candidatesNodes, err := m.getTopNodes(ctx, 0)
+	candidatesNodes, err := m.getTopNodes(ctx)
 	if err != nil {
 		return nil, errors.Errorf("call masternode top: %w", err)
 	}
@@ -123,7 +124,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes common.SuperN
 		meshedNodes, err = m.connectToPrimarySecondary(ctx, candidatesNodes, primaryRank)
 		if err != nil {
 			// close connected connections
-			m.DisconnectNodes(ctx, candidatesNodes)
+			m.disconnectNodes(ctx, candidatesNodes)
 
 			if errors.IsContextCanceled(err) {
 				return nil, err
@@ -136,7 +137,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes common.SuperN
 	}
 	if len(meshedNodes) < n {
 		// close connected connections
-		m.DisconnectNodes(ctx, meshedNodes)
+		m.disconnectNodes(ctx, meshedNodes)
 		return nil, errors.Errorf("Could not create a mesh of %d nodes: %w", n, errs)
 	}
 
@@ -152,7 +153,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes common.SuperN
 	for _, someNode := range meshedNodes {
 		err := someNode.MeshNodes(ctx, meshedSNInfo)
 		if err != nil {
-			m.DisconnectNodes(ctx, meshedNodes)
+			m.disconnectNodes(ctx, meshedNodes)
 			return nil, errors.Errorf("could not send info of meshed nodes: %w", err)
 		}
 	}
@@ -166,7 +167,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes common.SuperN
 }
 
 // GetTopNodes get list of current top masternodes and validate them (in the order received from pasteld)
-func (m *MeshHandler) getTopNodes(ctx context.Context, maximumFee float64) (common.SuperNodeList, error) {
+func (m *MeshHandler) getTopNodes(ctx context.Context) (common.SuperNodeList, error) {
 
 	var nodes common.SuperNodeList
 
@@ -175,9 +176,6 @@ func (m *MeshHandler) getTopNodes(ctx context.Context, maximumFee float64) (comm
 		return nil, err
 	}
 	for _, mn := range mns {
-		if mn.Fee > maximumFee {
-			continue
-		}
 		if mn.ExtKey == "" || mn.ExtAddress == "" {
 			continue
 		}
@@ -333,6 +331,18 @@ func (m *MeshHandler) CloseSNsConnections(ctx context.Context, nodesDone chan st
 	return nil
 }
 
+// ConnectionsSupervisor supervises the connection to top rank nodes
+// and cancels any ongoing context if the connections are broken
+func (m *MeshHandler) ConnectionsSupervisor(ctx context.Context, cancel context.CancelFunc) chan struct{} {
+	nodesDone := make(chan struct{})
+	groupConnClose, _ := errgroup.WithContext(ctx)
+	groupConnClose.Go(func() error {
+		defer cancel()
+		return m.Nodes.WaitConnClose(ctx, nodesDone)
+	})
+	return nodesDone
+}
+
 // ValidBurnTxID returns whether the burn txid is valid at ALL SNs
 func (m *MeshHandler) CheckSNReportedState() bool {
 	for _, someNode := range m.Nodes {
@@ -352,15 +362,8 @@ func (m *MeshHandler) DisconnectInactiveNodes(ctx context.Context) {
 	}
 }
 
-// DisconnectAll disconnects all nodes
-func (m *MeshHandler) DisconnectAll(ctx context.Context) {
-	for _, someNode := range m.Nodes {
-		_ = m.disconnectFromNode(ctx, someNode, false)
-	}
-}
-
-// DisconnectNodes disconnects all passed nodes
-func (m *MeshHandler) DisconnectNodes(ctx context.Context, nodes common.SuperNodeList) {
+// disconnectNodes disconnects all passed nodes
+func (m *MeshHandler) disconnectNodes(ctx context.Context, nodes common.SuperNodeList) {
 	for _, someNode := range nodes {
 		_ = m.disconnectFromNode(ctx, someNode, false)
 	}

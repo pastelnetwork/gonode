@@ -30,7 +30,7 @@ type SenseRegisterService struct {
 	*task.Worker
 	config *Config
 
-	imageHandler  *mixins.FilesHandler
+	ImageHandler  *mixins.FilesHandler
 	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface
 }
@@ -40,7 +40,7 @@ func (service *SenseRegisterService) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		return service.imageHandler.FileStorage.Run(ctx)
+		return service.ImageHandler.FileStorage.Run(ctx)
 	})
 
 	// Run worker service
@@ -72,13 +72,13 @@ func (service *SenseRegisterService) AddTask(p *sense.StartProcessingPayload) (s
 	request := FromSenseRegisterPayload(p)
 
 	// get image filename from storage based on image_id
-	filename, err := service.imageHandler.FileDb.Get(p.ImageID)
+	filename, err := service.ImageHandler.FileDb.Get(p.ImageID)
 	if err != nil {
 		return "", errors.Errorf("get image filename from storage: %w", err)
 	}
 
 	// get image data from storage
-	file, err := service.imageHandler.FileStorage.File(string(filename))
+	file, err := service.ImageHandler.FileStorage.File(string(filename))
 	if err != nil {
 		return "", errors.Errorf("get image data: %v", err)
 	}
@@ -92,12 +92,12 @@ func (service *SenseRegisterService) AddTask(p *sense.StartProcessingPayload) (s
 
 // StoreFile stores file into walletnode file storage. //TODO: make common with the same from NftRegisterService
 func (service *SenseRegisterService) StoreFile(ctx context.Context, fileName *string) (string, string, error) {
-	return service.imageHandler.StoreFileNameIntoStorage(ctx, fileName)
+	return service.ImageHandler.StoreFileNameIntoStorage(ctx, fileName)
 }
 
 // StoreFile stores file into walletnode file storage. //TODO: make common with the same from NftRegisterService
 func (service *SenseRegisterService) ValidateDetailsAndCalculateFee(ctx context.Context, fileID string, fileSignature string, pastelID string) (float64, error) {
-	fileData, err := service.imageHandler.GetImgData(fileID)
+	fileData, err := service.ImageHandler.GetImgData(fileID)
 	if err != nil {
 		return 0.0, err
 	}
@@ -132,7 +132,7 @@ func NewService(
 		Worker:        task.NewWorker(),
 		config:        config,
 		nodeClient:    nodeClient,
-		imageHandler:  mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
+		ImageHandler:  mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
 	}
 }

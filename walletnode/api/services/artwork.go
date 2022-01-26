@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -231,10 +230,7 @@ func (service *NftApiHandler) ArtworkGet(ctx context.Context, p *artworks.Artwor
 	}
 
 	res = toArtworkDetail(ticket)
-	data, err := service.search.GetThumbnail(ctx, ticket, &alts.SecInfo{
-		PastelID:   p.UserPastelID,
-		PassPhrase: p.UserPassphrase,
-		Algorithm:  "ed448"})
+	data, err := service.search.GetThumbnail(ctx, ticket, p.UserPastelID, p.UserPassphrase)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}

@@ -231,6 +231,13 @@ func (service *processUserdata) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
+//NON IMPLEMETED--->
+func (service *processUserdata) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
+	return nil
+}
+
+///<---
+
 func newProcessUserdata(conn *clientConn) node.ProcessUserdataInterface {
 	return &processUserdata{
 		conn:   conn,

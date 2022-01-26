@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"strings"
 	"sync"
 
@@ -226,7 +227,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 		return userdata.ProcessResult{}, errors.Errorf("encode validateResult %w", err)
 	}
 	// Hash the validateResult
-	hashvalue, err := userdata.Sha3256hash(js)
+	hashvalue, err := utils.Sha3256hash(js)
 	if err != nil {
 		return userdata.ProcessResult{}, errors.Errorf("hash userdata %w", err)
 	}

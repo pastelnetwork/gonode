@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"fmt"
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/sense_register"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
@@ -60,7 +61,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 
 			meshHandler.Nodes = nodes
 
-			meshHandler.DisconnectInactiveNodes(ctx)
+			meshHandler.DisconnectInactiveNodes(context.Background())
 
 			for j, c := range testCase.conn {
 				c := c

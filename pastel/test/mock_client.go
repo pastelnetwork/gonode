@@ -76,6 +76,10 @@ type Client struct {
 	*mocks.Client
 }
 
+func (c Client) BurnAddress() string {
+	return "tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
+}
+
 // NewMockClient new Client instance
 func NewMockClient(t *testing.T) *Client {
 	return &Client{

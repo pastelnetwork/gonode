@@ -1,6 +1,7 @@
 package userdataprocess
 
 import (
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
@@ -15,4 +16,7 @@ func (maker UserDataNodeMaker) MakeNode(conn node.ConnectionInterface) node.Supe
 // Node represent supernode connection.
 type UserDataNode struct {
 	node.ProcessUserdataInterface
+
+	Result    *userdata.ProcessResult
+	ResultGet *userdata.ProcessRequest
 }

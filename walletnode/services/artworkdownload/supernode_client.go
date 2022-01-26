@@ -7,10 +7,10 @@ type NftDownloadNodeMaker struct {
 }
 
 func (maker NftDownloadNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
-	return &NftDownload{DownloadNftInterface: conn.DownloadArtwork()}
+	return &NftDownloadNode{DownloadNftInterface: conn.DownloadArtwork()}
 }
 
 // Node represent supernode connection.
-type NftDownload struct {
+type NftDownloadNode struct {
 	node.DownloadNftInterface
 }

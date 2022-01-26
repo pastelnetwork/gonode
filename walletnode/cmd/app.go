@@ -131,7 +131,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(config.Pastel, config.BurnAddress)
+	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
 
 	// Business logic services
 	// ----NftApiHandler Services----
@@ -145,10 +145,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
 	rqClient := rqgrpc.NewClient()
 
-	// burn address
-	// TODO: this should be hardcoded with format like Ptxxxxxxx
-	//config.ArtworkRegister.BurnAddress =
-
 	if config.RegTxMinConfirmations > 0 {
 		config.ArtworkRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
 		config.SenseRegister.SenseRegTxMinConfirmations = config.RegTxMinConfirmations
@@ -161,8 +157,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
-	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, nodeClient)
-	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
+	artworkSearch := artworksearch.NewNftSearchService(&config.ArtworkSearch, pastelClient, nodeClient)
+	artworkDownload := artworkdownload.NewNftFownloadService(&config.ArtworkDownload, pastelClient, nodeClient)
 
 	// ----UserdataApiHandler Services----
 	userdataNodeClient := grpc.NewClient(pastelClient)

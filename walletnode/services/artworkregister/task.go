@@ -69,12 +69,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
-	nodesDone := make(chan struct{})
-	groupConnClose, _ := errgroup.WithContext(ctx)
-	groupConnClose.Go(func() error {
-		defer cancel()
-		return task.MeshHandler.Nodes.WaitConnClose(ctx, nodesDone)
-	})
+	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 
 	// send registration metadata
 	if err := task.sendRegMetadata(ctx); err != nil {
@@ -146,7 +141,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	task.UpdateStatus(common.StatusTicketAccepted)
 
-	// do need SNs anymore
+	// don't need SNs anymore
 	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	// new context because the old context already cancelled
@@ -483,7 +478,7 @@ func NewNFTRegistrationTask(service *NftRegisterService, request *NftRegisterReq
 		service.pastelHandler,
 		request.ArtistPastelID, request.ArtistPastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.acceptNodesTimeout, service.config.connectToNextNodeDelay,
+		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
 	)
 	task.RqHandler = mixins.NewRQHandler(task.WalletNodeTask,
 		service.rqClient,

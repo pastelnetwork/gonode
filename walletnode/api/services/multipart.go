@@ -34,7 +34,7 @@ func NftRegUploadImageDecoderFunc(ctx context.Context, service *NftApiHandler) n
 	return func(reader *multipart.Reader, p **nftreg.UploadImagePayload) error {
 		var res nftreg.UploadImagePayload
 
-		filename, errType, err := handleUploadImage(ctx, reader, service.register.FileStorage)
+		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage)
 		if err != nil {
 			return &goa.ServiceError{
 				Name:    errType,
