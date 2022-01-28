@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/tools/download_thumbnail
 
-go 1.16
+go 1.17
 
 require (
 	github.com/gorilla/websocket v1.4.2

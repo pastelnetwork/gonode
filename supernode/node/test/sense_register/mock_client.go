@@ -41,8 +41,8 @@ const (
 	// DownloadMethod represent Download name method
 	DownloadMethod = "Download"
 
-	// SendArtTicketSignatureMethod represent SendArtTicketSignature method
-	SendArtTicketSignatureMethod = "SendArtTicketSignature"
+	// SendSenseTicketSignatureMethod represent SendSenseTicketSignature method
+	SendSenseTicketSignatureMethod = "SendSenseTicketSignature"
 
 	// SendSignedDDAndFingerprintsMethod represent SendSignedDDAndFingerprints method
 	SendSignedDDAndFingerprintsMethod = "SendSignedDDAndFingerprints"
@@ -137,13 +137,13 @@ func (client *Client) ListenOnSession(returnErr error) *Client {
 	return client
 }
 
-// ListenOnSendArtTicketSignature listens on send art ticket signature
-func (client *Client) ListenOnSendArtTicketSignature(returnErr error) *Client {
-	client.RegisterSense.On(SendArtTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
+// ListenOnSendSenseTicketSignature listens on send Sense ticket signature
+func (client *Client) ListenOnSendSenseTicketSignature(returnErr error) *Client {
+	client.RegisterSense.On(SendSenseTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 
-// ListenOnSendSignedDDAndFingerprints listens on send art ticket signature
+// ListenOnSendSignedDDAndFingerprints listens on send DD anf Fp ticket signature
 func (client *Client) ListenOnSendSignedDDAndFingerprints(returnErr error) *Client {
 	client.RegisterSense.On(SendSignedDDAndFingerprintsMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
 	return client

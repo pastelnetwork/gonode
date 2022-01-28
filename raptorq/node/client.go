@@ -1,4 +1,4 @@
-//go:generate mockery --name=Client
+//go:generate mockery --name=ClientInterface
 //go:generate mockery --name=Connection
 //go:generate mockery --name=RaptorQ
 

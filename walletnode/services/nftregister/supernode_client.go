@@ -7,7 +7,7 @@ type RegisterNftNodeMaker struct {
 }
 
 func (maker RegisterNftNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
-	return &NftRegisterNode{RegisterNftInterface: conn.RegisterArtwork()}
+	return &NftRegisterNode{RegisterNftInterface: conn.RegisterNft()}
 }
 
 // Node represent supernode connection.

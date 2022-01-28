@@ -5,7 +5,7 @@ import "common_wn.proto";
 
 package walletnode;
 
-service RegisterArtwork {
+service RegisterNft {
     // Session informs the supernode its position (primary/secondary).
     // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
     // The stream is used by the parties to inform each other about the cancellation of the task.

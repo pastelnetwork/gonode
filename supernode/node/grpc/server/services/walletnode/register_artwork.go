@@ -14,7 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
-	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -22,19 +22,19 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// RegisterArtwork represents grpc service for registration artwork.
-type RegisterArtwork struct {
-	pb.UnimplementedRegisterArtworkServer
+// RegisterNft represents grpc service for registration Nft.
+type RegisterNft struct {
+	pb.UnimplementedRegisterNftServer
 
-	*common.RegisterArtwork
+	*common.RegisterNft
 }
 
-// Session implements walletnode.RegisterArtworkServer.Session()
-func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer) error {
+// Session implements walletnode.RegisterNftServer.Session()
+func (service *RegisterNft) Session(stream pb.RegisterNft_SessionServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	var task *artworkregister.Task
+	var task *nftregister.NftRegistrationTask
 
 	if sessID, ok := service.SessID(ctx); ok {
 		if task = service.Task(sessID); task == nil {
@@ -59,7 +59,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
-	if err := task.Session(ctx, req.IsPrimary); err != nil {
+	if err := task.NetworkHandler.Session(ctx, req.IsPrimary); err != nil {
 		return err
 	}
 
@@ -85,15 +85,15 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 }
 
-// AcceptedNodes implements walletnode.RegisterArtworkServer.AcceptedNodes()
-func (service *RegisterArtwork) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
+// AcceptedNodes implements walletnode.RegisterNftServer.AcceptedNodes()
+func (service *RegisterNft) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	nodes, err := task.AcceptedNodes(ctx)
+	nodes, err := task.NetworkHandler.AcceptedNodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -112,15 +112,15 @@ func (service *RegisterArtwork) AcceptedNodes(ctx context.Context, req *pb.Accep
 	return resp, nil
 }
 
-// ConnectTo implements walletnode.RegisterArtworkServer.ConnectTo()
-func (service *RegisterArtwork) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
+// ConnectTo implements walletnode.RegisterNftServer.ConnectTo()
+func (service *RegisterNft) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := task.ConnectTo(ctx, req.NodeID, req.SessID); err != nil {
+	if err := task.NetworkHandler.ConnectTo(ctx, req.NodeID, req.SessID); err != nil {
 		return nil, err
 	}
 
@@ -129,8 +129,8 @@ func (service *RegisterArtwork) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
-// MeshNodes implements walletnode.RegisterArtworkServer.MeshNodes
-func (service *RegisterArtwork) MeshNodes(ctx context.Context, req *pb.MeshNodesRequest) (*pb.MeshNodesReply, error) {
+// MeshNodes implements walletnode.RegisterNftServer.MeshNodes
+func (service *RegisterNft) MeshNodes(ctx context.Context, req *pb.MeshNodesRequest) (*pb.MeshNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("MeshNodes request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -145,12 +145,12 @@ func (service *RegisterArtwork) MeshNodes(ctx context.Context, req *pb.MeshNodes
 		})
 	}
 
-	err = task.MeshNodes(ctx, meshedNodes)
+	err = task.NetworkHandler.MeshNodes(ctx, meshedNodes)
 	return &pb.MeshNodesReply{}, err
 }
 
 // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
-func (service *RegisterArtwork) SendRegMetadata(ctx context.Context, req *pb.SendRegMetadataRequest) (*pb.SendRegMetadataReply, error) {
+func (service *RegisterNft) SendRegMetadata(ctx context.Context, req *pb.SendRegMetadataRequest) (*pb.SendRegMetadataReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("SendRegMetadata request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -167,8 +167,8 @@ func (service *RegisterArtwork) SendRegMetadata(ctx context.Context, req *pb.Sen
 	return &pb.SendRegMetadataReply{}, err
 }
 
-// ProbeImage implements walletnode.RegisterArtworkServer.ProbeImage()
-func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageServer) (retErr error) {
+// ProbeImage implements walletnode.RegisterNftServer.ProbeImage()
+func (service *RegisterNft) ProbeImage(stream pb.RegisterNft_ProbeImageServer) (retErr error) {
 	ctx := stream.Context()
 
 	defer errors.Recover(func(recErr error) {
@@ -239,8 +239,8 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	return nil
 }
 
-// UploadImage implements walletnode.RegisterArtwork.UploadImageWithThumbnail
-func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) (retErr error) {
+// UploadImage implements walletnode.RegisterNft.UploadImageWithThumbnail
+func (service *RegisterNft) UploadImage(stream pb.RegisterNft_UploadImageServer) (retErr error) {
 	ctx := stream.Context()
 	defer errors.Recover(func(recErr error) {
 		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenUploadImage")
@@ -369,8 +369,8 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	return nil
 }
 
-// SendSignedNFTTicket implements walletnode.RegisterArtwork.SendSignedNFTTicket
-func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb.SendSignedNFTTicketRequest) (retRes *pb.SendSignedNFTTicketReply, retErr error) {
+// SendSignedNFTTicket implements walletnode.RegisterNft.SendSignedNFTTicket
+func (service *RegisterNft) SendSignedNFTTicket(ctx context.Context, req *pb.SendSignedNFTTicketRequest) (retRes *pb.SendSignedNFTTicketReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
 		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenSendSignedNFTTicket")
 		retErr = recErr
@@ -382,7 +382,7 @@ func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb
 		return nil, errors.Errorf("get task from metada %w", err)
 	}
 
-	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.RqFiles, req.DdFpFiles, req.EncodeParameters.Oti)
+	registrationFee, err := task.GetNftRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.RqFiles, req.DdFpFiles, req.EncodeParameters.Oti)
 	if err != nil {
 		return nil, errors.Errorf("get total storage fee %w", err)
 	}
@@ -394,8 +394,8 @@ func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb
 	return &rsp, nil
 }
 
-// SendPreBurntFeeTxid implements walletnode.RegisterArtwork.SendPreBurntFeeTxid
-func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (retRes *pb.SendPreBurntFeeTxidReply, retErr error) {
+// SendPreBurntFeeTxid implements walletnode.RegisterNft.SendPreBurntFeeTxid
+func (service *RegisterNft) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (retRes *pb.SendPreBurntFeeTxidReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
 		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicSendPreBurntFeeTxid")
 		retErr = recErr
@@ -407,9 +407,13 @@ func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb
 		return nil, errors.Errorf("get task from meta data %w", err)
 	}
 
-	nftRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
+	err = task.ValidatePreBurnTransaction(ctx, req.Txid)
 	if err != nil {
 		return nil, errors.Errorf("validate preburn transaction %w", err)
+	}
+	nftRegTxid, err := task.ActivateAndStoreNft(ctx)
+	if err != nil {
+		return nil, errors.Errorf("activate and store NFT %w", err)
 	}
 
 	rsp := pb.SendPreBurntFeeTxidReply{
@@ -419,13 +423,13 @@ func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb
 }
 
 // Desc returns a description of the service.
-func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
-	return &pb.RegisterArtwork_ServiceDesc
+func (service *RegisterNft) Desc() *grpc.ServiceDesc {
+	return &pb.RegisterNft_ServiceDesc
 }
 
-// NewRegisterArtwork returns a new RegisterArtwork instance.
-func NewRegisterArtwork(service *artworkregister.Service) *RegisterArtwork {
-	return &RegisterArtwork{
-		RegisterArtwork: common.NewRegisterArtwork(service),
+// NewRegisterNft returns a new RegisterNft instance.
+func NewRegisterNft(service *nftregister.NftRegistrationService) *RegisterNft {
+	return &RegisterNft{
+		RegisterNft: common.NewRegisterNft(service),
 	}
 }

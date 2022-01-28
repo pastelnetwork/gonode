@@ -25,7 +25,7 @@ func (service *registerSense) SessID() string {
 	return service.sessID
 }
 
-// Session implements node.RegisterArtwork.Session()
+// Session implements node.RegisterNft.Session()
 func (service *registerSense) Session(ctx context.Context, nodeID, sessID string) error {
 	service.sessID = sessID
 
@@ -84,11 +84,11 @@ func (service *registerSense) SendSignedDDAndFingerprints(ctx context.Context, s
 	return err
 }
 
-// SendArtTicketSignature implements SendArtTicketSignature
-func (service *registerSense) SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
+// SendSenseTicketSignature implements SendSenseTicketSignature
+func (service *registerSense) SendSenseTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
-	_, err := service.client.SendArtTicketSignature(ctx, &pb.SendArtTicketSignatureRequest{
+	_, err := service.client.SendSenseTicketSignature(ctx, &pb.SendNftTicketSignatureRequest{
 		NodeID:    nodeID,
 		Signature: signature,
 	})
@@ -105,7 +105,7 @@ func (service *registerSense) contextWithLogPrefix(ctx context.Context) context.
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newRegisterSense(conn *clientConn) node.RegisterSense {
+func newRegisterSense(conn *clientConn) node.RegisterSenseInterface {
 	return &registerSense{
 		conn:   conn,
 		client: pb.NewRegisterSenseClient(conn),

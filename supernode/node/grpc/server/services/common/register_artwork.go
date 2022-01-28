@@ -5,17 +5,17 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/proto"
-	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"google.golang.org/grpc/metadata"
 )
 
-// RegisterArtwork represents common grpc service for registration artwork.
-type RegisterArtwork struct {
-	*artworkregister.Service
+// RegisterNft represents common grpc service for registration NFTs.
+type RegisterNft struct {
+	*nftregister.NftRegistrationService
 }
 
 // SessID retrieves SessID from the metadata.
-func (service *RegisterArtwork) SessID(ctx context.Context) (string, bool) {
+func (service *RegisterNft) SessID(ctx context.Context) (string, bool) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return "", false
@@ -29,7 +29,7 @@ func (service *RegisterArtwork) SessID(ctx context.Context) (string, bool) {
 }
 
 // TaskFromMD returns task by SessID from the metadata.
-func (service *RegisterArtwork) TaskFromMD(ctx context.Context) (*artworkregister.Task, error) {
+func (service *RegisterNft) TaskFromMD(ctx context.Context) (*nftregister.NftRegistrationTask, error) {
 	sessID, ok := service.SessID(ctx)
 	if !ok {
 		return nil, errors.New("not found sessID in metadata")
@@ -42,9 +42,9 @@ func (service *RegisterArtwork) TaskFromMD(ctx context.Context) (*artworkregiste
 	return task, nil
 }
 
-// NewRegisterArtwork returns a new RegisterArtwork instance.
-func NewRegisterArtwork(service *artworkregister.Service) *RegisterArtwork {
-	return &RegisterArtwork{
-		Service: service,
+// NewRegisterNft returns a new RegisterNft instance.
+func NewRegisterNft(service *nftregister.NftRegistrationService) *RegisterNft {
+	return &RegisterNft{
+		NftRegistrationService: service,
 	}
 }

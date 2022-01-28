@@ -23,11 +23,11 @@ const (
 	// DoneMethod represent Done call
 	DoneMethod = "Done"
 
-	// RegisterArtworkMethod represent RegisterArtwork name method
-	RegisterArtworkMethod = "RegisterArtwork"
+	// RegisterArtworkMethod represent RegisterNft name method
+	RegisterArtworkMethod = "RegisterNft"
 
-	// DownloadArtworkMethod represent DownloadArtwork name method
-	DownloadArtworkMethod = "DownloadArtwork"
+	// DownloadArtworkMethod represent DownloadNft name method
+	DownloadArtworkMethod = "DownloadNft"
 
 	// ProcessUserdataMethod represent ProcessUserdata name method
 	ProcessUserdataMethod = "ProcessUserdata"
@@ -43,32 +43,32 @@ type Client struct {
 	t *testing.T
 	*mocks.Client
 	*mocks.Connection
-	*mocks.DownloadArtwork
+	*mocks.DownloadNft
 }
 
 // NewMockClient create new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:               t,
-		Client:          &mocks.Client{},
-		Connection:      &mocks.Connection{},
-		DownloadArtwork: &mocks.DownloadArtwork{},
+		t:           t,
+		Client:      &mocks.Client{},
+		Connection:  &mocks.Connection{},
+		DownloadNft: &mocks.DownloadNft{},
 	}
 }
 
-// ListenOnRegisterArtwork listening RegisterArtwork call
+// ListenOnRegisterArtwork listening RegisterNft call
 func (client *Client) ListenOnRegisterArtwork() *Client {
 	client.Connection.On(RegisterArtworkMethod).Return(nil)
 	return client
 }
 
-// ListenOnDownloadArtwork listening DownloadArtwork call
+// ListenOnDownloadArtwork listening DownloadNft call
 func (client *Client) ListenOnDownloadArtwork() *Client {
-	client.Connection.On(DownloadArtworkMethod).Return(client.DownloadArtwork)
+	client.Connection.On(DownloadArtworkMethod).Return(client.DownloadNft)
 	return client
 }
 
-// AssertDownloadArtworkCall assertion DownloadArtwork call
+// AssertDownloadArtworkCall assertion DownloadNft call
 func (client *Client) AssertDownloadArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.Connection.AssertCalled(client.t, DownloadArtworkMethod, arguments...)
@@ -129,7 +129,7 @@ func (client *Client) AssertDoneCall(expectedCalls int, arguments ...interface{}
 
 // ListenOnDownload listening Download call and returns args value
 func (client *Client) ListenOnDownload(arguments ...interface{}) *Client {
-	client.DownloadArtwork.On(DownloadMethod, mock.Anything,
+	client.DownloadNft.On(DownloadMethod, mock.Anything,
 		mock.IsType(string("")),
 		mock.IsType(string("")),
 		mock.IsType(string("")),
@@ -139,7 +139,7 @@ func (client *Client) ListenOnDownload(arguments ...interface{}) *Client {
 
 // ListenOnDownloadThumbnail listening DownloadThumbnail call and returns args value
 func (client *Client) ListenOnDownloadThumbnail(arguments ...interface{}) *Client {
-	client.DownloadArtwork.On(DownloadThumbnailMethod, mock.Anything,
+	client.DownloadNft.On(DownloadThumbnailMethod, mock.Anything,
 		mock.Anything).Return(arguments...)
 	return client
 }
@@ -147,9 +147,9 @@ func (client *Client) ListenOnDownloadThumbnail(arguments ...interface{}) *Clien
 // AssertDownloadCall assertion Download call
 func (client *Client) AssertDownloadCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.DownloadArtwork.AssertCalled(client.t, DownloadMethod, arguments...)
+		client.DownloadNft.AssertCalled(client.t, DownloadMethod, arguments...)
 	}
-	client.DownloadArtwork.AssertNumberOfCalls(client.t, DownloadMethod, expectedCalls)
+	client.DownloadNft.AssertNumberOfCalls(client.t, DownloadMethod, expectedCalls)
 	return client
 }
 

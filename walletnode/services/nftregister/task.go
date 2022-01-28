@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -20,12 +20,12 @@ import (
 type NftRegistrationTask struct {
 	*common.WalletNodeTask
 
-	MeshHandler         *mixins.MeshHandler
+	MeshHandler         *common.MeshHandler
 	FingerprintsHandler *mixins.FingerprintsHandler
 	ImageHandler        *mixins.NftImageHandler
 	RqHandler           *mixins.RQHandler
 
-	service *NftRegisterService
+	service *NftRegistrationService
 	Request *NftRegisterRequest
 
 	// task data to create RegArt ticket
@@ -107,6 +107,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// connect to rq serivce to get rq symbols identifier
 	if err := task.RqHandler.GenRQIdentifiersFiles(ctx, task.ImageHandler.ImageEncodedWithFingerprints,
 		task.creatorBlockHash, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase); err != nil {
+		task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
 
@@ -142,7 +143,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	task.UpdateStatus(common.StatusTicketAccepted)
 
 	// don't need SNs anymore
-	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
@@ -251,9 +252,11 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 	}
 
 	if err := task.FingerprintsHandler.Match(ctx); err != nil {
+		task.UpdateStatus(common.StatusErrorSignaturesNotMatch)
 		log.WithContext(ctx).WithError(err).WithField("filename", fileName).Error("probe image failed")
 		return errors.Errorf("probing image %s failed: %w", fileName, err)
 	}
+	task.UpdateStatus(common.StatusImageProbed)
 
 	return nil
 }
@@ -464,24 +467,24 @@ func (task *NftRegistrationTask) removeArtifacts() {
 }
 
 // NewNFTRegistrationTask returns a new Task instance.
-func NewNFTRegistrationTask(service *NftRegisterService, request *NftRegisterRequest) *NftRegistrationTask {
+func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegisterRequest) *NftRegistrationTask {
 	task := &NftRegistrationTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 		service:        service,
 		Request:        request,
 	}
 
-	task.ImageHandler = mixins.NewImageHandler(task.WalletNodeTask, service.pastelHandler)
+	task.ImageHandler = mixins.NewImageHandler(service.pastelHandler)
 
-	task.MeshHandler = mixins.NewMeshHandler(task.WalletNodeTask,
+	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
 		service.nodeClient, &RegisterNftNodeMaker{},
 		service.pastelHandler,
 		request.ArtistPastelID, request.ArtistPastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
 		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
 	)
-	task.RqHandler = mixins.NewRQHandler(task.WalletNodeTask,
-		service.rqClient,
+	task.FingerprintsHandler = mixins.NewFingerprintsHandler(service.pastelHandler)
+	task.RqHandler = mixins.NewRQHandler(service.rqClient,
 		service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.config.RQIDsMax,
 		service.config.NumberRQIDSFiles)
 

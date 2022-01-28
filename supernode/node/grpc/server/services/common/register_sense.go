@@ -11,7 +11,7 @@ import (
 
 // RegisterSense represents common grpc service for registration sense.
 type RegisterSense struct {
-	*senseregister.Service
+	*senseregister.SenseRegistrationService
 }
 
 // SessID retrieves SessID from the metadata.
@@ -29,7 +29,7 @@ func (service *RegisterSense) SessID(ctx context.Context) (string, bool) {
 }
 
 // TaskFromMD returns task by SessID from the metadata.
-func (service *RegisterSense) TaskFromMD(ctx context.Context) (*senseregister.Task, error) {
+func (service *RegisterSense) TaskFromMD(ctx context.Context) (*senseregister.SenseRegistrationTask, error) {
 	sessID, ok := service.SessID(ctx)
 	if !ok {
 		return nil, errors.New("not found sessID in metadata")
@@ -43,8 +43,8 @@ func (service *RegisterSense) TaskFromMD(ctx context.Context) (*senseregister.Ta
 }
 
 // NewRegisterSense returns a new RegisterSense instance.
-func NewRegisterSense(service *senseregister.Service) *RegisterSense {
+func NewRegisterSense(service *senseregister.SenseRegistrationService) *RegisterSense {
 	return &RegisterSense{
-		Service: service,
+		SenseRegistrationService: service,
 	}
 }

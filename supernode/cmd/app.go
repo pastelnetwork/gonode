@@ -31,8 +31,8 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
-	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
-	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
@@ -224,8 +224,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.ArtworkDownload.RqFilesDir = config.RqFilesDir
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
-	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
+	nftRegister := nftregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
+	nftDownload := nftdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 
 	ddScanConfig := ddscan.NewConfig()
@@ -255,11 +255,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		"service",
 		pastelClient,
 		secInfo,
-		walletnode.NewRegisterArtwork(artworkRegister),
-		supernode.NewRegisterArtwork(artworkRegister),
+		walletnode.NewRegisterNft(nftRegister),
+		supernode.NewRegisterNft(nftRegister),
 		walletnode.NewRegisterSense(senseRegister),
 		supernode.NewRegisterSense(senseRegister),
-		walletnode.NewDownloadArtwork(artworkDownload),
+		walletnode.NewDownloadNft(nftDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
 		healthcheck.NewHealthCheck(statsMngr),
@@ -267,5 +267,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, senseRegister, ddScan, database, userdataProcess, statsMngr, debugSerivce)
+	return runServices(ctx, metadb, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, database, userdataProcess, statsMngr, debugSerivce)
 }

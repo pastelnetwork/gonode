@@ -147,7 +147,7 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 	}, nil
 }
 
-func newProcessUserdata(conn *clientConn) node.ProcessUserdata {
+func newProcessUserdata(conn *clientConn) node.ProcessUserdataInterface {
 	return &processUserdata{
 		conn:   conn,
 		client: pb.NewProcessUserdataClient(conn),

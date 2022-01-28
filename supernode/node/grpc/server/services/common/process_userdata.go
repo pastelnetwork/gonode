@@ -29,7 +29,7 @@ func (service *ProcessUserdata) SessID(ctx context.Context) (string, bool) {
 }
 
 // TaskFromMD returns task by SessID from the metadata.
-func (service *ProcessUserdata) TaskFromMD(ctx context.Context) (*userdataprocess.Task, error) {
+func (service *ProcessUserdata) TaskFromMD(ctx context.Context) (*userdataprocess.UserDataTask, error) {
 	sessID, ok := service.SessID(ctx)
 	if !ok {
 		return nil, errors.New("not found sessID in metadata")

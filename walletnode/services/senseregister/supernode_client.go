@@ -9,10 +9,10 @@ type RegisterSenseNodeMaker struct {
 }
 
 func (maker RegisterSenseNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
-	return &SenseRegisterNode{RegisterSenseInterface: conn.RegisterSense()}
+	return &SenseRegistrationNode{RegisterSenseInterface: conn.RegisterSense()}
 }
 
 // Node represent supernode connection.
-type SenseRegisterNode struct {
+type SenseRegistrationNode struct {
 	node.RegisterSenseInterface
 }

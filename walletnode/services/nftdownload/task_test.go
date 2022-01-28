@@ -457,7 +457,7 @@ package nftdownload
 //			// nodeClient mock assertion
 //			nodeClient.Connection.AssertExpectations(t)
 //			nodeClient.Client.AssertExpectations(t)
-//			nodeClient.DownloadArtwork.AssertExpectations(t)
+//			nodeClient.DownloadNft.AssertExpectations(t)
 //			nodeClient.AssertConnectCall(testCase.numConnect, mock.Anything, mock.Anything, mock.Anything)
 //			nodeClient.AssertDownloadArtworkCall(testCase.numDownLoadArtwork)
 //			nodeClient.AssertDownloadCall(testCase.numDownload, mock.Anything, testCase.fields.Ticket.Txid,
@@ -602,7 +602,7 @@ package nftdownload
 //
 //				nodes.Add(&NftDownloadNodeClient{
 //					address:              a.address,
-//					DownloadNftInterface: client.DownloadArtwork,
+//					DownloadNftInterface: client.DownloadNft,
 //				})
 //			}
 //
@@ -611,7 +611,7 @@ package nftdownload
 //
 //			//mock assertion each client
 //			for _, client := range clients {
-//				client.DownloadArtwork.AssertExpectations(t)
+//				client.DownloadNft.AssertExpectations(t)
 //				client.AssertDownloadCall(testCase.numberDownloadCall, testCase.args.ctx,
 //					testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid)
 //			}

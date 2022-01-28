@@ -30,11 +30,11 @@ const (
 	// ProbeImageMethod represent ProbeImage name method
 	ProbeImageMethod = "ProbeImage"
 
-	// RegisterArtworkMethod represent RegisterArtwork name method
-	RegisterArtworkMethod = "RegisterArtwork"
+	// RegisterArtworkMethod represent RegisterNft name method
+	RegisterArtworkMethod = "RegisterNft"
 
-	// DownloadArtworkMethod represent DownloadArtwork name method
-	DownloadArtworkMethod = "DownloadArtwork"
+	// DownloadArtworkMethod represent DownloadNft name method
+	DownloadArtworkMethod = "DownloadNft"
 
 	// ProcessUserdataMethod represent ProcessUserdata name method
 	ProcessUserdataMethod = "ProcessUserdata"
@@ -64,8 +64,8 @@ type Client struct {
 	t *testing.T
 	*mocks.Client
 	*mocks.Connection
-	*mocks.RegisterArtwork
-	*mocks.DownloadArtwork
+	*mocks.RegisterNft
+	*mocks.DownloadNft
 	*mocks.ProcessUserdata
 }
 
@@ -75,27 +75,27 @@ func NewMockClient(t *testing.T) *Client {
 		t:               t,
 		Client:          &mocks.Client{},
 		Connection:      &mocks.Connection{},
-		RegisterArtwork: &mocks.RegisterArtwork{},
-		DownloadArtwork: &mocks.DownloadArtwork{},
+		RegisterNft:     &mocks.RegisterNft{},
+		DownloadNft:     &mocks.DownloadNft{},
 		ProcessUserdata: &mocks.ProcessUserdata{},
 	}
 }
 
-// ListenOnRegisterArtwork listening RegisterArtwork call
+// ListenOnRegisterArtwork listening RegisterNft call
 func (client *Client) ListenOnRegisterArtwork() *Client {
-	client.Connection.On(RegisterArtworkMethod).Return(client.RegisterArtwork)
+	client.Connection.On(RegisterArtworkMethod).Return(client.RegisterNft)
 	return client
 }
 
 // ListenOnSendPreBurntFeeTxID listening SendPreBurntFeeTxIdMethod call
 func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Client {
-	client.RegisterArtwork.On(SendPreBurntFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
+	client.RegisterNft.On(SendPreBurntFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
 	return client
 }
 
 // ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
 func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
-	client.RegisterArtwork.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
+	client.RegisterNft.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 	return client
 }
@@ -104,14 +104,14 @@ func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
 func (client *Client) ListenOnUploadImageWithThumbnail(retPreviewHash []byte,
 	retMediumThumbnailHash []byte, retsmallThumbnailHash []byte, retErr error) *Client {
 
-	client.RegisterArtwork.On(UploadImageWithThumbnailMethod, mock.Anything,
+	client.RegisterNft.On(UploadImageWithThumbnailMethod, mock.Anything,
 		mock.Anything, mock.Anything).Return(retPreviewHash,
 		retMediumThumbnailHash, retsmallThumbnailHash, retErr)
 
 	return client
 }
 
-// AssertRegisterArtworkCall assertion RegisterArtwork call
+// AssertRegisterArtworkCall assertion RegisterNft call
 func (client *Client) AssertRegisterArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.Connection.AssertCalled(client.t, RegisterArtworkMethod, arguments...)
@@ -120,13 +120,13 @@ func (client *Client) AssertRegisterArtworkCall(expectedCalls int, arguments ...
 	return client
 }
 
-// ListenOnDownloadArtwork listening DownloadArtwork call
+// ListenOnDownloadArtwork listening DownloadNft call
 func (client *Client) ListenOnDownloadArtwork() *Client {
-	client.Connection.On(DownloadArtworkMethod).Return(client.DownloadArtwork)
+	client.Connection.On(DownloadArtworkMethod).Return(client.DownloadNft)
 	return client
 }
 
-// AssertDownloadArtworkCall assertion DownloadArtwork call
+// AssertDownloadArtworkCall assertion DownloadNft call
 func (client *Client) AssertDownloadArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.Connection.AssertCalled(client.t, DownloadArtworkMethod, arguments...)
@@ -187,37 +187,37 @@ func (client *Client) AssertDoneCall(expectedCalls int, arguments ...interface{}
 
 // ListenOnMeshNodes listening MeshNodes call and returns args value
 func (client *Client) ListenOnMeshNodes(arguments ...interface{}) *Client {
-	client.RegisterArtwork.On(MeshNodesMethod, mock.Anything, mock.Anything).Return(arguments...)
+	client.RegisterNft.On(MeshNodesMethod, mock.Anything, mock.Anything).Return(arguments...)
 	return client
 }
 
 // ListenOnProbeImage listening ProbeImage call and returns args value
 func (client *Client) ListenOnProbeImage(arguments ...interface{}) *Client {
-	client.RegisterArtwork.On(ProbeImageMethod, mock.Anything, mock.Anything).Return(arguments...)
+	client.RegisterNft.On(ProbeImageMethod, mock.Anything, mock.Anything).Return(arguments...)
 	return client
 }
 
 // AssertProbeImageCall assertion ProbeImage call
 func (client *Client) AssertProbeImageCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, ProbeImageMethod, arguments...)
+		client.RegisterNft.AssertCalled(client.t, ProbeImageMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, ProbeImageMethod, expectedCalls)
+	client.RegisterNft.AssertNumberOfCalls(client.t, ProbeImageMethod, expectedCalls)
 	return client
 }
 
 // ListenOnSession listening Session call and returns error from args
 func (client *Client) ListenOnSession(returnErr error) *Client {
-	client.RegisterArtwork.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+	client.RegisterNft.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
 	return client
 }
 
 // AssertSessionCall assertion Session Call
 func (client *Client) AssertSessionCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, SessionMethod, arguments...)
+		client.RegisterNft.AssertCalled(client.t, SessionMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, SessionMethod, expectedCalls)
+	client.RegisterNft.AssertNumberOfCalls(client.t, SessionMethod, expectedCalls)
 	return client
 }
 
@@ -229,52 +229,52 @@ func (client *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error)
 		return pastelIDs
 	}
 
-	client.RegisterArtwork.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
+	client.RegisterNft.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
 	return client
 }
 
 // AssertAcceptedNodesCall assertion AcceptedNodes call
 func (client *Client) AssertAcceptedNodesCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
+		client.RegisterNft.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, AcceptedNodesMethod, expectedCalls)
+	client.RegisterNft.AssertNumberOfCalls(client.t, AcceptedNodesMethod, expectedCalls)
 	return client
 }
 
 // ListenOnConnectTo listening ConnectTo call and returns error from args
 func (client *Client) ListenOnConnectTo(returnErr error) *Client {
-	client.RegisterArtwork.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
+	client.RegisterNft.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 
 // AssertConnectToCall assertion ConnectTo call
 func (client *Client) AssertConnectToCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, ConnectToMethod, arguments...)
+		client.RegisterNft.AssertCalled(client.t, ConnectToMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, ConnectToMethod, expectedCalls)
+	client.RegisterNft.AssertNumberOfCalls(client.t, ConnectToMethod, expectedCalls)
 	return client
 }
 
 // ListenOnSessID listening SessID call and returns sessID from args
 func (client *Client) ListenOnSessID(sessID string) *Client {
-	client.RegisterArtwork.On(SessIDMethod).Return(sessID)
+	client.RegisterNft.On(SessIDMethod).Return(sessID)
 	return client
 }
 
 // AssertSessIDCall assertion SessID call
 func (client *Client) AssertSessIDCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, SessIDMethod, arguments...)
+		client.RegisterNft.AssertCalled(client.t, SessIDMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
+	client.RegisterNft.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
 	return client
 }
 
 // ListenOnDownload listening Download call and returns args value
 func (client *Client) ListenOnDownload(arguments ...interface{}) *Client {
-	client.DownloadArtwork.On(DownloadMethod, mock.Anything,
+	client.DownloadNft.On(DownloadMethod, mock.Anything,
 		mock.IsType(string("")),
 		mock.IsType(string("")),
 		mock.IsType(string("")),
@@ -284,7 +284,7 @@ func (client *Client) ListenOnDownload(arguments ...interface{}) *Client {
 
 // ListenOnDownloadThumbnail listening DownloadThumbnail call and returns args value
 func (client *Client) ListenOnDownloadThumbnail(arguments ...interface{}) *Client {
-	client.DownloadArtwork.On(DownloadThumbnailMethod, mock.Anything,
+	client.DownloadNft.On(DownloadThumbnailMethod, mock.Anything,
 		mock.Anything).Return(arguments...)
 	return client
 }
@@ -292,9 +292,9 @@ func (client *Client) ListenOnDownloadThumbnail(arguments ...interface{}) *Clien
 // AssertDownloadCall assertion Download call
 func (client *Client) AssertDownloadCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.DownloadArtwork.AssertCalled(client.t, DownloadMethod, arguments...)
+		client.DownloadNft.AssertCalled(client.t, DownloadMethod, arguments...)
 	}
-	client.DownloadArtwork.AssertNumberOfCalls(client.t, DownloadMethod, expectedCalls)
+	client.DownloadNft.AssertNumberOfCalls(client.t, DownloadMethod, expectedCalls)
 	return client
 }
 

@@ -8,26 +8,26 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
-	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
-// RegisterArtwork represents grpc service for registration artwork.
-type RegisterArtwork struct {
-	pb.UnimplementedRegisterArtworkServer
+// RegisterNft represents grpc service for NFT registration.
+type RegisterNft struct {
+	pb.UnimplementedRegisterNftServer
 
-	*common.RegisterArtwork
+	*common.RegisterNft
 }
 
-// Session implements supernode.RegisterArtworkServer.Session()
-func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer) error {
+// Session implements supernode.RegisterNftServer.Session()
+func (service *RegisterNft) Session(stream pb.RegisterNft_SessionServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	var task *artworkregister.Task
+	var task *nftregister.NftRegistrationTask
 	isTaskNew := false
 
 	if sessID, ok := service.SessID(ctx); ok {
@@ -57,7 +57,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
-	if err := task.SessionNode(ctx, req.NodeID); err != nil {
+	if err := task.NetworkHandler.SessionNode(ctx, req.NodeID); err != nil {
 		return err
 	}
 
@@ -88,7 +88,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 }
 
 // SendSignedDDAndFingerprints sends signed dd and fp
-func (service *RegisterArtwork) SendSignedDDAndFingerprints(ctx context.Context, req *pb.SendSignedDDAndFingerprintsRequest) (*pb.SendSignedDDAndFingerprintsReply, error) {
+func (service *RegisterNft) SendSignedDDAndFingerprints(ctx context.Context, req *pb.SendSignedDDAndFingerprintsRequest) (*pb.SendSignedDDAndFingerprintsReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SendSignedDDAndFingerprints request")
 	task := service.Task(req.SessID)
 	if task == nil {
@@ -99,29 +99,29 @@ func (service *RegisterArtwork) SendSignedDDAndFingerprints(ctx context.Context,
 
 }
 
-// SendArtTicketSignature implements supernode.RegisterArtworkServer.SendArtTicketSignature()
-func (service *RegisterArtwork) SendArtTicketSignature(ctx context.Context, req *pb.SendArtTicketSignatureRequest) (*pb.SendArtTicketSignatureReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendArtTicketSignature request")
+// SendNftTicketSignature implements supernode.RegisterNftServer.SendNftTicketSignature()
+func (service *RegisterNft) SendNftTicketSignature(ctx context.Context, req *pb.SendNftTicketSignatureRequest) (*pb.SendNftTicketSignatureReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendNftTicketSignature request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := task.AddPeerArticketSignature(req.NodeID, req.Signature); err != nil {
+	if err := task.AddPeerTicketSignature(req.NodeID, req.Signature); err != nil {
 		return nil, errors.Errorf("add peer signature %w", err)
 	}
 
-	return &pb.SendArtTicketSignatureReply{}, nil
+	return &pb.SendNftTicketSignatureReply{}, nil
 }
 
 // Desc returns a description of the service.
-func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
-	return &pb.RegisterArtwork_ServiceDesc
+func (service *RegisterNft) Desc() *grpc.ServiceDesc {
+	return &pb.RegisterNft_ServiceDesc
 }
 
-// NewRegisterArtwork returns a new RegisterArtwork instance.
-func NewRegisterArtwork(service *artworkregister.Service) *RegisterArtwork {
-	return &RegisterArtwork{
-		RegisterArtwork: common.NewRegisterArtwork(service),
+// NewRegisterNft returns a new RegisterNft instance.
+func NewRegisterNft(service *nftregister.NftRegistrationService) *RegisterNft {
+	return &RegisterNft{
+		RegisterNft: common.NewRegisterNft(service),
 	}
 }

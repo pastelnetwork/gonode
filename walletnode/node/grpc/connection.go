@@ -13,13 +13,13 @@ type clientConn struct {
 	id string
 }
 
-// RegisterArtwork implements node.ConnectionInterface.RegisterArtwork()
-func (conn *clientConn) RegisterArtwork() node.RegisterNftInterface {
+// RegisterNft implements node.ConnectionInterface.RegisterNft()
+func (conn *clientConn) RegisterNft() node.RegisterNftInterface {
 	return newRegisterArtwork(conn)
 }
 
-// DownloadArtwork implements node.ConnectionInterface.DownloadArtwork()
-func (conn *clientConn) DownloadArtwork() node.DownloadNftInterface {
+// DownloadNft implements node.ConnectionInterface.DownloadNft()
+func (conn *clientConn) DownloadNft() node.DownloadNftInterface {
 	return newDownloadArtwork(conn)
 }
 

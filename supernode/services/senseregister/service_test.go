@@ -26,7 +26,7 @@ func TestNewService(t *testing.T) {
 	type args struct {
 		config        *Config
 		pastelClient  pastel.Client
-		nodeClient    node.Client
+		nodeClient    node.ClientInterface
 		p2pClient     p2p.Client
 		raptorQClient rqnode.ClientInterface
 	}
@@ -39,7 +39,7 @@ func TestNewService(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *Service
+		want *SenseRegistrationService
 	}{
 		{
 			args: args{
@@ -49,7 +49,7 @@ func TestNewService(t *testing.T) {
 				raptorQClient: raptorQClient.Client,
 				nodeClient:    nodeClient,
 			},
-			want: &Service{
+			want: &SenseRegistrationService{
 				config:       config,
 				pastelClient: pastelClient.Client,
 				p2pClient:    p2pClient.Client,
@@ -106,7 +106,7 @@ func TestServiceRun(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			p2pClient := p2pMock.NewMockClient(t)
 			raptorQClient := rqmock.NewMockClient(t)
-			service := &Service{
+			service := &SenseRegistrationService{
 				config:       config,
 				pastelClient: pastelClient.Client,
 				p2pClient:    p2pClient.Client,
@@ -154,7 +154,7 @@ func TestServiceNewTask(t *testing.T) {
 			p2pClient := p2pMock.NewMockClient(t)
 			raptorQClient := rqmock.NewMockClient(t)
 
-			service := &Service{
+			service := &SenseRegistrationService{
 				config:       config,
 				pastelClient: pastelClient.Client,
 				rqClient:     raptorQClient.Client,
@@ -165,7 +165,7 @@ func TestServiceNewTask(t *testing.T) {
 			defer cancel()
 			go service.Run(ctx)
 			task := service.NewTask()
-			assert.Equal(t, service, task.Service)
+			assert.Equal(t, service, task.SenseRegistrationService)
 		})
 	}
 }

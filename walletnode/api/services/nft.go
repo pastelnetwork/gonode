@@ -31,7 +31,7 @@ const (
 // NftApiHandler represents services for nfts endpoints.
 type NftApiHandler struct {
 	*Common
-	register *nftregister.NftRegisterService
+	register *nftregister.NftRegistrationService
 	search   *nftsearch.NftSearchService
 	download *nftdownload.NftDownloadService
 	db       storage.KeyValue
@@ -240,7 +240,7 @@ func (service *NftApiHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 }
 
 // NewNftApiHandler returns the artworks NftApiHandler implementation.
-func NewNftApiHandler(register *nftregister.NftRegisterService, search *nftsearch.NftSearchService, download *nftdownload.NftDownloadService) *NftApiHandler {
+func NewNftApiHandler(register *nftregister.NftRegistrationService, search *nftsearch.NftSearchService, download *nftdownload.NftDownloadService) *NftApiHandler {
 	return &NftApiHandler{
 		Common:   NewCommon(),
 		register: register,

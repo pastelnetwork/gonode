@@ -3,12 +3,11 @@ module github.com/pastelnetwork/gonode/walletnode
 go 1.17
 
 require (
-	github.com/DataDog/zstd v1.5.0
-	github.com/btcsuite/btcutil v1.0.2
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/pastelnetwork/gonode/common v0.0.0
+	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-20210731175226-8a39b3090588
@@ -24,6 +23,8 @@ require (
 )
 
 require (
+	github.com/DataDog/zstd v1.5.0 // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dimfeld/httppath v0.0.0-20170720192232-ee938bf73598 // indirect
@@ -44,7 +45,6 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
-	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
@@ -65,7 +65,7 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	github.com/zach-klippenstein/goregen v0.0.0-20160303162051-795b5e3961ea // indirect
 	golang.org/x/mod v0.5.0 // indirect
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/text v0.3.7 // indirect
@@ -82,6 +82,7 @@ require (
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/metadb => ../metadb
+	github.com/pastelnetwork/gonode/mixins => ../mixins
 	github.com/pastelnetwork/gonode/p2p => ../p2p
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/proto => ../proto

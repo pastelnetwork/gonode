@@ -1,0 +1,77 @@
+package common
+
+import (
+	"context"
+	"github.com/pastelnetwork/gonode/supernode/node"
+	"time"
+)
+
+const (
+	defaultConnectToNodeTimeout = time.Second * 15
+)
+
+// SuperNodeClient represents a single supernode
+type SuperNodePeer struct {
+	node.ClientInterface
+	node.NodeMaker
+	node.ConnectionInterface
+	node.SuperNodePeerAPIInterface
+
+	ID      string
+	Address string
+}
+
+func (node *SuperNodePeer) Connect(ctx context.Context) error {
+	connCtx, connCancel := context.WithTimeout(ctx, defaultConnectToNodeTimeout)
+	defer connCancel()
+
+	conn, err := node.ClientInterface.Connect(connCtx, node.Address)
+	if err != nil {
+		return err
+	}
+
+	node.ConnectionInterface = conn
+	node.SuperNodePeerAPIInterface = node.MakeNode(conn)
+	return nil
+}
+
+// NewSuperNode returns a new Node instance.
+func NewSuperNode(client node.ClientInterface,
+	address string, pastelID string,
+	nodeMaker node.NodeMaker,
+) *SuperNodePeer {
+	return &SuperNodePeer{
+		ClientInterface: client,
+		NodeMaker:       nodeMaker,
+		Address:         address,
+		ID:              pastelID,
+	}
+}
+
+// SuperNodePeerList represents muptiple SenseRegistrationNodes
+type SuperNodePeerList []*SuperNodePeer
+
+// Add adds a new node to the list
+func (list *SuperNodePeerList) Add(node *SuperNodePeer) {
+	*list = append(*list, node)
+}
+
+// ByID returns a node from the list by the given id.
+func (list *SuperNodePeerList) ByID(id string) *SuperNodePeer {
+	for _, someNode := range *list {
+		if someNode.ID == id {
+			return someNode
+		}
+	}
+	return nil
+}
+
+// Remove removes a node from the list by the given id.
+func (list *SuperNodePeerList) Remove(id string) {
+	for i, someNode := range *list {
+		if someNode.ID == id {
+			*list = append((*list)[:i], (*list)[:i+1]...)
+			break
+		}
+	}
+}

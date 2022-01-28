@@ -5,7 +5,7 @@ option go_package = "github.com/pastelnetwork/gonode/proto/supernode";
 package supernode;
 import "common_sn.proto";
 
-service RegisterArtwork {
+service RegisterNft {
     // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
     // The stream is used by the parties to inform each other about the cancellation of the task.
     rpc Session(stream SessionRequest) returns (stream SessionReply);
@@ -13,6 +13,6 @@ service RegisterArtwork {
     // SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
     rpc SendSignedDDAndFingerprints(SendSignedDDAndFingerprintsRequest) returns (SendSignedDDAndFingerprintsReply);
 
-    // SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
-    rpc SendArtTicketSignature(SendArtTicketSignatureRequest) returns (SendArtTicketSignatureReply);
+    // SendNftTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
+    rpc SendNftTicketSignature(SendNftTicketSignatureRequest) returns (SendNftTicketSignatureReply);
 }

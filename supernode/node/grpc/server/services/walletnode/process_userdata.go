@@ -31,7 +31,7 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	var task *userdataprocess.Task
+	var task *userdataprocess.UserDataTask
 
 	if sessID, ok := service.SessID(ctx); ok {
 		if task = service.Task(sessID); task == nil {
@@ -218,7 +218,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 			// Send data to SN contain the leader rqlite
 			if !service.databaseOps.IsLeader() {
 				if task.ConnectedToLeader != nil {
-					if _, err := task.ConnectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
+					if _, err := task.ConnectedToLeader.ProcessUserdataInterface.SendUserdataToLeader(ctx, request); err != nil {
 						processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
 						processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
 						actionErr = errors.Errorf("send or write userdata to leader rqlite %w", err)

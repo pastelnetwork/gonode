@@ -6,13 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"strings"
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 
@@ -27,9 +26,10 @@ const (
 	facebookShortURL         = "fb.com"
 )
 
-// Task is the task of registering new artwork.
-type Task struct {
-	task.Task
+// UserDataTask is the task of registering new User.
+type UserDataTask struct {
+	*common.SuperNodeTask
+
 	*Service
 
 	acceptedMu sync.Mutex
@@ -51,33 +51,25 @@ type Task struct {
 }
 
 // Run starts the task
-func (task *Task) Run(ctx context.Context) error {
-	ctx = task.context(ctx)
-	defer log.WithContext(ctx).Debug("Task Done")
-	defer task.Cancel()
-
-	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status.String()).Debug("States updated")
-	})
-
-	return task.RunAction(ctx)
+func (task *UserDataTask) Run(ctx context.Context) error {
+	return task.RunHelper(ctx, task.removeArtifacts)
 }
 
 // Session is handshake wallet to supernode
-func (task *Task) Session(_ context.Context, isPrimary bool) error {
-	if err := task.RequiredStatus(StatusTaskStarted); err != nil {
+func (task *UserDataTask) Session(_ context.Context, isPrimary bool) error {
+	if err := task.RequiredStatus(common.StatusTaskStarted); err != nil {
 		return err
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if isPrimary {
 			log.WithContext(ctx).Debug("Acts as primary node")
-			task.UpdateStatus(StatusPrimaryMode)
+			task.UpdateStatus(common.StatusPrimaryMode)
 			return nil
 		}
 
 		log.WithContext(ctx).Debug("Acts as secondary node")
-		task.UpdateStatus(StatusSecondaryMode)
+		task.UpdateStatus(common.StatusSecondaryMode)
 
 		return nil
 	})
@@ -85,8 +77,8 @@ func (task *Task) Session(_ context.Context, isPrimary bool) error {
 }
 
 // AcceptedNodes waits for connection supernodes, as soon as there is the required amount returns them.
-func (task *Task) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
-	if err := task.RequiredStatus(StatusPrimaryMode); err != nil {
+func (task *UserDataTask) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
+	if err := task.RequiredStatus(common.StatusPrimaryMode); err != nil {
 		return nil, err
 	}
 
@@ -101,7 +93,7 @@ func (task *Task) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
 			case <-ctx.Done():
 				return nil
 			case status := <-sub():
-				if status.Is(StatusConnected) {
+				if status.Is(common.StatusConnected) {
 					return nil
 				}
 			}
@@ -111,11 +103,11 @@ func (task *Task) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
 }
 
 // SessionNode accepts secondary node
-func (task *Task) SessionNode(_ context.Context, nodeID string) error {
+func (task *UserDataTask) SessionNode(_ context.Context, nodeID string) error {
 	task.acceptedMu.Lock()
 	defer task.acceptedMu.Unlock()
 
-	err := task.RequiredStatus(StatusPrimaryMode)
+	err := task.RequiredStatus(common.StatusPrimaryMode)
 	if err != nil {
 		return err
 	}
@@ -137,7 +129,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 		log.WithContext(ctx).WithField("nodeID", nodeID).Debug("Accept secondary node")
 
 		if len(task.accepted) >= task.config.NumberSuperNodes-1 {
-			task.UpdateStatus(StatusConnected)
+			task.UpdateStatus(common.StatusConnected)
 		}
 		return nil
 	})
@@ -145,8 +137,8 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 }
 
 // ConnectTo connects to primary node
-func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
-	err := task.RequiredStatus(StatusSecondaryMode)
+func (task *UserDataTask) ConnectTo(_ context.Context, nodeID, sessID string) error {
+	err := task.RequiredStatus(common.StatusSecondaryMode)
 	if err != nil {
 		return err
 	}
@@ -171,14 +163,14 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 
 		task.ConnectedTo = node
 
-		task.UpdateStatus(StatusConnected)
+		task.UpdateStatus(common.StatusConnected)
 		return nil
 	})
 	return actionErr
 }
 
 // SupernodeProcessUserdata process the userdata send from Walletnode
-func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.ProcessRequestSigned) (userdata.ProcessResult, error) {
+func (task *UserDataTask) SupernodeProcessUserdata(ctx context.Context, req *userdata.ProcessRequestSigned) (userdata.ProcessResult, error) {
 	log.WithContext(ctx).Debugf("supernodeProcessUserdata on user PastelID: %s", req.Userdata.UserPastelID)
 
 	validateResult, err := task.validateUserdata(req.Userdata)
@@ -286,7 +278,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 }
 
 // ReceiveUserdata get the userdata from database
-func (task *Task) ReceiveUserdata(ctx context.Context, userpastelid string) (r userdata.ProcessRequest, err error) {
+func (task *UserDataTask) ReceiveUserdata(ctx context.Context, userpastelid string) (r userdata.ProcessRequest, err error) {
 	log.WithContext(ctx).Debugf("ReceiveUserdata on user PastelID: %s", userpastelid)
 
 	if task.Service.databaseOps == nil {
@@ -298,7 +290,7 @@ func (task *Task) ReceiveUserdata(ctx context.Context, userpastelid string) (r u
 }
 
 // Sign and send SNDataSigned if not primary
-func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.SuperNodeRequest, isPrimary bool) error {
+func (task *UserDataTask) signAndSendSNDataSigned(ctx context.Context, sndata userdata.SuperNodeRequest, isPrimary bool) error {
 	log.WithContext(ctx).Debugf("signAndSendSNDataSigned begin to sign SuperNodeRequest")
 	signature, err := task.pastelClient.Sign(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), task.config.PastelID, task.config.PassPhrase, "ed448")
 	if err != nil {
@@ -308,7 +300,7 @@ func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.S
 		sndata.HashSignature = hex.EncodeToString(signature)
 		sndata.NodeID = task.config.PastelID
 		log.WithContext(ctx).Debug("send signed sndata to primary node")
-		if _, err := task.ConnectedTo.ProcessUserdata.SendUserdataToPrimary(ctx, sndata); err != nil {
+		if _, err := task.ConnectedTo.ProcessUserdataInterface.SendUserdataToPrimary(ctx, sndata); err != nil {
 			return errors.Errorf("send signature to primary node %s at address %s %w", task.ConnectedTo.ID, task.ConnectedTo.Address, err)
 		}
 	}
@@ -316,7 +308,7 @@ func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.S
 }
 
 // AddPeerSNDataSigned gather all the Userdata with signature from other Supernodes
-func (task *Task) AddPeerSNDataSigned(ctx context.Context, snrequest userdata.SuperNodeRequest) error {
+func (task *UserDataTask) AddPeerSNDataSigned(ctx context.Context, snrequest userdata.SuperNodeRequest) error {
 	log.WithContext(ctx).Debugf("addPeerSNDataSigned begin to aggregate SuperNodeRequest")
 
 	task.peersSNDataSignedMtx.Lock()
@@ -342,7 +334,7 @@ func (task *Task) AddPeerSNDataSigned(ctx context.Context, snrequest userdata.Su
 	return actionErr
 }
 
-func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResult, error) {
+func (task *UserDataTask) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResult, error) {
 	log.WithContext(ctx).Debugf("all supernode data signed received so start validation")
 	successCount := 0
 	dataMatchingCount := 0
@@ -394,7 +386,7 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResu
 	}, nil
 }
 
-func (task *Task) validateUserdata(req *userdata.ProcessRequest) (userdata.ProcessResult, error) {
+func (task *UserDataTask) validateUserdata(req *userdata.ProcessRequest) (userdata.ProcessResult, error) {
 	result := userdata.ProcessResult{}
 
 	contentValidation := userdata.SuccessValidateContent
@@ -457,7 +449,7 @@ func (task *Task) validateUserdata(req *userdata.ProcessRequest) (userdata.Proce
 	return result, nil
 }
 
-func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
+func (task *UserDataTask) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
 	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
 	// log.WithContext(ctx).Debugf("master node %s", masterNodes)
 
@@ -482,7 +474,7 @@ func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node,
 	return nil, errors.Errorf("node %q not found", nodeID)
 }
 
-func (task *Task) getRQliteLeaderNode(ctx context.Context, extAddress string) (*Node, error) {
+func (task *UserDataTask) getRQliteLeaderNode(ctx context.Context, extAddress string) (*Node, error) {
 	log.WithContext(ctx).Debugf("getRQliteLeaderNode node %s", extAddress)
 
 	node := &Node{
@@ -494,7 +486,7 @@ func (task *Task) getRQliteLeaderNode(ctx context.Context, extAddress string) (*
 }
 
 // ConnectToLeader connects to RQLite Leader node
-func (task *Task) ConnectToLeader(ctx context.Context, extAddress string) error {
+func (task *UserDataTask) ConnectToLeader(ctx context.Context, extAddress string) error {
 	log.WithContext(ctx).Debugf("ConnectToLeader on address %s", extAddress)
 	var actionErr error
 	task.NewAction(func(ctx context.Context) error {
@@ -515,15 +507,13 @@ func (task *Task) ConnectToLeader(ctx context.Context, extAddress string) error 
 	})
 	return actionErr
 }
-
-func (task *Task) context(ctx context.Context) context.Context {
-	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
+func (task *UserDataTask) removeArtifacts() {
 }
 
-// NewTask returns a new Task instance.
-func NewTask(service *Service) *Task {
-	return &Task{
-		Task:                    task.New(StatusTaskStarted),
+// NewUserDataTask returns a new Task instance.
+func NewUserDataTask(service *Service) *UserDataTask {
+	return &UserDataTask{
+		SuperNodeTask:           common.NewSuperNodeTask(logPrefix),
 		Service:                 service,
 		peersSNDataSignedMtx:    &sync.Mutex{},
 		peersSNDataSigned:       make(map[string]userdata.SuperNodeRequest),

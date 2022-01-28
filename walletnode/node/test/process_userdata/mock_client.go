@@ -27,11 +27,11 @@ const (
 	// MeshNodesMethod represent MeshNodes name method
 	MeshNodesMethod = "MeshNodes"
 
-	// RegisterArtworkMethod represent RegisterArtwork name method
-	RegisterArtworkMethod = "RegisterArtwork"
+	// RegisterArtworkMethod represent RegisterNft name method
+	RegisterArtworkMethod = "RegisterNft"
 
-	// DownloadArtworkMethod represent DownloadArtwork name method
-	DownloadArtworkMethod = "DownloadArtwork"
+	// DownloadArtworkMethod represent DownloadNft name method
+	DownloadArtworkMethod = "DownloadNft"
 
 	// ProcessUserdataMethod represent ProcessUserdata name method
 	ProcessUserdataMethod = "ProcessUserdata"
@@ -61,13 +61,13 @@ func NewMockClient(t *testing.T) *Client {
 	}
 }
 
-// ListenOnRegisterArtwork listening RegisterArtwork call
+// ListenOnRegisterArtwork listening RegisterNft call
 func (client *Client) ListenOnRegisterArtwork() *Client {
 	client.Connection.On(RegisterArtworkMethod).Return(nil)
 	return client
 }
 
-// AssertRegisterArtworkCall assertion RegisterArtwork call
+// AssertRegisterArtworkCall assertion RegisterNft call
 func (client *Client) AssertRegisterArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.Connection.AssertCalled(client.t, RegisterArtworkMethod, arguments...)
@@ -76,13 +76,13 @@ func (client *Client) AssertRegisterArtworkCall(expectedCalls int, arguments ...
 	return client
 }
 
-// ListenOnDownloadArtwork listening DownloadArtwork call
+// ListenOnDownloadArtwork listening DownloadNft call
 func (client *Client) ListenOnDownloadArtwork() *Client {
-	client.Connection.On(DownloadArtworkMethod).Return(client.DownloadArtwork)
+	client.Connection.On(DownloadArtworkMethod).Return(client.DownloadNft)
 	return client
 }
 
-// AssertDownloadArtworkCall assertion DownloadArtwork call
+// AssertDownloadArtworkCall assertion DownloadNft call
 func (client *Client) AssertDownloadArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.Connection.AssertCalled(client.t, DownloadArtworkMethod, arguments...)

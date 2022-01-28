@@ -32,7 +32,7 @@ func parse(inputFile string, outputFile string, config interface{}) {
 	f.Close()
 }
 
-func gen_supernode_client_test() {
+func genSupernodeClientTest() {
 	type args struct {
 		Service string
 		Client  string
@@ -48,7 +48,7 @@ func gen_supernode_client_test() {
 		"../nftregistration_node_client_test.go": {
 			Service: "nftregister",
 			Client:  "artwork_register",
-			Prefix:  "RegisterArtwork",
+			Prefix:  "RegisterNft",
 		},
 	}
 	for f, d := range data {
@@ -58,5 +58,5 @@ func gen_supernode_client_test() {
 }
 
 func main() {
-	gen_supernode_client_test()
+	genSupernodeClientTest()
 }

@@ -41,9 +41,9 @@ func (nodes *Nodes) Remove(id string) {
 
 // Node represents a single supernode
 type Node struct {
-	node.ProcessUserdata
-	client node.Client
-	conn   node.Connection
+	node.ProcessUserdataInterface
+	client node.ClientInterface
+	conn   node.ConnectionInterface
 
 	ID      string
 	Address string
@@ -59,6 +59,6 @@ func (node *Node) connect(ctx context.Context) error {
 	}
 
 	node.conn = conn
-	node.ProcessUserdata = conn.ProcessUserdata()
+	node.ProcessUserdataInterface = conn.ProcessUserdata()
 	return nil
 }

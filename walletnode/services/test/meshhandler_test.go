@@ -5,7 +5,6 @@ import (
 	"fmt"
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/sense_register"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 	service "github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 	"testing"
 )
@@ -46,7 +45,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			meshHandler := mixins.NewMeshHandlerSimple(test.NewMockClient(t), service.RegisterSenseNodeMaker{})
+			meshHandler := common.NewMeshHandlerSimple(test.NewMockClient(t), service.RegisterSenseNodeMaker{})
 
 			nodes := common.SuperNodeList{}
 

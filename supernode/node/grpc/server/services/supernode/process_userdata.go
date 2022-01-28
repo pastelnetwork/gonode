@@ -34,7 +34,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	var task *userdataprocess.Task
+	var task *userdataprocess.UserDataTask
 
 	if sessID, ok := service.SessID(ctx); ok {
 		task = service.Task(sessID)

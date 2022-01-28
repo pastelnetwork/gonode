@@ -2,20 +2,13 @@ package senseregister
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/common/storage/files"
-
-	"github.com/pastelnetwork/gonode/common/utils"
-
-	"github.com/pastelnetwork/gonode/common/errgroup"
-	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/node"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
 const (
@@ -23,75 +16,37 @@ const (
 )
 
 // Service represent sense service.
-type Service struct {
-	*task.Worker
-	*files.Storage
+type SenseRegistrationService struct {
+	*common.SuperNodeService
+	config *Config
 
-	config       *Config
-	pastelClient pastel.Client
-	nodeClient   node.Client
-	p2pClient    p2p.Client
-	rqClient     rqnode.ClientInterface
-	ddClient     ddclient.DDServerClient
-}
-
-// run starts task
-func (service *Service) run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, logPrefix)
-
-	if service.config.PastelID == "" {
-		return errors.New("PastelID is not specified in the config file")
-	}
-
-	group, ctx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return service.Storage.Run(ctx)
-	})
-	group.Go(func() error {
-		return service.Worker.Run(ctx)
-	})
-	return group.Wait()
+	nodeClient node.ClientInterface
+	ddClient   ddclient.DDServerClient
 }
 
 // Run starts task
-func (service *Service) Run(ctx context.Context) error {
-	for {
-		if err := service.run(ctx); err != nil {
-			if utils.IsContextErr(err) {
-				return err
-			}
-
-			service.Worker = task.NewWorker()
-			log.WithContext(ctx).WithError(err).Error("registration failed, retrying")
-		} else {
-			return nil
-		}
-	}
+func (service *SenseRegistrationService) Run(ctx context.Context) error {
+	return service.RunHelper(ctx, service.config.PastelID, logPrefix)
 }
 
-// Task returns the task of the registration artwork by the given id.
-func (service *Service) Task(id string) *Task {
-	return service.Worker.Task(id).(*Task)
-}
-
-// NewTask runs a new task of the registration artwork and returns its taskID.
-func (service *Service) NewTask() *Task {
-	task := NewTask(service)
+// NewSenseRegistrationTask runs a new task of the registration Sense and returns its taskID.
+func (service *SenseRegistrationService) NewTask() *SenseRegistrationTask {
+	task := NewSenseRegistrationTask(service)
 	service.Worker.AddTask(task)
-
 	return task
 }
 
+// Task returns the task of the Sense registration by the given id.
+func (service *SenseRegistrationService) Task(id string) *SenseRegistrationTask {
+	return service.Worker.Task(id).(*SenseRegistrationTask)
+}
+
 // NewService returns a new Service instance.
-func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client, rqClient rqnode.ClientInterface, ddClient ddclient.DDServerClient) *Service {
-	return &Service{
-		config:       config,
-		pastelClient: pastelClient,
-		nodeClient:   nodeClient,
-		p2pClient:    p2pClient,
-		rqClient:     rqClient,
-		ddClient:     ddClient,
-		Worker:       task.NewWorker(),
-		Storage:      files.NewStorage(fileStorage),
+func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface, ddClient ddclient.DDServerClient) *SenseRegistrationService {
+	return &SenseRegistrationService{
+		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient, rqClient),
+		config:           config,
+		nodeClient:       nodeClient,
+		ddClient:         ddClient,
 	}
 }

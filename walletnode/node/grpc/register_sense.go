@@ -33,7 +33,7 @@ func (service *registerSense) SessID() string {
 	return service.sessID
 }
 
-// Session implements node.RegisterArtwork.Session()
+// Session implements node.RegisterNft.Session()
 func (service *registerSense) Session(ctx context.Context, isPrimary bool) error {
 	ctx = service.contextWithLogPrefix(ctx)
 
@@ -77,7 +77,7 @@ func (service *registerSense) Session(ctx context.Context, isPrimary bool) error
 	return nil
 }
 
-// AcceptedNodes implements node.RegisterArtwork.AcceptedNodes()
+// AcceptedNodes implements node.RegisterNft.AcceptedNodes()
 func (service *registerSense) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
@@ -98,7 +98,7 @@ func (service *registerSense) AcceptedNodes(ctx context.Context) (pastelIDs []st
 	return ids, nil
 }
 
-// ConnectTo implements node.RegisterArtwork.ConnectTo()
+// ConnectTo implements node.RegisterNft.ConnectTo()
 func (service *registerSense) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
@@ -164,7 +164,7 @@ func (service *registerSense) SendActionAct(ctx context.Context, actionRegTxid s
 	return err
 }
 
-// ProbeImage implements node.RegisterArtwork.ProbeImage()
+// ProbeImage implements node.RegisterNft.ProbeImage()
 func (service *registerSense) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)

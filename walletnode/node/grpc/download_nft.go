@@ -14,7 +14,7 @@ import (
 
 type downloadNft struct {
 	conn   *clientConn
-	client pb.DownloadArtworkClient
+	client pb.DownloadNftClient
 }
 
 func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signature, ttxid string) (file []byte, err error) {
@@ -27,7 +27,7 @@ func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signa
 		Ttxid:     ttxid,
 	}
 
-	var stream pb.DownloadArtwork_DownloadClient
+	var stream pb.DownloadNft_DownloadClient
 	stream, err = service.client.Download(ctx, in)
 	if err != nil {
 		err = errors.Errorf("open stream: %w", err)
@@ -97,6 +97,6 @@ func (service *downloadNft) ConnectTo(ctx context.Context, primaryNode types.Mes
 func newDownloadArtwork(conn *clientConn) node.DownloadNftInterface {
 	return &downloadNft{
 		conn:   conn,
-		client: pb.NewDownloadArtworkClient(conn),
+		client: pb.NewDownloadNftClient(conn),
 	}
 }
