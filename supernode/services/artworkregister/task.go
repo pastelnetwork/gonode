@@ -913,7 +913,7 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 		return errors.Errorf("no symbols identifiers file")
 	}
 
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, uint32(len(task.Ticket.AppTicketData.RQIDs)),
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, 1,
 		hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.Author)
 	if err != nil {
 		return errors.Errorf("generate RaptorQ symbols' identifiers: %w", err)
