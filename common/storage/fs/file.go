@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	logPrefix = "storage"
+	logPrefix = "storage-fs"
 )
 
 // FS represents file sysmte storage.

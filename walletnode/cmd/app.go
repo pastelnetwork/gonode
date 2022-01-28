@@ -45,7 +45,7 @@ var (
 	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
 )
 
-// NewApp inits a new command line interface.
+// NewApp configures our app by parsing command line flags, config files, and setting up logging and temporary directories
 func NewApp() *cli.App {
 	var configFile string
 	var pastelConfigFile string
@@ -69,9 +69,13 @@ func NewApp() *cli.App {
 		cli.NewFlag("swagger", &config.API.Swagger).SetUsage("Enable Swagger UI."),
 	)
 
+	//SetActionFunc is the default, and in our case only, executed action.
+	//Sets up configs and logging, and also returns the "app" function to main.go to be called (Run) there.
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
-		ctx = log.ContextWithPrefix(ctx, "app")
+		//Sets logging prefix to pastel-app
+		ctx = log.ContextWithPrefix(ctx, "pastel-app")
 
+		//Parse config files supplied in arguments
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
 				return fmt.Errorf("error parsing walletnode config file: %v", err)
@@ -84,12 +88,14 @@ func NewApp() *cli.App {
 			}
 		}
 
+		//Write to stdout by default, no output if quiet is set in config
 		if config.Quiet {
 			log.SetOutput(ioutil.Discard)
 		} else {
 			log.SetOutput(app.Writer)
 		}
 
+		//Configure log rotation IFF a file is specified for output
 		if config.LogConfig.File != "" {
 			rotateHook := hooks.NewFileHook(config.LogConfig.File)
 			rotateHook.SetMaxSizeInMB(config.LogConfig.MaxSizeInMB)
@@ -98,8 +104,10 @@ func NewApp() *cli.App {
 			rotateHook.SetCompress(config.LogConfig.Compress)
 			log.AddHook(rotateHook)
 		}
+		//By default, log time since start of app
 		log.AddHook(hooks.NewDurationHook())
 
+		//Parse other flags like log level, temp directory, and raptorq files directory
 		if err := log.SetLevelName(config.LogConfig.Level); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogConfig.Level, err)
 		}
@@ -111,40 +119,58 @@ func NewApp() *cli.App {
 		if err := os.MkdirAll(config.RqFilesDir, os.ModePerm); err != nil {
 			return errors.Errorf("could not create rq-files-dir %q, %w", config.RqFilesDir, err)
 		}
-
+		//This function, defined below, is what will be run when "Run" is called on our app
 		return runApp(ctx, config)
 	})
 
+	//while "app" is returned, the default action func we just set as a parameter to it is going to be called when run
 	return app
 }
 
+//What walletnode actually does when you run it!
+//- Creates App Context
+//- Registers system interrupts for shutdown
+//- Configures RPC connections to nodeC and raptorq
+//- Sets up local file storage for NFT registration (is there more that needs this local db?)
+//- Set minimum confirmation requirements for transactions
+//- Create services for the functions we want to expose to users, allowing for running and tasking
+//- Create API endpoints for those services
+//- Run those services in their own goroutines and wait for them
 func runApp(ctx context.Context, config *configs.Config) error {
+	//Create App Context
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	//Register system interrupts for shutdown
 	sys.RegisterInterruptHandler(func() {
 		cancel()
 		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
-	// entities
+	// pastelClient reads in the json-formatted hostname, port, username, and password and
+	//  connects over gRPC to cNode for access to Blockchain, Masternodes, Tickets, and PastelID databases
 	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
-
-	// Business logic services
-	// ----NftApiHandler Services----
+	// wrap pastelClient in security functionality then allow for calling of artwork, userdata, and sense functions
 	nodeClient := grpc.NewClient(pastelClient)
 
-	db := memory.NewKeyValue()
-	fileStorage := fs.NewFileStorage(config.TempDir)
-
-	// raptorq client
+	// rqClient is the raptorq client providing error correction for files.
+	//  On testnet raptorq host will be local with a random port
 	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
 	rqClient := rqgrpc.NewClient()
 
+	// create another wrapped RPC connection for use by our userdata service, basically the same as nodeClient
+	userdataNodeClient := grpc.NewClient(pastelClient)
+
+	// start new key value storage
+	db := memory.NewKeyValue()
+	// Initialize temporary file storage
+	fileStorage := fs.NewFileStorage(config.TempDir)
+
+	//Set minimum confirmation requirements for transactions to ensure completion
 	if config.RegTxMinConfirmations > 0 {
 		config.ArtworkRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
 		config.SenseRegister.SenseRegTxMinConfirmations = config.RegTxMinConfirmations
@@ -155,19 +181,18 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		config.SenseRegister.SenseActTxMinConfirmations = config.ActTxMinConfirmations
 	}
 
-	// business logic services
+	// These services connect the different clients and configs together to provide tasking and handling for
+	//  the required functionality.  These services aren't started with these declarations, they will be run
+	//	later through the API Server.
 	nftRegister := nftregister.NewService(&config.ArtworkRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
 	nftSearch := nftsearch.NewNftSearchService(&config.ArtworkSearch, pastelClient, nodeClient)
-	nftDownload := nftdownload.NewNftFownloadService(&config.ArtworkDownload, pastelClient, nodeClient)
-
-	// ----UserdataApiHandler Services----
-	userdataNodeClient := grpc.NewClient(pastelClient)
+	nftDownload := nftdownload.NewNftDownloadService(&config.ArtworkDownload, pastelClient, nodeClient)
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
-
-	// SenseApiHandler services
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
 
-	// api service
+	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.
+	//  Since the API Server has access to the services, this is what finally exposes useful methods like
+	//  "NftGet" and "Download".
 	server := api.NewAPIServer(config.API,
 		services.NewNftApiHandler(nftRegister, nftSearch, nftDownload),
 		services.NewUserdataApiHandler(userdataProcess),
@@ -177,5 +202,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
+	//calls all of our services in its own goroutine with "Run" but waits for them as a group
+	//NB: Tasks are defined individually for each service, and probably override the actual task struct's functions.
+	//  For instance, nftRegister uses the NftRegistrationTask found in services/nftregister/task.go
 	return runServices(ctx, server, nftRegister, nftSearch, nftDownload, userdataProcess, senseRegister)
 }

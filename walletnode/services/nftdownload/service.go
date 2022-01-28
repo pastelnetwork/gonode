@@ -2,6 +2,7 @@ package nftdownload
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	logPrefix = "nft-download"
+	logPrefix = "walletnode-nft-download"
 )
 
 // Service represents a service for the registration NFT.
@@ -61,8 +62,8 @@ func (service *NftDownloadService) AddTask(p *nft.NftDownloadPayload) string {
 	return task.ID()
 }
 
-// NewNftFownloadService returns a new Service instance.
-func NewNftFownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *NftDownloadService {
+// NewNftDownloadService returns a new Service instance.
+func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *NftDownloadService {
 	return &NftDownloadService{
 		Worker:        task.NewWorker(),
 		config:        config,

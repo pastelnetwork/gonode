@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	logPrefix             = "raptorqClient"
+	logPrefix             = "grpc-raptorqClient"
 	defaultConnectTimeout = 5 * time.Second
 )
 

@@ -3,9 +3,10 @@ package nftsearch
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
-	"sync"
 
 	"sort"
 
@@ -190,7 +191,7 @@ type NftGetSearchTask struct {
 	thumbnail *ThumbnailHandler
 }
 
-// NewNftSearchTask returns a new NftSearchTask instance.
+// NewNftSearchTask is only used by GetThumbnail, but bypasses the need to form a request.
 func NewNftGetSearchTask(service *NftSearchService, pastelID string, passphrase string) *NftGetSearchTask {
 	task := &NftGetSearchTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
