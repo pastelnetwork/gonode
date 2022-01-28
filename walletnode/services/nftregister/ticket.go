@@ -5,8 +5,8 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 )
 
-// NftRegisterRequest represents nft registration request.
-type NftRegisterRequest struct {
+// NftRegistrationRequest represents nft registration request.
+type NftRegistrationRequest struct {
 	Image                    *files.File               `json:"image"`
 	Name                     string                    `json:"name"`
 	Description              *string                   `json:"description"`
@@ -25,7 +25,8 @@ type NftRegisterRequest struct {
 	Thumbnail                files.ThumbnailCoordinate `json:"thumbnail_coordinate"`
 }
 
-func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegisterRequest {
+// FromNftRegisterPayload converts from one to another
+func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegistrationRequest {
 	thumbnail := files.ThumbnailCoordinate{
 		TopLeftX:     payload.ThumbnailCoordinate.TopLeftX,
 		TopLeftY:     payload.ThumbnailCoordinate.TopLeftY,
@@ -33,7 +34,7 @@ func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegisterRequest {
 		BottomRightY: payload.ThumbnailCoordinate.BottomRightY,
 	}
 
-	return &NftRegisterRequest{
+	return &NftRegistrationRequest{
 		Name:                     payload.Name,
 		Description:              payload.Description,
 		Keywords:                 payload.Keywords,
@@ -52,7 +53,8 @@ func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegisterRequest {
 	}
 }
 
-func ToNftRegisterTicket(request *NftRegisterRequest) *nft.NftRegisterPayload {
+// ToNftRegisterTicket converts from one to another
+func ToNftRegisterTicket(request *NftRegistrationRequest) *nft.NftRegisterPayload {
 	thumbnail := nft.Thumbnailcoordinate{
 		TopLeftX:     request.Thumbnail.TopLeftX,
 		TopLeftY:     request.Thumbnail.TopLeftY,

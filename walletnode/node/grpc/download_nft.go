@@ -76,19 +76,19 @@ func (service *downloadNft) contextWithLogPrefix(ctx context.Context) context.Co
 }
 
 //NON IMPLEMETED--->
-func (service *downloadNft) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
+func (service *downloadNft) MeshNodes(_ context.Context, _ []types.MeshedSuperNode) error {
 	return nil
 }
 func (service *downloadNft) SessID() string {
 	return ""
 }
-func (service *downloadNft) Session(ctx context.Context, isPrimary bool) error {
+func (service *downloadNft) Session(_ context.Context, _ bool) error {
 	return nil
 }
-func (service *downloadNft) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
+func (service *downloadNft) AcceptedNodes(_ context.Context) (pastelIDs []string, err error) {
 	return nil, nil
 }
-func (service *downloadNft) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
+func (service *downloadNft) ConnectTo(_ context.Context, _ types.MeshedSuperNode) error {
 	return nil
 }
 

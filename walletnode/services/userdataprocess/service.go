@@ -14,7 +14,7 @@ const (
 	logPrefix = "userdata"
 )
 
-// Service represents a service for the userdata process
+// UserDataService represents a service for the userdata process
 type UserDataService struct {
 	*task.Worker
 

@@ -9,16 +9,20 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/files"
 )
 
+// TaskCleanerFunc pointer to cleaner function
 type TaskCleanerFunc func()
+
+// TaskRunnerFunc pointer to runner function
 type TaskRunnerFunc func(ctx context.Context) error
 
+// WalletNodeTask represents base WalletNode task
 type WalletNodeTask struct {
 	task.Task
 
 	LogPrefix string
 }
 
-// Run starts the task
+// RunHelper starts the task
 func (task *WalletNodeTask) RunHelper(ctx context.Context, run TaskRunnerFunc, clean TaskCleanerFunc) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", task.LogPrefix, task.ID()))
 
@@ -50,7 +54,7 @@ func (task *WalletNodeTask) RemoveFile(file *files.File) {
 	}
 }
 
-// NewTask returns a new Task instance.
+// NewWalletNodeTask returns a new WalletNodeTask instance.
 func NewWalletNodeTask(logPrefix string) *WalletNodeTask {
 	return &WalletNodeTask{
 		Task:      task.New(StatusTaskStarted),

@@ -19,7 +19,7 @@ const (
 	defaultImageTTL = time.Second * 3600 // 1 hour
 )
 
-// Service represents a service for the registration NFT.
+// NftRegistrationService represents a service for the registration NFT.
 type NftRegistrationService struct {
 	*task.Worker
 

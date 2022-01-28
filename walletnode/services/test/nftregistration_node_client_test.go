@@ -63,7 +63,7 @@ func TestRegisterArtworkNodeConnect(t *testing.T) {
 			//set up node client only
 			testCase.node.ClientInterface = clientMock.Client
 
-			//testCase.node.NodeMaker = service.RegisterArtworkNodeMaker{}
+			//testCase.node.RealNodeMaker = service.RegisterArtworkNodeMaker{}
 
 			//assertion error
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))

@@ -2,16 +2,21 @@ package nftsearch
 
 import "github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 
-// NftSearchQueryField represents artsearch query-able field
-type NftSearchQueryField string
+// NftSearchingQueryField represents artsearch query-able field
+type NftSearchingQueryField string
 
 // List of types of activation ticket.
 const (
-	NftSearchArtistName NftSearchQueryField = "artist_name"
-	NftSearchArtTitle   NftSearchQueryField = "art_title"
-	NftSearchSeries     NftSearchQueryField = "series"
-	NftSearchDescr      NftSearchQueryField = "descr"
-	NftSearchKeyword    NftSearchQueryField = "keyword"
+	//NftSearchArtistName is field
+	NftSearchArtistName NftSearchingQueryField = "artist_name"
+	//NftSearchArtTitle is field
+	NftSearchArtTitle NftSearchingQueryField = "art_title"
+	//NftSearchSeries is field
+	NftSearchSeries NftSearchingQueryField = "series"
+	//NftSearchDescr is field
+	NftSearchDescr NftSearchingQueryField = "descr"
+	//NftSearchKeyword is field
+	NftSearchKeyword NftSearchingQueryField = "keyword"
 )
 
 // NftSearchQueryFields returns all query-able field names for an nft
@@ -23,13 +28,13 @@ var NftSearchQueryFields = []string{
 	NftSearchKeyword.String(),
 }
 
-// String returns the string val of NftSearchQueryField
-func (f NftSearchQueryField) String() string {
+// String returns the string val of NftSearchingQueryField
+func (f NftSearchingQueryField) String() string {
 	return string(f)
 }
 
-// NftSearchRequest represents nft search payload
-type NftSearchRequest struct {
+// NftSearchingRequest represents nft search payload
+type NftSearchingRequest struct {
 	// Artist PastelID or special value; mine
 	Artist *string
 	// Number of results to be return
@@ -72,8 +77,9 @@ type NftSearchRequest struct {
 	UserPassphrase string
 }
 
-func FromNftSearchRequest(req *nft.NftSearchPayload) *NftSearchRequest {
-	rq := &NftSearchRequest{
+// FromNftSearchRequest from one to another
+func FromNftSearchRequest(req *nft.NftSearchPayload) *NftSearchingRequest {
+	rq := &NftSearchingRequest{
 		Artist:           req.Artist,
 		Limit:            req.Limit,
 		Query:            req.Query,

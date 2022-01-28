@@ -28,7 +28,7 @@ func TestNewService(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *NftDownloadService
+		want *NftDownloadingService
 	}{
 		{
 			args: args{
@@ -36,7 +36,7 @@ func TestNewService(t *testing.T) {
 				pastelClient: pastelClient.Client,
 				nodeClient:   nodeClient.Client,
 			},
-			want: &NftDownloadService{
+			want: &NftDownloadingService{
 				config:        config,
 				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
 				nodeClient:    nodeClient.Client,
@@ -49,7 +49,7 @@ func TestNewService(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			// t.Parallel()
 
-			service := NewNftFownloadService(testCase.args.config, testCase.args.pastelClient, testCase.args.nodeClient)
+			service := NewNftDownloadService(testCase.args.config, testCase.args.pastelClient, testCase.args.nodeClient)
 			assert.Equal(t, testCase.want.config, service.config)
 			assert.Equal(t, testCase.want.pastelHandler.PastelClient, service.pastelHandler.PastelClient)
 			assert.Equal(t, testCase.want.nodeClient, service.nodeClient)
@@ -83,7 +83,7 @@ func TestServiceRun(t *testing.T) {
 			config := &Config{}
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
-			service := &NftDownloadService{
+			service := &NftDownloadingService{
 				config:        config,
 				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
 				nodeClient:    nodeClient.Client,
@@ -130,7 +130,7 @@ func TestServiceAddTask(t *testing.T) {
 			config := &Config{}
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
-			service := &NftDownloadService{
+			service := &NftDownloadingService{
 				config:        config,
 				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
 				nodeClient:    nodeClient.Client,
@@ -149,9 +149,9 @@ func TestServiceAddTask(t *testing.T) {
 func TestServiceGetTask(t *testing.T) {
 	type args struct {
 		ctx    context.Context
-		ticket *NftDownloadRequest
+		ticket *NftDownloadingRequest
 	}
-	ticket := &NftDownloadRequest{
+	ticket := &NftDownloadingRequest{
 		Txid:               "txid",
 		PastelID:           "pastelid",
 		PastelIDPassphrase: "passphrase",
@@ -159,7 +159,7 @@ func TestServiceGetTask(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *NftDownloadRequest
+		want *NftDownloadingRequest
 	}{
 		{
 			args: args{
@@ -179,7 +179,7 @@ func TestServiceGetTask(t *testing.T) {
 			config := &Config{}
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
-			service := &NftDownloadService{
+			service := &NftDownloadingService{
 				config:        config,
 				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
 				nodeClient:    nodeClient.Client,
@@ -233,7 +233,7 @@ func TestServiceListTasks(t *testing.T) {
 			config := &Config{}
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
-			service := &NftDownloadService{
+			service := &NftDownloadingService{
 				config:        config,
 				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
 				nodeClient:    nodeClient.Client,

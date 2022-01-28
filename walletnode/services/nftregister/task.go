@@ -26,7 +26,7 @@ type NftRegistrationTask struct {
 	RqHandler           *mixins.RQHandler
 
 	service *NftRegistrationService
-	Request *NftRegisterRequest
+	Request *NftRegistrationRequest
 
 	// task data to create RegArt ticket
 	creatorBlockHeight int
@@ -193,10 +193,10 @@ func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
-		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegisterNode)
+		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not NftRegisterNode", someNode.String())
+			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 		group.Go(func() (err error) {
 			err = nftRegNode.SendRegMetadata(ctx, regMetadata)
@@ -219,10 +219,10 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 	// Send image to supernodes for probing.
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
-		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegisterNode)
+		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not NftRegisterNode", someNode.String())
+			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 		group.Go(func() (err error) {
 			compress, stateOk, err := nftRegNode.ProbeImage(ctx, file)
@@ -282,10 +282,10 @@ func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, f
 	task.ImageHandler.ClearHashes()
 
 	for _, someNode := range task.MeshHandler.Nodes {
-		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegisterNode)
+		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not NftRegisterNode", someNode.String())
+			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 		group.Go(func() error {
 			hash1, hash2, hash3, err := nftRegNode.UploadImageWithThumbnail(ctx, file, thumbnail)
@@ -382,10 +382,10 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 	var fees []int64
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
-		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegisterNode)
+		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not NftRegisterNode", someNode.String())
+			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 		// TODO: Fix this when method to generate key1 and key2 are finalized
 		key1 := "key1-" + uuid.New().String()
@@ -433,10 +433,10 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
-		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegisterNode)
+		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not NftRegisterNode", someNode.String())
+			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 		group.Go(func() error {
 			ticketTxid, err := nftRegNode.SendPreBurntFeeTxid(ctx, task.burnTxid)
@@ -467,7 +467,7 @@ func (task *NftRegistrationTask) removeArtifacts() {
 }
 
 // NewNFTRegistrationTask returns a new Task instance.
-func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegisterRequest) *NftRegistrationTask {
+func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistrationRequest) *NftRegistrationTask {
 	task := &NftRegistrationTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 		service:        service,

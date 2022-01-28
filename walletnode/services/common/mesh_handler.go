@@ -13,11 +13,12 @@ import (
 	"time"
 )
 
+// MeshHandler provides networking functionality, including mesh
 type MeshHandler struct {
 	task          *WalletNodeTask
 	pastelHandler *mixins.PastelHandler
 
-	nodeMaker  node.NodeMaker
+	nodeMaker  node.RealNodeMaker
 	nodeClient node.ClientInterface
 
 	// TODO: make config interface and use it here instead of individual items
@@ -32,8 +33,9 @@ type MeshHandler struct {
 	Nodes SuperNodeList
 }
 
+// NewMeshHandler returns new NewMeshHandler
 func NewMeshHandler(task *WalletNodeTask,
-	nodeClient node.ClientInterface, nodeMaker node.NodeMaker,
+	nodeClient node.ClientInterface, nodeMaker node.RealNodeMaker,
 	pastelHandler *mixins.PastelHandler,
 	pastelID string, passphrase string,
 	minSNs int, connectToNodeTimeout time.Duration, acceptNodesTimeout time.Duration, connectToNextNodeDelay time.Duration,
@@ -52,7 +54,7 @@ func NewMeshHandler(task *WalletNodeTask,
 	}
 }
 
-// SetupMeshOfNSupernodesNodes
+// SetupMeshOfNSupernodesNodes sets Mesh
 func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, string, error) {
 
 	// Get current block height & hash
@@ -78,6 +80,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 	return blockNum, blockHash, nil
 }
 
+// ConnectToNSuperNodes sets single simple connection to N SNs
 func (m MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int) error {
 
 	connectedNodes, err := m.findNValidTopSuperNodes(ctx, n)
@@ -343,7 +346,7 @@ func (m *MeshHandler) ConnectionsSupervisor(ctx context.Context, cancel context.
 	return nodesDone
 }
 
-// ValidBurnTxID returns whether the burn txid is valid at ALL SNs
+// CheckSNReportedState returns SNs state
 func (m *MeshHandler) CheckSNReportedState() bool {
 	for _, someNode := range m.Nodes {
 		if !someNode.IsRemoteState() {
@@ -353,7 +356,7 @@ func (m *MeshHandler) CheckSNReportedState() bool {
 	return true
 }
 
-// DisconnectInactive disconnects nodes which were not marked as activated.
+// DisconnectInactiveNodes disconnects nodes which were not marked as activated.
 func (m *MeshHandler) DisconnectInactiveNodes(ctx context.Context) {
 	log.WithContext(ctx).Debug("close connections to inactive supernodes")
 
@@ -389,11 +392,13 @@ func (m *MeshHandler) disconnectFromNode(ctx context.Context, someNode *SuperNod
 	return err
 }
 
+// AddNewNode adds new SN to the (internal) collection
 func (m *MeshHandler) AddNewNode(address string, pastelID string) {
 	m.Nodes.AddNewNode(m.nodeClient, address, pastelID, m.nodeMaker)
 }
 
-func NewMeshHandlerSimple(nodeClient node.ClientInterface, nodeMaker node.NodeMaker) *MeshHandler {
+// NewMeshHandlerSimple returns new MeshHandlerSimple
+func NewMeshHandlerSimple(nodeClient node.ClientInterface, nodeMaker node.RealNodeMaker) *MeshHandler {
 	return &MeshHandler{
 		nodeMaker:  nodeMaker,
 		nodeClient: nodeClient,

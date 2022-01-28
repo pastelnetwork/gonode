@@ -15,15 +15,15 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// SenseRegisterTask is the task of registering new nft.
-type SenseRegisterTask struct {
+// SenseRegistrationTask is the task of registering new nft.
+type SenseRegistrationTask struct {
 	*common.WalletNodeTask
 
 	MeshHandler         *common.MeshHandler
 	FingerprintsHandler *mixins.FingerprintsHandler
 
 	service *SenseRegistrationService
-	Request *SenseRegisterRequest
+	Request *SenseRegistrationRequest
 
 	// data to create ticket
 	creatorBlockHeight int
@@ -40,11 +40,11 @@ type SenseRegisterTask struct {
 }
 
 // Run starts the task
-func (task *SenseRegisterTask) Run(ctx context.Context) error {
+func (task *SenseRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
-func (task *SenseRegisterTask) run(ctx context.Context) error {
+func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -144,7 +144,7 @@ func (task *SenseRegisterTask) run(ctx context.Context) error {
 }
 
 // sendActionMetadata sends Action Ticket metadata to supernodes
-func (task *SenseRegisterTask) sendActionMetadata(ctx context.Context) error {
+func (task *SenseRegistrationTask) sendActionMetadata(ctx context.Context) error {
 	if task.creatorBlockHash == "" {
 		return errors.New("empty current block hash")
 	}
@@ -181,7 +181,7 @@ func (task *SenseRegisterTask) sendActionMetadata(ctx context.Context) error {
 
 // ProbeImage sends the image to supernodes for image analysis, such as fingerprint, rareness score, NSWF.
 // Add received fingerprints into Fingerprint handler
-func (task *SenseRegisterTask) ProbeImage(ctx context.Context, file *files.File, fileName string) error {
+func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.File, fileName string) error {
 	log.WithContext(ctx).WithField("filename", fileName).Debug("probe image")
 
 	task.FingerprintsHandler.Clear()
@@ -228,7 +228,7 @@ func (task *SenseRegisterTask) ProbeImage(ctx context.Context, file *files.File,
 	return nil
 }
 
-func (task *SenseRegisterTask) createSenseTicket(_ context.Context) error {
+func (task *SenseRegistrationTask) createSenseTicket(_ context.Context) error {
 	if task.dataHash == nil ||
 		task.FingerprintsHandler.DDAndFingerprintsIDs == nil {
 		return common.ErrEmptyDatahash
@@ -252,7 +252,7 @@ func (task *SenseRegisterTask) createSenseTicket(_ context.Context) error {
 	return nil
 }
 
-func (task *SenseRegisterTask) signTicket(ctx context.Context) error {
+func (task *SenseRegistrationTask) signTicket(ctx context.Context) error {
 	data, err := pastel.EncodeActionTicket(task.actionTicket)
 	if err != nil {
 		return errors.Errorf("encode sense ticket %w", err)
@@ -267,7 +267,7 @@ func (task *SenseRegisterTask) signTicket(ctx context.Context) error {
 }
 
 // uploadSignedTicket uploads sense ticket  and its signature to super nodes
-func (task *SenseRegisterTask) uploadSignedTicket(ctx context.Context) error {
+func (task *SenseRegistrationTask) uploadSignedTicket(ctx context.Context) error {
 	if task.serializedTicket == nil {
 		return errors.Errorf("uploading ticket: serializedTicket is empty")
 	}
@@ -304,7 +304,7 @@ func (task *SenseRegisterTask) uploadSignedTicket(ctx context.Context) error {
 	return group.Wait()
 }
 
-func (task *SenseRegisterTask) activateActionTicket(ctx context.Context) (string, error) {
+func (task *SenseRegistrationTask) activateActionTicket(ctx context.Context) (string, error) {
 	request := pastel.ActivateActionRequest{
 		RegTxID:    task.regSenseTxid,
 		BlockNum:   task.creatorBlockHeight,
@@ -317,7 +317,7 @@ func (task *SenseRegisterTask) activateActionTicket(ctx context.Context) (string
 }
 
 // uploadActionAct uploads action act to primary node
-func (task *SenseRegisterTask) uploadActionAct(ctx context.Context, activateTxID string) error {
+func (task *SenseRegistrationTask) uploadActionAct(ctx context.Context, activateTxID string) error {
 	group, _ := errgroup.WithContext(ctx)
 
 	for _, someNode := range task.MeshHandler.Nodes {
@@ -335,16 +335,16 @@ func (task *SenseRegisterTask) uploadActionAct(ctx context.Context, activateTxID
 	return group.Wait()
 }
 
-func (task *SenseRegisterTask) removeArtifacts() {
+func (task *SenseRegistrationTask) removeArtifacts() {
 	if task.Request != nil {
 		task.RemoveFile(task.Request.Image)
 	}
 }
 
-// NewSenseRegisterTask returns a new SenseRegisterTask instance.
+// NewSenseRegisterTask returns a new SenseRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
-func NewSenseRegisterTask(service *SenseRegistrationService, request *SenseRegisterRequest) *SenseRegisterTask {
-	task := SenseRegisterTask{
+func NewSenseRegisterTask(service *SenseRegistrationService, request *SenseRegistrationRequest) *SenseRegistrationTask {
+	task := SenseRegistrationTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 		service:        service,
 		Request:        request,

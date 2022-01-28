@@ -28,23 +28,23 @@ const (
 	defaultImageTTL = time.Second * 3600 // 1 hour
 )
 
-// NftApiHandler represents services for nfts endpoints.
-type NftApiHandler struct {
+// NftAPIHandler represents services for nfts endpoints.
+type NftAPIHandler struct {
 	*Common
 	register *nftregister.NftRegistrationService
-	search   *nftsearch.NftSearchService
-	download *nftdownload.NftDownloadService
+	search   *nftsearch.NftSearchingService
+	download *nftdownload.NftDownloadingService
 	db       storage.KeyValue
 	imageTTL time.Duration
 }
 
 // APIKeyAuth implements the authorization logic for the APIKey security scheme.
-func (service *NftApiHandler) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
+func (service *NftAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
 	return ctx, nil
 }
 
 // Mount configures the mux to serve the nfts endpoints.
-func (service *NftApiHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+func (service *NftAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := nft.NewEndpoints(service)
 	srv := server.New(
 		endpoints,
@@ -66,8 +66,9 @@ func (service *NftApiHandler) Mount(ctx context.Context, mux goahttp.Muxer) goah
 }
 
 // --- Register NFT ---
+
 // UploadImage uploads an image and return unique image id.
-func (service *NftApiHandler) UploadImage(ctx context.Context, p *nft.UploadImagePayload) (res *nft.Image, err error) {
+func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImagePayload) (res *nft.Image, err error) {
 	if p.Filename == nil {
 		return nil, nft.MakeBadRequest(errors.New("file not specified"))
 	}
@@ -85,7 +86,7 @@ func (service *NftApiHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 }
 
 // Register runs registers process for the new NFT.
-func (service *NftApiHandler) Register(_ context.Context, p *nft.RegisterPayload) (res *nft.RegisterResult, err error) {
+func (service *NftAPIHandler) Register(_ context.Context, p *nft.RegisterPayload) (res *nft.RegisterResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
@@ -98,7 +99,7 @@ func (service *NftApiHandler) Register(_ context.Context, p *nft.RegisterPayload
 }
 
 // RegisterTaskState streams the state of the registration process.
-func (service *NftApiHandler) RegisterTaskState(ctx context.Context, p *nft.RegisterTaskStatePayload, stream nft.RegisterTaskStateServerStream) (err error) {
+func (service *NftAPIHandler) RegisterTaskState(ctx context.Context, p *nft.RegisterTaskStatePayload, stream nft.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
 	task := service.register.GetTask(p.TaskID)
@@ -129,7 +130,7 @@ func (service *NftApiHandler) RegisterTaskState(ctx context.Context, p *nft.Regi
 }
 
 // RegisterTask returns a single task.
-func (service *NftApiHandler) RegisterTask(_ context.Context, p *nft.RegisterTaskPayload) (res *nft.Task, err error) {
+func (service *NftAPIHandler) RegisterTask(_ context.Context, p *nft.RegisterTaskPayload) (res *nft.Task, err error) {
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
 		return nil, nft.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
@@ -145,7 +146,7 @@ func (service *NftApiHandler) RegisterTask(_ context.Context, p *nft.RegisterTas
 }
 
 // RegisterTasks returns list of all tasks.
-func (service *NftApiHandler) RegisterTasks(_ context.Context) (res nft.TaskCollection, err error) {
+func (service *NftAPIHandler) RegisterTasks(_ context.Context) (res nft.TaskCollection, err error) {
 	tasks := service.register.Tasks()
 	for _, task := range tasks {
 		res = append(res, &nft.Task{
@@ -157,8 +158,8 @@ func (service *NftApiHandler) RegisterTasks(_ context.Context) (res nft.TaskColl
 	return res, nil
 }
 
-// --- Download registered NFT ---
-func (service *NftApiHandler) Download(ctx context.Context, p *nft.NftDownloadPayload) (res *nft.DownloadResult, err error) {
+// Download registered NFT
+func (service *NftAPIHandler) Download(ctx context.Context, p *nft.NftDownloadPayload) (res *nft.DownloadResult, err error) {
 	log.WithContext(ctx).Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
 	taskID := service.download.AddTask(p)
@@ -193,8 +194,9 @@ func (service *NftApiHandler) Download(ctx context.Context, p *nft.NftDownloadPa
 }
 
 // --- Search registered NFTs and return details ---
-// ArtSearch searches for NFT & streams the result based on filters
-func (service *NftApiHandler) NftSearch(ctx context.Context, p *nft.NftSearchPayload, stream nft.NftSearchServerStream) error {
+
+// NftSearch searches for NFT & streams the result based on filters
+func (service *NftAPIHandler) NftSearch(ctx context.Context, p *nft.NftSearchPayload, stream nft.NftSearchServerStream) error {
 	defer stream.Close()
 
 	taskID := service.search.AddTask(p)
@@ -222,8 +224,8 @@ func (service *NftApiHandler) NftSearch(ctx context.Context, p *nft.NftSearchPay
 	}
 }
 
-// ArtworkGet returns NFT detail
-func (service *NftApiHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) (res *nft.NftDetail, err error) {
+// NftGet returns NFT detail
+func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) (res *nft.NftDetail, err error) {
 	ticket, err := service.search.RegTicket(ctx, p.Txid)
 	if err != nil {
 		return nil, nft.MakeBadRequest(err)
@@ -239,9 +241,9 @@ func (service *NftApiHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 	return res, nil
 }
 
-// NewNftApiHandler returns the artworks NftApiHandler implementation.
-func NewNftApiHandler(register *nftregister.NftRegistrationService, search *nftsearch.NftSearchService, download *nftdownload.NftDownloadService) *NftApiHandler {
-	return &NftApiHandler{
+// NewNftAPIHandler returns the artworks NftAPIHandler implementation.
+func NewNftAPIHandler(register *nftregister.NftRegistrationService, search *nftsearch.NftSearchingService, download *nftdownload.NftDownloadingService) *NftAPIHandler {
+	return &NftAPIHandler{
 		Common:   NewCommon(),
 		register: register,
 		search:   search,

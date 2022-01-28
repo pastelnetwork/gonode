@@ -14,7 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// Task is the task of registering new Nft.
+// NftRegistrationTask is the task of registering new Nft.
 type NftRegistrationTask struct {
 	*common.SuperNodeTask
 	*common.DupeDetectionHandler

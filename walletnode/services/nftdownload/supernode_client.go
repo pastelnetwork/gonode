@@ -2,15 +2,17 @@ package nftdownload
 
 import "github.com/pastelnetwork/gonode/walletnode/node"
 
-type NftDownloadNodeMaker struct {
-	node.NodeMaker
+// NftDownloadingNodeMaker makes class DownloadNft for SuperNodeAPIInterface
+type NftDownloadingNodeMaker struct {
+	node.RealNodeMaker
 }
 
-func (maker NftDownloadNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
-	return &NftDownloadNode{DownloadNftInterface: conn.DownloadNft()}
+// MakeNode makes class DownloadNft for SuperNodeAPIInterface
+func (maker NftDownloadingNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
+	return &NftDownloadingNode{DownloadNftInterface: conn.DownloadNft()}
 }
 
-// Node represent supernode connection.
-type NftDownloadNode struct {
+// NftDownloadingNode represent supernode connection.
+type NftDownloadingNode struct {
 	node.DownloadNftInterface
 }

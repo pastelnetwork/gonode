@@ -134,7 +134,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
 
 	// Business logic services
-	// ----NftApiHandler Services----
+	// ----NftAPIHandler Services----
 	nodeClient := grpc.NewClient(pastelClient)
 
 	db := memory.NewKeyValue()
@@ -158,20 +158,20 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	nftRegister := nftregister.NewService(&config.ArtworkRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
 	nftSearch := nftsearch.NewNftSearchService(&config.ArtworkSearch, pastelClient, nodeClient)
-	nftDownload := nftdownload.NewNftFownloadService(&config.ArtworkDownload, pastelClient, nodeClient)
+	nftDownload := nftdownload.NewNftDownloadService(&config.ArtworkDownload, pastelClient, nodeClient)
 
-	// ----UserdataApiHandler Services----
+	// ----UserdataAPIHandler Services----
 	userdataNodeClient := grpc.NewClient(pastelClient)
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 
-	// SenseApiHandler services
+	// SenseAPIHandler services
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
 
 	// api service
 	server := api.NewAPIServer(config.API,
-		services.NewNftApiHandler(nftRegister, nftSearch, nftDownload),
-		services.NewUserdataApiHandler(userdataProcess),
-		services.NewSenseApiHandler(senseRegister),
+		services.NewNftAPIHandler(nftRegister, nftSearch, nftDownload),
+		services.NewUserdataAPIHandler(userdataProcess),
+		services.NewSenseAPIHandler(senseRegister),
 		services.NewSwagger(),
 	)
 

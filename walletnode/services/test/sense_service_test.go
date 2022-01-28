@@ -172,7 +172,7 @@ func TestNodesSendImage(t *testing.T) {
 			nodeTask := &common.WalletNodeTask{Task: taskClient}
 
 			fpHandler := service2.NewFingerprintsHandler(pslHandler)
-			srvTask := service.SenseRegisterTask{WalletNodeTask: nodeTask}
+			srvTask := service.SenseRegistrationTask{WalletNodeTask: nodeTask}
 			srvTask.MeshHandler = meshHandler
 			srvTask.FingerprintsHandler = fpHandler
 

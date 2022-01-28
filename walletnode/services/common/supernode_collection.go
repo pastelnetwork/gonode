@@ -7,10 +7,11 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
+// SuperNodeList keeps list of SuperNodeClient for networking
 type SuperNodeList []*SuperNodeClient
 
 // AddNewNode created and adds a new node to the list.
-func (nodes *SuperNodeList) AddNewNode(client node.ClientInterface, address string, pastelID string, nodeMaker node.NodeMaker) {
+func (nodes *SuperNodeList) AddNewNode(client node.ClientInterface, address string, pastelID string, nodeMaker node.RealNodeMaker) {
 	someNode := NewSuperNode(client, address, pastelID, nodeMaker)
 	*nodes = append(*nodes, someNode)
 }

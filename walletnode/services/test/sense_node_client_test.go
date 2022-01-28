@@ -63,7 +63,7 @@ func TestRegisterSenseNodeConnect(t *testing.T) {
 			//set up node client only
 			testCase.node.ClientInterface = clientMock.Client
 
-			testCase.node.NodeMaker = service.RegisterSenseNodeMaker{}
+			testCase.node.RealNodeMaker = service.RegisterSenseNodeMaker{}
 
 			//assertion error
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))

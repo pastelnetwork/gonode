@@ -2,15 +2,17 @@ package nftsearch
 
 import "github.com/pastelnetwork/gonode/walletnode/node"
 
-type NftSearchNodeMaker struct {
-	node.NodeMaker
+// NftSearchingNodeMaker makes class DownloadNft for SuperNodeAPIInterface
+type NftSearchingNodeMaker struct {
+	node.RealNodeMaker
 }
 
-func (maker NftSearchNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
-	return &NftSearchNode{DownloadNftInterface: conn.DownloadNft()}
+// MakeNode makes class DownloadNft for SuperNodeAPIInterface
+func (maker NftSearchingNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
+	return &NftSearchingNode{DownloadNftInterface: conn.DownloadNft()}
 }
 
-// Node represent supernode connection.
-type NftSearchNode struct {
+// NftSearchingNode represent supernode connection.
+type NftSearchingNode struct {
 	node.DownloadNftInterface
 }
