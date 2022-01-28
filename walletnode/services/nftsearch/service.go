@@ -3,11 +3,10 @@ package nftsearch
 import (
 	"context"
 
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
-
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/node"

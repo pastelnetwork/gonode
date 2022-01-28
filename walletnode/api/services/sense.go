@@ -17,7 +17,7 @@ import (
 // SenseApiHandler - SenseApiHandler service
 type SenseApiHandler struct {
 	*Common
-	register *senseregister.SenseRegisterService
+	register *senseregister.SenseRegistrationService
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
@@ -124,7 +124,7 @@ func (service *SenseApiHandler) RegisterTaskState(ctx context.Context, p *sense.
 }
 
 // NewSenseApiHandler returns the swagger OpenAPI implementation.
-func NewSenseApiHandler(register *senseregister.SenseRegisterService) *SenseApiHandler {
+func NewSenseApiHandler(register *senseregister.SenseRegistrationService) *SenseApiHandler {
 	return &SenseApiHandler{
 		Common:   NewCommon(),
 		register: register,

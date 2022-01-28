@@ -187,7 +187,7 @@ package senseregister
 //				rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 //				rqClientMock.ListenOnConnect(testCase.args.connectErr)
 //
-//				service := &SenseRegisterService{
+//				service := &SenseRegistrationService{
 //					pastelClient: pastelClientMock.Client,
 //					nodeClient:   nodeClient.Client,
 //					config:       NewConfig(),
@@ -207,7 +207,7 @@ package senseregister
 //						Task:      taskClient.Task,
 //						LogPrefix: logPrefix,
 //					},
-//					SenseRegisterService: service,
+//					SenseRegistrationService: service,
 //					Request:              Request,
 //				}
 //
@@ -337,11 +337,11 @@ package senseregister
 //				nodes.Add(node.NewNode(nodeClient.Client, n.address, n.pastelID))
 //			}
 //
-//			service := &SenseRegisterService{
+//			service := &SenseRegistrationService{
 //				config: NewConfig(),
 //			}
 //
-//			task := &SenseRegisterTask{SenseRegisterService: service, Request: &SenseRegisterRequest{}}
+//			task := &SenseRegisterTask{SenseRegistrationService: service, Request: &SenseRegisterRequest{}}
 //			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 //
 //			testCase.assertion(t, err)
@@ -441,7 +441,7 @@ package senseregister
 //				pastelClient.ListenOnFindTicketByID(&pastel.IDTicket{}, testCase.args.returnFindIDErr)
 //			}
 //
-//			service := &SenseRegisterService{
+//			service := &SenseRegistrationService{
 //				pastelClient: pastelClient.Client,
 //			}
 //
@@ -450,7 +450,7 @@ package senseregister
 //					Task:      testCase.fields.Task,
 //					LogPrefix: logPrefix,
 //				},
-//				SenseRegisterService: service,
+//				SenseRegistrationService: service,
 //				Request:              testCase.fields.Request,
 //			}
 //			got, err := task.GetTopNodes(testCase.args.ctx)
@@ -469,11 +469,11 @@ package senseregister
 //	t.Parallel()
 //
 //	type args struct {
-//		service *SenseRegisterService
+//		service *SenseRegistrationService
 //		Request *SenseRegisterRequest
 //	}
 //
-//	service := &SenseRegisterService{}
+//	service := &SenseRegistrationService{}
 //	Request := &SenseRegisterRequest{}
 //
 //	testCases := []struct {
@@ -487,7 +487,7 @@ package senseregister
 //			},
 //			want: &SenseRegisterTask{
 //				WalletNodeTask:       common.NewWalletNodeTask(logPrefix),
-//				SenseRegisterService: service,
+//				SenseRegistrationService: service,
 //				Request:              Request,
 //			},
 //		},
@@ -499,7 +499,7 @@ package senseregister
 //			t.Parallel()
 //
 //			task := NewSenseRegisterTask(testCase.args.service, testCase.args.Request)
-//			assert.Equal(t, testCase.want.SenseRegisterService, task.SenseRegisterService)
+//			assert.Equal(t, testCase.want.SenseRegistrationService, task.SenseRegistrationService)
 //			assert.Equal(t, testCase.want.Request, task.Request)
 //			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 //		})
@@ -524,7 +524,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "test-id",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: NewConfig(),
 //					},
 //				},
@@ -542,7 +542,7 @@ package senseregister
 //						AppPastelID:           "test-id",
 //						AppPastelIDPassphrase: "test-name",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: NewConfig(),
 //					},
 //				},
@@ -561,7 +561,7 @@ package senseregister
 //			pastelClientMock := pastelMock.NewMockClient(t)
 //			pastelClientMock.ListenOnGetBlockCount(int32(blockNum), nil).
 //				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
-//			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
+//			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 //
 //			tc.want = &pastel.ActionTicket{
 //				Version:    1,
@@ -613,7 +613,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "test-id",
 //					},
-//					SenseRegisterService: &SenseRegisterService{},
+//					SenseRegistrationService: &SenseRegistrationService{},
 //				},
 //				blockNum: int32(10),
 //				blockInfo: &pastel.GetBlockVerbose1Result{
@@ -629,7 +629,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "test-id",
 //					},
-//					SenseRegisterService: &SenseRegisterService{},
+//					SenseRegistrationService: &SenseRegistrationService{},
 //				},
 //				blockNum: int32(10),
 //				blockInfo: &pastel.GetBlockVerbose1Result{
@@ -646,7 +646,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "test-id",
 //					},
-//					SenseRegisterService: &SenseRegisterService{},
+//					SenseRegistrationService: &SenseRegistrationService{},
 //				},
 //				blockNum: int32(10),
 //				blockInfo: &pastel.GetBlockVerbose1Result{
@@ -668,7 +668,7 @@ package senseregister
 //			pastelClientMock := pastelMock.NewMockClient(t)
 //			pastelClientMock.ListenOnGetBlockCount(tc.args.blockNum, tc.args.blockCountErr).
 //				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
-//			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
+//			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 //
 //			tc.wantArtistblockHash = tc.args.blockInfo.Hash
 //
@@ -702,7 +702,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "testid",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{},
 //					},
 //					actionTicket: &pastel.ActionTicket{},
@@ -716,7 +716,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "testid",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{},
 //					},
 //					actionTicket: &pastel.ActionTicket{},
@@ -734,7 +734,7 @@ package senseregister
 //
 //			pastelClientMock := pastelMock.NewMockClient(t)
 //			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-//			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
+//			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 //
 //			err := tc.args.task.signTicket(context.Background())
 //			if tc.wantErr != nil {
@@ -766,7 +766,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "testid",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{},
 //					},
 //				},
@@ -780,7 +780,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "testid",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{},
 //					},
 //				},
@@ -795,7 +795,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "testid",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{},
 //					},
 //				},
@@ -810,7 +810,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "testid",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{},
 //					},
 //				},
@@ -830,7 +830,7 @@ package senseregister
 //			pastelClientMock.ListenOnGetBlockCount(1, nil)
 //			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.args.getRawTransactionVerbose1Ret,
 //				tc.args.getRawTransactionVerbose1RetErr)
-//			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
+//			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 //
 //			ctx, cancel := context.WithCancel(context.Background())
 //			if tc.args.ctxDone {
@@ -943,7 +943,7 @@ package senseregister
 //			args: args{
 //				isValidBurnTxID: true,
 //				task: &SenseRegisterTask{
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{
 //							thumbnailSize: 224,
 //						},
@@ -965,7 +965,7 @@ package senseregister
 //			args: args{
 //				isValidBurnTxID: true,
 //				task: &SenseRegisterTask{
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{
 //							thumbnailSize: 224,
 //						},
@@ -1001,7 +1001,7 @@ package senseregister
 //			pastelClientMock := pastelMock.NewMockClient(t)
 //			pastelClientMock.ListenOnVerify(true, nil)
 //
-//			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
+//			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 //
 //			newT := &common.WalletNodeTask{
 //				Task:      task.New(&state.Status{}),
@@ -1065,7 +1065,7 @@ package senseregister
 //						AppPastelID:           "testid",
 //						AppPastelIDPassphrase: "testpassphrase",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{},
 //					},
 //					actionTicket: &pastel.ActionTicket{},
@@ -1148,7 +1148,7 @@ package senseregister
 //						AppPastelID:           "testid",
 //						AppPastelIDPassphrase: "testpassphrase",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{},
 //					},
 //					actionTicket: &pastel.ActionTicket{},
@@ -1167,7 +1167,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "testid",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{},
 //					},
 //					actionTicket: &pastel.ActionTicket{},
@@ -1186,7 +1186,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "testid",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{NumberSuperNodes: 1},
 //					},
 //					actionTicket: &pastel.ActionTicket{},
@@ -1215,7 +1215,7 @@ package senseregister
 //				ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
 //				ListenOnMasterNodesTop(tc.args.masterNodes, tc.args.masterNodesTopErr)
 //
-//			tc.args.task.SenseRegisterService.pastelClient = pastelClientMock
+//			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 //
 //			//need to remove generate thumbnail file
 //			newT := &common.WalletNodeTask{
@@ -1236,7 +1236,7 @@ package senseregister
 //			if tc.wantErr == nil {
 //				nodeClient.ListenOnMeshNodes(nil)
 //			}
-//			tc.args.task.SenseRegisterService.nodeClient = nodeClient
+//			tc.args.task.SenseRegistrationService.nodeClient = nodeClient
 //
 //			tc.args.task.Request.Image = artworkFile
 //			nodes := node.List{}
@@ -1277,7 +1277,7 @@ package senseregister
 //					Request: &SenseRegisterRequest{
 //						AppPastelID: "test-id",
 //					},
-//					SenseRegisterService: &SenseRegisterService{
+//					SenseRegistrationService: &SenseRegistrationService{
 //						config: NewConfig(),
 //					},
 //					signatures: make([][]byte, 3),

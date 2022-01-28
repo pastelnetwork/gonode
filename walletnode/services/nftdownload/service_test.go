@@ -3,6 +3,7 @@ package nftdownload
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"testing"
 	"time"
 
@@ -36,9 +37,9 @@ func TestNewService(t *testing.T) {
 				nodeClient:   nodeClient.Client,
 			},
 			want: &NftDownloadService{
-				config:       config,
-				pastelClient: pastelClient.Client,
-				nodeClient:   nodeClient.Client,
+				config:        config,
+				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.Client,
 			},
 		},
 	}
@@ -50,7 +51,7 @@ func TestNewService(t *testing.T) {
 
 			service := NewNftFownloadService(testCase.args.config, testCase.args.pastelClient, testCase.args.nodeClient)
 			assert.Equal(t, testCase.want.config, service.config)
-			assert.Equal(t, testCase.want.pastelClient, service.pastelClient)
+			assert.Equal(t, testCase.want.pastelHandler.PastelClient, service.pastelHandler.PastelClient)
 			assert.Equal(t, testCase.want.nodeClient, service.nodeClient)
 		})
 	}
@@ -83,10 +84,10 @@ func TestServiceRun(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
 			service := &NftDownloadService{
-				config:       config,
-				pastelClient: pastelClient.Client,
-				nodeClient:   nodeClient.Client,
-				Worker:       task.NewWorker(),
+				config:        config,
+				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.Client,
+				Worker:        task.NewWorker(),
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
 			defer cancel()
@@ -98,25 +99,25 @@ func TestServiceRun(t *testing.T) {
 
 func TestServiceAddTask(t *testing.T) {
 	type args struct {
-		ctx    context.Context
-		ticket *NftDownloadRequest
+		ctx     context.Context
+		payload *nft.NftDownloadPayload
 	}
-	ticket := &NftDownloadRequest{
-		Txid:               "txid",
-		PastelID:           "pastelid",
-		PastelIDPassphrase: "passphrase",
+	payload := &nft.NftDownloadPayload{
+		Txid: "txid",
+		Pid:  "pastelid",
+		Key:  "passphrase",
 	}
 
 	testCases := []struct {
 		args args
-		want *NftDownloadRequest
+		want *nft.NftDownloadPayload
 	}{
 		{
 			args: args{
-				ctx:    context.Background(),
-				ticket: ticket,
+				ctx:     context.Background(),
+				payload: payload,
 			},
-			want: ticket,
+			want: payload,
 		},
 	}
 
@@ -130,15 +131,15 @@ func TestServiceAddTask(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
 			service := &NftDownloadService{
-				config:       config,
-				pastelClient: pastelClient.Client,
-				nodeClient:   nodeClient.Client,
-				Worker:       task.NewWorker(),
+				config:        config,
+				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.Client,
+				Worker:        task.NewWorker(),
 			}
 			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
-			taskID := service.AddTask(testCase.args.ticket)
+			taskID := service.AddTask(testCase.args.payload)
 			task := service.GetTask(taskID)
 			assert.Equal(t, testCase.want, task.Request)
 		})
@@ -179,10 +180,10 @@ func TestServiceGetTask(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
 			service := &NftDownloadService{
-				config:       config,
-				pastelClient: pastelClient.Client,
-				nodeClient:   nodeClient.Client,
-				Worker:       task.NewWorker(),
+				config:        config,
+				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.Client,
+				Worker:        task.NewWorker(),
 			}
 			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
@@ -199,27 +200,27 @@ func TestServiceGetTask(t *testing.T) {
 
 func TestServiceListTasks(t *testing.T) {
 	type args struct {
-		ctx     context.Context
-		tickets []*NftDownloadRequest
+		ctx      context.Context
+		payloads []*nft.NftDownloadPayload
 	}
-	ticket := &NftDownloadRequest{
-		Txid:               "txid",
-		PastelID:           "pastelid",
-		PastelIDPassphrase: "passphrase",
+	payload := &nft.NftDownloadPayload{
+		Txid: "txid",
+		Pid:  "pastelid",
+		Key:  "passphrase",
 	}
-	var tickets []*NftDownloadRequest
-	tickets = append(tickets, ticket)
+	var payloads []*nft.NftDownloadPayload
+	payloads = append(payloads, payload)
 
 	testCases := []struct {
 		args args
-		want []*NftDownloadRequest
+		want []*nft.NftDownloadPayload
 	}{
 		{
 			args: args{
-				ctx:     context.Background(),
-				tickets: tickets,
+				ctx:      context.Background(),
+				payloads: payloads,
 			},
-			want: tickets,
+			want: payloads,
 		},
 	}
 
@@ -233,16 +234,16 @@ func TestServiceListTasks(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			nodeClient := test.NewMockClient(t)
 			service := &NftDownloadService{
-				config:       config,
-				pastelClient: pastelClient.Client,
-				nodeClient:   nodeClient.Client,
-				Worker:       task.NewWorker(),
+				config:        config,
+				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.Client,
+				Worker:        task.NewWorker(),
 			}
 			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
 			var listTaskID []string
-			for _, ticket := range testCase.args.tickets {
+			for _, ticket := range testCase.args.payloads {
 				listTaskID = append(listTaskID, service.AddTask(ticket))
 			}
 

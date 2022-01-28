@@ -7,20 +7,17 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
-	"sync"
 )
 
 type ThumbnailHandler struct {
-	meshHandler *mixins.MeshHandler
+	meshHandler *common.MeshHandler
 
-	fetchersChan       chan request
-	closeFetchersMutex sync.Mutex
-	nodesDone          chan struct{}
+	fetchersChan chan request
+	nodesDone    chan struct{}
 }
 
 // New returns a new instance of ThumbnailHandler as Helper
-func NewThumbnailHandler(meshHandler *mixins.MeshHandler) *ThumbnailHandler {
+func NewThumbnailHandler(meshHandler *common.MeshHandler) *ThumbnailHandler {
 	return &ThumbnailHandler{
 		meshHandler:  meshHandler,
 		fetchersChan: make(chan request),
@@ -51,7 +48,7 @@ func (h *ThumbnailHandler) Connect(ctx context.Context, num int, cancel context.
 	fetchersErrs, err := h.setFetchers(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Could not setup thumbnail fetcher")
-		return errors.Errorf("setup thumbnail fetchers: %w (%w)", err, fetchersErrs)
+		return errors.Errorf("setup thumbnail fetchers: %w (%v)", err, fetchersErrs)
 	}
 	return nil
 }
@@ -103,7 +100,7 @@ func (h *ThumbnailHandler) setFetchers(ctx context.Context) ([]error, error) {
 	return downloadErrors, err
 }
 
-func (h *ThumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNodeClient, nodeId string) error {
+func (h *ThumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNodeClient, nodeID string) error {
 	nftSearchNode, ok := someNode.SuperNodeAPIInterface.(*NftSearchNode)
 	if !ok {
 		//TODO: use assert here?
@@ -118,7 +115,7 @@ func (h *ThumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNo
 				return nil
 			}
 
-			log.WithContext(ctx).Debugf("thumb-key: %v-%v", req.key, nodeId)
+			log.WithContext(ctx).Debugf("thumb-key: %v-%v", req.key, nodeID)
 			data, err := nftSearchNode.DownloadThumbnail(ctx, req.key)
 			req.respCh <- &response{err: err, data: data}
 		}

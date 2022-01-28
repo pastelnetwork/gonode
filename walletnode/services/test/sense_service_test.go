@@ -5,11 +5,11 @@ import (
 	"fmt"
 	taskMock "github.com/pastelnetwork/gonode/common/service/task/test"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	service2 "github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/sense_register"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 	service "github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 	"github.com/stretchr/testify/assert"
 	"strings"
@@ -144,7 +144,7 @@ func TestNodesSendImage(t *testing.T) {
 			nodes := common.SuperNodeList{}
 			clients := []*test.Client{}
 
-			meshHandler := mixins.NewMeshHandlerSimple(nil, service.RegisterSenseNodeMaker{})
+			meshHandler := common.NewMeshHandlerSimple(nil, service.RegisterSenseNodeMaker{})
 
 			for _, a := range testCase.nodes {
 				//client mock
@@ -154,7 +154,7 @@ func TestNodesSendImage(t *testing.T) {
 				clients = append(clients, client)
 
 				someNode := common.NewSuperNode(client, a.address, "", service.RegisterSenseNodeMaker{})
-				someNode.SuperNodeAPIInterface = &service.SenseRegisterNode{client.RegisterSense}
+				someNode.SuperNodeAPIInterface = &service.SenseRegistrationNode{RegisterSenseInterface: client.RegisterSense}
 
 				//maker := service.RegisterSenseNodeMaker{}
 				//someNode.SuperNodeAPIInterface = maker.MakeNode(client.Connection)
@@ -165,13 +165,13 @@ func TestNodesSendImage(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(true, nil)
-			pslHandler := mixins.NewPastelHandler(pastelClientMock)
+			pslHandler := service2.NewPastelHandler(pastelClientMock)
 
 			taskClient := taskMock.NewMockTask(t)
 			taskClient.ListenOnUpdateStatus()
 			nodeTask := &common.WalletNodeTask{Task: taskClient}
 
-			fpHandler := mixins.NewFingerprintsHandler(nodeTask, pslHandler)
+			fpHandler := service2.NewFingerprintsHandler(pslHandler)
 			srvTask := service.SenseRegisterTask{WalletNodeTask: nodeTask}
 			srvTask.MeshHandler = meshHandler
 			srvTask.FingerprintsHandler = fpHandler

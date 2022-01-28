@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 
 	"sort"
 
@@ -173,7 +172,7 @@ func NewNftSearchTask(service *NftSearchService, request *NftSearchRequest) *Nft
 		resultChan:     make(chan *RegTicketSearch),
 	}
 
-	meshHandler := mixins.NewMeshHandler(task.WalletNodeTask,
+	meshHandler := common.NewMeshHandler(task.WalletNodeTask,
 		service.nodeClient, &NftSearchNodeMaker{},
 		service.pastelHandler,
 		request.UserPastelID, request.UserPassphrase,
@@ -197,7 +196,7 @@ func NewNftGetSearchTask(service *NftSearchService, pastelID string, passphrase 
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 	}
 
-	meshHandler := mixins.NewMeshHandler(task.WalletNodeTask,
+	meshHandler := common.NewMeshHandler(task.WalletNodeTask,
 		service.nodeClient, &NftSearchNodeMaker{},
 		service.pastelHandler,
 		pastelID, passphrase,

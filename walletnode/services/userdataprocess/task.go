@@ -10,14 +10,13 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 )
 
 // Task is the task of userdata processing.
 type UserDataTask struct {
 	*common.WalletNodeTask
 
-	MeshHandler *mixins.MeshHandler
+	MeshHandler *common.MeshHandler
 
 	service *UserDataService
 
@@ -29,7 +28,7 @@ type UserDataTask struct {
 	userpastelid  string // user pastelid
 	resultChanGet chan *userdata.ProcessRequest
 
-	userdata []userdata.ProcessResult
+	//userdata []userdata.ProcessResult
 
 	err error
 }
@@ -43,10 +42,9 @@ func (task *UserDataTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	maxNode := task.service.config.NumberSuperNodes
 	if task.request == nil {
 		// This is process to retrieve userdata
-		maxNode = 1 // Get data from 1 supernode only, currently we choose the 1st ranked supernode, but this may change later
+		maxNode := 1 // Get data from 1 supernode only, currently we choose the 1st ranked supernode, but this may change later
 
 		if err := task.MeshHandler.ConnectToNSuperNodes(ctx, maxNode); err != nil {
 			return errors.Errorf("connect to top rank nodes: %w", err)
@@ -242,7 +240,7 @@ func NewUserDataTask(service *UserDataService, request *userdata.ProcessRequest,
 		resultChanGet:  make(chan *userdata.ProcessRequest),
 	}
 
-	task.MeshHandler = mixins.NewMeshHandler(task.WalletNodeTask,
+	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
 		service.nodeClient, &UserDataNodeMaker{},
 		service.pastelHandler,
 		request.UserPastelID, request.UserPastelIDPassphrase,

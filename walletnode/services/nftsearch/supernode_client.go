@@ -7,7 +7,7 @@ type NftSearchNodeMaker struct {
 }
 
 func (maker NftSearchNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
-	return &NftSearchNode{DownloadNftInterface: conn.DownloadArtwork()}
+	return &NftSearchNode{DownloadNftInterface: conn.DownloadNft()}
 }
 
 // Node represent supernode connection.

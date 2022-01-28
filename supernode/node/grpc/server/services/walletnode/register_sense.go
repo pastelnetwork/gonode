@@ -18,7 +18,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// RegisterSense represents grpc service for registration artwork.
+// RegisterSense represents grpc service for registration Sense.
 type RegisterSense struct {
 	pb.UnimplementedRegisterSenseServer
 
@@ -30,7 +30,7 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	var task *senseregister.Task
+	var task *senseregister.SenseRegistrationTask
 
 	if sessID, ok := service.SessID(ctx); ok {
 		if task = service.Task(sessID); task == nil {
@@ -55,7 +55,7 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
-	if err := task.Session(ctx, req.IsPrimary); err != nil {
+	if err := task.NetworkHandler.Session(ctx, req.IsPrimary); err != nil {
 		return err
 	}
 
@@ -89,7 +89,7 @@ func (service *RegisterSense) AcceptedNodes(ctx context.Context, req *pb.Accepte
 		return nil, err
 	}
 
-	nodes, err := task.AcceptedNodes(ctx)
+	nodes, err := task.NetworkHandler.AcceptedNodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (service *RegisterSense) ConnectTo(ctx context.Context, req *pb.ConnectToRe
 		return nil, err
 	}
 
-	if err := task.ConnectTo(ctx, req.NodeID, req.SessID); err != nil {
+	if err := task.NetworkHandler.ConnectTo(ctx, req.NodeID, req.SessID); err != nil {
 		return nil, err
 	}
 
@@ -141,7 +141,7 @@ func (service *RegisterSense) MeshNodes(ctx context.Context, req *pb.MeshNodesRe
 		})
 	}
 
-	err = task.MeshNodes(ctx, meshedNodes)
+	err = task.NetworkHandler.MeshNodes(ctx, meshedNodes)
 	return &pb.MeshNodesReply{}, err
 }
 
@@ -294,7 +294,7 @@ func (service *RegisterSense) Desc() *grpc.ServiceDesc {
 }
 
 // NewRegisterSense returns a new RegisterSense instance.
-func NewRegisterSense(service *senseregister.Service) *RegisterSense {
+func NewRegisterSense(service *senseregister.SenseRegistrationService) *RegisterSense {
 	return &RegisterSense{
 		RegisterSense: common.NewRegisterSense(service),
 	}

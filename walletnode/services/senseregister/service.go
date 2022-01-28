@@ -2,7 +2,7 @@ package senseregister
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
+	"github.com/pastelnetwork/gonode/mixins"
 	"time"
 
 	// Package image/jpeg is not used explicitly in the code below,
@@ -26,7 +26,7 @@ const (
 )
 
 // Service represents a service for Sense Open API
-type SenseRegisterService struct {
+type SenseRegistrationService struct {
 	*task.Worker
 	config *Config
 
@@ -36,7 +36,7 @@ type SenseRegisterService struct {
 }
 
 // Run starts worker.
-func (service *SenseRegisterService) Run(ctx context.Context) error {
+func (service *SenseRegistrationService) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
@@ -51,7 +51,7 @@ func (service *SenseRegisterService) Run(ctx context.Context) error {
 }
 
 // Run starts worker. //TODO: make common with the same from NftRegisterService
-func (service *SenseRegisterService) Tasks() []*SenseRegisterTask {
+func (service *SenseRegistrationService) Tasks() []*SenseRegisterTask {
 	var tasks []*SenseRegisterTask
 	for _, task := range service.Worker.Tasks() {
 		tasks = append(tasks, task.(*SenseRegisterTask))
@@ -60,7 +60,7 @@ func (service *SenseRegisterService) Tasks() []*SenseRegisterTask {
 }
 
 // SenseRegisterTask returns the task of the Sense OpenAPI by the given id.
-func (service *SenseRegisterService) GetTask(id string) *SenseRegisterTask {
+func (service *SenseRegistrationService) GetTask(id string) *SenseRegisterTask {
 	if t := service.Worker.Task(id); t != nil {
 		return t.(*SenseRegisterTask)
 	}
@@ -68,7 +68,7 @@ func (service *SenseRegisterService) GetTask(id string) *SenseRegisterTask {
 }
 
 // AddTask create ticket request and start a new task with the given payload
-func (service *SenseRegisterService) AddTask(p *sense.StartProcessingPayload) (string, error) {
+func (service *SenseRegistrationService) AddTask(p *sense.StartProcessingPayload) (string, error) {
 	request := FromSenseRegisterPayload(p)
 
 	// get image filename from storage based on image_id
@@ -91,12 +91,12 @@ func (service *SenseRegisterService) AddTask(p *sense.StartProcessingPayload) (s
 }
 
 // StoreFile stores file into walletnode file storage. //TODO: make common with the same from NftRegisterService
-func (service *SenseRegisterService) StoreFile(ctx context.Context, fileName *string) (string, string, error) {
+func (service *SenseRegistrationService) StoreFile(ctx context.Context, fileName *string) (string, string, error) {
 	return service.ImageHandler.StoreFileNameIntoStorage(ctx, fileName)
 }
 
 // StoreFile stores file into walletnode file storage. //TODO: make common with the same from NftRegisterService
-func (service *SenseRegisterService) ValidateDetailsAndCalculateFee(ctx context.Context, fileID string, fileSignature string, pastelID string) (float64, error) {
+func (service *SenseRegistrationService) ValidateDetailsAndCalculateFee(ctx context.Context, fileID string, fileSignature string, pastelID string) (float64, error) {
 	fileData, err := service.ImageHandler.GetImgData(fileID)
 	if err != nil {
 		return 0.0, err
@@ -127,8 +127,8 @@ func NewService(
 	nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface,
 	db storage.KeyValue,
-) *SenseRegisterService {
-	return &SenseRegisterService{
+) *SenseRegistrationService {
+	return &SenseRegistrationService{
 		Worker:        task.NewWorker(),
 		config:        config,
 		nodeClient:    nodeClient,

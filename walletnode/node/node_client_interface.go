@@ -17,7 +17,7 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
-// Client represents a base connection interface.
+// ClientInterface represents a base connection interface.
 type ClientInterface interface {
 	// Connect connects to the server at the given address.
 	Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (ConnectionInterface, error)
@@ -29,16 +29,17 @@ type ConnectionInterface interface {
 	Close() error
 	// Done returns a channel that's closed when connection is shutdown.
 	Done() <-chan struct{}
-	// RegisterArtwork returns a new RegisterArtwork stream.
-	RegisterArtwork() RegisterNftInterface
-	// DownloadArtwork returns a new DownloadArtwork stream.
-	DownloadArtwork() DownloadNftInterface
+	// RegisterNft returns a new RegisterNft stream.
+	RegisterNft() RegisterNftInterface
+	// DownloadNft returns a new DownloadNft stream.
+	DownloadNft() DownloadNftInterface
 	// ProcessUserdata returns a new ProcessUserdata stream.
 	ProcessUserdata() ProcessUserdataInterface
 	// RegisterSense returns new RegisterSense stream
 	RegisterSense() RegisterSenseInterface
 }
 
+// SuperNodeAPIInterface base API interface
 type SuperNodeAPIInterface interface {
 	// SessID returns the sessID received from the server during the handshake.
 	SessID() (sessID string)
@@ -52,6 +53,7 @@ type SuperNodeAPIInterface interface {
 	MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error
 }
 
+// NodeMaker interface to make concrete node types
 type NodeMaker interface {
 	MakeNode(conn ConnectionInterface) SuperNodeAPIInterface
 }

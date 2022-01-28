@@ -6,7 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
-	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
+	"github.com/pastelnetwork/gonode/supernode/services/nftdownload"
 	"google.golang.org/grpc"
 )
 
@@ -14,15 +14,15 @@ const (
 	downloadImageBufferSize = 32 * 1024
 )
 
-// DownloadArtwork represents grpc service for downloading artwork.
-type DownloadArtwork struct {
-	pb.UnimplementedDownloadArtworkServer
+// DownloadNft represents grpc service for downloading NFT.
+type DownloadNft struct {
+	pb.UnimplementedDownloadNftServer
 
-	*common.DownloadArtwork
+	*common.DownloadNft
 }
 
-// Download downloads artwork by given txid, timestamp and signature.
-func (service *DownloadArtwork) Download(m *pb.DownloadRequest, stream pb.DownloadArtwork_DownloadServer) error {
+// Download downloads Nft by given txid, timestamp and signature.
+func (service *DownloadNft) Download(m *pb.DownloadRequest, stream pb.DownloadNft_DownloadServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 	// Create new task
@@ -65,7 +65,7 @@ func (service *DownloadArtwork) Download(m *pb.DownloadRequest, stream pb.Downlo
 }
 
 // DownloadThumbnail returns thumbnail of given hash
-func (service *DownloadArtwork) DownloadThumbnail(ctx context.Context, req *pb.DownloadThumbnailRequest) (*pb.DownloadThumbnailReply, error) {
+func (service *DownloadNft) DownloadThumbnail(ctx context.Context, req *pb.DownloadThumbnailRequest) (*pb.DownloadThumbnailReply, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	// Create new task
@@ -88,13 +88,13 @@ func (service *DownloadArtwork) DownloadThumbnail(ctx context.Context, req *pb.D
 }
 
 // Desc returns a description of the service.
-func (service *DownloadArtwork) Desc() *grpc.ServiceDesc {
-	return &pb.DownloadArtwork_ServiceDesc
+func (service *DownloadNft) Desc() *grpc.ServiceDesc {
+	return &pb.DownloadNft_ServiceDesc
 }
 
-// NewDownloadArtwork returns a new DownloadArtwork instance.
-func NewDownloadArtwork(service *artworkdownload.Service) *DownloadArtwork {
-	return &DownloadArtwork{
-		DownloadArtwork: common.NewDownloadArtwork(service),
+// NewDownloadNft returns a new DownloadNft instance.
+func NewDownloadNft(service *nftdownload.NftDownloadService) *DownloadNft {
+	return &DownloadNft{
+		DownloadNft: common.NewDownloadNft(service),
 	}
 }

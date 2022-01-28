@@ -21,9 +21,9 @@ message SendSignedDDAndFingerprintsRequest {
 message SendSignedDDAndFingerprintsReply {}
 
 
-message SendArtTicketSignatureRequest {
+message SendNftTicketSignatureRequest {
     string nodeID = 1;
     bytes  signature = 2;
 }
 
-message SendArtTicketSignatureReply {}
+message SendNftTicketSignatureReply {}

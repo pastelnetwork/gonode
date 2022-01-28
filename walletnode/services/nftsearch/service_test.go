@@ -1,11 +1,5 @@
 package nftsearch
 
-import (
-	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/stretchr/testify/assert"
-	"testing"
-)
-
 //
 //import (
 //	"context"
@@ -175,8 +169,8 @@ import (
 //	}
 //}
 //
-func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
-	artTicketBytes, err := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
-	assert.Nil(t, err)
-	ticket.RegTicketData.NFTTicket = artTicketBytes
-}
+//func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
+//	artTicketBytes, err := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
+//	assert.Nil(t, err)
+//	ticket.RegTicketData.NFTTicket = artTicketBytes
+//}

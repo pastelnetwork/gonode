@@ -18,14 +18,14 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// RegisterArtworkClient is the client API for RegisterArtwork service.
+// RegisterNftClient is the client API for RegisterNft service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RegisterArtworkClient interface {
+type RegisterNftClient interface {
 	// Session informs the supernode its position (primary/secondary).
 	// Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
-	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_SessionClient, error)
+	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterNft_SessionClient, error)
 	// AcceptedNodes returns peers of the secondary supernodes connected to it.
 	AcceptedNodes(ctx context.Context, in *AcceptedNodesRequest, opts ...grpc.CallOption) (*AcceptedNodesReply, error)
 	// ConnectTo requests to connect to the primary supernode.
@@ -35,7 +35,7 @@ type RegisterArtworkClient interface {
 	// SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
 	SendRegMetadata(ctx context.Context, in *SendRegMetadataRequest, opts ...grpc.CallOption) (*SendRegMetadataReply, error)
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
-	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error)
+	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterNft_ProbeImageClient, error)
 	// SendArtTicket sends a signed art-ticket to the supernode.
 	SendSignedNFTTicket(ctx context.Context, in *SendSignedNFTTicketRequest, opts ...grpc.CallOption) (*SendSignedNFTTicketReply, error)
 	// SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
@@ -43,41 +43,41 @@ type RegisterArtworkClient interface {
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
 	// Upload the image after pq signature is appended along with its thumbnail coordinates
-	UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_UploadImageClient, error)
+	UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterNft_UploadImageClient, error)
 }
 
-type registerArtworkClient struct {
+type registerNftClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRegisterArtworkClient(cc grpc.ClientConnInterface) RegisterArtworkClient {
-	return &registerArtworkClient{cc}
+func NewRegisterNftClient(cc grpc.ClientConnInterface) RegisterNftClient {
+	return &registerNftClient{cc}
 }
 
-func (c *registerArtworkClient) Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_SessionClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RegisterArtwork_ServiceDesc.Streams[0], "/walletnode.RegisterArtwork/Session", opts...)
+func (c *registerNftClient) Session(ctx context.Context, opts ...grpc.CallOption) (RegisterNft_SessionClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterNft_ServiceDesc.Streams[0], "/walletnode.RegisterNft/Session", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &registerArtworkSessionClient{stream}
+	x := &registerNftSessionClient{stream}
 	return x, nil
 }
 
-type RegisterArtwork_SessionClient interface {
+type RegisterNft_SessionClient interface {
 	Send(*SessionRequest) error
 	Recv() (*SessionReply, error)
 	grpc.ClientStream
 }
 
-type registerArtworkSessionClient struct {
+type registerNftSessionClient struct {
 	grpc.ClientStream
 }
 
-func (x *registerArtworkSessionClient) Send(m *SessionRequest) error {
+func (x *registerNftSessionClient) Send(m *SessionRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *registerArtworkSessionClient) Recv() (*SessionReply, error) {
+func (x *registerNftSessionClient) Recv() (*SessionReply, error) {
 	m := new(SessionReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -85,66 +85,66 @@ func (x *registerArtworkSessionClient) Recv() (*SessionReply, error) {
 	return m, nil
 }
 
-func (c *registerArtworkClient) AcceptedNodes(ctx context.Context, in *AcceptedNodesRequest, opts ...grpc.CallOption) (*AcceptedNodesReply, error) {
+func (c *registerNftClient) AcceptedNodes(ctx context.Context, in *AcceptedNodesRequest, opts ...grpc.CallOption) (*AcceptedNodesReply, error) {
 	out := new(AcceptedNodesReply)
-	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/AcceptedNodes", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterNft/AcceptedNodes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *registerArtworkClient) ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error) {
+func (c *registerNftClient) ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error) {
 	out := new(ConnectToReply)
-	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/ConnectTo", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterNft/ConnectTo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *registerArtworkClient) MeshNodes(ctx context.Context, in *MeshNodesRequest, opts ...grpc.CallOption) (*MeshNodesReply, error) {
+func (c *registerNftClient) MeshNodes(ctx context.Context, in *MeshNodesRequest, opts ...grpc.CallOption) (*MeshNodesReply, error) {
 	out := new(MeshNodesReply)
-	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/MeshNodes", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterNft/MeshNodes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *registerArtworkClient) SendRegMetadata(ctx context.Context, in *SendRegMetadataRequest, opts ...grpc.CallOption) (*SendRegMetadataReply, error) {
+func (c *registerNftClient) SendRegMetadata(ctx context.Context, in *SendRegMetadataRequest, opts ...grpc.CallOption) (*SendRegMetadataReply, error) {
 	out := new(SendRegMetadataReply)
-	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendRegMetadata", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterNft/SendRegMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *registerArtworkClient) ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RegisterArtwork_ServiceDesc.Streams[1], "/walletnode.RegisterArtwork/ProbeImage", opts...)
+func (c *registerNftClient) ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterNft_ProbeImageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterNft_ServiceDesc.Streams[1], "/walletnode.RegisterNft/ProbeImage", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &registerArtworkProbeImageClient{stream}
+	x := &registerNftProbeImageClient{stream}
 	return x, nil
 }
 
-type RegisterArtwork_ProbeImageClient interface {
+type RegisterNft_ProbeImageClient interface {
 	Send(*ProbeImageRequest) error
 	CloseAndRecv() (*ProbeImageReply, error)
 	grpc.ClientStream
 }
 
-type registerArtworkProbeImageClient struct {
+type registerNftProbeImageClient struct {
 	grpc.ClientStream
 }
 
-func (x *registerArtworkProbeImageClient) Send(m *ProbeImageRequest) error {
+func (x *registerNftProbeImageClient) Send(m *ProbeImageRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *registerArtworkProbeImageClient) CloseAndRecv() (*ProbeImageReply, error) {
+func (x *registerNftProbeImageClient) CloseAndRecv() (*ProbeImageReply, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -155,57 +155,57 @@ func (x *registerArtworkProbeImageClient) CloseAndRecv() (*ProbeImageReply, erro
 	return m, nil
 }
 
-func (c *registerArtworkClient) SendSignedNFTTicket(ctx context.Context, in *SendSignedNFTTicketRequest, opts ...grpc.CallOption) (*SendSignedNFTTicketReply, error) {
+func (c *registerNftClient) SendSignedNFTTicket(ctx context.Context, in *SendSignedNFTTicketRequest, opts ...grpc.CallOption) (*SendSignedNFTTicketReply, error) {
 	out := new(SendSignedNFTTicketReply)
-	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendSignedNFTTicket", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterNft/SendSignedNFTTicket", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *registerArtworkClient) SendPreBurntFeeTxid(ctx context.Context, in *SendPreBurntFeeTxidRequest, opts ...grpc.CallOption) (*SendPreBurntFeeTxidReply, error) {
+func (c *registerNftClient) SendPreBurntFeeTxid(ctx context.Context, in *SendPreBurntFeeTxidRequest, opts ...grpc.CallOption) (*SendPreBurntFeeTxidReply, error) {
 	out := new(SendPreBurntFeeTxidReply)
-	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendPreBurntFeeTxid", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterNft/SendPreBurntFeeTxid", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *registerArtworkClient) SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error) {
+func (c *registerNftClient) SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error) {
 	out := new(SendTicketReply)
-	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendTicket", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterNft/SendTicket", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *registerArtworkClient) UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_UploadImageClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RegisterArtwork_ServiceDesc.Streams[2], "/walletnode.RegisterArtwork/UploadImage", opts...)
+func (c *registerNftClient) UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterNft_UploadImageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterNft_ServiceDesc.Streams[2], "/walletnode.RegisterNft/UploadImage", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &registerArtworkUploadImageClient{stream}
+	x := &registerNftUploadImageClient{stream}
 	return x, nil
 }
 
-type RegisterArtwork_UploadImageClient interface {
+type RegisterNft_UploadImageClient interface {
 	Send(*UploadImageRequest) error
 	CloseAndRecv() (*UploadImageReply, error)
 	grpc.ClientStream
 }
 
-type registerArtworkUploadImageClient struct {
+type registerNftUploadImageClient struct {
 	grpc.ClientStream
 }
 
-func (x *registerArtworkUploadImageClient) Send(m *UploadImageRequest) error {
+func (x *registerNftUploadImageClient) Send(m *UploadImageRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *registerArtworkUploadImageClient) CloseAndRecv() (*UploadImageReply, error) {
+func (x *registerNftUploadImageClient) CloseAndRecv() (*UploadImageReply, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -216,14 +216,14 @@ func (x *registerArtworkUploadImageClient) CloseAndRecv() (*UploadImageReply, er
 	return m, nil
 }
 
-// RegisterArtworkServer is the server API for RegisterArtwork service.
-// All implementations must embed UnimplementedRegisterArtworkServer
+// RegisterNftServer is the server API for RegisterNft service.
+// All implementations must embed UnimplementedRegisterNftServer
 // for forward compatibility
-type RegisterArtworkServer interface {
+type RegisterNftServer interface {
 	// Session informs the supernode its position (primary/secondary).
 	// Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
-	Session(RegisterArtwork_SessionServer) error
+	Session(RegisterNft_SessionServer) error
 	// AcceptedNodes returns peers of the secondary supernodes connected to it.
 	AcceptedNodes(context.Context, *AcceptedNodesRequest) (*AcceptedNodesReply, error)
 	// ConnectTo requests to connect to the primary supernode.
@@ -233,7 +233,7 @@ type RegisterArtworkServer interface {
 	// SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
 	SendRegMetadata(context.Context, *SendRegMetadataRequest) (*SendRegMetadataReply, error)
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
-	ProbeImage(RegisterArtwork_ProbeImageServer) error
+	ProbeImage(RegisterNft_ProbeImageServer) error
 	// SendArtTicket sends a signed art-ticket to the supernode.
 	SendSignedNFTTicket(context.Context, *SendSignedNFTTicketRequest) (*SendSignedNFTTicketReply, error)
 	// SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
@@ -241,76 +241,76 @@ type RegisterArtworkServer interface {
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
 	// Upload the image after pq signature is appended along with its thumbnail coordinates
-	UploadImage(RegisterArtwork_UploadImageServer) error
-	mustEmbedUnimplementedRegisterArtworkServer()
+	UploadImage(RegisterNft_UploadImageServer) error
+	mustEmbedUnimplementedRegisterNftServer()
 }
 
-// UnimplementedRegisterArtworkServer must be embedded to have forward compatible implementations.
-type UnimplementedRegisterArtworkServer struct {
+// UnimplementedRegisterNftServer must be embedded to have forward compatible implementations.
+type UnimplementedRegisterNftServer struct {
 }
 
-func (UnimplementedRegisterArtworkServer) Session(RegisterArtwork_SessionServer) error {
+func (UnimplementedRegisterNftServer) Session(RegisterNft_SessionServer) error {
 	return status.Errorf(codes.Unimplemented, "method Session not implemented")
 }
-func (UnimplementedRegisterArtworkServer) AcceptedNodes(context.Context, *AcceptedNodesRequest) (*AcceptedNodesReply, error) {
+func (UnimplementedRegisterNftServer) AcceptedNodes(context.Context, *AcceptedNodesRequest) (*AcceptedNodesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AcceptedNodes not implemented")
 }
-func (UnimplementedRegisterArtworkServer) ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error) {
+func (UnimplementedRegisterNftServer) ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConnectTo not implemented")
 }
-func (UnimplementedRegisterArtworkServer) MeshNodes(context.Context, *MeshNodesRequest) (*MeshNodesReply, error) {
+func (UnimplementedRegisterNftServer) MeshNodes(context.Context, *MeshNodesRequest) (*MeshNodesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MeshNodes not implemented")
 }
-func (UnimplementedRegisterArtworkServer) SendRegMetadata(context.Context, *SendRegMetadataRequest) (*SendRegMetadataReply, error) {
+func (UnimplementedRegisterNftServer) SendRegMetadata(context.Context, *SendRegMetadataRequest) (*SendRegMetadataReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendRegMetadata not implemented")
 }
-func (UnimplementedRegisterArtworkServer) ProbeImage(RegisterArtwork_ProbeImageServer) error {
+func (UnimplementedRegisterNftServer) ProbeImage(RegisterNft_ProbeImageServer) error {
 	return status.Errorf(codes.Unimplemented, "method ProbeImage not implemented")
 }
-func (UnimplementedRegisterArtworkServer) SendSignedNFTTicket(context.Context, *SendSignedNFTTicketRequest) (*SendSignedNFTTicketReply, error) {
+func (UnimplementedRegisterNftServer) SendSignedNFTTicket(context.Context, *SendSignedNFTTicketRequest) (*SendSignedNFTTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendSignedNFTTicket not implemented")
 }
-func (UnimplementedRegisterArtworkServer) SendPreBurntFeeTxid(context.Context, *SendPreBurntFeeTxidRequest) (*SendPreBurntFeeTxidReply, error) {
+func (UnimplementedRegisterNftServer) SendPreBurntFeeTxid(context.Context, *SendPreBurntFeeTxidRequest) (*SendPreBurntFeeTxidReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendPreBurntFeeTxid not implemented")
 }
-func (UnimplementedRegisterArtworkServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
+func (UnimplementedRegisterNftServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
 }
-func (UnimplementedRegisterArtworkServer) UploadImage(RegisterArtwork_UploadImageServer) error {
+func (UnimplementedRegisterNftServer) UploadImage(RegisterNft_UploadImageServer) error {
 	return status.Errorf(codes.Unimplemented, "method UploadImage not implemented")
 }
-func (UnimplementedRegisterArtworkServer) mustEmbedUnimplementedRegisterArtworkServer() {}
+func (UnimplementedRegisterNftServer) mustEmbedUnimplementedRegisterNftServer() {}
 
-// UnsafeRegisterArtworkServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RegisterArtworkServer will
+// UnsafeRegisterNftServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RegisterNftServer will
 // result in compilation errors.
-type UnsafeRegisterArtworkServer interface {
-	mustEmbedUnimplementedRegisterArtworkServer()
+type UnsafeRegisterNftServer interface {
+	mustEmbedUnimplementedRegisterNftServer()
 }
 
-func RegisterRegisterArtworkServer(s grpc.ServiceRegistrar, srv RegisterArtworkServer) {
-	s.RegisterService(&RegisterArtwork_ServiceDesc, srv)
+func RegisterRegisterNftServer(s grpc.ServiceRegistrar, srv RegisterNftServer) {
+	s.RegisterService(&RegisterNft_ServiceDesc, srv)
 }
 
-func _RegisterArtwork_Session_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RegisterArtworkServer).Session(&registerArtworkSessionServer{stream})
+func _RegisterNft_Session_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterNftServer).Session(&registerNftSessionServer{stream})
 }
 
-type RegisterArtwork_SessionServer interface {
+type RegisterNft_SessionServer interface {
 	Send(*SessionReply) error
 	Recv() (*SessionRequest, error)
 	grpc.ServerStream
 }
 
-type registerArtworkSessionServer struct {
+type registerNftSessionServer struct {
 	grpc.ServerStream
 }
 
-func (x *registerArtworkSessionServer) Send(m *SessionReply) error {
+func (x *registerNftSessionServer) Send(m *SessionReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *registerArtworkSessionServer) Recv() (*SessionRequest, error) {
+func (x *registerNftSessionServer) Recv() (*SessionRequest, error) {
 	m := new(SessionRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -318,97 +318,97 @@ func (x *registerArtworkSessionServer) Recv() (*SessionRequest, error) {
 	return m, nil
 }
 
-func _RegisterArtwork_AcceptedNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterNft_AcceptedNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AcceptedNodesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterArtworkServer).AcceptedNodes(ctx, in)
+		return srv.(RegisterNftServer).AcceptedNodes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.RegisterArtwork/AcceptedNodes",
+		FullMethod: "/walletnode.RegisterNft/AcceptedNodes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).AcceptedNodes(ctx, req.(*AcceptedNodesRequest))
+		return srv.(RegisterNftServer).AcceptedNodes(ctx, req.(*AcceptedNodesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegisterArtwork_ConnectTo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterNft_ConnectTo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConnectToRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterArtworkServer).ConnectTo(ctx, in)
+		return srv.(RegisterNftServer).ConnectTo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.RegisterArtwork/ConnectTo",
+		FullMethod: "/walletnode.RegisterNft/ConnectTo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).ConnectTo(ctx, req.(*ConnectToRequest))
+		return srv.(RegisterNftServer).ConnectTo(ctx, req.(*ConnectToRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegisterArtwork_MeshNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterNft_MeshNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MeshNodesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterArtworkServer).MeshNodes(ctx, in)
+		return srv.(RegisterNftServer).MeshNodes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.RegisterArtwork/MeshNodes",
+		FullMethod: "/walletnode.RegisterNft/MeshNodes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).MeshNodes(ctx, req.(*MeshNodesRequest))
+		return srv.(RegisterNftServer).MeshNodes(ctx, req.(*MeshNodesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegisterArtwork_SendRegMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterNft_SendRegMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendRegMetadataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterArtworkServer).SendRegMetadata(ctx, in)
+		return srv.(RegisterNftServer).SendRegMetadata(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.RegisterArtwork/SendRegMetadata",
+		FullMethod: "/walletnode.RegisterNft/SendRegMetadata",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).SendRegMetadata(ctx, req.(*SendRegMetadataRequest))
+		return srv.(RegisterNftServer).SendRegMetadata(ctx, req.(*SendRegMetadataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegisterArtwork_ProbeImage_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RegisterArtworkServer).ProbeImage(&registerArtworkProbeImageServer{stream})
+func _RegisterNft_ProbeImage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterNftServer).ProbeImage(&registerNftProbeImageServer{stream})
 }
 
-type RegisterArtwork_ProbeImageServer interface {
+type RegisterNft_ProbeImageServer interface {
 	SendAndClose(*ProbeImageReply) error
 	Recv() (*ProbeImageRequest, error)
 	grpc.ServerStream
 }
 
-type registerArtworkProbeImageServer struct {
+type registerNftProbeImageServer struct {
 	grpc.ServerStream
 }
 
-func (x *registerArtworkProbeImageServer) SendAndClose(m *ProbeImageReply) error {
+func (x *registerNftProbeImageServer) SendAndClose(m *ProbeImageReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *registerArtworkProbeImageServer) Recv() (*ProbeImageRequest, error) {
+func (x *registerNftProbeImageServer) Recv() (*ProbeImageRequest, error) {
 	m := new(ProbeImageRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -416,79 +416,79 @@ func (x *registerArtworkProbeImageServer) Recv() (*ProbeImageRequest, error) {
 	return m, nil
 }
 
-func _RegisterArtwork_SendSignedNFTTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterNft_SendSignedNFTTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendSignedNFTTicketRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterArtworkServer).SendSignedNFTTicket(ctx, in)
+		return srv.(RegisterNftServer).SendSignedNFTTicket(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.RegisterArtwork/SendSignedNFTTicket",
+		FullMethod: "/walletnode.RegisterNft/SendSignedNFTTicket",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).SendSignedNFTTicket(ctx, req.(*SendSignedNFTTicketRequest))
+		return srv.(RegisterNftServer).SendSignedNFTTicket(ctx, req.(*SendSignedNFTTicketRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegisterArtwork_SendPreBurntFeeTxid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterNft_SendPreBurntFeeTxid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendPreBurntFeeTxidRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterArtworkServer).SendPreBurntFeeTxid(ctx, in)
+		return srv.(RegisterNftServer).SendPreBurntFeeTxid(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.RegisterArtwork/SendPreBurntFeeTxid",
+		FullMethod: "/walletnode.RegisterNft/SendPreBurntFeeTxid",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).SendPreBurntFeeTxid(ctx, req.(*SendPreBurntFeeTxidRequest))
+		return srv.(RegisterNftServer).SendPreBurntFeeTxid(ctx, req.(*SendPreBurntFeeTxidRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegisterArtwork_SendTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterNft_SendTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendTicketRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterArtworkServer).SendTicket(ctx, in)
+		return srv.(RegisterNftServer).SendTicket(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.RegisterArtwork/SendTicket",
+		FullMethod: "/walletnode.RegisterNft/SendTicket",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).SendTicket(ctx, req.(*SendTicketRequest))
+		return srv.(RegisterNftServer).SendTicket(ctx, req.(*SendTicketRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegisterArtwork_UploadImage_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RegisterArtworkServer).UploadImage(&registerArtworkUploadImageServer{stream})
+func _RegisterNft_UploadImage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterNftServer).UploadImage(&registerNftUploadImageServer{stream})
 }
 
-type RegisterArtwork_UploadImageServer interface {
+type RegisterNft_UploadImageServer interface {
 	SendAndClose(*UploadImageReply) error
 	Recv() (*UploadImageRequest, error)
 	grpc.ServerStream
 }
 
-type registerArtworkUploadImageServer struct {
+type registerNftUploadImageServer struct {
 	grpc.ServerStream
 }
 
-func (x *registerArtworkUploadImageServer) SendAndClose(m *UploadImageReply) error {
+func (x *registerNftUploadImageServer) SendAndClose(m *UploadImageReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *registerArtworkUploadImageServer) Recv() (*UploadImageRequest, error) {
+func (x *registerNftUploadImageServer) Recv() (*UploadImageRequest, error) {
 	m := new(UploadImageRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -496,57 +496,57 @@ func (x *registerArtworkUploadImageServer) Recv() (*UploadImageRequest, error) {
 	return m, nil
 }
 
-// RegisterArtwork_ServiceDesc is the grpc.ServiceDesc for RegisterArtwork service.
+// RegisterNft_ServiceDesc is the grpc.ServiceDesc for RegisterNft service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "walletnode.RegisterArtwork",
-	HandlerType: (*RegisterArtworkServer)(nil),
+var RegisterNft_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "walletnode.RegisterNft",
+	HandlerType: (*RegisterNftServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "AcceptedNodes",
-			Handler:    _RegisterArtwork_AcceptedNodes_Handler,
+			Handler:    _RegisterNft_AcceptedNodes_Handler,
 		},
 		{
 			MethodName: "ConnectTo",
-			Handler:    _RegisterArtwork_ConnectTo_Handler,
+			Handler:    _RegisterNft_ConnectTo_Handler,
 		},
 		{
 			MethodName: "MeshNodes",
-			Handler:    _RegisterArtwork_MeshNodes_Handler,
+			Handler:    _RegisterNft_MeshNodes_Handler,
 		},
 		{
 			MethodName: "SendRegMetadata",
-			Handler:    _RegisterArtwork_SendRegMetadata_Handler,
+			Handler:    _RegisterNft_SendRegMetadata_Handler,
 		},
 		{
 			MethodName: "SendSignedNFTTicket",
-			Handler:    _RegisterArtwork_SendSignedNFTTicket_Handler,
+			Handler:    _RegisterNft_SendSignedNFTTicket_Handler,
 		},
 		{
 			MethodName: "SendPreBurntFeeTxid",
-			Handler:    _RegisterArtwork_SendPreBurntFeeTxid_Handler,
+			Handler:    _RegisterNft_SendPreBurntFeeTxid_Handler,
 		},
 		{
 			MethodName: "SendTicket",
-			Handler:    _RegisterArtwork_SendTicket_Handler,
+			Handler:    _RegisterNft_SendTicket_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Session",
-			Handler:       _RegisterArtwork_Session_Handler,
+			Handler:       _RegisterNft_Session_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
 		{
 			StreamName:    "ProbeImage",
-			Handler:       _RegisterArtwork_ProbeImage_Handler,
+			Handler:       _RegisterNft_ProbeImage_Handler,
 			ClientStreams: true,
 		},
 		{
 			StreamName:    "UploadImage",
-			Handler:       _RegisterArtwork_UploadImage_Handler,
+			Handler:       _RegisterNft_UploadImage_Handler,
 			ClientStreams: true,
 		},
 	},

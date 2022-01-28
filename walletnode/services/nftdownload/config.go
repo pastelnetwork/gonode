@@ -4,10 +4,6 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
-const (
-	defaultNumberSuperNodes = 3
-)
-
 // Config contains settings of the registering nft.
 type Config struct {
 	common.Config `mapstructure:",squash" json:"-"`

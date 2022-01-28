@@ -4,7 +4,7 @@ option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
 
 package walletnode;
 
-service DownloadArtwork {
+service DownloadNft {
     // Download downloads artwork by given txid, timestamp and signature.
     rpc Download(DownloadRequest) returns (stream DownloadReply);
     rpc DownloadThumbnail(DownloadThumbnailRequest) returns (DownloadThumbnailReply);

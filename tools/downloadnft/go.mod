@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/tools/downloadnft
 
-go 1.16
+go 1.17
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../../common

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -21,7 +20,7 @@ type downFile struct {
 type NftDownloadTask struct {
 	*common.WalletNodeTask
 
-	MeshHandler *mixins.MeshHandler
+	MeshHandler *common.MeshHandler
 
 	service *NftDownloadService
 	Request *NftDownloadRequest
@@ -68,7 +67,7 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not download files")
 		task.UpdateStatus(common.StatusErrorDownloadFailed)
-		return errors.Errorf("download files from supernodes: %w (%w)", err, downloadErrs)
+		return errors.Errorf("download files from supernodes: %w: %v", err, downloadErrs)
 	}
 
 	if len(task.files) < task.service.config.NumberSuperNodes {
@@ -157,7 +156,7 @@ func NewNftDownloadTask(service *NftDownloadService, request *NftDownloadRequest
 		Request:        request,
 	}
 
-	task.MeshHandler = mixins.NewMeshHandler(task.WalletNodeTask,
+	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
 		service.nodeClient, &NftDownloadNodeMaker{},
 		service.pastelHandler,
 		request.PastelID, request.PastelIDPassphrase,

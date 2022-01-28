@@ -9,7 +9,7 @@ const (
 	defaultPreburntTxMinConfirmations = 3
 )
 
-// Config contains settings of the registering artwork.
+// Config contains settings of the registering Nft.
 type Config struct {
 	common.Config `mapstructure:",squash" json:"-"`
 

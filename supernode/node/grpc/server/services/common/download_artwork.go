@@ -1,17 +1,17 @@
 package common
 
 import (
-	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
+	"github.com/pastelnetwork/gonode/supernode/services/nftdownload"
 )
 
-// DownloadArtwork represents common grpc service for downloading artwork.
-type DownloadArtwork struct {
-	*artworkdownload.Service
+// DownloadNft represents common grpc service for downloading NFTs.
+type DownloadNft struct {
+	*nftdownload.NftDownloadService
 }
 
-// NewDownloadArtwork returns a new DownloadArtwork instance.
-func NewDownloadArtwork(service *artworkdownload.Service) *DownloadArtwork {
-	return &DownloadArtwork{
-		Service: service,
+// NewDownloadNft returns a new DownloadNft instance.
+func NewDownloadNft(service *nftdownload.NftDownloadService) *DownloadNft {
+	return &DownloadNft{
+		NftDownloadService: service,
 	}
 }

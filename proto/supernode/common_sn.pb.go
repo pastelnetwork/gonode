@@ -215,7 +215,7 @@ func (*SendSignedDDAndFingerprintsReply) Descriptor() ([]byte, []int) {
 	return file_common_sn_proto_rawDescGZIP(), []int{3}
 }
 
-type SendArtTicketSignatureRequest struct {
+type SendNftTicketSignatureRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -224,8 +224,8 @@ type SendArtTicketSignatureRequest struct {
 	Signature []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
 }
 
-func (x *SendArtTicketSignatureRequest) Reset() {
-	*x = SendArtTicketSignatureRequest{}
+func (x *SendNftTicketSignatureRequest) Reset() {
+	*x = SendNftTicketSignatureRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_common_sn_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -233,13 +233,13 @@ func (x *SendArtTicketSignatureRequest) Reset() {
 	}
 }
 
-func (x *SendArtTicketSignatureRequest) String() string {
+func (x *SendNftTicketSignatureRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendArtTicketSignatureRequest) ProtoMessage() {}
+func (*SendNftTicketSignatureRequest) ProtoMessage() {}
 
-func (x *SendArtTicketSignatureRequest) ProtoReflect() protoreflect.Message {
+func (x *SendNftTicketSignatureRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_common_sn_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -251,33 +251,33 @@ func (x *SendArtTicketSignatureRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendArtTicketSignatureRequest.ProtoReflect.Descriptor instead.
-func (*SendArtTicketSignatureRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendNftTicketSignatureRequest.ProtoReflect.Descriptor instead.
+func (*SendNftTicketSignatureRequest) Descriptor() ([]byte, []int) {
 	return file_common_sn_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *SendArtTicketSignatureRequest) GetNodeID() string {
+func (x *SendNftTicketSignatureRequest) GetNodeID() string {
 	if x != nil {
 		return x.NodeID
 	}
 	return ""
 }
 
-func (x *SendArtTicketSignatureRequest) GetSignature() []byte {
+func (x *SendNftTicketSignatureRequest) GetSignature() []byte {
 	if x != nil {
 		return x.Signature
 	}
 	return nil
 }
 
-type SendArtTicketSignatureReply struct {
+type SendNftTicketSignatureReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *SendArtTicketSignatureReply) Reset() {
-	*x = SendArtTicketSignatureReply{}
+func (x *SendNftTicketSignatureReply) Reset() {
+	*x = SendNftTicketSignatureReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_common_sn_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -285,13 +285,13 @@ func (x *SendArtTicketSignatureReply) Reset() {
 	}
 }
 
-func (x *SendArtTicketSignatureReply) String() string {
+func (x *SendNftTicketSignatureReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendArtTicketSignatureReply) ProtoMessage() {}
+func (*SendNftTicketSignatureReply) ProtoMessage() {}
 
-func (x *SendArtTicketSignatureReply) ProtoReflect() protoreflect.Message {
+func (x *SendNftTicketSignatureReply) ProtoReflect() protoreflect.Message {
 	mi := &file_common_sn_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -303,8 +303,8 @@ func (x *SendArtTicketSignatureReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendArtTicketSignatureReply.ProtoReflect.Descriptor instead.
-func (*SendArtTicketSignatureReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendNftTicketSignatureReply.ProtoReflect.Descriptor instead.
+func (*SendNftTicketSignatureReply) Descriptor() ([]byte, []int) {
 	return file_common_sn_proto_rawDescGZIP(), []int{5}
 }
 
@@ -330,12 +330,12 @@ var file_common_sn_proto_rawDesc = []byte{
 	0x70, 0x72, 0x69, 0x6e, 0x74, 0x22, 0x22, 0x0a, 0x20, 0x53, 0x65, 0x6e, 0x64, 0x53, 0x69, 0x67,
 	0x6e, 0x65, 0x64, 0x44, 0x44, 0x41, 0x6e, 0x64, 0x46, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x70, 0x72,
 	0x69, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x55, 0x0a, 0x1d, 0x53, 0x65, 0x6e,
-	0x64, 0x41, 0x72, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74,
+	0x64, 0x4e, 0x66, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74,
 	0x75, 0x72, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x6e, 0x6f,
 	0x64, 0x65, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x6e, 0x6f, 0x64, 0x65,
 	0x49, 0x44, 0x12, 0x1c, 0x0a, 0x09, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18,
 	0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65,
-	0x22, 0x1d, 0x0a, 0x1b, 0x53, 0x65, 0x6e, 0x64, 0x41, 0x72, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65,
+	0x22, 0x1d, 0x0a, 0x1b, 0x53, 0x65, 0x6e, 0x64, 0x4e, 0x66, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65,
 	0x74, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x42,
 	0x31, 0x5a, 0x2f, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x61,
 	0x73, 0x74, 0x65, 0x6c, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x67, 0x6f, 0x6e, 0x6f,
@@ -361,8 +361,8 @@ var file_common_sn_proto_goTypes = []interface{}{
 	(*SessionReply)(nil),                       // 1: supernode.SessionReply
 	(*SendSignedDDAndFingerprintsRequest)(nil), // 2: supernode.SendSignedDDAndFingerprintsRequest
 	(*SendSignedDDAndFingerprintsReply)(nil),   // 3: supernode.SendSignedDDAndFingerprintsReply
-	(*SendArtTicketSignatureRequest)(nil),      // 4: supernode.SendArtTicketSignatureRequest
-	(*SendArtTicketSignatureReply)(nil),        // 5: supernode.SendArtTicketSignatureReply
+	(*SendNftTicketSignatureRequest)(nil),      // 4: supernode.SendNftTicketSignatureRequest
+	(*SendNftTicketSignatureReply)(nil),        // 5: supernode.SendNftTicketSignatureReply
 }
 var file_common_sn_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -427,7 +427,7 @@ func file_common_sn_proto_init() {
 			}
 		}
 		file_common_sn_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendArtTicketSignatureRequest); i {
+			switch v := v.(*SendNftTicketSignatureRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -439,7 +439,7 @@ func file_common_sn_proto_init() {
 			}
 		}
 		file_common_sn_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendArtTicketSignatureReply); i {
+			switch v := v.(*SendNftTicketSignatureReply); i {
 			case 0:
 				return &v.state
 			case 1:

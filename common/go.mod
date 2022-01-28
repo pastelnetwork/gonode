@@ -4,6 +4,10 @@ go 1.17
 
 replace golang.org/x/crypto => github.com/golang/crypto v0.0.0-20210921155107-089bfa567519
 
+replace github.com/pastelnetwork/gonode/pastel => ../pastel
+
+replace github.com/pastelnetwork/gonode/raptorq => ../raptorq
+
 require (
 	github.com/DataDog/zstd v1.5.0
 	github.com/cloudflare/circl v1.1.0
@@ -29,6 +33,7 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
@@ -42,7 +47,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/onsi/gomega v1.17.0 // indirect
+	github.com/onsi/gomega v1.18.1 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
@@ -51,7 +56,7 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.1.1 // indirect
+	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect

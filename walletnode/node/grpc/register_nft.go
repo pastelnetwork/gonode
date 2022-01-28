@@ -27,7 +27,7 @@ const (
 
 type registerNft struct {
 	conn   *clientConn
-	client pb.RegisterArtworkClient
+	client pb.RegisterNftClient
 
 	sessID string
 }
@@ -36,7 +36,7 @@ func (service *registerNft) SessID() string {
 	return service.sessID
 }
 
-// Session implements node.RegisterArtwork.Session()
+// Session implements node.RegisterNft.Session()
 func (service *registerNft) Session(ctx context.Context, isPrimary bool) error {
 	ctx = service.contextWithLogPrefix(ctx)
 
@@ -80,7 +80,7 @@ func (service *registerNft) Session(ctx context.Context, isPrimary bool) error {
 	return nil
 }
 
-// AcceptedNodes implements node.RegisterArtwork.AcceptedNodes()
+// AcceptedNodes implements node.RegisterNft.AcceptedNodes()
 func (service *registerNft) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
@@ -101,7 +101,7 @@ func (service *registerNft) AcceptedNodes(ctx context.Context) (pastelIDs []stri
 	return ids, nil
 }
 
-// ConnectTo implements node.RegisterArtwork.ConnectTo()
+// ConnectTo implements node.RegisterNft.ConnectTo()
 func (service *registerNft) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
@@ -154,7 +154,7 @@ func (service *registerNft) SendRegMetadata(ctx context.Context, regMetadata *ty
 	return err
 }
 
-// ProbeImage implements node.RegisterArtwork.ProbeImage()
+// ProbeImage implements node.RegisterNft.ProbeImage()
 func (service *registerNft) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
@@ -194,7 +194,7 @@ func (service *registerNft) ProbeImage(ctx context.Context, image *files.File) (
 	return resp.CompressedSignedDDAndFingerprints, true, nil
 }
 
-// UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
+// UploadImageWithThumbnail implements node.RegisterNft.UploadImageWithThumbnail()
 func (service *registerNft) UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
@@ -336,6 +336,6 @@ func (service *registerNft) SendPreBurntFeeTxid(ctx context.Context, txid string
 func newRegisterArtwork(conn *clientConn) node.RegisterNftInterface {
 	return &registerNft{
 		conn:   conn,
-		client: pb.NewRegisterArtworkClient(conn),
+		client: pb.NewRegisterNftClient(conn),
 	}
 }

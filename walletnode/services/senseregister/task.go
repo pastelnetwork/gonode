@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"github.com/pastelnetwork/gonode/walletnode/services/mixins"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -19,10 +19,10 @@ import (
 type SenseRegisterTask struct {
 	*common.WalletNodeTask
 
-	MeshHandler         *mixins.MeshHandler
+	MeshHandler         *common.MeshHandler
 	FingerprintsHandler *mixins.FingerprintsHandler
 
-	service *SenseRegisterService
+	service *SenseRegistrationService
 	Request *SenseRegisterRequest
 
 	// data to create ticket
@@ -161,10 +161,10 @@ func (task *SenseRegisterTask) sendActionMetadata(ctx context.Context) error {
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegisterNode)
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
+			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
 		}
 		group.Go(func() (err error) {
 			err = senseRegNode.SendRegMetadata(ctx, regMetadata)
@@ -188,10 +188,10 @@ func (task *SenseRegisterTask) ProbeImage(ctx context.Context, file *files.File,
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegisterNode)
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
+			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
 		}
 		group.Go(func() (err error) {
 			compress, stateOk, err := senseRegNode.ProbeImage(ctx, file)
@@ -278,10 +278,10 @@ func (task *SenseRegisterTask) uploadSignedTicket(ctx context.Context) error {
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegisterNode)
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
+			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
 		}
 		group.Go(func() error {
 			ticketTxid, err := senseRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, ddFpFile)
@@ -321,10 +321,10 @@ func (task *SenseRegisterTask) uploadActionAct(ctx context.Context, activateTxID
 	group, _ := errgroup.WithContext(ctx)
 
 	for _, someNode := range task.MeshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegisterNode)
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
+			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
 		}
 		if someNode.IsPrimary() {
 			group.Go(func() error {
@@ -343,20 +343,20 @@ func (task *SenseRegisterTask) removeArtifacts() {
 
 // NewSenseRegisterTask returns a new SenseRegisterTask instance.
 // TODO: make config interface and pass it instead of individual items
-func NewSenseRegisterTask(service *SenseRegisterService, request *SenseRegisterRequest) *SenseRegisterTask {
+func NewSenseRegisterTask(service *SenseRegistrationService, request *SenseRegisterRequest) *SenseRegisterTask {
 	task := SenseRegisterTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 		service:        service,
 		Request:        request,
 	}
-	task.MeshHandler = mixins.NewMeshHandler(task.WalletNodeTask,
+	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
 		service.nodeClient, &RegisterSenseNodeMaker{},
 		service.pastelHandler,
 		request.AppPastelID, request.AppPastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
 		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
 	)
-	task.FingerprintsHandler = mixins.NewFingerprintsHandler(task.WalletNodeTask, service.pastelHandler)
+	task.FingerprintsHandler = mixins.NewFingerprintsHandler(service.pastelHandler)
 
 	return &task
 }
