@@ -154,7 +154,7 @@ func TestNodesSendImage(t *testing.T) {
 				clients = append(clients, client)
 
 				someNode := common.NewSuperNode(client, a.address, "", service.RegisterSenseNodeMaker{})
-				someNode.SuperNodeAPIInterface = &service.SenseRegistrationNode{RegisterSenseInterface: client.RegisterSense}
+				someNode.SuperNodeAPIInterface = &service.SenseRegistrationNode{RegisterSenseInterface: client.RegisterSenseInterface}
 
 				//maker := service.RegisterSenseNodeMaker{}
 				//someNode.SuperNodeAPIInterface = maker.MakeNode(client.Connection)
@@ -185,7 +185,7 @@ func TestNodesSendImage(t *testing.T) {
 
 			//mock assertion each client
 			for _, client := range clients {
-				client.RegisterSense.AssertExpectations(t)
+				client.RegisterSenseInterface.AssertExpectations(t)
 				client.AssertProbeImageCall(testCase.numberProbeImageCall, testCase.args.ctx, testCase.args.file)
 			}
 		})

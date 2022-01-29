@@ -3,6 +3,7 @@ package nftdownload
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"testing"
 	"time"
@@ -11,7 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_download"
+	test "github.com/pastelnetwork/gonode/walletnode/node/test/nft_download"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,12 +35,12 @@ func TestNewService(t *testing.T) {
 			args: args{
 				config:       config,
 				pastelClient: pastelClient.Client,
-				nodeClient:   nodeClient.Client,
+				nodeClient:   nodeClient.ClientInterface,
 			},
 			want: &NftDownloadingService{
 				config:        config,
-				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
-				nodeClient:    nodeClient.Client,
+				pastelHandler: &mixins.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.ClientInterface,
 			},
 		},
 	}
@@ -85,8 +86,8 @@ func TestServiceRun(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			service := &NftDownloadingService{
 				config:        config,
-				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
-				nodeClient:    nodeClient.Client,
+				pastelHandler: &mixins.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.ClientInterface,
 				Worker:        task.NewWorker(),
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
@@ -132,8 +133,8 @@ func TestServiceAddTask(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			service := &NftDownloadingService{
 				config:        config,
-				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
-				nodeClient:    nodeClient.Client,
+				pastelHandler: &mixins.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.ClientInterface,
 				Worker:        task.NewWorker(),
 			}
 			ctx, cancel := context.WithCancel(testCase.args.ctx)
@@ -181,8 +182,8 @@ func TestServiceGetTask(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			service := &NftDownloadingService{
 				config:        config,
-				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
-				nodeClient:    nodeClient.Client,
+				pastelHandler: &mixins.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.ClientInterface,
 				Worker:        task.NewWorker(),
 			}
 			ctx, cancel := context.WithCancel(testCase.args.ctx)
@@ -235,8 +236,8 @@ func TestServiceListTasks(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			service := &NftDownloadingService{
 				config:        config,
-				pastelHandler: &mixin.PastelHandler{PastelClient: pastelClient.Client},
-				nodeClient:    nodeClient.Client,
+				pastelHandler: &mixins.PastelHandler{PastelClient: pastelClient.Client},
+				nodeClient:    nodeClient.ClientInterface,
 				Worker:        task.NewWorker(),
 			}
 			ctx, cancel := context.WithCancel(testCase.args.ctx)

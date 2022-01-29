@@ -12,7 +12,7 @@ package nftdownload
 //	taskMock "github.com/pastelnetwork/gonode/common/service/task/test"
 //	"github.com/pastelnetwork/gonode/pastel"
 //	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-//	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_download"
+//	test "github.com/pastelnetwork/gonode/walletnode/node/test/nft_download"
 //	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload/node"
 //	"github.com/stretchr/testify/assert"
 //	"github.com/stretchr/testify/mock"

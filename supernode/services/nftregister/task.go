@@ -410,7 +410,7 @@ func (task *NftRegistrationTask) compareRQSymbolID(ctx context.Context) error {
 	}
 
 	return task.storage.ValidateRaptorQSymbolIDs(ctx,
-		content, uint32(len(task.Ticket.AppTicketData.RQIDs)),
+		content /*uint32(len(task.Ticket.AppTicketData.RQIDs))*/, 1,
 		hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.Author,
 		task.rawRqFile)
 }
