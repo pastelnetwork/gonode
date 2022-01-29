@@ -34,7 +34,7 @@ func TestNewService(t *testing.T) {
 	config := NewConfig()
 	pastelClient := pastelMock.NewMockClient(t)
 	p2pClient := p2pMock.NewMockClient(t)
-	nodeClient := &nodeMock.Client{}
+	nodeClient := &nodeMock.ClientInterface{}
 	raptorQClient := rqmock.NewMockClient(t)
 
 	testCases := []struct {
@@ -50,10 +50,12 @@ func TestNewService(t *testing.T) {
 				nodeClient:    nodeClient,
 			},
 			want: &SenseRegistrationService{
-				config:       config,
-				pastelClient: pastelClient.Client,
-				p2pClient:    p2pClient.Client,
-				rqClient:     raptorQClient.Client,
+				SuperNodeService: &common.SuperNodeService{
+					PastelClient: pastelClient.Client,
+					P2PClient:    p2pClient.Client,
+					RQClient:     raptorQClient.Client,
+					Worker:       task.NewWorker(),
+				},
 			},
 		},
 	}
@@ -66,9 +68,9 @@ func TestNewService(t *testing.T) {
 			service := NewService(testCase.args.config, nil, testCase.args.pastelClient, testCase.args.nodeClient,
 				testCase.args.p2pClient, testCase.args.raptorQClient, nil)
 			assert.Equal(t, testCase.want.config, service.config)
-			assert.Equal(t, testCase.want.pastelClient, service.pastelClient)
-			assert.Equal(t, testCase.want.p2pClient, service.p2pClient)
-			assert.Equal(t, testCase.want.rqClient, service.rqClient)
+			assert.Equal(t, testCase.want.PastelClient, service.PastelClient)
+			assert.Equal(t, testCase.want.P2PClient, service.P2PClient)
+			assert.Equal(t, testCase.want.RQClient, service.RQClient)
 		})
 	}
 }
@@ -107,12 +109,14 @@ func TestServiceRun(t *testing.T) {
 			p2pClient := p2pMock.NewMockClient(t)
 			raptorQClient := rqmock.NewMockClient(t)
 			service := &SenseRegistrationService{
-				config:       config,
-				pastelClient: pastelClient.Client,
-				p2pClient:    p2pClient.Client,
-				rqClient:     raptorQClient.Client,
-				Worker:       task.NewWorker(),
-				Storage:      files.NewStorage(nil),
+				config: config,
+				SuperNodeService: &common.SuperNodeService{
+					PastelClient: pastelClient.Client,
+					P2PClient:    p2pClient.Client,
+					RQClient:     raptorQClient.Client,
+					Worker:       task.NewWorker(),
+					Storage:      files.NewStorage(nil),
+				},
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
 			defer cancel()
@@ -155,11 +159,13 @@ func TestServiceNewTask(t *testing.T) {
 			raptorQClient := rqmock.NewMockClient(t)
 
 			service := &SenseRegistrationService{
-				config:       config,
-				pastelClient: pastelClient.Client,
-				rqClient:     raptorQClient.Client,
-				p2pClient:    p2pClient.Client,
-				Worker:       task.NewWorker(),
+				config: config,
+				SuperNodeService: &common.SuperNodeService{
+					PastelClient: pastelClient.Client,
+					P2PClient:    p2pClient.Client,
+					RQClient:     raptorQClient.Client,
+					Worker:       task.NewWorker(),
+				},
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
 			defer cancel()
