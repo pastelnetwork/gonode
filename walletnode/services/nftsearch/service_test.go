@@ -156,7 +156,7 @@ package nftsearch
 //			nodeClientMock := nodeMock.NewMockClient(t)
 //			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
 //
-//			service := &NftSearchService{
+//			service := &NftSearchingService{
 //				pastelClient: pastelClientMock.Client,
 //				nodeClient:   nodeClientMock,
 //				config:       NewConfig(),

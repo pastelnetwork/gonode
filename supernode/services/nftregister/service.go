@@ -15,7 +15,7 @@ const (
 	logPrefix = "nft"
 )
 
-// Service represent nft service.
+// NftRegistrationService represent nft service.
 type NftRegistrationService struct {
 	*common.SuperNodeService
 	config *Config

@@ -88,15 +88,18 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
+			tc.args.task.SenseRegistrationService.PastelClient = pastelClientMock
 
 			clientMock := test.NewMockClient(t)
-			clientMock.ListenOnSendArtTicketSignature(tc.args.sendArtErr).
+			clientMock.ListenOnSendSenseTicketSignature(tc.args.sendArtErr).
 				ListenOnConnect("", nil).ListenOnRegisterSense()
 
 			tc.args.task.nodeClient = clientMock
-			tc.args.task.connectedTo = &SenseRegistrationNode{client: clientMock}
-			err := tc.args.task.connectedTo.connect(context.Background())
+			tc.args.task.NetworkHandler.ConnectedTo = &common.SuperNodePeer{
+				ClientInterface: clientMock,
+				NodeMaker:       &RegisterSenseNodeMaker{},
+			}
+			err := tc.args.task.NetworkHandler.ConnectedTo.Connect(context.Background())
 			assert.Nil(t, err)
 
 			err = tc.args.task.signAndSendArtTicket(context.Background(), tc.args.primary)

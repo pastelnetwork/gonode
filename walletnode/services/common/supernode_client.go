@@ -8,9 +8,10 @@ import (
 	"time"
 )
 
+// SuperNodeClient represents base SN client
 type SuperNodeClient struct {
 	node.ClientInterface
-	node.NodeMaker
+	node.RealNodeMaker
 	node.ConnectionInterface
 	node.SuperNodeAPIInterface
 
@@ -55,7 +56,7 @@ func (node *SuperNodeClient) SetActive(active bool) {
 	node.activated = active
 }
 
-// SetActive returns true if nodes is active
+// IsActive returns true if nodes is active
 func (node *SuperNodeClient) IsActive() bool {
 	return node.activated
 }
@@ -75,7 +76,7 @@ func (node *SuperNodeClient) RLock() {
 	node.mtx.RLock()
 }
 
-// RUnLock set nodes active or not
+// RUnlock set nodes active or not
 func (node *SuperNodeClient) RUnlock() {
 	node.mtx.RUnlock()
 }
@@ -104,11 +105,11 @@ func (node *SuperNodeClient) Connect(ctx context.Context, timeout time.Duration,
 // NewSuperNode returns a new Node instance.
 func NewSuperNode(client node.ClientInterface,
 	address string, pastelID string,
-	nodeMaker node.NodeMaker,
+	nodeMaker node.RealNodeMaker,
 ) *SuperNodeClient {
 	return &SuperNodeClient{
 		ClientInterface: client,
-		NodeMaker:       nodeMaker,
+		RealNodeMaker:   nodeMaker,
 		mtx:             &sync.RWMutex{},
 		address:         address,
 		pastelID:        pastelID,

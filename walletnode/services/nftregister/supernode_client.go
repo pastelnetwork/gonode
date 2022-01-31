@@ -2,15 +2,17 @@ package nftregister
 
 import "github.com/pastelnetwork/gonode/walletnode/node"
 
+// RegisterNftNodeMaker makes class ProcessUserdata for RegisterNft
 type RegisterNftNodeMaker struct {
-	node.NodeMaker
+	node.RealNodeMaker
 }
 
+// MakeNode makes class ProcessUserdata for RegisterNft
 func (maker RegisterNftNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
-	return &NftRegisterNode{RegisterNftInterface: conn.RegisterNft()}
+	return &NftRegistrationNode{RegisterNftInterface: conn.RegisterNft()}
 }
 
-// Node represent supernode connection.
-type NftRegisterNode struct {
+// NftRegistrationNode represent supernode connection.
+type NftRegistrationNode struct {
 	node.RegisterNftInterface
 }

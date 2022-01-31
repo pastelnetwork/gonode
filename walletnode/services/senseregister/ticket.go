@@ -5,21 +5,26 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 )
 
-// SenseRegisterRequest represents a request for the registration sense
-type SenseRegisterRequest struct {
-	Image                 *files.File `json:"image"`
-	BurnTxID              string      `json:"burn_txid"`
-	AppPastelID           string      `json:"app_pastel_id"`
-	AppPastelIDPassphrase string      `json:"app_pastel_id_passphrase"`
+// SenseRegistrationRequest represents a request for the registration sense
+type SenseRegistrationRequest struct {
+	// Image is field
+	Image *files.File `json:"image"`
+	// BurnTxID is field
+	BurnTxID string `json:"burn_txid"`
+	// AppPastelID is field
+	AppPastelID string `json:"app_pastel_id"`
+	// AppPastelIDPassphrase is field
+	AppPastelIDPassphrase string `json:"app_pastel_id_passphrase"`
 }
 
-func FromSenseRegisterPayload(payload *sense.StartProcessingPayload) *SenseRegisterRequest {
-	return &SenseRegisterRequest{
+// FromSenseRegisterPayload convert StartProcessingPayload to SenseRegistrationRequest
+func FromSenseRegisterPayload(payload *sense.StartProcessingPayload) *SenseRegistrationRequest {
+	return &SenseRegistrationRequest{
 		BurnTxID:              payload.BurnTxid,
 		AppPastelID:           payload.AppPastelID,
 		AppPastelIDPassphrase: payload.AppPastelidPassphrase,
 	}
 }
 
-//func toNftRegisterTicket(ticket *SenseRegisterRequest) *sense.SenseTicket {
+//func toNftRegisterTicket(ticket *SenseRegistrationRequest) *sense.SenseTicket {
 //}

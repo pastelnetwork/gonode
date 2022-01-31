@@ -30,7 +30,7 @@ const (
 
 // NftRegUploadImageDecoderFunc implements the multipart decoder for service "nftreg" endpoint "UploadImage".
 // The decoder must populate the argument p after encoding.
-func NftRegUploadImageDecoderFunc(ctx context.Context, service *NftApiHandler) nftsrv.NftUploadImageDecoderFunc {
+func NftRegUploadImageDecoderFunc(ctx context.Context, service *NftAPIHandler) nftsrv.NftUploadImageDecoderFunc {
 	return func(reader *multipart.Reader, p **nftreg.UploadImagePayload) error {
 		var res nftreg.UploadImagePayload
 
@@ -48,7 +48,9 @@ func NftRegUploadImageDecoderFunc(ctx context.Context, service *NftApiHandler) n
 		return nil
 	}
 }
-func SenseUploadImageDecoderFunc(ctx context.Context, service *SenseApiHandler) sensrv.SenseUploadImageDecoderFunc {
+
+// SenseUploadImageDecoderFunc decodes image uploaded from request
+func SenseUploadImageDecoderFunc(ctx context.Context, service *SenseAPIHandler) sensrv.SenseUploadImageDecoderFunc {
 	return func(reader *multipart.Reader, p **sense.UploadImagePayload) error {
 		var res sense.UploadImagePayload
 
@@ -122,7 +124,7 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 
 // UserdatasCreateUserdataDecoderFunc implements the multipart decoder for service "userdatas" endpoint "/create".
 // The decoder must populate the argument p after encoding.
-func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *UserdataApiHandler) mdlserver.UserdatasCreateUserdataDecoderFunc {
+func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *UserdataAPIHandler) mdlserver.UserdatasCreateUserdataDecoderFunc {
 	return func(reader *multipart.Reader, p **userdatas.CreateUserdataPayload) error {
 
 		var response *userdatas.CreateUserdataPayload
@@ -213,7 +215,7 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *UserdataApiHandl
 
 // UserdatasUpdateUserdataDecoderFunc implements the multipart decoder for service "userdatas" endpoint "/update".
 // The decoder must populate the argument p after encoding.
-func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, _ *UserdataApiHandler) mdlserver.UserdatasUpdateUserdataDecoderFunc {
+func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, _ *UserdataAPIHandler) mdlserver.UserdatasUpdateUserdataDecoderFunc {
 	return func(reader *multipart.Reader, p **userdatas.UpdateUserdataPayload) error {
 
 		var response *userdatas.UpdateUserdataPayload

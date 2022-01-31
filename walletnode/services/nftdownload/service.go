@@ -15,8 +15,8 @@ const (
 	logPrefix = "walletnode-nft-download"
 )
 
-// Service represents a service for the registration NFT.
-type NftDownloadService struct {
+// NftDownloadingService represents a service for the registration NFT.
+type NftDownloadingService struct {
 	*task.Worker
 
 	config        *Config
@@ -25,7 +25,7 @@ type NftDownloadService struct {
 }
 
 // Run starts worker.
-func (service *NftDownloadService) Run(ctx context.Context) error {
+func (service *NftDownloadingService) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
@@ -35,24 +35,24 @@ func (service *NftDownloadService) Run(ctx context.Context) error {
 }
 
 // Tasks returns all tasks.
-func (service *NftDownloadService) Tasks() []*NftDownloadTask {
-	var tasks []*NftDownloadTask
+func (service *NftDownloadingService) Tasks() []*NftDownloadingTask {
+	var tasks []*NftDownloadingTask
 	for _, task := range service.Worker.Tasks() {
-		tasks = append(tasks, task.(*NftDownloadTask))
+		tasks = append(tasks, task.(*NftDownloadingTask))
 	}
 	return tasks
 }
 
 // GetTask returns the task of the NFT downloading by the given id.
-func (service *NftDownloadService) GetTask(id string) *NftDownloadTask {
+func (service *NftDownloadingService) GetTask(id string) *NftDownloadingTask {
 	if t := service.Worker.Task(id); t != nil {
-		return t.(*NftDownloadTask)
+		return t.(*NftDownloadingTask)
 	}
 	return nil
 }
 
 // AddTask adds a new task of the NFT downloading and returns its taskID.
-func (service *NftDownloadService) AddTask(p *nft.NftDownloadPayload) string {
+func (service *NftDownloadingService) AddTask(p *nft.NftDownloadPayload) string {
 	request := FromDownloadPayload(p)
 
 	task := NewNftDownloadTask(service, request)
@@ -62,10 +62,8 @@ func (service *NftDownloadService) AddTask(p *nft.NftDownloadPayload) string {
 }
 
 // NewNftDownloadService returns a new Service instance.
-// NB: AddTask will get called by the API, creating an NftDownloadTask
-// instead of a generic task.
-func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *NftDownloadService {
-	return &NftDownloadService{
+func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *NftDownloadingService {
+	return &NftDownloadingService{
 		Worker:        task.NewWorker(),
 		config:        config,
 		nodeClient:    nodeClient,

@@ -116,7 +116,7 @@ func TestNewTask(t *testing.T) {
 				service: service,
 			},
 			want: &NftDownloadingTask{
-				Task:               task.New(common.StatusTaskStarted),
+				SuperNodeTask:      &common.SuperNodeTask{Task: task.New(common.StatusTaskStarted)},
 				NftDownloadService: service,
 			},
 		},
@@ -235,7 +235,7 @@ func TestTaskRun(t *testing.T) {
 
 			service := &NftDownloadService{}
 			task := &NftDownloadingTask{
-				Task:               task.New(common.StatusTaskStarted),
+				SuperNodeTask:      &common.SuperNodeTask{Task: task.New(common.StatusTaskStarted)},
 				NftDownloadService: service,
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
@@ -386,15 +386,17 @@ func TestTaskDownload(t *testing.T) {
 			// }
 
 			service := &NftDownloadService{
-				config:        config,
-				pastelClient:  pastelClient.Client,
-				p2pClient:     p2pClient.Client,
-				raptorQClient: raptorQClient.Client,
-				Worker:        task.NewWorker(),
+				config: config,
+				SuperNodeService: &common.SuperNodeService{
+					PastelClient: pastelClient.Client,
+					P2PClient:    p2pClient.Client,
+					RQClient:     raptorQClient.Client,
+					Worker:       task.NewWorker(),
+				},
 			}
 
 			task := &NftDownloadingTask{
-				Task:               task.New(common.StatusTaskStarted),
+				SuperNodeTask:      &common.SuperNodeTask{Task: task.New(common.StatusTaskStarted)},
 				NftDownloadService: service,
 			}
 

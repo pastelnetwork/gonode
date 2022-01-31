@@ -61,14 +61,14 @@ func TestRegisterSenseNodeConnect(t *testing.T) {
 			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterSense()
 
 			//set up node client only
-			testCase.node.ClientInterface = clientMock.Client
+			testCase.node.ClientInterface = clientMock.ClientInterface
 
-			testCase.node.NodeMaker = service.RegisterSenseNodeMaker{}
+			testCase.node.RealNodeMaker = service.RegisterSenseNodeMaker{}
 
 			//assertion error
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
 			//mock assertion
-			clientMock.Client.AssertExpectations(t)
+			clientMock.ClientInterface.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address, mock.Anything)
 			clientMock.AssertRegisterSenseCall(testCase.numberAPICall)
 		})

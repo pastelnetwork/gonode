@@ -3,6 +3,7 @@ package nftregister
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"testing"
 
 	test "github.com/pastelnetwork/gonode/supernode/node/test/nft_register"
@@ -18,7 +19,7 @@ func TestNftNodeConnect(t *testing.T) {
 	}
 
 	testCases := []struct {
-		node                  *NftRegistrationNode
+		node                  *common.SuperNodePeer
 		address               string
 		args                  args
 		err                   error
@@ -27,15 +28,18 @@ func TestNftNodeConnect(t *testing.T) {
 		assertion             assert.ErrorAssertionFunc
 	}{
 		{
-			node:                  &NftRegistrationNode{Address: "127.0.0.1:4444"},
-			address:               "127.0.0.1:4444",
+			node: &common.SuperNodePeer{
+				Address:   "127.0.0.1:4444",
+				NodeMaker: &RegisterNftNodeMaker{}},
 			args:                  args{context.Background()},
 			err:                   nil,
 			numberConnectCall:     1,
 			numberRegisterNftCall: 1,
 			assertion:             assert.NoError,
 		}, {
-			node:                  &NftRegistrationNode{Address: "127.0.0.1:4445"},
+			node: &common.SuperNodePeer{
+				Address:   "127.0.0.1:4445",
+				NodeMaker: &RegisterNftNodeMaker{}},
 			address:               "127.0.0.1:4445",
 			args:                  args{context.Background()},
 			err:                   fmt.Errorf("connection timeout"),
@@ -58,12 +62,12 @@ func TestNftNodeConnect(t *testing.T) {
 			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterNft()
 
 			//set up node client only
-			testCase.node.client = clientMock.Client
+			testCase.node.ClientInterface = clientMock.ClientInterface
 
 			//assertion error
-			testCase.assertion(t, testCase.node.connect(testCase.args.ctx))
+			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx))
 			//mock assertion
-			clientMock.Client.AssertExpectations(t)
+			clientMock.ClientInterface.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address)
 			clientMock.AssertRegisterNftCall(testCase.numberRegisterNftCall)
 		})
@@ -74,19 +78,21 @@ func TestNftNodesAdd(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		node *NftRegistrationNode
+		node *common.SuperNodePeer
 	}
 	testCases := []struct {
-		nodes NftRegistrationNodes
+		nodes common.SuperNodePeerList
 		args  args
-		want  NftRegistrationNodes
+		want  common.SuperNodePeer
 	}{
 		{
-			nodes: NftRegistrationNodes{},
-			args:  args{node: &NftRegistrationNode{Address: "127.0.0.1"}},
-			want: NftRegistrationNodes{
-				&NftRegistrationNode{Address: "127.0.0.1"},
-			},
+			nodes: common.SuperNodePeerList{},
+			args: args{node: &common.SuperNodePeer{
+				Address:   "127.0.0.1",
+				NodeMaker: &RegisterNftNodeMaker{}}},
+			want: common.SuperNodePeer{
+				Address:   "127.0.0.1",
+				NodeMaker: &RegisterNftNodeMaker{}},
 		},
 	}
 
@@ -109,21 +115,35 @@ func TestNftByID(t *testing.T) {
 		id string
 	}
 	testCases := []struct {
-		nodes NftRegistrationNodes
+		nodes common.SuperNodePeerList
 		args  args
-		want  *NftRegistrationNode
+		want  *common.SuperNodePeer
 	}{
 		{
-			nodes: NftRegistrationNodes{
-				&NftRegistrationNode{ID: "1"},
-				&NftRegistrationNode{ID: "2"},
+			nodes: common.SuperNodePeerList{
+				&common.SuperNodePeer{
+					ID:        "1",
+					NodeMaker: &RegisterNftNodeMaker{},
+				},
+				&common.SuperNodePeer{
+					ID:        "1",
+					NodeMaker: &RegisterNftNodeMaker{},
+				},
 			},
 			args: args{"2"},
-			want: &NftRegistrationNode{ID: "2"},
+			want: &common.SuperNodePeer{
+				ID:        "2",
+				NodeMaker: &RegisterNftNodeMaker{}},
 		}, {
-			nodes: NftRegistrationNodes{
-				&NftRegistrationNode{ID: "1"},
-				&NftRegistrationNode{ID: "2"},
+			nodes: common.SuperNodePeerList{
+				&common.SuperNodePeer{
+					ID:        "1",
+					NodeMaker: &RegisterNftNodeMaker{},
+				},
+				&common.SuperNodePeer{
+					ID:        "1",
+					NodeMaker: &RegisterNftNodeMaker{},
+				},
 			},
 			args: args{"3"},
 			want: nil,
@@ -136,7 +156,10 @@ func TestNftByID(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			testCase.nodes.Add(&NftRegistrationNode{ID: "4"})
+			testCase.nodes.Add(&common.SuperNodePeer{
+				ID:        "4",
+				NodeMaker: &RegisterNftNodeMaker{},
+			})
 			testCase.nodes.Remove("4")
 			assert.Equal(t, testCase.want, testCase.nodes.ByID(testCase.args.id))
 		})

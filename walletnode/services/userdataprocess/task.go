@@ -12,7 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
-// Task is the task of userdata processing.
+// UserDataTask is the task of userdata processing.
 type UserDataTask struct {
 	*common.WalletNodeTask
 

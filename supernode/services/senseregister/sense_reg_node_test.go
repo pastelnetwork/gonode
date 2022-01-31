@@ -3,6 +3,7 @@ package senseregister
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"testing"
 
 	test "github.com/pastelnetwork/gonode/supernode/node/test/sense_register"
@@ -18,7 +19,7 @@ func TestNodeConnect(t *testing.T) {
 	}
 
 	testCases := []struct {
-		node                    *SenseRegistrationNode
+		node                    *common.SuperNodePeer
 		address                 string
 		args                    args
 		err                     error
@@ -27,7 +28,10 @@ func TestNodeConnect(t *testing.T) {
 		assertion               assert.ErrorAssertionFunc
 	}{
 		{
-			node:                    &SenseRegistrationNode{Address: "127.0.0.1:4444"},
+			node: &common.SuperNodePeer{
+				Address:   "127.0.0.1:4444",
+				NodeMaker: &RegisterSenseNodeMaker{},
+			},
 			address:                 "127.0.0.1:4444",
 			args:                    args{context.Background()},
 			err:                     nil,
@@ -35,7 +39,10 @@ func TestNodeConnect(t *testing.T) {
 			numberRegisterSenseCall: 1,
 			assertion:               assert.NoError,
 		}, {
-			node:                    &SenseRegistrationNode{Address: "127.0.0.1:4445"},
+			node: &common.SuperNodePeer{
+				Address:   "127.0.0.1:4445",
+				NodeMaker: &RegisterSenseNodeMaker{},
+			},
 			address:                 "127.0.0.1:4445",
 			args:                    args{context.Background()},
 			err:                     fmt.Errorf("connection timeout"),
@@ -58,12 +65,12 @@ func TestNodeConnect(t *testing.T) {
 			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterSense()
 
 			//set up node client only
-			testCase.node.client = clientMock.Client
+			testCase.node.ClientInterface = clientMock.ClientInterface
 
 			//assertion error
-			testCase.assertion(t, testCase.node.connect(testCase.args.ctx))
+			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx))
 			//mock assertion
-			clientMock.Client.AssertExpectations(t)
+			clientMock.ClientInterface.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address)
 			clientMock.AssertRegisterSenseCall(testCase.numberRegisterSenseCall)
 		})
@@ -74,19 +81,22 @@ func TestNodesAdd(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		node *SenseRegistrationNode
+		node *common.SuperNodePeer
 	}
 	testCases := []struct {
-		nodes SenseRegistrationNodes
+		nodes common.SuperNodePeerList
 		args  args
-		want  SenseRegistrationNodes
+		want  common.SuperNodePeer
 	}{
 		{
-			nodes: SenseRegistrationNodes{},
-			args:  args{node: &SenseRegistrationNode{Address: "127.0.0.1"}},
-			want: SenseRegistrationNodes{
-				&SenseRegistrationNode{Address: "127.0.0.1"},
+			nodes: common.SuperNodePeerList{},
+			args: args{node: &common.SuperNodePeer{
+				Address:   "127.0.0.1",
+				NodeMaker: &RegisterSenseNodeMaker{}},
 			},
+			want: common.SuperNodePeer{
+				Address:   "127.0.0.1",
+				NodeMaker: &RegisterSenseNodeMaker{}},
 		},
 	}
 
@@ -109,21 +119,31 @@ func TestByID(t *testing.T) {
 		id string
 	}
 	testCases := []struct {
-		nodes SenseRegistrationNodes
+		nodes common.SuperNodePeerList
 		args  args
-		want  *SenseRegistrationNode
+		want  *common.SuperNodePeer
 	}{
 		{
-			nodes: SenseRegistrationNodes{
-				&SenseRegistrationNode{ID: "1"},
-				&SenseRegistrationNode{ID: "2"},
+			nodes: common.SuperNodePeerList{
+				&common.SuperNodePeer{
+					ID:        "1",
+					NodeMaker: &RegisterSenseNodeMaker{}},
+				&common.SuperNodePeer{
+					ID:        "2",
+					NodeMaker: &RegisterSenseNodeMaker{}},
 			},
 			args: args{"2"},
-			want: &SenseRegistrationNode{ID: "2"},
+			want: &common.SuperNodePeer{
+				ID:        "2",
+				NodeMaker: &RegisterSenseNodeMaker{}},
 		}, {
-			nodes: SenseRegistrationNodes{
-				&SenseRegistrationNode{ID: "1"},
-				&SenseRegistrationNode{ID: "2"},
+			nodes: common.SuperNodePeerList{
+				&common.SuperNodePeer{
+					ID:        "1",
+					NodeMaker: &RegisterSenseNodeMaker{}},
+				&common.SuperNodePeer{
+					ID:        "2",
+					NodeMaker: &RegisterSenseNodeMaker{}},
 			},
 			args: args{"3"},
 			want: nil,
@@ -136,7 +156,9 @@ func TestByID(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			testCase.nodes.Add(&SenseRegistrationNode{ID: "4"})
+			testCase.nodes.Add(&common.SuperNodePeer{
+				ID:        "4",
+				NodeMaker: &RegisterSenseNodeMaker{}})
 			testCase.nodes.Remove("4")
 			assert.Equal(t, testCase.want, testCase.nodes.ByID(testCase.args.id))
 		})

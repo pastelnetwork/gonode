@@ -53,8 +53,8 @@ type SuperNodeAPIInterface interface {
 	MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error
 }
 
-// NodeMaker interface to make concrete node types
-type NodeMaker interface {
+// RealNodeMaker interface to make concrete node types
+type RealNodeMaker interface {
 	MakeNode(conn ConnectionInterface) SuperNodeAPIInterface
 }
 

@@ -14,7 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// Task is the task of registering new Nft.
+// NftRegistrationTask is the task of registering new Nft.
 type NftRegistrationTask struct {
 	*common.SuperNodeTask
 	*common.DupeDetectionHandler
@@ -410,7 +410,7 @@ func (task *NftRegistrationTask) compareRQSymbolID(ctx context.Context) error {
 	}
 
 	return task.storage.ValidateRaptorQSymbolIDs(ctx,
-		content, uint32(len(task.Ticket.AppTicketData.RQIDs)),
+		content /*uint32(len(task.Ticket.AppTicketData.RQIDs))*/, 1,
 		hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.Author,
 		task.rawRqFile)
 }

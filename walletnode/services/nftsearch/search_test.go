@@ -31,13 +31,13 @@ func TestGetSearchableFields(t *testing.T) {
 
 	tests := map[string]struct {
 		search   *RegTicketSearch
-		req      *NftSearchRequest
+		req      *NftSearchingRequest
 		matching bool
 		matches  int
 	}{
 		"artist-name-match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
-			req: &NftSearchRequest{
+			req: &NftSearchingRequest{
 				Query:      "alan",
 				ArtTitle:   true,
 				ArtistName: true,
@@ -47,7 +47,7 @@ func TestGetSearchableFields(t *testing.T) {
 		},
 		"art-title-match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
-			req: &NftSearchRequest{
+			req: &NftSearchingRequest{
 				Query:    "super",
 				ArtTitle: true,
 			},
@@ -56,7 +56,7 @@ func TestGetSearchableFields(t *testing.T) {
 		},
 		"keyword-match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
-			req: &NftSearchRequest{
+			req: &NftSearchingRequest{
 				Query:   "Lakes",
 				Keyword: true,
 			},
@@ -65,7 +65,7 @@ func TestGetSearchableFields(t *testing.T) {
 		},
 		"descr-match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
-			req: &NftSearchRequest{
+			req: &NftSearchingRequest{
 				Query: "Explore Lake Superiorfrom ",
 				Descr: true,
 			},
@@ -74,7 +74,7 @@ func TestGetSearchableFields(t *testing.T) {
 		},
 		"keyword-match-false": {
 			search: &RegTicketSearch{RegTicket: regTicket},
-			req: &NftSearchRequest{
+			req: &NftSearchingRequest{
 				Query:   "Lakes",
 				Keyword: false, // keyword shouldn't be searched
 			},
@@ -83,7 +83,7 @@ func TestGetSearchableFields(t *testing.T) {
 		},
 		"title,descr match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
-			req: &NftSearchRequest{
+			req: &NftSearchingRequest{
 				Query:    "Lakes ",
 				ArtTitle: true,
 				Descr:    true,
@@ -93,7 +93,7 @@ func TestGetSearchableFields(t *testing.T) {
 		},
 		"title,descr, keyword match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
-			req: &NftSearchRequest{
+			req: &NftSearchingRequest{
 				Query:    "lAkEs",
 				ArtTitle: true,
 				Descr:    true,

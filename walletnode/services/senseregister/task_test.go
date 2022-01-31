@@ -69,7 +69,7 @@ package senseregister
 //	t.Skip()
 //
 //	type fields struct {
-//		Request *SenseRegisterRequest
+//		Request *SenseRegistrationRequest
 //	}
 //
 //	type args struct {
@@ -98,7 +98,7 @@ package senseregister
 //		numProbeImageCall int
 //	}{
 //		{
-//			fields: fields{&SenseRegisterRequest{BurnTxID: "1", AppPastelID: "1", AppPastelIDPassphrase: "2"}},
+//			fields: fields{&SenseRegistrationRequest{BurnTxID: "1", AppPastelID: "1", AppPastelIDPassphrase: "2"}},
 //			args: args{
 //				taskID:     "1",
 //				ctx:        context.Background(),
@@ -149,7 +149,7 @@ package senseregister
 //			testCase.args.fingerPrint = compressedFg
 //
 //			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-//				var task *SenseRegisterTask
+//				var task *SenseRegistrationTask
 //
 //				nodeClient := test.NewMockClient(t)
 //				nodeClient.
@@ -202,7 +202,7 @@ package senseregister
 //				Request := testCase.fields.Request
 //				Request.Image = artworkFile
 //				Request.BurnTxID = "1"
-//				task = &SenseRegisterTask{
+//				task = &SenseRegistrationTask{
 //					WalletNodeTask: &common.WalletNodeTask{
 //						Task:      taskClient.Task,
 //						LogPrefix: logPrefix,
@@ -341,7 +341,7 @@ package senseregister
 //				config: NewConfig(),
 //			}
 //
-//			task := &SenseRegisterTask{SenseRegistrationService: service, Request: &SenseRegisterRequest{}}
+//			task := &SenseRegistrationTask{SenseRegistrationService: service, Request: &SenseRegistrationRequest{}}
 //			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 //
 //			testCase.assertion(t, err)
@@ -363,7 +363,7 @@ package senseregister
 //
 //	type fields struct {
 //		Task    task.Task
-//		Request *SenseRegisterRequest
+//		Request *SenseRegistrationRequest
 //	}
 //
 //	type args struct {
@@ -381,7 +381,7 @@ package senseregister
 //	}{
 //		{
 //			fields: fields{
-//				Request: &SenseRegisterRequest{
+//				Request: &SenseRegistrationRequest{
 //					BurnTxID: "xdxdf",
 //				},
 //			},
@@ -401,7 +401,7 @@ package senseregister
 //			assertion: assert.NoError,
 //		}, {
 //			fields: fields{
-//				Request: &SenseRegisterRequest{
+//				Request: &SenseRegistrationRequest{
 //					BurnTxID: "xdxdf",
 //				},
 //			},
@@ -445,7 +445,7 @@ package senseregister
 //				pastelClient: pastelClient.Client,
 //			}
 //
-//			task := &SenseRegisterTask{
+//			task := &SenseRegistrationTask{
 //				WalletNodeTask: &common.WalletNodeTask{
 //					Task:      testCase.fields.Task,
 //					LogPrefix: logPrefix,
@@ -470,22 +470,22 @@ package senseregister
 //
 //	type args struct {
 //		service *SenseRegistrationService
-//		Request *SenseRegisterRequest
+//		Request *SenseRegistrationRequest
 //	}
 //
 //	service := &SenseRegistrationService{}
-//	Request := &SenseRegisterRequest{}
+//	Request := &SenseRegistrationRequest{}
 //
 //	testCases := []struct {
 //		args args
-//		want *SenseRegisterTask
+//		want *SenseRegistrationTask
 //	}{
 //		{
 //			args: args{
 //				service: service,
 //				Request: Request,
 //			},
-//			want: &SenseRegisterTask{
+//			want: &SenseRegistrationTask{
 //				WalletNodeTask:       common.NewWalletNodeTask(logPrefix),
 //				SenseRegistrationService: service,
 //				Request:              Request,
@@ -510,7 +510,7 @@ package senseregister
 //	t.Parallel()
 //
 //	type args struct {
-//		task *SenseRegisterTask
+//		task *SenseRegistrationTask
 //	}
 //
 //	testCases := map[string]struct {
@@ -520,8 +520,8 @@ package senseregister
 //	}{
 //		"data-hash-error": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "test-id",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{
@@ -534,11 +534,11 @@ package senseregister
 //		},
 //		"success": {
 //			args: args{
-//				task: &SenseRegisterTask{
+//				task: &SenseRegistrationTask{
 //					fingerprint:          []byte{},
 //					dataHash:             []byte{},
 //					fingerprintAndScores: &pastel.DDAndFingerprints{},
-//					Request: &SenseRegisterRequest{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID:           "test-id",
 //						AppPastelIDPassphrase: "test-name",
 //					},
@@ -594,7 +594,7 @@ package senseregister
 //	t.Parallel()
 //
 //	type args struct {
-//		task            *SenseRegisterTask
+//		task            *SenseRegistrationTask
 //		blockCountErr   error
 //		blockVerboseErr error
 //		blockNum        int32
@@ -609,8 +609,8 @@ package senseregister
 //	}{
 //		"success": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "test-id",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{},
@@ -625,8 +625,8 @@ package senseregister
 //		},
 //		"block-count-err": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "test-id",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{},
@@ -642,8 +642,8 @@ package senseregister
 //		},
 //		"block-verbose-err": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "test-id",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{},
@@ -687,7 +687,7 @@ package senseregister
 //
 //func TestTaskSignTicket(t *testing.T) {
 //	type args struct {
-//		task        *SenseRegisterTask
+//		task        *SenseRegistrationTask
 //		signErr     error
 //		signReturns []byte
 //	}
@@ -698,8 +698,8 @@ package senseregister
 //	}{
 //		"success": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{
@@ -712,8 +712,8 @@ package senseregister
 //		},
 //		"err": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{
@@ -750,7 +750,7 @@ package senseregister
 //
 //func TestWaitTxnValid(t *testing.T) {
 //	type args struct {
-//		task                            *SenseRegisterTask
+//		task                            *SenseRegistrationTask
 //		getRawTransactionVerbose1RetErr error
 //		getRawTransactionVerbose1Ret    *pastel.GetRawTransactionVerbose1Result
 //		ctxDone                         bool
@@ -762,8 +762,8 @@ package senseregister
 //	}{
 //		"ctx-done-err": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{
@@ -776,8 +776,8 @@ package senseregister
 //		},
 //		"get-raw-transaction-err": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{
@@ -791,8 +791,8 @@ package senseregister
 //		},
 //		"insufficient-confirmations": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{
@@ -806,8 +806,8 @@ package senseregister
 //		},
 //		"success": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{
@@ -929,7 +929,7 @@ package senseregister
 //		pastelID string
 //	}
 //	type args struct {
-//		task            *SenseRegisterTask
+//		task            *SenseRegistrationTask
 //		nodes           []nodeArg
 //		isValidBurnTxID bool
 //		probeImgErr     error
@@ -942,13 +942,13 @@ package senseregister
 //		"success": {
 //			args: args{
 //				isValidBurnTxID: true,
-//				task: &SenseRegisterTask{
+//				task: &SenseRegistrationTask{
 //					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{
 //							thumbnailSize: 224,
 //						},
 //					},
-//					Request: &SenseRegisterRequest{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					actionTicket: &pastel.ActionTicket{},
@@ -964,13 +964,13 @@ package senseregister
 //		"probe-img-err": {
 //			args: args{
 //				isValidBurnTxID: true,
-//				task: &SenseRegisterTask{
+//				task: &SenseRegistrationTask{
 //					SenseRegistrationService: &SenseRegistrationService{
 //						config: &Config{
 //							thumbnailSize: 224,
 //						},
 //					},
-//					Request: &SenseRegisterRequest{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					actionTicket: &pastel.ActionTicket{},
@@ -1046,7 +1046,7 @@ package senseregister
 //		pastelID string
 //	}
 //	type args struct {
-//		task                   *SenseRegisterTask
+//		task                   *SenseRegistrationTask
 //		sendSignedTicketRet    string
 //		sendSignedTicketRetErr error
 //		nodes                  []nodeArg
@@ -1060,8 +1060,8 @@ package senseregister
 //		"success": {
 //			args: args{
 //				sendSignedTicketRet: "test",
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID:           "testid",
 //						AppPastelIDPassphrase: "testpassphrase",
 //					},
@@ -1125,7 +1125,7 @@ package senseregister
 //		pastelID string
 //	}
 //	type args struct {
-//		task              *SenseRegisterTask
+//		task              *SenseRegistrationTask
 //		nodes             []nodeArg
 //		masterNodesTopErr error
 //		masterNodes       pastel.MasterNodes
@@ -1143,8 +1143,8 @@ package senseregister
 //					pastel.MasterNode{Fee: 0.3, ExtAddress: "127.0.0.1:4446", ExtKey: "3"},
 //					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4447", ExtKey: "4"},
 //				},
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID:           "testid",
 //						AppPastelIDPassphrase: "testpassphrase",
 //					},
@@ -1163,8 +1163,8 @@ package senseregister
 //		"master-nodes-err": {
 //			args: args{
 //				masterNodesTopErr: errors.New("test"),
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{
@@ -1182,8 +1182,8 @@ package senseregister
 //		"insufficient-sns-err": {
 //			args: args{
 //				masterNodesTopErr: nil,
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "testid",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{
@@ -1264,7 +1264,7 @@ package senseregister
 //	t.Parallel()
 //
 //	type args struct {
-//		task *SenseRegisterTask
+//		task *SenseRegistrationTask
 //	}
 //
 //	testCases := map[string]struct {
@@ -1273,8 +1273,8 @@ package senseregister
 //	}{
 //		"success": {
 //			args: args{
-//				task: &SenseRegisterTask{
-//					Request: &SenseRegisterRequest{
+//				task: &SenseRegistrationTask{
+//					Request: &SenseRegistrationRequest{
 //						AppPastelID: "test-id",
 //					},
 //					SenseRegistrationService: &SenseRegistrationService{

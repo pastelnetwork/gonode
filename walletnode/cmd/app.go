@@ -194,9 +194,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	//  Since the API Server has access to the services, this is what finally exposes useful methods like
 	//  "NftGet" and "Download".
 	server := api.NewAPIServer(config.API,
-		services.NewNftApiHandler(nftRegister, nftSearch, nftDownload),
-		services.NewUserdataApiHandler(userdataProcess),
-		services.NewSenseApiHandler(senseRegister),
+		services.NewNftAPIHandler(nftRegister, nftSearch, nftDownload),
+		services.NewUserdataAPIHandler(userdataProcess),
+		services.NewSenseAPIHandler(senseRegister),
 		services.NewSwagger(),
 	)
 

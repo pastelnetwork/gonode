@@ -232,7 +232,7 @@ func (service *processUserdata) contextWithLogPrefix(ctx context.Context) contex
 }
 
 //NON IMPLEMETED--->
-func (service *processUserdata) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
+func (service *processUserdata) MeshNodes(_ context.Context, _ []types.MeshedSuperNode) error {
 	return nil
 }
 

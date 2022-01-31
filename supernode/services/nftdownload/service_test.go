@@ -44,10 +44,12 @@ func TestNewService(t *testing.T) {
 				raptorQClient: raptorQClient.Client,
 			},
 			want: &NftDownloadService{
-				config:        config,
-				pastelClient:  pastelClient.Client,
-				p2pClient:     p2pClient.Client,
-				raptorQClient: raptorQClient.Client,
+				config: config,
+				SuperNodeService: &common.SuperNodeService{
+					PastelClient: pastelClient.Client,
+					P2PClient:    p2pClient.Client,
+					RQClient:     raptorQClient.Client,
+				},
 			},
 		},
 	}
@@ -59,9 +61,9 @@ func TestNewService(t *testing.T) {
 
 			service := NewService(testCase.args.config, testCase.args.pastelClient, testCase.args.p2pClient, testCase.args.raptorQClient)
 			assert.Equal(t, testCase.want.config, service.config)
-			assert.Equal(t, testCase.want.pastelClient, service.pastelClient)
-			assert.Equal(t, testCase.want.p2pClient, service.p2pClient)
-			assert.Equal(t, testCase.want.raptorQClient, service.raptorQClient)
+			assert.Equal(t, testCase.want.PastelClient, service.PastelClient)
+			assert.Equal(t, testCase.want.P2PClient, service.P2PClient)
+			assert.Equal(t, testCase.want.RQClient, service.RQClient)
 		})
 	}
 }
@@ -100,11 +102,13 @@ func TestServiceRun(t *testing.T) {
 			p2pClient := p2pMock.NewMockClient(t)
 			raptorQClient := rqmock.NewMockClient(t)
 			service := &NftDownloadService{
-				config:        config,
-				pastelClient:  pastelClient.Client,
-				p2pClient:     p2pClient.Client,
-				raptorQClient: raptorQClient.Client,
-				Worker:        task.NewWorker(),
+				config: config,
+				SuperNodeService: &common.SuperNodeService{
+					PastelClient: pastelClient.Client,
+					P2PClient:    p2pClient.Client,
+					RQClient:     raptorQClient.Client,
+					Worker:       task.NewWorker(),
+				},
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
@@ -145,10 +149,12 @@ func TestServiceNewTask(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			p2pClient := p2pMock.NewMockClient(t)
 			service := &NftDownloadService{
-				config:       config,
-				pastelClient: pastelClient.Client,
-				p2pClient:    p2pClient.Client,
-				Worker:       task.NewWorker(),
+				config: config,
+				SuperNodeService: &common.SuperNodeService{
+					PastelClient: pastelClient.Client,
+					P2PClient:    p2pClient.Client,
+					Worker:       task.NewWorker(),
+				},
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_register"
+	test "github.com/pastelnetwork/gonode/walletnode/node/test/nft_register"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -61,14 +61,14 @@ func TestRegisterArtworkNodeConnect(t *testing.T) {
 			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterArtwork()
 
 			//set up node client only
-			testCase.node.ClientInterface = clientMock.Client
+			testCase.node.ClientInterface = clientMock.ClientInterface
 
-			//testCase.node.NodeMaker = service.RegisterArtworkNodeMaker{}
+			//testCase.node.RealNodeMaker = service.RegisterArtworkNodeMaker{}
 
 			//assertion error
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
 			//mock assertion
-			clientMock.Client.AssertExpectations(t)
+			clientMock.ClientInterface.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address, mock.Anything)
 			clientMock.AssertRegisterArtworkCall(testCase.numberAPICall)
 		})

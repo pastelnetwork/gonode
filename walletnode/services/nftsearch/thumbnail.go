@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
+// ThumbnailHandler helps with fetching thumbnails
 type ThumbnailHandler struct {
 	meshHandler *common.MeshHandler
 
@@ -17,7 +18,7 @@ type ThumbnailHandler struct {
 	nodesDone    chan struct{}
 }
 
-// New returns a new instance of ThumbnailHandler as Helper
+// NewThumbnailHandler returns a new instance of ThumbnailHandler as Helper
 func NewThumbnailHandler(meshHandler *common.MeshHandler) *ThumbnailHandler {
 	return &ThumbnailHandler{
 		meshHandler:  meshHandler,
@@ -103,7 +104,7 @@ func (h *ThumbnailHandler) setFetchers(ctx context.Context) ([]error, error) {
 }
 
 func (h *ThumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNodeClient, nodeID string) error {
-	nftSearchNode, ok := someNode.SuperNodeAPIInterface.(*NftSearchNode)
+	nftSearchNode, ok := someNode.SuperNodeAPIInterface.(*NftSearchingNode)
 	if !ok {
 		//TODO: use assert here?
 		return errors.Errorf("node %s is not NftRegisterNode", someNode.String())

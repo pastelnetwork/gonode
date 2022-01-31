@@ -53,7 +53,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 				c.client.ListenOnClose(nil)
 
 				node := common.NewSuperNode(nil, "", "", nil)
-				node.ConnectionInterface = c.client.Connection
+				node.ConnectionInterface = c.client.ConnectionInterface
 				node.SetActive(c.activated)
 				nodes = append(nodes, node)
 			}

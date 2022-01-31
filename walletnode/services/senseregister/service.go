@@ -25,7 +25,7 @@ const (
 	defaultImageTTL = time.Second * 3600 // 1 hour
 )
 
-// Service represents a service for Sense Open API
+// SenseRegistrationService represents a service for Sense Open API
 type SenseRegistrationService struct {
 	*task.Worker
 	config *Config
@@ -50,19 +50,19 @@ func (service *SenseRegistrationService) Run(ctx context.Context) error {
 	return group.Wait()
 }
 
-// Run starts worker. //TODO: make common with the same from NftRegisterService
-func (service *SenseRegistrationService) Tasks() []*SenseRegisterTask {
-	var tasks []*SenseRegisterTask
+// Tasks starts worker. //TODO: make common with the same from NftRegisterService
+func (service *SenseRegistrationService) Tasks() []*SenseRegistrationTask {
+	var tasks []*SenseRegistrationTask
 	for _, task := range service.Worker.Tasks() {
-		tasks = append(tasks, task.(*SenseRegisterTask))
+		tasks = append(tasks, task.(*SenseRegistrationTask))
 	}
 	return tasks
 }
 
-// SenseRegisterTask returns the task of the Sense OpenAPI by the given id.
-func (service *SenseRegistrationService) GetTask(id string) *SenseRegisterTask {
+// GetTask returns the task of the Sense OpenAPI by the given id.
+func (service *SenseRegistrationService) GetTask(id string) *SenseRegistrationTask {
 	if t := service.Worker.Task(id); t != nil {
-		return t.(*SenseRegisterTask)
+		return t.(*SenseRegistrationTask)
 	}
 	return nil
 }
@@ -90,12 +90,12 @@ func (service *SenseRegistrationService) AddTask(p *sense.StartProcessingPayload
 	return task.ID(), nil
 }
 
-// StoreFile stores file into walletnode file storage. //TODO: make common with the same from NftRegisterService
+// StoreFile stores file into walletnode file storage
 func (service *SenseRegistrationService) StoreFile(ctx context.Context, fileName *string) (string, string, error) {
 	return service.ImageHandler.StoreFileNameIntoStorage(ctx, fileName)
 }
 
-// StoreFile stores file into walletnode file storage. //TODO: make common with the same from NftRegisterService
+// ValidateDetailsAndCalculateFee stores file into walletnode file storage
 func (service *SenseRegistrationService) ValidateDetailsAndCalculateFee(ctx context.Context, fileID string, fileSignature string, pastelID string) (float64, error) {
 	fileData, err := service.ImageHandler.GetImgData(fileID)
 	if err != nil {

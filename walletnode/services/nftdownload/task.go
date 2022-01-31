@@ -17,15 +17,14 @@ type downFile struct {
 	pastelID string
 }
 
-// Task is the task of downloading nft.
-// Follows instructions from https://pastel.wiki/en/Architecture/Workflows/ArtDownloadWorkflow
-type NftDownloadTask struct {
+// NftDownloadingTask is the task of downloading nft.
+type NftDownloadingTask struct {
 	*common.WalletNodeTask
 
 	MeshHandler *common.MeshHandler
 
-	service *NftDownloadService
-	Request *NftDownloadRequest
+	service *NftDownloadingService
+	Request *NftDownloadingRequest
 
 	files []downFile
 	File  []byte
@@ -34,14 +33,12 @@ type NftDownloadTask struct {
 }
 
 // Run starts the task
-func (task *NftDownloadTask) Run(ctx context.Context) error {
+func (task *NftDownloadingTask) Run(ctx context.Context) error {
 	task.err = task.RunHelper(ctx, task.run, task.removeArtifacts)
 	return nil
 }
 
-//Following instructions from https://pastel.wiki/en/Architecture/Workflows/ArtDownloadWorkflow
-// manage connections to supernode mesh network to download nft
-func (task *NftDownloadTask) run(ctx context.Context) error {
+func (task *NftDownloadingTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -102,12 +99,12 @@ func (task *NftDownloadTask) run(ctx context.Context) error {
 }
 
 // Download downloads image from supernodes.
-func (task *NftDownloadTask) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]error, error) {
+func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]error, error) {
 	group, _ := errgroup.WithContext(ctx)
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
 
 	for _, someNode := range task.MeshHandler.Nodes {
-		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownloadNode)
+		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownloadingNode)
 		if !ok {
 			//TODO: use assert here
 			return nil, errors.Errorf("node %s is not NftRegisterNode", someNode.String())
@@ -136,9 +133,8 @@ func (task *NftDownloadTask) Download(ctx context.Context, txid, timestamp, sign
 	return downloadErrors, err
 }
 
-// MatchFiles matches files against the first downloaded file to check if all are equal.
-//  All must be equal for matchfiles to succeed.
-func (task *NftDownloadTask) MatchFiles() error {
+// MatchFiles matches files.
+func (task *NftDownloadingTask) MatchFiles() error {
 	for _, someFile := range task.files[1:] {
 		if !bytes.Equal(task.files[0].file, someFile.file) {
 			return errors.Errorf("file of nodes %q and %q didn't match", task.files[0].pastelID, someFile.pastelID)
@@ -148,23 +144,23 @@ func (task *NftDownloadTask) MatchFiles() error {
 }
 
 // Error returns task err
-func (task *NftDownloadTask) Error() error {
+func (task *NftDownloadingTask) Error() error {
 	return task.err
 }
 
-func (task *NftDownloadTask) removeArtifacts() {
+func (task *NftDownloadingTask) removeArtifacts() {
 }
 
 // NewNftDownloadTask returns a new Task instance.
-func NewNftDownloadTask(service *NftDownloadService, request *NftDownloadRequest) *NftDownloadTask {
-	task := &NftDownloadTask{
+func NewNftDownloadTask(service *NftDownloadingService, request *NftDownloadingRequest) *NftDownloadingTask {
+	task := &NftDownloadingTask{
 		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
 		service:        service,
 		Request:        request,
 	}
 
 	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &NftDownloadNodeMaker{},
+		service.nodeClient, &NftDownloadingNodeMaker{},
 		service.pastelHandler,
 		request.PastelID, request.PastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,

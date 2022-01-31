@@ -12,7 +12,7 @@ package nftdownload
 //	taskMock "github.com/pastelnetwork/gonode/common/service/task/test"
 //	"github.com/pastelnetwork/gonode/pastel"
 //	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-//	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_download"
+//	test "github.com/pastelnetwork/gonode/walletnode/node/test/nft_download"
 //	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload/node"
 //	"github.com/stretchr/testify/assert"
 //	"github.com/stretchr/testify/mock"
@@ -26,25 +26,25 @@ package nftdownload
 //	// t.Parallel()
 //
 //	type args struct {
-//		service *NftDownloadService
-//		Ticket  *NftDownloadRequest
+//		service *NftDownloadingService
+//		Ticket  *NftDownloadingRequest
 //	}
 //
-//	service := &NftDownloadService{}
-//	ticket := &NftDownloadRequest{}
+//	service := &NftDownloadingService{}
+//	ticket := &NftDownloadingRequest{}
 //
 //	testCases := []struct {
 //		args args
-//		want *NftDownloadTask
+//		want *NftDownloadingTask
 //	}{
 //		{
 //			args: args{
 //				service: service,
 //				Ticket:  ticket,
 //			},
-//			want: &NftDownloadTask{
+//			want: &NftDownloadingTask{
 //				WalletNodeTask:     common.NewWalletNodeTask(logPrefix),
-//				NftDownloadService: service,
+//				NftDownloadingService: service,
 //				Request:            ticket,
 //			},
 //		},
@@ -56,7 +56,7 @@ package nftdownload
 //			// t.Parallel()
 //
 //			task := NewNftDownloadTask(testCase.args.service, testCase.args.Ticket)
-//			assert.Equal(t, testCase.want.NftDownloadService, task.NftDownloadService)
+//			assert.Equal(t, testCase.want.NftDownloadingService, task.NftDownloadingService)
 //			assert.Equal(t, testCase.want.Request, task.Request)
 //			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 //		})
@@ -68,7 +68,7 @@ package nftdownload
 //
 //	type fields struct {
 //		Task   task.Task
-//		Ticket *NftDownloadRequest
+//		Ticket *NftDownloadingRequest
 //	}
 //
 //	type args struct {
@@ -85,7 +85,7 @@ package nftdownload
 //	}{
 //		{
 //			fields: fields{
-//				Ticket: &NftDownloadRequest{},
+//				Ticket: &NftDownloadingRequest{},
 //			},
 //			args: args{
 //				ctx: context.Background(),
@@ -120,16 +120,16 @@ package nftdownload
 //			//create new mock service
 //			pastelClient := pastelMock.NewMockClient(t)
 //			pastelClient.ListenOnMasterNodesTop(testCase.args.returnMn, testCase.args.returnErr)
-//			service := &NftDownloadService{
+//			service := &NftDownloadingService{
 //				pastelClient: pastelClient.Client,
 //			}
 //
-//			task := &NftDownloadTask{
+//			task := &NftDownloadingTask{
 //				WalletNodeTask: &common.WalletNodeTask{
 //					Task:      testCase.fields.Task,
 //					LogPrefix: logPrefix,
 //				},
-//				NftDownloadService: service,
+//				NftDownloadingService: service,
 //				Request:            testCase.fields.Ticket,
 //			}
 //			got, err := task.pastelTopNodes(testCase.args.ctx)
@@ -164,7 +164,7 @@ package nftdownload
 //	}
 //
 //	type fields struct {
-//		Ticket *NftDownloadRequest
+//		Ticket *NftDownloadingRequest
 //	}
 //
 //	testCases := []struct {
@@ -182,7 +182,7 @@ package nftdownload
 //		numClose           int
 //	}{
 //		{
-//			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+//			fields: fields{Ticket: &NftDownloadingRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 //			args: args{
 //				ctx:                context.Background(),
 //				returnErr:          nil,
@@ -214,7 +214,7 @@ package nftdownload
 //			numClose:           3,
 //		},
 //		{
-//			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+//			fields: fields{Ticket: &NftDownloadingRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 //			args: args{
 //				ctx:                context.Background(),
 //				returnErr:          nil,
@@ -246,7 +246,7 @@ package nftdownload
 //			numClose:           0,
 //		},
 //		{
-//			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+//			fields: fields{Ticket: &NftDownloadingRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 //			args: args{
 //				ctx:                context.Background(),
 //				returnErr:          nil,
@@ -278,7 +278,7 @@ package nftdownload
 //			numClose:           0,
 //		},
 //		{
-//			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+//			fields: fields{Ticket: &NftDownloadingRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 //			args: args{
 //				ctx:                context.Background(),
 //				returnErr:          nil,
@@ -310,7 +310,7 @@ package nftdownload
 //			numClose:           0,
 //		},
 //		{
-//			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+//			fields: fields{Ticket: &NftDownloadingRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 //			args: args{
 //				ctx:                context.Background(),
 //				returnErr:          nil,
@@ -342,7 +342,7 @@ package nftdownload
 //			numClose:           0,
 //		},
 //		{
-//			fields: fields{Ticket: &NftDownloadRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+//			fields: fields{Ticket: &NftDownloadingRequest{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
 //			args: args{
 //				ctx:                context.Background(),
 //				returnErr:          nil,
@@ -409,7 +409,7 @@ package nftdownload
 //				pastelClient.ListenOnSign(testCase.args.signature, testCase.args.signErr)
 //			}
 //
-//			service := &NftDownloadService{
+//			service := &NftDownloadingService{
 //				pastelClient: pastelClient.Client,
 //				nodeClient:   nodeClient.Client,
 //				config:       NewConfig(),
@@ -421,12 +421,12 @@ package nftdownload
 //				ListenOnUpdateStatus().
 //				ListenOnSetStatusNotifyFunc()
 //
-//			task := &NftDownloadTask{
+//			task := &NftDownloadingTask{
 //				WalletNodeTask: &common.WalletNodeTask{
 //					Task:      taskClient.Task,
 //					LogPrefix: logPrefix,
 //				},
-//				NftDownloadService: service,
+//				NftDownloadingService: service,
 //				Request:            testCase.fields.Ticket,
 //			}
 //

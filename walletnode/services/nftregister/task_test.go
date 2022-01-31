@@ -81,7 +81,7 @@ package nftregister
 //	t.Skip()
 //
 //	type fields struct {
-//		Request *NftRegisterRequest
+//		Request *NftRegistrationRequest
 //	}
 //
 //	type args struct {
@@ -110,7 +110,7 @@ package nftregister
 //		numProbeImageCall int
 //	}{
 //		{
-//			fields: fields{&NftRegisterRequest{MaximumFee: 0.5, ArtistPastelID: "1", ArtistPastelIDPassphrase: "2"}},
+//			fields: fields{&NftRegistrationRequest{MaximumFee: 0.5, ArtistPastelID: "1", ArtistPastelIDPassphrase: "2"}},
 //			args: args{
 //				taskID:     "1",
 //				ctx:        context.Background(),
@@ -373,7 +373,7 @@ package nftregister
 //				config: NewConfig(),
 //			}
 //
-//			task := &NftRegistrationTask{NftRegistrationService: service, Request: &NftRegisterRequest{}}
+//			task := &NftRegistrationTask{NftRegistrationService: service, Request: &NftRegistrationRequest{}}
 //			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 //
 //			testCase.assertion(t, err)
@@ -394,7 +394,7 @@ package nftregister
 //	t.Parallel()
 //
 //	type fields struct {
-//		Request *NftRegisterRequest
+//		Request *NftRegistrationRequest
 //	}
 //
 //	type args struct {
@@ -411,7 +411,7 @@ package nftregister
 //	}{
 //		{
 //			fields: fields{
-//				Request: &NftRegisterRequest{MaximumFee: 0.5},
+//				Request: &NftRegistrationRequest{MaximumFee: 0.5},
 //			},
 //			args: args{
 //				ctx:        context.Background(),
@@ -422,7 +422,7 @@ package nftregister
 //		},
 //		{
 //			fields: fields{
-//				Request: &NftRegisterRequest{MaximumFee: 0.5},
+//				Request: &NftRegistrationRequest{MaximumFee: 0.5},
 //			},
 //			args: args{
 //				ctx:        context.Background(),
@@ -475,7 +475,7 @@ package nftregister
 //
 //	type fields struct {
 //		Task    task.Task
-//		Request *NftRegisterRequest
+//		Request *NftRegistrationRequest
 //	}
 //
 //	type args struct {
@@ -493,7 +493,7 @@ package nftregister
 //	}{
 //		{
 //			fields: fields{
-//				Request: &NftRegisterRequest{
+//				Request: &NftRegistrationRequest{
 //					MaximumFee: 0.30,
 //				},
 //			},
@@ -513,7 +513,7 @@ package nftregister
 //			assertion: assert.NoError,
 //		}, {
 //			fields: fields{
-//				Request: &NftRegisterRequest{
+//				Request: &NftRegistrationRequest{
 //					MaximumFee: 0.3,
 //				},
 //			},
@@ -532,7 +532,7 @@ package nftregister
 //			assertion: assert.NoError,
 //		}, {
 //			fields: fields{
-//				Request: &NftRegisterRequest{
+//				Request: &NftRegistrationRequest{
 //					MaximumFee: 0.3,
 //				},
 //			},
@@ -601,11 +601,11 @@ package nftregister
 //
 //	type args struct {
 //		service *NftRegistrationService
-//		Request *NftRegisterRequest
+//		Request *NftRegistrationRequest
 //	}
 //
 //	service := &NftRegistrationService{}
-//	Request := &NftRegisterRequest{}
+//	Request := &NftRegistrationRequest{}
 //
 //	testCases := []struct {
 //		args args
@@ -657,7 +657,7 @@ package nftregister
 //					previewHash:         []byte{},
 //					rqids:               []string{},
 //					dataHash:            []byte{},
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -676,7 +676,7 @@ package nftregister
 //					smallThumbnailHash:  []byte{},
 //					mediumThumbnailHash: []byte{},
 //					rqids:               []string{},
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -695,7 +695,7 @@ package nftregister
 //					smallThumbnailHash:  []byte{},
 //					mediumThumbnailHash: []byte{},
 //					rqids:               []string{},
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -714,7 +714,7 @@ package nftregister
 //					dataHash:           []byte{},
 //					smallThumbnailHash: []byte{},
 //					rqids:              []string{},
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -733,7 +733,7 @@ package nftregister
 //					previewHash:         []byte{},
 //					dataHash:            []byte{},
 //					rqids:               []string{},
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -752,7 +752,7 @@ package nftregister
 //					mediumThumbnailHash: []byte{},
 //					previewHash:         []byte{},
 //					dataHash:            []byte{},
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -774,7 +774,7 @@ package nftregister
 //					dataHash:             []byte{},
 //					fingerprintAndScores: &pastel.DDAndFingerprints{},
 //					rqids:                []string{},
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //						ArtistName:     "test-name",
 //						IssuedCopies:   10,
@@ -858,7 +858,7 @@ package nftregister
 //		"success": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{},
@@ -874,7 +874,7 @@ package nftregister
 //		"block-count-err": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{},
@@ -891,7 +891,7 @@ package nftregister
 //		"block-verbose-err": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{},
@@ -952,7 +952,7 @@ package nftregister
 //		"success": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -972,7 +972,7 @@ package nftregister
 //		"error": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1036,7 +1036,7 @@ package nftregister
 //			args: args{
 //				task: &NftRegistrationTask{
 //					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1065,7 +1065,7 @@ package nftregister
 //			args: args{
 //				task: &NftRegistrationTask{
 //					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1089,7 +1089,7 @@ package nftregister
 //			args: args{
 //				task: &NftRegistrationTask{
 //					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1112,7 +1112,7 @@ package nftregister
 //			args: args{
 //				task: &NftRegistrationTask{
 //					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1131,7 +1131,7 @@ package nftregister
 //			args: args{
 //				task: &NftRegistrationTask{
 //					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1215,7 +1215,7 @@ package nftregister
 //		"success": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 //					},
 //					NftRegistrationService: &NftRegistrationService{},
@@ -1310,7 +1310,7 @@ package nftregister
 //		"success": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1324,7 +1324,7 @@ package nftregister
 //		"err": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1374,7 +1374,7 @@ package nftregister
 //		"ctx-done-err": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1388,7 +1388,7 @@ package nftregister
 //		"get-raw-transaction-err": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1403,7 +1403,7 @@ package nftregister
 //		"insufficient-confirmations": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1418,7 +1418,7 @@ package nftregister
 //		"success": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1483,7 +1483,7 @@ package nftregister
 //		"reg-fee-err": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1497,7 +1497,7 @@ package nftregister
 //		"send-from-address-err": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1514,7 +1514,7 @@ package nftregister
 //			args: args{
 //				preBurntFeeRetErr: errors.New("test"),
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1537,7 +1537,7 @@ package nftregister
 //				preBurntFeeRetTxID: "test-id",
 //				preBurntFeeRetErr:  nil,
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1556,7 +1556,7 @@ package nftregister
 //				preBurntFeeRetTxID: "test-id",
 //				preBurntFeeRetErr:  nil,
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1638,7 +1638,7 @@ package nftregister
 //		"success": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1662,7 +1662,7 @@ package nftregister
 //		"upload-err": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1829,7 +1829,7 @@ package nftregister
 //							thumbnailSize: 224,
 //						},
 //					},
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					nftRegistrationTicket: &pastel.NFTTicket{},
@@ -1850,7 +1850,7 @@ package nftregister
 //							thumbnailSize: 224,
 //						},
 //					},
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					nftRegistrationTicket: &pastel.NFTTicket{},
@@ -1941,7 +1941,7 @@ package nftregister
 //		"success": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -1959,7 +1959,7 @@ package nftregister
 //		"reg-fee-err": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //						MaximumFee:     -1,
 //					},
@@ -2043,7 +2043,7 @@ package nftregister
 //					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4447", ExtKey: "4"},
 //				},
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //						MaximumFee:     1,
 //					},
@@ -2063,7 +2063,7 @@ package nftregister
 //			args: args{
 //				masterNodesTopErr: errors.New("test"),
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -2082,7 +2082,7 @@ package nftregister
 //			args: args{
 //				masterNodesTopErr: nil,
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "testid",
 //					},
 //					NftRegistrationService: &NftRegistrationService{
@@ -2171,7 +2171,7 @@ package nftregister
 //		"success": {
 //			args: args{
 //				task: &NftRegistrationTask{
-//					Request: &NftRegisterRequest{
+//					Request: &NftRegistrationRequest{
 //						ArtistPastelID: "test-id",
 //					},
 //					NftRegistrationService: &NftRegistrationService{

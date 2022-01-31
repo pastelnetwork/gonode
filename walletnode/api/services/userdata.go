@@ -15,14 +15,14 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
-// UserdataApiHandler represents services for userdatas endpoints.
-type UserdataApiHandler struct {
+// UserdataAPIHandler represents services for userdatas endpoints.
+type UserdataAPIHandler struct {
 	*Common
 	process *userdataprocess.UserDataService
 }
 
 // Mount configures the mux to serve the nfts endpoints.
-func (service *UserdataApiHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+func (service *UserdataAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := userdatas.NewEndpoints(service)
 	srv := server.New(
 		endpoints,
@@ -43,17 +43,17 @@ func (service *UserdataApiHandler) Mount(ctx context.Context, mux goahttp.Muxer)
 }
 
 // CreateUserdata create the userdata in rqlite db
-func (service *UserdataApiHandler) CreateUserdata(ctx context.Context, req *userdatas.CreateUserdataPayload) (*userdatas.UserdataProcessResult, error) {
+func (service *UserdataAPIHandler) CreateUserdata(ctx context.Context, req *userdatas.CreateUserdataPayload) (*userdatas.UserdataProcessResult, error) {
 	return service.processUserdata(ctx, fromUserdataCreateRequest(req))
 }
 
 // UpdateUserdata update the userdata in rqlite db
-func (service *UserdataApiHandler) UpdateUserdata(ctx context.Context, req *userdatas.UpdateUserdataPayload) (*userdatas.UserdataProcessResult, error) {
+func (service *UserdataAPIHandler) UpdateUserdata(ctx context.Context, req *userdatas.UpdateUserdataPayload) (*userdatas.UserdataProcessResult, error) {
 	return service.processUserdata(ctx, fromUserdataUpdateRequest(req))
 }
 
 // ProcessUserdata will send userdata to Super Nodes to store in Metadata layer
-func (service *UserdataApiHandler) processUserdata(ctx context.Context, request *userdata.ProcessRequest) (*userdatas.UserdataProcessResult, error) {
+func (service *UserdataAPIHandler) processUserdata(ctx context.Context, request *userdata.ProcessRequest) (*userdatas.UserdataProcessResult, error) {
 	taskID := service.process.AddTask(request, "")
 	task := service.process.Task(taskID)
 
@@ -78,7 +78,7 @@ func (service *UserdataApiHandler) processUserdata(ctx context.Context, request 
 }
 
 // GetUserdata will get userdata from Super Nodes to store in Metadata layer
-func (service *UserdataApiHandler) GetUserdata(ctx context.Context, req *userdatas.GetUserdataPayload) (*userdatas.UserSpecifiedData, error) {
+func (service *UserdataAPIHandler) GetUserdata(ctx context.Context, req *userdatas.GetUserdataPayload) (*userdatas.UserSpecifiedData, error) {
 	userpastelid := req.Pastelid
 
 	taskID := service.process.AddTask(nil, userpastelid)
@@ -104,9 +104,9 @@ func (service *UserdataApiHandler) GetUserdata(ctx context.Context, req *userdat
 	}
 }
 
-// NewUserdataApiHandler returns the UserdataApiHandler implementation.
-func NewUserdataApiHandler(process *userdataprocess.UserDataService) *UserdataApiHandler {
-	return &UserdataApiHandler{
+// NewUserdataAPIHandler returns the UserdataAPIHandler implementation.
+func NewUserdataAPIHandler(process *userdataprocess.UserDataService) *UserdataAPIHandler {
+	return &UserdataAPIHandler{
 		Common:  NewCommon(),
 		process: process,
 	}

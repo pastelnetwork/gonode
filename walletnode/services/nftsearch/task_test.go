@@ -53,7 +53,7 @@ package nftsearch
 //	type args struct {
 //		actTickets    pastel.ActTickets
 //		regTickets    pastel.RegTickets
-//		req           *NftSearchRequest
+//		req           *NftSearchingRequest
 //		actTicketsErr error
 //		regTicketErr  error
 //	}
@@ -67,7 +67,7 @@ package nftsearch
 //			args: args{
 //				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
 //				regTickets: pastel.RegTickets{regTicketA},
-//				req: &NftSearchRequest{
+//				req: &NftSearchingRequest{
 //					Query:      "alan",
 //					ArtistName: true,
 //					Limit:      10,
@@ -82,7 +82,7 @@ package nftsearch
 //				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}},
 //					pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDB}}},
 //				regTickets: pastel.RegTickets{regTicketA, regTicketB},
-//				req: &NftSearchRequest{
+//				req: &NftSearchingRequest{
 //					Query:      "Alan",
 //					ArtistName: true,
 //					ArtTitle:   true,
@@ -99,7 +99,7 @@ package nftsearch
 //			args: args{
 //				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
 //				regTickets: pastel.RegTickets{regTicketA},
-//				req: &NftSearchRequest{
+//				req: &NftSearchingRequest{
 //					Query:      "nowhere-to-be-found",
 //					ArtTitle:   true,
 //					ArtistName: true,
@@ -114,7 +114,7 @@ package nftsearch
 //			args: args{
 //				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
 //				regTickets: pastel.RegTickets{regTicketA},
-//				req: &NftSearchRequest{
+//				req: &NftSearchingRequest{
 //					Query:      "alan",
 //					ArtTitle:   true,
 //					ArtistName: true,
@@ -130,7 +130,7 @@ package nftsearch
 //			args: args{
 //				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDB}}},
 //				regTickets: pastel.RegTickets{regTicketB},
-//				req: &NftSearchRequest{
+//				req: &NftSearchingRequest{
 //					Query:      "alan",
 //					ArtTitle:   true,
 //					ArtistName: true,
@@ -170,7 +170,7 @@ package nftsearch
 //				pastelClientMock.ListenOnRegTicket(ticket.ActTicketData.RegTXID, testCase.args.regTickets[i], testCase.args.regTicketErr)
 //			}
 //
-//			service := &NftSearchService{
+//			service := &NftSearchingService{
 //				pastelClient: pastelClientMock.Client,
 //				nodeClient:   nodeClientMock,
 //				config:       NewConfig(),
@@ -219,28 +219,28 @@ package nftsearch
 //	t.Parallel()
 //
 //	type args struct {
-//		service *NftSearchService
-//		req     *NftSearchRequest
+//		service *NftSearchingService
+//		req     *NftSearchingRequest
 //	}
 //
-//	service := &NftSearchService{
+//	service := &NftSearchingService{
 //		config: NewConfig(),
 //	}
 //
-//	req := &NftSearchRequest{}
+//	req := &NftSearchingRequest{}
 //
 //	testCases := map[string]struct {
 //		args args
-//		want *NftSearchTask
+//		want *NftSearchingTask
 //	}{
 //		"new-task": {
 //			args: args{
 //				service: service,
 //				req:     req,
 //			},
-//			want: &NftSearchTask{
+//			want: &NftSearchingTask{
 //				WalletNodeTask:   common.NewWalletNodeTask(logPrefix),
-//				NftSearchService: service,
+//				NftSearchingService: service,
 //				Request:          req,
 //				thumbnailHelper:  thumbnail.NewDownloadHandler(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
 //			},
@@ -253,7 +253,7 @@ package nftsearch
 //			t.Parallel()
 //
 //			task := NewNftSearchTask(testCase.args.service, testCase.args.req)
-//			assert.Equal(t, testCase.want.NftSearchService, task.NftSearchService)
+//			assert.Equal(t, testCase.want.NftSearchingService, task.NftSearchingService)
 //			assert.Equal(t, testCase.want.Request, task.Request)
 //			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 //		})

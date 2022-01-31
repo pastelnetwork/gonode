@@ -29,8 +29,8 @@ type Match struct {
 
 // getSearchableFields checks Request & returns list of data to be searched along with
 // a Map to record index of each field type in the list as fuzzy search returns index
-func (rs *RegTicketSearch) getSearchableFields(req *NftSearchRequest) (data []string, mapper map[int]NftSearchQueryField) {
-	fieldIdxMapper := make(map[int]NftSearchQueryField)
+func (rs *RegTicketSearch) getSearchableFields(req *NftSearchingRequest) (data []string, mapper map[int]NftSearchingQueryField) {
+	fieldIdxMapper := make(map[int]NftSearchingQueryField)
 	idx := 0
 	if req.ArtistName {
 		data = append(data, rs.RegTicketData.NFTTicketData.AppTicketData.CreatorName)
@@ -61,7 +61,7 @@ func (rs *RegTicketSearch) getSearchableFields(req *NftSearchRequest) (data []st
 }
 
 // Search does fuzzy search  on the reg ticket data for the query
-func (rs *RegTicketSearch) Search(req *NftSearchRequest) (srch *RegTicketSearch, matched bool) {
+func (rs *RegTicketSearch) Search(req *NftSearchingRequest) (srch *RegTicketSearch, matched bool) {
 	data, mapper := rs.getSearchableFields(req)
 	matches := fuzzy.Find(req.Query, data)
 	for _, match := range matches {

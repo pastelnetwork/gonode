@@ -14,14 +14,14 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
-// SenseApiHandler - SenseApiHandler service
-type SenseApiHandler struct {
+// SenseAPIHandler - SenseAPIHandler service
+type SenseAPIHandler struct {
 	*Common
 	register *senseregister.SenseRegistrationService
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
-func (service *SenseApiHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+func (service *SenseAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := sense.NewEndpoints(service)
 
 	srv := server.New(
@@ -44,7 +44,7 @@ func (service *SenseApiHandler) Mount(ctx context.Context, mux goahttp.Muxer) go
 }
 
 // UploadImage - Uploads an image and return unique image id
-func (service *SenseApiHandler) UploadImage(ctx context.Context, p *sense.UploadImagePayload) (res *sense.Image, err error) {
+func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.UploadImagePayload) (res *sense.Image, err error) {
 	if p.Filename == nil {
 		return nil, sense.MakeBadRequest(errors.New("file not specified"))
 	}
@@ -63,7 +63,7 @@ func (service *SenseApiHandler) UploadImage(ctx context.Context, p *sense.Upload
 }
 
 // ActionDetails - Starts an action data task
-func (service *SenseApiHandler) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
+func (service *SenseAPIHandler) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
 
 	fee, err := service.register.ValidateDetailsAndCalculateFee(ctx, p.ImageID, p.ActionDataSignature, p.PastelID)
 	if err != nil {
@@ -79,7 +79,7 @@ func (service *SenseApiHandler) ActionDetails(ctx context.Context, p *sense.Acti
 }
 
 // StartProcessing - Starts a processing image task
-func (service *SenseApiHandler) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
+func (service *SenseAPIHandler) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
@@ -93,7 +93,7 @@ func (service *SenseApiHandler) StartProcessing(_ context.Context, p *sense.Star
 }
 
 // RegisterTaskState - Registers a task state
-func (service *SenseApiHandler) RegisterTaskState(ctx context.Context, p *sense.RegisterTaskStatePayload, stream sense.RegisterTaskStateServerStream) (err error) {
+func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.RegisterTaskStatePayload, stream sense.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
 	task := service.register.GetTask(p.TaskID)
@@ -123,9 +123,9 @@ func (service *SenseApiHandler) RegisterTaskState(ctx context.Context, p *sense.
 	}
 }
 
-// NewSenseApiHandler returns the swagger OpenAPI implementation.
-func NewSenseApiHandler(register *senseregister.SenseRegistrationService) *SenseApiHandler {
-	return &SenseApiHandler{
+// NewSenseAPIHandler returns the swagger OpenAPI implementation.
+func NewSenseAPIHandler(register *senseregister.SenseRegistrationService) *SenseAPIHandler {
+	return &SenseAPIHandler{
 		Common:   NewCommon(),
 		register: register,
 	}
