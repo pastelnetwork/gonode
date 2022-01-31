@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	logPrefix = "nft-search"
+	logPrefix = "walletnode-nft-search"
 )
 
 // Service represents a service for the NFT search.
@@ -62,7 +62,9 @@ func (service *NftSearchService) AddTask(p *nft.NftSearchPayload) string {
 	return task.ID()
 }
 
-// GetThumbnail gets thumbnail
+// GetThumbnail manages the retrieval of a thumbnail from the supernodes
+// requires a thumbnail hash for a lookup key.
+// //details at https://pastel.wiki/en/Architecture/Workflows/ArtSearchWorkflow
 func (service *NftSearchService) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket, pastelID string, passphrase string) (data []byte, err error) {
 	nftGetSearchTask := NewNftGetSearchTask(service, pastelID, passphrase)
 
@@ -98,7 +100,7 @@ func (service *NftSearchService) RegTicket(ctx context.Context, RegTXID string) 
 }
 
 // NewNftSearchService returns a new NFT Search Service instance.
-// 	NB: Because NewNftApiHandler calls AddTask, a NftSearchTask will actually
+// 	NB: Because NewNftApiHandler calls AddTask, an NftSearchTask will actually
 //		be instantiated instead of a generic Task.
 func NewNftSearchService(config *Config,
 	pastelClient pastel.Client,

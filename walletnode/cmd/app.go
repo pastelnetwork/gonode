@@ -167,7 +167,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// start new key value storage
 	db := memory.NewKeyValue()
-	// Initialize temporary file storage
+	// Initialize temporary local file storage
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	//Set minimum confirmation requirements for transactions to ensure completion

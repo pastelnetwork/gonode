@@ -15,7 +15,8 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// NftSearchTask is the task of searching for nft.
+// NftSearchTask handles communication to the supernodes for
+//  NFT search as well as getting thumbnails.
 type NftSearchTask struct {
 	*common.WalletNodeTask
 
@@ -38,6 +39,8 @@ func (task *NftSearchTask) Run(ctx context.Context) error {
 	return nil
 }
 
+//following https://pastel.wiki/en/Architecture/Workflows/ArtSearchWorkflow
+//first conduct a search for art, then get thumbnails from supernode
 func (task *NftSearchTask) run(ctx context.Context) error {
 	if err := task.search(ctx); err != nil {
 		return errors.Errorf("search tickets: %w", err)
@@ -61,7 +64,9 @@ func (task *NftSearchTask) run(ctx context.Context) error {
 	return task.thumbnail.CloseAll(ctx)
 }
 
+//https://pastel.wiki/en/Architecture/Workflows/ArtSearchWorkflow#h-1-walletnode-search-for-art
 func (task *NftSearchTask) search(ctx context.Context) error {
+	//get list of activation tickets from cNode
 	actTickets, err := task.service.pastelHandler.PastelClient.ActTickets(ctx, pastel.ActTicketAll, task.Request.MinBlock)
 	if err != nil {
 		return fmt.Errorf("act ticket: %s", err)
@@ -70,16 +75,17 @@ func (task *NftSearchTask) search(ctx context.Context) error {
 	group, gctx := errgroup.WithContext(ctx)
 	for _, ticket := range actTickets {
 		ticket := ticket
-
+		//filter list of activation tickets by blocknum if provided
 		if !common.InIntRange(ticket.Height, nil, task.Request.MaxBlock) {
 			continue
 		}
-
+		//filter list of activation tickets by artist pastelid if artist is provided
 		if task.Request.Artist != nil && *task.Request.Artist != ticket.ActTicketData.PastelID {
 			continue
 		}
-
+		//iterate through filtered activation tickets
 		group.Go(func() error {
+			//request art registration tickets
 			regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(gctx, ticket.ActTicketData.RegTXID)
 			if err != nil {
 				log.WithContext(ctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg Request")
@@ -113,6 +119,7 @@ func (task *NftSearchTask) search(ctx context.Context) error {
 }
 
 // filterRegTicket filters ticket against Request params & checks if its a match
+//  parameters are things like number of copies, rareness, nsfw scores, fuzzy search terms
 func (task *NftSearchTask) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
 	// --------- WIP: PSL-142------------------
 	/* if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore),

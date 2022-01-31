@@ -62,6 +62,8 @@ func (service *NftDownloadService) AddTask(p *nft.NftDownloadPayload) string {
 }
 
 // NewNftDownloadService returns a new Service instance.
+// NB: AddTask will get called by the API, creating an NftDownloadTask
+// instead of a generic task.
 func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *NftDownloadService {
 	return &NftDownloadService{
 		Worker:        task.NewWorker(),

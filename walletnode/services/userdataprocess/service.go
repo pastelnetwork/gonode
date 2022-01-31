@@ -2,6 +2,7 @@ package userdataprocess
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
@@ -57,6 +58,8 @@ func (service *UserDataService) AddTask(request *userdata.ProcessRequest, userpa
 }
 
 // NewService returns a new Service instance.
+// 	NB: Because NewNftApiHandler calls AddTask, a UserDataTask will actually
+//		be instantiated instead of a generic Task.
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface) *UserDataService {
 	return &UserDataService{
 		Worker:        task.NewWorker(),
