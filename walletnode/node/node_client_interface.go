@@ -9,6 +9,7 @@ package node
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
@@ -103,6 +104,6 @@ type ProcessUserdataInterface interface {
 
 	// SendUserdata send user specified data (with other generated info like signature, previous block hash, timestamp,...) to supernode.
 	SendUserdata(ctx context.Context, request *userdata.ProcessRequestSigned) (*userdata.ProcessResult, error)
-	// ReceiveUserdata get user specified data from supernode
-	ReceiveUserdata(ctx context.Context, userpastelid string) (*userdata.ProcessRequest, error)
+	// RetrieveUserdata get user specified data from supernode
+	RetrieveUserdata(ctx context.Context, userpastelid string) (*userdata.ProcessRequest, error)
 }

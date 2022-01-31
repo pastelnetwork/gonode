@@ -131,7 +131,7 @@ func NewApp() *cli.App {
 //- Creates App Context
 //- Registers system interrupts for shutdown
 //- Configures RPC connections to nodeC and raptorq
-//- Sets up local file storage for NFT registration (is there more that needs this local db?)
+//- Sets up local file storage for NFT registration
 //- Set minimum confirmation requirements for transactions
 //- Create services for the functions we want to expose to users, allowing for running and tasking
 //- Create API endpoints for those services

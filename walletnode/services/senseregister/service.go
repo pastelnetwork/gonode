@@ -2,8 +2,9 @@ package senseregister
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/mixins"
 	"time"
+
+	"github.com/pastelnetwork/gonode/mixins"
 
 	// Package image/jpeg is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows
@@ -121,6 +122,8 @@ func (service *SenseRegistrationService) ValidateDetailsAndCalculateFee(ctx cont
 }
 
 // NewService returns a new Service instance
+// 	NB: Because NewNftApiHandler calls AddTask, a SenseRegisterTask will actually
+//		be instantiated instead of a generic Task.
 func NewService(
 	config *Config,
 	pastelClient pastel.Client,

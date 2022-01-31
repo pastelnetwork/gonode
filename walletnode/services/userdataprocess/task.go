@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -62,8 +63,8 @@ func (task *UserDataTask) run(ctx context.Context) error {
 
 	if task.request == nil {
 		// PROCESS TO RETRIEVE USERDATA FROM METADATA LAYER
-		if err := task.ReceiveUserdata(ctx, task.userpastelid); err != nil {
-			return errors.Errorf("receive userdata: %w", err)
+		if err := task.RetrieveUserdata(ctx, task.userpastelid); err != nil {
+			return errors.Errorf("retrieve userdata error: %w", err)
 		}
 		// Post on result channel
 		node0 := task.MeshHandler.Nodes[0]
@@ -75,7 +76,7 @@ func (task *UserDataTask) run(ctx context.Context) error {
 		if userDataNode.ResultGet != nil {
 			task.resultChanGet <- userDataNode.ResultGet
 		} else {
-			return errors.Errorf("receive userdata")
+			return errors.Errorf("Error, retrieved nil from userdata node.")
 		}
 
 		log.WithContext(ctx).Debug("Finished retrieve userdata")
@@ -166,8 +167,8 @@ func (task *UserDataTask) SendUserdata(ctx context.Context, req *userdata.Proces
 	return group.Wait()
 }
 
-// ReceiveUserdata retrieve the userdata from Metadata layer
-func (task *UserDataTask) ReceiveUserdata(ctx context.Context, pasteluserid string) error {
+// RetrieveUserdata retrieve the userdata from Metadata layer
+func (task *UserDataTask) RetrieveUserdata(ctx context.Context, pasteluserid string) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		userDataNode, ok := someNode.SuperNodeAPIInterface.(*UserDataNode)
@@ -176,7 +177,7 @@ func (task *UserDataTask) ReceiveUserdata(ctx context.Context, pasteluserid stri
 			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
 		}
 		group.Go(func() (err error) {
-			res, err := userDataNode.ReceiveUserdata(ctx, pasteluserid)
+			res, err := userDataNode.RetrieveUserdata(ctx, pasteluserid)
 			userDataNode.ResultGet = res
 			return err
 		})

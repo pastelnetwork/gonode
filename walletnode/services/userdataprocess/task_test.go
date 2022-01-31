@@ -529,13 +529,13 @@ package userdataprocess
 //	}
 //}
 //
-//// ReceiveUserdata retrieve the userdata from Metadata layer
-//func (nodes *List) ReceiveUserdata(ctx context.Context, pasteluserid string) error {
+//// RetrieveUserdata retrieve the userdata from Metadata layer
+//func (nodes *List) RetrieveUserdata(ctx context.Context, pasteluserid string) error {
 //	group, _ := errgroup.WithContext(ctx)
 //	for _, node := range *nodes {
 //		node := node
 //		group.Go(func() (err error) {
-//			res, err := node.ReceiveUserdata(ctx, pasteluserid)
+//			res, err := node.RetrieveUserdata(ctx, pasteluserid)
 //			node.ResultGet = res
 //			return err
 //		})

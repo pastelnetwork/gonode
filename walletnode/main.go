@@ -76,6 +76,7 @@ var (
 func main() {
 	defer errors.Recover(log.FatalAndExit)
 
+	//configuration in here, app.Run will actually run NewApp's runApp function.
 	app := cmd.NewApp()
 	err := app.Run(os.Args)
 

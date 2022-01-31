@@ -174,14 +174,15 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 	return result, nil
 }
 
-// ReceiveUserdata implements node.ProcessUserdata.ReceiveUserdata()
-func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpastelid string) (result *userdata.ProcessRequest, err error) {
+// RetrieveUserdata implements node.ProcessUserdata.RetrieveUserdata()
+func (service *processUserdata) RetrieveUserdata(ctx context.Context, userpastelid string) (result *userdata.ProcessRequest, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	reqProto := &pb.RetrieveRequest{
 		Userpastelid: userpastelid,
 	}
+	//this file is generated so we do not change the name of receive to retreave
 	resp, err := service.client.ReceiveUserdata(ctx, reqProto)
 	if err != nil {
 		return nil, errors.Errorf("receive data: %w", err)
