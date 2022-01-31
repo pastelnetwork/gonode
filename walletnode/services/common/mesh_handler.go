@@ -361,7 +361,7 @@ func (m *MeshHandler) DisconnectInactiveNodes(ctx context.Context) {
 	log.WithContext(ctx).Debug("close connections to inactive supernodes")
 
 	for _, someNode := range m.Nodes {
-		_ = m.disconnectFromNode(ctx, someNode, false)
+		_ = m.disconnectFromNode(ctx, someNode, true)
 	}
 }
 

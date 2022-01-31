@@ -177,7 +177,7 @@ package nftdownload
 //		numSign            int
 //		numConnect         int
 //		numDownload        int
-//		numDownLoadArtwork int
+//		numDownLoadNft int
 //		numDone            int
 //		numClose           int
 //	}{
@@ -209,7 +209,7 @@ package nftdownload
 //			numSign:            1,
 //			numConnect:         3,
 //			numDownload:        3,
-//			numDownLoadArtwork: 3,
+//			numDownLoadNft: 3,
 //			numDone:            0,
 //			numClose:           3,
 //		},
@@ -241,7 +241,7 @@ package nftdownload
 //			numSign:            0,
 //			numConnect:         0,
 //			numDownload:        0,
-//			numDownLoadArtwork: 0,
+//			numDownLoadNft: 0,
 //			numDone:            0,
 //			numClose:           0,
 //		},
@@ -273,7 +273,7 @@ package nftdownload
 //			numMasterNodesTop:  0,
 //			numConnect:         0,
 //			numDownload:        0,
-//			numDownLoadArtwork: 0,
+//			numDownLoadNft: 0,
 //			numDone:            0,
 //			numClose:           0,
 //		},
@@ -304,7 +304,7 @@ package nftdownload
 //			numSign:            1,
 //			numMasterNodesTop:  1,
 //			numConnect:         0,
-//			numDownLoadArtwork: 0,
+//			numDownLoadNft: 0,
 //			numDownload:        0,
 //			numDone:            0,
 //			numClose:           0,
@@ -336,7 +336,7 @@ package nftdownload
 //			numSign:            1,
 //			numMasterNodesTop:  1,
 //			numConnect:         3,
-//			numDownLoadArtwork: 0,
+//			numDownLoadNft: 0,
 //			numDownload:        0,
 //			numDone:            0,
 //			numClose:           0,
@@ -368,7 +368,7 @@ package nftdownload
 //			numSign:            1,
 //			numMasterNodesTop:  1,
 //			numConnect:         3,
-//			numDownLoadArtwork: 3,
+//			numDownLoadNft: 3,
 //			numDownload:        3,
 //			numDone:            0,
 //			numClose:           0,
@@ -385,8 +385,8 @@ package nftdownload
 //			if testCase.numConnect > 0 {
 //				nodeClient.ListenOnConnect("", testCase.args.connectErr)
 //			}
-//			if testCase.numDownLoadArtwork > 0 {
-//				nodeClient.ListenOnDownloadArtwork()
+//			if testCase.numDownLoadNft > 0 {
+//				nodeClient.ListenOnDownloadNft()
 //			}
 //			if testCase.numDownload > 0 {
 //				nodeClient.ListenOnDownload(testCase.args.file, testCase.args.downloadErr)
@@ -459,7 +459,7 @@ package nftdownload
 //			nodeClient.Client.AssertExpectations(t)
 //			nodeClient.DownloadNft.AssertExpectations(t)
 //			nodeClient.AssertConnectCall(testCase.numConnect, mock.Anything, mock.Anything, mock.Anything)
-//			nodeClient.AssertDownloadArtworkCall(testCase.numDownLoadArtwork)
+//			nodeClient.AssertDownloadNftCall(testCase.numDownLoadNft)
 //			nodeClient.AssertDownloadCall(testCase.numDownload, mock.Anything, testCase.fields.Ticket.Txid,
 //				mock.Anything, string(testCase.args.signature), testCase.args.ttxid)
 //			nodeClient.AssertDoneCall(testCase.numDone)

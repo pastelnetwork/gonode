@@ -148,7 +148,7 @@ package nftregister
 //	}
 //
 //	t.Run("group", func(t *testing.T) {
-//		artworkFile, err := newTestImageFile()
+//		nftFile, err := newTestImageFile()
 //		assert.NoError(t, err)
 //
 //		for i, testCase := range testCases {
@@ -166,7 +166,7 @@ package nftregister
 //				nodeClient := test.NewMockClient(t)
 //				nodeClient.
 //					ListenOnConnect("", testCase.args.returnErr).
-//					ListenOnRegisterArtwork().
+//					ListenOnRegisterNft().
 //					ListenOnSession(testCase.args.returnErr).
 //					ListenOnConnectTo(testCase.args.returnErr).
 //					ListenOnSessID(testCase.args.primarySessID).
@@ -232,7 +232,7 @@ package nftregister
 //					ListenOnSetStatusNotifyFunc()
 //
 //				Request := testCase.fields.Request
-//				Request.Image = artworkFile
+//				Request.Image = nftFile
 //				Request.MaximumFee = 100
 //				task = &NftRegistrationTask{
 //					WalletNodeTask: &common.WalletNodeTask{
@@ -358,7 +358,7 @@ package nftregister
 //			nodeClient := test.NewMockClient(t)
 //			nodeClient.
 //				ListenOnConnect("", testCase.args.returnErr).
-//				ListenOnRegisterArtwork().
+//				ListenOnRegisterNft().
 //				ListenOnSession(testCase.args.returnErr).
 //				ListenOnConnectTo(testCase.args.returnErr).
 //				ListenOnSessID(testCase.args.primarySessID).
@@ -1016,7 +1016,7 @@ package nftregister
 //}
 //
 //func TestTaskGenRQIdentifiersFiles(t *testing.T) {
-//	artworkFile, err := newTestImageFile()
+//	nftFile, err := newTestImageFile()
 //	assert.NoError(t, err)
 //
 //	type args struct {
@@ -1042,7 +1042,7 @@ package nftregister
 //					NftRegistrationService: &NftRegistrationService{
 //						config: &Config{},
 //					},
-//					imageEncodedWithFingerprints: artworkFile,
+//					imageEncodedWithFingerprints: nftFile,
 //				},
 //				encodeInfoReturns: &rqnode.EncodeInfo{
 //					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
@@ -1071,7 +1071,7 @@ package nftregister
 //					NftRegistrationService: &NftRegistrationService{
 //						config: &Config{},
 //					},
-//					imageEncodedWithFingerprints: artworkFile,
+//					imageEncodedWithFingerprints: nftFile,
 //				},
 //				readErr: io.EOF,
 //				encodeInfoReturns: &rqnode.EncodeInfo{
@@ -1095,7 +1095,7 @@ package nftregister
 //					NftRegistrationService: &NftRegistrationService{
 //						config: &Config{},
 //					},
-//					imageEncodedWithFingerprints: artworkFile,
+//					imageEncodedWithFingerprints: nftFile,
 //				},
 //				readErr: io.EOF,
 //				encodeInfoReturns: &rqnode.EncodeInfo{
@@ -1118,7 +1118,7 @@ package nftregister
 //					NftRegistrationService: &NftRegistrationService{
 //						config: &Config{},
 //					},
-//					imageEncodedWithFingerprints: artworkFile,
+//					imageEncodedWithFingerprints: nftFile,
 //				},
 //				readErr: errors.New("test-err"),
 //				encodeInfoReturns: &rqnode.EncodeInfo{
@@ -1137,7 +1137,7 @@ package nftregister
 //					NftRegistrationService: &NftRegistrationService{
 //						config: &Config{},
 //					},
-//					imageEncodedWithFingerprints: artworkFile,
+//					imageEncodedWithFingerprints: nftFile,
 //				},
 //				encodeInfoReturns: &rqnode.EncodeInfo{
 //					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
@@ -1588,7 +1588,7 @@ package nftregister
 //			nodeClient := test.NewMockClient(t)
 //			nodeClient.
 //				ListenOnConnect("", nil).
-//				ListenOnRegisterArtwork().
+//				ListenOnRegisterNft().
 //				ListenOnSession(nil).
 //				ListenOnConnectTo(nil).
 //				ListenOnSessID("").
@@ -1691,7 +1691,7 @@ package nftregister
 //
 //		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 //			t.Parallel()
-//			artworkFile, err := newTestImageFile()
+//			nftFile, err := newTestImageFile()
 //			assert.NoError(t, err)
 //
 //			pastelClientMock := pastelMock.NewMockClient(t)
@@ -1707,11 +1707,11 @@ package nftregister
 //			nodeClient := test.NewMockClient(t)
 //			nodeClient.
 //				ListenOnConnect("", nil).
-//				ListenOnRegisterArtwork().
+//				ListenOnRegisterNft().
 //				ListenOnUploadImageWithThumbnail(tc.args.previewHash, tc.args.mediumHash,
 //					tc.args.smallHash, tc.args.uploadImageThumbnailErr)
 //
-//			tc.args.task.Request.Image = artworkFile
+//			tc.args.task.Request.Image = nftFile
 //			nodes := node.List{}
 //			for _, n := range tc.args.nodes {
 //				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
@@ -1870,7 +1870,7 @@ package nftregister
 //
 //		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 //			t.Parallel()
-//			artworkFile, err := newTestImageFile()
+//			nftFile, err := newTestImageFile()
 //			assert.NoError(t, err)
 //
 //			//need to remove generate thumbnail file
@@ -1891,10 +1891,10 @@ package nftregister
 //			nodeClient := test.NewMockClient(t)
 //			nodeClient.
 //				ListenOnConnect("", nil).
-//				ListenOnRegisterArtwork().
+//				ListenOnRegisterNft().
 //				ListenOnProbeImage(customProbeImageFunc, tc.args.probeImgErr)
 //
-//			tc.args.task.Request.Image = artworkFile
+//			tc.args.task.Request.Image = nftFile
 //			nodes := node.List{}
 //			for _, n := range tc.args.nodes {
 //				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
@@ -1986,7 +1986,7 @@ package nftregister
 //			nodeClient := test.NewMockClient(t)
 //			nodeClient.
 //				ListenOnConnect("", nil).
-//				ListenOnRegisterArtwork().
+//				ListenOnRegisterNft().
 //				ListenOnSession(nil).
 //				ListenOnConnectTo(nil).
 //				ListenOnSessID("").
@@ -2104,7 +2104,7 @@ package nftregister
 //
 //		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 //			t.Parallel()
-//			artworkFile, err := newTestImageFile()
+//			nftFile, err := newTestImageFile()
 //			assert.NoError(t, err)
 //
 //			pastelClientMock := pastelMock.NewMockClient(t)
@@ -2123,7 +2123,7 @@ package nftregister
 //			nodeClient := test.NewMockClient(t)
 //			nodeClient.
 //				ListenOnConnect("", nil).
-//				ListenOnRegisterArtwork().
+//				ListenOnRegisterNft().
 //				ListenOnSession(nil).
 //				ListenOnConnectTo(nil).
 //				ListenOnSessID("").
@@ -2135,7 +2135,7 @@ package nftregister
 //			}
 //			tc.args.task.NftRegistrationService.nodeClient = nodeClient
 //
-//			tc.args.task.Request.Image = artworkFile
+//			tc.args.task.Request.Image = nftFile
 //			nodes := node.List{}
 //			for _, n := range tc.args.nodes {
 //				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)

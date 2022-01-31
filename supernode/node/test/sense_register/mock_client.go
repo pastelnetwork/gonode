@@ -28,7 +28,7 @@ const (
 	ProbeImageMethod = "ProbeImage"
 
 	// RegisterSenseMethod represent RegisterSenseInterface name method
-	RegisterSenseMethod = "RegisterSenseInterface"
+	RegisterSenseMethod = "RegisterSense"
 
 	// SessionMethod represent Session name method
 	SessionMethod = "Session"

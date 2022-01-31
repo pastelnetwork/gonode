@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.2
-// source: register_artwork_sn.proto
+// source: register_nft_sn.proto
 
 package supernode
 
@@ -214,5 +214,5 @@ var RegisterNft_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "register_artwork_sn.proto",
+	Metadata: "register_nft_sn.proto",
 }

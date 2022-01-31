@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
-	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
-	cli "github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/client"
+	cli "github.com/pastelnetwork/gonode/walletnode/api/gen/http/nft/client"
 	"github.com/pkg/errors"
 	goahttp "goa.design/goa/v3/http"
 )
@@ -83,7 +83,7 @@ func main() {
 		return
 	}
 
-	result, ok := res.(*artworks.DownloadResult)
+	result, ok := res.(*nft.DownloadResult)
 	if !ok {
 		printError(errors.New("invalid data"))
 		return

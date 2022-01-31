@@ -45,11 +45,11 @@ type NftSearchingRequest struct {
 	ArtistName bool
 	// Search in Title of nft
 	ArtTitle bool
-	// Search in Artwork series name
+	// Search in Nft series name
 	Series bool
 	// Search in Artist written statement
 	Descr bool
-	// Search Keywords that Artist assigns to Artwork
+	// Search Keywords that Artist assigns to Nft
 	Keyword bool
 	// Minimum blocknum
 	MinBlock int

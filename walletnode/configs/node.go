@@ -12,10 +12,10 @@ import (
 // Node contains the SuperNode configuration itself.
 type Node struct {
 	// `squash` field cannot be pointer
-	ArtworkRegister nftregister.Config `mapstructure:",squash" json:"artwork_register,omitempty"`
-	ArtworkSearch   nftsearch.Config   `mapstructure:",squash" json:"artwork_search,omitempty"`
-	ArtworkDownload nftdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
-	API             *api.Config        `mapstructure:"api" json:"api,omitempty"`
+	NftRegister nftregister.Config `mapstructure:",squash" json:"nft_register,omitempty"`
+	NftSearch   nftsearch.Config   `mapstructure:",squash" json:"nft_search,omitempty"`
+	NftDownload nftdownload.Config `mapstructure:",squash" json:"nft_download,omitempty"`
+	API         *api.Config        `mapstructure:"api" json:"api,omitempty"`
 
 	SenseRegister senseregister.Config `mapstructure:"sense_register" json:"sense_register,omitempty"`
 
@@ -28,9 +28,9 @@ type Node struct {
 // NewNode returns a new Node instance
 func NewNode() Node {
 	return Node{
-		ArtworkSearch:   *nftsearch.NewConfig(),
-		ArtworkRegister: *nftregister.NewConfig(),
-		ArtworkDownload: *nftdownload.NewConfig(),
+		NftSearch:       *nftsearch.NewConfig(),
+		NftRegister:     *nftregister.NewConfig(),
+		NftDownload:     *nftdownload.NewConfig(),
 		API:             api.NewConfig(),
 		UserdataProcess: *userdataprocess.NewConfig(),
 		SenseRegister:   *senseregister.NewConfig(),

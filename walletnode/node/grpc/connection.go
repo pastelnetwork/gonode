@@ -15,12 +15,12 @@ type clientConn struct {
 
 // RegisterNft implements node.ConnectionInterface.RegisterNft()
 func (conn *clientConn) RegisterNft() node.RegisterNftInterface {
-	return newRegisterArtwork(conn)
+	return newRegisterNft(conn)
 }
 
 // DownloadNft implements node.ConnectionInterface.DownloadNft()
 func (conn *clientConn) DownloadNft() node.DownloadNftInterface {
-	return newDownloadArtwork(conn)
+	return newDownloadNft(conn)
 }
 
 // ProcessUserdata implements node.ConnectionInterface.ProcessUserdata()

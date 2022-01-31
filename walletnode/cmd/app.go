@@ -141,24 +141,24 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// raptorq client
-	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
-	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
+	config.NftRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.NftRegister.RqFilesDir = config.RqFilesDir
 	rqClient := rqgrpc.NewClient()
 
 	if config.RegTxMinConfirmations > 0 {
-		config.ArtworkRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
+		config.NftRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
 		config.SenseRegister.SenseRegTxMinConfirmations = config.RegTxMinConfirmations
 	}
 
 	if config.ActTxMinConfirmations > 0 {
-		config.ArtworkRegister.NFTActTxMinConfirmations = config.ActTxMinConfirmations
+		config.NftRegister.NFTActTxMinConfirmations = config.ActTxMinConfirmations
 		config.SenseRegister.SenseActTxMinConfirmations = config.ActTxMinConfirmations
 	}
 
 	// business logic services
-	nftRegister := nftregister.NewService(&config.ArtworkRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
-	nftSearch := nftsearch.NewNftSearchService(&config.ArtworkSearch, pastelClient, nodeClient)
-	nftDownload := nftdownload.NewNftDownloadService(&config.ArtworkDownload, pastelClient, nodeClient)
+	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
+	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient)
+	nftDownload := nftdownload.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
 
 	// ----UserdataAPIHandler Services----
 	userdataNodeClient := grpc.NewClient(pastelClient)

@@ -216,7 +216,7 @@ func (service *NftAPIHandler) NftSearch(ctx context.Context, p *nft.NftSearchPay
 				return nil
 			}
 
-			res := toArtSearchResult(search)
+			res := toNftSearchResult(search)
 			if err := stream.Send(res); err != nil {
 				return nft.MakeInternalServerError(err)
 			}
@@ -241,7 +241,7 @@ func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 	return res, nil
 }
 
-// NewNftAPIHandler returns the artworks NftAPIHandler implementation.
+// NewNftAPIHandler returns the nft NftAPIHandler implementation.
 func NewNftAPIHandler(register *nftregister.NftRegistrationService, search *nftsearch.NftSearchingService, download *nftdownload.NftDownloadingService) *NftAPIHandler {
 	return &NftAPIHandler{
 		Common:   NewCommon(),

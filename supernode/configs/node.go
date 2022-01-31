@@ -11,25 +11,25 @@ import (
 // Node contains the SuperNode configuration itself.
 type Node struct {
 	// `squash` field cannot be pointer
-	ArtworkRegister nftregister.Config   `mapstructure:",squash" json:"artwork_register,omitempty"`
-	SenseRegister   senseregister.Config `mapstructure:",squash" json:"sense_register,omitempty"`
-	Server          *server.Config       `mapstructure:"server" json:"server,omitempty"`
-	PastelID        string               `mapstructure:"pastel_id" json:"pastel_id,omitempty"`
-	PassPhrase      string               `mapstructure:"pass_phrase" json:"pass_phrase,omitempty"`
+	NftRegister   nftregister.Config   `mapstructure:",squash" json:"nft_register,omitempty"`
+	SenseRegister senseregister.Config `mapstructure:",squash" json:"sense_register,omitempty"`
+	Server        *server.Config       `mapstructure:"server" json:"server,omitempty"`
+	PastelID      string               `mapstructure:"pastel_id" json:"pastel_id,omitempty"`
+	PassPhrase    string               `mapstructure:"pass_phrase" json:"pass_phrase,omitempty"`
 
 	NumberConnectedNodes       int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
 	PreburntTxMinConfirmations int `mapstructure:"preburnt_tx_min_confirmations" json:"preburnt_tx_min_confirmations,omitempty"`
 
-	ArtworkDownload nftdownload.Config     `mapstructure:",squash" json:"artwork_download,omitempty"`
+	NftDownload     nftdownload.Config     `mapstructure:",squash" json:"nft_download,omitempty"`
 	UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
 }
 
 // NewNode returns a new Node instance
 func NewNode() Node {
 	return Node{
-		ArtworkRegister: *nftregister.NewConfig(),
+		NftRegister:     *nftregister.NewConfig(),
 		SenseRegister:   *senseregister.NewConfig(),
-		ArtworkDownload: *nftdownload.NewConfig(),
+		NftDownload:     *nftdownload.NewConfig(),
 		UserdataProcess: *userdataprocess.NewConfig(),
 		Server:          server.NewConfig(),
 	}

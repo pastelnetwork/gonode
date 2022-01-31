@@ -108,17 +108,18 @@ func TestServiceAddTask(t *testing.T) {
 		Pid:  "pastelid",
 		Key:  "passphrase",
 	}
+	request := FromDownloadPayload(payload)
 
 	testCases := []struct {
 		args args
-		want *nft.NftDownloadPayload
+		want *NftDownloadingRequest
 	}{
 		{
 			args: args{
 				ctx:     context.Background(),
 				payload: payload,
 			},
-			want: payload,
+			want: request,
 		},
 	}
 
@@ -209,19 +210,22 @@ func TestServiceListTasks(t *testing.T) {
 		Pid:  "pastelid",
 		Key:  "passphrase",
 	}
+	var requests []*NftDownloadingRequest
+	requests = append(requests, FromDownloadPayload(payload))
+
 	var payloads []*nft.NftDownloadPayload
 	payloads = append(payloads, payload)
 
 	testCases := []struct {
 		args args
-		want []*nft.NftDownloadPayload
+		want []*NftDownloadingRequest
 	}{
 		{
 			args: args{
 				ctx:      context.Background(),
 				payloads: payloads,
 			},
-			want: payloads,
+			want: requests,
 		},
 	}
 

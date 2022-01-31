@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	service "github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"testing"
 	"time"
 
@@ -13,8 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestRegisterArtworkNodeConnect(t *testing.T) {
-	t.Skip()
+func TestRegisterNftNodeConnect(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
@@ -58,19 +58,19 @@ func TestRegisterArtworkNodeConnect(t *testing.T) {
 			clientMock := test.NewMockClient(t)
 
 			//listen needed method
-			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterArtwork()
+			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterNft().ListenOnRegisterNft()
 
 			//set up node client only
 			testCase.node.ClientInterface = clientMock.ClientInterface
 
-			//testCase.node.RealNodeMaker = service.RegisterArtworkNodeMaker{}
+			testCase.node.RealNodeMaker = service.RegisterNftNodeMaker{}
 
 			//assertion error
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
 			//mock assertion
 			clientMock.ClientInterface.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address, mock.Anything)
-			clientMock.AssertRegisterArtworkCall(testCase.numberAPICall)
+			clientMock.AssertRegisterNftCall(testCase.numberAPICall)
 		})
 	}
 }

@@ -28,7 +28,7 @@ const (
 	ProbeImageMethod = "ProbeImage"
 
 	// RegisterNftMethod represent RegisterNftInterface name method
-	RegisterNftMethod = "RegisterNftInterface"
+	RegisterNftMethod = "RegisterNft"
 
 	// DownloadNftMethod represent DownloadNft name method
 	DownloadNftMethod = "DownloadNft"

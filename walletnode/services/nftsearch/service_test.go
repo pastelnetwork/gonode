@@ -87,7 +87,7 @@ package nftsearch
 //			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 //
 //			nodeClientMock := nodeMock.NewMockClient(t)
-//			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
+//			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadNft().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
 //
 //			pastelClientMock.ListenOnRegTicket(testCase.args.regTicketID, testCase.want, testCase.args.regTicketErr)
 //
@@ -154,7 +154,7 @@ package nftsearch
 //			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 //
 //			nodeClientMock := nodeMock.NewMockClient(t)
-//			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
+//			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadNft().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
 //
 //			service := &NftSearchingService{
 //				pastelClient: pastelClientMock.Client,
