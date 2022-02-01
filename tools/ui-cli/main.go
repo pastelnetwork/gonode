@@ -51,10 +51,10 @@ func registerTicket(client *cli.Client, artistId string, passphrase string, spen
 	endpoint := client.Register()
 	payloadJson := fmt.Sprintf(
 		`{
-		  "artist_name": "Leonardo da Vinci",
-		  "artist_pastelid": "%s",
-		  "artist_pastelid_passphrase": "%s",
-		  "artist_website_url": "https://www.leonardodavinci.net",
+		  "creator_name": "Leonardo da Vinci",
+		  "creator_pastelid": "%s",
+		  "creator_pastelid_passphrase": "%s",
+		  "creator_website_url": "https://www.leonardodavinci.net",
 		  "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
 		  "green": false,
 		  "image_id": "%s",

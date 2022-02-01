@@ -149,9 +149,9 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *UserdataAPIHandl
 				log.WithContext(ctx).Debugf("Multipart process field: %q", part.FormName())
 
 				switch part.FormName() {
-				case "artist_pastelid":
+				case "creator_pastelid":
 					res.UserPastelID = string(buffer)
-				case "artist_pastelid_passphrase":
+				case "creator_pastelid_passphrase":
 					res.UserPastelIDPassphrase = string(buffer)
 				case "biography":
 					value := string(buffer)
@@ -240,9 +240,9 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, _ *UserdataAPIHandl
 				log.WithContext(ctx).Debugf("Multipart process field: %q", part.FormName())
 
 				switch part.FormName() {
-				case "artist_pastelid":
+				case "creator_pastelid":
 					res.UserPastelID = string(buffer)
-				case "artist_pastelid_passphrase":
+				case "creator_pastelid_passphrase":
 					res.UserPastelIDPassphrase = string(buffer)
 				case "biography":
 					value := string(buffer)

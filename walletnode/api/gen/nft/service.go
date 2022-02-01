@@ -99,14 +99,14 @@ type RegisterPayload struct {
 	IssuedCopies int
 	// NFT creation video youtube URL
 	YoutubeURL *string
-	// Artist's PastelID
-	ArtistPastelID string
+	// Creator's PastelID
+	CreatorPastelID string
 	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string
-	// Name of the artist
-	ArtistName string
-	// Artist website URL
-	ArtistWebsiteURL *string
+	CreatorPastelIDPassphrase string
+	// Name of the NFT creator
+	CreatorName string
+	// NFT creator website URL
+	CreatorWebsiteURL *string
 	// Spendable address
 	SpendableAddress string
 	// Used to find a suitable masternode with a fee equal or less
@@ -188,8 +188,8 @@ type NftSearchPayload struct {
 	Limit int
 	// Query is search query entered by user
 	Query string
-	// Name of the artist
-	ArtistName bool
+	// Name of the nft creator
+	CreatorName bool
 	// Title of NFT
 	ArtTitle bool
 	// NFT series name
@@ -292,11 +292,11 @@ type NftDetail struct {
 	// NFT creation video youtube URL
 	YoutubeURL *string
 	// Artist's PastelID
-	ArtistPastelID string
+	CreatorPastelID string
 	// Name of the artist
-	ArtistName string
+	CreatorName string
 	// Artist website URL
-	ArtistWebsiteURL *string
+	CreatorWebsiteURL *string
 }
 
 // NftDownloadPayload is the payload type of the nft service download method.
@@ -341,14 +341,14 @@ type NftRegisterPayload struct {
 	IssuedCopies int
 	// NFT creation video youtube URL
 	YoutubeURL *string
-	// Artist's PastelID
-	ArtistPastelID string
+	// Creator's PastelID
+	CreatorPastelID string
 	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string
-	// Name of the artist
-	ArtistName string
-	// Artist website URL
-	ArtistWebsiteURL *string
+	CreatorPastelIDPassphrase string
+	// Name of the NFT creator
+	CreatorName string
+	// NFT creator website URL
+	CreatorWebsiteURL *string
 	// Spendable address
 	SpendableAddress string
 	// Used to find a suitable masternode with a fee equal or less
@@ -383,11 +383,11 @@ type NftSummary struct {
 	// NFT creation video youtube URL
 	YoutubeURL *string
 	// Artist's PastelID
-	ArtistPastelID string
+	CreatorPastelID string
 	// Name of the artist
-	ArtistName string
+	CreatorName string
 	// Artist website URL
-	ArtistWebsiteURL *string
+	CreatorWebsiteURL *string
 }
 
 type FuzzyMatch struct {
@@ -714,18 +714,18 @@ func transformNftviewsNftRegisterPayloadViewToNftRegisterPayload(v *nftviews.Nft
 		return nil
 	}
 	res := &NftRegisterPayload{
-		Name:                     *v.Name,
-		Description:              v.Description,
-		Keywords:                 v.Keywords,
-		SeriesName:               v.SeriesName,
-		IssuedCopies:             *v.IssuedCopies,
-		YoutubeURL:               v.YoutubeURL,
-		ArtistPastelID:           *v.ArtistPastelID,
-		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
-		ArtistName:               *v.ArtistName,
-		ArtistWebsiteURL:         v.ArtistWebsiteURL,
-		SpendableAddress:         *v.SpendableAddress,
-		MaximumFee:               *v.MaximumFee,
+		Name:                      *v.Name,
+		Description:               v.Description,
+		Keywords:                  v.Keywords,
+		SeriesName:                v.SeriesName,
+		IssuedCopies:              *v.IssuedCopies,
+		YoutubeURL:                v.YoutubeURL,
+		CreatorPastelID:           *v.CreatorPastelID,
+		CreatorPastelIDPassphrase: *v.CreatorPastelIDPassphrase,
+		CreatorName:               *v.CreatorName,
+		CreatorWebsiteURL:         v.CreatorWebsiteURL,
+		SpendableAddress:          *v.SpendableAddress,
+		MaximumFee:                *v.MaximumFee,
 	}
 	if v.Royalty != nil {
 		res.Royalty = *v.Royalty
@@ -782,20 +782,20 @@ func transformNftviewsTaskStateViewToTaskState(v *nftviews.TaskStateView) *TaskS
 // *NftRegisterPayload.
 func transformNftRegisterPayloadToNftviewsNftRegisterPayloadView(v *NftRegisterPayload) *nftviews.NftRegisterPayloadView {
 	res := &nftviews.NftRegisterPayloadView{
-		Name:                     &v.Name,
-		Description:              v.Description,
-		Keywords:                 v.Keywords,
-		SeriesName:               v.SeriesName,
-		IssuedCopies:             &v.IssuedCopies,
-		YoutubeURL:               v.YoutubeURL,
-		ArtistPastelID:           &v.ArtistPastelID,
-		ArtistPastelIDPassphrase: &v.ArtistPastelIDPassphrase,
-		ArtistName:               &v.ArtistName,
-		ArtistWebsiteURL:         v.ArtistWebsiteURL,
-		SpendableAddress:         &v.SpendableAddress,
-		MaximumFee:               &v.MaximumFee,
-		Royalty:                  &v.Royalty,
-		Green:                    &v.Green,
+		Name:                      &v.Name,
+		Description:               v.Description,
+		Keywords:                  v.Keywords,
+		SeriesName:                v.SeriesName,
+		IssuedCopies:              &v.IssuedCopies,
+		YoutubeURL:                v.YoutubeURL,
+		CreatorPastelID:           &v.CreatorPastelID,
+		CreatorPastelIDPassphrase: &v.CreatorPastelIDPassphrase,
+		CreatorName:               &v.CreatorName,
+		CreatorWebsiteURL:         v.CreatorWebsiteURL,
+		SpendableAddress:          &v.SpendableAddress,
+		MaximumFee:                &v.MaximumFee,
+		Royalty:                   &v.Royalty,
+		Green:                     &v.Green,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = transformThumbnailcoordinateToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)

@@ -8,7 +8,7 @@ type NftSearchingQueryField string
 // List of types of activation ticket.
 const (
 	//NftSearchArtistName is field
-	NftSearchArtistName NftSearchingQueryField = "artist_name"
+	NftSearchArtistName NftSearchingQueryField = "creator_name"
 	//NftSearchArtTitle is field
 	NftSearchArtTitle NftSearchingQueryField = "art_title"
 	//NftSearchSeries is field
@@ -83,7 +83,7 @@ func FromNftSearchRequest(req *nft.NftSearchPayload) *NftSearchingRequest {
 		Artist:           req.Artist,
 		Limit:            req.Limit,
 		Query:            req.Query,
-		ArtistName:       req.ArtistName,
+		ArtistName:       req.CreatorName,
 		ArtTitle:         req.ArtTitle,
 		Series:           req.Series,
 		Descr:            req.Descr,

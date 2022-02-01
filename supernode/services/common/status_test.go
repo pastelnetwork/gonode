@@ -29,9 +29,9 @@ func TestStatusNames(t *testing.T) {
 				// Error
 				StatusErrorInvalidBurnTxID,
 				StatusRequestTooLate,
-				StatusArtRegGettingFailed,
-				StatusArtRegDecodingFailed,
-				StatusArtRegTicketInvalid,
+				StatusNftRegGettingFailed,
+				StatusNftRegDecodingFailed,
+				StatusNftRegTicketInvalid,
 				StatusListTradeTicketsFailed,
 				StatusTradeTicketsNotFound,
 				StatusTradeTicketMismatched,
@@ -90,14 +90,14 @@ func TestStatusString(t *testing.T) {
 			status:        StatusRequestTooLate,
 			expectedValue: StatusNames()[StatusRequestTooLate],
 		}, {
-			status:        StatusArtRegGettingFailed,
-			expectedValue: StatusNames()[StatusArtRegGettingFailed],
+			status:        StatusNftRegGettingFailed,
+			expectedValue: StatusNames()[StatusNftRegGettingFailed],
 		}, {
-			status:        StatusArtRegDecodingFailed,
-			expectedValue: StatusNames()[StatusArtRegDecodingFailed],
+			status:        StatusNftRegDecodingFailed,
+			expectedValue: StatusNames()[StatusNftRegDecodingFailed],
 		}, {
-			status:        StatusArtRegTicketInvalid,
-			expectedValue: StatusNames()[StatusArtRegTicketInvalid],
+			status:        StatusNftRegTicketInvalid,
+			expectedValue: StatusNames()[StatusNftRegTicketInvalid],
 		}, {
 			status:        StatusListTradeTicketsFailed,
 			expectedValue: StatusNames()[StatusListTradeTicketsFailed],
@@ -181,13 +181,13 @@ func TestStatusIsFinal(t *testing.T) {
 			status:        StatusRequestTooLate,
 			expectedValue: false,
 		}, {
-			status:        StatusArtRegGettingFailed,
+			status:        StatusNftRegGettingFailed,
 			expectedValue: false,
 		}, {
-			status:        StatusArtRegDecodingFailed,
+			status:        StatusNftRegDecodingFailed,
 			expectedValue: false,
 		}, {
-			status:        StatusArtRegTicketInvalid,
+			status:        StatusNftRegTicketInvalid,
 			expectedValue: false,
 		}, {
 			status:        StatusListTradeTicketsFailed,
@@ -272,13 +272,13 @@ func TestStatusIsFailure(t *testing.T) {
 			status:        StatusRequestTooLate,
 			expectedValue: true,
 		}, {
-			status:        StatusArtRegGettingFailed,
+			status:        StatusNftRegGettingFailed,
 			expectedValue: true,
 		}, {
-			status:        StatusArtRegDecodingFailed,
+			status:        StatusNftRegDecodingFailed,
 			expectedValue: true,
 		}, {
-			status:        StatusArtRegTicketInvalid,
+			status:        StatusNftRegTicketInvalid,
 			expectedValue: true,
 		}, {
 			status:        StatusListTradeTicketsFailed,

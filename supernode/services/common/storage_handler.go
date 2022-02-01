@@ -12,8 +12,8 @@ import (
 )
 
 type StorageHandler struct {
-	p2pClient p2p.Client
-	rqClient  rqnode.ClientInterface
+	P2PClient p2p.Client
+	RqClient  rqnode.ClientInterface
 
 	rqAddress string
 	rqDir     string
@@ -23,8 +23,8 @@ func NewStorageHandler(p2p p2p.Client, rq rqnode.ClientInterface,
 	rqAddress string, rqDir string,
 ) *StorageHandler {
 	return &StorageHandler{
-		p2pClient: p2p,
-		rqClient:  rq,
+		P2PClient: p2p,
+		RqClient:  rq,
 		rqAddress: rqAddress, rqDir: rqDir,
 	}
 }
@@ -38,7 +38,7 @@ func (h *StorageHandler) StoreFileIntoP2P(ctx context.Context, nft *files.File) 
 }
 
 func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte) (string, error) {
-	return h.p2pClient.Store(ctx, data)
+	return h.P2PClient.Store(ctx, data)
 }
 
 func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]byte) error {
@@ -51,12 +51,12 @@ func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]b
 }
 
 func (h *StorageHandler) GenerateRaptorQSymbols(ctx context.Context, data []byte, name string) (map[string][]byte, error) {
-	if h.rqClient == nil {
+	if h.RqClient == nil {
 		log.WithContext(ctx).Warnf("RQ Server is not initialized")
 		return nil, errors.Errorf("RQ Server is not initialized")
 	}
 
-	conn, err := h.rqClient.Connect(ctx, h.rqAddress)
+	conn, err := h.RqClient.Connect(ctx, h.rqAddress)
 	if err != nil {
 		return nil, errors.Errorf("connect to raptorq service: %w", err)
 	}
@@ -77,12 +77,12 @@ func (h *StorageHandler) GenerateRaptorQSymbols(ctx context.Context, data []byte
 func (h *StorageHandler) GetRaptorQEncodeInfo(ctx context.Context,
 	data []byte, num uint32, hash string, pastelID string,
 ) (*rqnode.EncodeInfo, error) {
-	if h.rqClient == nil {
+	if h.RqClient == nil {
 		log.WithContext(ctx).Warnf("RQ Server is not initialized")
 		return nil, errors.Errorf("RQ Server is not initialized")
 	}
 
-	conn, err := h.rqClient.Connect(ctx, h.rqAddress)
+	conn, err := h.RqClient.Connect(ctx, h.rqAddress)
 	if err != nil {
 		return nil, errors.Errorf("connect to raptorq service: %w", err)
 	}
@@ -103,6 +103,11 @@ func (h *StorageHandler) GetRaptorQEncodeInfo(ctx context.Context,
 func (h *StorageHandler) ValidateRaptorQSymbolIDs(ctx context.Context,
 	data []byte, num uint32, hash string, pastelID string,
 	haveData []byte) error {
+
+	if len(haveData) == 0 {
+		return errors.Errorf("no symbols identifiers")
+	}
+
 	encodeInfo, err := h.GetRaptorQEncodeInfo(ctx, data, num, hash, pastelID)
 	if err != nil {
 		return err
@@ -132,7 +137,7 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	}
 
 	for id, symbol := range symbols {
-		if _, err := h.p2pClient.Store(ctx, symbol); err != nil {
+		if _, err := h.P2PClient.Store(ctx, symbol); err != nil {
 			return errors.Errorf("store symbol id=%s into kademlia: %w", id, err)
 		}
 	}

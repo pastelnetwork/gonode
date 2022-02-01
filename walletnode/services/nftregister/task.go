@@ -89,7 +89,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// Create copy of original image and embed fingerprints into it
 	// result is in the - task.NftImageHandler
 	if err := task.ImageHandler.CreateCopyWithEncodedFingerprint(ctx,
-		task.Request.ArtistPastelID, task.Request.ArtistPastelID,
+		task.Request.CreatorPastelID, task.Request.CreatorPastelID,
 		task.FingerprintsHandler.FinalFingerprints, task.Request.Image); err != nil {
 		return errors.Errorf("encode image with fingerprint: %w", err)
 	}
@@ -106,7 +106,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// connect to rq serivce to get rq symbols identifier
 	if err := task.RqHandler.GenRQIdentifiersFiles(ctx, task.ImageHandler.ImageEncodedWithFingerprints,
-		task.creatorBlockHash, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase); err != nil {
+		task.creatorBlockHash, task.Request.CreatorPastelID, task.Request.CreatorPastelIDPassphrase); err != nil {
 		task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
@@ -182,13 +182,13 @@ func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
 	if task.creatorBlockHash == "" {
 		return errors.New("empty current block hash")
 	}
-	if task.Request.ArtistPastelID == "" {
+	if task.Request.CreatorPastelID == "" {
 		return errors.New("empty creator pastelID")
 	}
 
 	regMetadata := &types.NftRegMetadata{
 		BlockHash:       task.creatorBlockHash,
-		CreatorPastelID: task.Request.ArtistPastelID,
+		CreatorPastelID: task.Request.CreatorPastelID,
 	}
 
 	group, _ := errgroup.WithContext(ctx)
@@ -319,15 +319,15 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.NFTTicket{
 		Version:   1,
-		Author:    task.Request.ArtistPastelID,
+		Author:    task.Request.CreatorPastelID,
 		BlockNum:  task.creatorBlockHeight,
 		BlockHash: task.creatorBlockHash,
 		Copies:    task.Request.IssuedCopies,
 		Royalty:   0,     // Not supported yet by cNode
 		Green:     false, // Not supported yet by cNode
 		AppTicketData: pastel.AppTicket{
-			CreatorName:                task.Request.ArtistName,
-			CreatorWebsite:             utils.SafeString(task.Request.ArtistWebsiteURL),
+			CreatorName:                task.Request.CreatorName,
+			CreatorWebsite:             utils.SafeString(task.Request.CreatorWebsiteURL),
 			CreatorWrittenStatement:    utils.SafeString(task.Request.Description),
 			NFTTitle:                   utils.SafeString(&task.Request.Name),
 			NFTSeriesName:              utils.SafeString(task.Request.SeriesName),
@@ -359,7 +359,7 @@ func (task *NftRegistrationTask) signTicket(ctx context.Context) error {
 		return errors.Errorf("encode ticket %w", err)
 	}
 
-	task.creatorSignature, err = task.service.pastelHandler.PastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
+	task.creatorSignature, err = task.service.pastelHandler.PastelClient.Sign(ctx, data, task.Request.CreatorPastelID, task.Request.CreatorPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign ticket %w", err)
 	}
@@ -423,8 +423,8 @@ func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string,
 		task.regNFTTxid,
 		task.creatorBlockHeight,
 		task.registrationFee,
-		task.Request.ArtistPastelID,
-		task.Request.ArtistPastelIDPassphrase)
+		task.Request.CreatorPastelID,
+		task.Request.CreatorPastelIDPassphrase)
 }
 
 func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context.Context) error {
@@ -479,7 +479,7 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
 		service.nodeClient, &RegisterNftNodeMaker{},
 		service.pastelHandler,
-		request.ArtistPastelID, request.ArtistPastelIDPassphrase,
+		request.CreatorPastelID, request.CreatorPastelIDPassphrase,
 		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
 		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
 	)

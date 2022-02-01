@@ -54,11 +54,13 @@ func TestNewService(t *testing.T) {
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
 					P2PClient:    p2pClient.Client,
+					RQClient:     raptorQClient.Client,
 					Worker:       task.NewWorker(),
 				},
 			},
 		},
 	}
+
 	for i, testCase := range testCases {
 		testCase := testCase
 

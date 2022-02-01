@@ -77,7 +77,7 @@ curl -X 'POST' \
 -F 'cover_photo={
 "content": "VmVsIGFyY2hpdGVjdG8gcXVpYSBldCBkb2xvcmVzLg=="
 }' \
--F 'artist_pastelid=jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS' \
+-F 'creator_pastelid=jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS' \
 -F 'facebook_link=https://www.facebook.com/Williams_Scottish' \
 -F 'biography=I'\''m a digital artist based in Paris, France. ...' \
 -F 'primary_language=English' \
@@ -87,7 +87,7 @@ curl -X 'POST' \
 -F 'location=New York, US' \
 -F 'native_currency=USD' \
 -F 'categories=Quos dignissimos ut corrupti eos aut.' \
--F 'artist_pastelid_passphrase=qwerasdf1234'
+-F 'creator_pastelid_passphrase=qwerasdf1234'
 
   
 curl -X 'GET' \

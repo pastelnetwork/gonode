@@ -20,9 +20,10 @@ type Tasker interface {
 }
 
 type DupeDetectionHandler struct {
+	*SuperNodeTask
 	*RegTaskHelper
 
-	ddClient ddclient.DDServerClient
+	DdClient ddclient.DDServerClient
 
 	ddMtx sync.Mutex
 
@@ -34,14 +35,16 @@ type DupeDetectionHandler struct {
 	allSignedDDAndFingerprintsReceivedChn chan struct{}
 }
 
-func NewSenseTaskHelper(
+func NewSenseTaskHelper(task *SuperNodeTask,
 	pastelID string, passPhrase string,
 	network *NetworkHandler,
+	pastelClient pastel.Client,
 ) *DupeDetectionHandler {
 	return &DupeDetectionHandler{
+		SuperNodeTask:                         task,
 		allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
 		allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
-		RegTaskHelper:                         NewRegTaskHelper(pastelID, passPhrase, network),
+		RegTaskHelper:                         NewRegTaskHelper(task, pastelID, passPhrase, network, pastelClient),
 	}
 }
 
@@ -59,7 +62,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		})
 		h.UpdateStatus(StatusImageProbed)
 
-		h.myDDAndFingerprints, err = h.genFingerprintsData(ctx, file, blockHash, creatorPastelID)
+		h.myDDAndFingerprints, err = h.GenFingerprintsData(ctx, file, blockHash, creatorPastelID)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
 			err = errors.Errorf("generate fingerprints data: %w", err)
@@ -75,7 +78,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 
 		for _, nodeInfo := range h.NetworkHandler.meshedNodes {
 			// Don't send to itself
-			if nodeInfo.NodeID == h.serverPastelID {
+			if nodeInfo.NodeID == h.ServerPastelID {
 				continue
 			}
 
@@ -97,7 +100,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 				return nil
 			}
 
-			if err = tasker.SendDDFBack(ctx, node, &nodeInfo, h.serverPastelID, h.myDDAndFingerprints.ZstdCompressedFingerprint); err != nil {
+			if err = tasker.SendDDFBack(ctx, node.SuperNodePeerAPIInterface, &nodeInfo, h.ServerPastelID, h.myDDAndFingerprints.ZstdCompressedFingerprint); err != nil {
 				log.WithContext(ctx).WithFields(log.Fields{
 					"nodeID":  nodeInfo.NodeID,
 					"sessID":  nodeInfo.SessID,
@@ -118,7 +121,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 			return nil
 		case <-h.allSignedDDAndFingerprintsReceivedChn:
 			log.WithContext(ctx).Debug("all DDAndFingerprints received so start calculate final DDAndFingerprints")
-			h.allDDAndFingerprints[h.serverPastelID] = h.myDDAndFingerprints
+			h.allDDAndFingerprints[h.ServerPastelID] = h.myDDAndFingerprints
 
 			// get list of DDAndFingerprints in order of node rank
 			dDAndFingerprintsList := []*pastel.DDAndFingerprints{}
@@ -179,14 +182,14 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 	return h.calculatedDDAndFingerprints.ZstdCompressedFingerprint, nil
 }
 
-func (h *DupeDetectionHandler) genFingerprintsData(ctx context.Context, file *files.File, blockHash string, creatorPastelID string) (*pastel.DDAndFingerprints, error) {
+func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *files.File, blockHash string, creatorPastelID string) (*pastel.DDAndFingerprints, error) {
 	img, err := file.Bytes()
 	if err != nil {
 		return nil, errors.Errorf("get content of image %s: %w", file.Name(), err)
 	}
 
 	// Get DDAndFingerprints
-	ddAndFingerprints, err := h.ddClient.ImageRarenessScore(
+	ddAndFingerprints, err := h.DdClient.ImageRarenessScore(
 		ctx,
 		img,
 		file.Format().String(),
@@ -216,7 +219,7 @@ func (h *DupeDetectionHandler) compressSignedDDAndFingerprints(ctx context.Conte
 	}
 
 	// sign it
-	signature, err := h.pastelHandler.PastelClient.Sign(ctx, ddDataBytes, h.serverPastelID, h.serverPassPhrase, pastel.SignAlgorithmED448)
+	signature, err := h.PastelHandler.PastelClient.Sign(ctx, ddDataBytes, h.ServerPastelID, h.serverPassPhrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return nil, errors.Errorf("sign DDAndFingerprints: %w", err)
 	}
@@ -260,7 +263,7 @@ func (h *DupeDetectionHandler) AddSignedDDAndFingerprints(nodeID string, compres
 		}
 
 		var ok bool
-		ok, err = h.pastelHandler.PastelClient.Verify(ctx, ddAndFingerprintsBytes, string(signature), nodeID, pastel.SignAlgorithmED448)
+		ok, err = h.PastelHandler.PastelClient.Verify(ctx, ddAndFingerprintsBytes, string(signature), nodeID, pastel.SignAlgorithmED448)
 		if err != nil || !ok {
 			err = errors.New("signature verification failed")
 			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("verify signature of ddAndFingerprintsBytes failed")

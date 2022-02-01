@@ -32,14 +32,14 @@ type RegisterRequestBody struct {
 	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
 	// NFT creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
-	// Artist's PastelID
-	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Creator's PastelID
+	CreatorPastelID *string `form:"creator_pastelid,omitempty" json:"creator_pastelid,omitempty" xml:"creator_pastelid,omitempty"`
 	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
-	// Name of the artist
-	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
-	// Artist website URL
-	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	CreatorPastelIDPassphrase *string `form:"creator_pastelid_passphrase,omitempty" json:"creator_pastelid_passphrase,omitempty" xml:"creator_pastelid_passphrase,omitempty"`
+	// Name of the NFT creator
+	CreatorName *string `form:"creator_name,omitempty" json:"creator_name,omitempty" xml:"creator_name,omitempty"`
+	// NFT creator website URL
+	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
 	// Spendable address
 	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
 	// Used to find a suitable masternode with a fee equal or less
@@ -174,11 +174,11 @@ type NftGetResponseBody struct {
 	// NFT creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
-	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	CreatorPastelID string `form:"creator_pastelid" json:"creator_pastelid" xml:"creator_pastelid"`
 	// Name of the artist
-	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
+	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
 	// Artist website URL
-	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
 }
 
 // DownloadResponseBody is the type of the "nft" service "download" endpoint
@@ -503,14 +503,14 @@ type NftRegisterPayloadResponseBody struct {
 	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
 	// NFT creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
-	// Artist's PastelID
-	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Creator's PastelID
+	CreatorPastelID string `form:"creator_pastelid" json:"creator_pastelid" xml:"creator_pastelid"`
 	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
-	// Name of the artist
-	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
-	// Artist website URL
-	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	CreatorPastelIDPassphrase string `form:"creator_pastelid_passphrase" json:"creator_pastelid_passphrase" xml:"creator_pastelid_passphrase"`
+	// Name of the NFT creator
+	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
+	// NFT creator website URL
+	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
 	// Spendable address
 	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
 	// Used to find a suitable masternode with a fee equal or less
@@ -562,14 +562,14 @@ type NftRegisterPayloadResponse struct {
 	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
 	// NFT creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
-	// Artist's PastelID
-	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Creator's PastelID
+	CreatorPastelID string `form:"creator_pastelid" json:"creator_pastelid" xml:"creator_pastelid"`
 	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
-	// Name of the artist
-	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
-	// Artist website URL
-	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	CreatorPastelIDPassphrase string `form:"creator_pastelid_passphrase" json:"creator_pastelid_passphrase" xml:"creator_pastelid_passphrase"`
+	// Name of the NFT creator
+	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
+	// NFT creator website URL
+	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
 	// Spendable address
 	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
 	// Used to find a suitable masternode with a fee equal or less
@@ -616,11 +616,11 @@ type NftSummaryResponseBody struct {
 	// NFT creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
-	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	CreatorPastelID string `form:"creator_pastelid" json:"creator_pastelid" xml:"creator_pastelid"`
 	// Name of the artist
-	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
+	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
 	// Artist website URL
-	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
 }
 
 // FuzzyMatchResponseBody is used to define fields on response body types.
@@ -751,9 +751,9 @@ func NewNftGetResponseBody(res *nft.NftDetail) *NftGetResponseBody {
 		SeriesName:            res.SeriesName,
 		Copies:                res.Copies,
 		YoutubeURL:            res.YoutubeURL,
-		ArtistPastelID:        res.ArtistPastelID,
-		ArtistName:            res.ArtistName,
-		ArtistWebsiteURL:      res.ArtistWebsiteURL,
+		CreatorPastelID:       res.CreatorPastelID,
+		CreatorName:           res.CreatorName,
+		CreatorWebsiteURL:     res.CreatorWebsiteURL,
 	}
 	return body
 }
@@ -995,19 +995,19 @@ func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *Download
 // NewRegisterPayload builds a nft service register endpoint payload.
 func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
 	v := &nft.RegisterPayload{
-		ImageID:                  *body.ImageID,
-		Name:                     *body.Name,
-		Description:              body.Description,
-		Keywords:                 body.Keywords,
-		SeriesName:               body.SeriesName,
-		IssuedCopies:             *body.IssuedCopies,
-		YoutubeURL:               body.YoutubeURL,
-		ArtistPastelID:           *body.ArtistPastelID,
-		ArtistPastelIDPassphrase: *body.ArtistPastelIDPassphrase,
-		ArtistName:               *body.ArtistName,
-		ArtistWebsiteURL:         body.ArtistWebsiteURL,
-		SpendableAddress:         *body.SpendableAddress,
-		MaximumFee:               *body.MaximumFee,
+		ImageID:                   *body.ImageID,
+		Name:                      *body.Name,
+		Description:               body.Description,
+		Keywords:                  body.Keywords,
+		SeriesName:                body.SeriesName,
+		IssuedCopies:              *body.IssuedCopies,
+		YoutubeURL:                body.YoutubeURL,
+		CreatorPastelID:           *body.CreatorPastelID,
+		CreatorPastelIDPassphrase: *body.CreatorPastelIDPassphrase,
+		CreatorName:               *body.CreatorName,
+		CreatorWebsiteURL:         body.CreatorWebsiteURL,
+		SpendableAddress:          *body.SpendableAddress,
+		MaximumFee:                *body.MaximumFee,
 	}
 	if body.Royalty != nil {
 		v.Royalty = *body.Royalty
@@ -1056,12 +1056,12 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *nft.UploadImagePayload
 }
 
 // NewNftSearchPayload builds a nft service nftSearch endpoint payload.
-func NewNftSearchPayload(artist *string, limit int, query string, artistName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *float64, maxRarenessScore *float64, minNsfwScore *float64, maxNsfwScore *float64, minInternetRarenessScore *float64, maxInternetRarenessScore *float64, userPastelid *string, userPassphrase *string) *nft.NftSearchPayload {
+func NewNftSearchPayload(artist *string, limit int, query string, creatorName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *float64, maxRarenessScore *float64, minNsfwScore *float64, maxNsfwScore *float64, minInternetRarenessScore *float64, maxInternetRarenessScore *float64, userPastelid *string, userPassphrase *string) *nft.NftSearchPayload {
 	v := &nft.NftSearchPayload{}
 	v.Artist = artist
 	v.Limit = limit
 	v.Query = query
-	v.ArtistName = artistName
+	v.CreatorName = creatorName
 	v.ArtTitle = artTitle
 	v.Series = series
 	v.Descr = descr
@@ -1109,8 +1109,8 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 	if body.ImageID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "body"))
 	}
-	if body.ArtistName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("artist_name", "body"))
+	if body.CreatorName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("creator_name", "body"))
 	}
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
@@ -1118,11 +1118,11 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 	if body.IssuedCopies == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
 	}
-	if body.ArtistPastelID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	if body.CreatorPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "body"))
 	}
-	if body.ArtistPastelIDPassphrase == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "body"))
+	if body.CreatorPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid_passphrase", "body"))
 	}
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
@@ -1175,27 +1175,27 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.youtube_url", *body.YoutubeURL, utf8.RuneCountInString(*body.YoutubeURL), 128, false))
 		}
 	}
-	if body.ArtistPastelID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", *body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+	if body.CreatorPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.creator_pastelid", *body.CreatorPastelID, "^[a-zA-Z0-9]+$"))
 	}
-	if body.ArtistPastelID != nil {
-		if utf8.RuneCountInString(*body.ArtistPastelID) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, true))
+	if body.CreatorPastelID != nil {
+		if utf8.RuneCountInString(*body.CreatorPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_pastelid", *body.CreatorPastelID, utf8.RuneCountInString(*body.CreatorPastelID), 86, true))
 		}
 	}
-	if body.ArtistPastelID != nil {
-		if utf8.RuneCountInString(*body.ArtistPastelID) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, false))
+	if body.CreatorPastelID != nil {
+		if utf8.RuneCountInString(*body.CreatorPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_pastelid", *body.CreatorPastelID, utf8.RuneCountInString(*body.CreatorPastelID), 86, false))
 		}
 	}
-	if body.ArtistName != nil {
-		if utf8.RuneCountInString(*body.ArtistName) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_name", *body.ArtistName, utf8.RuneCountInString(*body.ArtistName), 256, false))
+	if body.CreatorName != nil {
+		if utf8.RuneCountInString(*body.CreatorName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_name", *body.CreatorName, utf8.RuneCountInString(*body.CreatorName), 256, false))
 		}
 	}
-	if body.ArtistWebsiteURL != nil {
-		if utf8.RuneCountInString(*body.ArtistWebsiteURL) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
+	if body.CreatorWebsiteURL != nil {
+		if utf8.RuneCountInString(*body.CreatorWebsiteURL) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_website_url", *body.CreatorWebsiteURL, utf8.RuneCountInString(*body.CreatorWebsiteURL), 256, false))
 		}
 	}
 	if body.SpendableAddress != nil {

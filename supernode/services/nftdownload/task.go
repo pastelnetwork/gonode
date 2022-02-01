@@ -80,11 +80,11 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			return nil
 		}
 
-		// Get Art Registration ticket by txid
+		// Get Nft Registration ticket by txid
 		nftRegTicket, err = task.PastelClient.RegTicket(ctx, txid)
 		if err != nil {
 			err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
-			task.UpdateStatus(common.StatusArtRegGettingFailed)
+			task.UpdateStatus(common.StatusNftRegGettingFailed)
 			return nil
 		}
 
@@ -93,7 +93,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		// Decode Art Request
 		err = task.decodeRegTicket(&nftRegTicket)
 		if err != nil {
-			task.UpdateStatus(common.StatusArtRegDecodingFailed)
+			task.UpdateStatus(common.StatusNftRegDecodingFailed)
 			return nil
 		}
 
@@ -174,7 +174,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, nftRegTicket *p
 	var err error
 
 	if len(nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs) == 0 {
-		task.UpdateStatus(common.StatusArtRegTicketInvalid)
+		task.UpdateStatus(common.StatusNftRegTicketInvalid)
 		return file, errors.Errorf("ticket has empty symbol identifier files")
 	}
 

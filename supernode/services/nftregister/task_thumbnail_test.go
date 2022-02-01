@@ -3,6 +3,7 @@ package nftregister
 import (
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"image"
 	"image/png"
 	"os"
@@ -152,7 +153,8 @@ func TestCreateAndHashThumbnail(t *testing.T) {
 			args: args{
 				task: &NftRegistrationTask{
 					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
+						config:           &Config{},
+						SuperNodeService: &common.SuperNodeService{},
 					},
 					Ticket: &pastel.NFTTicket{},
 				},
@@ -209,7 +211,8 @@ func TestCreateAndHashThumbnails(t *testing.T) {
 			args: args{
 				task: &NftRegistrationTask{
 					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
+						config:           &Config{},
+						SuperNodeService: &common.SuperNodeService{},
 					},
 					Ticket: &pastel.NFTTicket{},
 				},

@@ -389,6 +389,7 @@ func NewSenseRegistrationTask(service *SenseRegistrationService) *SenseRegistrat
 			RegisterSenseNodeMaker{}, service.PastelClient,
 			task.config.PastelID,
 			service.config.NumberConnectedNodes),
+		service.PastelClient,
 	)
 
 	return task
