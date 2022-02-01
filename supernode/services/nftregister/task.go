@@ -91,7 +91,7 @@ func (task *NftRegistrationTask) validateRqIDsAndDdFpIds(ctx context.Context, rq
 
 	task.rawDdFpFile, task.ddFpFiles, err = task.ValidateIDFiles(ctx, dd,
 		task.Ticket.AppTicketData.DDAndFingerprintsIc, task.Ticket.AppTicketData.DDAndFingerprintsMax,
-		task.Ticket.AppTicketData.DDAndFingerprintsIDs, 4,
+		task.Ticket.AppTicketData.DDAndFingerprintsIDs, 3,
 		pastelIDs,
 		task.PastelClient)
 	if err != nil {
@@ -474,7 +474,7 @@ func NewNftRegistrationTask(service *NftRegistrationService) *NftRegistrationTas
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
 	}
 
-	task.DupeDetectionHandler = common.NewSenseTaskHelper(task.SuperNodeTask,
+	task.DupeDetectionHandler = common.NewSenseTaskHelper(task.SuperNodeTask, service.ddClient,
 		task.config.PastelID, task.config.PassPhrase,
 		common.NewNetworkHandler(task.SuperNodeTask, service.nodeClient,
 			RegisterNftNodeMaker{}, service.PastelClient,

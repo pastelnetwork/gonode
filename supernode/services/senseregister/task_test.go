@@ -5,49 +5,68 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/files"
-	"github.com/pastelnetwork/gonode/mixins"
-	"github.com/pastelnetwork/gonode/supernode/services/common"
-	"io"
-	"strings"
-	"sync"
-	"testing"
-	"time"
-
 	"github.com/DataDog/zstd"
-	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/files"
+	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
-
-	"github.com/pastelnetwork/gonode/common/errors"
-	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
+	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	ddMock "github.com/pastelnetwork/gonode/dupedetection/ddclient/test"
+	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	"github.com/pastelnetwork/gonode/supernode/node"
 	test "github.com/pastelnetwork/gonode/supernode/node/test/sense_register"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"github.com/tj/assert"
+	"io"
+	"strings"
+	"testing"
+	"time"
 )
 
-func makeSenseRegTask1() *SenseRegistrationTask {
-	service := &SenseRegistrationService{
-		config:           &Config{},
-		SuperNodeService: &common.SuperNodeService{},
+func makeConnected(task *SenseRegistrationTask, status common.Status) *SenseRegistrationTask {
+	meshedNodes := []types.MeshedSuperNode{
+		types.MeshedSuperNode{
+			NodeID: "PrimaryID",
+		},
+		types.MeshedSuperNode{
+			NodeID: "A",
+		},
+		types.MeshedSuperNode{
+			NodeID: "B",
+		},
 	}
 
-	task := NewSenseRegistrationTask(service)
-	task.Ticket = &pastel.ActionTicket{}
+	task.UpdateStatus(common.StatusConnected)
+	task.NetworkHandler.MeshNodes(nil, meshedNodes)
+	task.UpdateStatus(status)
+
+	return task
+}
+
+func add2NodesAnd2TicketSignatures(task *SenseRegistrationTask) *SenseRegistrationTask {
 	task.NetworkHandler.Accepted = common.SuperNodePeerList{
 		&common.SuperNodePeer{ID: "A"},
 		&common.SuperNodePeer{ID: "B"},
 	}
 	task.PeersTicketSignature = map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}}
+	return task
+}
+
+func makeEmptySenseRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface, ddClient ddclient.DDServerClient) *SenseRegistrationTask {
+	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, rqClient, ddClient)
+	task := NewSenseRegistrationTask(service)
+	task.Ticket = &pastel.ActionTicket{}
 
 	return task
 }
 
 func TestTaskSignAndSendArtTicket(t *testing.T) {
 	type args struct {
-		task        *SenseRegistrationTask
 		signErr     error
 		sendArtErr  error
 		signReturns []byte
@@ -60,36 +79,12 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config:           &Config{},
-						SuperNodeService: &common.SuperNodeService{},
-					},
-					Ticket: &pastel.ActionTicket{},
-					DupeDetectionHandler: &common.DupeDetectionHandler{
-						RegTaskHelper: &common.RegTaskHelper{
-							NetworkHandler: &common.NetworkHandler{},
-						},
-					},
-				},
 				primary: true,
 			},
 			wantErr: nil,
 		},
 		"err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config:           &Config{},
-						SuperNodeService: &common.SuperNodeService{},
-					},
-					Ticket: &pastel.ActionTicket{},
-					DupeDetectionHandler: &common.DupeDetectionHandler{
-						RegTaskHelper: &common.RegTaskHelper{
-							NetworkHandler: &common.NetworkHandler{},
-						},
-					},
-				},
 				signErr: errors.New("test"),
 				primary: true,
 			},
@@ -97,18 +92,6 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 		},
 		"primary-err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config:           &Config{},
-						SuperNodeService: &common.SuperNodeService{},
-					},
-					Ticket: &pastel.ActionTicket{},
-					DupeDetectionHandler: &common.DupeDetectionHandler{
-						RegTaskHelper: &common.RegTaskHelper{
-							NetworkHandler: &common.NetworkHandler{},
-						},
-					},
-				},
 				sendArtErr: errors.New("test"),
 				signErr:    nil,
 				primary:    false,
@@ -124,21 +107,21 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-			tc.args.task.SenseRegistrationService.PastelClient = pastelClientMock
 
 			clientMock := test.NewMockClient(t)
 			clientMock.ListenOnSendSenseTicketSignature(tc.args.sendArtErr).
 				ListenOnConnect("", nil).ListenOnRegisterSense()
 
-			tc.args.task.nodeClient = clientMock
-			tc.args.task.NetworkHandler.ConnectedTo = &common.SuperNodePeer{
+			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, clientMock, nil, nil, nil)
+
+			task.NetworkHandler.ConnectedTo = &common.SuperNodePeer{
 				ClientInterface: clientMock,
-				NodeMaker:       &RegisterSenseNodeMaker{},
+				NodeMaker:       RegisterSenseNodeMaker{},
 			}
-			err := tc.args.task.NetworkHandler.ConnectedTo.Connect(context.Background())
+			err := task.NetworkHandler.ConnectedTo.Connect(context.Background())
 			assert.Nil(t, err)
 
-			err = tc.args.task.signAndSendArtTicket(context.Background(), tc.args.primary)
+			err = task.signAndSendSenseTicket(context.Background(), tc.args.primary)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -151,7 +134,6 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 
 func TestTaskRegisterAction(t *testing.T) {
 	type args struct {
-		task     *SenseRegistrationTask
 		regErr   error
 		regRetID string
 	}
@@ -161,14 +143,11 @@ func TestTaskRegisterAction(t *testing.T) {
 		wantErr error
 	}{
 		"success": {
-			args: args{
-				task: makeSenseRegTask1(),
-			},
+			args:    args{},
 			wantErr: nil,
 		},
 		"err": {
 			args: args{
-				task:   makeSenseRegTask1(),
 				regErr: errors.New("test"),
 			},
 			wantErr: errors.New("test"),
@@ -182,9 +161,11 @@ func TestTaskRegisterAction(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnRegisterActionTicket(tc.args.regRetID, tc.args.regErr)
-			tc.args.task.SenseRegistrationService.PastelClient = pastelClientMock
 
-			id, err := tc.args.task.registerAction(context.Background())
+			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task = add2NodesAnd2TicketSignatures(task)
+
+			id, err := task.registerAction(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -270,7 +251,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 	}
 
 	type args struct {
-		task    *SenseRegistrationTask
 		fileErr error
 		genErr  error
 		genResp *pastel.DDAndFingerprints
@@ -285,7 +265,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 				genErr:  nil,
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task:    makeSenseRegTask1(),
 			},
 			wantErr: nil,
 		},
@@ -294,7 +273,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 				genErr:  nil,
 				fileErr: errors.New("test"),
 				genResp: genfingerAndScoresFunc(),
-				task:    makeSenseRegTask1(),
 			},
 			wantErr: errors.New("test"),
 		},
@@ -303,7 +281,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 				genErr:  errors.New("test"),
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task:    makeSenseRegTask1(),
 			},
 			wantErr: errors.New("test"),
 		},
@@ -324,15 +301,15 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("signature"), nil)
-			tc.args.task.SenseRegistrationService.PastelClient = pastelClientMock
-			tc.args.task.DupeDetectionHandler.RegTaskHelper.PastelHandler = &mixins.PastelHandler{PastelClient: pastelClientMock}
-
-			tc.args.task.senseRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
 
 			ddmock := ddMock.NewMockClient(t)
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
-			tc.args.task.ddClient = ddmock
-			_, err := tc.args.task.GenFingerprintsData(context.Background(), file, "testBlockHash", "creatorPastelID")
+
+			task := makeEmptySenseRegTask(&Config{}, fsMock, pastelClientMock, nil, nil, nil, ddmock)
+			task = add2NodesAnd2TicketSignatures(task)
+			task.senseRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+
+			_, err := task.GenFingerprintsData(context.Background(), file, "testBlockHash", "creatorPastelID")
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -345,7 +322,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 
 func TestTaskPastelNodesByExtKey(t *testing.T) {
 	type args struct {
-		task           *SenseRegistrationTask
 		nodeID         string
 		masterNodesErr error
 	}
@@ -356,12 +332,6 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.ActionTicket{},
-				},
 				masterNodesErr: nil,
 				nodeID:         "A",
 			},
@@ -369,24 +339,12 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 		},
 		"err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.ActionTicket{},
-				},
 				masterNodesErr: errors.New("test"),
 			},
 			wantErr: errors.New("test"),
 		},
 		"node-err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.ActionTicket{},
-				},
 				nodeID:         "B",
 				masterNodesErr: nil,
 			},
@@ -407,10 +365,10 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
-			tc.args.task.pastelClient = pastelClientMock
-			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 
-			_, err := tc.args.task.pastelNodeByExtKey(context.Background(), tc.args.nodeID)
+			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+
+			_, err := task.NetworkHandler.PastelNodeByExtKey(context.Background(), tc.args.nodeID)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -423,7 +381,6 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 
 func TestTaskVerifyPeersSignature(t *testing.T) {
 	type args struct {
-		task      *SenseRegistrationTask
 		verifyErr error
 		verifyRet bool
 	}
@@ -434,13 +391,6 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.ActionTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
-				},
 				verifyRet: true,
 				verifyErr: nil,
 			},
@@ -448,13 +398,6 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 		},
 		"verify-err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.ActionTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
-				},
 				verifyRet: true,
 				verifyErr: errors.New("test"),
 			},
@@ -462,13 +405,6 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 		},
 		"verify-failure": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.ActionTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
-				},
 				verifyRet: false,
 				verifyErr: nil,
 			},
@@ -483,9 +419,11 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(tc.args.verifyRet, tc.args.verifyErr)
-			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 
-			err := tc.args.task.verifyPeersSignature(context.Background())
+			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task = add2NodesAnd2TicketSignatures(task)
+
+			err := task.verifyPeersSignature(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -498,7 +436,6 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 
 func TestTaskWaitConfirmation(t *testing.T) {
 	type args struct {
-		task             *SenseRegistrationTask
 		txid             string
 		interval         time.Duration
 		minConfirmations int64
@@ -513,12 +450,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 	}{
 		"min-confirmations-timeout": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.ActionTicket{},
-				},
 				minConfirmations: 2,
 				interval:         100 * time.Millisecond,
 				ctxTimeout:       20 * time.Second,
@@ -531,12 +462,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 		},
 		"success": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.ActionTicket{},
-				},
 				minConfirmations: 1,
 				interval:         50 * time.Millisecond,
 				ctxTimeout:       500 * time.Millisecond,
@@ -548,12 +473,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 		},
 		"ctx-done-err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.ActionTicket{},
-				},
 				minConfirmations: 1,
 				interval:         500 * time.Millisecond,
 				ctxTimeout:       10 * time.Millisecond,
@@ -574,9 +493,10 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnGetBlockCount(1, nil)
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.retRes, tc.retErr)
-			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 
-			err := <-tc.args.task.waitConfirmation(ctx, tc.args.txid,
+			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+
+			err := <-task.WaitConfirmation(ctx, tc.args.txid,
 				tc.args.minConfirmations, tc.args.interval)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
@@ -665,10 +585,10 @@ func TestTaskProbeImage(t *testing.T) {
 	}
 
 	type args struct {
-		task    *SenseRegistrationTask
 		fileErr error
 		genErr  error
 		genResp *pastel.DDAndFingerprints
+		status  common.Status
 	}
 
 	serviceCfg := NewConfig()
@@ -682,29 +602,7 @@ func TestTaskProbeImage(t *testing.T) {
 				genErr:  nil,
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: serviceCfg,
-					},
-					Task:   task.New(StatusConnected),
-					Ticket: &pastel.ActionTicket{},
-					meshedNodes: []types.MeshedSuperNode{
-						types.MeshedSuperNode{
-							NodeID: "PrimaryID",
-						},
-						types.MeshedSuperNode{
-							NodeID: "A",
-						},
-						types.MeshedSuperNode{
-							NodeID: "B",
-						},
-					},
-					allSignaturesReceivedChn:              make(chan struct{}),
-					allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
-					allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
-					accepted:                              common.SenseRegistrationNodes{&SenseRegistrationNode{ID: "A"}, &SenseRegistrationNode{ID: "B"}},
-					peersArtTicketSignature:               map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
+				status:  common.StatusConnected,
 			},
 			wantErr: nil,
 		},
@@ -713,26 +611,7 @@ func TestTaskProbeImage(t *testing.T) {
 				genErr:  nil,
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: serviceCfg,
-					},
-					Task:   task.New(StatusImageProbed),
-					Ticket: &pastel.ActionTicket{},
-					meshedNodes: []types.MeshedSuperNode{
-						types.MeshedSuperNode{
-							NodeID: "PrimaryID",
-						},
-						types.MeshedSuperNode{
-							NodeID: "A",
-						},
-						types.MeshedSuperNode{
-							NodeID: "B",
-						},
-					},
-					accepted:                common.SenseRegistrationNodes{&SenseRegistrationNode{ID: "A"}, &SenseRegistrationNode{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
+				status:  common.StatusImageProbed,
 			},
 			wantErr: errors.New("required status"),
 		},
@@ -741,26 +620,7 @@ func TestTaskProbeImage(t *testing.T) {
 				genErr:  errors.New("test"),
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task: &SenseRegistrationTask{
-					Task: task.New(StatusConnected),
-					SenseRegistrationService: &SenseRegistrationService{
-						config: serviceCfg,
-					},
-					Ticket: &pastel.ActionTicket{},
-					meshedNodes: []types.MeshedSuperNode{
-						types.MeshedSuperNode{
-							NodeID: "PrimaryID",
-						},
-						types.MeshedSuperNode{
-							NodeID: "A",
-						},
-						types.MeshedSuperNode{
-							NodeID: "B",
-						},
-					},
-					accepted:                common.SenseRegistrationNodes{&SenseRegistrationNode{ID: "A"}, &SenseRegistrationNode{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
+				status:  common.StatusConnected,
 			},
 			wantErr: errors.New("test"),
 		},
@@ -782,26 +642,29 @@ func TestTaskProbeImage(t *testing.T) {
 
 			ddmock := ddMock.NewMockClient(t)
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
-			tc.args.task.ddClient = ddmock
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("signature"), nil).ListenOnVerify(true, nil)
-			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 
-			tc.args.task.nftRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+			var clientMock *test.Client = nil
+			if tc.wantErr == nil {
+				clientMock = test.NewMockClient(t)
+				clientMock.ListenOnSendSignedDDAndFingerprints(nil).
+					ListenOnConnect("", nil).ListenOnRegisterSense()
+			}
+
+			task := makeEmptySenseRegTask(serviceCfg, fsMock, pastelClientMock, clientMock, nil, nil, ddmock)
+			task = add2NodesAnd2TicketSignatures(task)
+			task = makeConnected(task, tc.args.status)
+
+			task.senseRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			go tc.args.task.RunAction(ctx)
+			go task.RunAction(ctx)
 
 			if tc.wantErr == nil {
-				clientMock := test.NewMockClient(t)
-				clientMock.ListenOnSendSignedDDAndFingerprints(nil).
-					ListenOnConnect("", nil).ListenOnRegisterSense()
-
-				tc.args.task.nodeClient = clientMock
-
 				nodes := pastel.MasterNodes{}
 				nodes = append(nodes, pastel.MasterNode{ExtKey: "PrimaryID"})
 				nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
@@ -810,13 +673,10 @@ func TestTaskProbeImage(t *testing.T) {
 				pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(genfingerAndScoresFunc(), []byte("signature"))
-				go func() {
-					time.Sleep(4 * time.Second)
-					tc.args.task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
-					tc.args.task.AddSignedDDAndFingerprints("B", peerDDAndFingerprints)
-				}()
+				go task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
+				go task.AddSignedDDAndFingerprints("B", peerDDAndFingerprints)
 			}
-			_, err := tc.args.task.ProbeImage(context.Background(), file)
+			_, err := task.ProbeImage(context.Background(), file)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -829,9 +689,9 @@ func TestTaskProbeImage(t *testing.T) {
 
 func TestTaskSessionNode(t *testing.T) {
 	type args struct {
-		task           *SenseRegistrationTask
 		nodeID         string
 		masterNodesErr error
+		status         common.Status
 	}
 
 	testCases := map[string]struct {
@@ -840,13 +700,7 @@ func TestTaskSessionNode(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Task:   task.New(StatusPrimaryMode),
-					Ticket: &pastel.ActionTicket{},
-				},
+				status:         common.StatusPrimaryMode,
 				masterNodesErr: nil,
 				nodeID:         "A",
 			},
@@ -854,13 +708,7 @@ func TestTaskSessionNode(t *testing.T) {
 		},
 		"status-err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Task:   task.New(StatusConnected),
-					Ticket: &pastel.ActionTicket{},
-				},
+				status:         common.StatusConnected,
 				masterNodesErr: nil,
 				nodeID:         "A",
 			},
@@ -868,13 +716,7 @@ func TestTaskSessionNode(t *testing.T) {
 		},
 		"pastel-err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Task:   task.New(StatusPrimaryMode),
-					Ticket: &pastel.ActionTicket{},
-				},
+				status:         common.StatusPrimaryMode,
 				masterNodesErr: errors.New("test"),
 				nodeID:         "A",
 			},
@@ -891,8 +733,6 @@ func TestTaskSessionNode(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			go tc.args.task.RunAction(ctx)
-
 			nodes := pastel.MasterNodes{}
 			for i := 0; i < 10; i++ {
 				nodes = append(nodes, pastel.MasterNode{})
@@ -901,10 +741,13 @@ func TestTaskSessionNode(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
-			tc.args.task.pastelClient = pastelClientMock
-			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 
-			err := tc.args.task.SessionNode(context.Background(), tc.args.nodeID)
+			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task.UpdateStatus(tc.args.status)
+
+			go task.RunAction(ctx)
+
+			err := task.NetworkHandler.SessionNode(context.Background(), tc.args.nodeID)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -915,9 +758,9 @@ func TestTaskSessionNode(t *testing.T) {
 	}
 }
 
-func TestTaskAddPeerArticketSignature(t *testing.T) {
+func TestTaskAddPeerSenseTicketSignature(t *testing.T) {
 	type args struct {
-		task           *SenseRegistrationTask
+		status         common.Status
 		nodeID         string
 		masterNodesErr error
 		acceptedNodeID string
@@ -929,15 +772,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &SenseRegistrationTask{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Task:                     task.New(StatusImageProbed),
-					Ticket:                   &pastel.ActionTicket{},
-					allSignaturesReceivedChn: make(chan struct{}),
-				},
+				status:         common.StatusImageProbed,
 				masterNodesErr: nil,
 				nodeID:         "A",
 				acceptedNodeID: "A",
@@ -946,15 +781,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 		},
 		"status-err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Task:                     task.New(StatusConnected),
-					Ticket:                   &pastel.ActionTicket{},
-					allSignaturesReceivedChn: make(chan struct{}),
-				},
+				status:         common.StatusConnected,
 				masterNodesErr: nil,
 				nodeID:         "A",
 				acceptedNodeID: "A",
@@ -963,32 +790,16 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 		},
 		"no-node-err": {
 			args: args{
-				task: &SenseRegistrationTask{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					Task:                     task.New(StatusImageProbed),
-					Ticket:                   &pastel.ActionTicket{},
-					allSignaturesReceivedChn: make(chan struct{}),
-				},
+				status:         common.StatusImageProbed,
 				masterNodesErr: nil,
 				nodeID:         "A",
 				acceptedNodeID: "B",
 			},
-			wantErr: errors.New("accepted"),
+			wantErr: errors.New("not in Accepted list"),
 		},
 		"success-close-sign-chn": {
 			args: args{
-				task: &SenseRegistrationTask{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					allSignaturesReceivedChn: make(chan struct{}),
-					Task:                     task.New(StatusImageProbed),
-					Ticket:                   &pastel.ActionTicket{},
-				},
+				status:         common.StatusImageProbed,
 				masterNodesErr: nil,
 				nodeID:         "A",
 				acceptedNodeID: "A",
@@ -1006,23 +817,25 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			go tc.args.task.RunAction(ctx)
-
 			nodes := pastel.MasterNodes{}
 			for i := 0; i < 10; i++ {
 				nodes = append(nodes, pastel.MasterNode{})
 			}
 			nodes = append(nodes, pastel.MasterNode{ExtKey: tc.args.nodeID})
-			tc.args.task.accepted = common.SenseRegistrationNodes{&SenseRegistrationNode{ID: tc.args.acceptedNodeID, Address: tc.args.acceptedNodeID}}
-
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
-			tc.args.task.pastelClient = pastelClientMock
-			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
 
-			tc.args.task.peersArtTicketSignature = map[string][]byte{tc.args.acceptedNodeID: []byte{}}
+			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task.UpdateStatus(tc.args.status)
 
-			err := tc.args.task.AddPeerTicketSignature(tc.args.nodeID, []byte{})
+			go task.RunAction(ctx)
+
+			task.NetworkHandler.Accepted = common.SuperNodePeerList{
+				&common.SuperNodePeer{ID: tc.args.acceptedNodeID, Address: tc.args.acceptedNodeID},
+			}
+			task.PeersTicketSignature = map[string][]byte{tc.args.acceptedNodeID: []byte{}}
+
+			err := task.AddPeerTicketSignature(tc.args.nodeID, []byte{}, common.StatusImageProbed)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -1035,9 +848,9 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 
 func TestTaskValidateDdFpIds(t *testing.T) {
 	type args struct {
-		task  *SenseRegistrationTask
-		fg    *pastel.DDAndFingerprints
-		ddSig [][]byte
+		status common.Status
+		fg     *pastel.DDAndFingerprints
+		ddSig  [][]byte
 	}
 
 	testCases := map[string]struct {
@@ -1117,22 +930,7 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 						XgbimportanceTop100BpsPercentile:     7.0,
 					},
 				},
-				task: &SenseRegistrationTask{
-					SenseRegistrationService: &SenseRegistrationService{
-						config: &Config{},
-					},
-					meshedNodes: []types.MeshedSuperNode{
-						types.MeshedSuperNode{NodeID: "node-1"},
-						types.MeshedSuperNode{NodeID: "node-2"},
-						types.MeshedSuperNode{NodeID: "node-3"},
-					},
-					Task: task.New(StatusImageProbed),
-					Ticket: &pastel.ActionTicket{
-						Caller:        "author-pastelid",
-						ActionType:    pastel.ActionTypeSense,
-						APITicketData: &pastel.APISenseTicket{},
-					},
-				},
+				status: common.StatusImageProbed,
 			},
 
 			wantErr: nil,
@@ -1145,9 +943,26 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(true, nil)
-			tc.args.task.SenseRegistrationService.pastelClient = pastelClientMock
-			var dd []byte
 
+			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+
+			meshedNodes := []types.MeshedSuperNode{
+				types.MeshedSuperNode{NodeID: "node-1"},
+				types.MeshedSuperNode{NodeID: "node-2"},
+				types.MeshedSuperNode{NodeID: "node-3"},
+			}
+
+			task.UpdateStatus(common.StatusConnected)
+			task.NetworkHandler.MeshNodes(nil, meshedNodes)
+			task.UpdateStatus(tc.args.status)
+
+			task.Ticket = &pastel.ActionTicket{
+				Caller:        "author-pastelid",
+				APITicketData: pastel.APISenseTicket{},
+				ActionType:    pastel.ActionTypeSense,
+			}
+
+			var dd []byte
 			ddJSON, err := json.Marshal(tc.args.fg)
 			assert.Nil(t, err)
 
@@ -1162,11 +977,11 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 			ticketData := &pastel.APISenseTicket{
 				DataHash: []byte{},
 			}
-			tc.args.task.Ticket.APITicketData = ticketData
+			task.Ticket.APITicketData = ticketData
 
 			assert.Nil(t, err)
 
-			err = tc.args.task.validateDdFpIds(context.Background(), dd)
+			err = task.validateDdFpIds(context.Background(), dd)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

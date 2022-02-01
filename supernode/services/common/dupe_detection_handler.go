@@ -36,12 +36,14 @@ type DupeDetectionHandler struct {
 }
 
 func NewSenseTaskHelper(task *SuperNodeTask,
+	ddClient ddclient.DDServerClient,
 	pastelID string, passPhrase string,
 	network *NetworkHandler,
 	pastelClient pastel.Client,
 ) *DupeDetectionHandler {
 	return &DupeDetectionHandler{
 		SuperNodeTask:                         task,
+		DdClient:                              ddClient,
 		allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
 		allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
 		RegTaskHelper:                         NewRegTaskHelper(task, pastelID, passPhrase, network, pastelClient),

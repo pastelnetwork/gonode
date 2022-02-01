@@ -43,11 +43,11 @@ func NewRegTaskHelper(task *SuperNodeTask,
 	}
 }
 
-func (h *RegTaskHelper) AddPeerTicketSignature(nodeID string, signature []byte) error {
+func (h *RegTaskHelper) AddPeerTicketSignature(nodeID string, signature []byte, reqStatus Status) error {
 	h.peersTicketSignatureMtx.Lock()
 	defer h.peersTicketSignatureMtx.Unlock()
 
-	if err := h.RequiredStatus(StatusImageProbed); err != nil {
+	if err := h.RequiredStatus(reqStatus); err != nil {
 		return err
 	}
 
@@ -77,7 +77,7 @@ func (h *RegTaskHelper) AddPeerTicketSignature(nodeID string, signature []byte) 
 // 	1. checks signatures
 //	2. generates list of 50 IDs and compares them to received
 func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
-	data []byte, ic uint32, max uint32, ids []string, parts int,
+	data []byte, ic uint32, max uint32, ids []string, numSignRequired int,
 	pastelIDs []string,
 	pastelClient pastel.Client,
 ) ([]byte, [][]byte, error) {
@@ -93,7 +93,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 	}
 
 	splits := bytes.Split(decData, []byte{pastel.SeparatorByte})
-	if len(splits) != parts {
+	if len(splits) != numSignRequired+1 {
 		return nil, nil, errors.New("invalid data")
 	}
 
@@ -104,7 +104,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 
 	verifications := 0
 	verifiedNodes := make(map[int]bool)
-	for i := 1; i < parts; i++ {
+	for i := 1; i < numSignRequired+1; i++ {
 		for j := 0; j < len(pastelIDs); j++ {
 			if _, ok := verifiedNodes[j]; ok {
 				continue
@@ -123,7 +123,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 		}
 	}
 
-	if verifications != 3 {
+	if verifications != numSignRequired {
 		return nil, nil, errors.Errorf("file verification failed: need %d verifications, got %d", 3, verifications)
 	}
 

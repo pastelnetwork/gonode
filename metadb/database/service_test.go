@@ -188,7 +188,7 @@ var (
 			Content:  nil,
 			Filename: "",
 		},
-		ArtistPastelID:    "qwe",
+		UserPastelID:      "qwe",
 		Timestamp:         123,
 		PreviousBlockHash: "hash",
 	}
@@ -210,7 +210,7 @@ var (
 			Content:  []byte{4, 5, 6, 7},
 			Filename: "4567.jpg",
 		},
-		ArtistPastelID:    "rty",
+		UserPastelID:      "rty",
 		Timestamp:         123,
 		PreviousBlockHash: "hash",
 	}

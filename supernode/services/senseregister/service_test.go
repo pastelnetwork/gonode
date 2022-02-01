@@ -50,6 +50,7 @@ func TestNewService(t *testing.T) {
 				nodeClient:    nodeClient,
 			},
 			want: &SenseRegistrationService{
+				config: config,
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
 					P2PClient:    p2pClient.Client,
@@ -59,6 +60,7 @@ func TestNewService(t *testing.T) {
 			},
 		},
 	}
+
 	for i, testCase := range testCases {
 		testCase := testCase
 
@@ -118,7 +120,7 @@ func TestServiceRun(t *testing.T) {
 					Storage:      files.NewStorage(nil),
 				},
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
 			err := service.Run(ctx)
 			assert.Equal(t, testCase.want, err)
@@ -163,11 +165,11 @@ func TestServiceNewTask(t *testing.T) {
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
 					P2PClient:    p2pClient.Client,
-					RQClient:     raptorQClient.Client,
 					Worker:       task.NewWorker(),
+					RQClient:     raptorQClient.Client,
 				},
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
 			go service.Run(ctx)
 			task := service.NewTask()

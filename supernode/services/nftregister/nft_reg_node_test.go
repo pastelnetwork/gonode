@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
-	"github.com/stretchr/testify/mock"
 	"testing"
 
 	test "github.com/pastelnetwork/gonode/supernode/node/test/nft_register"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNftNodeConnect(t *testing.T) {
@@ -30,7 +30,8 @@ func TestNftNodeConnect(t *testing.T) {
 		{
 			node: &common.SuperNodePeer{
 				Address:   "127.0.0.1:4444",
-				NodeMaker: &RegisterNftNodeMaker{}},
+				NodeMaker: &RegisterNftNodeMaker{},
+			},
 			address:               "127.0.0.1:4444",
 			args:                  args{context.Background()},
 			err:                   nil,
@@ -40,7 +41,8 @@ func TestNftNodeConnect(t *testing.T) {
 		}, {
 			node: &common.SuperNodePeer{
 				Address:   "127.0.0.1:4445",
-				NodeMaker: &RegisterNftNodeMaker{}},
+				NodeMaker: &RegisterNftNodeMaker{},
+			},
 			address:               "127.0.0.1:4445",
 			args:                  args{context.Background()},
 			err:                   fmt.Errorf("connection timeout"),
@@ -90,10 +92,12 @@ func TestNftNodesAdd(t *testing.T) {
 			nodes: common.SuperNodePeerList{},
 			args: args{node: &common.SuperNodePeer{
 				Address:   "127.0.0.1",
-				NodeMaker: &RegisterNftNodeMaker{}}},
+				NodeMaker: &RegisterNftNodeMaker{}},
+			},
 			want: common.SuperNodePeerList{&common.SuperNodePeer{
 				Address:   "127.0.0.1",
-				NodeMaker: &RegisterNftNodeMaker{}}},
+				NodeMaker: &RegisterNftNodeMaker{}},
+			},
 		},
 	}
 
