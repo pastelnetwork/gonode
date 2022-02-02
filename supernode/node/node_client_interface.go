@@ -3,6 +3,7 @@
 //go:generate mockery --name=RegisterNftInterface
 //go:generate mockery --name=ProcessUserdataInterface
 //go:generate mockery --name=RegisterSenseInterface
+//go:generate mockery --name=RegisterCascadeInterface
 
 package node
 
@@ -29,6 +30,8 @@ type ConnectionInterface interface {
 	ProcessUserdata() ProcessUserdataInterface
 	// RegisterSense returns a new RegisterSense stream
 	RegisterSense() RegisterSenseInterface
+	// RegisterCascade returns a new RegisterCascade stream
+	RegisterCascade() RegisterCascadeInterface
 }
 
 type SuperNodePeerAPIInterface interface {
@@ -61,6 +64,14 @@ type RegisterSenseInterface interface {
 	SendSignedDDAndFingerprints(ctx context.Context, sessionID string, fromNodeID string, compressedDDAndFingerprints []byte) error
 	// Send signature of ticket to primary supernode
 	SendSenseTicketSignature(ctx context.Context, nodeID string, signature []byte) error
+}
+
+// RegisterSense represents an interaction stream with supernodes for registering sense.
+type RegisterCascadeInterface interface {
+	SuperNodePeerAPIInterface
+
+	// Send signature of ticket to primary supernode
+	SendCascadeTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }
 
 // ProcessUserdata represents an interaction stream with supernodes for sending userdata.

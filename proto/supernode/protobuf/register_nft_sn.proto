@@ -14,5 +14,5 @@ service RegisterNft {
     rpc SendSignedDDAndFingerprints(SendSignedDDAndFingerprintsRequest) returns (SendSignedDDAndFingerprintsReply);
 
     // SendNftTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
-    rpc SendNftTicketSignature(SendNftTicketSignatureRequest) returns (SendNftTicketSignatureReply);
+    rpc SendNftTicketSignature(SendTicketSignatureRequest) returns (SendTicketSignatureReply);
 }

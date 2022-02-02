@@ -28,7 +28,7 @@ type RegisterNftClient interface {
 	// SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
 	SendSignedDDAndFingerprints(ctx context.Context, in *SendSignedDDAndFingerprintsRequest, opts ...grpc.CallOption) (*SendSignedDDAndFingerprintsReply, error)
 	// SendNftTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
-	SendNftTicketSignature(ctx context.Context, in *SendNftTicketSignatureRequest, opts ...grpc.CallOption) (*SendNftTicketSignatureReply, error)
+	SendNftTicketSignature(ctx context.Context, in *SendTicketSignatureRequest, opts ...grpc.CallOption) (*SendTicketSignatureReply, error)
 }
 
 type registerNftClient struct {
@@ -79,8 +79,8 @@ func (c *registerNftClient) SendSignedDDAndFingerprints(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *registerNftClient) SendNftTicketSignature(ctx context.Context, in *SendNftTicketSignatureRequest, opts ...grpc.CallOption) (*SendNftTicketSignatureReply, error) {
-	out := new(SendNftTicketSignatureReply)
+func (c *registerNftClient) SendNftTicketSignature(ctx context.Context, in *SendTicketSignatureRequest, opts ...grpc.CallOption) (*SendTicketSignatureReply, error) {
+	out := new(SendTicketSignatureReply)
 	err := c.cc.Invoke(ctx, "/supernode.RegisterNft/SendNftTicketSignature", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ type RegisterNftServer interface {
 	// SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
 	SendSignedDDAndFingerprints(context.Context, *SendSignedDDAndFingerprintsRequest) (*SendSignedDDAndFingerprintsReply, error)
 	// SendNftTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
-	SendNftTicketSignature(context.Context, *SendNftTicketSignatureRequest) (*SendNftTicketSignatureReply, error)
+	SendNftTicketSignature(context.Context, *SendTicketSignatureRequest) (*SendTicketSignatureReply, error)
 	mustEmbedUnimplementedRegisterNftServer()
 }
 
@@ -112,7 +112,7 @@ func (UnimplementedRegisterNftServer) Session(RegisterNft_SessionServer) error {
 func (UnimplementedRegisterNftServer) SendSignedDDAndFingerprints(context.Context, *SendSignedDDAndFingerprintsRequest) (*SendSignedDDAndFingerprintsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendSignedDDAndFingerprints not implemented")
 }
-func (UnimplementedRegisterNftServer) SendNftTicketSignature(context.Context, *SendNftTicketSignatureRequest) (*SendNftTicketSignatureReply, error) {
+func (UnimplementedRegisterNftServer) SendNftTicketSignature(context.Context, *SendTicketSignatureRequest) (*SendTicketSignatureReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendNftTicketSignature not implemented")
 }
 func (UnimplementedRegisterNftServer) mustEmbedUnimplementedRegisterNftServer() {}
@@ -173,7 +173,7 @@ func _RegisterNft_SendSignedDDAndFingerprints_Handler(srv interface{}, ctx conte
 }
 
 func _RegisterNft_SendNftTicketSignature_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendNftTicketSignatureRequest)
+	in := new(SendTicketSignatureRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func _RegisterNft_SendNftTicketSignature_Handler(srv interface{}, ctx context.Co
 		FullMethod: "/supernode.RegisterNft/SendNftTicketSignature",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterNftServer).SendNftTicketSignature(ctx, req.(*SendNftTicketSignatureRequest))
+		return srv.(RegisterNftServer).SendNftTicketSignature(ctx, req.(*SendTicketSignatureRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

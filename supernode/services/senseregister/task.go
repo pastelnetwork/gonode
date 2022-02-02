@@ -26,7 +26,7 @@ type SenseRegistrationTask struct {
 	Ticket           *pastel.ActionTicket
 	Asset            *files.File
 
-	// signature of ticket data signed by node's pateslID
+	// signature of ticket data signed by this node's pastelID
 	ownSignature []byte
 
 	creatorSignature []byte
@@ -383,7 +383,7 @@ func NewSenseRegistrationTask(service *SenseRegistrationService) *SenseRegistrat
 		storage:                  common.NewStorageHandler(service.P2PClient, nil, "", ""),
 	}
 
-	task.DupeDetectionHandler = common.NewSenseTaskHelper(task.SuperNodeTask, service.ddClient,
+	task.DupeDetectionHandler = common.NewDupeDetectionTaskHelper(task.SuperNodeTask, service.ddClient,
 		task.config.PastelID, task.config.PassPhrase,
 		common.NewNetworkHandler(task.SuperNodeTask, service.nodeClient,
 			RegisterSenseNodeMaker{}, service.PastelClient,

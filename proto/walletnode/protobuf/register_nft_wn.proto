@@ -23,7 +23,7 @@ service RegisterNft {
     // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
     rpc SendRegMetadata(SendRegMetadataRequest) returns (SendRegMetadataReply);
 
-    // ProbeImage uploads the resampled image compute and return a fingerpirnt.
+    // ProbeImage uploads the resampled image compute and return a fingerprints
     rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
 
     // SendArtTicket sends a signed art-ticket to the supernode.
@@ -37,10 +37,6 @@ service RegisterNft {
 
     // Upload the image after pq signature is appended along with its thumbnail coordinates
     rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
-}
-
-message EncoderParameters {
-  bytes oti = 1;   //12 bytes
 }
 
 message SendSignedNFTTicketRequest {

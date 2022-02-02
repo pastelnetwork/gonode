@@ -13,26 +13,26 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
+	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	sc "github.com/pastelnetwork/gonode/supernode/services/common"
-	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 )
 
-// this implements SN's GRPC methods that are called by another SNs during Sense Registration
+// this implements SN's GRPC methods that are called by another SNs during Cascade Registration
 // meaning - these methods implements server side of SN to SN GRPC communication
 
-// RegisterSense represents grpc service for registration Sense tickets.
-type RegisterSense struct {
-	pb.UnimplementedRegisterSenseServer
+// RegisterCascade represents grpc service for registration Sense tickets.
+type RegisterCascade struct {
+	pb.UnimplementedRegisterCascadeServer
 
-	*common.RegisterSense
+	*common.RegisterCascade
 }
 
 // Session implements supernode.RegisterSenseServer.Session()
-func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) error {
+func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	var task *senseregister.SenseRegistrationTask
+	var task *cascaderegister.CascadeRegistrationTask
 	isTaskNew := false
 
 	if sessID, ok := service.SessID(ctx); ok {
@@ -92,21 +92,9 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 	}
 }
 
-// SendSignedDDAndFingerprints sends signed dd and fp
-func (service *RegisterSense) SendSignedDDAndFingerprints(ctx context.Context, req *pb.SendSignedDDAndFingerprintsRequest) (*pb.SendSignedDDAndFingerprintsReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendSignedDDAndFingerprints request")
-	task := service.Task(req.SessID)
-	if task == nil {
-		return nil, errors.Errorf("not found %q task", req.SessID)
-	}
-
-	return &pb.SendSignedDDAndFingerprintsReply{}, task.AddSignedDDAndFingerprints(req.NodeID, req.ZstdCompressedFingerprint)
-
-}
-
-// SendSenseTicketSignature implements supernode.RegisterSenseServer.SendSenseTicketSignature()
-func (service *RegisterSense) SendSenseTicketSignature(ctx context.Context, req *pb.SendTicketSignatureRequest) (*pb.SendTicketSignatureReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendSenseTicketSignature request")
+// SendCascadeTicketSignature implements supernode.RegisterCascadeServer.SendCascadeTicketSignature()
+func (service *RegisterCascade) SendCascadeTicketSignature(ctx context.Context, req *pb.SendTicketSignatureRequest) (*pb.SendTicketSignatureReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendCascadeTicketSignature request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
@@ -120,13 +108,13 @@ func (service *RegisterSense) SendSenseTicketSignature(ctx context.Context, req 
 }
 
 // Desc returns a description of the service.
-func (service *RegisterSense) Desc() *grpc.ServiceDesc {
-	return &pb.RegisterSense_ServiceDesc
+func (service *RegisterCascade) Desc() *grpc.ServiceDesc {
+	return &pb.RegisterCascade_ServiceDesc
 }
 
-// NewRegisterSense returns a new RegisterSense instance.
-func NewRegisterSense(service *senseregister.SenseRegistrationService) *RegisterSense {
-	return &RegisterSense{
-		RegisterSense: common.NewRegisterSense(service),
+// NewRegisterCascade returns a new RegisterCascade instance.
+func NewRegisterCascade(service *cascaderegister.CascadeRegistrationService) *RegisterCascade {
+	return &RegisterCascade{
+		RegisterCascade: common.NewRegisterCascade(service),
 	}
 }

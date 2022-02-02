@@ -5,6 +5,8 @@ option go_package = "github.com/pastelnetwork/gonode/proto/supernode";
 package supernode;
 import "common_sn.proto";
 
+// this proto defines GRPC methods that SN uses to talk to another SNs during Sense Registration
+
 service RegisterSense {
     // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
     // The stream is used by the parties to inform each other about the cancellation of the task.
@@ -14,5 +16,5 @@ service RegisterSense {
     rpc SendSignedDDAndFingerprints(SendSignedDDAndFingerprintsRequest) returns (SendSignedDDAndFingerprintsReply);
 
     // SendSenseTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
-    rpc SendSenseTicketSignature(SendNftTicketSignatureRequest) returns (SendNftTicketSignatureReply);
+    rpc SendSenseTicketSignature(SendTicketSignatureRequest) returns (SendTicketSignatureReply);
 }

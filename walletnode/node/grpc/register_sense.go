@@ -218,7 +218,7 @@ func (service *registerSense) SendSignedTicket(ctx context.Context, ticket []byt
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := pb.SendSignedActionTicketRequest{
+	req := pb.SendSignedSenseTicketRequest{
 		ActionTicket:     ticket,
 		CreatorSignature: signature,
 		DdFpFiles:        ddFp,

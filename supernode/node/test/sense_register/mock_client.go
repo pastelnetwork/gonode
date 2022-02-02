@@ -38,6 +38,7 @@ const (
 
 	// UploadImageWithThumbnailMethod represent UploadImageWithThumbnail method
 	UploadImageWithThumbnailMethod = "UploadImageWithThumbnail"
+
 	// DownloadMethod represent Download name method
 	DownloadMethod = "Download"
 

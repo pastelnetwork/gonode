@@ -6,17 +6,21 @@ import (
 	"io"
 	"runtime/debug"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
 )
+
+// this implements SN's GRPC methods that are called by WNs during Sense Registration
+// meaning - these methods implements server side of WN to SN GRPC communication
 
 // RegisterSense represents grpc service for registration Sense.
 type RegisterSense struct {
@@ -247,7 +251,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 }
 
 // SendSignedActionTicket implements walletnode.RegisterSense.SendSignedActionTicket
-func (service *RegisterSense) SendSignedActionTicket(ctx context.Context, req *pb.SendSignedActionTicketRequest) (retRes *pb.SendSignedActionTicketReply, retErr error) {
+func (service *RegisterSense) SendSignedActionTicket(ctx context.Context, req *pb.SendSignedSenseTicketRequest) (retRes *pb.SendSignedActionTicketReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
 		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenSendSignedActionTicket")
 		retErr = recErr

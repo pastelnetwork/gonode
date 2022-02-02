@@ -101,7 +101,7 @@ func (service *RegisterNft) SendSignedDDAndFingerprints(ctx context.Context, req
 }
 
 // SendNftTicketSignature implements supernode.RegisterNftServer.SendNftTicketSignature()
-func (service *RegisterNft) SendNftTicketSignature(ctx context.Context, req *pb.SendNftTicketSignatureRequest) (*pb.SendNftTicketSignatureReply, error) {
+func (service *RegisterNft) SendNftTicketSignature(ctx context.Context, req *pb.SendTicketSignatureRequest) (*pb.SendTicketSignatureReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SendNftTicketSignature request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -112,7 +112,7 @@ func (service *RegisterNft) SendNftTicketSignature(ctx context.Context, req *pb.
 		return nil, errors.Errorf("add peer signature %w", err)
 	}
 
-	return &pb.SendNftTicketSignatureReply{}, nil
+	return &pb.SendTicketSignatureReply{}, nil
 }
 
 // Desc returns a description of the service.

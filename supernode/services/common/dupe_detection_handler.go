@@ -35,7 +35,7 @@ type DupeDetectionHandler struct {
 	allSignedDDAndFingerprintsReceivedChn chan struct{}
 }
 
-func NewSenseTaskHelper(task *SuperNodeTask,
+func NewDupeDetectionTaskHelper(task *SuperNodeTask,
 	ddClient ddclient.DDServerClient,
 	pastelID string, passPhrase string,
 	network *NetworkHandler,

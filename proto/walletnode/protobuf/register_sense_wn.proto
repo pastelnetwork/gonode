@@ -5,6 +5,8 @@ option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
 package walletnode;
 import "common_wn.proto";
 
+// this proto defines GRPC methods that WN uses to talk to SNs during Sense Registration
+
 service RegisterSense {
     // Session informs the supernode its position (primary/secondary).
     // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
@@ -27,25 +29,14 @@ service RegisterSense {
     rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
 
     // SendArtTicket sends a signed art-ticket to the supernode.
-    rpc SendSignedActionTicket(SendSignedActionTicketRequest) returns (SendSignedActionTicketReply);
+    rpc SendSignedActionTicket(SendSignedSenseTicketRequest) returns (SendSignedActionTicketReply);
 
     // SendActionAc informs to SN that walletnode activated action_reg
     rpc SendActionAct(SendActionActRequest) returns (SendActionActReply);
 }
 
-message SendSignedActionTicketRequest {
+message SendSignedSenseTicketRequest {
     bytes action_ticket = 1;
     bytes creator_signature = 2;
     bytes dd_fp_files = 3;
-}
-
-message SendSignedActionTicketReply {
-    string action_reg_txid = 1;
-}
-
-message SendActionActRequest {
-    string action_reg_txid = 1;
-}
-
-message SendActionActReply {
 }

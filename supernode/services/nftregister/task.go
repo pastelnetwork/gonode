@@ -34,7 +34,7 @@ type NftRegistrationTask struct {
 
 	Oti []byte
 
-	// signature of ticket data signed by node's pateslID
+	// signature of ticket data signed by this node's pastelID
 	ownSignature []byte
 
 	creatorSignature []byte
@@ -474,7 +474,7 @@ func NewNftRegistrationTask(service *NftRegistrationService) *NftRegistrationTas
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
 	}
 
-	task.DupeDetectionHandler = common.NewSenseTaskHelper(task.SuperNodeTask, service.ddClient,
+	task.DupeDetectionHandler = common.NewDupeDetectionTaskHelper(task.SuperNodeTask, service.ddClient,
 		task.config.PastelID, task.config.PassPhrase,
 		common.NewNetworkHandler(task.SuperNodeTask, service.nodeClient,
 			RegisterNftNodeMaker{}, service.PastelClient,

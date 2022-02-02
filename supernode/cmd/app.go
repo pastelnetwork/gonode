@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -227,6 +228,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftRegister := nftregister.NewService(&config.NftRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	nftDownload := nftdownload.NewService(&config.NftDownload, pastelClient, p2p, rqClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
+	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
 
 	ddScanConfig := ddscan.NewConfig()
 	ddScanConfig.SetWorkDir(config.DdWorkDir)
@@ -259,6 +261,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterNft(nftRegister),
 		walletnode.NewRegisterSense(senseRegister),
 		supernode.NewRegisterSense(senseRegister),
+		walletnode.NewRegisterCascade(cascadeRegister),
+		supernode.NewRegisterCascade(cascadeRegister),
 		walletnode.NewDownloadNft(nftDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),

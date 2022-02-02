@@ -1,4 +1,4 @@
-package senseregister
+package cascaderegister
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	test "github.com/pastelnetwork/gonode/supernode/node/test/sense_register"
+	test "github.com/pastelnetwork/gonode/supernode/node/test/cascade_register"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
@@ -31,7 +31,7 @@ func TestNodeConnect(t *testing.T) {
 		{
 			node: &common.SuperNodePeer{
 				Address:   "127.0.0.1:4444",
-				NodeMaker: &RegisterSenseNodeMaker{},
+				NodeMaker: &RegisterCascadeNodeMaker{},
 			},
 			address:                 "127.0.0.1:4444",
 			args:                    args{context.Background()},
@@ -42,7 +42,7 @@ func TestNodeConnect(t *testing.T) {
 		}, {
 			node: &common.SuperNodePeer{
 				Address:   "127.0.0.1:4445",
-				NodeMaker: &RegisterSenseNodeMaker{},
+				NodeMaker: &RegisterCascadeNodeMaker{},
 			},
 			address:                 "127.0.0.1:4445",
 			args:                    args{context.Background()},
@@ -93,11 +93,11 @@ func TestNodesAdd(t *testing.T) {
 			nodes: common.SuperNodePeerList{},
 			args: args{node: &common.SuperNodePeer{
 				Address:   "127.0.0.1",
-				NodeMaker: &RegisterSenseNodeMaker{}},
+				NodeMaker: &RegisterCascadeNodeMaker{}},
 			},
 			want: common.SuperNodePeerList{&common.SuperNodePeer{
 				Address:   "127.0.0.1",
-				NodeMaker: &RegisterSenseNodeMaker{}},
+				NodeMaker: &RegisterCascadeNodeMaker{}},
 			},
 		},
 	}
@@ -129,26 +129,26 @@ func TestByID(t *testing.T) {
 			nodes: common.SuperNodePeerList{
 				&common.SuperNodePeer{
 					ID:        "1",
-					NodeMaker: &RegisterSenseNodeMaker{},
+					NodeMaker: &RegisterCascadeNodeMaker{},
 				},
 				&common.SuperNodePeer{
 					ID:        "2",
-					NodeMaker: &RegisterSenseNodeMaker{},
+					NodeMaker: &RegisterCascadeNodeMaker{},
 				},
 			},
 			args: args{"2"},
 			want: &common.SuperNodePeer{
 				ID:        "2",
-				NodeMaker: &RegisterSenseNodeMaker{}},
+				NodeMaker: &RegisterCascadeNodeMaker{}},
 		}, {
 			nodes: common.SuperNodePeerList{
 				&common.SuperNodePeer{
 					ID:        "1",
-					NodeMaker: &RegisterSenseNodeMaker{},
+					NodeMaker: &RegisterCascadeNodeMaker{},
 				},
 				&common.SuperNodePeer{
 					ID:        "2",
-					NodeMaker: &RegisterSenseNodeMaker{},
+					NodeMaker: &RegisterCascadeNodeMaker{},
 				},
 			},
 			args: args{"3"},
@@ -164,7 +164,7 @@ func TestByID(t *testing.T) {
 
 			testCase.nodes.Add(&common.SuperNodePeer{
 				ID:        "4",
-				NodeMaker: &RegisterSenseNodeMaker{},
+				NodeMaker: &RegisterCascadeNodeMaker{},
 			})
 			testCase.nodes.Remove("4")
 			assert.Equal(t, testCase.want, testCase.nodes.ByID(testCase.args.id))
