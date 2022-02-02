@@ -57,8 +57,8 @@ const (
 	// RegisterNFTTicket represents RegisterNFTTicket method name
 	RegisterNFTTicket = "RegisterNFTTicket"
 
-	// RegisterArtTicketMethod represents RegisterArtTicket method
-	RegisterArtTicketMethod = "RegisterArtTicket"
+	// RegisterNftTicketMethod represents RegisterNftTicket method
+	RegisterNftTicketMethod = "RegisterNftTicket"
 
 	// GetRegisterNFTFeeMethod represents GetRegisterNFTFee method
 	GetRegisterNFTFeeMethod = "GetRegisterNFTFee"
@@ -264,9 +264,9 @@ func (client *Client) ListenOnVerify(isValid bool, returnErr error) *Client {
 	return client
 }
 
-// ListenOnRegisterArtTicket listenes register art ticket & return id & err
-func (client *Client) ListenOnRegisterArtTicket(retID string, retErr error) *Client {
-	client.On(RegisterArtTicketMethod, mock.Anything, mock.Anything).Return(retID, retErr)
+// ListenOnRegisterNftTicket listenes register art ticket & return id & err
+func (client *Client) ListenOnRegisterNftTicket(retID string, retErr error) *Client {
+	client.On(RegisterNftTicketMethod, mock.Anything, mock.Anything).Return(retID, retErr)
 	return client
 }
 

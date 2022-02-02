@@ -101,7 +101,7 @@ func (task *UserDataTask) run(ctx context.Context) error {
 
 		task.request.PreviousBlockHash = blockHash
 
-		// Get the value of task.request.ArtistPastelIDPassphrase for sign data, then empty it in the request to make sure it not sent to supernodes
+		// Get the value of task.request.CreatorPastelIDPassphrase for sign data, then empty it in the request to make sure it not sent to supernodes
 		passphrase := task.request.UserPastelIDPassphrase
 		task.request.UserPastelIDPassphrase = ""
 		// Marshal task.request to byte array for signing

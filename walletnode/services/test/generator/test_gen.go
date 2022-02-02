@@ -47,7 +47,7 @@ func genSupernodeClientTest() {
 		},
 		"../nftregistration_node_client_test.go": {
 			Service: "nftregister",
-			Client:  "artwork_register",
+			Client:  "nft_register",
 			Prefix:  "RegisterNft",
 		},
 	}

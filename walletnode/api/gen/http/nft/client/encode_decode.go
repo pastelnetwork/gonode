@@ -569,7 +569,7 @@ func EncodeNftSearchRequest(encoder func(*http.Request) goahttp.Encoder) func(*h
 		}
 		values.Add("limit", fmt.Sprintf("%v", p.Limit))
 		values.Add("query", p.Query)
-		values.Add("artist_name", fmt.Sprintf("%v", p.ArtistName))
+		values.Add("creator_name", fmt.Sprintf("%v", p.CreatorName))
 		values.Add("art_title", fmt.Sprintf("%v", p.ArtTitle))
 		values.Add("series", fmt.Sprintf("%v", p.Series))
 		values.Add("descr", fmt.Sprintf("%v", p.Descr))
@@ -967,20 +967,20 @@ func unmarshalTaskStateResponseBodyToNftviewsTaskStateView(v *TaskStateResponseB
 // *NftRegisterPayloadResponseBody.
 func unmarshalNftRegisterPayloadResponseBodyToNftviewsNftRegisterPayloadView(v *NftRegisterPayloadResponseBody) *nftviews.NftRegisterPayloadView {
 	res := &nftviews.NftRegisterPayloadView{
-		Name:                     v.Name,
-		Description:              v.Description,
-		Keywords:                 v.Keywords,
-		SeriesName:               v.SeriesName,
-		IssuedCopies:             v.IssuedCopies,
-		YoutubeURL:               v.YoutubeURL,
-		ArtistPastelID:           v.ArtistPastelID,
-		ArtistPastelIDPassphrase: v.ArtistPastelIDPassphrase,
-		ArtistName:               v.ArtistName,
-		ArtistWebsiteURL:         v.ArtistWebsiteURL,
-		SpendableAddress:         v.SpendableAddress,
-		MaximumFee:               v.MaximumFee,
-		Royalty:                  v.Royalty,
-		Green:                    v.Green,
+		Name:                      v.Name,
+		Description:               v.Description,
+		Keywords:                  v.Keywords,
+		SeriesName:                v.SeriesName,
+		IssuedCopies:              v.IssuedCopies,
+		YoutubeURL:                v.YoutubeURL,
+		CreatorPastelID:           v.CreatorPastelID,
+		CreatorPastelIDPassphrase: v.CreatorPastelIDPassphrase,
+		CreatorName:               v.CreatorName,
+		CreatorWebsiteURL:         v.CreatorWebsiteURL,
+		SpendableAddress:          v.SpendableAddress,
+		MaximumFee:                v.MaximumFee,
+		Royalty:                   v.Royalty,
+		Green:                     v.Green,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseBodyToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
@@ -1044,20 +1044,20 @@ func unmarshalTaskStateResponseToNftviewsTaskStateView(v *TaskStateResponse) *nf
 // *NftRegisterPayloadResponse.
 func unmarshalNftRegisterPayloadResponseToNftviewsNftRegisterPayloadView(v *NftRegisterPayloadResponse) *nftviews.NftRegisterPayloadView {
 	res := &nftviews.NftRegisterPayloadView{
-		Name:                     v.Name,
-		Description:              v.Description,
-		Keywords:                 v.Keywords,
-		SeriesName:               v.SeriesName,
-		IssuedCopies:             v.IssuedCopies,
-		YoutubeURL:               v.YoutubeURL,
-		ArtistPastelID:           v.ArtistPastelID,
-		ArtistPastelIDPassphrase: v.ArtistPastelIDPassphrase,
-		ArtistName:               v.ArtistName,
-		ArtistWebsiteURL:         v.ArtistWebsiteURL,
-		SpendableAddress:         v.SpendableAddress,
-		MaximumFee:               v.MaximumFee,
-		Royalty:                  v.Royalty,
-		Green:                    v.Green,
+		Name:                      v.Name,
+		Description:               v.Description,
+		Keywords:                  v.Keywords,
+		SeriesName:                v.SeriesName,
+		IssuedCopies:              v.IssuedCopies,
+		YoutubeURL:                v.YoutubeURL,
+		CreatorPastelID:           v.CreatorPastelID,
+		CreatorPastelIDPassphrase: v.CreatorPastelIDPassphrase,
+		CreatorName:               v.CreatorName,
+		CreatorWebsiteURL:         v.CreatorWebsiteURL,
+		SpendableAddress:          v.SpendableAddress,
+		MaximumFee:                v.MaximumFee,
+		Royalty:                   v.Royalty,
+		Green:                     v.Green,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
@@ -1087,18 +1087,18 @@ func unmarshalThumbnailcoordinateResponseToNftviewsThumbnailcoordinateView(v *Th
 // *nft.NftSummary from a value of type *NftSummaryResponseBody.
 func unmarshalNftSummaryResponseBodyToNftNftSummary(v *NftSummaryResponseBody) *nft.NftSummary {
 	res := &nft.NftSummary{
-		Thumbnail1:       v.Thumbnail1,
-		Thumbnail2:       v.Thumbnail2,
-		Txid:             *v.Txid,
-		Title:            *v.Title,
-		Description:      *v.Description,
-		Keywords:         v.Keywords,
-		SeriesName:       v.SeriesName,
-		Copies:           *v.Copies,
-		YoutubeURL:       v.YoutubeURL,
-		ArtistPastelID:   *v.ArtistPastelID,
-		ArtistName:       *v.ArtistName,
-		ArtistWebsiteURL: v.ArtistWebsiteURL,
+		Thumbnail1:        v.Thumbnail1,
+		Thumbnail2:        v.Thumbnail2,
+		Txid:              *v.Txid,
+		Title:             *v.Title,
+		Description:       *v.Description,
+		Keywords:          v.Keywords,
+		SeriesName:        v.SeriesName,
+		Copies:            *v.Copies,
+		YoutubeURL:        v.YoutubeURL,
+		CreatorPastelID:   *v.CreatorPastelID,
+		CreatorName:       *v.CreatorName,
+		CreatorWebsiteURL: v.CreatorWebsiteURL,
 	}
 
 	return res

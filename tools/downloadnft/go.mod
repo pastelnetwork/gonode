@@ -8,6 +8,7 @@ replace (
 	github.com/pastelnetwork/gonode/pastel => ../../pastel
 	github.com/pastelnetwork/gonode/proto => ../../proto
 	github.com/pastelnetwork/gonode/raptorq => ../../raptorq
+	github.com/pastelnetwork/gonode/mixins => ../../mixins
 	github.com/pastelnetwork/gonode/walletnode => ../../walletnode
 )
 

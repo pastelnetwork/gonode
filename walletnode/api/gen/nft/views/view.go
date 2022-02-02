@@ -86,14 +86,14 @@ type NftRegisterPayloadView struct {
 	IssuedCopies *int
 	// NFT creation video youtube URL
 	YoutubeURL *string
-	// Artist's PastelID
-	ArtistPastelID *string
+	// Creator's PastelID
+	CreatorPastelID *string
 	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase *string
-	// Name of the artist
-	ArtistName *string
-	// Artist website URL
-	ArtistWebsiteURL *string
+	CreatorPastelIDPassphrase *string
+	// Name of the NFT creator
+	CreatorName *string
+	// NFT creator website URL
+	CreatorWebsiteURL *string
 	// Spendable address
 	SpendableAddress *string
 	// Used to find a suitable masternode with a fee equal or less
@@ -376,8 +376,8 @@ func ValidateTaskStateView(result *TaskStateView) (err error) {
 // ValidateNftRegisterPayloadView runs the validations defined on
 // NftRegisterPayloadView.
 func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) {
-	if result.ArtistName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("artist_name", "result"))
+	if result.CreatorName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("creator_name", "result"))
 	}
 	if result.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "result"))
@@ -385,11 +385,11 @@ func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) 
 	if result.IssuedCopies == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "result"))
 	}
-	if result.ArtistPastelID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "result"))
+	if result.CreatorPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "result"))
 	}
-	if result.ArtistPastelIDPassphrase == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "result"))
+	if result.CreatorPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid_passphrase", "result"))
 	}
 	if result.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "result"))
@@ -432,27 +432,27 @@ func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) 
 			err = goa.MergeErrors(err, goa.InvalidLengthError("result.youtube_url", *result.YoutubeURL, utf8.RuneCountInString(*result.YoutubeURL), 128, false))
 		}
 	}
-	if result.ArtistPastelID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("result.artist_pastelid", *result.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+	if result.CreatorPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("result.creator_pastelid", *result.CreatorPastelID, "^[a-zA-Z0-9]+$"))
 	}
-	if result.ArtistPastelID != nil {
-		if utf8.RuneCountInString(*result.ArtistPastelID) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.artist_pastelid", *result.ArtistPastelID, utf8.RuneCountInString(*result.ArtistPastelID), 86, true))
+	if result.CreatorPastelID != nil {
+		if utf8.RuneCountInString(*result.CreatorPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.creator_pastelid", *result.CreatorPastelID, utf8.RuneCountInString(*result.CreatorPastelID), 86, true))
 		}
 	}
-	if result.ArtistPastelID != nil {
-		if utf8.RuneCountInString(*result.ArtistPastelID) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.artist_pastelid", *result.ArtistPastelID, utf8.RuneCountInString(*result.ArtistPastelID), 86, false))
+	if result.CreatorPastelID != nil {
+		if utf8.RuneCountInString(*result.CreatorPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.creator_pastelid", *result.CreatorPastelID, utf8.RuneCountInString(*result.CreatorPastelID), 86, false))
 		}
 	}
-	if result.ArtistName != nil {
-		if utf8.RuneCountInString(*result.ArtistName) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.artist_name", *result.ArtistName, utf8.RuneCountInString(*result.ArtistName), 256, false))
+	if result.CreatorName != nil {
+		if utf8.RuneCountInString(*result.CreatorName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.creator_name", *result.CreatorName, utf8.RuneCountInString(*result.CreatorName), 256, false))
 		}
 	}
-	if result.ArtistWebsiteURL != nil {
-		if utf8.RuneCountInString(*result.ArtistWebsiteURL) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.artist_website_url", *result.ArtistWebsiteURL, utf8.RuneCountInString(*result.ArtistWebsiteURL), 256, false))
+	if result.CreatorWebsiteURL != nil {
+		if utf8.RuneCountInString(*result.CreatorWebsiteURL) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.creator_website_url", *result.CreatorWebsiteURL, utf8.RuneCountInString(*result.CreatorWebsiteURL), 256, false))
 		}
 	}
 	if result.SpendableAddress != nil {

@@ -159,8 +159,8 @@ package nftsearch
 //			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 //
 //			nodeClientMock := nodeMock.NewMockClient(t)
-//			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().
-//				ListenOnClose(nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil)
+//			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterNft().
+//				ListenOnClose(nil).ListenOnDownloadNft().ListenOnDownloadThumbnail([]byte{}, nil)
 //
 //			if len(testCase.args.actTickets) != len(testCase.args.regTickets) {
 //				t.Fatalf("#act_tickets != # reg_tickets")

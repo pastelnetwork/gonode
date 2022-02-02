@@ -1,12 +1,12 @@
 # GoNode
 
-`gonode` contains two main applications, `walletnode` and `supernode`. These are designed to register NFTs (artworks) on the [Pastel](http://pastel.wiki/en/home) blockchain. Neither `walletnode` nor `supernode`  interact directly with the blockchain; instead, they use Pastel's RPC API to communicate with Pastel's [cNode](https://github.com/pastelnetwork/pastel) which handles the blockchain itself.
+`gonode` contains two main applications, `walletnode` and `supernode`. These are designed to register NFTs on the [Pastel](http://pastel.wiki/en/home) blockchain. Neither `walletnode` nor `supernode`  interact directly with the blockchain; instead, they use Pastel's RPC API to communicate with Pastel's [cNode](https://github.com/pastelnetwork/pastel) which handles the blockchain itself.
 
 ### Main Apps
 
 [`walletnode`](walletnode/README.md) is a command line client application (i.e., there is no graphical interface); the main purpose of the app is to provide a REST API on the client side.
 
-[`supernode`](supernode/README.md) is a server application for `walletnode` and actually does all the work of registering and searching for NFTs (artworks).
+[`supernode`](supernode/README.md) is a server application for `walletnode` and actually does all the work of registering and searching for NFTs.
 
 ### Tools
 

@@ -13,10 +13,10 @@ import (
 
 type NetworkHandler struct {
 	task          *SuperNodeTask
-	pastelHandler *mixins.PastelHandler
+	PastelHandler *mixins.PastelHandler
 
 	nodeMaker  node.NodeMaker
-	nodeClient node.ClientInterface
+	NodeClient node.ClientInterface
 
 	acceptedMu sync.Mutex
 	Accepted   SuperNodePeerList
@@ -38,8 +38,8 @@ func NewNetworkHandler(task *SuperNodeTask,
 	return &NetworkHandler{
 		task:                    task,
 		nodeMaker:               nodeMaker,
-		pastelHandler:           mixins.NewPastelHandler(pastelClient),
-		nodeClient:              nodeClient,
+		PastelHandler:           mixins.NewPastelHandler(pastelClient),
+		NodeClient:              nodeClient,
 		pastelID:                pastelID,
 		minNumberConnectedNodes: minNumberConnectedNodes,
 	}
@@ -195,7 +195,7 @@ func (h *NetworkHandler) CheckNodeInMeshedNodes(nodeID string) error {
 }
 
 func (h *NetworkHandler) PastelNodeByExtKey(ctx context.Context, nodeID string) (*SuperNodePeer, error) {
-	masterNodes, err := h.pastelHandler.PastelClient.MasterNodesTop(ctx)
+	masterNodes, err := h.PastelHandler.PastelClient.MasterNodesTop(ctx)
 	log.WithContext(ctx).Debugf("master node %v", masterNodes)
 
 	if err != nil {
@@ -206,7 +206,7 @@ func (h *NetworkHandler) PastelNodeByExtKey(ctx context.Context, nodeID string) 
 		if masterNode.ExtKey != nodeID {
 			continue
 		}
-		someNode := NewSuperNode(h.nodeClient, masterNode.ExtKey, masterNode.ExtAddress, h.nodeMaker)
+		someNode := NewSuperNode(h.NodeClient, masterNode.ExtKey, masterNode.ExtAddress, h.nodeMaker)
 		return someNode, nil
 	}
 

@@ -156,10 +156,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// wrap pastelClient in security functionality then allow for calling of artwork, userdata, and sense functions
 	nodeClient := grpc.NewClient(pastelClient)
 
-	// rqClient is the raptorq client providing error correction for files.
-	//  On testnet raptorq host will be local with a random port
-	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
-	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
+	// raptorq client
+	config.NftRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.NftRegister.RqFilesDir = config.RqFilesDir
 	rqClient := rqgrpc.NewClient()
 
 	// create another wrapped RPC connection for use by our userdata service, basically the same as nodeClient
@@ -172,21 +171,21 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	//Set minimum confirmation requirements for transactions to ensure completion
 	if config.RegTxMinConfirmations > 0 {
-		config.ArtworkRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
+		config.NftRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
 		config.SenseRegister.SenseRegTxMinConfirmations = config.RegTxMinConfirmations
 	}
 
 	if config.ActTxMinConfirmations > 0 {
-		config.ArtworkRegister.NFTActTxMinConfirmations = config.ActTxMinConfirmations
+		config.NftRegister.NFTActTxMinConfirmations = config.ActTxMinConfirmations
 		config.SenseRegister.SenseActTxMinConfirmations = config.ActTxMinConfirmations
 	}
 
 	// These services connect the different clients and configs together to provide tasking and handling for
 	//  the required functionality.  These services aren't started with these declarations, they will be run
 	//	later through the API Server.
-	nftRegister := nftregister.NewService(&config.ArtworkRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
-	nftSearch := nftsearch.NewNftSearchService(&config.ArtworkSearch, pastelClient, nodeClient)
-	nftDownload := nftdownload.NewNftDownloadService(&config.ArtworkDownload, pastelClient, nodeClient)
+	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
+	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient)
+	nftDownload := nftdownload.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
 

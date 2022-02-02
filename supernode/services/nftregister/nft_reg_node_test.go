@@ -30,7 +30,9 @@ func TestNftNodeConnect(t *testing.T) {
 		{
 			node: &common.SuperNodePeer{
 				Address:   "127.0.0.1:4444",
-				NodeMaker: &RegisterNftNodeMaker{}},
+				NodeMaker: &RegisterNftNodeMaker{},
+			},
+			address:               "127.0.0.1:4444",
 			args:                  args{context.Background()},
 			err:                   nil,
 			numberConnectCall:     1,
@@ -39,7 +41,8 @@ func TestNftNodeConnect(t *testing.T) {
 		}, {
 			node: &common.SuperNodePeer{
 				Address:   "127.0.0.1:4445",
-				NodeMaker: &RegisterNftNodeMaker{}},
+				NodeMaker: &RegisterNftNodeMaker{},
+			},
 			address:               "127.0.0.1:4445",
 			args:                  args{context.Background()},
 			err:                   fmt.Errorf("connection timeout"),
@@ -83,16 +86,18 @@ func TestNftNodesAdd(t *testing.T) {
 	testCases := []struct {
 		nodes common.SuperNodePeerList
 		args  args
-		want  common.SuperNodePeer
+		want  common.SuperNodePeerList
 	}{
 		{
 			nodes: common.SuperNodePeerList{},
 			args: args{node: &common.SuperNodePeer{
 				Address:   "127.0.0.1",
-				NodeMaker: &RegisterNftNodeMaker{}}},
-			want: common.SuperNodePeer{
+				NodeMaker: &RegisterNftNodeMaker{}},
+			},
+			want: common.SuperNodePeerList{&common.SuperNodePeer{
 				Address:   "127.0.0.1",
 				NodeMaker: &RegisterNftNodeMaker{}},
+			},
 		},
 	}
 
@@ -126,7 +131,7 @@ func TestNftByID(t *testing.T) {
 					NodeMaker: &RegisterNftNodeMaker{},
 				},
 				&common.SuperNodePeer{
-					ID:        "1",
+					ID:        "2",
 					NodeMaker: &RegisterNftNodeMaker{},
 				},
 			},
@@ -141,7 +146,7 @@ func TestNftByID(t *testing.T) {
 					NodeMaker: &RegisterNftNodeMaker{},
 				},
 				&common.SuperNodePeer{
-					ID:        "1",
+					ID:        "2",
 					NodeMaker: &RegisterNftNodeMaker{},
 				},
 			},

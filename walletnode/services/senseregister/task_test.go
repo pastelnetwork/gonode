@@ -136,7 +136,7 @@ package senseregister
 //	}
 //
 //	t.Run("group", func(t *testing.T) {
-//		artworkFile, err := newTestImageFile()
+//		nftFile, err := newTestImageFile()
 //		assert.NoError(t, err)
 //
 //		for i, testCase := range testCases {
@@ -200,7 +200,7 @@ package senseregister
 //					ListenOnSetStatusNotifyFunc()
 //
 //				Request := testCase.fields.Request
-//				Request.Image = artworkFile
+//				Request.Image = nftFile
 //				Request.BurnTxID = "1"
 //				task = &SenseRegistrationTask{
 //					WalletNodeTask: &common.WalletNodeTask{
@@ -990,7 +990,7 @@ package senseregister
 //
 //		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 //			t.Parallel()
-//			artworkFile, err := newTestImageFile()
+//			nftFile, err := newTestImageFile()
 //			assert.NoError(t, err)
 //
 //			//need to remove generate thumbnail file
@@ -1014,7 +1014,7 @@ package senseregister
 //				ListenOnRegisterSense().
 //				ListenOnProbeImage(customProbeImageFunc, tc.args.isValidBurnTxID, tc.args.probeImgErr)
 //
-//			tc.args.task.Request.Image = artworkFile
+//			tc.args.task.Request.Image = nftFile
 //			nodes := node.List{}
 //			for _, n := range tc.args.nodes {
 //				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
@@ -1205,7 +1205,7 @@ package senseregister
 //
 //		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 //			t.Parallel()
-//			artworkFile, err := newTestImageFile()
+//			nftFile, err := newTestImageFile()
 //			assert.NoError(t, err)
 //
 //			pastelClientMock := pastelMock.NewMockClient(t)
@@ -1238,7 +1238,7 @@ package senseregister
 //			}
 //			tc.args.task.SenseRegistrationService.nodeClient = nodeClient
 //
-//			tc.args.task.Request.Image = artworkFile
+//			tc.args.task.Request.Image = nftFile
 //			nodes := node.List{}
 //			for _, n := range tc.args.nodes {
 //				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)

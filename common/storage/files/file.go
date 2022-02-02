@@ -250,7 +250,7 @@ func (file *File) SaveImage(img image.Image) error {
 	return ErrUnsupportedFormat
 }
 
-// Thumbnail creates a thumbnail file from the artwork file and store in to starage layer
+// Thumbnail creates a thumbnail file from the NFT file and store in to storage layer
 func (file *File) Thumbnail(coordinate ThumbnailCoordinate) (*File, error) {
 	f := NewFile(file.storage, "thumbnail-of-"+file.name)
 	if f == nil {

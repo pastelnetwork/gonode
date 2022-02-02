@@ -83,7 +83,7 @@ func (task *SenseRegistrationTask) validateDdFpIds(ctx context.Context, dd []byt
 
 	task.rawDdFpFile, task.ddFpFiles, err = task.ValidateIDFiles(ctx, dd,
 		apiSenseTicket.DDAndFingerprintsIc, apiSenseTicket.DDAndFingerprintsMax,
-		apiSenseTicket.DDAndFingerprintsIDs, 4,
+		apiSenseTicket.DDAndFingerprintsIDs, 3,
 		pastelIDs,
 		task.PastelClient)
 	if err != nil {
@@ -168,7 +168,7 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 
 		// sign the ticket if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
-		if err = task.signAndSendArtTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
+		if err = task.signAndSendSenseTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("signed and send NFT ticket")
 			err = errors.Errorf("signed and send NFT ticket")
 			return nil
@@ -290,7 +290,7 @@ func (task *SenseRegistrationTask) waitActionActivation(ctx context.Context, txi
 }
 
 // sign and send NFT ticket if not primary
-func (task *SenseRegistrationTask) signAndSendArtTicket(ctx context.Context, isPrimary bool) error {
+func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, isPrimary bool) error {
 	ticket, err := pastel.EncodeActionTicket(task.Ticket)
 	if err != nil {
 		return errors.Errorf("serialize NFT ticket: %w", err)
@@ -383,12 +383,13 @@ func NewSenseRegistrationTask(service *SenseRegistrationService) *SenseRegistrat
 		storage:                  common.NewStorageHandler(service.P2PClient, nil, "", ""),
 	}
 
-	task.DupeDetectionHandler = common.NewSenseTaskHelper(
+	task.DupeDetectionHandler = common.NewSenseTaskHelper(task.SuperNodeTask, service.ddClient,
 		task.config.PastelID, task.config.PassPhrase,
 		common.NewNetworkHandler(task.SuperNodeTask, service.nodeClient,
 			RegisterSenseNodeMaker{}, service.PastelClient,
 			task.config.PastelID,
 			service.config.NumberConnectedNodes),
+		service.PastelClient,
 	)
 
 	return task

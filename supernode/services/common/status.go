@@ -19,9 +19,9 @@ const (
 	// Error
 	StatusErrorInvalidBurnTxID
 	StatusRequestTooLate
-	StatusArtRegGettingFailed
-	StatusArtRegDecodingFailed
-	StatusArtRegTicketInvalid
+	StatusNftRegGettingFailed
+	StatusNftRegDecodingFailed
+	StatusNftRegTicketInvalid
 	StatusListTradeTicketsFailed
 	StatusTradeTicketsNotFound
 	StatusTradeTicketMismatched
@@ -55,9 +55,9 @@ var statusNames = map[Status]string{
 	StatusFileDecoded:                         "File Decoded",
 	StatusErrorInvalidBurnTxID:                "Error Invalid Burn TxID",
 	StatusRequestTooLate:                      "Request too late",
-	StatusArtRegGettingFailed:                 "Art registered getting failed",
-	StatusArtRegDecodingFailed:                "Art registered decoding failed",
-	StatusArtRegTicketInvalid:                 "Art registered ticket invalid",
+	StatusNftRegGettingFailed:                 "NFT registered getting failed",
+	StatusNftRegDecodingFailed:                "NFT registered decoding failed",
+	StatusNftRegTicketInvalid:                 "NFT registered ticket invalid",
 	StatusListTradeTicketsFailed:              "Could not get available trade tickets",
 	StatusTradeTicketsNotFound:                "Trade tickets not found",
 	StatusTradeTicketMismatched:               "Trade ticket mismatched",
@@ -96,8 +96,8 @@ func (status Status) IsFinal() bool {
 // IsFailure returns true if the task failed due to an error
 func (status Status) IsFailure() bool {
 	return status == StatusTaskCanceled || status == StatusRequestTooLate ||
-		status == StatusArtRegGettingFailed || status == StatusArtRegDecodingFailed ||
-		status == StatusArtRegTicketInvalid || status == StatusListTradeTicketsFailed ||
+		status == StatusNftRegGettingFailed || status == StatusNftRegDecodingFailed ||
+		status == StatusNftRegTicketInvalid || status == StatusListTradeTicketsFailed ||
 		status == StatusTradeTicketsNotFound || status == StatusTradeTicketMismatched ||
 		status == StatusTimestampVerificationFailed || status == StatusTimestampInvalid ||
 		status == StatusRQServiceConnectionFailed || status == StatusSymbolFileNotFound ||

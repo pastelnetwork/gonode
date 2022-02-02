@@ -15,4 +15,5 @@ replace (
 	github.com/pastelnetwork/gonode/proto => ../../proto
 	github.com/pastelnetwork/gonode/raptorq => ../../raptorq
 	github.com/pastelnetwork/gonode/walletnode => ../../walletnode
+	github.com/pastelnetwork/gonode/mixins => ../../mixins
 )

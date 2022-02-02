@@ -30,8 +30,8 @@ const (
 	// ProbeImageMethod represent ProbeImage name method
 	ProbeImageMethod = "ProbeImage"
 
-	// RegisterSenseMethod represent RegisterSenseInterface name method
-	RegisterSenseMethod = "RegisterSenseInterface"
+	// RegisterSenseMethod represent RegisterSense name method
+	RegisterSenseMethod = "RegisterSense"
 
 	// SessionMethod represent Session name method
 	SessionMethod = "Session"

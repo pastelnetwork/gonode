@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.2
-// source: download_artwork.proto
+// source: download_nft.proto
 
 package walletnode
 
@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DownloadNftClient interface {
-	// Download downloads artwork by given txid, timestamp and signature.
+	// Download downloads NFT by given txid, timestamp and signature.
 	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (DownloadNft_DownloadClient, error)
 	DownloadThumbnail(ctx context.Context, in *DownloadThumbnailRequest, opts ...grpc.CallOption) (*DownloadThumbnailReply, error)
 }
@@ -80,7 +80,7 @@ func (c *downloadNftClient) DownloadThumbnail(ctx context.Context, in *DownloadT
 // All implementations must embed UnimplementedDownloadNftServer
 // for forward compatibility
 type DownloadNftServer interface {
-	// Download downloads artwork by given txid, timestamp and signature.
+	// Download downloads NFT by given txid, timestamp and signature.
 	Download(*DownloadRequest, DownloadNft_DownloadServer) error
 	DownloadThumbnail(context.Context, *DownloadThumbnailRequest) (*DownloadThumbnailReply, error)
 	mustEmbedUnimplementedDownloadNftServer()
@@ -167,5 +167,5 @@ var DownloadNft_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "download_artwork.proto",
+	Metadata: "download_nft.proto",
 }

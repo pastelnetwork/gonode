@@ -133,7 +133,7 @@ var _ = Service("nft", func() {
 				Param("artist")
 				Param("limit")
 				Param("query")
-				Param("artist_name")
+				Param("creator_name")
 				Param("art_title")
 				Param("series")
 				Param("descr")
@@ -251,26 +251,26 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 		Example("https://www.youtube.com/watch?v=0xl6Ufo4ZX0")
 	})
 
-	Attribute("artist_pastelid", String, func() {
-		Meta("struct:field:name", "ArtistPastelID")
-		Description("Artist's PastelID")
+	Attribute("creator_pastelid", String, func() {
+		Meta("struct:field:name", "CreatorPastelID")
+		Description("Creator's PastelID")
 		MinLength(86)
 		MaxLength(86)
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
-	Attribute("artist_pastelid_passphrase", String, func() {
-		Meta("struct:field:name", "ArtistPastelIDPassphrase")
+	Attribute("creator_pastelid_passphrase", String, func() {
+		Meta("struct:field:name", "CreatorPastelIDPassphrase")
 		Description("Passphrase of the artist's PastelID")
 		Example("qwerasdf1234")
 	})
-	Attribute("artist_name", String, func() {
-		Description("Name of the artist")
+	Attribute("creator_name", String, func() {
+		Description("Name of the NFT creator")
 		MaxLength(256)
 		Example("Leonardo da Vinci")
 	})
-	Attribute("artist_website_url", String, func() {
-		Description("Artist website URL")
+	Attribute("creator_website_url", String, func() {
+		Description("NFT creator website URL")
 		MaxLength(256)
 		Example("https://www.leonardodavinci.net")
 	})
@@ -305,7 +305,7 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 
 	Attribute("thumbnail_coordinate", ThumbnailCoordinate)
 
-	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "maximum_fee")
+	Required("creator_name", "name", "issued_copies", "creator_pastelid", "creator_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
 
 // NftRegisterResult is NFT registeration result.
@@ -474,8 +474,8 @@ var SearchNftParams = func() {
 	Attribute("query", String, func() {
 		Description("Query is search query entered by user")
 	})
-	Attribute("artist_name", Boolean, func() {
-		Description("Name of the artist")
+	Attribute("creator_name", Boolean, func() {
+		Description("Name of the nft creator")
 		Default(true)
 	})
 	Attribute("art_title", Boolean, func() {
@@ -618,8 +618,8 @@ var NftSummary = Type("NftSummary", func() {
 		Example("https://www.youtube.com/watch?v=0xl6Ufo4ZX0")
 	})
 
-	Attribute("artist_pastelid", String, func() {
-		Meta("struct:field:name", "ArtistPastelID")
+	Attribute("creator_pastelid", String, func() {
+		Meta("struct:field:name", "CreatorPastelID")
 		Description("Artist's PastelID")
 		MinLength(86)
 		MaxLength(86)
@@ -627,18 +627,18 @@ var NftSummary = Type("NftSummary", func() {
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
 
-	Attribute("artist_name", String, func() {
+	Attribute("creator_name", String, func() {
 		Description("Name of the artist")
 		MaxLength(256)
 		Example("Leonardo da Vinci")
 	})
-	Attribute("artist_website_url", String, func() {
+	Attribute("creator_website_url", String, func() {
 		Description("Artist website URL")
 		MaxLength(256)
 		Example("https://www.leonardodavinci.net")
 	})
 
-	Required("title", "description", "artist_name", "copies", "artist_pastelid", "txid")
+	Required("title", "description", "creator_name", "copies", "creator_pastelid", "txid")
 })
 
 // NftDetail is NFT get response.

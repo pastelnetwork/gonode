@@ -25,7 +25,7 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 	{
 		err = json.Unmarshal([]byte(nftRegisterBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_name\": \"Leonardo da Vinci\",\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"artist_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"green\": false,\n      \"image_id\": \"VK7mpAqZ\",\n      \"issued_copies\": 1,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"maximum_fee\": 100,\n      \"name\": \"Mona Lisa\",\n      \"royalty\": 12,\n      \"series_name\": \"Famous artist\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"thumbnail_coordinate\": {\n         \"bottom_right_x\": 640,\n         \"bottom_right_y\": 480,\n         \"top_left_x\": 0,\n         \"top_left_y\": 0\n      },\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"creator_name\": \"Leonardo da Vinci\",\n      \"creator_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"creator_pastelid_passphrase\": \"qwerasdf1234\",\n      \"creator_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"green\": false,\n      \"image_id\": \"VK7mpAqZ\",\n      \"issued_copies\": 1,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"maximum_fee\": 100,\n      \"name\": \"Mona Lisa\",\n      \"royalty\": 12,\n      \"series_name\": \"Famous artist\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"thumbnail_coordinate\": {\n         \"bottom_right_x\": 640,\n         \"bottom_right_y\": 480,\n         \"top_left_x\": 0,\n         \"top_left_y\": 0\n      },\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
 		}
 		if utf8.RuneCountInString(body.ImageID) < 8 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", body.ImageID, utf8.RuneCountInString(body.ImageID), 8, true))
@@ -62,19 +62,19 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 				err = goa.MergeErrors(err, goa.InvalidLengthError("body.youtube_url", *body.YoutubeURL, utf8.RuneCountInString(*body.YoutubeURL), 128, false))
 			}
 		}
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
-		if utf8.RuneCountInString(body.ArtistPastelID) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", body.ArtistPastelID, utf8.RuneCountInString(body.ArtistPastelID), 86, true))
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.creator_pastelid", body.CreatorPastelID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.CreatorPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_pastelid", body.CreatorPastelID, utf8.RuneCountInString(body.CreatorPastelID), 86, true))
 		}
-		if utf8.RuneCountInString(body.ArtistPastelID) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", body.ArtistPastelID, utf8.RuneCountInString(body.ArtistPastelID), 86, false))
+		if utf8.RuneCountInString(body.CreatorPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_pastelid", body.CreatorPastelID, utf8.RuneCountInString(body.CreatorPastelID), 86, false))
 		}
-		if utf8.RuneCountInString(body.ArtistName) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_name", body.ArtistName, utf8.RuneCountInString(body.ArtistName), 256, false))
+		if utf8.RuneCountInString(body.CreatorName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_name", body.CreatorName, utf8.RuneCountInString(body.CreatorName), 256, false))
 		}
-		if body.ArtistWebsiteURL != nil {
-			if utf8.RuneCountInString(*body.ArtistWebsiteURL) > 256 {
-				err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
+		if body.CreatorWebsiteURL != nil {
+			if utf8.RuneCountInString(*body.CreatorWebsiteURL) > 256 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_website_url", *body.CreatorWebsiteURL, utf8.RuneCountInString(*body.CreatorWebsiteURL), 256, false))
 			}
 		}
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.spendable_address", body.SpendableAddress, "^[a-zA-Z0-9]+$"))
@@ -98,21 +98,21 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 		}
 	}
 	v := &nft.RegisterPayload{
-		ImageID:                  body.ImageID,
-		Name:                     body.Name,
-		Description:              body.Description,
-		Keywords:                 body.Keywords,
-		SeriesName:               body.SeriesName,
-		IssuedCopies:             body.IssuedCopies,
-		YoutubeURL:               body.YoutubeURL,
-		ArtistPastelID:           body.ArtistPastelID,
-		ArtistPastelIDPassphrase: body.ArtistPastelIDPassphrase,
-		ArtistName:               body.ArtistName,
-		ArtistWebsiteURL:         body.ArtistWebsiteURL,
-		SpendableAddress:         body.SpendableAddress,
-		MaximumFee:               body.MaximumFee,
-		Royalty:                  body.Royalty,
-		Green:                    body.Green,
+		ImageID:                   body.ImageID,
+		Name:                      body.Name,
+		Description:               body.Description,
+		Keywords:                  body.Keywords,
+		SeriesName:                body.SeriesName,
+		IssuedCopies:              body.IssuedCopies,
+		YoutubeURL:                body.YoutubeURL,
+		CreatorPastelID:           body.CreatorPastelID,
+		CreatorPastelIDPassphrase: body.CreatorPastelIDPassphrase,
+		CreatorName:               body.CreatorName,
+		CreatorWebsiteURL:         body.CreatorWebsiteURL,
+		SpendableAddress:          body.SpendableAddress,
+		MaximumFee:                body.MaximumFee,
+		Royalty:                   body.Royalty,
+		Green:                     body.Green,
 	}
 	{
 		var zero float64
@@ -206,7 +206,7 @@ func BuildUploadImagePayload(nftUploadImageBody string) (*nft.UploadImagePayload
 
 // BuildNftSearchPayload builds the payload for the nft nftSearch endpoint from
 // CLI flags.
-func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, nftNftSearchQuery string, nftNftSearchArtistName string, nftNftSearchArtTitle string, nftNftSearchSeries string, nftNftSearchDescr string, nftNftSearchKeyword string, nftNftSearchMinCopies string, nftNftSearchMaxCopies string, nftNftSearchMinBlock string, nftNftSearchMaxBlock string, nftNftSearchMinRarenessScore string, nftNftSearchMaxRarenessScore string, nftNftSearchMinNsfwScore string, nftNftSearchMaxNsfwScore string, nftNftSearchMinInternetRarenessScore string, nftNftSearchMaxInternetRarenessScore string, nftNftSearchUserPastelid string, nftNftSearchUserPassphrase string) (*nft.NftSearchPayload, error) {
+func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, nftNftSearchQuery string, nftNftSearchCreatorName string, nftNftSearchArtTitle string, nftNftSearchSeries string, nftNftSearchDescr string, nftNftSearchKeyword string, nftNftSearchMinCopies string, nftNftSearchMaxCopies string, nftNftSearchMinBlock string, nftNftSearchMaxBlock string, nftNftSearchMinRarenessScore string, nftNftSearchMaxRarenessScore string, nftNftSearchMinNsfwScore string, nftNftSearchMaxNsfwScore string, nftNftSearchMinInternetRarenessScore string, nftNftSearchMaxInternetRarenessScore string, nftNftSearchUserPastelid string, nftNftSearchUserPassphrase string) (*nft.NftSearchPayload, error) {
 	var err error
 	var artist *string
 	{
@@ -246,12 +246,12 @@ func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, 
 	{
 		query = nftNftSearchQuery
 	}
-	var artistName bool
+	var creatorName bool
 	{
-		if nftNftSearchArtistName != "" {
-			artistName, err = strconv.ParseBool(nftNftSearchArtistName)
+		if nftNftSearchCreatorName != "" {
+			creatorName, err = strconv.ParseBool(nftNftSearchCreatorName)
 			if err != nil {
-				return nil, fmt.Errorf("invalid value for artistName, must be BOOL")
+				return nil, fmt.Errorf("invalid value for creatorName, must be BOOL")
 			}
 		}
 	}
@@ -548,7 +548,7 @@ func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, 
 	v.Artist = artist
 	v.Limit = limit
 	v.Query = query
-	v.ArtistName = artistName
+	v.CreatorName = creatorName
 	v.ArtTitle = artTitle
 	v.Series = series
 	v.Descr = descr

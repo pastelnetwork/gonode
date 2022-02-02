@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	cli "github.com/pastelnetwork/gonode/walletnode/api/gen/http/nft/client"
 	"io"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
-	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
-	cli "github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/client"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pkg/errors"
 	goahttp "goa.design/goa/v3/http"
 )
@@ -51,10 +51,10 @@ func registerTicket(client *cli.Client, artistId string, passphrase string, spen
 	endpoint := client.Register()
 	payloadJson := fmt.Sprintf(
 		`{
-		  "artist_name": "Leonardo da Vinci",
-		  "artist_pastelid": "%s",
-		  "artist_pastelid_passphrase": "%s",
-		  "artist_website_url": "https://www.leonardodavinci.net",
+		  "creator_name": "Leonardo da Vinci",
+		  "creator_pastelid": "%s",
+		  "creator_pastelid_passphrase": "%s",
+		  "creator_website_url": "https://www.leonardodavinci.net",
 		  "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
 		  "green": false,
 		  "image_id": "%s",
@@ -84,7 +84,7 @@ func registerTicket(client *cli.Client, artistId string, passphrase string, spen
 		return "", errors.Wrap(err, "error send data")
 	}
 
-	result, ok := res.(*artworks.RegisterResult)
+	result, ok := res.(*nft.RegisterResult)
 	if !ok {
 		return "", errors.New("invalid data")
 	}
@@ -109,7 +109,7 @@ func watchStatus(client *cli.Client, taskId string) error {
 	}
 
 	switch stream := data.(type) {
-	case artworks.RegisterTaskStateClientStream:
+	case nft.RegisterTaskStateClientStream:
 		// result streaming
 		for {
 			p, err := stream.Recv()

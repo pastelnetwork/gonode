@@ -42,13 +42,13 @@ func fakeRQIDsData(isValid bool) ([]byte, []string) {
 
 func fakeRegiterTicket() pastel.RegTicket {
 	appTicketData := pastel.AppTicket{
-		CreatorName:                "artist_name",
+		CreatorName:                "creator_name",
 		CreatorWebsite:             "artist_website",
 		CreatorWrittenStatement:    "artist_written_statement",
-		NFTTitle:                   "artwork_title",
-		NFTSeriesName:              "artwork_series_name",
-		NFTCreationVideoYoutubeURL: "artwork_creation_video_youtube_url",
-		NFTKeywordSet:              "artwork_keyword_set",
+		NFTTitle:                   "nft_title",
+		NFTSeriesName:              "nft_series_name",
+		NFTCreationVideoYoutubeURL: "nft_creation_video_youtube_url",
+		NFTKeywordSet:              "nft_keyword_set",
 		TotalCopies:                10,
 		PreviewHash:                []byte("preview_hash"),
 		Thumbnail1Hash:             []byte("thumbnail1_hash"),

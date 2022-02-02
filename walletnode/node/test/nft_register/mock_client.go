@@ -1,4 +1,4 @@
-package artworkregister
+package nftregister
 
 import (
 	"context"
@@ -30,11 +30,11 @@ const (
 	// ProbeImageMethod represent ProbeImage name method
 	ProbeImageMethod = "ProbeImage"
 
-	// RegisterArtworkMethod represent RegisterNftInterface name method
-	RegisterArtworkMethod = "RegisterNftInterface"
+	// RegisterNftMethod represent RegisterNftInterface name method
+	RegisterNftMethod = "RegisterNft"
 
-	// DownloadArtworkMethod represent DownloadNft name method
-	DownloadArtworkMethod = "DownloadNft"
+	// DownloadNftMethod represent DownloadNft name method
+	DownloadNftMethod = "DownloadNft"
 
 	// ProcessUserdataMethod represent ProcessUserdata name method
 	ProcessUserdataMethod = "ProcessUserdata"
@@ -73,9 +73,9 @@ func NewMockClient(t *testing.T) *Client {
 	}
 }
 
-// ListenOnRegisterArtwork listening RegisterNftInterface call
-func (client *Client) ListenOnRegisterArtwork() *Client {
-	client.ConnectionInterface.On(RegisterArtworkMethod).Return(client.RegisterNftInterface)
+// ListenOnRegisterNft listening RegisterNftInterface call
+func (client *Client) ListenOnRegisterNft() *Client {
+	client.ConnectionInterface.On(RegisterNftMethod).Return(client.RegisterNftInterface)
 	return client
 }
 
@@ -103,27 +103,27 @@ func (client *Client) ListenOnUploadImageWithThumbnail(retPreviewHash []byte,
 	return client
 }
 
-// AssertRegisterArtworkCall assertion RegisterNftInterface call
-func (client *Client) AssertRegisterArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertRegisterNftCall assertion RegisterNftInterface call
+func (client *Client) AssertRegisterNftCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.ConnectionInterface.AssertCalled(client.t, RegisterArtworkMethod, arguments...)
+		client.ConnectionInterface.AssertCalled(client.t, RegisterNftMethod, arguments...)
 	}
-	client.ConnectionInterface.AssertNumberOfCalls(client.t, RegisterArtworkMethod, expectedCalls)
+	client.ConnectionInterface.AssertNumberOfCalls(client.t, RegisterNftMethod, expectedCalls)
 	return client
 }
 
-// ListenOnDownloadArtwork listening DownloadNft call
-func (client *Client) ListenOnDownloadArtwork() *Client {
-	client.ConnectionInterface.On(DownloadArtworkMethod).Return(nil)
+// ListenOnDownloadNft listening DownloadNft call
+func (client *Client) ListenOnDownloadNft() *Client {
+	client.ConnectionInterface.On(DownloadNftMethod).Return(nil)
 	return client
 }
 
-// AssertDownloadArtworkCall assertion DownloadNft call
-func (client *Client) AssertDownloadArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertDownloadNftCall assertion DownloadNft call
+func (client *Client) AssertDownloadNftCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.ConnectionInterface.AssertCalled(client.t, DownloadArtworkMethod, arguments...)
+		client.ConnectionInterface.AssertCalled(client.t, DownloadNftMethod, arguments...)
 	}
-	client.ConnectionInterface.AssertNumberOfCalls(client.t, DownloadArtworkMethod, expectedCalls)
+	client.ConnectionInterface.AssertNumberOfCalls(client.t, DownloadNftMethod, expectedCalls)
 	return client
 }
 

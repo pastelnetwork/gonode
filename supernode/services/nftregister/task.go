@@ -83,6 +83,7 @@ func (task *NftRegistrationTask) ProbeImage(ctx context.Context, file *files.Fil
 		task.nftRegMetadata.BlockHash, task.nftRegMetadata.CreatorPastelID, &tasker{})
 }
 
+// validates RQIDs and DdFp IDs file and its IDs
 func (task *NftRegistrationTask) validateRqIDsAndDdFpIds(ctx context.Context, rq []byte, dd []byte) error {
 	var err error
 
@@ -90,7 +91,7 @@ func (task *NftRegistrationTask) validateRqIDsAndDdFpIds(ctx context.Context, rq
 
 	task.rawDdFpFile, task.ddFpFiles, err = task.ValidateIDFiles(ctx, dd,
 		task.Ticket.AppTicketData.DDAndFingerprintsIc, task.Ticket.AppTicketData.DDAndFingerprintsMax,
-		task.Ticket.AppTicketData.DDAndFingerprintsIDs, 4,
+		task.Ticket.AppTicketData.DDAndFingerprintsIDs, 3,
 		pastelIDs,
 		task.PastelClient)
 	if err != nil {
@@ -151,7 +152,7 @@ func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context, ticket
 			return nil
 		}
 
-		// Assume passphase is 16-bytes length
+		// Assume passphrase is 16-bytes length
 
 		getFeeRequest := pastel.GetRegisterNFTFeeRequest{
 			Ticket: task.Ticket,
@@ -205,7 +206,7 @@ func (task *NftRegistrationTask) ValidatePreBurnTransaction(ctx context.Context,
 
 		// sign the ticket if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
-		if err = task.signAndSendArtTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
+		if err = task.signAndSendNftTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("signed and send NFT ticket")
 			err = errors.Errorf("signed and send NFT ticket")
 			return nil
@@ -249,7 +250,7 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 						return nil
 					}
 
-					nftRegTxid, err = task.registerArt(ctx)
+					nftRegTxid, err = task.registerNft(ctx)
 					if err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
 						err = errors.Errorf("register NFT: %w", err)
@@ -290,7 +291,7 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 }
 
 // sign and send NFT ticket if not primary
-func (task *NftRegistrationTask) signAndSendArtTicket(ctx context.Context, isPrimary bool) error {
+func (task *NftRegistrationTask) signAndSendNftTicket(ctx context.Context, isPrimary bool) error {
 	ticket, err := pastel.EncodeNFTTicket(task.Ticket)
 	if err != nil {
 		return errors.Errorf("serialize NFT ticket: %w", err)
@@ -326,7 +327,7 @@ func (task *NftRegistrationTask) verifyPeersSignature(ctx context.Context) error
 	return task.RegTaskHelper.VerifyPeersSignature(ctx, data)
 }
 
-func (task *NftRegistrationTask) registerArt(ctx context.Context) (string, error) {
+func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
 	req := pastel.RegisterNFTRequest{
@@ -402,6 +403,7 @@ func (task *NftRegistrationTask) storeIDFiles(ctx context.Context) error {
 	return nil
 }
 
+// validates actual RQ Symbol IDs inside RQIDs file
 func (task *NftRegistrationTask) compareRQSymbolID(ctx context.Context) error {
 
 	content, err := task.Nft.Bytes()
@@ -472,12 +474,13 @@ func NewNftRegistrationTask(service *NftRegistrationService) *NftRegistrationTas
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
 	}
 
-	task.DupeDetectionHandler = common.NewSenseTaskHelper(
+	task.DupeDetectionHandler = common.NewSenseTaskHelper(task.SuperNodeTask, service.ddClient,
 		task.config.PastelID, task.config.PassPhrase,
 		common.NewNetworkHandler(task.SuperNodeTask, service.nodeClient,
 			RegisterNftNodeMaker{}, service.PastelClient,
 			task.config.PastelID,
 			service.config.NumberConnectedNodes),
+		service.PastelClient,
 	)
 
 	return task

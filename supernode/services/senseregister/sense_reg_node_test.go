@@ -86,7 +86,7 @@ func TestNodesAdd(t *testing.T) {
 	testCases := []struct {
 		nodes common.SuperNodePeerList
 		args  args
-		want  common.SuperNodePeer
+		want  common.SuperNodePeerList
 	}{
 		{
 			nodes: common.SuperNodePeerList{},
@@ -94,9 +94,10 @@ func TestNodesAdd(t *testing.T) {
 				Address:   "127.0.0.1",
 				NodeMaker: &RegisterSenseNodeMaker{}},
 			},
-			want: common.SuperNodePeer{
+			want: common.SuperNodePeerList{&common.SuperNodePeer{
 				Address:   "127.0.0.1",
 				NodeMaker: &RegisterSenseNodeMaker{}},
+			},
 		},
 	}
 
@@ -127,10 +128,12 @@ func TestByID(t *testing.T) {
 			nodes: common.SuperNodePeerList{
 				&common.SuperNodePeer{
 					ID:        "1",
-					NodeMaker: &RegisterSenseNodeMaker{}},
+					NodeMaker: &RegisterSenseNodeMaker{},
+				},
 				&common.SuperNodePeer{
 					ID:        "2",
-					NodeMaker: &RegisterSenseNodeMaker{}},
+					NodeMaker: &RegisterSenseNodeMaker{},
+				},
 			},
 			args: args{"2"},
 			want: &common.SuperNodePeer{
@@ -140,10 +143,12 @@ func TestByID(t *testing.T) {
 			nodes: common.SuperNodePeerList{
 				&common.SuperNodePeer{
 					ID:        "1",
-					NodeMaker: &RegisterSenseNodeMaker{}},
+					NodeMaker: &RegisterSenseNodeMaker{},
+				},
 				&common.SuperNodePeer{
 					ID:        "2",
-					NodeMaker: &RegisterSenseNodeMaker{}},
+					NodeMaker: &RegisterSenseNodeMaker{},
+				},
 			},
 			args: args{"3"},
 			want: nil,
@@ -158,7 +163,8 @@ func TestByID(t *testing.T) {
 
 			testCase.nodes.Add(&common.SuperNodePeer{
 				ID:        "4",
-				NodeMaker: &RegisterSenseNodeMaker{}})
+				NodeMaker: &RegisterSenseNodeMaker{},
+			})
 			testCase.nodes.Remove("4")
 			assert.Equal(t, testCase.want, testCase.nodes.ByID(testCase.args.id))
 		})

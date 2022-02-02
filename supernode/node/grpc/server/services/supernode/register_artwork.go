@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
+	sc "github.com/pastelnetwork/gonode/supernode/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -107,7 +108,7 @@ func (service *RegisterNft) SendNftTicketSignature(ctx context.Context, req *pb.
 		return nil, err
 	}
 
-	if err := task.AddPeerTicketSignature(req.NodeID, req.Signature); err != nil {
+	if err := task.AddPeerTicketSignature(req.NodeID, req.Signature, sc.StatusRegistrationFeeCalculated); err != nil {
 		return nil, errors.Errorf("add peer signature %w", err)
 	}
 

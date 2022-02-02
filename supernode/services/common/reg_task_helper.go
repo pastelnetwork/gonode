@@ -18,9 +18,9 @@ type RegTaskHelper struct {
 	*SuperNodeTask
 
 	NetworkHandler   *NetworkHandler
-	serverPastelID   string
+	ServerPastelID   string
 	serverPassPhrase string
-	pastelHandler    *mixins.PastelHandler
+	PastelHandler    *mixins.PastelHandler
 
 	// valid only for a task run as primary
 	peersTicketSignatureMtx  *sync.Mutex
@@ -28,23 +28,26 @@ type RegTaskHelper struct {
 	AllSignaturesReceivedChn chan struct{}
 }
 
-func NewRegTaskHelper(
+func NewRegTaskHelper(task *SuperNodeTask,
 	pastelID string, passPhrase string,
 	network *NetworkHandler,
+	pastelClient pastel.Client,
 ) *RegTaskHelper {
 	return &RegTaskHelper{
-		serverPastelID: pastelID, serverPassPhrase: passPhrase, NetworkHandler: network,
+		SuperNodeTask:  task,
+		ServerPastelID: pastelID, serverPassPhrase: passPhrase, NetworkHandler: network,
+		PastelHandler:            &mixins.PastelHandler{PastelClient: pastelClient},
 		peersTicketSignatureMtx:  &sync.Mutex{},
 		PeersTicketSignature:     make(map[string][]byte),
 		AllSignaturesReceivedChn: make(chan struct{}),
 	}
 }
 
-func (h *RegTaskHelper) AddPeerTicketSignature(nodeID string, signature []byte) error {
+func (h *RegTaskHelper) AddPeerTicketSignature(nodeID string, signature []byte, reqStatus Status) error {
 	h.peersTicketSignatureMtx.Lock()
 	defer h.peersTicketSignatureMtx.Unlock()
 
-	if err := h.RequiredStatus(StatusImageProbed); err != nil {
+	if err := h.RequiredStatus(reqStatus); err != nil {
 		return err
 	}
 
@@ -70,8 +73,11 @@ func (h *RegTaskHelper) AddPeerTicketSignature(nodeID string, signature []byte) 
 	return err
 }
 
+// ValidateIDFiles validates received (IDs) file and its (50) IDs:
+// 	1. checks signatures
+//	2. generates list of 50 IDs and compares them to received
 func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
-	data []byte, ic uint32, max uint32, ids []string, parts int,
+	data []byte, ic uint32, max uint32, ids []string, numSignRequired int,
 	pastelIDs []string,
 	pastelClient pastel.Client,
 ) ([]byte, [][]byte, error) {
@@ -87,7 +93,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 	}
 
 	splits := bytes.Split(decData, []byte{pastel.SeparatorByte})
-	if len(splits) != parts {
+	if len(splits) != numSignRequired+1 {
 		return nil, nil, errors.New("invalid data")
 	}
 
@@ -98,7 +104,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 
 	verifications := 0
 	verifiedNodes := make(map[int]bool)
-	for i := 1; i < parts; i++ {
+	for i := 1; i < numSignRequired+1; i++ {
 		for j := 0; j < len(pastelIDs); j++ {
 			if _, ok := verifiedNodes[j]; ok {
 				continue
@@ -117,7 +123,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 		}
 	}
 
-	if verifications != 3 {
+	if verifications != numSignRequired {
 		return nil, nil, errors.Errorf("file verification failed: need %d verifications, got %d", 3, verifications)
 	}
 
@@ -135,7 +141,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 
 func (h *RegTaskHelper) VerifyPeersSignature(ctx context.Context, data []byte) error {
 	for nodeID, signature := range h.PeersTicketSignature {
-		if ok, err := h.pastelHandler.PastelClient.Verify(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {
+		if ok, err := h.PastelHandler.PastelClient.Verify(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {
 			return errors.Errorf("verify signature %s of node %s", signature, nodeID)
 		} else if !ok {
 			return errors.Errorf("signature of node %s mistmatch", nodeID)
@@ -149,7 +155,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 
 	go func(ctx context.Context, txid string) {
 		defer close(ch)
-		blockTracker := blocktracker.New(h.pastelHandler.PastelClient)
+		blockTracker := blocktracker.New(h.PastelHandler.PastelClient)
 		baseBlkCnt, err := blockTracker.GetBlockCount()
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Warn("failed to get block count")
@@ -165,7 +171,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 				ch <- ctx.Err()
 				return
 			case <-time.After(interval):
-				txResult, err := h.pastelHandler.PastelClient.GetRawTransactionVerbose1(ctx, txid)
+				txResult, err := h.PastelHandler.PastelClient.GetRawTransactionVerbose1(ctx, txid)
 				if err != nil {
 					log.WithContext(ctx).WithError(err).Warn("GetRawTransactionVerbose1 err")
 				} else {

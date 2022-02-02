@@ -5,39 +5,74 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/files"
-	"github.com/pastelnetwork/gonode/supernode/services/common"
-	"io"
-	"math/rand"
-	"os"
-	"strings"
-	"sync"
-	"testing"
-	"time"
-
 	"github.com/DataDog/zstd"
-	"github.com/pastelnetwork/gonode/common/utils"
-
-	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/common/types"
-
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
+	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	ddMock "github.com/pastelnetwork/gonode/dupedetection/ddclient/test"
+	"github.com/pastelnetwork/gonode/p2p"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
+	"github.com/pastelnetwork/gonode/supernode/node"
 	test "github.com/pastelnetwork/gonode/supernode/node/test/nft_register"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"github.com/tj/assert"
+	"io"
+	"math/rand"
+	"os"
+	"strings"
+	"testing"
+	"time"
 )
+
+func makeConnected(task *NftRegistrationTask, status common.Status) *NftRegistrationTask {
+	meshedNodes := []types.MeshedSuperNode{
+		types.MeshedSuperNode{
+			NodeID: "PrimaryID",
+		},
+		types.MeshedSuperNode{
+			NodeID: "A",
+		},
+		types.MeshedSuperNode{
+			NodeID: "B",
+		},
+	}
+
+	task.UpdateStatus(common.StatusConnected)
+	task.NetworkHandler.MeshNodes(nil, meshedNodes)
+	task.UpdateStatus(status)
+
+	return task
+}
+
+func add2NodesAnd2TicketSignatures(task *NftRegistrationTask) *NftRegistrationTask {
+	task.NetworkHandler.Accepted = common.SuperNodePeerList{
+		&common.SuperNodePeer{ID: "A"},
+		&common.SuperNodePeer{ID: "B"},
+	}
+	task.PeersTicketSignature = map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}}
+	return task
+}
+
+func makeEmptyNftRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface, ddClient ddclient.DDServerClient) *NftRegistrationTask {
+	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, rqClient, ddClient)
+	task := NewNftRegistrationTask(service)
+	task.Ticket = &pastel.NFTTicket{}
+
+	return task
+}
 
 func TestTaskSignAndSendArtTicket(t *testing.T) {
 	type args struct {
-		task        *NftRegistrationTask
 		signErr     error
 		sendArtErr  error
 		signReturns []byte
@@ -50,24 +85,12 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				primary: true,
 			},
 			wantErr: nil,
 		},
 		"err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				signErr: errors.New("test"),
 				primary: true,
 			},
@@ -75,12 +98,6 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 		},
 		"primary-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				sendArtErr: errors.New("test"),
 				signErr:    nil,
 				primary:    false,
@@ -96,18 +113,21 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
 
 			clientMock := test.NewMockClient(t)
 			clientMock.ListenOnSendNftTicketSignature(tc.args.sendArtErr).
 				ListenOnConnect("", nil).ListenOnRegisterNft()
 
-			tc.args.task.nodeClient = clientMock
-			tc.args.task.connectedTo = &NftRegistrationNode{client: clientMock}
-			err := tc.args.task.connectedTo.connect(context.Background())
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, clientMock, nil, nil, nil)
+
+			task.NetworkHandler.ConnectedTo = &common.SuperNodePeer{
+				ClientInterface: clientMock,
+				NodeMaker:       RegisterNftNodeMaker{},
+			}
+			err := task.NetworkHandler.ConnectedTo.Connect(context.Background())
 			assert.Nil(t, err)
 
-			err = tc.args.task.signAndSendArtTicket(context.Background(), tc.args.primary)
+			err = task.signAndSendNftTicket(context.Background(), tc.args.primary)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -120,7 +140,6 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 
 func TestTaskRegisterArt(t *testing.T) {
 	type args struct {
-		task     *NftRegistrationTask
 		regErr   error
 		regRetID string
 	}
@@ -130,28 +149,11 @@ func TestTaskRegisterArt(t *testing.T) {
 		wantErr error
 	}{
 		"success": {
-			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					accepted:                common.NftRegistrationNodes{&NftRegistrationNode{ID: "A"}, &NftRegistrationNode{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
-			},
+			args:    args{},
 			wantErr: nil,
 		},
 		"err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					accepted:                common.NftRegistrationNodes{&NftRegistrationNode{ID: "A"}, &NftRegistrationNode{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
 				regErr: errors.New("test"),
 			},
 			wantErr: errors.New("test"),
@@ -164,11 +166,12 @@ func TestTaskRegisterArt(t *testing.T) {
 			t.Parallel()
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnRegisterArtTicket(tc.args.regRetID, tc.args.regErr).
-				ListenOnRegisterNFTTicket(tc.args.regRetID, tc.args.regErr)
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
+			pastelClientMock.ListenOnRegisterNFTTicket(tc.args.regRetID, tc.args.regErr)
 
-			id, err := tc.args.task.registerArt(context.Background())
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task = add2NodesAnd2TicketSignatures(task)
+
+			id, err := task.registerNft(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -254,7 +257,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 	}
 
 	type args struct {
-		task    *NftRegistrationTask
 		fileErr error
 		genErr  error
 		genResp *pastel.DDAndFingerprints
@@ -269,14 +271,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 				genErr:  nil,
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					accepted:                common.NftRegistrationNodes{&NftRegistrationNode{ID: "A"}, &NftRegistrationNode{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
 			},
 			wantErr: nil,
 		},
@@ -285,14 +279,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 				genErr:  nil,
 				fileErr: errors.New("test"),
 				genResp: genfingerAndScoresFunc(),
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					accepted:                common.NftRegistrationNodes{&NftRegistrationNode{ID: "A"}, &NftRegistrationNode{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
 			},
 			wantErr: errors.New("test"),
 		},
@@ -301,14 +287,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 				genErr:  errors.New("test"),
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					accepted:                common.NftRegistrationNodes{&NftRegistrationNode{ID: "A"}, &NftRegistrationNode{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
 			},
 			wantErr: errors.New("test"),
 		},
@@ -329,14 +307,15 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("signature"), nil)
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-
-			tc.args.task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
 
 			ddmock := ddMock.NewMockClient(t)
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
-			tc.args.task.ddClient = ddmock
-			_, err := tc.args.task.genFingerprintsData(context.Background(), file)
+
+			task := makeEmptyNftRegTask(&Config{}, fsMock, pastelClientMock, nil, nil, nil, ddmock)
+			task = add2NodesAnd2TicketSignatures(task)
+			task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+
+			_, err := task.GenFingerprintsData(context.Background(), file, "testBlockHash", "creatorPastelID")
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -349,7 +328,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 
 func TestTaskPastelNodesByExtKey(t *testing.T) {
 	type args struct {
-		task           *NftRegistrationTask
 		nodeID         string
 		masterNodesErr error
 	}
@@ -360,12 +338,6 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				masterNodesErr: nil,
 				nodeID:         "A",
 			},
@@ -373,24 +345,12 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 		},
 		"err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				masterNodesErr: errors.New("test"),
 			},
 			wantErr: errors.New("test"),
 		},
 		"node-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				nodeID:         "B",
 				masterNodesErr: nil,
 			},
@@ -411,10 +371,10 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
-			tc.args.task.pastelClient = pastelClientMock
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
 
-			_, err := tc.args.task.pastelNodeByExtKey(context.Background(), tc.args.nodeID)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+
+			_, err := task.NetworkHandler.PastelNodeByExtKey(context.Background(), tc.args.nodeID)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -427,10 +387,9 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 
 func TestTaskCompareRQSymbolID(t *testing.T) {
 	type args struct {
-		task        *NftRegistrationTask
-		connectErr  error
-		fileErr     error
-		assignRQIDS bool
+		connectErr error
+		fileErr    error
+		addIDsFile bool
 	}
 
 	testCases := map[string]struct {
@@ -439,47 +398,30 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 	}{
 		"conn-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				connectErr:  errors.New("test"),
-				fileErr:     nil,
-				assignRQIDS: true,
+				connectErr: errors.New("test"),
+				fileErr:    nil,
+				addIDsFile: true,
 			},
 			wantErr: errors.New("test"),
 		},
 		"file-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				fileErr:     errors.New("test"),
-				connectErr:  nil,
-				assignRQIDS: true,
+				connectErr: nil,
+				fileErr:    errors.New("test"),
+				addIDsFile: true,
 			},
 			wantErr: errors.New("read image"),
 		},
 		"rqids-len-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				fileErr:     nil,
-				connectErr:  nil,
-				assignRQIDS: false,
+				connectErr: nil,
+				fileErr:    nil,
+				addIDsFile: false,
 			},
-			wantErr: errors.New("no symbols identifiers file"),
+			wantErr: errors.New("no symbols identifiers"),
 		},
 	}
+
 	for name, tc := range testCases {
 		tc := tc
 
@@ -491,18 +433,21 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 			rqClientMock.ListenOnConnect(tc.args.connectErr)
 
-			tc.args.task.NftRegistrationService.rqClient = rqClientMock
-			tc.args.task.rqClient = rqClientMock
-
 			fsMock := storageMock.NewMockFileStorage()
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
+			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, nil, rqClientMock, nil)
+
 			storage := files.NewStorage(fsMock)
-			tc.args.task.Nft = files.NewFile(storage, "test")
+			task.Nft = files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
-			err := tc.args.task.compareRQSymbolID(context.Background())
+			if tc.args.addIDsFile {
+				task.rawRqFile = []byte{'a'}
+			}
+
+			err := task.compareRQSymbolID(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -515,7 +460,6 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 
 func TestTaskStoreRaptorQSymbols(t *testing.T) {
 	type args struct {
-		task       *NftRegistrationTask
 		encodeErr  error
 		connectErr error
 		fileErr    error
@@ -529,12 +473,6 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				encodeErr:  nil,
 				connectErr: nil,
 				fileErr:    nil,
@@ -545,12 +483,6 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 		},
 		"file-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				encodeErr:  nil,
 				connectErr: nil,
 				fileErr:    errors.New("test"),
@@ -561,12 +493,6 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 		},
 		"conn-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				encodeErr:  nil,
 				connectErr: errors.New("test"),
 				fileErr:    nil,
@@ -577,12 +503,6 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 		},
 		"encode-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				encodeErr:  errors.New("test"),
 				connectErr: nil,
 				fileErr:    nil,
@@ -593,12 +513,6 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 		},
 		"store-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				encodeErr:  nil,
 				connectErr: nil,
 				fileErr:    nil,
@@ -629,21 +543,18 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 
 			p2pClient := p2pMock.NewMockClient(t)
 			p2pClient.ListenOnStore("", tc.args.storeErr)
-			tc.args.task.NftRegistrationService.p2pClient = p2pClient
-			tc.args.task.p2pClient = p2pClient
-
-			tc.args.task.NftRegistrationService.rqClient = rqClientMock
-			tc.args.task.rqClient = rqClientMock
 
 			fsMock := storageMock.NewMockFileStorage()
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
+			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, rqClientMock, nil)
+
 			storage := files.NewStorage(fsMock)
-			tc.args.task.Nft = files.NewFile(storage, "test")
+			task.Nft = files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
-			err = tc.args.task.storeRaptorQSymbols(context.Background())
+			err = task.storeRaptorQSymbols(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -656,7 +567,6 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 
 func TestTaskStoreThumbnails(t *testing.T) {
 	type args struct {
-		task     *NftRegistrationTask
 		storeErr error
 		fileErr  error
 	}
@@ -667,12 +577,6 @@ func TestTaskStoreThumbnails(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				fileErr:  nil,
 				storeErr: nil,
 			},
@@ -681,12 +585,6 @@ func TestTaskStoreThumbnails(t *testing.T) {
 
 		"store-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				fileErr:  nil,
 				storeErr: errors.New("test"),
 			},
@@ -694,12 +592,6 @@ func TestTaskStoreThumbnails(t *testing.T) {
 		},
 		"file-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				fileErr:  errors.New("test"),
 				storeErr: nil,
 			},
@@ -715,22 +607,21 @@ func TestTaskStoreThumbnails(t *testing.T) {
 
 			p2pClient := p2pMock.NewMockClient(t)
 			p2pClient.ListenOnStore("", tc.args.storeErr)
-			tc.args.task.NftRegistrationService.p2pClient = p2pClient
-			tc.args.task.p2pClient = p2pClient
 
 			fsMock := storageMock.NewMockFileStorage()
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			storage := files.NewStorage(fsMock)
+			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, nil, nil)
 
-			tc.args.task.SmallThumbnail = files.NewFile(storage, "test-small")
-			tc.args.task.MediumThumbnail = files.NewFile(storage, "test-medium")
-			tc.args.task.PreviewThumbnail = files.NewFile(storage, "test-preview")
+			storage := files.NewStorage(fsMock)
+			task.SmallThumbnail = files.NewFile(storage, "test-small")
+			task.MediumThumbnail = files.NewFile(storage, "test-medium")
+			task.PreviewThumbnail = files.NewFile(storage, "test-preview")
 
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
-			err := tc.args.task.storeThumbnails(context.Background())
+			err := task.storeThumbnails(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -743,7 +634,6 @@ func TestTaskStoreThumbnails(t *testing.T) {
 
 func TestTaskVerifyPeersSignature(t *testing.T) {
 	type args struct {
-		task      *NftRegistrationTask
 		verifyErr error
 		verifyRet bool
 	}
@@ -754,13 +644,6 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
-				},
 				verifyRet: true,
 				verifyErr: nil,
 			},
@@ -768,13 +651,6 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 		},
 		"verify-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
-				},
 				verifyRet: true,
 				verifyErr: errors.New("test"),
 			},
@@ -782,13 +658,6 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 		},
 		"verify-failure": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
-				},
 				verifyRet: false,
 				verifyErr: nil,
 			},
@@ -803,9 +672,11 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(tc.args.verifyRet, tc.args.verifyErr)
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
 
-			err := tc.args.task.verifyPeersSignature(context.Background())
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task = add2NodesAnd2TicketSignatures(task)
+
+			err := task.verifyPeersSignature(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -818,7 +689,6 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 
 func TestTaskWaitConfirmation(t *testing.T) {
 	type args struct {
-		task             *NftRegistrationTask
 		txid             string
 		interval         time.Duration
 		minConfirmations int64
@@ -833,12 +703,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 	}{
 		"min-confirmations-timeout": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				minConfirmations: 2,
 				interval:         100 * time.Millisecond,
 				ctxTimeout:       20 * time.Second,
@@ -851,12 +715,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 		},
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				minConfirmations: 1,
 				interval:         50 * time.Millisecond,
 				ctxTimeout:       500 * time.Millisecond,
@@ -868,12 +726,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 		},
 		"ctx-done-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
 				minConfirmations: 1,
 				interval:         500 * time.Millisecond,
 				ctxTimeout:       10 * time.Millisecond,
@@ -894,9 +746,10 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnGetBlockCount(1, nil)
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.retRes, tc.retErr)
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
 
-			err := <-tc.args.task.waitConfirmation(ctx, tc.args.txid,
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+
+			err := <-task.WaitConfirmation(ctx, tc.args.txid,
 				tc.args.minConfirmations, tc.args.interval)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
@@ -985,10 +838,10 @@ func TestTaskProbeImage(t *testing.T) {
 	}
 
 	type args struct {
-		task    *NftRegistrationTask
 		fileErr error
 		genErr  error
 		genResp *pastel.DDAndFingerprints
+		status  common.Status
 	}
 
 	serviceCfg := NewConfig()
@@ -1002,29 +855,7 @@ func TestTaskProbeImage(t *testing.T) {
 				genErr:  nil,
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: serviceCfg,
-					},
-					Task:   task.New(StatusConnected),
-					Ticket: &pastel.NFTTicket{},
-					meshedNodes: []types.MeshedSuperNode{
-						types.MeshedSuperNode{
-							NodeID: "PrimaryID",
-						},
-						types.MeshedSuperNode{
-							NodeID: "A",
-						},
-						types.MeshedSuperNode{
-							NodeID: "B",
-						},
-					},
-					allSignaturesReceivedChn:              make(chan struct{}),
-					allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
-					allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
-					accepted:                              common.NftRegistrationNodes{&NftRegistrationNode{ID: "A"}, &NftRegistrationNode{ID: "B"}},
-					peersArtTicketSignature:               map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
+				status:  common.StatusConnected,
 			},
 			wantErr: nil,
 		},
@@ -1033,26 +864,7 @@ func TestTaskProbeImage(t *testing.T) {
 				genErr:  nil,
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: serviceCfg,
-					},
-					Task:   task.New(StatusImageProbed),
-					Ticket: &pastel.NFTTicket{},
-					meshedNodes: []types.MeshedSuperNode{
-						types.MeshedSuperNode{
-							NodeID: "PrimaryID",
-						},
-						types.MeshedSuperNode{
-							NodeID: "A",
-						},
-						types.MeshedSuperNode{
-							NodeID: "B",
-						},
-					},
-					accepted:                common.NftRegistrationNodes{&NftRegistrationNode{ID: "A"}, &NftRegistrationNode{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
+				status:  common.StatusImageProbed,
 			},
 			wantErr: errors.New("required status"),
 		},
@@ -1061,26 +873,7 @@ func TestTaskProbeImage(t *testing.T) {
 				genErr:  errors.New("test"),
 				fileErr: nil,
 				genResp: genfingerAndScoresFunc(),
-				task: &NftRegistrationTask{
-					Task: task.New(StatusConnected),
-					NftRegistrationService: &NftRegistrationService{
-						config: serviceCfg,
-					},
-					Ticket: &pastel.NFTTicket{},
-					meshedNodes: []types.MeshedSuperNode{
-						types.MeshedSuperNode{
-							NodeID: "PrimaryID",
-						},
-						types.MeshedSuperNode{
-							NodeID: "A",
-						},
-						types.MeshedSuperNode{
-							NodeID: "B",
-						},
-					},
-					accepted:                common.NftRegistrationNodes{&NftRegistrationNode{ID: "A"}, &NftRegistrationNode{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
-				},
+				status:  common.StatusConnected,
 			},
 			wantErr: errors.New("test"),
 		},
@@ -1102,26 +895,29 @@ func TestTaskProbeImage(t *testing.T) {
 
 			ddmock := ddMock.NewMockClient(t)
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
-			tc.args.task.ddClient = ddmock
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("signature"), nil).ListenOnVerify(true, nil)
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
 
-			tc.args.task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+			var clientMock *test.Client = nil
+			if tc.wantErr == nil {
+				clientMock = test.NewMockClient(t)
+				clientMock.ListenOnSendSignedDDAndFingerprints(nil).
+					ListenOnConnect("", nil).ListenOnRegisterNft()
+			}
+
+			task := makeEmptyNftRegTask(serviceCfg, fsMock, pastelClientMock, clientMock, nil, nil, ddmock)
+			task = add2NodesAnd2TicketSignatures(task)
+			task = makeConnected(task, tc.args.status)
+
+			task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			go tc.args.task.RunAction(ctx)
+			go task.RunAction(ctx)
 
 			if tc.wantErr == nil {
-				clientMock := test.NewMockClient(t)
-				clientMock.ListenOnSendSignedDDAndFingerprints(nil).
-					ListenOnConnect("", nil).ListenOnRegisterNft()
-
-				tc.args.task.nodeClient = clientMock
-
 				nodes := pastel.MasterNodes{}
 				nodes = append(nodes, pastel.MasterNode{ExtKey: "PrimaryID"})
 				nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
@@ -1130,10 +926,10 @@ func TestTaskProbeImage(t *testing.T) {
 				pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(genfingerAndScoresFunc(), []byte("signature"))
-				go tc.args.task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
-				go tc.args.task.AddSignedDDAndFingerprints("B", peerDDAndFingerprints)
+				go task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
+				go task.AddSignedDDAndFingerprints("B", peerDDAndFingerprints)
 			}
-			_, err := tc.args.task.ProbeImage(context.Background(), file)
+			_, err := task.ProbeImage(context.Background(), file)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -1144,11 +940,24 @@ func TestTaskProbeImage(t *testing.T) {
 	}
 }
 
+func makeTask1(pastelClient pastel.Client, status common.Status) *NftRegistrationTask {
+	task := makeEmptyNftRegTask(&Config{}, nil, pastelClient, nil, nil, nil, nil)
+	task.UpdateStatus(status)
+	task.Ticket = &pastel.NFTTicket{
+		Author: "author-id-b",
+		AppTicketData: pastel.AppTicket{
+			CreatorName: "Andy",
+			NFTTitle:    "alantic",
+		},
+	}
+	return task
+}
+
 func TestTaskGetRegistrationFee(t *testing.T) {
 	type args struct {
-		task   *NftRegistrationTask
 		retFee int64
 		retErr error
+		status common.Status
 	}
 
 	testCases := map[string]struct {
@@ -1157,38 +966,14 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
-					Ticket: &pastel.NFTTicket{
-						Author: "author-id-b",
-						AppTicketData: pastel.AppTicket{
-							CreatorName: "Andy",
-							NFTTitle:    "alantic",
-						},
-					},
-				},
+				status: common.StatusImageAndThumbnailCoordinateUploaded,
 			},
 			wantErr: nil,
 		},
 
 		"status-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task: task.New(StatusConnected),
-					Ticket: &pastel.NFTTicket{
-						Author: "author-id-b",
-						AppTicketData: pastel.AppTicket{
-							CreatorName: "Andy",
-							NFTTitle:    "alantic",
-						},
-					},
-				},
+				status: common.StatusConnected,
 			},
 			wantErr: errors.New("require status"),
 		},
@@ -1222,16 +1007,17 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnGetRegisterNFTFee(tc.args.retFee, tc.args.retErr)
 			pastelClientMock.ListenOnVerify(true, nil)
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
+
+			task := makeTask1(pastelClientMock, tc.args.status)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			go tc.args.task.RunAction(ctx)
-			artTicketBytes, err := pastel.EncodeNFTTicket(tc.args.task.Ticket)
+			go task.RunAction(ctx)
+			artTicketBytes, err := pastel.EncodeNFTTicket(task.Ticket)
 			assert.Nil(t, err)
 
-			_, err = tc.args.task.GetNftRegistrationFee(context.Background(), artTicketBytes,
+			_, err = task.GetNftRegistrationFee(context.Background(), artTicketBytes,
 				[]byte{}, "", "", []byte{}, []byte{}, []byte{})
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
@@ -1245,9 +1031,9 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 
 func TestTaskSessionNode(t *testing.T) {
 	type args struct {
-		task           *NftRegistrationTask
 		nodeID         string
 		masterNodesErr error
+		status         common.Status
 	}
 
 	testCases := map[string]struct {
@@ -1256,13 +1042,7 @@ func TestTaskSessionNode(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task:   task.New(StatusPrimaryMode),
-					Ticket: &pastel.NFTTicket{},
-				},
+				status:         common.StatusPrimaryMode,
 				masterNodesErr: nil,
 				nodeID:         "A",
 			},
@@ -1270,13 +1050,7 @@ func TestTaskSessionNode(t *testing.T) {
 		},
 		"status-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task:   task.New(StatusConnected),
-					Ticket: &pastel.NFTTicket{},
-				},
+				status:         common.StatusConnected,
 				masterNodesErr: nil,
 				nodeID:         "A",
 			},
@@ -1284,13 +1058,7 @@ func TestTaskSessionNode(t *testing.T) {
 		},
 		"pastel-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task:   task.New(StatusPrimaryMode),
-					Ticket: &pastel.NFTTicket{},
-				},
+				status:         common.StatusPrimaryMode,
 				masterNodesErr: errors.New("test"),
 				nodeID:         "A",
 			},
@@ -1307,8 +1075,6 @@ func TestTaskSessionNode(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			go tc.args.task.RunAction(ctx)
-
 			nodes := pastel.MasterNodes{}
 			for i := 0; i < 10; i++ {
 				nodes = append(nodes, pastel.MasterNode{})
@@ -1317,10 +1083,13 @@ func TestTaskSessionNode(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
-			tc.args.task.pastelClient = pastelClientMock
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
 
-			err := tc.args.task.SessionNode(context.Background(), tc.args.nodeID)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task.UpdateStatus(tc.args.status)
+
+			go task.RunAction(ctx)
+
+			err := task.NetworkHandler.SessionNode(context.Background(), tc.args.nodeID)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -1331,9 +1100,9 @@ func TestTaskSessionNode(t *testing.T) {
 	}
 }
 
-func TestTaskAddPeerArticketSignature(t *testing.T) {
+func TestTaskAddPeerNftTicketSignature(t *testing.T) {
 	type args struct {
-		task           *NftRegistrationTask
+		status         common.Status
 		nodeID         string
 		masterNodesErr error
 		acceptedNodeID string
@@ -1345,15 +1114,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task:                     task.New(StatusRegistrationFeeCalculated),
-					Ticket:                   &pastel.NFTTicket{},
-					allSignaturesReceivedChn: make(chan struct{}),
-				},
+				status:         common.StatusRegistrationFeeCalculated,
 				masterNodesErr: nil,
 				nodeID:         "A",
 				acceptedNodeID: "A",
@@ -1362,15 +1123,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 		},
 		"status-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task:                     task.New(StatusConnected),
-					Ticket:                   &pastel.NFTTicket{},
-					allSignaturesReceivedChn: make(chan struct{}),
-				},
+				status:         common.StatusConnected,
 				masterNodesErr: nil,
 				nodeID:         "A",
 				acceptedNodeID: "A",
@@ -1379,32 +1132,16 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 		},
 		"no-node-err": {
 			args: args{
-				task: &NftRegistrationTask{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task:                     task.New(StatusRegistrationFeeCalculated),
-					Ticket:                   &pastel.NFTTicket{},
-					allSignaturesReceivedChn: make(chan struct{}),
-				},
+				status:         common.StatusRegistrationFeeCalculated,
 				masterNodesErr: nil,
 				nodeID:         "A",
 				acceptedNodeID: "B",
 			},
-			wantErr: errors.New("accepted"),
+			wantErr: errors.New("not in Accepted list"),
 		},
 		"success-close-sign-chn": {
 			args: args{
-				task: &NftRegistrationTask{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					allSignaturesReceivedChn: make(chan struct{}),
-					Task:                     task.New(StatusRegistrationFeeCalculated),
-					Ticket:                   &pastel.NFTTicket{},
-				},
+				status:         common.StatusRegistrationFeeCalculated,
 				masterNodesErr: nil,
 				nodeID:         "A",
 				acceptedNodeID: "A",
@@ -1422,23 +1159,25 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			go tc.args.task.RunAction(ctx)
-
 			nodes := pastel.MasterNodes{}
 			for i := 0; i < 10; i++ {
 				nodes = append(nodes, pastel.MasterNode{})
 			}
 			nodes = append(nodes, pastel.MasterNode{ExtKey: tc.args.nodeID})
-			tc.args.task.accepted = common.NftRegistrationNodes{&NftRegistrationNode{ID: tc.args.acceptedNodeID, Address: tc.args.acceptedNodeID}}
-
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
-			tc.args.task.pastelClient = pastelClientMock
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
 
-			tc.args.task.peersArtTicketSignature = map[string][]byte{tc.args.acceptedNodeID: []byte{}}
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task.UpdateStatus(tc.args.status)
 
-			err := tc.args.task.AddPeerTicketSignature(tc.args.nodeID, []byte{})
+			go task.RunAction(ctx)
+
+			task.NetworkHandler.Accepted = common.SuperNodePeerList{
+				&common.SuperNodePeer{ID: tc.args.acceptedNodeID, Address: tc.args.acceptedNodeID},
+			}
+			task.PeersTicketSignature = map[string][]byte{tc.args.acceptedNodeID: []byte{}}
+
+			err := task.AddPeerTicketSignature(tc.args.nodeID, []byte{}, common.StatusRegistrationFeeCalculated)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -1451,7 +1190,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 
 func TestTaskUploadImageWithThumbnail(t *testing.T) {
 	type args struct {
-		task *NftRegistrationTask
+		status common.Status
 	}
 
 	testCases := map[string]struct {
@@ -1460,25 +1199,13 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task:   task.New(StatusImageProbed),
-					Ticket: &pastel.NFTTicket{},
-				},
+				status: common.StatusImageProbed,
 			},
 			wantErr: nil,
 		},
 		"failure-status": {
 			args: args{
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					Task:   task.New(StatusConnected),
-					Ticket: &pastel.NFTTicket{},
-				},
+				status: common.StatusConnected,
 			},
 			wantErr: errors.New("status"),
 		},
@@ -1493,14 +1220,16 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			go tc.args.task.RunAction(ctx)
-
 			stg := files.NewStorage(fs.NewFileStorage(os.TempDir()))
 
-			tc.args.task.Storage = stg
+			task := makeEmptyNftRegTask(&Config{}, stg, nil, nil, nil, nil, nil)
+			task.UpdateStatus(tc.args.status)
+
+			go task.RunAction(ctx)
+
 			file, err := newTestImageFile(stg)
 			assert.Nil(t, err)
-			tc.args.task.Nft = file
+			task.Nft = file
 
 			coordinate := files.ThumbnailCoordinate{
 				TopLeftX:     0,
@@ -1508,7 +1237,7 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 				BottomRightX: 400,
 				BottomRightY: 400,
 			}
-			_, _, _, err = tc.args.task.UploadImageWithThumbnail(ctx, file, coordinate)
+			_, _, _, err = task.UploadImageWithThumbnail(ctx, file, coordinate)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -1521,7 +1250,7 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 
 func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 	type args struct {
-		task   *NftRegistrationTask
+		status common.Status
 		fg     *pastel.DDAndFingerprints
 		rqFile *rqnode.RawSymbolIDFile
 		ddSig  [][]byte
@@ -1612,21 +1341,7 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 						XgbimportanceTop100BpsPercentile:     7.0,
 					},
 				},
-				task: &NftRegistrationTask{
-					NftRegistrationService: &NftRegistrationService{
-						config: &Config{},
-					},
-					meshedNodes: []types.MeshedSuperNode{
-						types.MeshedSuperNode{NodeID: "node-1"},
-						types.MeshedSuperNode{NodeID: "node-2"},
-						types.MeshedSuperNode{NodeID: "node-3"},
-					},
-					Task: task.New(StatusImageProbed),
-					Ticket: &pastel.NFTTicket{
-						Author:        "author-pastelid",
-						AppTicketData: pastel.AppTicket{},
-					},
-				},
+				status: common.StatusImageProbed,
 			},
 
 			wantErr: nil,
@@ -1639,9 +1354,25 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(true, nil)
-			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-			var rq, dd []byte
 
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+
+			meshedNodes := []types.MeshedSuperNode{
+				types.MeshedSuperNode{NodeID: "node-1"},
+				types.MeshedSuperNode{NodeID: "node-2"},
+				types.MeshedSuperNode{NodeID: "node-3"},
+			}
+
+			task.UpdateStatus(common.StatusConnected)
+			task.NetworkHandler.MeshNodes(nil, meshedNodes)
+			task.UpdateStatus(tc.args.status)
+
+			task.Ticket = &pastel.NFTTicket{
+				Author:        "author-pastelid",
+				AppTicketData: pastel.AppTicket{},
+			}
+
+			var rq, dd []byte
 			ddJSON, err := json.Marshal(tc.args.fg)
 			assert.Nil(t, err)
 
@@ -1662,24 +1393,24 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 			assert.Nil(t, err)
 			rq = utils.B64Encode(compressedRq)
 
-			tc.args.task.Ticket.AppTicketData.DDAndFingerprintsIc = rand.Uint32()
-			tc.args.task.Ticket.AppTicketData.DDAndFingerprintsMax = 50
-			tc.args.task.Ticket.AppTicketData.RQIc = rand.Uint32()
-			tc.args.task.Ticket.AppTicketData.RQMax = 50
+			task.Ticket.AppTicketData.DDAndFingerprintsIc = rand.Uint32()
+			task.Ticket.AppTicketData.DDAndFingerprintsMax = 50
+			task.Ticket.AppTicketData.RQIc = rand.Uint32()
+			task.Ticket.AppTicketData.RQMax = 50
 
-			tc.args.task.Ticket.AppTicketData.DDAndFingerprintsIDs, _, err = pastel.GetIDFiles([]byte(ddStr),
-				tc.args.task.Ticket.AppTicketData.DDAndFingerprintsIc,
-				tc.args.task.Ticket.AppTicketData.DDAndFingerprintsMax)
-
-			assert.Nil(t, err)
-
-			tc.args.task.Ticket.AppTicketData.RQIDs, _, err = pastel.GetIDFiles([]byte(rqStr),
-				tc.args.task.Ticket.AppTicketData.RQIc,
-				tc.args.task.Ticket.AppTicketData.RQMax)
+			task.Ticket.AppTicketData.DDAndFingerprintsIDs, _, err = pastel.GetIDFiles([]byte(ddStr),
+				task.Ticket.AppTicketData.DDAndFingerprintsIc,
+				task.Ticket.AppTicketData.DDAndFingerprintsMax)
 
 			assert.Nil(t, err)
 
-			err = tc.args.task.validateRqIDsAndDdFpIds(context.Background(), rq, dd)
+			task.Ticket.AppTicketData.RQIDs, _, err = pastel.GetIDFiles([]byte(rqStr),
+				task.Ticket.AppTicketData.RQIc,
+				task.Ticket.AppTicketData.RQMax)
+
+			assert.Nil(t, err)
+
+			err = task.validateRqIDsAndDdFpIds(context.Background(), rq, dd)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

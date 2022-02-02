@@ -373,7 +373,7 @@ func DecodeNftSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			artist                   *string
 			limit                    int
 			query                    string
-			artistName               bool
+			creatorName              bool
 			artTitle                 bool
 			series                   bool
 			descr                    bool
@@ -424,15 +424,15 @@ func DecodeNftSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			err = goa.MergeErrors(err, goa.MissingFieldError("query", "query string"))
 		}
 		{
-			artistNameRaw := r.URL.Query().Get("artist_name")
-			if artistNameRaw == "" {
-				artistName = true
+			creatorNameRaw := r.URL.Query().Get("creator_name")
+			if creatorNameRaw == "" {
+				creatorName = true
 			} else {
-				v, err2 := strconv.ParseBool(artistNameRaw)
+				v, err2 := strconv.ParseBool(creatorNameRaw)
 				if err2 != nil {
-					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("artistName", artistNameRaw, "boolean"))
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("creatorName", creatorNameRaw, "boolean"))
 				}
-				artistName = v
+				creatorName = v
 			}
 		}
 		{
@@ -700,7 +700,7 @@ func DecodeNftSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 		if err != nil {
 			return nil, err
 		}
-		payload := NewNftSearchPayload(artist, limit, query, artistName, artTitle, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore, minInternetRarenessScore, maxInternetRarenessScore, userPastelid, userPassphrase)
+		payload := NewNftSearchPayload(artist, limit, query, creatorName, artTitle, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore, minInternetRarenessScore, maxInternetRarenessScore, userPastelid, userPassphrase)
 
 		return payload, nil
 	}
@@ -988,18 +988,18 @@ func marshalNftviewsTaskStateViewToTaskStateResponseBody(v *nftviews.TaskStateVi
 // *nftviews.NftRegisterPayloadView.
 func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponseBody(v *nftviews.NftRegisterPayloadView) *NftRegisterPayloadResponseBody {
 	res := &NftRegisterPayloadResponseBody{
-		Name:                     *v.Name,
-		Description:              v.Description,
-		Keywords:                 v.Keywords,
-		SeriesName:               v.SeriesName,
-		IssuedCopies:             *v.IssuedCopies,
-		YoutubeURL:               v.YoutubeURL,
-		ArtistPastelID:           *v.ArtistPastelID,
-		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
-		ArtistName:               *v.ArtistName,
-		ArtistWebsiteURL:         v.ArtistWebsiteURL,
-		SpendableAddress:         *v.SpendableAddress,
-		MaximumFee:               *v.MaximumFee,
+		Name:                      *v.Name,
+		Description:               v.Description,
+		Keywords:                  v.Keywords,
+		SeriesName:                v.SeriesName,
+		IssuedCopies:              *v.IssuedCopies,
+		YoutubeURL:                v.YoutubeURL,
+		CreatorPastelID:           *v.CreatorPastelID,
+		CreatorPastelIDPassphrase: *v.CreatorPastelIDPassphrase,
+		CreatorName:               *v.CreatorName,
+		CreatorWebsiteURL:         v.CreatorWebsiteURL,
+		SpendableAddress:          *v.SpendableAddress,
+		MaximumFee:                *v.MaximumFee,
 	}
 	if v.Royalty != nil {
 		res.Royalty = *v.Royalty
@@ -1057,18 +1057,18 @@ func marshalNftviewsTaskViewToTaskResponseTiny(v *nftviews.TaskView) *TaskRespon
 // *nftviews.NftRegisterPayloadView.
 func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponse(v *nftviews.NftRegisterPayloadView) *NftRegisterPayloadResponse {
 	res := &NftRegisterPayloadResponse{
-		Name:                     *v.Name,
-		Description:              v.Description,
-		Keywords:                 v.Keywords,
-		SeriesName:               v.SeriesName,
-		IssuedCopies:             *v.IssuedCopies,
-		YoutubeURL:               v.YoutubeURL,
-		ArtistPastelID:           *v.ArtistPastelID,
-		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
-		ArtistName:               *v.ArtistName,
-		ArtistWebsiteURL:         v.ArtistWebsiteURL,
-		SpendableAddress:         *v.SpendableAddress,
-		MaximumFee:               *v.MaximumFee,
+		Name:                      *v.Name,
+		Description:               v.Description,
+		Keywords:                  v.Keywords,
+		SeriesName:                v.SeriesName,
+		IssuedCopies:              *v.IssuedCopies,
+		YoutubeURL:                v.YoutubeURL,
+		CreatorPastelID:           *v.CreatorPastelID,
+		CreatorPastelIDPassphrase: *v.CreatorPastelIDPassphrase,
+		CreatorName:               *v.CreatorName,
+		CreatorWebsiteURL:         v.CreatorWebsiteURL,
+		SpendableAddress:          *v.SpendableAddress,
+		MaximumFee:                *v.MaximumFee,
 	}
 	if v.Royalty != nil {
 		res.Royalty = *v.Royalty
@@ -1110,18 +1110,18 @@ func marshalNftviewsThumbnailcoordinateViewToThumbnailcoordinateResponse(v *nftv
 // *NftSummaryResponseBody from a value of type *nft.NftSummary.
 func marshalNftNftSummaryToNftSummaryResponseBody(v *nft.NftSummary) *NftSummaryResponseBody {
 	res := &NftSummaryResponseBody{
-		Thumbnail1:       v.Thumbnail1,
-		Thumbnail2:       v.Thumbnail2,
-		Txid:             v.Txid,
-		Title:            v.Title,
-		Description:      v.Description,
-		Keywords:         v.Keywords,
-		SeriesName:       v.SeriesName,
-		Copies:           v.Copies,
-		YoutubeURL:       v.YoutubeURL,
-		ArtistPastelID:   v.ArtistPastelID,
-		ArtistName:       v.ArtistName,
-		ArtistWebsiteURL: v.ArtistWebsiteURL,
+		Thumbnail1:        v.Thumbnail1,
+		Thumbnail2:        v.Thumbnail2,
+		Txid:              v.Txid,
+		Title:             v.Title,
+		Description:       v.Description,
+		Keywords:          v.Keywords,
+		SeriesName:        v.SeriesName,
+		Copies:            v.Copies,
+		YoutubeURL:        v.YoutubeURL,
+		CreatorPastelID:   v.CreatorPastelID,
+		CreatorName:       v.CreatorName,
+		CreatorWebsiteURL: v.CreatorWebsiteURL,
 	}
 
 	return res

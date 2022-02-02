@@ -9,8 +9,14 @@ require (
 	goa.design/goa/v3 v3.4.3
 )
 
+require (
+	github.com/dimfeld/httptreemux/v5 v5.3.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
+)
+
 replace (
 	github.com/pastelnetwork/gonode/common => ../../common
+	github.com/pastelnetwork/gonode/mixins => ../../mixins
 	github.com/pastelnetwork/gonode/pastel => ../../pastel
 	github.com/pastelnetwork/gonode/proto => ../../proto
 	github.com/pastelnetwork/gonode/raptorq => ../../raptorq

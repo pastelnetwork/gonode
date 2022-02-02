@@ -94,7 +94,7 @@ func (service *downloadNft) ConnectTo(_ context.Context, _ types.MeshedSuperNode
 
 ///<---
 
-func newDownloadArtwork(conn *clientConn) node.DownloadNftInterface {
+func newDownloadNft(conn *clientConn) node.DownloadNftInterface {
 	return &downloadNft{
 		conn:   conn,
 		client: pb.NewDownloadNftClient(conn),

@@ -33,7 +33,7 @@ func toNftStates(statuses []*state.Status) []*nft.TaskState {
 }
 
 // NFT Search
-func toArtSearchResult(srch *nftsearch.RegTicketSearch) *nft.NftSearchResult {
+func toNftSearchResult(srch *nftsearch.RegTicketSearch) *nft.NftSearchResult {
 	ticketData := srch.RegTicketData.NFTTicketData.AppTicketData
 	res := &nft.NftSearchResult{
 		Nft: &nft.NftSummary{
@@ -42,14 +42,14 @@ func toArtSearchResult(srch *nftsearch.RegTicketSearch) *nft.NftSearchResult {
 			Thumbnail2: srch.ThumbnailSecondry,
 			Title:      ticketData.NFTTitle,
 
-			Copies:           srch.RegTicketData.NFTTicketData.Copies,
-			ArtistName:       ticketData.CreatorName,
-			YoutubeURL:       &ticketData.NFTCreationVideoYoutubeURL,
-			ArtistPastelID:   srch.RegTicketData.NFTTicketData.Author,
-			ArtistWebsiteURL: &ticketData.CreatorWebsite,
-			Description:      ticketData.CreatorWrittenStatement,
-			Keywords:         &ticketData.NFTKeywordSet,
-			SeriesName:       &ticketData.NFTSeriesName,
+			Copies:            srch.RegTicketData.NFTTicketData.Copies,
+			CreatorName:       ticketData.CreatorName,
+			YoutubeURL:        &ticketData.NFTCreationVideoYoutubeURL,
+			CreatorPastelID:   srch.RegTicketData.NFTTicketData.Author,
+			CreatorWebsiteURL: &ticketData.CreatorWebsite,
+			Description:       ticketData.CreatorWrittenStatement,
+			Keywords:          &ticketData.NFTKeywordSet,
+			SeriesName:        &ticketData.NFTSeriesName,
 		},
 
 		MatchIndex: srch.MatchIndex,
@@ -70,17 +70,17 @@ func toArtSearchResult(srch *nftsearch.RegTicketSearch) *nft.NftSearchResult {
 
 func toNftDetail(ticket *pastel.RegTicket) *nft.NftDetail {
 	return &nft.NftDetail{
-		Txid:             ticket.TXID,
-		Title:            ticket.RegTicketData.NFTTicketData.AppTicketData.NFTTitle,
-		Copies:           ticket.RegTicketData.NFTTicketData.Copies,
-		ArtistName:       ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorName,
-		YoutubeURL:       &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTCreationVideoYoutubeURL,
-		ArtistPastelID:   ticket.RegTicketData.NFTTicketData.Author,
-		ArtistWebsiteURL: &ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWebsite,
-		Description:      ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWrittenStatement,
-		Keywords:         &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTKeywordSet,
-		SeriesName:       &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName,
-		Royalty:          &ticket.RegTicketData.Royalty,
+		Txid:              ticket.TXID,
+		Title:             ticket.RegTicketData.NFTTicketData.AppTicketData.NFTTitle,
+		Copies:            ticket.RegTicketData.NFTTicketData.Copies,
+		CreatorName:       ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorName,
+		YoutubeURL:        &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTCreationVideoYoutubeURL,
+		CreatorPastelID:   ticket.RegTicketData.NFTTicketData.Author,
+		CreatorWebsiteURL: &ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWebsite,
+		Description:       ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWrittenStatement,
+		Keywords:          &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTKeywordSet,
+		SeriesName:        &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName,
+		Royalty:           &ticket.RegTicketData.Royalty,
 		// ------------------- WIP: PSL-142 -------------figure out how to search for these ---------
 		//RarenessScore:         ticket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore,
 		//NsfwScore:             ticket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore,
@@ -198,7 +198,7 @@ func toUserSpecifiedData(req *userdata.ProcessRequest) *userdatas.UserSpecifiedD
 	result.Categories = &req.Categories
 	result.Biography = &req.Biography
 	result.UserPastelID = req.UserPastelID
-	result.UserPastelIDPassphrase = "" // No need to reture ArtistPastelIDPassphrase
+	result.UserPastelIDPassphrase = "" // No need to reture CreatorPastelIDPassphrase
 
 	if result.AvatarImage != nil {
 		if result.AvatarImage.Content != nil && len(result.AvatarImage.Content) > 0 {
