@@ -153,19 +153,26 @@ func (task *NftDownloadingTask) removeArtifacts() {
 
 // NewNftDownloadTask returns a new Task instance.
 func NewNftDownloadTask(service *NftDownloadingService, request *NftDownloadingRequest) *NftDownloadingTask {
-	task := &NftDownloadingTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-		service:        service,
-		Request:        request,
+	task := common.NewWalletNodeTask(logPrefix)
+	meshHandlerOpts := common.MeshHandlerOpts{
+		Task:          task,
+		NodeMaker:     &NftDownloadingNodeMaker{},
+		PastelHandler: service.pastelHandler,
+		NodeClient:    service.nodeClient,
+		Configs: &common.MeshHandlerConfig{
+			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
+			MinSNs:                 service.config.NumberSuperNodes,
+			PastelID:               request.PastelID,
+			Passphrase:             request.PastelIDPassphrase,
+		},
 	}
 
-	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &NftDownloadingNodeMaker{},
-		service.pastelHandler,
-		request.PastelID, request.PastelIDPassphrase,
-		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
-	)
-
-	return task
+	return &NftDownloadingTask{
+		WalletNodeTask: task,
+		service:        service,
+		Request:        request,
+		MeshHandler:    common.NewMeshHandler(meshHandlerOpts),
+	}
 }

@@ -474,25 +474,31 @@ func (task *NftRegistrationTask) removeArtifacts() {
 
 // NewNFTRegistrationTask returns a new Task instance.
 func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistrationRequest) *NftRegistrationTask {
-	task := &NftRegistrationTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-		service:        service,
-		Request:        request,
+	task := common.NewWalletNodeTask(logPrefix)
+	meshHandlerOpts := common.MeshHandlerOpts{
+		Task:          task,
+		NodeMaker:     &RegisterNftNodeMaker{},
+		PastelHandler: service.pastelHandler,
+		NodeClient:    service.nodeClient,
+		Configs: &common.MeshHandlerConfig{
+			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
+			MinSNs:                 service.config.NumberSuperNodes,
+			PastelID:               request.CreatorPastelID,
+			Passphrase:             request.CreatorPastelIDPassphrase,
+		},
 	}
 
-	task.ImageHandler = mixins.NewImageHandler(service.pastelHandler)
-
-	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &RegisterNftNodeMaker{},
-		service.pastelHandler,
-		request.CreatorPastelID, request.CreatorPastelIDPassphrase,
-		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
-	)
-	task.FingerprintsHandler = mixins.NewFingerprintsHandler(service.pastelHandler)
-	task.RqHandler = mixins.NewRQHandler(service.rqClient,
-		service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.config.RQIDsMax,
-		service.config.NumberRQIDSFiles)
-
-	return task
+	return &NftRegistrationTask{
+		WalletNodeTask:      task,
+		service:             service,
+		Request:             request,
+		MeshHandler:         common.NewMeshHandler(meshHandlerOpts),
+		ImageHandler:        mixins.NewImageHandler(service.pastelHandler),
+		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
+		RqHandler: mixins.NewRQHandler(service.rqClient,
+			service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.config.RQIDsMax,
+			service.config.NumberRQIDSFiles),
+	}
 }

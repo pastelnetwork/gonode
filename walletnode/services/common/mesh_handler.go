@@ -2,6 +2,9 @@ package common
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -9,8 +12,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	"sync"
-	"time"
 )
 
 // MeshHandler provides networking functionality, including mesh
@@ -33,24 +34,36 @@ type MeshHandler struct {
 	Nodes SuperNodeList
 }
 
+type MeshHandlerOpts struct {
+	Task          *WalletNodeTask
+	NodeClient    node.ClientInterface
+	NodeMaker     node.RealNodeMaker
+	PastelHandler *mixins.PastelHandler
+	Configs       *MeshHandlerConfig
+}
+
+type MeshHandlerConfig struct {
+	PastelID               string
+	Passphrase             string
+	MinSNs                 int
+	ConnectToNodeTimeout   time.Duration
+	AcceptNodesTimeout     time.Duration
+	ConnectToNextNodeDelay time.Duration
+}
+
 // NewMeshHandler returns new NewMeshHandler
-func NewMeshHandler(task *WalletNodeTask,
-	nodeClient node.ClientInterface, nodeMaker node.RealNodeMaker,
-	pastelHandler *mixins.PastelHandler,
-	pastelID string, passphrase string,
-	minSNs int, connectToNodeTimeout time.Duration, acceptNodesTimeout time.Duration, connectToNextNodeDelay time.Duration,
-) *MeshHandler {
+func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 	return &MeshHandler{
-		task:                   task,
-		nodeMaker:              nodeMaker,
-		pastelHandler:          pastelHandler,
-		nodeClient:             nodeClient,
-		callersPastelID:        pastelID,
-		passphrase:             passphrase,
-		minNumberSuperNodes:    minSNs,
-		connectToNodeTimeout:   connectToNodeTimeout,
-		acceptNodesTimeout:     acceptNodesTimeout,
-		connectToNextNodeDelay: connectToNextNodeDelay,
+		task:                   opts.Task,
+		nodeMaker:              opts.NodeMaker,
+		pastelHandler:          opts.PastelHandler,
+		nodeClient:             opts.NodeClient,
+		callersPastelID:        opts.Configs.PastelID,
+		passphrase:             opts.Configs.Passphrase,
+		minNumberSuperNodes:    opts.Configs.MinSNs,
+		connectToNodeTimeout:   opts.Configs.ConnectToNodeTimeout,
+		acceptNodesTimeout:     opts.Configs.AcceptNodesTimeout,
+		connectToNextNodeDelay: opts.Configs.ConnectToNextNodeDelay,
 	}
 }
 
@@ -81,17 +94,19 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 }
 
 // ConnectToNSuperNodes sets single simple connection to N SNs
-func (m MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int) error {
+func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int) error {
 
 	connectedNodes, err := m.findNValidTopSuperNodes(ctx, n)
 	if err != nil {
 		return err
 	}
+
 	// Activate supernodes that are in the mesh.
 	connectedNodes.Activate()
 	// Cancel context when any connection is broken.
 	m.task.UpdateStatus(StatusConnected)
 	m.Nodes = connectedNodes
+
 	return nil
 }
 
@@ -343,6 +358,7 @@ func (m *MeshHandler) ConnectionsSupervisor(ctx context.Context, cancel context.
 		defer cancel()
 		return m.Nodes.WaitConnClose(ctx, nodesDone)
 	})
+
 	return nodesDone
 }
 
@@ -398,9 +414,10 @@ func (m *MeshHandler) AddNewNode(address string, pastelID string) {
 }
 
 // NewMeshHandlerSimple returns new MeshHandlerSimple
-func NewMeshHandlerSimple(nodeClient node.ClientInterface, nodeMaker node.RealNodeMaker) *MeshHandler {
+func NewMeshHandlerSimple(nodeClient node.ClientInterface, nodeMaker node.RealNodeMaker, pastelHandler *mixins.PastelHandler) *MeshHandler {
 	return &MeshHandler{
-		nodeMaker:  nodeMaker,
-		nodeClient: nodeClient,
+		nodeMaker:     nodeMaker,
+		nodeClient:    nodeClient,
+		pastelHandler: pastelHandler,
 	}
 }
