@@ -3,8 +3,9 @@ package nftsearch
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"sync"
+
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 
 	"sort"
 
@@ -21,8 +22,8 @@ type NftSearchingTask struct {
 	thumbnail *ThumbnailHandler
 
 	service *NftSearchingService
-	// Request is search request from API call
-	Request *NftSearchingRequest
+	// request is search request from API call
+	request *NftSearchingRequest
 
 	searchResult   []*RegTicketSearch
 	resultChan     chan *RegTicketSearch
@@ -62,7 +63,7 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 }
 
 func (task *NftSearchingTask) search(ctx context.Context) error {
-	actTickets, err := task.service.pastelHandler.PastelClient.ActTickets(ctx, pastel.ActTicketAll, task.Request.MinBlock)
+	actTickets, err := task.service.pastelHandler.PastelClient.ActTickets(ctx, pastel.ActTicketAll, task.request.MinBlock)
 	if err != nil {
 		return fmt.Errorf("act ticket: %s", err)
 	}
@@ -70,19 +71,20 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 	group, gctx := errgroup.WithContext(ctx)
 	for _, ticket := range actTickets {
 		ticket := ticket
-
-		if !common.InIntRange(ticket.Height, nil, task.Request.MaxBlock) {
+		//filter list of activation tickets by blocknum if provided
+		if !common.InIntRange(ticket.Height, nil, task.request.MaxBlock) {
 			continue
 		}
-
-		if task.Request.Artist != nil && *task.Request.Artist != ticket.ActTicketData.PastelID {
+		//filter list of activation tickets by artist pastelid if artist is provided
+		if task.request.Artist != nil && *task.request.Artist != ticket.ActTicketData.PastelID {
 			continue
 		}
-
+		//iterate through filtered activation tickets
 		group.Go(func() error {
+			//request art registration tickets
 			regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(gctx, ticket.ActTicketData.RegTXID)
 			if err != nil {
-				log.WithContext(ctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg Request")
+				log.WithContext(gctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg request")
 
 				return fmt.Errorf("reg ticket - txid: %s - err: %s", ticket.TXID, err)
 			}
@@ -94,6 +96,7 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 			return nil
 		})
 	}
+
 	if err := group.Wait(); err != nil {
 		return fmt.Errorf("reg ticket: %s", err)
 	}
@@ -102,36 +105,37 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 		return task.searchResult[i].MaxScore > task.searchResult[j].MaxScore
 	})
 
-	if len(task.searchResult) > task.Request.Limit {
-		task.searchResult = task.searchResult[:task.Request.Limit]
+	if len(task.searchResult) > task.request.Limit {
+		task.searchResult = task.searchResult[:task.request.Limit]
 	}
 
 	if len(task.searchResult) == 0 {
-		log.WithContext(ctx).WithField("request", task.Request).Debug("No matching results")
+		log.WithContext(ctx).WithField("request", task.request).Debug("No matching results")
 	}
+
 	return nil
 }
 
-// filterRegTicket filters ticket against Request params & checks if its a match
+// filterRegTicket filters ticket against request params & checks if its a match
 func (task *NftSearchingTask) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
 	// --------- WIP: PSL-142------------------
 	/* if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore),
-		task.Request.MinRarenessScore, task.Request.MaxRarenessScore) {
+		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
 		return srch, false
 	}
 
 		if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore),
-			task.Request.MinNsfwScore, task.Request.MaxNsfwScore) {
+			task.request.MinNsfwScore, task.request.MaxNsfwScore) {
 			return srch, false
 		}
 
 	if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore),
-		task.Request.MinInternetRarenessScore, task.Request.MaxInternetRarenessScore) {
+		task.request.MinInternetRarenessScore, task.request.MaxInternetRarenessScore) {
 		return srch, false
 	}*/
 
 	if !common.InIntRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.TotalCopies,
-		task.Request.MinCopies, task.Request.MaxCopies) {
+		task.request.MinCopies, task.request.MaxCopies) {
 		return srch, false
 	}
 
@@ -139,7 +143,7 @@ func (task *NftSearchingTask) filterRegTicket(regTicket *pastel.RegTicket) (srch
 		RegTicket: regTicket,
 	}
 
-	return regSearch.Search(task.Request)
+	return regSearch.Search(task.request)
 }
 
 // addMatchedResult adds to search result
@@ -165,24 +169,29 @@ func (task *NftSearchingTask) removeArtifacts() {
 
 // NewNftSearchTask returns a new NftSearchingTask instance.
 func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest) *NftSearchingTask {
-	task := &NftSearchingTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-		service:        service,
-		Request:        request,
-		resultChan:     make(chan *RegTicketSearch),
+	task := common.NewWalletNodeTask(logPrefix)
+	meshHandlerOpts := common.MeshHandlerOpts{
+		Task:          task,
+		NodeMaker:     &NftSearchingNodeMaker{},
+		PastelHandler: service.pastelHandler,
+		NodeClient:    service.nodeClient,
+		Configs: &common.MeshHandlerConfig{
+			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
+			MinSNs:                 service.config.NumberSuperNodes,
+			PastelID:               request.UserPastelID,
+			Passphrase:             request.UserPassphrase,
+		},
 	}
 
-	meshHandler := common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &NftSearchingNodeMaker{},
-		service.pastelHandler,
-		request.UserPastelID, request.UserPassphrase,
-		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
-	)
-
-	task.thumbnail = NewThumbnailHandler(meshHandler)
-
-	return task
+	return &NftSearchingTask{
+		WalletNodeTask: task,
+		service:        service,
+		request:        request,
+		resultChan:     make(chan *RegTicketSearch),
+		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
+	}
 }
 
 // NftGetSearchTask helper
@@ -193,19 +202,24 @@ type NftGetSearchTask struct {
 
 // NewNftGetSearchTask returns a new NftSearchingTask instance.
 func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphrase string) *NftGetSearchTask {
-	task := &NftGetSearchTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
+	task := common.NewWalletNodeTask(logPrefix)
+	meshHandlerOpts := common.MeshHandlerOpts{
+		Task:          task,
+		NodeMaker:     &NftSearchingNodeMaker{},
+		PastelHandler: service.pastelHandler,
+		NodeClient:    service.nodeClient,
+		Configs: &common.MeshHandlerConfig{
+			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
+			MinSNs:                 service.config.NumberSuperNodes,
+			PastelID:               pastelID,
+			Passphrase:             passphrase,
+		},
 	}
 
-	meshHandler := common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &NftSearchingNodeMaker{},
-		service.pastelHandler,
-		pastelID, passphrase,
-		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
-	)
-
-	task.thumbnail = NewThumbnailHandler(meshHandler)
-
-	return task
+	return &NftGetSearchTask{
+		WalletNodeTask: task,
+		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
+	}
 }

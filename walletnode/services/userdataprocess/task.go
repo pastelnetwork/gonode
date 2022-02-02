@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -62,8 +63,8 @@ func (task *UserDataTask) run(ctx context.Context) error {
 
 	if task.request == nil {
 		// PROCESS TO RETRIEVE USERDATA FROM METADATA LAYER
-		if err := task.ReceiveUserdata(ctx, task.userpastelid); err != nil {
-			return errors.Errorf("receive userdata: %w", err)
+		if err := task.RetrieveUserdata(ctx, task.userpastelid); err != nil {
+			return errors.Errorf("retrieve userdata error: %w", err)
 		}
 		// Post on result channel
 		node0 := task.MeshHandler.Nodes[0]
@@ -75,7 +76,7 @@ func (task *UserDataTask) run(ctx context.Context) error {
 		if userDataNode.ResultGet != nil {
 			task.resultChanGet <- userDataNode.ResultGet
 		} else {
-			return errors.Errorf("receive userdata")
+			return errors.Errorf("Error, retrieved nil from userdata node.")
 		}
 
 		log.WithContext(ctx).Debug("Finished retrieve userdata")
@@ -166,8 +167,8 @@ func (task *UserDataTask) SendUserdata(ctx context.Context, req *userdata.Proces
 	return group.Wait()
 }
 
-// ReceiveUserdata retrieve the userdata from Metadata layer
-func (task *UserDataTask) ReceiveUserdata(ctx context.Context, pasteluserid string) error {
+// RetrieveUserdata retrieve the userdata from Metadata layer
+func (task *UserDataTask) RetrieveUserdata(ctx context.Context, pasteluserid string) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		userDataNode, ok := someNode.SuperNodeAPIInterface.(*UserDataNode)
@@ -176,7 +177,7 @@ func (task *UserDataTask) ReceiveUserdata(ctx context.Context, pasteluserid stri
 			return errors.Errorf("node %s is not SenseRegisterNode", someNode.String())
 		}
 		group.Go(func() (err error) {
-			res, err := userDataNode.ReceiveUserdata(ctx, pasteluserid)
+			res, err := userDataNode.RetrieveUserdata(ctx, pasteluserid)
 			userDataNode.ResultGet = res
 			return err
 		})
@@ -231,22 +232,29 @@ func (task *UserDataTask) removeArtifacts() {
 // NewUserDataTask returns a new Task instance.
 func NewUserDataTask(service *UserDataService, request *userdata.ProcessRequest, userpastelid string) *UserDataTask {
 	// userpastelid is empty on createUserdata and updateUserdata; and not empty on getUserdata
-	task := &UserDataTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
+	task := common.NewWalletNodeTask(logPrefix)
+	meshHandlerOpts := common.MeshHandlerOpts{
+		Task:          task,
+		NodeMaker:     &UserDataNodeMaker{},
+		PastelHandler: service.pastelHandler,
+		NodeClient:    service.nodeClient,
+		Configs: &common.MeshHandlerConfig{
+			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
+			MinSNs:                 service.config.NumberSuperNodes,
+			PastelID:               request.UserPastelID,
+			Passphrase:             request.UserPastelIDPassphrase,
+		},
+	}
+
+	return &UserDataTask{
+		WalletNodeTask: task,
 		service:        service,
 		request:        request,
 		userpastelid:   userpastelid,
 		resultChan:     make(chan *userdata.ProcessResult),
 		resultChanGet:  make(chan *userdata.ProcessRequest),
+		MeshHandler:    common.NewMeshHandler(meshHandlerOpts),
 	}
-
-	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &UserDataNodeMaker{},
-		service.pastelHandler,
-		request.UserPastelID, request.UserPastelIDPassphrase,
-		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
-	)
-
-	return task
 }

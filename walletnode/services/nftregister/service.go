@@ -2,6 +2,8 @@ package nftregister
 
 import (
 	"context"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -11,7 +13,6 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	"time"
 )
 
 const (
@@ -90,6 +91,8 @@ func (service *NftRegistrationService) StoreFile(ctx context.Context, fileName *
 }
 
 // NewService returns a new Service instance.
+// NB: although it might appear that a generic task is instantiated here with NewWorker, because of the way the API calls
+//	are  handled in NftApiHandler, an NftRegistrationTask will actually be created via AddTask.
 func NewService(
 	config *Config,
 	pastelClient pastel.Client,

@@ -3,8 +3,9 @@ package nftdownload
 import (
 	"bytes"
 	"context"
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"time"
+
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -13,7 +14,7 @@ import (
 
 type downFile struct {
 	file     []byte
-	paslteID string
+	pastelID string
 }
 
 // NftDownloadingTask is the task of downloading nft.
@@ -41,13 +42,15 @@ func (task *NftDownloadingTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	//validate download requested - ensure that the pastelID belongs either to the
+	//  creator of the non-sold NFT or the latest buyer of the NFT
 	ttxid, err := task.service.pastelHandler.PastelClient.TicketOwnership(ctx, task.Request.Txid, task.Request.PastelID, task.Request.PastelIDPassphrase)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("pastelid", task.Request.PastelID).Error("Could not get ticket ownership")
 		return errors.Errorf("get ticket ownership: %w", err)
 	}
 
-	// Sign current-timestamp with PsstelID passed in request
+	// Sign current-timestamp with PastelID passed in request
 	timestamp := time.Now().Format(time.RFC3339)
 	signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, "ed448")
 	if err != nil {
@@ -59,10 +62,10 @@ func (task *NftDownloadingTask) run(ctx context.Context) error {
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
 
-	// supervise the connection to top rank nodes
+	// supervise the connection to top rank supernodes
 	// cancel any ongoing context if the connections are broken
 	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
-
+	//send download requests to ALL Supernodes, number defined by mesh handler's "minNumberSuperNodes" (really just set in a config file as NumberSuperNodes)
 	downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not download files")
@@ -114,7 +117,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			} else {
 				log.WithContext(ctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
 			}
-			task.files = append(task.files, downFile{file: file, paslteID: someNode.PastelID()})
+			task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
 			return nil
 		})
 	}
@@ -134,7 +137,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 func (task *NftDownloadingTask) MatchFiles() error {
 	for _, someFile := range task.files[1:] {
 		if !bytes.Equal(task.files[0].file, someFile.file) {
-			return errors.Errorf("file of nodes %q and %q didn't match", task.files[0].paslteID, someFile.paslteID)
+			return errors.Errorf("file of nodes %q and %q didn't match", task.files[0].pastelID, someFile.pastelID)
 		}
 	}
 	return nil
@@ -150,19 +153,26 @@ func (task *NftDownloadingTask) removeArtifacts() {
 
 // NewNftDownloadTask returns a new Task instance.
 func NewNftDownloadTask(service *NftDownloadingService, request *NftDownloadingRequest) *NftDownloadingTask {
-	task := &NftDownloadingTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-		service:        service,
-		Request:        request,
+	task := common.NewWalletNodeTask(logPrefix)
+	meshHandlerOpts := common.MeshHandlerOpts{
+		Task:          task,
+		NodeMaker:     &NftDownloadingNodeMaker{},
+		PastelHandler: service.pastelHandler,
+		NodeClient:    service.nodeClient,
+		Configs: &common.MeshHandlerConfig{
+			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
+			MinSNs:                 service.config.NumberSuperNodes,
+			PastelID:               request.PastelID,
+			Passphrase:             request.PastelIDPassphrase,
+		},
 	}
 
-	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &NftDownloadingNodeMaker{},
-		service.pastelHandler,
-		request.PastelID, request.PastelIDPassphrase,
-		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
-	)
-
-	return task
+	return &NftDownloadingTask{
+		WalletNodeTask: task,
+		service:        service,
+		Request:        request,
+		MeshHandler:    common.NewMeshHandler(meshHandlerOpts),
+	}
 }

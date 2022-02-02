@@ -3,6 +3,7 @@ package nftsearch
 import (
 	"context"
 	"fmt"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -46,10 +47,9 @@ func (h *ThumbnailHandler) Connect(ctx context.Context, num int, cancel context.
 	// cancel any ongoing context if the connections are broken
 	h.nodesDone = h.meshHandler.ConnectionsSupervisor(ctx, cancel)
 
-	fetchersErrs, err := h.setFetchers(ctx)
-	if err != nil {
+	if err := h.setFetchers(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("Could not setup thumbnail fetcher")
-		return errors.Errorf("setup thumbnail fetchers: %w (%v)", err, fetchersErrs)
+		return errors.Errorf("setup thumbnail fetchers: %w", err)
 	}
 	return nil
 }
@@ -65,6 +65,7 @@ func (h *ThumbnailHandler) FetchMultiple(ctx context.Context, searchResult []*Re
 }
 
 // FetchOne fetches single thumbnails by custom request
+//  The key is base58(thumbnail_hash)
 func (h *ThumbnailHandler) FetchOne(ctx context.Context, key []byte) ([]byte, error) {
 	data, err := h.fetch(ctx, key)
 	if err != nil {
@@ -80,47 +81,46 @@ func (h *ThumbnailHandler) CloseAll(ctx context.Context) error {
 }
 
 // set one fetcher for each connected SN
-func (h *ThumbnailHandler) setFetchers(ctx context.Context) ([]error, error) {
+func (h *ThumbnailHandler) setFetchers(ctx context.Context) error {
+	if len(h.meshHandler.Nodes) == 0 {
+		return fmt.Errorf("no nodes to listen")
+	}
+
 	group, _ := errgroup.WithContext(ctx)
-	errChan := make(chan error, len(h.meshHandler.Nodes))
 
 	for _, someNode := range h.meshHandler.Nodes {
 		group.Go(func() error {
 			return h.fetcher(ctx, someNode, someNode.PastelID())
 		})
 	}
-	err := group.Wait()
 
-	close(errChan)
-
-	downloadErrors := []error{}
-	for subErr := range errChan {
-		downloadErrors = append(downloadErrors, subErr)
-	}
-
-	return downloadErrors, err
+	return group.Wait()
 }
 
 func (h *ThumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNodeClient, nodeID string) error {
 	nftSearchNode, ok := someNode.SuperNodeAPIInterface.(*NftSearchingNode)
 	if !ok {
-		//TODO: use assert here?
-		return errors.Errorf("node %s is not NftRegisterNode", someNode.String())
+		return errors.Errorf("node %s is not NftSearchingNode", someNode.String())
 	}
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case req, ok := <-h.fetchersChan:
-			if !ok {
-				return nil
-			}
 
-			log.WithContext(ctx).Debugf("thumb-key: %v-%v", req.key, nodeID)
-			data, err := nftSearchNode.DownloadThumbnail(ctx, req.key)
-			req.respCh <- &response{err: err, data: data}
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case req, ok := <-h.fetchersChan:
+				if !ok {
+					return
+				}
+
+				log.WithContext(ctx).Debugf("thumb-key: %v-%v", req.key, nodeID)
+				data, err := nftSearchNode.DownloadThumbnail(ctx, req.key)
+				req.respCh <- &response{err: err, data: data}
+			}
 		}
-	}
+	}()
+
+	return nil
 }
 
 func (h *ThumbnailHandler) fetchAll(ctx context.Context, searchResult []*RegTicketSearch, resultChan *chan *RegTicketSearch) error {
@@ -161,7 +161,7 @@ func (h *ThumbnailHandler) fetchAll(ctx context.Context, searchResult []*RegTick
 	return group.Wait()
 }
 
-// Fetch gets thumbnail
+// fetch gets the actual thumbnail data from the network as bytes to be wrapped by the calling function
 func (h *ThumbnailHandler) fetch(ctx context.Context, key []byte) (data []byte, err error) {
 	respCh := make(chan *response)
 	req := request{key: key, respCh: respCh}

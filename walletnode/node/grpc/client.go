@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	logPrefix = "client"
+	logPrefix = "walletnode-grpc-secclient"
 )
 
 type client struct {
@@ -44,7 +44,9 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 	return conn, nil
 }
 
-// NewClient returns a new client instance.
+// NewClient will wrap the input client in the SecClient interface, providing Signing and Verification
+//	functionality.  By wrapping the return in ClientInterface, the resulting client will be able to call
+//  artwork registration, userdata, and sense stream functions.
 func NewClient(secClient alts.SecClient) node.ClientInterface {
 	return &client{
 		secClient: secClient,

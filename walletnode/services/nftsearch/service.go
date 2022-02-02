@@ -2,6 +2,7 @@ package nftsearch
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	logPrefix = "nft-search"
+	logPrefix = "walletnode-nft-search"
 )
 
 // NftSearchingService represents a service for the NFT search.
@@ -73,7 +74,7 @@ func (service *NftSearchingService) GetThumbnail(ctx context.Context, regTicket 
 	}
 	data, err = nftGetSearchTask.thumbnail.FetchOne(ctx, regTicket.RegTicketData.NFTTicketData.AppTicketData.PreviewHash)
 	if err != nil {
-		return nil, errors.Errorf("fetch multiple thumbnails: %w", err)
+		return nil, errors.Errorf("nftsearch get thumbnail fetchone error, there may be multiple thumbnails: %w", err)
 	}
 
 	return data, nftGetSearchTask.thumbnail.CloseAll(ctx)
@@ -96,7 +97,9 @@ func (service *NftSearchingService) RegTicket(ctx context.Context, RegTXID strin
 	return &regTicket, nil
 }
 
-// NewNftSearchService returns a new Service instance.
+// NewNftSearchService returns a new NFT Search Service instance.
+// 	NB: Because NewNftApiHandler calls AddTask, an NftSearchTask will actually
+//		be instantiated instead of a generic Task.
 func NewNftSearchService(config *Config,
 	pastelClient pastel.Client,
 	nodeClient node.ClientInterface,

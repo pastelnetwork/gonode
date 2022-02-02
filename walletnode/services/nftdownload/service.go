@@ -2,6 +2,7 @@ package nftdownload
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/mixins"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	logPrefix = "nft-download"
+	logPrefix = "walletnode-nft-download"
 )
 
 // NftDownloadingService represents a service for the registration NFT.

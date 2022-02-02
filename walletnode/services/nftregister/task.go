@@ -2,11 +2,12 @@ package nftregister
 
 import (
 	"context"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -16,7 +17,9 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// NftRegistrationTask is the task of registering new nft.
+// Registers an NFT on the blockchain
+// Follow instructions from : https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration//
+// NftRegistrationTask is Run from NftRegisterService.Run(), which eventually calls run, below
 type NftRegistrationTask struct {
 	*common.WalletNodeTask
 
@@ -48,6 +51,9 @@ func (task *NftRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
+// Run sets up a connection to a mesh network of supernodes, then controls the communications to the mesh of nodes.
+//	Task here will abstract away the individual node communications layer, and instead operate at the mesh control layer.
+//  For individual communcations control, see node/grpc/nft_register.go
 func (task *NftRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -83,7 +89,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// generateDDAndFingerprintsIDs generates dd & fp IDs
 	if err := task.FingerprintsHandler.GenerateDDAndFingerprintsIDs(ctx, task.service.config.DDAndFingerprintsMax); err != nil {
-		return errors.Errorf("probe image: %w", err)
+		return errors.Errorf("DD and/or Fingerprint ID error: %w", err)
 	}
 
 	// Create copy of original image and embed fingerprints into it
@@ -468,25 +474,31 @@ func (task *NftRegistrationTask) removeArtifacts() {
 
 // NewNFTRegistrationTask returns a new Task instance.
 func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistrationRequest) *NftRegistrationTask {
-	task := &NftRegistrationTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-		service:        service,
-		Request:        request,
+	task := common.NewWalletNodeTask(logPrefix)
+	meshHandlerOpts := common.MeshHandlerOpts{
+		Task:          task,
+		NodeMaker:     &RegisterNftNodeMaker{},
+		PastelHandler: service.pastelHandler,
+		NodeClient:    service.nodeClient,
+		Configs: &common.MeshHandlerConfig{
+			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
+			MinSNs:                 service.config.NumberSuperNodes,
+			PastelID:               request.CreatorPastelID,
+			Passphrase:             request.CreatorPastelIDPassphrase,
+		},
 	}
 
-	task.ImageHandler = mixins.NewImageHandler(service.pastelHandler)
-
-	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &RegisterNftNodeMaker{},
-		service.pastelHandler,
-		request.CreatorPastelID, request.CreatorPastelIDPassphrase,
-		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
-	)
-	task.FingerprintsHandler = mixins.NewFingerprintsHandler(service.pastelHandler)
-	task.RqHandler = mixins.NewRQHandler(service.rqClient,
-		service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.config.RQIDsMax,
-		service.config.NumberRQIDSFiles)
-
-	return task
+	return &NftRegistrationTask{
+		WalletNodeTask:      task,
+		service:             service,
+		Request:             request,
+		MeshHandler:         common.NewMeshHandler(meshHandlerOpts),
+		ImageHandler:        mixins.NewImageHandler(service.pastelHandler),
+		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
+		RqHandler: mixins.NewRQHandler(service.rqClient,
+			service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.config.RQIDsMax,
+			service.config.NumberRQIDSFiles),
+	}
 }
