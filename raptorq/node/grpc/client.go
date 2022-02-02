@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	logPrefix             = "raptorqClient"
+	logPrefix             = "grpc-raptorqClient"
 	defaultConnectTimeout = 5 * time.Second
 )
 
@@ -29,6 +29,7 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
 
 	grpcConn, err := grpc.DialContext(dialCtx, address,
+		//TODO: Update to use new, non-deprecated function
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)

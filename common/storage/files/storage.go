@@ -10,7 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 )
 
-// Storage represents a file srorage.
+// Storage represents a file storage.
 type Storage struct {
 	storage.FileStorageInterface
 

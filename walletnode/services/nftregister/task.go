@@ -17,7 +17,9 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// NftRegistrationTask is the task of registering new nft.
+// Registers an NFT on the blockchain
+// Follow instructions from : https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration//
+// NftRegistrationTask is Run from NftRegisterService.Run(), which eventually calls run, below
 type NftRegistrationTask struct {
 	*common.WalletNodeTask
 
@@ -49,6 +51,9 @@ func (task *NftRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
+// Run sets up a connection to a mesh network of supernodes, then controls the communications to the mesh of nodes.
+//	Task here will abstract away the individual node communications layer, and instead operate at the mesh control layer.
+//  For individual communcations control, see node/grpc/nft_register.go
 func (task *NftRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -84,7 +89,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// generateDDAndFingerprintsIDs generates dd & fp IDs
 	if err := task.FingerprintsHandler.GenerateDDAndFingerprintsIDs(ctx, task.service.config.DDAndFingerprintsMax); err != nil {
-		return errors.Errorf("probe image: %w", err)
+		return errors.Errorf("DD and/or Fingerprint ID error: %w", err)
 	}
 
 	// Create copy of original image and embed fingerprints into it

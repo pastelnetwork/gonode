@@ -65,6 +65,7 @@ func (h *ThumbnailHandler) FetchMultiple(ctx context.Context, searchResult []*Re
 }
 
 // FetchOne fetches single thumbnails by custom request
+//  The key is base58(thumbnail_hash)
 func (h *ThumbnailHandler) FetchOne(ctx context.Context, key []byte) ([]byte, error) {
 	data, err := h.fetch(ctx, key)
 	if err != nil {
@@ -160,7 +161,7 @@ func (h *ThumbnailHandler) fetchAll(ctx context.Context, searchResult []*RegTick
 	return group.Wait()
 }
 
-// Fetch gets thumbnail
+// fetch gets the actual thumbnail data from the network as bytes to be wrapped by the calling function
 func (h *ThumbnailHandler) fetch(ctx context.Context, key []byte) (data []byte, err error) {
 	respCh := make(chan *response)
 	req := request{key: key, respCh: respCh}

@@ -71,16 +71,17 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 	group, gctx := errgroup.WithContext(ctx)
 	for _, ticket := range actTickets {
 		ticket := ticket
-
+		//filter list of activation tickets by blocknum if provided
 		if !common.InIntRange(ticket.Height, nil, task.request.MaxBlock) {
 			continue
 		}
-
+		//filter list of activation tickets by artist pastelid if artist is provided
 		if task.request.Artist != nil && *task.request.Artist != ticket.ActTicketData.PastelID {
 			continue
 		}
-
+		//iterate through filtered activation tickets
 		group.Go(func() error {
+			//request art registration tickets
 			regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(gctx, ticket.ActTicketData.RegTXID)
 			if err != nil {
 				log.WithContext(gctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg request")
