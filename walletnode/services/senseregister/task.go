@@ -2,11 +2,12 @@ package senseregister
 
 import (
 	"context"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -344,19 +345,27 @@ func (task *SenseRegistrationTask) removeArtifacts() {
 // NewSenseRegisterTask returns a new SenseRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
 func NewSenseRegisterTask(service *SenseRegistrationService, request *SenseRegistrationRequest) *SenseRegistrationTask {
-	task := SenseRegistrationTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-		service:        service,
-		Request:        request,
+	task := common.NewWalletNodeTask(logPrefix)
+	meshHandlerOpts := common.MeshHandlerOpts{
+		Task:          task,
+		NodeMaker:     &RegisterSenseNodeMaker{},
+		PastelHandler: service.pastelHandler,
+		NodeClient:    service.nodeClient,
+		Configs: &common.MeshHandlerConfig{
+			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
+			MinSNs:                 service.config.NumberSuperNodes,
+			PastelID:               request.AppPastelID,
+			Passphrase:             request.AppPastelIDPassphrase,
+		},
 	}
-	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &RegisterSenseNodeMaker{},
-		service.pastelHandler,
-		request.AppPastelID, request.AppPastelIDPassphrase,
-		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
-	)
-	task.FingerprintsHandler = mixins.NewFingerprintsHandler(service.pastelHandler)
 
-	return &task
+	return &SenseRegistrationTask{
+		WalletNodeTask:      task,
+		service:             service,
+		Request:             request,
+		MeshHandler:         common.NewMeshHandler(meshHandlerOpts),
+		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
+	}
 }

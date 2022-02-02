@@ -2,6 +2,7 @@ package nftsearch
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -73,7 +74,7 @@ func (service *NftSearchingService) GetThumbnail(ctx context.Context, regTicket 
 	}
 	data, err = nftGetSearchTask.thumbnail.FetchOne(ctx, regTicket.RegTicketData.NFTTicketData.AppTicketData.PreviewHash)
 	if err != nil {
-		return nil, errors.Errorf("fetch multiple thumbnails: %w", err)
+		return nil, errors.Errorf("fetch thumbnail: %w", err)
 	}
 
 	return data, nftGetSearchTask.thumbnail.CloseAll(ctx)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -231,22 +232,29 @@ func (task *UserDataTask) removeArtifacts() {
 // NewUserDataTask returns a new Task instance.
 func NewUserDataTask(service *UserDataService, request *userdata.ProcessRequest, userpastelid string) *UserDataTask {
 	// userpastelid is empty on createUserdata and updateUserdata; and not empty on getUserdata
-	task := &UserDataTask{
-		WalletNodeTask: common.NewWalletNodeTask(logPrefix),
+	task := common.NewWalletNodeTask(logPrefix)
+	meshHandlerOpts := common.MeshHandlerOpts{
+		Task:          task,
+		NodeMaker:     &UserDataNodeMaker{},
+		PastelHandler: service.pastelHandler,
+		NodeClient:    service.nodeClient,
+		Configs: &common.MeshHandlerConfig{
+			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
+			MinSNs:                 service.config.NumberSuperNodes,
+			PastelID:               request.UserPastelID,
+			Passphrase:             request.UserPastelIDPassphrase,
+		},
+	}
+
+	return &UserDataTask{
+		WalletNodeTask: task,
 		service:        service,
 		request:        request,
 		userpastelid:   userpastelid,
 		resultChan:     make(chan *userdata.ProcessResult),
 		resultChanGet:  make(chan *userdata.ProcessRequest),
+		MeshHandler:    common.NewMeshHandler(meshHandlerOpts),
 	}
-
-	task.MeshHandler = common.NewMeshHandler(task.WalletNodeTask,
-		service.nodeClient, &UserDataNodeMaker{},
-		service.pastelHandler,
-		request.UserPastelID, request.UserPastelIDPassphrase,
-		service.config.NumberSuperNodes, service.config.ConnectToNodeTimeout,
-		service.config.AcceptNodesTimeout, service.config.ConnectToNextNodeDelay,
-	)
-
-	return task
 }
