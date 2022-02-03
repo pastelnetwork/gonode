@@ -57,19 +57,19 @@ func (task *SenseRegistrationTask) SendRegMetadata(_ context.Context, regMetadat
 	if err := task.RequiredStatus(common.StatusConnected); err != nil {
 		return err
 	}
-	task.SenseRegMetadata = regMetadata
+	task.ActionTicketRegMetadata = regMetadata
 
 	return nil
 }
 
 // ProbeImage sends the original image to dd-server and return a compression of pastel.DDAndFingerprints
 func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.File) ([]byte, error) {
-	if task.SenseRegMetadata == nil || task.SenseRegMetadata.BlockHash == "" || task.SenseRegMetadata.CreatorPastelID == "" {
+	if task.ActionTicketRegMetadata == nil || task.ActionTicketRegMetadata.BlockHash == "" || task.ActionTicketRegMetadata.CreatorPastelID == "" {
 		return nil, errors.Errorf("invalid senseRegMetadata")
 	}
 	task.Asset = file
 	return task.DupeDetectionHandler.ProbeImage(ctx, file,
-		task.SenseRegMetadata.BlockHash, task.SenseRegMetadata.CreatorPastelID, &tasker{})
+		task.ActionTicketRegMetadata.BlockHash, task.ActionTicketRegMetadata.CreatorPastelID, &tasker{})
 }
 
 func (task *SenseRegistrationTask) validateDdFpIds(ctx context.Context, dd []byte) error {

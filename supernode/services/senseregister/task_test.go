@@ -307,7 +307,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 
 			task := makeEmptySenseRegTask(&Config{}, fsMock, pastelClientMock, nil, nil, nil, ddmock)
 			task = add2NodesAnd2TicketSignatures(task)
-			task.senseRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+			task.ActionTicketRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
 
 			_, err := task.GenFingerprintsData(context.Background(), file, "testBlockHash", "creatorPastelID")
 			if tc.wantErr != nil {
@@ -423,7 +423,7 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
 			task = add2NodesAnd2TicketSignatures(task)
 
-			err := task.verifyPeersSignature(context.Background())
+			err := task.VerifyPeersTicketSignature(context.Background(), task.Ticket)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -657,7 +657,7 @@ func TestTaskProbeImage(t *testing.T) {
 			task = add2NodesAnd2TicketSignatures(task)
 			task = makeConnected(task, tc.args.status)
 
-			task.senseRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+			task.ActionTicketRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()

@@ -23,7 +23,7 @@ type RegTaskHelper struct {
 	serverPassPhrase string
 	PastelHandler    *mixins.PastelHandler
 
-	SenseRegMetadata           *types.ActionRegMetadata
+	ActionTicketRegMetadata    *types.ActionRegMetadata
 	preburntTxMinConfirmations int
 
 	// valid only for a task run as primary
@@ -199,7 +199,7 @@ func (h *RegTaskHelper) ValidateBurnTxID(_ context.Context) error {
 	var err error
 
 	<-h.NewAction(func(ctx context.Context) error {
-		confirmationChn := h.WaitConfirmation(ctx, h.SenseRegMetadata.BurnTxID, int64(h.preburntTxMinConfirmations), 15*time.Second)
+		confirmationChn := h.WaitConfirmation(ctx, h.ActionTicketRegMetadata.BurnTxID, int64(h.preburntTxMinConfirmations), 15*time.Second)
 
 		log.WithContext(ctx).Debug("waiting for confimation")
 		if err = <-confirmationChn; err != nil {
