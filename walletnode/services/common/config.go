@@ -3,7 +3,7 @@ package common
 import "time"
 
 const (
-	defaultNumberSuperNodes = 10
+	defaultNumberSuperNodes = 3
 
 	defaultConnectToNextNodeDelay = 200 * time.Millisecond
 	defaultAcceptNodesTimeout     = 30 * time.Second // = 3 * (2* ConnectToNodeTimeout)

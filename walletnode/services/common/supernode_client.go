@@ -2,10 +2,11 @@ package common
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/walletnode/node"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
 // SuperNodeClient represents base SN client
@@ -97,16 +98,16 @@ func (node *SuperNodeClient) Connect(ctx context.Context, timeout time.Duration,
 	if err != nil {
 		return err
 	}
+
 	node.ConnectionInterface = conn
 	node.SuperNodeAPIInterface = node.MakeNode(conn)
+
 	return nil
 }
 
 // NewSuperNode returns a new Node instance.
-func NewSuperNode(client node.ClientInterface,
-	address string, pastelID string,
-	nodeMaker node.RealNodeMaker,
-) *SuperNodeClient {
+func NewSuperNode(client node.ClientInterface, address string, pastelID string,
+	nodeMaker node.RealNodeMaker) *SuperNodeClient {
 	return &SuperNodeClient{
 		ClientInterface: client,
 		RealNodeMaker:   nodeMaker,

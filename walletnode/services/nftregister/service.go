@@ -93,14 +93,8 @@ func (service *NftRegistrationService) StoreFile(ctx context.Context, fileName *
 // NewService returns a new Service instance.
 // NB: although it might appear that a generic task is instantiated here with NewWorker, because of the way the API calls
 //	are  handled in NftApiHandler, an NftRegistrationTask will actually be created via AddTask.
-func NewService(
-	config *Config,
-	pastelClient pastel.Client,
-	nodeClient node.ClientInterface,
-	fileStorage storage.FileStorageInterface,
-	db storage.KeyValue,
-	raptorqClient rqnode.ClientInterface,
-) *NftRegistrationService {
+func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface, fileStorage storage.FileStorageInterface,
+	db storage.KeyValue, raptorqClient rqnode.ClientInterface) *NftRegistrationService {
 	return &NftRegistrationService{
 		Worker:        task.NewWorker(),
 		config:        config,

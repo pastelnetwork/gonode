@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"math/rand"
+
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
-	"math/rand"
 )
 
 type Fingerprints struct {
@@ -37,7 +38,7 @@ func NewFingerprintsHandler(pastelHandler *PastelHandler) *FingerprintsHandler {
 	return &FingerprintsHandler{pastelHandler: pastelHandler}
 }
 
-// AddNew adds fingerprints info to 'fingerprints' array
+// Add adds fingerprints info to 'fingerprints' array
 func (h *FingerprintsHandler) Add(fingerprints *Fingerprints) {
 	h.fingerprints = append(h.fingerprints, fingerprints)
 }
@@ -141,8 +142,6 @@ func (h *FingerprintsHandler) GenerateDDAndFingerprintsIDs(_ context.Context, ma
 	return nil
 }
 
-func (h FingerprintsHandler) IsEmpty() bool {
-	return h.DDAndFingerprintsIDs == nil || len(h.DDAndFingerprintsIDs) == 0 ||
-		h.DDAndFpFile == nil || len(h.DDAndFpFile) == 0 ||
-		h.SNsSignatures == nil || len(h.SNsSignatures) == 0
+func (h *FingerprintsHandler) IsEmpty() bool {
+	return len(h.DDAndFingerprintsIDs) == 0 || len(h.DDAndFpFile) == 0 || len(h.SNsSignatures) == 0
 }

@@ -3,10 +3,11 @@ package test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/sense_register"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	service "github.com/pastelnetwork/gonode/walletnode/services/senseregister"
-	"testing"
 )
 
 func TestNodesDisconnectInactive(t *testing.T) {
@@ -45,7 +46,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			meshHandler := common.NewMeshHandlerSimple(test.NewMockClient(t), service.RegisterSenseNodeMaker{})
+			meshHandler := common.NewMeshHandlerSimple(test.NewMockClient(t), service.RegisterSenseNodeMaker{}, nil)
 
 			nodes := common.SuperNodeList{}
 

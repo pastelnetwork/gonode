@@ -1,2417 +1,472 @@
 package nftregister
 
-//
-//import (
-//	"bytes"
-//	"context"
-//	"fmt"
-//	"github.com/pastelnetwork/gonode/common/storage/files"
-//	"github.com/pastelnetwork/gonode/walletnode/services/common"
-//	"image"
-//	"image/png"
-//	"io"
-//	"os"
-//	"sort"
-//	"strings"
-//	"sync"
-//	"testing"
-//	"time"
-//
-//	"github.com/DataDog/zstd"
-//	"github.com/google/uuid"
-//	"github.com/pastelnetwork/gonode/common/errors"
-//	"github.com/pastelnetwork/gonode/common/image/qrsignature"
-//	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-//	"github.com/pastelnetwork/gonode/common/service/task"
-//	"github.com/pastelnetwork/gonode/common/service/task/state"
-//	stateMock "github.com/pastelnetwork/gonode/common/service/task/test"
-//	"github.com/pastelnetwork/gonode/common/storage/fs"
-//	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
-//	"github.com/pastelnetwork/gonode/common/types"
-//	"github.com/pastelnetwork/gonode/common/utils"
-//	"github.com/pastelnetwork/gonode/pastel"
-//	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-//	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
-//	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
-//	test "github.com/pastelnetwork/gonode/walletnode/node/test/nft_register"
-//	"github.com/pastelnetwork/gonode/walletnode/services/nftregister/node"
-//	"github.com/stretchr/testify/assert"
-//	"github.com/stretchr/testify/mock"
-//)
-//
-//func appendStr(b []byte, s string) []byte {
-//	b = append(b, []byte(s)...)
-//	b = append(b, '\n')
-//	return b
-//}
-//
-//func newTestNode(address, pastelID string) *node.NftRegisterNodeClient {
-//	return node.NewNode(nil, address, pastelID)
-//}
-//
-//func pullPastelAddressIDNodes(nodes node.List) []string {
-//	var v []string
-//	for _, n := range nodes {
-//		v = append(v, fmt.Sprintf("%s:%s", n.PastelID(), n.String()))
-//	}
-//
-//	sort.Strings(v)
-//	return v
-//}
-//
-//func newTestImageFile() (*files.File, error) {
-//	imageStorage := files.NewStorage(fs.NewFileStorage(os.TempDir()))
-//	imgFile := imageStorage.NewFile()
-//
-//	f, err := imgFile.Create()
-//	if err != nil {
-//		return nil, errors.Errorf("failed to create storage file: %w", err)
-//	}
-//	defer f.Close()
-//
-//	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
-//	png.Encode(f, img)
-//	imgFile.SetFormat(1)
-//
-//	return imgFile, nil
-//}
-//
-//func TestTaskRun(t *testing.T) {
-//	t.Parallel()
-//	t.Skip()
-//
-//	type fields struct {
-//		Request *NftRegistrationRequest
-//	}
-//
-//	type args struct {
-//		taskID            string
-//		ctx               context.Context
-//		networkFee        float64
-//		masterNodes       pastel.MasterNodes
-//		primarySessID     string
-//		pastelIDS         []string
-//		fingerPrint       []byte
-//		signature         []byte
-//		returnErr         error
-//		connectErr        error
-//		encodeInfoReturns *rqnode.EncodeInfo
-//	}
-//
-//	testCases := []struct {
-//		fields            fields
-//		args              args
-//		assertion         assert.ErrorAssertionFunc
-//		numSessIDCall     int
-//		numUpdateStatus   int
-//		numSignCall       int
-//		numSessionCall    int
-//		numConnectToCall  int
-//		numProbeImageCall int
-//	}{
-//		{
-//			fields: fields{&NftRegistrationRequest{MaximumFee: 0.5, CreatorPastelID: "1", CreatorPastelIDPassphrase: "2"}},
-//			args: args{
-//				taskID:     "1",
-//				ctx:        context.Background(),
-//				networkFee: 0.4,
-//				masterNodes: pastel.MasterNodes{
-//					pastel.MasterNode{Fee: 0.1, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-//					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
-//					pastel.MasterNode{Fee: 0.3, ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
-//					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4448", ExtKey: "4"},
-//				},
-//				primarySessID: "sesid1",
-//				pastelIDS:     []string{"2", "3", "4"},
-//				fingerPrint:   []byte("match"),
-//				signature:     []byte("sign"),
-//				returnErr:     nil,
-//				encodeInfoReturns: &rqnode.EncodeInfo{
-//					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
-//						"test-file": {
-//							ID:                uuid.New().String(),
-//							SymbolIdentifiers: []string{"test-s1, test-s2"},
-//							BlockHash:         "test-block-hash",
-//							PastelID:          "test-pastel-id",
-//						},
-//					},
-//				},
-//			},
-//			assertion:         assert.NoError,
-//			numSessIDCall:     3,
-//			numUpdateStatus:   4,
-//			numSignCall:       4,
-//			numSessionCall:    4,
-//			numConnectToCall:  3,
-//			numProbeImageCall: 4,
-//		},
-//	}
-//
-//	t.Run("group", func(t *testing.T) {
-//		nftFile, err := newTestImageFile()
-//		assert.NoError(t, err)
-//
-//		for i, testCase := range testCases {
-//			testCase := testCase
-//
-//			// prepare task
-//			fg := pastel.Fingerprint{0.1, 0, 2}
-//			compressedFg, err := zstd.CompressLevel(nil, fg.Bytes(), 22)
-//			assert.Nil(t, err)
-//			testCase.args.fingerPrint = compressedFg
-//
-//			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-//				var task *NftRegistrationTask
-//
-//				nodeClient := test.NewMockClient(t)
-//				nodeClient.
-//					ListenOnConnect("", testCase.args.returnErr).
-//					ListenOnRegisterNft().
-//					ListenOnSession(testCase.args.returnErr).
-//					ListenOnConnectTo(testCase.args.returnErr).
-//					ListenOnSessID(testCase.args.primarySessID).
-//					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
-//					ListenOnDone().
-//					ListenOnUploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
-//					ListenOnSendSignedTicket(1, nil).
-//					ListenOnClose(nil)
-//
-//				counter := &struct {
-//					sync.Mutex
-//					val int
-//				}{}
-//				preburnCustomHandler := func() (string, error) {
-//					counter.Lock()
-//					defer counter.Unlock()
-//					counter.val++
-//					if counter.val == 1 {
-//						return "reg-nft-txid", nil
-//					}
-//					return "", nil
-//				}
-//				nodeClient.RegisterNft.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-//				nodeClient.RegisterNft.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-//				nodeClient.RegisterNft.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-//				nodeClient.RegisterNft.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-//
-//				//need to remove generate thumbnail file
-//				customProbeImageFunc := func(ctx context.Context, file *files.File) *pastel.DDAndFingerprints {
-//					file.Remove()
-//					return &pastel.DDAndFingerprints{ZstdCompressedFingerprint: testCase.args.fingerPrint}
-//				}
-//				nodeClient.ListenOnProbeImage(customProbeImageFunc, testCase.args.returnErr)
-//
-//				pastelClientMock := pastelMock.NewMockClient(t)
-//				pastelClientMock.
-//					ListenOnStorageNetworkFee(testCase.args.networkFee, testCase.args.returnErr).
-//					ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr).
-//					ListenOnSign([]byte(testCase.args.signature), testCase.args.returnErr).
-//					ListenOnGetBlockCount(100, nil).
-//					ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil).
-//					ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
-//					ListenOnSendFromAddress("pre-burnt-txid", nil).
-//					ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 10}, nil).
-//					ListenOnRegisterNFTTicket("nft-act-txid", nil)
-//
-//				rqClientMock := rqMock.NewMockClient(t)
-//				rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)
-//				rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
-//				rqClientMock.ListenOnConnect(testCase.args.connectErr)
-//
-//				service := &NftRegistrationService{
-//					pastelClient: pastelClientMock.Client,
-//					nodeClient:   nodeClient.Client,
-//					rqClient:     rqClientMock,
-//					config:       NewConfig(),
-//				}
-//
-//				taskClient := stateMock.NewMockTask(t)
-//				taskClient.
-//					ListenOnID(testCase.args.taskID).
-//					ListenOnUpdateStatus().
-//					ListenOnSetStatusNotifyFunc()
-//
-//				Request := testCase.fields.Request
-//				Request.Image = nftFile
-//				Request.MaximumFee = 100
-//				task = &NftRegistrationTask{
-//					WalletNodeTask: &common.WalletNodeTask{
-//						Task:      taskClient.Task,
-//						LogPrefix: logPrefix,
-//					},
-//					NftRegistrationService: service,
-//					Request:            Request,
-//				}
-//
-//				//create context with timeout to automatically end process after 1 sec
-//				ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
-//				defer cancel()
-//				testCase.assertion(t, task.Run(ctx))
-//
-//				taskClient.AssertExpectations(t)
-//				taskClient.AssertIDCall(1)
-//				taskClient.AssertUpdateStatusCall(testCase.numUpdateStatus, mock.Anything)
-//				taskClient.AssertSetStatusNotifyFuncCall(1, mock.Anything)
-//
-//				// //pastelClient mock assertion
-//				pastelClientMock.AssertStorageNetworkFeeCall(1, mock.Anything)
-//				pastelClientMock.AssertSignCall(testCase.numSignCall,
-//					mock.Anything,
-//					mock.Anything,
-//					Request.CreatorPastelID,
-//					Request.CreatorPastelIDPassphrase,
-//					mock.Anything,
-//				)
-//
-//				// //nodeClient mock assertion
-//				nodeClient.AssertAcceptedNodesCall(1, mock.Anything)
-//				nodeClient.AssertSessIDCall(testCase.numSessIDCall)
-//				nodeClient.AssertSessionCall(testCase.numSessionCall, mock.Anything, false)
-//				nodeClient.AssertConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
-//				nodeClient.AssertProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&files.File{}))
-//			})
-//		}
-//	})
-//
-//}
-//
-//func TestTaskMeshNodes(t *testing.T) {
-//	t.Parallel()
-//
-//	type nodeArg struct {
-//		address  string
-//		pastelID string
-//	}
-//
-//	type args struct {
-//		ctx             context.Context
-//		nodes           []nodeArg
-//		primaryIndex    int
-//		primaryPastelID string
-//		primarySessID   string
-//		pastelIDS       []string
-//		returnErr       error
-//		acceptNodeErr   error
-//	}
-//
-//	testCases := []struct {
-//		args             args
-//		want             []string
-//		assertion        assert.ErrorAssertionFunc
-//		numSessionCall   int
-//		numSessIDCall    int
-//		numConnectToCall int
-//	}{
-//		{
-//			args: args{
-//				ctx:          context.Background(),
-//				primaryIndex: 1,
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//					{"127.0.0.3", "3"},
-//					{"127.0.0.4", "4"},
-//					{"127.0.0.5", "5"},
-//					{"127.0.0.6", "6"},
-//					{"127.0.0.7", "7"},
-//				},
-//				primaryPastelID: "2",
-//				primarySessID:   "xdcfjc",
-//				pastelIDS:       []string{"1", "4", "7"},
-//				returnErr:       nil,
-//				acceptNodeErr:   nil,
-//			},
-//			assertion:        assert.NoError,
-//			numSessionCall:   7,
-//			numSessIDCall:    6,
-//			numConnectToCall: 6,
-//			want:             []string{"1:127.0.0.1", "2:127.0.0.2", "4:127.0.0.4", "7:127.0.0.7"},
-//		}, {
-//			args: args{
-//				ctx:          context.Background(),
-//				primaryIndex: 0,
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.1", "2"},
-//					{"127.0.0.1", "3"},
-//				},
-//				primaryPastelID: "1",
-//				primarySessID:   "xdxdf",
-//				pastelIDS:       []string{"2", "3"},
-//				returnErr:       nil,
-//				acceptNodeErr:   fmt.Errorf("primary node not accepted"),
-//			},
-//			assertion:        assert.Error,
-//			numSessionCall:   3,
-//			numSessIDCall:    2,
-//			numConnectToCall: 2,
-//			want:             nil,
-//		},
-//	}
-//
-//	for i, testCase := range testCases {
-//		testCase := testCase
-//
-//		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-//
-//			//create new client mock
-//			nodeClient := test.NewMockClient(t)
-//			nodeClient.
-//				ListenOnConnect("", testCase.args.returnErr).
-//				ListenOnRegisterNft().
-//				ListenOnSession(testCase.args.returnErr).
-//				ListenOnConnectTo(testCase.args.returnErr).
-//				ListenOnSessID(testCase.args.primarySessID).
-//				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.acceptNodeErr)
-//
-//			nodes := node.List{}
-//			for _, n := range testCase.args.nodes {
-//				nodes.Add(node.NewNode(nodeClient.Client, n.address, n.pastelID))
-//			}
-//
-//			service := &NftRegistrationService{
-//				config: NewConfig(),
-//			}
-//
-//			task := &NftRegistrationTask{NftRegistrationService: service, Request: &NftRegistrationRequest{}}
-//			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
-//
-//			testCase.assertion(t, err)
-//			assert.Equal(t, testCase.want, pullPastelAddressIDNodes(got))
-//
-//			nodeClient.AssertAcceptedNodesCall(1, mock.Anything)
-//			nodeClient.AssertSessIDCall(testCase.numSessIDCall)
-//			nodeClient.AssertSessionCall(testCase.numSessionCall, mock.Anything, false)
-//			nodeClient.AssertConnectToCall(testCase.numConnectToCall, mock.Anything, types.MeshedSuperNode{NodeID: testCase.args.primaryPastelID, SessID: testCase.args.primarySessID})
-//			nodeClient.Client.AssertExpectations(t)
-//			nodeClient.Connection.AssertExpectations(t)
-//		})
-//
-//	}
-//}
-//
-//func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
-//	t.Parallel()
-//
-//	type fields struct {
-//		Request *NftRegistrationRequest
-//	}
-//
-//	type args struct {
-//		ctx        context.Context
-//		networkFee float64
-//		returnErr  error
-//	}
-//
-//	testCases := []struct {
-//		fields    fields
-//		args      args
-//		want      bool
-//		assertion assert.ErrorAssertionFunc
-//	}{
-//		{
-//			fields: fields{
-//				Request: &NftRegistrationRequest{MaximumFee: 0.5},
-//			},
-//			args: args{
-//				ctx:        context.Background(),
-//				networkFee: 0.49,
-//			},
-//			want:      true,
-//			assertion: assert.NoError,
-//		},
-//		{
-//			fields: fields{
-//				Request: &NftRegistrationRequest{MaximumFee: 0.5},
-//			},
-//			args: args{
-//				ctx:        context.Background(),
-//				networkFee: 0.51,
-//			},
-//			want:      false,
-//			assertion: assert.NoError,
-//		},
-//		{
-//			args: args{
-//				ctx:       context.Background(),
-//				returnErr: fmt.Errorf("connection timeout"),
-//			},
-//			want:      false,
-//			assertion: assert.Error,
-//		},
-//	}
-//
-//	for i, testCase := range testCases {
-//		testCase := testCase
-//
-//		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-//			t.Parallel()
-//
-//			//create new mock service
-//			pastelClient := pastelMock.NewMockClient(t)
-//			pastelClient.ListenOnStorageNetworkFee(testCase.args.networkFee, testCase.args.returnErr)
-//			service := &NftRegistrationService{
-//				pastelClient: pastelClient.Client,
-//			}
-//
-//			task := &NftRegistrationTask{
-//				NftRegistrationService: service,
-//				Request:            testCase.fields.Request,
-//			}
-//
-//			got, err := task.isSuitableStorageFee(testCase.args.ctx)
-//			testCase.assertion(t, err)
-//			assert.Equal(t, testCase.want, got)
-//
-//			//pastelClient mock assertion
-//			pastelClient.AssertExpectations(t)
-//			pastelClient.AssertStorageNetworkFeeCall(1, testCase.args.ctx)
-//		})
-//	}
-//}
-//
-//func TestTaskPastelTopNodes(t *testing.T) {
-//	t.Parallel()
-//
-//	type fields struct {
-//		Task    task.Task
-//		Request *NftRegistrationRequest
-//	}
-//
-//	type args struct {
-//		ctx             context.Context
-//		returnMn        pastel.MasterNodes
-//		returnMnTopErr  error
-//		returnFindIDErr error
-//	}
-//
-//	testCases := []struct {
-//		fields    fields
-//		args      args
-//		want      node.List
-//		assertion assert.ErrorAssertionFunc
-//	}{
-//		{
-//			fields: fields{
-//				Request: &NftRegistrationRequest{
-//					MaximumFee: 0.30,
-//				},
-//			},
-//			args: args{
-//				ctx: context.Background(),
-//				returnMn: pastel.MasterNodes{
-//					pastel.MasterNode{Fee: 0.1, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-//					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
-//				},
-//				returnMnTopErr:  nil,
-//				returnFindIDErr: nil,
-//			},
-//			want: node.List{
-//				newTestNode("127.0.0.1:4444", "1"),
-//				newTestNode("127.0.0.1:4445", "2"),
-//			},
-//			assertion: assert.NoError,
-//		}, {
-//			fields: fields{
-//				Request: &NftRegistrationRequest{
-//					MaximumFee: 0.3,
-//				},
-//			},
-//			args: args{
-//				ctx: context.Background(),
-//				returnMn: pastel.MasterNodes{
-//					pastel.MasterNode{Fee: 0.5, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-//					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
-//				},
-//				returnMnTopErr:  nil,
-//				returnFindIDErr: nil,
-//			},
-//			want: node.List{
-//				newTestNode("127.0.0.1:4445", "2"),
-//			},
-//			assertion: assert.NoError,
-//		}, {
-//			fields: fields{
-//				Request: &NftRegistrationRequest{
-//					MaximumFee: 0.3,
-//				},
-//			},
-//			args: args{
-//				ctx: context.Background(),
-//				returnMn: pastel.MasterNodes{
-//					pastel.MasterNode{Fee: 0.5, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-//					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
-//				},
-//				returnMnTopErr:  nil,
-//				returnFindIDErr: fmt.Errorf("connection timeout"),
-//			},
-//			want:      nil,
-//			assertion: assert.NoError,
-//		}, {
-//			args: args{
-//				ctx:             context.Background(),
-//				returnMn:        nil,
-//				returnMnTopErr:  fmt.Errorf("connection timeout"),
-//				returnFindIDErr: nil,
-//			},
-//			want:      nil,
-//			assertion: assert.Error,
-//		},
-//	}
-//
-//	for i, testCase := range testCases {
-//		testCase := testCase
-//
-//		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-//			t.Parallel()
-//
-//			//create new mock service
-//			pastelClient := pastelMock.NewMockClient(t)
-//			pastelClient.ListenOnMasterNodesTop(testCase.args.returnMn, testCase.args.returnMnTopErr)
-//			if testCase.args.returnMnTopErr == nil {
-//				pastelClient.ListenOnFindTicketByID(&pastel.IDTicket{}, testCase.args.returnFindIDErr)
-//			}
-//
-//			service := &NftRegistrationService{
-//				pastelClient: pastelClient.Client,
-//			}
-//
-//			task := &NftRegistrationTask{
-//				WalletNodeTask: &common.WalletNodeTask{
-//					Task:      testCase.fields.Task,
-//					LogPrefix: logPrefix,
-//				},
-//				NftRegistrationService: service,
-//				Request:            testCase.fields.Request,
-//			}
-//			got, err := task.GetTopNodes(testCase.args.ctx)
-//			testCase.assertion(t, err)
-//			assert.Equal(t, testCase.want, got)
-//
-//			//mock assertion
-//			pastelClient.AssertExpectations(t)
-//			pastelClient.AssertMasterNodesTopCall(1, mock.Anything)
-//		})
-//	}
-//
-//}
-//
-//func TestNewTask(t *testing.T) {
-//	t.Parallel()
-//
-//	type args struct {
-//		service *NftRegistrationService
-//		Request *NftRegistrationRequest
-//	}
-//
-//	service := &NftRegistrationService{}
-//	Request := &NftRegistrationRequest{}
-//
-//	testCases := []struct {
-//		args args
-//		want *NftRegistrationTask
-//	}{
-//		{
-//			args: args{
-//				service: service,
-//				Request: Request,
-//			},
-//			want: &NftRegistrationTask{
-//				WalletNodeTask:     common.NewWalletNodeTask(logPrefix),
-//				NftRegistrationService: service,
-//				Request:            Request,
-//			},
-//		},
-//	}
-//	for i, testCase := range testCases {
-//		testCase := testCase
-//
-//		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-//			t.Parallel()
-//
-//			task := NewNFTRegistrationTask(testCase.args.service, testCase.args.Request)
-//			assert.Equal(t, testCase.want.NftRegistrationService, task.NftRegistrationService)
-//			assert.Equal(t, testCase.want.Request, task.Request)
-//			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
-//		})
-//	}
-//}
-//
-//func TestTaskCreateTicket(t *testing.T) {
-//	t.Parallel()
-//
-//	type args struct {
-//		task *NftRegistrationTask
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		want    *pastel.NFTTicket
-//		wantErr error
-//	}{
-//		"fingerprint-error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					smallThumbnailHash:  []byte{},
-//					mediumThumbnailHash: []byte{},
-//					previewHash:         []byte{},
-//					rqids:               []string{},
-//					dataHash:            []byte{},
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//				},
-//			},
-//			wantErr: common.ErrEmptyFingerprints,
-//			want:    nil,
-//		},
-//		"data-hash-error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					fingerprint:         []byte{},
-//					previewHash:         []byte{},
-//					smallThumbnailHash:  []byte{},
-//					mediumThumbnailHash: []byte{},
-//					rqids:               []string{},
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//				},
-//			},
-//			wantErr: common.ErrEmptyDatahash,
-//			want:    nil,
-//		},
-//		"preview-hash-error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					fingerprint:         []byte{},
-//					dataHash:            []byte{},
-//					smallThumbnailHash:  []byte{},
-//					mediumThumbnailHash: []byte{},
-//					rqids:               []string{},
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//				},
-//			},
-//			wantErr: common.ErrEmptyPreviewHash,
-//			want:    nil,
-//		},
-//		"medium-thumbnail-error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					fingerprint:        []byte{},
-//					previewHash:        []byte{},
-//					dataHash:           []byte{},
-//					smallThumbnailHash: []byte{},
-//					rqids:              []string{},
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//				},
-//			},
-//			wantErr: common.ErrEmptyMediumThumbnailHash,
-//			want:    nil,
-//		},
-//		"small-thumbnail-error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					fingerprint:         []byte{},
-//					mediumThumbnailHash: []byte{},
-//					previewHash:         []byte{},
-//					dataHash:            []byte{},
-//					rqids:               []string{},
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//				},
-//			},
-//			wantErr: common.ErrEmptySmallThumbnailHash,
-//			want:    nil,
-//		},
-//		"raptorQ-symbols-error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					fingerprint:         []byte{},
-//					smallThumbnailHash:  []byte{},
-//					mediumThumbnailHash: []byte{},
-//					previewHash:         []byte{},
-//					dataHash:            []byte{},
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//					fingerprintAndScores: &pastel.DDAndFingerprints{},
-//				},
-//			},
-//			wantErr: common.ErrEmptyRaptorQSymbols,
-//			want:    nil,
-//		},
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					fingerprint:          []byte{},
-//					smallThumbnailHash:   []byte{},
-//					mediumThumbnailHash:  []byte{},
-//					previewHash:          []byte{},
-//					dataHash:             []byte{},
-//					fingerprintAndScores: &pastel.DDAndFingerprints{},
-//					rqids:                []string{},
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//						CreatorName:     "test-name",
-//						IssuedCopies:   10,
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//				},
-//			},
-//			wantErr: nil,
-//		},
-//	}
-//
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			blockNum := 1
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnGetBlockCount(int32(blockNum), nil).
-//				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			tc.want = &pastel.NFTTicket{
-//				Version:  1,
-//				Author:   tc.args.task.Request.CreatorPastelID,
-//				BlockNum: tc.args.task.creatorBlockHeight,
-//				Copies:   tc.args.task.Request.IssuedCopies,
-//				AppTicketData: pastel.AppTicket{
-//					CreatorName:                tc.args.task.Request.CreatorName,
-//					CreatorWebsite:             utils.SafeString(tc.args.task.Request.CreatorWebsiteURL),
-//					CreatorWrittenStatement:    utils.SafeString(tc.args.task.Request.Description),
-//					NFTCreationVideoYoutubeURL: utils.SafeString(tc.args.task.Request.YoutubeURL),
-//					NFTKeywordSet:              utils.SafeString(tc.args.task.Request.Keywords),
-//					NFTType:                    pastel.NFTTypeImage,
-//					TotalCopies:                tc.args.task.Request.IssuedCopies,
-//					PreviewHash:                tc.args.task.previewHash,
-//					Thumbnail1Hash:             tc.args.task.mediumThumbnailHash,
-//					Thumbnail2Hash:             tc.args.task.smallThumbnailHash,
-//					DataHash:                   tc.args.task.dataHash,
-//					RQIDs:                      tc.args.task.rqids,
-//					RQOti:                      tc.args.task.rqEncodeParams.Oti,
-//					RQMax:                      tc.args.task.config.RQIDsMax,
-//					DDAndFingerprintsMax:       tc.args.task.config.DDAndFingerprintsMax,
-//				},
-//			}
-//
-//			err := tc.args.task.createNftTicket(context.Background())
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.Equal(t, tc.wantErr.Error(), err.Error())
-//			} else {
-//				assert.Nil(t, err)
-//				assert.NotNil(t, tc.args.task.nftRegistrationTicket)
-//				assert.Equal(t, *tc.want, *tc.args.task.nftRegistrationTicket)
-//			}
-//
-//		})
-//	}
-//}
-//
-//func TestTaskGetBlock(t *testing.T) {
-//	t.Parallel()
-//
-//	type args struct {
-//		task            *NftRegistrationTask
-//		blockCountErr   error
-//		blockVerboseErr error
-//		blockNum        int32
-//		blockInfo       *pastel.GetBlockVerbose1Result
-//	}
-//
-//	testCases := map[string]struct {
-//		args                  args
-//		wantArtistblockHash   string
-//		wantArtistBlockHeight int
-//		wantErr               error
-//	}{
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{},
-//				},
-//				blockNum: int32(10),
-//				blockInfo: &pastel.GetBlockVerbose1Result{
-//					Hash: "000000007465737468617368",
-//				},
-//			},
-//			wantArtistBlockHeight: 10,
-//			wantErr:               nil,
-//		},
-//		"block-count-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{},
-//				},
-//				blockNum: int32(10),
-//				blockInfo: &pastel.GetBlockVerbose1Result{
-//					Hash: "000000007465737468617368",
-//				},
-//				blockCountErr: errors.New("block-count-err"),
-//			},
-//			wantArtistBlockHeight: 10,
-//			wantErr:               errors.New("block-count-err"),
-//		},
-//		"block-verbose-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{},
-//				},
-//				blockNum: int32(10),
-//				blockInfo: &pastel.GetBlockVerbose1Result{
-//					Hash: "000000007465737468617368",
-//				},
-//				blockVerboseErr: errors.New("verbose-err"),
-//			},
-//			wantArtistBlockHeight: 10,
-//			wantErr:               errors.New("verbose-err"),
-//		},
-//	}
-//
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnGetBlockCount(tc.args.blockNum, tc.args.blockCountErr).
-//				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			tc.wantArtistblockHash = tc.args.blockInfo.Hash
-//
-//			_, _, err := tc.args.task.GetBlock(context.Background())
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				assert.Nil(t, err)
-//				assert.Equal(t, tc.wantArtistblockHash, tc.args.task.creatorBlockHash)
-//				assert.Equal(t, tc.wantArtistBlockHeight, tc.args.task.creatorBlockHeight)
-//			}
-//		})
-//	}
-//}
-//
-//func TestTaskConvertToSymbolIdFile(t *testing.T) {
-//	t.Parallel()
-//
-//	testErrStr := "test-err"
-//	type args struct {
-//		task    *NftRegistrationTask
-//		signErr error
-//		inFile  rqnode.RawSymbolIDFile
-//	}
-//
-//	testCases := map[string]struct {
-//		args        args
-//		wantContent []byte
-//		wantErr     error
-//		wantSign    []byte
-//	}{
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//				},
-//				inFile: rqnode.RawSymbolIDFile{
-//					ID:                uuid.New().String(),
-//					SymbolIdentifiers: []string{"test-s1", "test-s2"},
-//					BlockHash:         "test-block-hash",
-//					PastelID:          "test-pastel-id",
-//				},
-//			},
-//			wantSign: []byte("test-signature"),
-//			wantErr:  nil,
-//		},
-//		"error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//				},
-//				signErr: errors.New(testErrStr),
-//			},
-//			wantErr: errors.New(testErrStr),
-//		},
-//	}
-//
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			var rawContent []byte
-//			rawContent = appendStr(rawContent, tc.args.inFile.ID)
-//			rawContent = appendStr(rawContent, tc.args.inFile.BlockHash)
-//			rawContent = appendStr(rawContent, tc.args.inFile.PastelID)
-//			for _, id := range tc.args.inFile.SymbolIdentifiers {
-//				rawContent = appendStr(rawContent, id)
-//			}
-//
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			err := tc.args.task.generateRQIDs(context.Background(), tc.args.inFile)
-//
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), testErrStr))
-//			} else {
-//				assert.Nil(t, err)
-//			}
-//		})
-//	}
-//}
-//
-//func TestTaskGenRQIdentifiersFiles(t *testing.T) {
-//	nftFile, err := newTestImageFile()
-//	assert.NoError(t, err)
-//
-//	type args struct {
-//		task                *NftRegistrationTask
-//		connectErr          error
-//		encodeInfoReturns   *rqnode.EncodeInfo
-//		findTicketIDReturns *pastel.IDTicket
-//		encodeInfoErr       error
-//		readErr             error
-//		signErr             error
-//	}
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					imageEncodedWithFingerprints: nftFile,
-//				},
-//				encodeInfoReturns: &rqnode.EncodeInfo{
-//					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
-//						"test-file": {
-//							ID:                uuid.New().String(),
-//							SymbolIdentifiers: []string{"test-s1, test-s2"},
-//							BlockHash:         "test-block-hash",
-//							PastelID:          "test-pastel-id",
-//						},
-//					},
-//				},
-//				findTicketIDReturns: &pastel.IDTicket{
-//					TXID: "test-txid",
-//				},
-//				readErr: io.EOF,
-//			},
-//			wantErr: nil,
-//		},
-//		"connect-error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					imageEncodedWithFingerprints: nftFile,
-//				},
-//				readErr: io.EOF,
-//				encodeInfoReturns: &rqnode.EncodeInfo{
-//					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
-//				},
-//				findTicketIDReturns: &pastel.IDTicket{
-//					TXID: "test-txid",
-//				},
-//				connectErr: errors.New("test-err"),
-//			},
-//			wantErr: errors.New("test-err"),
-//		},
-//
-//		"encode-info-error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					imageEncodedWithFingerprints: nftFile,
-//				},
-//				readErr: io.EOF,
-//				encodeInfoReturns: &rqnode.EncodeInfo{
-//					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
-//				},
-//				findTicketIDReturns: &pastel.IDTicket{
-//					TXID: "test-txid",
-//				},
-//				encodeInfoErr: errors.New("test-err"),
-//			},
-//			wantErr: errors.New("test-err"),
-//		},
-//		"read-error": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					imageEncodedWithFingerprints: nftFile,
-//				},
-//				readErr: errors.New("test-err"),
-//				encodeInfoReturns: &rqnode.EncodeInfo{
-//					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
-//				},
-//			},
-//			wantErr: errors.New("read image"),
-//		},
-//		"sign-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					imageEncodedWithFingerprints: nftFile,
-//				},
-//				encodeInfoReturns: &rqnode.EncodeInfo{
-//					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
-//						"test-file": {
-//							ID:                uuid.New().String(),
-//							SymbolIdentifiers: []string{"test-s1, test-s2"},
-//							BlockHash:         "test-block-hash",
-//							PastelID:          "test-pastel-id",
-//						},
-//					},
-//				},
-//				findTicketIDReturns: &pastel.IDTicket{
-//					TXID: "test-txid",
-//				},
-//				readErr: io.EOF,
-//				signErr: errors.New("tes-err"),
-//			},
-//			wantErr: errors.New("rqids file"),
-//		},
-//	}
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnSign([]byte("test-signature"), tc.args.signErr)
-//			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			rqClientMock := rqMock.NewMockClient(t)
-//			rqClientMock.ListenOnEncodeInfo(tc.args.encodeInfoReturns, tc.args.encodeInfoErr)
-//			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
-//			rqClientMock.ListenOnConnect(tc.args.connectErr)
-//
-//			tc.args.task.NftRegistrationService.rqClient = rqClientMock
-//
-//			fsMock := storageMock.NewMockFileStorage()
-//			fileMock := storageMock.NewMockFile()
-//			fileMock.ListenOnClose(nil).ListenOnRead(0, tc.args.readErr)
-//
-//			storage := files.NewStorage(fsMock)
-//			tc.args.task.imageEncodedWithFingerprints = files.NewFile(storage, "test")
-//			fsMock.ListenOnOpen(fileMock, nil)
-//
-//			tc.args.task.Request.Image = files.NewFile(storage, "test")
-//
-//			err := tc.args.task.genRQIdentifiersFiles(context.Background())
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				// TODO: fix this when the return error is define correctly
-//				// assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				assert.Nil(t, err)
-//			}
-//		})
-//	}
-//}
-//
-//func TestTaskEncodeFingerprint(t *testing.T) {
-//	type args struct {
-//		task                *NftRegistrationTask
-//		fingerprint         []byte
-//		img                 *files.File
-//		signReturns         []byte
-//		findTicketIDReturns *pastel.IDTicket
-//		signErr             error
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-//					},
-//					NftRegistrationService: &NftRegistrationService{},
-//				},
-//				img:         &files.File{},
-//				signReturns: []byte("test-signature"),
-//				fingerprint: []byte("test-fingerprint"),
-//				findTicketIDReturns: &pastel.IDTicket{
-//					TXID: "test-txid",
-//					IDTicketProp: pastel.IDTicketProp{
-//						PqKey: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-//					},
-//				},
-//			},
-//			wantErr: nil,
-//		},
-//	}
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-//			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
-//
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			file, err := newTestImageFile()
-//			if err != nil {
-//				t.Fatalf("err creating test file: %v", err)
-//			}
-//
-//			ctx := context.Background()
-//
-//			err = tc.args.task.encodeFingerprint(ctx, tc.args.fingerprint, file)
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				assert.Nil(t, err)
-//
-//				ed448PubKey, err := common.GetPubKey(tc.args.task.Request.CreatorPastelID)
-//				assert.Nil(t, err)
-//
-//				pqPubKey, err := common.GetPubKey(tc.args.findTicketIDReturns.PqKey)
-//				assert.Nil(t, err)
-//
-//				decSig := qrsignature.New()
-//				copyImage, _ := file.Copy()
-//				copyImage.SetFormatFromExtension(".png")
-//				copyImage.SetFormat(1)
-//
-//				if err := file.Decode(decSig); err != nil {
-//					t.Fatal(err)
-//				}
-//
-//				if !bytes.Equal(tc.args.fingerprint, decSig.Fingerprint()) {
-//					t.Fatalf("fingerprints do not match, original len:%d, decoded len:%d\n", tc.args.fingerprint, len(decSig.Fingerprint()))
-//				}
-//
-//				if !bytes.Equal(tc.args.signReturns, decSig.PostQuantumSignature()) {
-//					t.Fatalf("post quantum signatures do not match, original len:%d, decoded len:%d\n", tc.args.signReturns, len(decSig.PostQuantumSignature()))
-//				}
-//
-//				if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
-//					t.Fatalf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
-//				}
-//				if !bytes.Equal(tc.args.signReturns, decSig.Ed448Signature()) {
-//					t.Fatalf("ed448 signatures do not match, original len:%d, decoded len:%d\n", tc.args.signReturns, len(decSig.Ed448Signature()))
-//				}
-//				if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
-//					t.Fatalf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
-//				}
-//			}
-//		})
-//	}
-//}
-//
-//func TestTaskSignTicket(t *testing.T) {
-//	type args struct {
-//		task        *NftRegistrationTask
-//		signErr     error
-//		signReturns []byte
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//			},
-//			wantErr: nil,
-//		},
-//		"err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				signErr: errors.New("test"),
-//			},
-//			wantErr: errors.New("test"),
-//		},
-//	}
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			err := tc.args.task.signTicket(context.Background())
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				assert.Nil(t, err)
-//				assert.Equal(t, tc.args.signReturns, tc.args.task.creatorSignature)
-//			}
-//		})
-//	}
-//}
-//
-//func TestWaitTxnValid(t *testing.T) {
-//	type args struct {
-//		task                            *NftRegistrationTask
-//		getRawTransactionVerbose1RetErr error
-//		getRawTransactionVerbose1Ret    *pastel.GetRawTransactionVerbose1Result
-//		ctxDone                         bool
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//		"ctx-done-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//				},
-//				ctxDone: true,
-//			},
-//			wantErr: errors.New("context done"),
-//		},
-//		"get-raw-transaction-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//				},
-//				getRawTransactionVerbose1Ret:    &pastel.GetRawTransactionVerbose1Result{},
-//				getRawTransactionVerbose1RetErr: errors.New("test"),
-//			},
-//			wantErr: errors.New("timeout"),
-//		},
-//		"insufficient-confirmations": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//				},
-//				getRawTransactionVerbose1Ret:    &pastel.GetRawTransactionVerbose1Result{Confirmations: 4},
-//				getRawTransactionVerbose1RetErr: nil,
-//			},
-//			wantErr: errors.New("timeout"),
-//		},
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//				},
-//				getRawTransactionVerbose1Ret:    &pastel.GetRawTransactionVerbose1Result{Confirmations: 5},
-//				getRawTransactionVerbose1RetErr: nil,
-//			},
-//			wantErr: nil,
-//		},
-//	}
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnGetBlockCount(1, nil)
-//			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.args.getRawTransactionVerbose1Ret,
-//				tc.args.getRawTransactionVerbose1RetErr)
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			ctx, cancel := context.WithCancel(context.Background())
-//			if tc.args.ctxDone {
-//				cancel()
-//			}
-//
-//			err := tc.args.task.waitTxidValid(ctx, "txid", 5, 500*time.Millisecond)
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				assert.Nil(t, err)
-//			}
-//			cancel()
-//		})
-//	}
-//
-//}
-//
-//func TestTaskPreburntRegistrationFee(t *testing.T) {
-//	type nodeArg struct {
-//		address  string
-//		pastelID string
-//	}
-//
-//	type args struct {
-//		task                  *NftRegistrationTask
-//		sendFromAddressRetErr error
-//		burnTxnIDRet          string
-//		preBurntFeeRetTxID    string
-//		preBurntFeeRetErr     error
-//		nodes                 []nodeArg
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//		"reg-fee-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//			},
-//			wantErr: errors.New("registration fee"),
-//		},
-//		"send-from-address-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//					registrationFee:       40,
-//				},
-//				sendFromAddressRetErr: errors.New("test"),
-//			},
-//			wantErr: errors.New("burn"),
-//		},
-//		"send-preburnt-fee-err": {
-//			args: args{
-//				preBurntFeeRetErr: errors.New("test"),
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//					registrationFee:       40,
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//				sendFromAddressRetErr: nil,
-//				burnTxnIDRet:          "test-id",
-//			},
-//			wantErr: errors.New("send pre-burn-txid"),
-//		},
-//		"regArtTxId-empty-err": {
-//			args: args{
-//				preBurntFeeRetTxID: "test-id",
-//				preBurntFeeRetErr:  nil,
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//					registrationFee:       40,
-//				},
-//				sendFromAddressRetErr: nil,
-//				burnTxnIDRet:          "test-id",
-//			},
-//			wantErr: errors.New("empty regNFTTxid"),
-//		},
-//		"success": {
-//			args: args{
-//				preBurntFeeRetTxID: "test-id",
-//				preBurntFeeRetErr:  nil,
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//					registrationFee:       40,
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//				sendFromAddressRetErr: nil,
-//				burnTxnIDRet:          "test-id",
-//			},
-//			wantErr: nil,
-//		},
-//	}
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnSendFromAddress(tc.args.burnTxnIDRet, tc.args.sendFromAddressRetErr)
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			nodeClient := test.NewMockClient(t)
-//			nodeClient.
-//				ListenOnConnect("", nil).
-//				ListenOnRegisterNft().
-//				ListenOnSession(nil).
-//				ListenOnConnectTo(nil).
-//				ListenOnSessID("").
-//				ListenOnAcceptedNodes([]string{}, nil).
-//				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
-//
-//			nodes := node.List{}
-//			for _, n := range tc.args.nodes {
-//				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
-//				newNode.SetPrimary(true)
-//				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
-//
-//				nodes.Add(newNode)
-//			}
-//			tc.args.task.nodes = nodes
-//
-//			err := tc.args.task.preburntRegistrationFee(context.Background())
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				assert.Nil(t, err)
-//			}
-//		})
-//	}
-//}
-//
-//func TestTaskUploadImage(t *testing.T) {
-//	type nodeArg struct {
-//		address  string
-//		pastelID string
-//	}
-//	type args struct {
-//		task                    *NftRegistrationTask
-//		nodes                   []nodeArg
-//		findTicketIDReturns     *pastel.IDTicket
-//		previewHash             []byte
-//		mediumHash              []byte
-//		smallHash               []byte
-//		uploadImageThumbnailErr error
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//				findTicketIDReturns: &pastel.IDTicket{
-//					TXID: "test-txid",
-//					IDTicketProp: pastel.IDTicketProp{
-//						PqKey: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-//					},
-//				},
-//			},
-//			wantErr: nil,
-//		},
-//		"upload-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//				findTicketIDReturns: &pastel.IDTicket{
-//					TXID: "test-txid",
-//					IDTicketProp: pastel.IDTicketProp{
-//						PqKey: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-//					},
-//				},
-//				uploadImageThumbnailErr: errors.New("test"),
-//			},
-//			wantErr: errors.New("upload encoded image "),
-//		},
-//	}
-//
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//			nftFile, err := newTestImageFile()
-//			assert.NoError(t, err)
-//
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnSign([]byte("test-signature"), nil)
-//			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			newT := &common.WalletNodeTask{
-//				Task:      task.New(&state.Status{}),
-//				LogPrefix: logPrefix,
-//			}
-//			tc.args.task.WalletNodeTask = newT
-//			nodeClient := test.NewMockClient(t)
-//			nodeClient.
-//				ListenOnConnect("", nil).
-//				ListenOnRegisterNft().
-//				ListenOnUploadImageWithThumbnail(tc.args.previewHash, tc.args.mediumHash,
-//					tc.args.smallHash, tc.args.uploadImageThumbnailErr)
-//
-//			tc.args.task.Request.Image = nftFile
-//			nodes := node.List{}
-//			for _, n := range tc.args.nodes {
-//				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
-//				newNode.SetPrimary(true)
-//				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
-//
-//				nodes.Add(newNode)
-//			}
-//			tc.args.task.nodes = nodes
-//
-//			err = tc.args.task.uploadImage(context.Background())
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				assert.Nil(t, err)
-//			}
-//		})
-//	}
-//}
-//
-//func TestTaskProbeImage(t *testing.T) {
-//	fingerAndScores := &pastel.DDAndFingerprints{
-//		Block:                      "Block",
-//		Principal:                  "Principal",
-//		DupeDetectionSystemVersion: "v1.0",
-//
-//		IsLikelyDupe:     true,
-//		IsRareOnInternet: true,
-//
-//		RarenessScores: &pastel.RarenessScores{
-//			CombinedRarenessScore:         0,
-//			XgboostPredictedRarenessScore: 0,
-//			NnPredictedRarenessScore:      0,
-//			OverallAverageRarenessScore:   0,
-//		},
-//		InternetRareness: &pastel.InternetRareness{
-//			MatchesFoundOnFirstPage: 0,
-//			NumberOfPagesOfResults:  0,
-//			URLOfFirstMatchInPage:   "",
-//		},
-//
-//		OpenNSFWScore: 0.1,
-//		AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
-//			Drawings: 0.1,
-//			Hentai:   0.2,
-//			Neutral:  0.3,
-//			Porn:     0.4,
-//			Sexy:     0.5,
-//		},
-//
-//		ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
-//		FingerprintsStat: &pastel.FingerprintsStat{
-//			NumberOfFingerprintsRequiringFurtherTesting1: 1,
-//			NumberOfFingerprintsRequiringFurtherTesting2: 2,
-//			NumberOfFingerprintsRequiringFurtherTesting3: 3,
-//			NumberOfFingerprintsRequiringFurtherTesting4: 4,
-//			NumberOfFingerprintsRequiringFurtherTesting5: 5,
-//			NumberOfFingerprintsRequiringFurtherTesting6: 6,
-//			NumberOfFingerprintsOfSuspectedDupes:         7,
-//		},
-//
-//		HashOfCandidateImageFile: "HashOfCandidateImageFile",
-//		PerceptualImageHashes: &pastel.PerceptualImageHashes{
-//			PDQHash:        "PdqHash",
-//			PerceptualHash: "PerceptualHash",
-//			AverageHash:    "AverageHash",
-//			DifferenceHash: "DifferenceHash",
-//			NeuralHash:     "NeuralhashHash",
-//		},
-//		PerceptualHashOverlapCount: 1,
-//
-//		Maxes: &pastel.Maxes{
-//			PearsonMax:           1.0,
-//			SpearmanMax:          2.0,
-//			KendallMax:           3.0,
-//			HoeffdingMax:         4.0,
-//			MutualInformationMax: 5.0,
-//			HsicMax:              6.0,
-//			XgbimportanceMax:     7.0,
-//		},
-//		Percentile: &pastel.Percentile{
-//			PearsonTop1BpsPercentile:             1.0,
-//			SpearmanTop1BpsPercentile:            2.0,
-//			KendallTop1BpsPercentile:             3.0,
-//			HoeffdingTop10BpsPercentile:          4.0,
-//			MutualInformationTop100BpsPercentile: 5.0,
-//			HsicTop100BpsPercentile:              6.0,
-//			XgbimportanceTop100BpsPercentile:     7.0,
-//		},
-//	}
-//
-//	testCompressedFingerAndScores, genErr := pastel.ToCompressSignedDDAndFingerprints(fingerAndScores, []byte("testSignature"))
-//	assert.Nil(t, genErr)
-//
-//	type nodeArg struct {
-//		address  string
-//		pastelID string
-//	}
-//	type args struct {
-//		task        *NftRegistrationTask
-//		nodes       []nodeArg
-//		probeImgErr error
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{
-//							thumbnailSize: 224,
-//						},
-//					},
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//				probeImgErr: nil,
-//			},
-//			wantErr: nil,
-//		},
-//		"probe-img-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{
-//							thumbnailSize: 224,
-//						},
-//					},
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//				probeImgErr: errors.New("test"),
-//			},
-//			wantErr: errors.New("send image"),
-//		},
-//	}
-//
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//			nftFile, err := newTestImageFile()
-//			assert.NoError(t, err)
-//
-//			//need to remove generate thumbnail file
-//			customProbeImageFunc := func(ctx context.Context, file *files.File) []byte {
-//				file.Remove()
-//				return testCompressedFingerAndScores
-//			}
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnVerify(true, nil)
-//
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			newT := &common.WalletNodeTask{
-//				Task:      task.New(&state.Status{}),
-//				LogPrefix: logPrefix,
-//			}
-//			tc.args.task.WalletNodeTask = newT
-//			nodeClient := test.NewMockClient(t)
-//			nodeClient.
-//				ListenOnConnect("", nil).
-//				ListenOnRegisterNft().
-//				ListenOnProbeImage(customProbeImageFunc, tc.args.probeImgErr)
-//
-//			tc.args.task.Request.Image = nftFile
-//			nodes := node.List{}
-//			for _, n := range tc.args.nodes {
-//				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
-//				newNode.SetPrimary(true)
-//				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
-//				nodes.Add(newNode)
-//			}
-//			tc.args.task.nodes = nodes
-//
-//			err = tc.args.task.probeImage(context.Background())
-//
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				if err != nil {
-//					fmt.Println(err)
-//				}
-//				assert.Nil(t, err)
-//			}
-//		})
-//	}
-//}
-//
-//func TestTaskSendSignedTicket(t *testing.T) {
-//	type nodeArg struct {
-//		address  string
-//		pastelID string
-//	}
-//	type args struct {
-//		task                   *NftRegistrationTask
-//		sendSignedTicketRet    int64
-//		sendSignedTicketRetErr error
-//		preBurntFeeRetTxID     string
-//		preBurntFeeRetErr      error
-//		nodes                  []nodeArg
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//			},
-//			wantErr: nil,
-//		},
-//		"reg-fee-err": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//						MaximumFee:     -1,
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//			},
-//			wantErr: errors.New("registration fee"),
-//		},
-//	}
-//
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			nodeClient := test.NewMockClient(t)
-//			nodeClient.
-//				ListenOnConnect("", nil).
-//				ListenOnRegisterNft().
-//				ListenOnSession(nil).
-//				ListenOnConnectTo(nil).
-//				ListenOnSessID("").
-//				ListenOnAcceptedNodes([]string{}, nil).
-//				ListenOnSendSignedTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
-//				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
-//
-//			nodes := node.List{}
-//			for _, n := range tc.args.nodes {
-//				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
-//				newNode.SetPrimary(true)
-//				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
-//
-//				nodes.Add(newNode)
-//			}
-//			tc.args.task.nodes = nodes
-//
-//			err := tc.args.task.sendSignedTicket(context.Background())
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				if err != nil {
-//					fmt.Println("err: ", err.Error())
-//				}
-//				assert.Nil(t, err)
-//			}
-//		})
-//	}
-//}
-//
-//func TestTaskConnectToTopRankNodes(t *testing.T) {
-//	type nodeArg struct {
-//		address  string
-//		pastelID string
-//	}
-//	type args struct {
-//		task              *NftRegistrationTask
-//		nodes             []nodeArg
-//		masterNodesTopErr error
-//		masterNodes       pastel.MasterNodes
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//		"success": {
-//			args: args{
-//				masterNodes: pastel.MasterNodes{
-//					pastel.MasterNode{Fee: 0.1, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-//					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
-//					pastel.MasterNode{Fee: 0.3, ExtAddress: "127.0.0.1:4446", ExtKey: "3"},
-//					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4447", ExtKey: "4"},
-//				},
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//						MaximumFee:     1,
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//			},
-//			wantErr: nil,
-//		},
-//		"master-nodes-err": {
-//			args: args{
-//				masterNodesTopErr: errors.New("test"),
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//			},
-//			wantErr: errors.New("masternode top"),
-//		},
-//		"insufficient-sns-err": {
-//			args: args{
-//				masterNodesTopErr: nil,
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "testid",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: &Config{NumberSuperNodes: 1},
-//					},
-//					nftRegistrationTicket: &pastel.NFTTicket{},
-//				},
-//				nodes: []nodeArg{
-//					{"127.0.0.1", "1"},
-//					{"127.0.0.2", "2"},
-//				},
-//			},
-//			wantErr: errors.New("unable to find enough Supernodes"),
-//		},
-//	}
-//
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//			nftFile, err := newTestImageFile()
-//			assert.NoError(t, err)
-//
-//			pastelClientMock := pastelMock.NewMockClient(t)
-//			pastelClientMock.ListenOnSign([]byte("test-signature"), nil).
-//				ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
-//				ListenOnMasterNodesTop(tc.args.masterNodes, tc.args.masterNodesTopErr)
-//
-//			tc.args.task.NftRegistrationService.pastelClient = pastelClientMock
-//
-//			//need to remove generate thumbnail file
-//			newT := &common.WalletNodeTask{
-//				Task:      task.New(&state.Status{}),
-//				LogPrefix: logPrefix,
-//			}
-//			tc.args.task.WalletNodeTask = newT
-//			nodeClient := test.NewMockClient(t)
-//			nodeClient.
-//				ListenOnConnect("", nil).
-//				ListenOnRegisterNft().
-//				ListenOnSession(nil).
-//				ListenOnConnectTo(nil).
-//				ListenOnSessID("").
-//				ListenOnAcceptedNodes([]string{}, nil).
-//				ListenOnClose(tc.wantErr)
-//
-//			if tc.wantErr == nil {
-//				nodeClient.ListenOnMeshNodes(nil)
-//			}
-//			tc.args.task.NftRegistrationService.nodeClient = nodeClient
-//
-//			tc.args.task.Request.Image = nftFile
-//			nodes := node.List{}
-//			for _, n := range tc.args.nodes {
-//				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
-//				newNode.SetPrimary(true)
-//				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
-//
-//				nodes.Add(newNode)
-//			}
-//			tc.args.task.nodes = nodes
-//
-//			err = tc.args.task.connectToTopRankNodes(context.Background())
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-//			} else {
-//				assert.Nil(t, err)
-//			}
-//		})
-//	}
-//}
-//
-//func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
-//	t.Parallel()
-//
-//	type args struct {
-//		task *NftRegistrationTask
-//	}
-//
-//	testCases := map[string]struct {
-//		args    args
-//		wantErr error
-//	}{
-//		"success": {
-//			args: args{
-//				task: &NftRegistrationTask{
-//					Request: &NftRegistrationRequest{
-//						CreatorPastelID: "test-id",
-//					},
-//					NftRegistrationService: &NftRegistrationService{
-//						config: NewConfig(),
-//					},
-//					signatures: make([][]byte, 3),
-//					fingerprintAndScores: &pastel.DDAndFingerprints{
-//						Block:                      "Block",
-//						Principal:                  "Principal",
-//						DupeDetectionSystemVersion: "v1.0",
-//
-//						IsLikelyDupe:     true,
-//						IsRareOnInternet: true,
-//
-//						RarenessScores: &pastel.RarenessScores{
-//							CombinedRarenessScore:         0,
-//							XgboostPredictedRarenessScore: 0,
-//							NnPredictedRarenessScore:      0,
-//							OverallAverageRarenessScore:   0,
-//						},
-//						InternetRareness: &pastel.InternetRareness{
-//							MatchesFoundOnFirstPage: 0,
-//							NumberOfPagesOfResults:  0,
-//							URLOfFirstMatchInPage:   "",
-//						},
-//
-//						OpenNSFWScore: 0.1,
-//						AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
-//							Drawings: 0.1,
-//							Hentai:   0.2,
-//							Neutral:  0.3,
-//							Porn:     0.4,
-//							Sexy:     0.5,
-//						},
-//
-//						ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
-//						FingerprintsStat: &pastel.FingerprintsStat{
-//							NumberOfFingerprintsRequiringFurtherTesting1: 1,
-//							NumberOfFingerprintsRequiringFurtherTesting2: 2,
-//							NumberOfFingerprintsRequiringFurtherTesting3: 3,
-//							NumberOfFingerprintsRequiringFurtherTesting4: 4,
-//							NumberOfFingerprintsRequiringFurtherTesting5: 5,
-//							NumberOfFingerprintsRequiringFurtherTesting6: 6,
-//							NumberOfFingerprintsOfSuspectedDupes:         7,
-//						},
-//
-//						HashOfCandidateImageFile: "HashOfCandidateImageFile",
-//						PerceptualImageHashes: &pastel.PerceptualImageHashes{
-//							PDQHash:        "PdqHash",
-//							PerceptualHash: "PerceptualHash",
-//							AverageHash:    "AverageHash",
-//							DifferenceHash: "DifferenceHash",
-//							NeuralHash:     "NeuralhashHash",
-//						},
-//						PerceptualHashOverlapCount: 1,
-//
-//						Maxes: &pastel.Maxes{
-//							PearsonMax:           1.0,
-//							SpearmanMax:          2.0,
-//							KendallMax:           3.0,
-//							HoeffdingMax:         4.0,
-//							MutualInformationMax: 5.0,
-//							HsicMax:              6.0,
-//							XgbimportanceMax:     7.0,
-//						},
-//						Percentile: &pastel.Percentile{
-//							PearsonTop1BpsPercentile:             1.0,
-//							SpearmanTop1BpsPercentile:            2.0,
-//							KendallTop1BpsPercentile:             3.0,
-//							HoeffdingTop10BpsPercentile:          4.0,
-//							MutualInformationTop100BpsPercentile: 5.0,
-//							HsicTop100BpsPercentile:              6.0,
-//							XgbimportanceTop100BpsPercentile:     7.0,
-//						},
-//					},
-//				},
-//			},
-//			wantErr: nil,
-//		},
-//	}
-//
-//	for name, tc := range testCases {
-//		tc := tc
-//
-//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-//			t.Parallel()
-//
-//			err := tc.args.task.generateDDAndFingerprintsIDs()
-//			if tc.wantErr != nil {
-//				assert.NotNil(t, err)
-//			} else {
-//				assert.Nil(t, err)
-//			}
-//		})
-//	}
-//}
-//
-//func TestNodesSendImage(t *testing.T) {
-//	t.Parallel()
-//
-//	type args struct {
-//		ctx  context.Context
-//		file *files.File
-//	}
-//
-//	type nodeAttribute struct {
-//		address   string
-//		returnErr error
-//	}
-//
-//	fingerAndScores := &pastel.DDAndFingerprints{
-//		Block:                      "Block",
-//		Principal:                  "Principal",
-//		DupeDetectionSystemVersion: "v1.0",
-//
-//		IsLikelyDupe:     true,
-//		IsRareOnInternet: true,
-//
-//		RarenessScores: &pastel.RarenessScores{
-//			CombinedRarenessScore:         0,
-//			XgboostPredictedRarenessScore: 0,
-//			NnPredictedRarenessScore:      0,
-//			OverallAverageRarenessScore:   0,
-//		},
-//		InternetRareness: &pastel.InternetRareness{
-//			MatchesFoundOnFirstPage: 0,
-//			NumberOfPagesOfResults:  0,
-//			URLOfFirstMatchInPage:   "",
-//		},
-//
-//		OpenNSFWScore: 0.1,
-//		AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
-//			Drawings: 0.1,
-//			Hentai:   0.2,
-//			Neutral:  0.3,
-//			Porn:     0.4,
-//			Sexy:     0.5,
-//		},
-//
-//		ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
-//		FingerprintsStat: &pastel.FingerprintsStat{
-//			NumberOfFingerprintsRequiringFurtherTesting1: 1,
-//			NumberOfFingerprintsRequiringFurtherTesting2: 2,
-//			NumberOfFingerprintsRequiringFurtherTesting3: 3,
-//			NumberOfFingerprintsRequiringFurtherTesting4: 4,
-//			NumberOfFingerprintsRequiringFurtherTesting5: 5,
-//			NumberOfFingerprintsRequiringFurtherTesting6: 6,
-//			NumberOfFingerprintsOfSuspectedDupes:         7,
-//		},
-//
-//		HashOfCandidateImageFile: "HashOfCandidateImageFile",
-//		PerceptualImageHashes: &pastel.PerceptualImageHashes{
-//			PDQHash:        "PdqHash",
-//			PerceptualHash: "PerceptualHash",
-//			AverageHash:    "AverageHash",
-//			DifferenceHash: "DifferenceHash",
-//			NeuralHash:     "NeuralhashHash",
-//		},
-//		PerceptualHashOverlapCount: 1,
-//
-//		Maxes: &pastel.Maxes{
-//			PearsonMax:           1.0,
-//			SpearmanMax:          2.0,
-//			KendallMax:           3.0,
-//			HoeffdingMax:         4.0,
-//			MutualInformationMax: 5.0,
-//			HsicMax:              6.0,
-//			XgbimportanceMax:     7.0,
-//		},
-//		Percentile: &pastel.Percentile{
-//			PearsonTop1BpsPercentile:             1.0,
-//			SpearmanTop1BpsPercentile:            2.0,
-//			KendallTop1BpsPercentile:             3.0,
-//			HoeffdingTop10BpsPercentile:          4.0,
-//			MutualInformationTop100BpsPercentile: 5.0,
-//			HsicTop100BpsPercentile:              6.0,
-//			XgbimportanceTop100BpsPercentile:     7.0,
-//		},
-//	}
-//
-//	testCompressedFingerAndScores, genErr := pastel.ToCompressSignedDDAndFingerprints(fingerAndScores, []byte("testSignature"))
-//	assert.Nil(t, genErr)
-//
-//	testCases := []struct {
-//		nodes                     []nodeAttribute
-//		args                      args
-//		err                       error
-//		compressedFingersAndScore []byte
-//		numberProbeImageCall      int
-//	}{
-//		{
-//			nodes:                     []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
-//			args:                      args{context.Background(), &files.File{}},
-//			err:                       nil,
-//			compressedFingersAndScore: testCompressedFingerAndScores,
-//			numberProbeImageCall:      1,
-//		},
-//		{
-//			nodes:                     []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", fmt.Errorf("failed to open stream")}},
-//			args:                      args{context.Background(), &files.File{}},
-//			err:                       fmt.Errorf("failed to open stream"),
-//			compressedFingersAndScore: testCompressedFingerAndScores,
-//			numberProbeImageCall:      1,
-//		},
-//	}
-//
-//	for i, testCase := range testCases {
-//		testCase := testCase
-//
-//		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-//			t.Parallel()
-//
-//			nodes := List{}
-//			clients := []*test.Client{}
-//
-//			for _, a := range testCase.nodes {
-//				//client mock
-//				client := test.NewMockClient(t)
-//				//listen on uploadImage call
-//				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.err)
-//				clients = append(clients, client)
-//
-//				nodes.Add(&NftRegisterNodeClient{
-//					address:              a.address,
-//					RegisterNftInterface: client.RegisterNft,
-//				})
-//			}
-//
-//			err := nodes.ProbeImage(testCase.args.ctx, testCase.args.file)
-//			if testCase.err != nil {
-//				assert.True(t, strings.Contains(err.Error(), testCase.err.Error()))
-//			} else {
-//				assert.Nil(t, err)
-//			}
-//
-//			//mock assertion each client
-//			for _, client := range clients {
-//				client.RegisterNft.AssertExpectations(t)
-//				client.AssertProbeImageCall(testCase.numberProbeImageCall, testCase.args.ctx, testCase.args.file)
-//			}
-//		})
-//	}
-//}
+import (
+	"context"
+	"fmt"
+	"image"
+	"image/png"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/DataDog/zstd"
+	"github.com/google/uuid"
+	"github.com/pastelnetwork/gonode/mixins"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
+	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/stretchr/testify/mock"
+
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/common/storage/fs"
+	"github.com/pastelnetwork/gonode/pastel"
+	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	testCreatorPastelID = "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW"
+	testPqID            = `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`
+)
+
+func newTestImageFile() (*files.File, error) {
+	imageStorage := files.NewStorage(fs.NewFileStorage(os.TempDir()))
+	imgFile := imageStorage.NewFile()
+
+	f, err := imgFile.Create()
+	if err != nil {
+		return nil, errors.Errorf("failed to create storage file: %w", err)
+	}
+	defer f.Close()
+
+	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
+	png.Encode(f, img)
+	imgFile.SetFormat(1)
+
+	return imgFile, nil
+}
+
+func TestTaskRun(t *testing.T) {
+	t.Parallel()
+	type fields struct {
+		Request *NftRegistrationRequest
+	}
+
+	type args struct {
+		taskID            string
+		ctx               context.Context
+		networkFee        float64
+		masterNodes       pastel.MasterNodes
+		primarySessID     string
+		pastelIDS         []string
+		fingerPrint       []byte
+		signature         []byte
+		returnErr         error
+		connectErr        error
+		encodeInfoReturns *rqnode.EncodeInfo
+	}
+
+	tests := map[string]struct {
+		fields  fields
+		args    args
+		wantErr error
+	}{
+		"success": {
+			fields: fields{
+				Request: &NftRegistrationRequest{
+					MaximumFee:                0.5,
+					CreatorPastelID:           testCreatorPastelID,
+					CreatorPastelIDPassphrase: "passphrase",
+				},
+			},
+			args: args{
+				taskID:     "1",
+				ctx:        context.Background(),
+				networkFee: 0.4,
+				masterNodes: pastel.MasterNodes{
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
+				},
+				primarySessID: "sesid1",
+				pastelIDS:     []string{"2", "3"},
+				fingerPrint:   []byte("match"),
+				signature:     []byte("sign"),
+				returnErr:     nil,
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": {
+							ID:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelID:          "test-pastel-id",
+						},
+					},
+					EncoderParam: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+				},
+			},
+		},
+
+		"failure": {
+			wantErr: errors.New("test"),
+			fields: fields{
+				Request: &NftRegistrationRequest{
+					MaximumFee:                0.5,
+					CreatorPastelID:           testCreatorPastelID,
+					CreatorPastelIDPassphrase: "passphrase",
+				},
+			},
+			args: args{
+				taskID:     "1",
+				ctx:        context.Background(),
+				networkFee: 0.4,
+				masterNodes: pastel.MasterNodes{
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
+				},
+				primarySessID: "sesid1",
+				pastelIDS:     []string{"2", "3"},
+				fingerPrint:   []byte("match"),
+				signature:     []byte("sign"),
+				returnErr:     errors.New("test"),
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": {
+							ID:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelID:          "test-pastel-id",
+						},
+					},
+					EncoderParam: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		testCase := tc
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			nftFile, err := newTestImageFile()
+			assert.NoError(t, err)
+
+			// prepare task
+			fg := pastel.Fingerprint{0.1, 0, 2}
+			compressedFg, err := zstd.CompressLevel(nil, fg.Bytes(), 22)
+			assert.Nil(t, err)
+			testCase.args.fingerPrint = compressedFg
+
+			nodeClient := test.NewMockClient(t)
+			nodeClient.
+				ListenOnConnect("", testCase.args.returnErr).
+				ListenOnRegisterNft().
+				ListenOnSession(testCase.args.returnErr).
+				ListenOnConnectTo(testCase.args.returnErr).
+				ListenOnSessID(testCase.args.primarySessID).
+				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
+				ListenOnDone().
+				ListenOnUploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
+				ListenOnSendSignedTicket(1, nil).
+				ListenOnClose(nil)
+			nodeClient.ConnectionInterface.On("RegisterNft").Return(nodeClient.RegisterNftInterface)
+
+			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return("", nil)
+			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return("", nil)
+			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return("", nil)
+			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return("", nil)
+			nodeClient.RegisterNftInterface.On("MeshNodes", mock.Anything, mock.Anything).Return(nil)
+
+			ddData := &pastel.DDAndFingerprints{
+				InternetRareness:      &pastel.InternetRareness{},
+				AlternativeNSFWScores: &pastel.AlternativeNSFWScores{},
+				FingerprintsStat:      &pastel.FingerprintsStat{},
+				PerceptualImageHashes: &pastel.PerceptualImageHashes{},
+				RarenessScores:        &pastel.RarenessScores{},
+				Maxes:                 &pastel.Maxes{},
+				Percentile:            &pastel.Percentile{},
+			}
+			compressed, err := pastel.ToCompressSignedDDAndFingerprints(ddData, []byte("signature"))
+			assert.Nil(t, err)
+
+			nodeClient.ListenOnProbeImage(compressed, true, testCase.args.returnErr)
+			nodeClient.RegisterNftInterface.On("SendRegMetadata", mock.Anything, mock.Anything).Return(nil)
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.
+				ListenOnStorageNetworkFee(testCase.args.networkFee, testCase.args.returnErr).
+				ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr).
+				ListenOnSign([]byte(testCase.args.signature), testCase.args.returnErr).
+				ListenOnGetBlockCount(100, nil).
+				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{Hash: "abc123", Height: 100}, nil).
+				ListenOnFindTicketByID(&pastel.IDTicket{IDTicketProp: pastel.IDTicketProp{PqKey: testPqID}}, nil).
+				ListenOnSendFromAddress("pre-burnt-txid", nil).
+				ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 12}, nil).
+				ListenOnRegisterNFTTicket("nft-act-txid", nil).
+				ListenOnVerify(true, nil).ListenOnGetBalance(10, nil).
+				ListenOnRegisterActTicket("txid-act", nil)
+
+			rqClientMock := rqMock.NewMockClient(t)
+			rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)
+			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
+			rqClientMock.ListenOnConnect(testCase.args.connectErr)
+
+			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, rqClientMock)
+			service.config.WaitTxnValidInterval = 1
+
+			go service.Run(testCase.args.ctx)
+
+			Request := testCase.fields.Request
+			Request.Image = nftFile
+			Request.MaximumFee = 100
+			task := NewNFTRegistrationTask(service, Request)
+
+			//create context with timeout to automatically end process after 5 sec
+			ctx, cancel := context.WithTimeout(testCase.args.ctx, 5*time.Second)
+			defer cancel()
+
+			err = task.Run(ctx)
+			if testCase.wantErr != nil {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskCreateTicket(t *testing.T) {
+	type args struct {
+		task *NftRegistrationTask
+	}
+
+	testCases := map[string]struct {
+		args    args
+		want    *pastel.NFTTicket
+		wantErr error
+	}{
+		"fingerprint-error": {
+			args: args{
+				task: &NftRegistrationTask{
+					dataHash: []byte{1, 2, 3},
+					Request: &NftRegistrationRequest{
+						CreatorPastelID: "test-id",
+					},
+					service: &NftRegistrationService{
+						config: NewConfig(),
+					},
+					FingerprintsHandler: &mixins.FingerprintsHandler{},
+					RqHandler: &mixins.RQHandler{
+						RQIDs:          []string{"a"},
+						RQIDsFile:      []byte{1, 2, 3},
+						RQEncodeParams: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+					},
+					ImageHandler: &mixins.NftImageHandler{
+						PreviewHash:         []byte{1, 2, 3},
+						MediumThumbnailHash: []byte{1, 2, 3},
+						SmallThumbnailHash:  []byte{1, 2, 3},
+					},
+				},
+			},
+			wantErr: common.ErrEmptyFingerprints,
+			want:    nil,
+		},
+		"data-hash-error": {
+			args: args{
+				task: &NftRegistrationTask{
+					Request: &NftRegistrationRequest{
+						CreatorPastelID: "test-id",
+					},
+					service: &NftRegistrationService{
+						config: NewConfig(),
+					},
+					FingerprintsHandler: &mixins.FingerprintsHandler{
+						DDAndFingerprintsIDs: []string{"a"},
+						DDAndFpFile:          []byte{1, 2, 3},
+						SNsSignatures:        [][]byte{[]byte{1, 2, 3}},
+					},
+					RqHandler: &mixins.RQHandler{
+						RQIDs:          []string{"a"},
+						RQIDsFile:      []byte{1, 2, 3},
+						RQEncodeParams: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+					},
+					ImageHandler: &mixins.NftImageHandler{
+						PreviewHash:         []byte{1, 2, 3},
+						MediumThumbnailHash: []byte{1, 2, 3},
+						SmallThumbnailHash:  []byte{1, 2, 3},
+					},
+				},
+			},
+			wantErr: common.ErrEmptyDatahash,
+			want:    nil,
+		},
+		"preview-hash-error": {
+			args: args{
+				task: &NftRegistrationTask{
+					dataHash: []byte{1, 2},
+					Request: &NftRegistrationRequest{
+						CreatorPastelID: "test-id",
+					},
+					service: &NftRegistrationService{
+						config: NewConfig(),
+					},
+					FingerprintsHandler: &mixins.FingerprintsHandler{
+						DDAndFingerprintsIDs: []string{"a"},
+						DDAndFpFile:          []byte{1, 2, 3},
+						SNsSignatures:        [][]byte{[]byte{1, 2, 3}},
+					},
+					RqHandler: &mixins.RQHandler{
+						RQIDs:          []string{"a"},
+						RQIDsFile:      []byte{1, 2, 3},
+						RQEncodeParams: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+					},
+					ImageHandler: &mixins.NftImageHandler{},
+				},
+			},
+			wantErr: common.ErrEmptyPreviewHash,
+			want:    nil,
+		},
+
+		"raptorQ-symbols-error": {
+			args: args{
+				task: &NftRegistrationTask{
+					dataHash: []byte{},
+					Request: &NftRegistrationRequest{
+						CreatorPastelID: "test-id",
+					},
+					service: &NftRegistrationService{
+						config: NewConfig(),
+					},
+					FingerprintsHandler: &mixins.FingerprintsHandler{
+						DDAndFingerprintsIDs: []string{"a"},
+						DDAndFpFile:          []byte{1, 2, 3},
+						SNsSignatures:        [][]byte{[]byte{1, 2, 3}},
+					},
+					RqHandler: &mixins.RQHandler{},
+					ImageHandler: &mixins.NftImageHandler{
+						PreviewHash:         []byte{1, 2, 3},
+						MediumThumbnailHash: []byte{1, 2, 3},
+						SmallThumbnailHash:  []byte{1, 2, 3},
+					},
+				},
+			},
+			wantErr: common.ErrEmptyRaptorQSymbols,
+			want:    nil,
+		},
+
+		"success": {
+			args: args{
+				task: &NftRegistrationTask{
+					Request: &NftRegistrationRequest{
+						CreatorPastelID: "test-id",
+						CreatorName:     "test-name",
+						IssuedCopies:    10,
+					},
+					dataHash: []byte{1, 2},
+					service: &NftRegistrationService{
+						config: NewConfig(),
+					},
+					FingerprintsHandler: &mixins.FingerprintsHandler{
+						DDAndFingerprintsIDs: []string{"a"},
+						DDAndFpFile:          []byte{1, 2, 3},
+						SNsSignatures:        [][]byte{[]byte{1, 2, 3}},
+					},
+					RqHandler: &mixins.RQHandler{
+						RQIDs:          []string{"a"},
+						RQIDsFile:      []byte{1, 2, 3},
+						RQEncodeParams: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+					},
+					ImageHandler: &mixins.NftImageHandler{
+						PreviewHash:         []byte{1, 2, 3},
+						MediumThumbnailHash: []byte{1, 2, 3},
+						SmallThumbnailHash:  []byte{1, 2, 3},
+					},
+				},
+			},
+			wantErr: nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			err := tc.args.task.createNftTicket(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.Equal(t, tc.wantErr.Error(), err.Error())
+			} else {
+				assert.Nil(t, err)
+				assert.NotNil(t, tc.args.task.nftRegistrationTicket)
+			}
+
+		})
+	}
+}
+
+func TestTaskSignTicket(t *testing.T) {
+	type args struct {
+		task        *NftRegistrationTask
+		signErr     error
+		signReturns []byte
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &NftRegistrationTask{
+					Request: &NftRegistrationRequest{
+						CreatorPastelID: "testid",
+					},
+					service: &NftRegistrationService{
+						config: &Config{},
+					},
+					nftRegistrationTicket: &pastel.NFTTicket{},
+				},
+			},
+			wantErr: nil,
+		},
+		"err": {
+			args: args{
+				task: &NftRegistrationTask{
+					Request: &NftRegistrationRequest{
+						CreatorPastelID: "testid",
+					},
+					service: &NftRegistrationService{
+						config: &Config{},
+					},
+					nftRegistrationTicket: &pastel.NFTTicket{},
+				},
+				signErr: errors.New("test"),
+			},
+			wantErr: errors.New("test"),
+		},
+	}
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
+			tc.args.task.service.pastelHandler = mixins.NewPastelHandler(pastelClientMock)
+
+			err := tc.args.task.signTicket(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.args.signReturns, tc.args.task.creatorSignature)
+			}
+		})
+	}
+}

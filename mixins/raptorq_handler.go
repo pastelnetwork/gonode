@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
+
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -12,7 +14,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
-	"math/rand"
 )
 
 type RQHandler struct {
@@ -30,18 +31,15 @@ type RQHandler struct {
 	RQIDsIc        uint32
 }
 
-func NewRQHandler(rqClient rqnode.ClientInterface,
-	raptorQServiceAddress string,
-	rqFilesDir string,
-	numberRQIDSFiles uint32,
-	maxRQIDs uint32,
-) *RQHandler {
+func NewRQHandler(rqClient rqnode.ClientInterface, pastelHandler *PastelHandler, raptorQServiceAddress string, rqFilesDir string,
+	numberRQIDSFiles uint32, maxRQIDs uint32) *RQHandler {
 	return &RQHandler{
 		rqClient:              rqClient,
 		raptorQServiceAddress: raptorQServiceAddress,
 		rqFilesDir:            rqFilesDir,
 		numberRQIDSFiles:      numberRQIDSFiles,
 		maxRQIDs:              maxRQIDs,
+		pastelHandler:         pastelHandler,
 	}
 }
 
@@ -93,11 +91,8 @@ func (h *RQHandler) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolI
 		return fmt.Errorf("marshal rqID file")
 	}
 
-	signature, err := h.pastelHandler.PastelClient.Sign(ctx,
-		rqIDsfile,
-		callerPastelID,
-		callerPassphrase,
-		pastel.SignAlgorithmED448)
+	signature, err := h.pastelHandler.PastelClient.Sign(ctx, rqIDsfile, callerPastelID,
+		callerPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign identifiers file: %w", err)
 	}
@@ -126,7 +121,5 @@ func (h *RQHandler) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolI
 }
 
 func (h RQHandler) IsEmpty() bool {
-	return h.RQIDs == nil || len(h.RQIDs) == 0 ||
-		h.RQIDsFile == nil || len(h.RQIDsFile) == 0 ||
-		h.RQEncodeParams.Oti == nil || len(h.RQEncodeParams.Oti) == 0
+	return len(h.RQIDs) == 0 || len(h.RQIDsFile) == 0 || len(h.RQEncodeParams.Oti) == 0
 }

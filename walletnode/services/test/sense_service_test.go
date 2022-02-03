@@ -3,6 +3,9 @@ package test
 import (
 	"context"
 	"fmt"
+	"strings"
+	"testing"
+
 	taskMock "github.com/pastelnetwork/gonode/common/service/task/test"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	service2 "github.com/pastelnetwork/gonode/mixins"
@@ -12,8 +15,6 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	service "github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
 )
 
 func TestNodesSendImage(t *testing.T) {
@@ -144,7 +145,7 @@ func TestNodesSendImage(t *testing.T) {
 			nodes := common.SuperNodeList{}
 			clients := []*test.Client{}
 
-			meshHandler := common.NewMeshHandlerSimple(nil, service.RegisterSenseNodeMaker{})
+			meshHandler := common.NewMeshHandlerSimple(nil, service.RegisterSenseNodeMaker{}, nil)
 
 			for _, a := range testCase.nodes {
 				//client mock

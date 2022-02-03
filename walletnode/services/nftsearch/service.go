@@ -100,10 +100,9 @@ func (service *NftSearchingService) RegTicket(ctx context.Context, RegTXID strin
 // NewNftSearchService returns a new NFT Search Service instance.
 // 	NB: Because NewNftApiHandler calls AddTask, an NftSearchTask will actually
 //		be instantiated instead of a generic Task.
-func NewNftSearchService(config *Config,
-	pastelClient pastel.Client,
-	nodeClient node.ClientInterface,
-) *NftSearchingService {
+func NewNftSearchService(config *Config, pastelClient pastel.Client,
+	nodeClient node.ClientInterface) *NftSearchingService {
+
 	return &NftSearchingService{
 		Worker:        task.NewWorker(),
 		config:        config,

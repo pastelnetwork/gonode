@@ -2,6 +2,7 @@ package nftregister
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,7 +44,6 @@ type NftRegistrationTask struct {
 	serializedTicket      []byte
 
 	regNFTTxid string
-	burnTxid   string
 }
 
 // Run starts the task
@@ -153,7 +153,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regNFTTxid, int64(task.service.config.NFTRegTxMinConfirmations), 15*time.Second); err != nil {
+	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regNFTTxid, int64(task.service.config.NFTRegTxMinConfirmations),
+		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
@@ -166,7 +167,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	log.Debugf("reg-act-txid: %s", actTxid)
 
 	// Wait until actTxid is valid
-	err = task.service.pastelHandler.WaitTxidValid(newCtx, actTxid, int64(task.service.config.NFTActTxMinConfirmations), 15*time.Second)
+	err = task.service.pastelHandler.WaitTxidValid(newCtx, actTxid,
+		int64(task.service.config.NFTActTxMinConfirmations), time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
 		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
@@ -310,11 +312,11 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 	if task.dataHash == nil {
 		return common.ErrEmptyDatahash
 	}
-	if task.RqHandler.IsEmpty() {
-		return common.ErrEmptyRaptorQSymbols
-	}
 	if task.FingerprintsHandler.IsEmpty() {
 		return common.ErrEmptyFingerprints
+	}
+	if task.RqHandler.IsEmpty() {
+		return common.ErrEmptyRaptorQSymbols
 	}
 	if task.ImageHandler.IsEmpty() {
 		return common.ErrEmptyPreviewHash
@@ -410,6 +412,10 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 		return errors.Errorf("uploading ticket has failed: %w", err)
 	}
 
+	if len(fees) < 3 {
+		return errors.Errorf("registration fees not received")
+	}
+
 	if fees[0] != fees[1] || fees[0] != fees[2] || fees[1] != fees[2] {
 		return errors.Errorf("registration fees don't match")
 	}
@@ -434,18 +440,21 @@ func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string,
 }
 
 func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context.Context) error {
-
-	task.service.pastelHandler.BurnSomeCoins(ctx, task.Request.SpendableAddress, task.registrationFee, 10)
+	burnTxid, err := task.service.pastelHandler.BurnSomeCoins(ctx, task.Request.SpendableAddress,
+		task.registrationFee, 10)
+	if err != nil {
+		return fmt.Errorf("burn some coins: %w", err)
+	}
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
-			//TODO: use assert here
 			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
+
 		group.Go(func() error {
-			ticketTxid, err := nftRegNode.SendPreBurntFeeTxid(ctx, task.burnTxid)
+			ticketTxid, err := nftRegNode.SendPreBurntFeeTxid(ctx, burnTxid)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("send pre-burnt fee txid failed")
 				return err
@@ -497,8 +506,8 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 		MeshHandler:         common.NewMeshHandler(meshHandlerOpts),
 		ImageHandler:        mixins.NewImageHandler(service.pastelHandler),
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
-		RqHandler: mixins.NewRQHandler(service.rqClient,
-			service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.config.RQIDsMax,
-			service.config.NumberRQIDSFiles),
+		RqHandler: mixins.NewRQHandler(service.rqClient, service.pastelHandler,
+			service.config.RaptorQServiceAddress, service.config.RqFilesDir,
+			service.config.NumberRQIDSFiles, service.config.RQIDsMax),
 	}
 }

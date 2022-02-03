@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
@@ -66,12 +67,12 @@ func (h *NftImageHandler) CreateCopyWithEncodedFingerprint(ctx context.Context,
 
 	ed448PubKey, err := GetPubKey(creatorPatelID)
 	if err != nil {
-		return fmt.Errorf("encodeFingerprint: %v", err)
+		return fmt.Errorf("getPubKey from pastelID: %v", err)
 	}
 
 	pqPubKey, err := GetPubKey(ticket.PqKey)
 	if err != nil {
-		return fmt.Errorf("encodeFingerprint: %v", err)
+		return fmt.Errorf("getPubKey from pQKey: %v", err)
 	}
 
 	// Sign fingerprint
@@ -153,9 +154,7 @@ func NewImageHandler(pastelHandler *PastelHandler) *NftImageHandler {
 }
 
 func (h NftImageHandler) IsEmpty() bool {
-	return h.PreviewHash == nil || len(h.PreviewHash) == 0 ||
-		h.MediumThumbnailHash == nil || len(h.MediumThumbnailHash) == 0 ||
-		h.SmallThumbnailHash == nil || len(h.SmallThumbnailHash) == 0
+	return len(h.PreviewHash) == 0 || len(h.MediumThumbnailHash) == 0 || len(h.SmallThumbnailHash) == 0
 }
 
 // GetPubKey gets ED448 or PQ public key from base58 encoded key

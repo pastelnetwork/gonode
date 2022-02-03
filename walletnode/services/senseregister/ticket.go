@@ -25,6 +25,3 @@ func FromSenseRegisterPayload(payload *sense.StartProcessingPayload) *SenseRegis
 		AppPastelIDPassphrase: payload.AppPastelidPassphrase,
 	}
 }
-
-//func toNftRegisterTicket(ticket *SenseRegistrationRequest) *sense.SenseTicket {
-//}

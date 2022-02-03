@@ -2,8 +2,11 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/pastel"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -121,7 +124,7 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (Super
 
 	if len(candidatesNodes) < n {
 		m.task.UpdateStatus(StatusErrorNotEnoughSuperNode)
-		return nil, errors.New("unable to find enough Supernodes")
+		return nil, fmt.Errorf("unable to find enough Supernodes: %d", n)
 	}
 
 	// Connect to top nodes to find 3SN and validate their info
@@ -216,7 +219,7 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
 		PassPhrase: m.passphrase,
-		Algorithm:  "ed448",
+		Algorithm:  pastel.SignAlgorithmED448,
 	}
 
 	var nodes SuperNodeList
@@ -323,7 +326,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 
 		someNode := secondaries.FindByPastelID(pastelID)
 		if someNode == nil {
-			return nil, errors.New("not found accepted node")
+			return nil, fmt.Errorf("not found accepted node: %s", pastelID)
 		}
 		meshedNodes.Add(someNode)
 	}

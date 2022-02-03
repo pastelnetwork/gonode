@@ -58,8 +58,8 @@ func ToNftRegisterTicket(request *NftRegistrationRequest) *nft.NftRegisterPayloa
 	thumbnail := nft.Thumbnailcoordinate{
 		TopLeftX:     request.Thumbnail.TopLeftX,
 		TopLeftY:     request.Thumbnail.TopLeftY,
-		BottomRightY: request.Thumbnail.BottomRightX,
-		BottomRightX: request.Thumbnail.BottomRightY,
+		BottomRightY: request.Thumbnail.BottomRightY,
+		BottomRightX: request.Thumbnail.BottomRightX,
 	}
 	return &nft.NftRegisterPayload{
 		Name:                      request.Name,

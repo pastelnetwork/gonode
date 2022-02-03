@@ -10,6 +10,8 @@ const (
 	defaultSenseRegTxMinConfirmations = 12
 	defaultSenseActTxMinConfirmations = 5
 
+	defaultWaitTxnValidInterval = 15
+
 	defaultDDAndFingerprintsMax = 50
 )
 
@@ -21,8 +23,8 @@ type Config struct {
 	SenseActTxMinConfirmations int `mapstructure:"-" json:"sense_act_tx_min_confirmations,omitempty"`
 
 	DDAndFingerprintsMax uint32 `mapstructure:"dd_and_fingerprints_max" json:"dd_and_fingerprints_max,omitempty"`
-
-	thumbnailSize int
+	WaitTxnValidInterval uint32 `mapstructure:"-"`
+	thumbnailSize        int
 }
 
 // NewConfig returns a new Config instance.
@@ -33,5 +35,6 @@ func NewConfig() *Config {
 		SenseActTxMinConfirmations: defaultSenseActTxMinConfirmations,
 		thumbnailSize:              defaultThumbnailSize,
 		DDAndFingerprintsMax:       defaultDDAndFingerprintsMax,
+		WaitTxnValidInterval:       defaultWaitTxnValidInterval,
 	}
 }

@@ -14,6 +14,7 @@ const (
 
 	defaultDDAndFingerprintsMax = 50
 	defaultRQIDsMax             = 50
+	defaultWaitTxnValidInterval = 15
 )
 
 // Config contains settings of the registering nft.
@@ -32,6 +33,8 @@ type Config struct {
 	DDAndFingerprintsMax uint32 `mapstructure:"dd_and_fingerprints_max" json:"dd_and_fingerprints_max,omitempty"`
 	RQIDsMax             uint32 `mapstructure:"rq_ids_max" json:"rq_ids_max,omitempty"`
 
+	WaitTxnValidInterval uint32 `mapstructure:"-"`
+
 	thumbnailSize int
 }
 
@@ -45,5 +48,6 @@ func NewConfig() *Config {
 		thumbnailSize:            defaultThumbnailSize,
 		DDAndFingerprintsMax:     defaultDDAndFingerprintsMax,
 		RQIDsMax:                 defaultRQIDsMax,
+		WaitTxnValidInterval:     defaultWaitTxnValidInterval,
 	}
 }

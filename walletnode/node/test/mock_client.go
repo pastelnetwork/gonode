@@ -57,6 +57,9 @@ const (
 	DownloadMethod = "Download"
 	// DownloadThumbnailMethod represent DownloadThumbnail name method
 	DownloadThumbnailMethod = "DownloadThumbnail"
+
+	// SendActionActMethod represent SendActionAct method
+	SendActionActMethod = "SendActionAct"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -67,6 +70,7 @@ type Client struct {
 	*mocks.RegisterNftInterface
 	*mocks.DownloadNftInterface
 	*mocks.ProcessUserdataInterface
+	*mocks.RegisterSenseInterface
 }
 
 // NewMockClient create new client mock
@@ -78,6 +82,7 @@ func NewMockClient(t *testing.T) *Client {
 		RegisterNftInterface:     &mocks.RegisterNftInterface{},
 		DownloadNftInterface:     &mocks.DownloadNftInterface{},
 		ProcessUserdataInterface: &mocks.ProcessUserdataInterface{},
+		RegisterSenseInterface:   &mocks.RegisterSenseInterface{},
 	}
 }
 
@@ -90,6 +95,7 @@ func (client *Client) ListenOnRegisterNft() *Client {
 // ListenOnSendPreBurntFeeTxID listening SendPreBurntFeeTxIdMethod call
 func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Client {
 	client.RegisterNftInterface.On(SendPreBurntFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
+
 	return client
 }
 
@@ -97,6 +103,10 @@ func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Clien
 func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
 	client.RegisterNftInterface.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
+
+	client.RegisterSenseInterface.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything).Return("", err)
+
 	return client
 }
 
@@ -194,6 +204,8 @@ func (client *Client) ListenOnMeshNodes(arguments ...interface{}) *Client {
 // ListenOnProbeImage listening ProbeImage call and returns args value
 func (client *Client) ListenOnProbeImage(arguments ...interface{}) *Client {
 	client.RegisterNftInterface.On(ProbeImageMethod, mock.Anything, mock.Anything).Return(arguments...)
+	client.RegisterSenseInterface.On(ProbeImageMethod, mock.Anything, mock.Anything).Return(arguments...)
+
 	return client
 }
 
@@ -209,6 +221,8 @@ func (client *Client) AssertProbeImageCall(expectedCalls int, arguments ...inter
 // ListenOnSession listening Session call and returns error from args
 func (client *Client) ListenOnSession(returnErr error) *Client {
 	client.RegisterNftInterface.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+	client.RegisterSenseInterface.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+
 	return client
 }
 
@@ -230,6 +244,8 @@ func (client *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error)
 	}
 
 	client.RegisterNftInterface.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
+	client.RegisterSenseInterface.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
+
 	return client
 }
 
@@ -245,6 +261,8 @@ func (client *Client) AssertAcceptedNodesCall(expectedCalls int, arguments ...in
 // ListenOnConnectTo listening ConnectTo call and returns error from args
 func (client *Client) ListenOnConnectTo(returnErr error) *Client {
 	client.RegisterNftInterface.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
+	client.RegisterSenseInterface.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
+
 	return client
 }
 
@@ -260,6 +278,8 @@ func (client *Client) AssertConnectToCall(expectedCalls int, arguments ...interf
 // ListenOnSessID listening SessID call and returns sessID from args
 func (client *Client) ListenOnSessID(sessID string) *Client {
 	client.RegisterNftInterface.On(SessIDMethod).Return(sessID)
+	client.RegisterSenseInterface.On(SessIDMethod).Return(sessID)
+
 	return client
 }
 
@@ -376,5 +396,11 @@ func (client *Client) AssertSessIDCallUserdata(expectedCalls int, arguments ...i
 		client.ProcessUserdataInterface.AssertCalled(client.t, SessIDMethod, arguments...)
 	}
 	client.ProcessUserdataInterface.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
+	return client
+}
+
+// ListenOnSendActionAct listening RegisterNftInterface call
+func (client *Client) ListenOnSendActionAct(retErr error) *Client {
+	client.RegisterSenseInterface.On(SendActionActMethod, mock.Anything, mock.Anything).Return(retErr)
 	return client
 }
