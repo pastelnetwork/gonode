@@ -7,6 +7,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -22,6 +23,9 @@ type RegTaskHelper struct {
 	serverPassPhrase string
 	PastelHandler    *mixins.PastelHandler
 
+	SenseRegMetadata           *types.ActionRegMetadata
+	preburntTxMinConfirmations int
+
 	// valid only for a task run as primary
 	peersTicketSignatureMtx  *sync.Mutex
 	PeersTicketSignature     map[string][]byte
@@ -32,14 +36,16 @@ func NewRegTaskHelper(task *SuperNodeTask,
 	pastelID string, passPhrase string,
 	network *NetworkHandler,
 	pastelClient pastel.Client,
+	preburntTxMinConfirmations int,
 ) *RegTaskHelper {
 	return &RegTaskHelper{
 		SuperNodeTask:  task,
 		ServerPastelID: pastelID, serverPassPhrase: passPhrase, NetworkHandler: network,
-		PastelHandler:            &mixins.PastelHandler{PastelClient: pastelClient},
-		peersTicketSignatureMtx:  &sync.Mutex{},
-		PeersTicketSignature:     make(map[string][]byte),
-		AllSignaturesReceivedChn: make(chan struct{}),
+		PastelHandler:              &mixins.PastelHandler{PastelClient: pastelClient},
+		preburntTxMinConfirmations: preburntTxMinConfirmations,
+		peersTicketSignatureMtx:    &sync.Mutex{},
+		PeersTicketSignature:       make(map[string][]byte),
+		AllSignaturesReceivedChn:   make(chan struct{}),
 	}
 }
 
@@ -139,17 +145,6 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 	return file, idFiles, nil
 }
 
-func (h *RegTaskHelper) VerifyPeersSignature(ctx context.Context, data []byte) error {
-	for nodeID, signature := range h.PeersTicketSignature {
-		if ok, err := h.PastelHandler.PastelClient.Verify(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {
-			return errors.Errorf("verify signature %s of node %s", signature, nodeID)
-		} else if !ok {
-			return errors.Errorf("signature of node %s mistmatch", nodeID)
-		}
-	}
-	return nil
-}
-
 func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minConfirmation int64, interval time.Duration) <-chan error {
 	ch := make(chan error)
 
@@ -197,4 +192,46 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 		}
 	}(ctx, txid)
 	return ch
+}
+
+// ValidateBurnTxID - validates the pre-burnt fee transaction created by the caller
+func (h *RegTaskHelper) ValidateBurnTxID(_ context.Context) error {
+	var err error
+
+	<-h.NewAction(func(ctx context.Context) error {
+		confirmationChn := h.WaitConfirmation(ctx, h.SenseRegMetadata.BurnTxID, int64(h.preburntTxMinConfirmations), 15*time.Second)
+
+		log.WithContext(ctx).Debug("waiting for confimation")
+		if err = <-confirmationChn; err != nil {
+			h.UpdateStatus(StatusErrorInvalidBurnTxID)
+			log.WithContext(ctx).WithError(err).Errorf("validate preburn transaction validation")
+			err = errors.Errorf("validate preburn transaction validation :%w", err)
+			return err
+		}
+		log.WithContext(ctx).Debug("confirmation done")
+		return nil
+	})
+
+	return err
+}
+
+func (h *RegTaskHelper) VerifyPeersTicketSignature(ctx context.Context, ticket *pastel.ActionTicket) error {
+	log.WithContext(ctx).Debug("all signature received so start validation")
+
+	data, err := pastel.EncodeActionTicket(ticket)
+	if err != nil {
+		return errors.Errorf("encoded NFT ticket: %w", err)
+	}
+	return h.VerifyPeersSignature(ctx, data)
+}
+
+func (h *RegTaskHelper) VerifyPeersSignature(ctx context.Context, data []byte) error {
+	for nodeID, signature := range h.PeersTicketSignature {
+		if ok, err := h.PastelHandler.PastelClient.Verify(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {
+			return errors.Errorf("verify signature %s of node %s", signature, nodeID)
+		} else if !ok {
+			return errors.Errorf("signature of node %s mistmatch", nodeID)
+		}
+	}
+	return nil
 }

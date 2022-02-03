@@ -40,13 +40,15 @@ func NewDupeDetectionTaskHelper(task *SuperNodeTask,
 	pastelID string, passPhrase string,
 	network *NetworkHandler,
 	pastelClient pastel.Client,
+	preburntTxMinConfirmations int,
 ) *DupeDetectionHandler {
 	return &DupeDetectionHandler{
 		SuperNodeTask:                         task,
 		DdClient:                              ddClient,
 		allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
 		allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
-		RegTaskHelper:                         NewRegTaskHelper(task, pastelID, passPhrase, network, pastelClient),
+		RegTaskHelper: NewRegTaskHelper(task, pastelID, passPhrase, network, pastelClient,
+			preburntTxMinConfirmations),
 	}
 }
 

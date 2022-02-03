@@ -2,16 +2,16 @@ package senseregister
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/common/storage/files"
-	"github.com/pastelnetwork/gonode/supernode/node"
-	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/supernode/node"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
 // Task is the task of registering new Sense.
@@ -22,9 +22,8 @@ type SenseRegistrationTask struct {
 
 	storage *common.StorageHandler
 
-	senseRegMetadata *types.ActionRegMetadata
-	Ticket           *pastel.ActionTicket
-	Asset            *files.File
+	Ticket *pastel.ActionTicket
+	Asset  *files.File
 
 	// signature of ticket data signed by this node's pastelID
 	ownSignature []byte
@@ -52,24 +51,25 @@ func (task *SenseRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.removeArtifacts)
 }
 
-// SendRegMetadata sends reg metadata
+// SendRegMetadata receives registration metadata -
+//		caller/creator PastelID; block when ticket registration has started; txid of the pre-burn fee
 func (task *SenseRegistrationTask) SendRegMetadata(_ context.Context, regMetadata *types.ActionRegMetadata) error {
 	if err := task.RequiredStatus(common.StatusConnected); err != nil {
 		return err
 	}
-	task.senseRegMetadata = regMetadata
+	task.SenseRegMetadata = regMetadata
 
 	return nil
 }
 
 // ProbeImage sends the original image to dd-server and return a compression of pastel.DDAndFingerprints
 func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.File) ([]byte, error) {
-	if task.senseRegMetadata == nil || task.senseRegMetadata.BlockHash == "" || task.senseRegMetadata.CreatorPastelID == "" {
+	if task.SenseRegMetadata == nil || task.SenseRegMetadata.BlockHash == "" || task.SenseRegMetadata.CreatorPastelID == "" {
 		return nil, errors.Errorf("invalid senseRegMetadata")
 	}
 	task.Asset = file
 	return task.DupeDetectionHandler.ProbeImage(ctx, file,
-		task.senseRegMetadata.BlockHash, task.senseRegMetadata.CreatorPastelID, &tasker{})
+		task.SenseRegMetadata.BlockHash, task.SenseRegMetadata.CreatorPastelID, &tasker{})
 }
 
 func (task *SenseRegistrationTask) validateDdFpIds(ctx context.Context, dd []byte) error {
@@ -131,27 +131,6 @@ func (task *SenseRegistrationTask) validateSignedTicketFromWN(ctx context.Contex
 	return nil
 }
 
-// ValidateBurnTxID - will validate the pre-burnt transaction ID created by 3rd party
-func (task *SenseRegistrationTask) ValidateBurnTxID(_ context.Context) error {
-	var err error
-
-	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.WaitConfirmation(ctx, task.senseRegMetadata.BurnTxID, int64(task.config.PreburntTxMinConfirmations), 15*time.Second)
-
-		log.WithContext(ctx).Debug("waiting for confimation")
-		if err = <-confirmationChn; err != nil {
-			task.UpdateStatus(common.StatusErrorInvalidBurnTxID)
-			log.WithContext(ctx).WithError(err).Errorf("validate preburn transaction validation")
-			err = errors.Errorf("validate preburn transaction validation :%w", err)
-			return err
-		}
-		log.WithContext(ctx).Debug("confirmation done")
-		return nil
-	})
-
-	return err
-}
-
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
 func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) (string, error) {
 	var err error
@@ -197,7 +176,7 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 				case <-task.AllSignaturesReceivedChn:
 					log.WithContext(ctx).Debug("all signature received so start validation")
 
-					if err = task.verifyPeersSignature(ctx); err != nil {
+					if err = task.VerifyPeersTicketSignature(ctx, task.Ticket); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
 						err = errors.Errorf("peers' singature mismatched: %w", err)
 						return nil
@@ -219,7 +198,7 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 	return nftRegTxid, err
 }
 
-// ValidateActionActAndStore informs actionRegTxID to trigger store IDfiles in case of actionRegTxID was
+// ValidateActionActAndStore informs actionRegTxID to trigger store ID files in case of actionRegTxID was
 func (task *SenseRegistrationTask) ValidateActionActAndStore(ctx context.Context, actionRegTxID string) error {
 	var err error
 
@@ -279,7 +258,7 @@ func (task *SenseRegistrationTask) waitActionActivation(ctx context.Context, txi
 				}
 
 				if currentBlkCnt-baseBlkCnt >= int32(timeoutInBlock)+2 {
-					ch <- errors.Errorf("timeout when wating for confirmation of transaction %s", txid)
+					ch <- errors.Errorf("timeout when waiting for confirmation of transaction %s", txid)
 					return
 				}
 			}
@@ -302,7 +281,7 @@ func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, i
 	}
 
 	if !isPrimary {
-		log.WithContext(ctx).Debug("send signed articket to primary node")
+		log.WithContext(ctx).Debug("send signed sense ticket to primary node")
 
 		senseNode, ok := task.NetworkHandler.ConnectedTo.SuperNodePeerAPIInterface.(*SenseRegistrationNode)
 		if !ok {
@@ -314,16 +293,6 @@ func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, i
 		}
 	}
 	return nil
-}
-
-func (task *SenseRegistrationTask) verifyPeersSignature(ctx context.Context) error {
-	log.WithContext(ctx).Debug("all signature received so start validation")
-
-	data, err := pastel.EncodeActionTicket(task.Ticket)
-	if err != nil {
-		return errors.Errorf("encoded NFT ticket: %w", err)
-	}
-	return task.RegTaskHelper.VerifyPeersSignature(ctx, data)
 }
 
 func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, error) {
@@ -390,6 +359,7 @@ func NewSenseRegistrationTask(service *SenseRegistrationService) *SenseRegistrat
 			task.config.PastelID,
 			service.config.NumberConnectedNodes),
 		service.PastelClient,
+		task.config.PreburntTxMinConfirmations,
 	)
 
 	return task

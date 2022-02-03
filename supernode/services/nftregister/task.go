@@ -111,7 +111,10 @@ func (task *NftRegistrationTask) validateRqIDsAndDdFpIds(ctx context.Context, rq
 }
 
 // GetNftRegistrationFee get the fee to register Nft to blockchain
-func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context, ticket []byte, creatorSignature []byte, key1 string, key2 string, rqidFile []byte, ddFpFile []byte, oti []byte) (int64, error) {
+func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
+	ticket []byte, creatorSignature []byte, key1 string, key2 string,
+	rqidFile []byte, ddFpFile []byte, oti []byte,
+) (int64, error) {
 	var err error
 	if err = task.RequiredStatus(common.StatusImageAndThumbnailCoordinateUploaded); err != nil {
 		return 0, errors.Errorf("require status %s not satisfied", common.StatusImageAndThumbnailCoordinateUploaded)
@@ -481,6 +484,7 @@ func NewNftRegistrationTask(service *NftRegistrationService) *NftRegistrationTas
 			task.config.PastelID,
 			service.config.NumberConnectedNodes),
 		service.PastelClient,
+		task.config.PreburntTxMinConfirmations,
 	)
 
 	return task
