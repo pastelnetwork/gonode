@@ -12,6 +12,7 @@ const (
 	StatusConnected
 
 	StatusImageProbed
+	StatusAssetUploaded
 	StatusImageAndThumbnailCoordinateUploaded
 	StatusRegistrationFeeCalculated
 	StatusFileDecoded
@@ -50,6 +51,7 @@ var statusNames = map[Status]string{
 	StatusSecondaryMode:                       "Secondary Mode",
 	StatusConnected:                           "Connected",
 	StatusImageProbed:                         "Image Probed",
+	StatusAssetUploaded:                       "Asset Uploaded",
 	StatusImageAndThumbnailCoordinateUploaded: "Imaged And Thumbnail Coordinate Uploaded",
 	StatusRegistrationFeeCalculated:           "Registration Fee Caculated",
 	StatusFileDecoded:                         "File Decoded",

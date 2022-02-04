@@ -1,9 +1,8 @@
 package test
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/mock"
+	"testing"
 
 	"github.com/pastelnetwork/gonode/supernode/node/mocks"
 )
@@ -14,6 +13,8 @@ const (
 
 	// RegisterCascadeMethod represent RegisterSenseInterface name method
 	RegisterCascadeMethod = "RegisterCascade"
+
+	SendCascadeTicketSignatureMethod = "SendCascadeTicketSignature"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -21,27 +22,27 @@ type Client struct {
 	t *testing.T
 	*mocks.ClientInterface
 	*mocks.ConnectionInterface
-	*mocks.RegisterSenseInterface
+	*mocks.RegisterCascadeInterface
 }
 
 // NewMockClient create new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:                      t,
-		ClientInterface:        &mocks.ClientInterface{},
-		ConnectionInterface:    &mocks.ConnectionInterface{},
-		RegisterSenseInterface: &mocks.RegisterSenseInterface{},
+		t:                        t,
+		ClientInterface:          &mocks.ClientInterface{},
+		ConnectionInterface:      &mocks.ConnectionInterface{},
+		RegisterCascadeInterface: &mocks.RegisterCascadeInterface{},
 	}
 }
 
 // ListenOnRegisterSense listening RegisterSenseInterface call
-func (client *Client) ListenOnRegisterSense() *Client {
-	client.ConnectionInterface.On(RegisterCascadeMethod).Return(client.RegisterSenseInterface)
+func (client *Client) ListenOnRegisterCascade() *Client {
+	client.ConnectionInterface.On(RegisterCascadeMethod).Return(client.RegisterCascadeInterface)
 	return client
 }
 
 // AssertRegisterSenseCall assertion RegisterSenseInterface call
-func (client *Client) AssertRegisterSenseCall(expectedCalls int, arguments ...interface{}) *Client {
+func (client *Client) AssertRegisterCascadeCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.ConnectionInterface.AssertCalled(client.t, RegisterCascadeMethod, arguments...)
 	}
@@ -66,5 +67,11 @@ func (client *Client) AssertConnectCall(expectedCalls int, arguments ...interfac
 		client.ClientInterface.AssertCalled(client.t, ConnectMethod, arguments...)
 	}
 	client.ClientInterface.AssertNumberOfCalls(client.t, ConnectMethod, expectedCalls)
+	return client
+}
+
+// ListenOnSendCascadeTicketSignature listens on send Sense ticket signature
+func (client *Client) ListenOnSendCascadeTicketSignature(returnErr error) *Client {
+	client.RegisterCascadeInterface.On(SendCascadeTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }

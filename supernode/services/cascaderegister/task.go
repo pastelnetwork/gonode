@@ -2,6 +2,7 @@ package cascaderegister
 
 import (
 	"context"
+	"encoding/hex"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -23,6 +24,7 @@ type CascadeRegistrationTask struct {
 	cascadeRegMetadata *types.ActionRegMetadata
 	Ticket             *pastel.ActionTicket
 	Asset              *files.File
+	assetSizeBytes     int
 
 	Oti []byte
 
@@ -52,14 +54,43 @@ func (task *CascadeRegistrationTask) SendRegMetadata(_ context.Context, regMetad
 	return nil
 }
 
+// UploadAsset uploads the asset
+func (task *CascadeRegistrationTask) UploadAsset(_ context.Context, file *files.File) error {
+	var err error
+	if err = task.RequiredStatus(common.StatusConnected); err != nil {
+		return errors.Errorf("require status %s not satisfied", common.StatusConnected)
+	}
+
+	<-task.NewAction(func(ctx context.Context) error {
+		task.UpdateStatus(common.StatusAssetUploaded)
+
+		task.Asset = file
+
+		// Determine file size
+		// TODO: improve it by call stats on file
+		var fileBytes []byte
+		fileBytes, err = file.Bytes()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("read image file")
+			err = errors.Errorf("read image file: %w", err)
+			return nil
+		}
+		task.assetSizeBytes = len(fileBytes)
+
+		return nil
+	})
+
+	return err
+}
+
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
 func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
 	ticket []byte, creatorSignature []byte,
-	rqidFile []byte, oti []byte,
+	rqidFile []byte, _ /*oti*/ []byte,
 ) (string, error) {
 	var err error
-	if err = task.RequiredStatus(common.StatusImageProbed); err != nil {
-		return "", errors.Errorf("require status %s not satisfied", common.StatusImageProbed)
+	if err = task.RequiredStatus(common.StatusAssetUploaded); err != nil {
+		return "", errors.Errorf("require status %s not satisfied", common.StatusAssetUploaded)
 	}
 
 	task.creatorSignature = creatorSignature
@@ -71,7 +102,7 @@ func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
 
 		// sign the ticket if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
-		if err = task.signAndSendSenseTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
+		if err = task.signAndSendCascadeTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("signed and send NFT ticket")
 			err = errors.Errorf("signed and send NFT ticket")
 			return nil
@@ -154,13 +185,21 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 	}
 
 	if err := task.validateRqIDs(ctx, rqidFile); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("validate rq & dd id files")
+		log.WithContext(ctx).WithError(err).Errorf("validate rqids files")
 
 		return errors.Errorf("validate rq & dd id files %w", err)
 	}
+
+	if err = task.validateRQSymbolID(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("valdate rq ids inside rqids file")
+		err = errors.Errorf("generate rqids: %w", err)
+		return nil
+	}
+
 	return nil
 }
 
+// validates RQIDs file
 func (task *CascadeRegistrationTask) validateRqIDs(ctx context.Context, dd []byte) error {
 
 	pastelIDs := task.NetworkHandler.MeshedNodesPastelID()
@@ -182,8 +221,22 @@ func (task *CascadeRegistrationTask) validateRqIDs(ctx context.Context, dd []byt
 	return nil
 }
 
+// validates actual RQ Symbol IDs inside RQIDs file
+func (task *CascadeRegistrationTask) validateRQSymbolID(ctx context.Context) error {
+
+	content, err := task.Asset.Bytes()
+	if err != nil {
+		return errors.Errorf("read image contents: %w", err)
+	}
+
+	return task.storage.ValidateRaptorQSymbolIDs(ctx,
+		content /*uint32(len(task.Ticket.AppTicketData.RQIDs))*/, 1,
+		hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.Caller,
+		task.rawRqFile)
+}
+
 // sign and send NFT ticket if not primary
-func (task *CascadeRegistrationTask) signAndSendSenseTicket(ctx context.Context, isPrimary bool) error {
+func (task *CascadeRegistrationTask) signAndSendCascadeTicket(ctx context.Context, isPrimary bool) error {
 	ticket, err := pastel.EncodeActionTicket(task.Ticket)
 	if err != nil {
 		return errors.Errorf("serialize NFT ticket: %w", err)
@@ -258,6 +311,12 @@ func (task *CascadeRegistrationTask) ValidateActionActAndStore(ctx context.Conte
 		return errors.Errorf("wait for confirmation of reg-art ticket %w", err)
 	}
 
+	if err = task.storeRaptorQSymbols(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("store raptor symbols")
+		err = errors.Errorf("store raptor symbols: %w", err)
+		return nil
+	}
+
 	// Store dd_and_fingerprints into Kademlia
 	if err = task.storeIDFiles(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("store id files")
@@ -315,6 +374,14 @@ func (task *CascadeRegistrationTask) waitActionActivation(ctx context.Context, t
 		}
 	}(ctx, txid)
 	return ch
+}
+
+func (task *CascadeRegistrationTask) storeRaptorQSymbols(ctx context.Context) error {
+	data, err := task.Asset.Bytes()
+	if err != nil {
+		return errors.Errorf("read image data: %w", err)
+	}
+	return task.storage.StoreRaptorQSymbolsIntoP2P(ctx, data, task.Asset.Name())
 }
 
 func (task *CascadeRegistrationTask) storeIDFiles(ctx context.Context) error {

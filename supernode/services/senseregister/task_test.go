@@ -986,6 +986,9 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
+				if err != nil {
+					fmt.Println("err: ", err.Error())
+				}
 				assert.Nil(t, err)
 			}
 		})

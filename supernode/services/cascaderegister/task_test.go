@@ -1,20 +1,18 @@
 package cascaderegister
 
-/*
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
+	"io"
+	"strings"
+	"testing"
+	"time"
 
 	"github.com/tj/assert"
 
@@ -27,7 +25,7 @@ import (
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/node"
-	test "github.com/pastelnetwork/gonode/supernode/node/test/sense_register"
+	test "github.com/pastelnetwork/gonode/supernode/node/test/cascade_register"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
@@ -112,8 +110,8 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
 
 			clientMock := test.NewMockClient(t)
-			clientMock.ListenOnSendSenseTicketSignature(tc.args.sendArtErr).
-				ListenOnConnect("", nil).ListenOnRegisterSense()
+			clientMock.ListenOnSendCascadeTicketSignature(tc.args.sendArtErr).
+				ListenOnConnect("", nil).ListenOnRegisterCascade()
 
 			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, clientMock, nil, nil, nil)
 
@@ -124,7 +122,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			err := task.NetworkHandler.ConnectedTo.Connect(context.Background())
 			assert.Nil(t, err)
 
-			err = task.signAndSendSenseTicket(context.Background(), tc.args.primary)
+			err = task.signAndSendCascadeTicket(context.Background(), tc.args.primary)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -585,14 +583,14 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, nil, rqClientMock, nil)
 
 			storage := files.NewStorage(fsMock)
-
+			task.Asset = files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
 			if tc.args.addIDsFile {
 				task.rawRqFile = []byte{'a'}
 			}
 
-			err := task.validateRqIDs(context.Background())
+			err := task.validateRQSymbolID(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -693,10 +691,10 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, rqClientMock, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, p2pClient, rqClientMock, nil)
 
 			storage := files.NewStorage(fsMock)
-			task.Nft = files.NewFile(storage, "test")
+			task.Asset = files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
 			err = task.storeRaptorQSymbols(context.Background())
@@ -709,4 +707,3 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 		})
 	}
 }
-*/

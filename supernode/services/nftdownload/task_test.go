@@ -75,6 +75,7 @@ func fakeRegiterTicket() pastel.RegTicket {
 		AppTicketData: appTicketData,
 	}
 	artTicket, _ := json.Marshal(&nftTicketData)
+	// fmt.Println(string(artTicket))
 	ticketSignature := pastel.RegTicketSignatures{}
 	regTicketData := pastel.RegTicketData{
 		Type:          "type",

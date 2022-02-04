@@ -63,7 +63,7 @@ func TestNodeConnect(t *testing.T) {
 			clientMock := test.NewMockClient(t)
 
 			//listen needed method
-			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterSense()
+			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterCascade()
 
 			//set up node client only
 			testCase.node.ClientInterface = clientMock.ClientInterface
@@ -73,7 +73,7 @@ func TestNodeConnect(t *testing.T) {
 			//mock assertion
 			clientMock.ClientInterface.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address)
-			clientMock.AssertRegisterSenseCall(testCase.numberRegisterSenseCall)
+			clientMock.AssertRegisterCascadeCall(testCase.numberRegisterSenseCall)
 		})
 	}
 }

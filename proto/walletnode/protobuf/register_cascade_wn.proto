@@ -25,6 +25,9 @@ service RegisterCascade {
   // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
   rpc SendRegMetadata(SendRegMetadataRequest) returns (SendRegMetadataReply);
 
+  // Upload the asset for storing
+  rpc UploadAsset(stream UploadAssetRequest) returns (UploadAssetReply);
+
   // SendArtTicket sends a signed art-ticket to the supernode.
   rpc SendSignedActionTicket(SendSignedCascadeTicketRequest) returns (SendSignedActionTicketReply);
 
@@ -37,4 +40,23 @@ message SendSignedCascadeTicketRequest {
   bytes creator_signature = 2;
   EncoderParameters encode_parameters = 3;
   bytes rq_files = 4;
+}
+
+message UploadAssetRequest {
+  message MetaData {
+    // size of the data
+    int64 size = 1;
+    // format of data: such as jpeg, png ...
+    string format = 2;
+    // sha3-256 hash of the data
+    bytes hash = 3;
+  }
+  oneof payload {
+    bytes asset_piece = 1;
+    // Should be included in the last piece of image only
+    MetaData meta_data = 2;
+  }
+}
+
+message UploadAssetReply {
 }

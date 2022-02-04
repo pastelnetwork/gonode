@@ -22,6 +22,7 @@ func TestStatusNames(t *testing.T) {
 				// Process
 				StatusConnected,
 				StatusImageProbed,
+				StatusAssetUploaded,
 				StatusImageAndThumbnailCoordinateUploaded,
 				StatusRegistrationFeeCalculated,
 				StatusFileDecoded,

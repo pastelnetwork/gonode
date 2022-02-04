@@ -1,9 +1,13 @@
 package walletnode
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"encoding/base64"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
+	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc"
 	"io"
 	"runtime/debug"
@@ -165,6 +169,119 @@ func (service *RegisterCascade) SendRegMetadata(ctx context.Context, req *pb.Sen
 	err = task.SendRegMetadata(ctx, reqMetadata)
 
 	return &pb.SendRegMetadataReply{}, err
+}
+
+// UploadAsset implements walletnode.RegisterNft.UploadAssetWithThumbnail
+func (service *RegisterCascade) UploadAsset(stream pb.RegisterCascade_UploadAssetServer) (retErr error) {
+	ctx := stream.Context()
+	defer errors.Recover(func(recErr error) {
+		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenUploadAsset")
+		retErr = recErr
+	})
+
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return errors.Errorf("task not found %w", err)
+	}
+
+	asset := service.Storage.NewFile()
+	assetFile, err := asset.Create()
+	if err != nil {
+		return errors.Errorf("open asset file %q: %w", assetFile.Name(), err)
+	}
+	log.WithContext(ctx).WithField("filename", assetFile.Name()).Debug("UploadAsset request")
+
+	assetWriter := bufio.NewWriter(assetFile)
+
+	assetSize := int64(0)
+	hash := make([]byte, 0)
+
+	err = func() error {
+		defer assetFile.Close()
+		defer assetWriter.Flush()
+
+		for {
+			req, err := stream.Recv()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				if status.Code(err) == codes.Canceled {
+					return errors.New("connection closed")
+				}
+				return errors.Errorf("receive UploadAsset: %w", err)
+			}
+
+			if assetPiece := req.GetAssetPiece(); assetPiece != nil {
+				n, err := assetWriter.Write(assetPiece)
+				assetSize += int64(n)
+				if err != nil {
+					return errors.Errorf("write to file %q: %w", assetFile.Name(), err)
+				}
+			} else {
+				if metaData := req.GetMetaData(); metaData != nil {
+					if metaData.Size != assetSize {
+						return errors.Errorf("incomplete payload, send = %d receive=%d", metaData.Size, assetSize)
+					}
+
+					if metaData.Hash == nil {
+						return errors.Errorf("empty hash")
+					}
+					hash = metaData.Hash
+
+					if metaData.Format != "" {
+						if err := asset.SetFormatFromExtension(metaData.Format); err != nil {
+							return errors.Errorf("set format %s for file %s", metaData.Format, asset.Name())
+						}
+					}
+				}
+			}
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	err = func() error {
+		hasher := sha3.New256()
+		f, fileErr := asset.Open()
+		if fileErr != nil {
+			return errors.Errorf("open file %w", fileErr)
+		}
+		defer f.Close()
+
+		if _, err := io.Copy(hasher, f); err != nil {
+			return errors.Errorf("hash file failed %w", err)
+		}
+		hashFromPayload := hasher.Sum(nil)
+		if !bytes.Equal(hashFromPayload, hash) {
+			log.WithField("Filename", assetFile.Name()).Debugf("calculated from payload %s", base64.URLEncoding.EncodeToString(hashFromPayload))
+			log.WithField("Filename", assetFile.Name()).Debugf("sent by client %s", base64.URLEncoding.EncodeToString(hash))
+			return errors.Errorf("wrong hash")
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	err = task.UploadAsset(ctx, asset)
+	if err != nil {
+		return err
+	}
+
+	resp := &pb.UploadAssetReply{}
+
+	if err := stream.SendAndClose(resp); err != nil {
+		return errors.Errorf("send UploadAsset response: %w", err)
+	}
+
+	return nil
 }
 
 // SendSignedActionTicket implements walletnode.RegisterSense.SendSignedActionTicket
