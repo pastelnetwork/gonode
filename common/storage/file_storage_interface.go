@@ -32,7 +32,7 @@ type FileStorageInterface interface {
 	Rename(oldname, newname string) error
 }
 
-// File represents a file.
+// FileInterface represents a file.
 type FileInterface interface {
 	io.Closer
 	io.Reader

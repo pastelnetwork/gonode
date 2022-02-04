@@ -1,8 +1,9 @@
 package test
 
 import (
-	"github.com/stretchr/testify/mock"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/pastelnetwork/gonode/supernode/node/mocks"
 )
@@ -20,22 +21,22 @@ type Client struct {
 	t *testing.T
 	*mocks.ClientInterface
 	*mocks.ConnectionInterface
-	*mocks.RegisterCascadeInterface
+	*mocks.RegisterSenseInterface
 }
 
 // NewMockClient create new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:                        t,
-		ClientInterface:          &mocks.ClientInterface{},
-		ConnectionInterface:      &mocks.ConnectionInterface{},
-		RegisterCascadeInterface: &mocks.RegisterCascadeInterface{},
+		t:                      t,
+		ClientInterface:        &mocks.ClientInterface{},
+		ConnectionInterface:    &mocks.ConnectionInterface{},
+		RegisterSenseInterface: &mocks.RegisterSenseInterface{},
 	}
 }
 
 // ListenOnRegisterSense listening RegisterSenseInterface call
 func (client *Client) ListenOnRegisterSense() *Client {
-	client.ConnectionInterface.On(RegisterCascadeMethod).Return(client.RegisterCascadeInterface)
+	client.ConnectionInterface.On(RegisterCascadeMethod).Return(client.RegisterSenseInterface)
 	return client
 }
 

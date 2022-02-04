@@ -88,7 +88,8 @@ type Client struct {
 	*mocks.Client
 }
 
-func (c Client) BurnAddress() string {
+// BurnAddress returns burn addr
+func (client *Client) BurnAddress() string {
 	return "tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
 }
 
