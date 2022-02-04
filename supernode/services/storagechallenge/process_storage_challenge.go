@@ -72,7 +72,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 		outgoingChallengeMessage.BlockNumChallengeSent,
 	)
 
-	return nil
+	return err
 }
 
 func (s *service) validateProcessingStorageChallengeIncommingData(incomingChallengeMessage *ChallengeMessage) error {

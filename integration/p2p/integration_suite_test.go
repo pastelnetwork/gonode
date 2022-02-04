@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	it "github.com/pastelnetwork/gonode/integration"
+	it "github.com/pastelnetwork/gonode/integration/p2p"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"

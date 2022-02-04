@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	it "github.com/pastelnetwork/gonode/integration"
+	it "github.com/pastelnetwork/gonode/integration/p2p"
 )
 
 var _ = Describe("StoreRetrieve", func() {
