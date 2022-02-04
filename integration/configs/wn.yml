@@ -17,5 +17,5 @@ node:
     port: 8089
   burn_address: tPpasteLBurnAddressXXXXXXXXXXX3wy7u 
 raptorq:
-  host: "rq-server-4"
+  host: "rq-server-0"
   port: 50051

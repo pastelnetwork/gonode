@@ -2,7 +2,6 @@ package pastel
 
 import (
 	"encoding/base64"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,7 +33,7 @@ func TestEncodeNFTTicket(t *testing.T) {
 	outputTicket, err := DecodeNFTTicket(encoded)
 	outputAppData := outputTicket.AppTicketData
 	assert.Nil(t, err)
-	fmt.Println(string(encoded))
+
 	assert.Equal(t, inputTicket.Version, outputTicket.Version)
 	assert.Equal(t, inputTicket.Author, outputTicket.Author)
 	assert.Equal(t, inputTicket.BlockNum, outputTicket.BlockNum)

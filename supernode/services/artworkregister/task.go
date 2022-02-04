@@ -363,7 +363,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 			}
 			task.calculatedDDAndFingerprints.ZstdCompressedFingerprint = compressed
 			return nil
-		case <-time.After(30 * time.Second):
+		case <-time.After(60 * time.Second):
 			log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers timeout")
 			err = errors.New("waiting for DDAndFingerprints timeout")
 			return nil
@@ -913,7 +913,7 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 		return errors.Errorf("no symbols identifiers file")
 	}
 
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, uint32(len(task.Ticket.AppTicketData.RQIDs)),
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, 1,
 		hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.Author)
 	if err != nil {
 		return errors.Errorf("generate RaptorQ symbols' identifiers: %w", err)
