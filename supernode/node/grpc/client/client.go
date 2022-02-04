@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -30,14 +31,27 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	if client.secClient == nil || client.secInfo == nil {
 		return nil, errors.Errorf("secClient or secInfo don't initialize")
 	}
+
 	altsTCClient := credentials.NewClientCreds(client.secClient, client.secInfo)
-	grpcConn, err := grpc.DialContext(ctx, address,
-		grpc.WithTransportCredentials(altsTCClient),
-		grpc.WithBlock(),
-	)
+	var grpcConn *grpc.ClientConn
+	var err error
+	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
+		grpcConn, err = grpc.DialContext(ctx, address,
+			//lint:ignore SA1019 we want to ignore this for now
+			grpc.WithInsecure(),
+			grpc.WithBlock(),
+		)
+	} else {
+		grpcConn, err = grpc.DialContext(ctx, address,
+			grpc.WithTransportCredentials(altsTCClient),
+			grpc.WithBlock(),
+		)
+	}
+
 	if err != nil {
 		return nil, errors.Errorf("dial address %s: %w", address, err)
 	}
+
 	log.WithContext(ctx).Debugf("Connected to %s", address)
 
 	conn := newClientConn(id, grpcConn)

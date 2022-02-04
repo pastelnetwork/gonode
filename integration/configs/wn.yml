@@ -1,0 +1,21 @@
+
+log-config:
+  log-level: info
+  log-file: ~/.pastel/walletnode.log
+  log-compress: true
+  log-max-size-mb: 100
+  log-max-age-days: 3
+  log-max-backups: 10
+quiet: false
+temp-dir: ~/.pastel/tmp
+work-dir: ~/.pastel
+rq-files-dir: ~/.pastel/rqfiles
+
+node:
+  api:
+    hostname: "0.0.0.0"
+    port: 8089
+  burn_address: tPpasteLBurnAddressXXXXXXXXXXX3wy7u 
+raptorq:
+  host: "rq-server-0"
+  port: 50051
