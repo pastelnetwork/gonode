@@ -150,5 +150,6 @@ type Client interface {
 	// Command `z_getbalance address`
 	GetBalance(ctx context.Context, address string) (float64, error)
 
+	// BurnAddress ...
 	BurnAddress() string
 }

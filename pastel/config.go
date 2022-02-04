@@ -51,12 +51,13 @@ func (config *Config) port() int {
 	return defaultMainnetPort
 }
 
+// BurnAddress ...
 func (config *Config) BurnAddress() string {
 	if config.Testnet == 1 {
 		return defaultBurnAddressTest
-	} else {
-		return defaultBurnAddressMain
 	}
+
+	return defaultBurnAddressMain
 }
 
 // NewConfig returns a new Config instance.
