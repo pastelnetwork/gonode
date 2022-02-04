@@ -18,8 +18,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/storage"
-	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -28,26 +26,6 @@ import (
 	test "github.com/pastelnetwork/gonode/supernode/node/test/cascade_register"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
-
-func makeConnected(task *CascadeRegistrationTask, status common.Status) *CascadeRegistrationTask {
-	meshedNodes := []types.MeshedSuperNode{
-		types.MeshedSuperNode{
-			NodeID: "PrimaryID",
-		},
-		types.MeshedSuperNode{
-			NodeID: "A",
-		},
-		types.MeshedSuperNode{
-			NodeID: "B",
-		},
-	}
-
-	task.UpdateStatus(common.StatusConnected)
-	task.NetworkHandler.MeshNodes(nil, meshedNodes)
-	task.UpdateStatus(status)
-
-	return task
-}
 
 func add2NodesAnd2TicketSignatures(task *CascadeRegistrationTask) *CascadeRegistrationTask {
 	task.NetworkHandler.Accepted = common.SuperNodePeerList{
@@ -58,7 +36,7 @@ func add2NodesAnd2TicketSignatures(task *CascadeRegistrationTask) *CascadeRegist
 	return task
 }
 
-func makeEmptyCascadeRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface, ddClient ddclient.DDServerClient) *CascadeRegistrationTask {
+func makeEmptyCascadeRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface) *CascadeRegistrationTask {
 	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, rqClient)
 	task := NewCascadeRegistrationTask(service)
 	task.Ticket = &pastel.ActionTicket{}
@@ -113,7 +91,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			clientMock.ListenOnSendCascadeTicketSignature(tc.args.sendArtErr).
 				ListenOnConnect("", nil).ListenOnRegisterCascade()
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, clientMock, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, clientMock, nil, nil)
 
 			task.NetworkHandler.ConnectedTo = &common.SuperNodePeer{
 				ClientInterface: clientMock,
@@ -163,7 +141,7 @@ func TestTaskRegisterAction(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnRegisterActionTicket(tc.args.regRetID, tc.args.regErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 			task = add2NodesAnd2TicketSignatures(task)
 
 			id, err := task.registerAction(context.Background())
@@ -224,7 +202,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 
 			_, err := task.NetworkHandler.PastelNodeByExtKey(context.Background(), tc.args.nodeID)
 			if tc.wantErr != nil {
@@ -278,7 +256,7 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(tc.args.verifyRet, tc.args.verifyErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 			task = add2NodesAnd2TicketSignatures(task)
 
 			err := task.VerifyPeersTicketSignature(context.Background(), task.Ticket)
@@ -352,7 +330,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			pastelClientMock.ListenOnGetBlockCount(1, nil)
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.retRes, tc.retErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 
 			err := <-task.WaitConfirmation(ctx, tc.args.txid,
 				tc.args.minConfirmations, tc.args.interval)
@@ -424,7 +402,7 @@ func TestTaskSessionNode(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 			task.UpdateStatus(tc.args.status)
 
 			go task.RunAction(ctx)
@@ -507,7 +485,7 @@ func TestTaskAddPeerCascadeTicketSignature(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 			task.UpdateStatus(tc.args.status)
 
 			go task.RunAction(ctx)
@@ -580,7 +558,7 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, nil, rqClientMock, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, nil, rqClientMock)
 
 			storage := files.NewStorage(fsMock)
 			task.Asset = files.NewFile(storage, "test")
@@ -691,7 +669,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, p2pClient, rqClientMock, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, p2pClient, rqClientMock)
 
 			storage := files.NewStorage(fsMock)
 			task.Asset = files.NewFile(storage, "test")

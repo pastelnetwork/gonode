@@ -15,10 +15,12 @@ import (
 	"time"
 )
 
+// Tasker interface to call back concrete Task for specific actions
 type Tasker interface {
 	SendDDFBack(ctx context.Context, node node.SuperNodePeerAPIInterface, nodeInfo *types.MeshedSuperNode, pastelID string, data []byte) error
 }
 
+// DupeDetectionHandler common operations related to Dupe Detection and Fingerprints processing
 type DupeDetectionHandler struct {
 	*SuperNodeTask
 	*RegTaskHelper
@@ -35,6 +37,7 @@ type DupeDetectionHandler struct {
 	allSignedDDAndFingerprintsReceivedChn chan struct{}
 }
 
+// NewDupeDetectionTaskHelper creates instance of DupeDetectionHandler
 func NewDupeDetectionTaskHelper(task *SuperNodeTask,
 	ddClient ddclient.DDServerClient,
 	pastelID string, passPhrase string,
@@ -186,6 +189,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 	return h.calculatedDDAndFingerprints.ZstdCompressedFingerprint, nil
 }
 
+// GenFingerprintsData calls DD server to get DD and FP data
 func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *files.File, blockHash string, creatorPastelID string) (*pastel.DDAndFingerprints, error) {
 	img, err := file.Bytes()
 	if err != nil {

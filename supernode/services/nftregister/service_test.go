@@ -172,7 +172,7 @@ func TestServiceNewTask(t *testing.T) {
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
 			go service.Run(ctx)
-			task := service.NewTask()
+			task := service.NewNftRegistrationTask()
 			assert.Equal(t, service, task.NftRegistrationService)
 		})
 	}

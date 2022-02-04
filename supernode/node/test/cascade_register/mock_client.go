@@ -14,6 +14,7 @@ const (
 	// RegisterCascadeMethod represent RegisterSenseInterface name method
 	RegisterCascadeMethod = "RegisterCascade"
 
+	// SendCascadeTicketSignatureMethod represent SendCascadeTicketSignature name method
 	SendCascadeTicketSignatureMethod = "SendCascadeTicketSignature"
 )
 
@@ -35,13 +36,13 @@ func NewMockClient(t *testing.T) *Client {
 	}
 }
 
-// ListenOnRegisterSense listening RegisterSenseInterface call
+// ListenOnRegisterCascade listening RegisterCascadeInterface call
 func (client *Client) ListenOnRegisterCascade() *Client {
 	client.ConnectionInterface.On(RegisterCascadeMethod).Return(client.RegisterCascadeInterface)
 	return client
 }
 
-// AssertRegisterSenseCall assertion RegisterSenseInterface call
+// AssertRegisterCascadeCall assertion AssertRegisterCascade call
 func (client *Client) AssertRegisterCascadeCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.ConnectionInterface.AssertCalled(client.t, RegisterCascadeMethod, arguments...)

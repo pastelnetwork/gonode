@@ -37,6 +37,7 @@ type MeshHandler struct {
 	Nodes SuperNodeList
 }
 
+// MeshHandlerOpts set of options to pass to NewMeshHandler
 type MeshHandlerOpts struct {
 	Task          *WalletNodeTask
 	NodeClient    node.ClientInterface
@@ -45,6 +46,7 @@ type MeshHandlerOpts struct {
 	Configs       *MeshHandlerConfig
 }
 
+// MeshHandlerConfig config subset used by MeshHandler
 type MeshHandlerConfig struct {
 	PastelID               string
 	Passphrase             string

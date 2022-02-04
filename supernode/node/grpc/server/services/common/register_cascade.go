@@ -10,7 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 )
 
-// RegisterSense represents common grpc service for registration sense.
+// RegisterCascade represents common grpc service for registration sense.
 type RegisterCascade struct {
 	*cascaderegister.CascadeRegistrationService
 }
@@ -43,7 +43,7 @@ func (service *RegisterCascade) TaskFromMD(ctx context.Context) (*cascaderegiste
 	return task, nil
 }
 
-// NewRegisterSense returns a new RegisterSense instance.
+// NewRegisterCascade returns a new RegisterSense instance.
 func NewRegisterCascade(service *cascaderegister.CascadeRegistrationService) *RegisterCascade {
 	return &RegisterCascade{
 		CascadeRegistrationService: service,

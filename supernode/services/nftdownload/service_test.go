@@ -34,7 +34,7 @@ func TestNewService(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *NftDownloadService
+		want *NftDownloaderService
 	}{
 		{
 			args: args{
@@ -43,7 +43,7 @@ func TestNewService(t *testing.T) {
 				p2pClient:     p2pClient.Client,
 				raptorQClient: raptorQClient.Client,
 			},
-			want: &NftDownloadService{
+			want: &NftDownloaderService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
@@ -101,7 +101,7 @@ func TestServiceRun(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			p2pClient := p2pMock.NewMockClient(t)
 			raptorQClient := rqmock.NewMockClient(t)
-			service := &NftDownloadService{
+			service := &NftDownloaderService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
@@ -148,7 +148,7 @@ func TestServiceNewTask(t *testing.T) {
 			}
 			pastelClient := pastelMock.NewMockClient(t)
 			p2pClient := p2pMock.NewMockClient(t)
-			service := &NftDownloadService{
+			service := &NftDownloaderService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
@@ -159,8 +159,8 @@ func TestServiceNewTask(t *testing.T) {
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
 			go service.Run(ctx)
-			task := service.NewTask()
-			assert.Equal(t, service, task.NftDownloadService)
+			task := service.NewNftDownloadingTask()
+			assert.Equal(t, service, task.NftDownloaderService)
 		})
 	}
 }

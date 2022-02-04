@@ -10,7 +10,7 @@ const (
 	defaultConnectToNodeTimeout = time.Second * 15
 )
 
-// SuperNodeClient represents a single supernode
+// SuperNodePeer represents a single supernode
 type SuperNodePeer struct {
 	node.ClientInterface
 	node.NodeMaker
@@ -21,6 +21,7 @@ type SuperNodePeer struct {
 	Address string
 }
 
+// Connect connects to grpc Server and setup pointer to concrete client wrapper
 func (node *SuperNodePeer) Connect(ctx context.Context) error {
 	connCtx, connCancel := context.WithTimeout(ctx, defaultConnectToNodeTimeout)
 	defer connCancel()

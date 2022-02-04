@@ -30,7 +30,7 @@ func (service *NftRegistrationService) Run(ctx context.Context) error {
 }
 
 // NewNftRegistrationTask runs a new task of the registration Nft and returns its taskID.
-func (service *NftRegistrationService) NewTask() *NftRegistrationTask {
+func (service *NftRegistrationService) NewNftRegistrationTask() *NftRegistrationTask {
 	task := NewNftRegistrationTask(service)
 	service.Worker.AddTask(task)
 	return task

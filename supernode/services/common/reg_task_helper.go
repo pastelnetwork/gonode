@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+// RegTaskHelper common operations related to (any) Ticket registration
 type RegTaskHelper struct {
 	*SuperNodeTask
 
@@ -32,6 +33,7 @@ type RegTaskHelper struct {
 	AllSignaturesReceivedChn chan struct{}
 }
 
+// NewRegTaskHelper creates instance of RegTaskHelper
 func NewRegTaskHelper(task *SuperNodeTask,
 	pastelID string, passPhrase string,
 	network *NetworkHandler,
@@ -49,6 +51,7 @@ func NewRegTaskHelper(task *SuperNodeTask,
 	}
 }
 
+// AddPeerTicketSignature waits for ticket signatures from other SNs and adds them into internal array
 func (h *RegTaskHelper) AddPeerTicketSignature(nodeID string, signature []byte, reqStatus Status) error {
 	h.peersTicketSignatureMtx.Lock()
 	defer h.peersTicketSignatureMtx.Unlock()
@@ -145,6 +148,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 	return file, idFiles, nil
 }
 
+// WaitConfirmation wait for specific number of confirmations of some blockchain transaction by txid
 func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minConfirmation int64, interval time.Duration) <-chan error {
 	ch := make(chan error)
 
@@ -215,6 +219,7 @@ func (h *RegTaskHelper) ValidateBurnTxID(_ context.Context) error {
 	return err
 }
 
+// VerifyPeersTicketSignature verifies ticket signatures of other SNs
 func (h *RegTaskHelper) VerifyPeersTicketSignature(ctx context.Context, ticket *pastel.ActionTicket) error {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
@@ -225,6 +230,7 @@ func (h *RegTaskHelper) VerifyPeersTicketSignature(ctx context.Context, ticket *
 	return h.VerifyPeersSignature(ctx, data)
 }
 
+// VerifyPeersSignature verifies any data signatures of other SNs
 func (h *RegTaskHelper) VerifyPeersSignature(ctx context.Context, data []byte) error {
 	for nodeID, signature := range h.PeersTicketSignature {
 		if ok, err := h.PastelHandler.PastelClient.Verify(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {

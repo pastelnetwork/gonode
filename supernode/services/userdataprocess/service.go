@@ -29,7 +29,7 @@ func (service *Service) Run(ctx context.Context) error {
 }
 
 // NewUserDataTask runs a new task of the registration userdata and returns its taskID.
-func (service *Service) NewTask() *UserDataTask {
+func (service *Service) NewUserDataTask() *UserDataTask {
 	task := NewUserDataTask(service)
 	service.Worker.AddTask(task)
 	return task

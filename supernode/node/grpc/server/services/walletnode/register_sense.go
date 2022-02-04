@@ -41,7 +41,7 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewTask()
+		task = service.NewSenseRegistrationTask()
 	}
 	go func() {
 		<-task.Done()

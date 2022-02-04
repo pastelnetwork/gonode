@@ -12,32 +12,32 @@ const (
 	logPrefix = "Nft-download"
 )
 
-// Service represent Nft service.
-type NftDownloadService struct {
+// NftDownloaderService represent Nft service.
+type NftDownloaderService struct {
 	*common.SuperNodeService
 	config *Config
 }
 
 // Run starts task
-func (service *NftDownloadService) Run(ctx context.Context) error {
+func (service *NftDownloaderService) Run(ctx context.Context) error {
 	return service.RunHelper(ctx, service.config.PastelID, logPrefix)
 }
 
 // NewNftDownloadingTask runs a new task of the downloading Nft and returns its taskID.
-func (service *NftDownloadService) NewTask() *NftDownloadingTask {
+func (service *NftDownloaderService) NewNftDownloadingTask() *NftDownloadingTask {
 	task := NewNftDownloadingTask(service)
 	service.Worker.AddTask(task)
 	return task
 }
 
 // Task returns the task of the registration Nft by the given id.
-func (service *NftDownloadService) Task(id string) *NftDownloadingTask {
+func (service *NftDownloaderService) Task(id string) *NftDownloadingTask {
 	return service.Worker.Task(id).(*NftDownloadingTask)
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, rqClient rqnode.ClientInterface) *NftDownloadService {
-	return &NftDownloadService{
+func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, rqClient rqnode.ClientInterface) *NftDownloaderService {
+	return &NftDownloaderService{
 		SuperNodeService: common.NewSuperNodeService(nil, pastelClient, p2pClient, rqClient),
 		config:           config,
 	}

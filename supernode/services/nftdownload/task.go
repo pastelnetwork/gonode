@@ -22,11 +22,11 @@ const (
 	rqSymbolsDirName = "symbols"
 )
 
-// Task is the task of registering new Nft.
+// NftDownloadingTask is the task of registering new Nft.
 type NftDownloadingTask struct {
 	*common.SuperNodeTask
 
-	*NftDownloadService
+	*NftDownloaderService
 
 	RQSymbolsDir string
 }
@@ -179,14 +179,14 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, nftRegTicket *p
 	}
 
 	var rqConnection rqnode.Connection
-	rqConnection, err = task.NftDownloadService.RQClient.Connect(ctx, task.NftDownloadService.config.RaptorQServiceAddress)
+	rqConnection, err = task.NftDownloaderService.RQClient.Connect(ctx, task.NftDownloaderService.config.RaptorQServiceAddress)
 	if err != nil {
 		task.UpdateStatus(common.StatusRQServiceConnectionFailed)
 		return file, errors.Errorf("could not connect to rqservice: %w", err)
 	}
 	defer rqConnection.Done()
 	rqNodeConfig := &rqnode.Config{
-		RqFilesDir: task.NftDownloadService.config.RqFilesDir,
+		RqFilesDir: task.NftDownloaderService.config.RqFilesDir,
 	}
 	rqService := rqConnection.RaptorQ(rqNodeConfig)
 
@@ -315,9 +315,9 @@ func (task *NftDownloadingTask) removeArtifacts() {
 }
 
 // NewNftDownloadingTask returns a new Task instance.
-func NewNftDownloadingTask(service *NftDownloadService) *NftDownloadingTask {
+func NewNftDownloadingTask(service *NftDownloaderService) *NftDownloadingTask {
 	return &NftDownloadingTask{
-		SuperNodeTask:      common.NewSuperNodeTask(logPrefix),
-		NftDownloadService: service,
+		SuperNodeTask:        common.NewSuperNodeTask(logPrefix),
+		NftDownloaderService: service,
 	}
 }

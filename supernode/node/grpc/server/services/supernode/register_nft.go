@@ -36,7 +36,7 @@ func (service *RegisterNft) Session(stream pb.RegisterNft_SessionServer) error {
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewTask()
+		task = service.NewNftRegistrationTask()
 		isTaskNew = true
 	}
 	go func() {

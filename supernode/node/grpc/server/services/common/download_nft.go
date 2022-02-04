@@ -6,12 +6,12 @@ import (
 
 // DownloadNft represents common grpc service for downloading NFTs.
 type DownloadNft struct {
-	*nftdownload.NftDownloadService
+	*nftdownload.NftDownloaderService
 }
 
 // NewDownloadNft returns a new DownloadNft instance.
-func NewDownloadNft(service *nftdownload.NftDownloadService) *DownloadNft {
+func NewDownloadNft(service *nftdownload.NftDownloaderService) *DownloadNft {
 	return &DownloadNft{
-		NftDownloadService: service,
+		NftDownloaderService: service,
 	}
 }

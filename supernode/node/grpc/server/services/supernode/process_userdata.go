@@ -42,7 +42,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewTask()
+		task = service.NewUserDataTask()
 	}
 	go func() {
 		<-task.Done()

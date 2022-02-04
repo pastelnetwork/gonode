@@ -11,6 +11,7 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
+// StorageHandler provides common logic for RQ and P2P operations
 type StorageHandler struct {
 	P2PClient p2p.Client
 	RqClient  rqnode.ClientInterface
@@ -19,6 +20,7 @@ type StorageHandler struct {
 	rqDir     string
 }
 
+// NewStorageHandler creates instance of StorageHandler
 func NewStorageHandler(p2p p2p.Client, rq rqnode.ClientInterface,
 	rqAddress string, rqDir string,
 ) *StorageHandler {
@@ -29,18 +31,21 @@ func NewStorageHandler(p2p p2p.Client, rq rqnode.ClientInterface,
 	}
 }
 
-func (h *StorageHandler) StoreFileIntoP2P(ctx context.Context, nft *files.File) (string, error) {
-	data, err := nft.Bytes()
+// StoreFileIntoP2P stores file into P2P
+func (h *StorageHandler) StoreFileIntoP2P(ctx context.Context, file *files.File) (string, error) {
+	data, err := file.Bytes()
 	if err != nil {
-		return "", errors.Errorf("store file %s into p2p", nft.Name())
+		return "", errors.Errorf("store file %s into p2p", file.Name())
 	}
 	return h.StoreBytesIntoP2P(ctx, data)
 }
 
+// StoreBytesIntoP2P into P2P actual data
 func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte) (string, error) {
 	return h.P2PClient.Store(ctx, data)
 }
 
+// StoreListOfBytesIntoP2P stores into P2P array of bytes arrays
 func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]byte) error {
 	for _, data := range list {
 		if _, err := h.StoreBytesIntoP2P(ctx, data); err != nil {
@@ -50,6 +55,7 @@ func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]b
 	return nil
 }
 
+// GenerateRaptorQSymbols calls RQ service to produce RQ Symbols
 func (h *StorageHandler) GenerateRaptorQSymbols(ctx context.Context, data []byte, name string) (map[string][]byte, error) {
 	if h.RqClient == nil {
 		log.WithContext(ctx).Warnf("RQ Server is not initialized")
@@ -74,6 +80,7 @@ func (h *StorageHandler) GenerateRaptorQSymbols(ctx context.Context, data []byte
 	return encodeResp.Symbols, nil
 }
 
+// GetRaptorQEncodeInfo calls RQ service to get Encoding info and list of RQIDs
 func (h *StorageHandler) GetRaptorQEncodeInfo(ctx context.Context,
 	data []byte, num uint32, hash string, pastelID string,
 ) (*rqnode.EncodeInfo, error) {
@@ -100,6 +107,7 @@ func (h *StorageHandler) GetRaptorQEncodeInfo(ctx context.Context,
 	return encodeInfo, nil
 }
 
+// ValidateRaptorQSymbolIDs calls RQ service to get Encoding info and list of RQIDs and compares them to the similar data received from WN
 func (h *StorageHandler) ValidateRaptorQSymbolIDs(ctx context.Context,
 	data []byte, num uint32, hash string, pastelID string,
 	haveData []byte) error {
@@ -130,6 +138,7 @@ func (h *StorageHandler) ValidateRaptorQSymbolIDs(ctx context.Context,
 	return nil
 }
 
+// StoreRaptorQSymbolsIntoP2P stores RQ symbols into P2P
 func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []byte, name string) error {
 	symbols, err := h.GenerateRaptorQSymbols(ctx, data, name)
 	if err != nil {

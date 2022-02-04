@@ -26,7 +26,7 @@ func (service *DownloadNft) Download(m *pb.DownloadRequest, stream pb.DownloadNf
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 	// Create new task
-	task := service.NewTask()
+	task := service.NewNftDownloadingTask()
 	go func() {
 		<-task.Done()
 		cancel()
@@ -69,7 +69,7 @@ func (service *DownloadNft) DownloadThumbnail(ctx context.Context, req *pb.Downl
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	// Create new task
-	task := service.NewTask()
+	task := service.NewNftDownloadingTask()
 	go func() {
 		<-task.Done()
 		cancel()
@@ -93,7 +93,7 @@ func (service *DownloadNft) Desc() *grpc.ServiceDesc {
 }
 
 // NewDownloadNft returns a new DownloadNft instance.
-func NewDownloadNft(service *nftdownload.NftDownloadService) *DownloadNft {
+func NewDownloadNft(service *nftdownload.NftDownloaderService) *DownloadNft {
 	return &DownloadNft{
 		DownloadNft: common.NewDownloadNft(service),
 	}

@@ -42,7 +42,7 @@ func makeConnected(task *SenseRegistrationTask, status common.Status) *SenseRegi
 	}
 
 	task.UpdateStatus(common.StatusConnected)
-	task.NetworkHandler.MeshNodes(nil, meshedNodes)
+	task.NetworkHandler.MeshNodes(context.TODO(), meshedNodes)
 	task.UpdateStatus(status)
 
 	return task
@@ -646,7 +646,7 @@ func TestTaskProbeImage(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("signature"), nil).ListenOnVerify(true, nil)
 
-			var clientMock *test.Client = nil
+			var clientMock *test.Client
 			if tc.wantErr == nil {
 				clientMock = test.NewMockClient(t)
 				clientMock.ListenOnSendSignedDDAndFingerprints(nil).
@@ -953,7 +953,7 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 			}
 
 			task.UpdateStatus(common.StatusConnected)
-			task.NetworkHandler.MeshNodes(nil, meshedNodes)
+			task.NetworkHandler.MeshNodes(context.TODO(), meshedNodes)
 			task.UpdateStatus(tc.args.status)
 
 			task.Ticket = &pastel.ActionTicket{

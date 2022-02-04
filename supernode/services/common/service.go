@@ -15,12 +15,14 @@ import (
 	"time"
 )
 
+// SuperNodeServiceInterface common interface for Services
 type SuperNodeServiceInterface interface {
 	RunHelper(ctx context.Context) error
 	NewTask() task.Task
 	Task(id string) task.Task
 }
 
+// SuperNodeService common "class" for Services
 type SuperNodeService struct {
 	*task.Worker
 	*files.Storage
@@ -50,6 +52,7 @@ func (service *SuperNodeService) run(ctx context.Context, pastelID string, prefi
 	return group.Wait()
 }
 
+// RunHelper common code for Service runner
 func (service *SuperNodeService) RunHelper(ctx context.Context, pastelID string, prefix string) error {
 	for {
 		select {
@@ -70,6 +73,7 @@ func (service *SuperNodeService) RunHelper(ctx context.Context, pastelID string,
 	}
 }
 
+// NewSuperNodeService creates SuperNodeService
 func NewSuperNodeService(
 	fileStorage storage.FileStorageInterface,
 	pastelClient pastel.Client,

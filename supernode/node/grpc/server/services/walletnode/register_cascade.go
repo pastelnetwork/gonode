@@ -25,7 +25,7 @@ import (
 // this implements SN's GRPC methods that are called by WNs during Sense Registration
 // meaning - these methods implements server side of WN to SN GRPC communication
 
-// RegisterSense represents grpc service for registration Sense.
+// RegisterCascade represents grpc service for registration Sense.
 type RegisterCascade struct {
 	pb.UnimplementedRegisterCascadeServer
 
@@ -44,7 +44,7 @@ func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer)
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewTask()
+		task = service.NewSenseRegistrationTask()
 	}
 	go func() {
 		<-task.Done()
@@ -337,7 +337,7 @@ func (service *RegisterCascade) Desc() *grpc.ServiceDesc {
 	return &pb.RegisterCascade_ServiceDesc
 }
 
-// NewRegisterSense returns a new RegisterSense instance.
+// NewRegisterCascade returns a new RegisterSense instance.
 func NewRegisterCascade(service *cascaderegister.CascadeRegistrationService) *RegisterCascade {
 	return &RegisterCascade{
 		RegisterCascade: common.NewRegisterCascade(service),

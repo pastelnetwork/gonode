@@ -9,14 +9,17 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/files"
 )
 
+// TaskCleanerFunc pointer to func that removes artefacts
 type TaskCleanerFunc func()
 
+// SuperNodeTask base "class" for Task
 type SuperNodeTask struct {
 	task.Task
 
 	LogPrefix string
 }
 
+// RunHelper common code for Task runner
 func (task *SuperNodeTask) RunHelper(ctx context.Context, clean TaskCleanerFunc) error {
 	ctx = task.context(ctx)
 	log.WithContext(ctx).Debug("Start task")
@@ -45,7 +48,7 @@ func (task *SuperNodeTask) RemoveFile(file *files.File) {
 	}
 }
 
-// NewTask returns a new Task instance.
+// NewSuperNodeTask returns a new Task instance.
 func NewSuperNodeTask(logPrefix string) *SuperNodeTask {
 	return &SuperNodeTask{
 		Task:      task.New(StatusTaskStarted),

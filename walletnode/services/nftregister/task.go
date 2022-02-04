@@ -18,7 +18,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// Registers an NFT on the blockchain
+// NftRegistrationTask an NFT on the blockchain
 // Follow instructions from : https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration//
 // NftRegistrationTask is Run from NftRegisterService.Run(), which eventually calls run, below
 type NftRegistrationTask struct {

@@ -14,7 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
-// Task is the task of registering new Sense.
+// SenseRegistrationTask is the task of registering new Sense.
 type SenseRegistrationTask struct {
 	*common.SuperNodeTask
 	*common.DupeDetectionHandler

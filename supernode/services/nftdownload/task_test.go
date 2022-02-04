@@ -102,10 +102,10 @@ func fakeRegiterTicket() pastel.RegTicket {
 func TestNewTask(t *testing.T) {
 
 	type args struct {
-		service *NftDownloadService
+		service *NftDownloaderService
 	}
 
-	service := &NftDownloadService{}
+	service := &NftDownloaderService{}
 
 	testCases := []struct {
 		args args
@@ -116,8 +116,8 @@ func TestNewTask(t *testing.T) {
 				service: service,
 			},
 			want: &NftDownloadingTask{
-				SuperNodeTask:      &common.SuperNodeTask{Task: task.New(common.StatusTaskStarted)},
-				NftDownloadService: service,
+				SuperNodeTask:        &common.SuperNodeTask{Task: task.New(common.StatusTaskStarted)},
+				NftDownloaderService: service,
 			},
 		},
 	}
@@ -125,7 +125,7 @@ func TestNewTask(t *testing.T) {
 
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			task := NewNftDownloadingTask(testCase.args.service)
-			assert.Equal(t, testCase.want.NftDownloadService, task.NftDownloadService)
+			assert.Equal(t, testCase.want.NftDownloaderService, task.NftDownloaderService)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 		})
 	}
@@ -164,7 +164,7 @@ func TestTaskGetSymbolIDs(t *testing.T) {
 
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 
-			service := &NftDownloadService{}
+			service := &NftDownloaderService{}
 			task := NewNftDownloadingTask(service)
 			rqIDs, err := task.getRQSymbolIDs(testCase.args.rqIDsData)
 			testCase.assertion(t, err)
@@ -201,7 +201,7 @@ func TestDecodeRegTicket(t *testing.T) {
 
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 
-			service := &NftDownloadService{}
+			service := &NftDownloaderService{}
 			task := NewNftDownloadingTask(service)
 			err := task.decodeRegTicket(testCase.args.regTicket)
 			testCase.assertion(t, err)
@@ -233,10 +233,10 @@ func TestTaskRun(t *testing.T) {
 		testCase := testCase
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 
-			service := &NftDownloadService{}
+			service := &NftDownloaderService{}
 			task := &NftDownloadingTask{
-				SuperNodeTask:      &common.SuperNodeTask{Task: task.New(common.StatusTaskStarted)},
-				NftDownloadService: service,
+				SuperNodeTask:        &common.SuperNodeTask{Task: task.New(common.StatusTaskStarted)},
+				NftDownloaderService: service,
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
@@ -385,7 +385,7 @@ func TestTaskDownload(t *testing.T) {
 			// 	taskClient.ListenOnNewAction(testCase.args.newActionChan)
 			// }
 
-			service := &NftDownloadService{
+			service := &NftDownloaderService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
@@ -396,8 +396,8 @@ func TestTaskDownload(t *testing.T) {
 			}
 
 			task := &NftDownloadingTask{
-				SuperNodeTask:      &common.SuperNodeTask{Task: task.New(common.StatusTaskStarted)},
-				NftDownloadService: service,
+				SuperNodeTask:        &common.SuperNodeTask{Task: task.New(common.StatusTaskStarted)},
+				NftDownloaderService: service,
 			}
 
 			ctx, cancel := context.WithCancel(testCase.args.ctx)

@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Task is the task of registering new Sense.
+// CascadeRegistrationTask is the task of registering new Sense.
 type CascadeRegistrationTask struct {
 	*common.SuperNodeTask
 	*common.RegTaskHelper
@@ -395,7 +395,7 @@ func (task *CascadeRegistrationTask) removeArtifacts() {
 	task.RemoveFile(task.Asset)
 }
 
-// NewSenseRegistrationTask returns a new Task instance.
+// NewCascadeRegistrationTask returns a new Task instance.
 func NewCascadeRegistrationTask(service *CascadeRegistrationService) *CascadeRegistrationTask {
 	task := &CascadeRegistrationTask{
 		SuperNodeTask:              common.NewSuperNodeTask(logPrefix),

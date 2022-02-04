@@ -40,7 +40,7 @@ func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer)
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewTask()
+		task = service.NewSenseRegistrationTask()
 		isTaskNew = true
 	}
 	go func() {

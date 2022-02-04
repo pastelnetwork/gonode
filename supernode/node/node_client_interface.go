@@ -12,7 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 
-// Client represents a base connection interface.
+// ClientInterface represents a base connection interface.
 type ClientInterface interface {
 	// Connect connects to the server at the given address.
 	Connect(ctx context.Context, address string) (ConnectionInterface, error)
@@ -34,6 +34,7 @@ type ConnectionInterface interface {
 	RegisterCascade() RegisterCascadeInterface
 }
 
+// SuperNodePeerAPIInterface base interface for other Node API interfaces
 type SuperNodePeerAPIInterface interface {
 	// SessID returns the taskID received from the server during the handshake.
 	SessID() (taskID string)
@@ -46,7 +47,7 @@ type NodeMaker interface {
 	MakeNode(conn ConnectionInterface) SuperNodePeerAPIInterface
 }
 
-// RegisterNft represents an interaction stream with supernodes for registering Nft.
+// RegisterNftInterface represents an interaction stream with supernodes for registering Nft.
 type RegisterNftInterface interface {
 	SuperNodePeerAPIInterface
 
@@ -56,7 +57,7 @@ type RegisterNftInterface interface {
 	SendNftTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }
 
-// RegisterSense represents an interaction stream with supernodes for registering sense.
+// RegisterSenseInterface represents an interaction stream with supernodes for registering sense.
 type RegisterSenseInterface interface {
 	SuperNodePeerAPIInterface
 
@@ -66,7 +67,7 @@ type RegisterSenseInterface interface {
 	SendSenseTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }
 
-// RegisterSense represents an interaction stream with supernodes for registering sense.
+// RegisterCascadeInterface represents an interaction stream with supernodes for registering sense.
 type RegisterCascadeInterface interface {
 	SuperNodePeerAPIInterface
 
@@ -74,7 +75,7 @@ type RegisterCascadeInterface interface {
 	SendCascadeTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }
 
-// ProcessUserdata represents an interaction stream with supernodes for sending userdata.
+// ProcessUserdataInterface represents an interaction stream with supernodes for sending userdata.
 type ProcessUserdataInterface interface {
 	SuperNodePeerAPIInterface
 

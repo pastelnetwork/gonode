@@ -11,6 +11,7 @@ import (
 	"sync"
 )
 
+// NetworkHandler common functionality related for SNs Mesh and other interconnections
 type NetworkHandler struct {
 	task          *SuperNodeTask
 	PastelHandler *mixins.PastelHandler
@@ -29,6 +30,7 @@ type NetworkHandler struct {
 	minNumberConnectedNodes int
 }
 
+// NewNetworkHandler creates instance of NetworkHandler
 func NewNetworkHandler(task *SuperNodeTask,
 	nodeClient node.ClientInterface, nodeMaker node.NodeMaker,
 	pastelClient pastel.Client,
@@ -45,6 +47,7 @@ func NewNetworkHandler(task *SuperNodeTask,
 	}
 }
 
+// MeshedNodesPastelID return PastelIDs of meshed nodes
 func (h *NetworkHandler) MeshedNodesPastelID() []string {
 	var ids []string
 	for _, peer := range h.meshedNodes {
@@ -180,6 +183,7 @@ func (h *NetworkHandler) MeshNodes(_ context.Context, meshedNodes []types.Meshed
 	return nil
 }
 
+// CheckNodeInMeshedNodes checks if the node is in the active mesh (by nodeID)
 func (h *NetworkHandler) CheckNodeInMeshedNodes(nodeID string) error {
 	if h.meshedNodes == nil {
 		return errors.New("nil meshedNodes")
@@ -194,6 +198,7 @@ func (h *NetworkHandler) CheckNodeInMeshedNodes(nodeID string) error {
 	return errors.New("nodeID not found")
 }
 
+// PastelNodeByExtKey returns information about SN by its PastelID
 func (h *NetworkHandler) PastelNodeByExtKey(ctx context.Context, nodeID string) (*SuperNodePeer, error) {
 	masterNodes, err := h.PastelHandler.PastelClient.MasterNodesTop(ctx)
 	log.WithContext(ctx).Debugf("master node %v", masterNodes)

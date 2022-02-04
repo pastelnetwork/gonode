@@ -16,7 +16,7 @@ const (
 	logPrefix = "sense"
 )
 
-// Service represent sense service.
+// SenseRegistrationService represent sense service.
 type SenseRegistrationService struct {
 	*common.SuperNodeService
 	config *Config
@@ -31,7 +31,7 @@ func (service *SenseRegistrationService) Run(ctx context.Context) error {
 }
 
 // NewSenseRegistrationTask runs a new task of the registration Sense and returns its taskID.
-func (service *SenseRegistrationService) NewTask() *SenseRegistrationTask {
+func (service *SenseRegistrationService) NewSenseRegistrationTask() *SenseRegistrationTask {
 	task := NewSenseRegistrationTask(service)
 	service.Worker.AddTask(task)
 	return task
