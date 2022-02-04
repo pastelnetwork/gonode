@@ -27,14 +27,13 @@ func main() {
 		RqFilesDir: "/tmp/",
 	})
 
-	res1, err := service.Encode(context.Background(), data)
+	_, err = service.Encode(context.Background(), data)
 	if err != nil {
 		fmt.Printf("Encode error:%v\n", err)
 		return
 	}
 
-	res2, err := service.EncodeInfo(context.Background(), data, 2, "block_hash", "pastelID")
-
+	_, err = service.EncodeInfo(context.Background(), data, 2, "block_hash", "pastelID")
 	if err != nil {
 		fmt.Printf("EncodeInfo error:%v\n", err)
 		return
