@@ -21,7 +21,7 @@ type service struct {
 	pclient                       pastel.Client
 	storageChallengeExpiredBlocks int32
 	numberOfChallengeReplicas     int
-	repository                    repository
+	repository                    Repository
 	currentBlockCount             int32
 }
 

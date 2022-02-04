@@ -26,7 +26,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not read file data in to memory")
 		return err
 	}
-	challengeResponseHash := s.computeHashOfFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
+	challengeResponseHash := s.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.ChallengeSliceStartIndex, incomingChallengeMessage.ChallengeSliceEndIndex)
 	challengeStatus := statusResponded
 	messageType := storageChallengeResponseMessage
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.MerklerootWhenChallengeSent
@@ -60,10 +60,19 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 
 	// send to verifying masternode to validate challenge response hash
 	if err = s.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage); err != nil {
+		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not send processed challenge message to verifying node")
 		return err
 	}
-	s.repository.SaveChallengMessageState(ctx, "respond", outgoingChallengeMessage.ChallengeID, outgoingChallengeMessage.ChallengingMasternodeID, outgoingChallengeMessage.BlockNumChallengeSent)
-	return nil
+
+	s.repository.SaveChallengMessageState(
+		ctx,
+		"respond",
+		outgoingChallengeMessage.ChallengeID,
+		outgoingChallengeMessage.ChallengingMasternodeID,
+		outgoingChallengeMessage.BlockNumChallengeSent,
+	)
+
+	return err
 }
 
 func (s *service) validateProcessingStorageChallengeIncommingData(incomingChallengeMessage *ChallengeMessage) error {
@@ -76,7 +85,7 @@ func (s *service) validateProcessingStorageChallengeIncommingData(incomingChalle
 	return nil
 }
 
-func (s *service) computeHashOfFileSlice(fileData []byte, challengeSliceStartIndex int, challengeSliceEndIndex int) string {
+func (s *service) computeHashOfFileSlice(fileData []byte, challengeSliceStartIndex, challengeSliceEndIndex uint64) string {
 	challengeDataSlice := fileData[challengeSliceStartIndex:challengeSliceEndIndex]
 	algorithm := sha3.New256()
 	algorithm.Write(challengeDataSlice)
