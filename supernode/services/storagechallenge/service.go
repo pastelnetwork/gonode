@@ -47,6 +47,7 @@ func NewService(cfg *Config, secConn node.Client, p2p p2p.Client, pClient pastel
 	if err != nil {
 		panic(err)
 	}
+
 	return &service{
 		actor:                         localActor,
 		domainActorID:                 pid,

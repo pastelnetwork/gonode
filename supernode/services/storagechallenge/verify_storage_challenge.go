@@ -36,12 +36,15 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (blocksVerifyStorageChallengeInBlocks <= s.storageChallengeExpiredBlocks) {
 		challengeStatus = statusSucceeded
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("masternode %s correctly responded in %d blocks to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, blocksVerifyStorageChallengeInBlocks, incomingChallengeMessage.FileHashToChallenge))
+		s.repository.SaveChallengMessageState(ctx, "succeeded", incomingChallengeMessage.ChallengeID, incomingChallengeMessage.ChallengingMasternodeID, incomingChallengeMessage.BlockNumChallengeSent)
 	} else if incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash {
 		challengeStatus = statusFailedTimeout
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("masternode %s  correctly responded in %d blocks to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingChallengeMessage.RespondingMasternodeID, blocksVerifyStorageChallengeInBlocks, incomingChallengeMessage.FileHashToChallenge))
+		s.repository.SaveChallengMessageState(ctx, "timeout", incomingChallengeMessage.ChallengeID, incomingChallengeMessage.ChallengingMasternodeID, incomingChallengeMessage.BlockNumChallengeSent)
 	} else {
 		challengeStatus = statusFailedIncorrectResponse
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("masternode %s failed by incorrectly responding to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, incomingChallengeMessage.FileHashToChallenge))
+		s.repository.SaveChallengMessageState(ctx, "failed", incomingChallengeMessage.ChallengeID, incomingChallengeMessage.ChallengingMasternodeID, incomingChallengeMessage.BlockNumChallengeSent)
 	}
 
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.MerklerootWhenChallengeSent

@@ -49,4 +49,3 @@ services:
       - 19092:9090
 networks:
   internal: {}
-  
