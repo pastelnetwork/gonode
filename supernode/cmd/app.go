@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
+	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -231,6 +232,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftDownload := nftdownload.NewService(&config.NftDownload, pastelClient, p2p, rqClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
+	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, rqClient, nil)
 
 	ddScanConfig := ddscan.NewConfig()
 	ddScanConfig.SetWorkDir(config.DdWorkDir)
@@ -266,8 +268,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterCascade(cascadeRegister),
 		supernode.NewRegisterCascade(cascadeRegister),
 		walletnode.NewDownloadNft(nftDownload),
-		// walletnode.NewProcessUserdata(userdataProcess, database),
-		// supernode.NewProcessUserdata(userdataProcess, database),
+		supernode.NewStorageChallenger(storageChallenger),
 		healthcheck.NewHealthCheck(statsMngr),
 	)
 

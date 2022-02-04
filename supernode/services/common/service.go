@@ -2,6 +2,8 @@ package common
 
 import (
 	"context"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -12,7 +14,6 @@ import (
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
-	"time"
 )
 
 // SuperNodeServiceInterface common interface for Services
@@ -65,7 +66,7 @@ func (service *SuperNodeService) RunHelper(ctx context.Context, pastelID string,
 				}
 
 				service.Worker = task.NewWorker()
-				log.WithContext(ctx).WithError(err).Error("registration failed, retrying")
+				log.WithContext(ctx).WithError(err).Error("Service run failed, retrying")
 			} else {
 				return nil
 			}
