@@ -111,7 +111,8 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations), time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
+	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations),
+	 time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
