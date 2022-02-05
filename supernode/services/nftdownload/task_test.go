@@ -390,7 +390,7 @@ func TestTaskDownload(t *testing.T) {
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
 					P2PClient:    p2pClient.Client,
-					RQClient:     raptorQClient.Client,
+					RQClient:     raptorQClient.ClientInterface,
 					Worker:       task.NewWorker(),
 				},
 			}

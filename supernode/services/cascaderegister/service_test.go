@@ -46,7 +46,7 @@ func TestNewService(t *testing.T) {
 				config:        config,
 				pastelClient:  pastelClient.Client,
 				p2pClient:     p2pClient.Client,
-				raptorQClient: raptorQClient.Client,
+				raptorQClient: raptorQClient.ClientInterface,
 				nodeClient:    nodeClient,
 			},
 			want: &CascadeRegistrationService{
@@ -54,7 +54,7 @@ func TestNewService(t *testing.T) {
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
 					P2PClient:    p2pClient.Client,
-					RQClient:     raptorQClient.Client,
+					RQClient:     raptorQClient.ClientInterface,
 					Worker:       task.NewWorker(),
 				},
 			},
@@ -115,7 +115,7 @@ func TestServiceRun(t *testing.T) {
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
 					P2PClient:    p2pClient.Client,
-					RQClient:     raptorQClient.Client,
+					RQClient:     raptorQClient.ClientInterface,
 					Worker:       task.NewWorker(),
 					Storage:      files.NewStorage(nil),
 				},
@@ -166,7 +166,7 @@ func TestServiceNewTask(t *testing.T) {
 					PastelClient: pastelClient.Client,
 					P2PClient:    p2pClient.Client,
 					Worker:       task.NewWorker(),
-					RQClient:     raptorQClient.Client,
+					RQClient:     raptorQClient.ClientInterface,
 				},
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)

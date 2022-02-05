@@ -41,14 +41,14 @@ func TestNewService(t *testing.T) {
 				config:        config,
 				pastelClient:  pastelClient.Client,
 				p2pClient:     p2pClient.Client,
-				raptorQClient: raptorQClient.Client,
+				raptorQClient: raptorQClient.ClientInterface,
 			},
 			want: &NftDownloaderService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
 					P2PClient:    p2pClient.Client,
-					RQClient:     raptorQClient.Client,
+					RQClient:     raptorQClient.ClientInterface,
 				},
 			},
 		},
@@ -106,7 +106,7 @@ func TestServiceRun(t *testing.T) {
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
 					P2PClient:    p2pClient.Client,
-					RQClient:     raptorQClient.Client,
+					RQClient:     raptorQClient.ClientInterface,
 					Worker:       task.NewWorker(),
 				},
 			}
