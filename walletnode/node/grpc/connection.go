@@ -24,9 +24,9 @@ func (conn *clientConn) DownloadNft() node.DownloadNftInterface {
 }
 
 // ProcessUserdata implements node.ConnectionInterface.ProcessUserdata()
-func (conn *clientConn) ProcessUserdata() node.ProcessUserdataInterface {
-	return newProcessUserdata(conn)
-}
+// func (conn *clientConn) ProcessUserdata() node.ProcessUserdataInterface {
+// 	return newProcessUserdata(conn)
+// }
 
 // RegisterSense implements node.ConnectionInterface.RegisterSense()
 func (conn *clientConn) RegisterSense() node.RegisterSenseInterface {

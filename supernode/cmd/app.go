@@ -3,10 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -19,8 +20,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/dupedetection/ddscan"
-	"github.com/pastelnetwork/gonode/metadb"
-	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
@@ -35,7 +34,6 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/nftdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
-	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
 
 const (
@@ -80,7 +78,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
 		cli.NewFlag("dd-service-dir", &config.DdWorkDir).SetUsage("Set `path` to the directory of dupe detection service - contains database file").SetValue(defaultDdWorkDir),
 		cli.NewFlag("log-level", &config.LogConfig.Levels.CommonLogLevel).SetUsage("Set the log `level` of application services.").SetValue(config.LogConfig.Levels.CommonLogLevel),
-		cli.NewFlag("metadb-log-level", &config.LogConfig.Levels.MetaDBLogLevel).SetUsage("Set the log `level` for metadb.").SetValue(config.LogConfig.Levels.MetaDBLogLevel),
+		// cli.NewFlag("metadb-log-level", &config.LogConfig.Levels.MetaDBLogLevel).SetUsage("Set the log `level` for metadb.").SetValue(config.LogConfig.Levels.MetaDBLogLevel),
 		cli.NewFlag("p2p-log-level", &config.LogConfig.Levels.P2PLogLevel).SetUsage("Set the log `level` for p2p.").SetValue(config.LogConfig.Levels.P2PLogLevel),
 		cli.NewFlag("dd-log-level", &config.LogConfig.Levels.P2PLogLevel).SetUsage("Set the log `level` for dupedetection.").SetValue(config.LogConfig.Levels.DupeDetectionLogLevel),
 		cli.NewFlag("log-file", &config.LogConfig.File).SetUsage("The log `file` to write to."),
@@ -121,9 +119,9 @@ func NewApp() *cli.App {
 			return err
 		}
 
-		if err := config.MetaDB.Validate(); err != nil {
-			return err
-		}
+		// if err := config.MetaDB.Validate(); err != nil {
+		// 	return err
+		// }
 
 		if err := config.RaptorQ.Validate(); err != nil {
 			return err
@@ -194,10 +192,14 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.P2P.ID = config.PastelID
 	p2p := p2p.New(config.P2P, pastelClient, secInfo)
 
+	// Because of rqlite failures, we're going to disable metadb for now, this consequently disables user data processing until we
+	//  either fix rqlite or develop a workaround.
+	//	NB: Removed protobuf and grpc comms files as well to prevent malicious behavior.
+
 	// new metadb service
-	config.MetaDB.SetWorkDir(config.WorkDir)
-	metadb := metadb.New(config.MetaDB, config.Node.PastelID, pastelClient)
-	database := database.NewDatabaseOps(metadb, config.UserDB)
+	// config.MetaDB.SetWorkDir(config.WorkDir)
+	// metadb := metadb.New(config.MetaDB, config.Node.PastelID, pastelClient)
+	// database := database.NewDatabaseOps(metadb, config.UserDB)
 
 	// raptorq client
 	config.NftRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
@@ -238,14 +240,14 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		return fmt.Errorf("start ddscan: %w", err)
 	}
 
-	// ----Userdata Services----
-	userdataNodeClient := client.New(pastelClient, secInfo)
-	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
+	// // ----Userdata Services----
+	// userdataNodeClient := client.New(pastelClient, secInfo)
+	// userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
 
 	// create stats manager
 	statsMngr := healthcheck_lib.NewStatsMngr(config.HealthCheck)
 	statsMngr.Add("p2p", p2p)
-	statsMngr.Add("mdl", metadb)
+	// statsMngr.Add("mdl", metadb)
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
 	statsMngr.Add("ddscan", ddScan)
 
@@ -264,12 +266,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterCascade(cascadeRegister),
 		supernode.NewRegisterCascade(cascadeRegister),
 		walletnode.NewDownloadNft(nftDownload),
-		walletnode.NewProcessUserdata(userdataProcess, database),
-		supernode.NewProcessUserdata(userdataProcess, database),
+		// walletnode.NewProcessUserdata(userdataProcess, database),
+		// supernode.NewProcessUserdata(userdataProcess, database),
 		healthcheck.NewHealthCheck(statsMngr),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
-
-	return runServices(ctx, metadb, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, database, userdataProcess, statsMngr, debugSerivce)
+	// return runServices(ctx, metadb, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, database, userdataProcess, statsMngr, debugSerivce)
+	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, statsMngr, debugSerivce)
 }

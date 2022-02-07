@@ -35,7 +35,7 @@ type ConnectionInterface interface {
 	// DownloadNft returns a new DownloadNft stream.
 	DownloadNft() DownloadNftInterface
 	// ProcessUserdata returns a new ProcessUserdata stream.
-	ProcessUserdata() ProcessUserdataInterface
+	// ProcessUserdata() ProcessUserdataInterface
 	// RegisterSense returns new RegisterSense stream
 	RegisterSense() RegisterSenseInterface
 }
