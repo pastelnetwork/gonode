@@ -27,7 +27,6 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
-	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 )
 
 const (
@@ -161,8 +160,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.NftRegister.RqFilesDir = config.RqFilesDir
 	rqClient := rqgrpc.NewClient()
 
+	// NB: As part of current dev push for Sense and Cascade, we are disabling userdata handling thru rqlite.
+
 	// create another wrapped RPC connection for use by our userdata service, basically the same as nodeClient
-	userdataNodeClient := grpc.NewClient(pastelClient)
+	//userdataNodeClient := grpc.NewClient(pastelClient)
 
 	// start new key value storage
 	db := memory.NewKeyValue()
@@ -186,7 +187,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
 	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient)
 	nftDownload := nftdownload.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
-	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
+	//userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
 
 	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.
@@ -194,7 +195,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	//  "NftGet" and "Download".
 	server := api.NewAPIServer(config.API,
 		services.NewNftAPIHandler(nftRegister, nftSearch, nftDownload),
-		services.NewUserdataAPIHandler(userdataProcess),
+		// services.NewUserdataAPIHandler(userdataProcess),
 		services.NewSenseAPIHandler(senseRegister),
 		services.NewSwagger(),
 	)
@@ -204,5 +205,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	//calls all of our services in its own goroutine with "Run" but waits for them as a group
 	//NB: Tasks are defined individually for each service, and probably override the actual task struct's functions.
 	//  For instance, nftRegister uses the NftRegistrationTask found in services/nftregister/task.go
-	return runServices(ctx, server, nftRegister, nftSearch, nftDownload, userdataProcess, senseRegister)
+	//return runServices(ctx, server, nftRegister, nftSearch, nftDownload, userdataProcess, senseRegister)
+	return runServices(ctx, server, nftRegister, nftSearch, nftDownload, senseRegister)
 }

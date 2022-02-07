@@ -29,9 +29,9 @@ func (conn *clientConn) RegisterCascade() node.RegisterCascadeInterface {
 }
 
 // ProcessUserdata implements node.ConnectionInterface.ProcessUserdata()
-func (conn *clientConn) ProcessUserdata() node.ProcessUserdataInterface {
-	return newProcessUserdata(conn)
-}
+// func (conn *clientConn) ProcessUserdata() node.ProcessUserdataInterface {
+// 	return newProcessUserdata(conn)
+// }
 
 func newClientConn(id string, conn *grpc.ClientConn) node.ConnectionInterface {
 	return &clientConn{

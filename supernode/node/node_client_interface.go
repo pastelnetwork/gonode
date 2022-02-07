@@ -28,7 +28,7 @@ type ConnectionInterface interface {
 	// RegisterNft returns a new RegisterNft stream.
 	RegisterNft() RegisterNftInterface
 	// ProcessUserdata returns a new ProcessUserdata stream.
-	ProcessUserdata() ProcessUserdataInterface
+	// ProcessUserdata() ProcessUserdataInterface
 	// RegisterSense returns a new RegisterSense stream
 	RegisterSense() RegisterSenseInterface
 	// RegisterCascade returns a new RegisterCascade stream
