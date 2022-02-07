@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
@@ -37,7 +38,7 @@ func (task *WalletNodeTask) RunHelper(ctx context.Context, run TaskRunnerFunc, c
 	if err := run(ctx); err != nil {
 		task.UpdateStatus(StatusTaskRejected)
 		log.WithContext(ctx).WithErrorStack(err).Error("Task is rejected")
-		return err
+		return nil
 	}
 
 	task.UpdateStatus(StatusTaskCompleted)
