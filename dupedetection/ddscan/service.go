@@ -21,6 +21,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
+// Service ...
 type Service interface {
 	// Run starts task
 	Run(ctx context.Context) error
@@ -84,7 +85,7 @@ func (s *service) Run(ctx context.Context) error {
 					return err
 				}
 
-				log.DD().WithContext(ctx).WithError(err).Error("failed to run ddscan, retrying.")
+				//log.DD().WithContext(ctx).WithError(err).Error("failed to run ddscan, retrying.")
 			} else {
 				return nil
 			}
@@ -118,11 +119,12 @@ func (s *service) run(ctx context.Context) error {
 				if err := s.checkSynchronized(ctx); err != nil {
 					log.DD().WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
 					continue
-				} else {
-					log.DD().WithContext(ctx).Debug("Done for waiting synchronization status")
-					s.isMasterNodeSynced = true
 				}
+
+				log.DD().WithContext(ctx).Debug("Done for waiting synchronization status")
+				s.isMasterNodeSynced = true
 			}
+
 			if err := s.runTask(ctx); err != nil {
 				log.DD().WithContext(ctx).WithError(err).Errorf("runTask() failed")
 			}
@@ -448,11 +450,11 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	stats["last_insert_time"] = lastItem.DatetimeFingerprintAddedToDatabase
 
 	// Get total of records
-	record_count, err := s.getRecordCount(ctx)
+	recordCount, err := s.getRecordCount(ctx)
 	if err != nil {
 		return nil, errors.Errorf("getRecordCount: %w", err)
 	}
-	stats["record_count"] = record_count
+	stats["record_count"] = recordCount
 
 	return stats, nil
 }

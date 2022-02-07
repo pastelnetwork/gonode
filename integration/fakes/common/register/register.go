@@ -68,12 +68,12 @@ func (r *register) Register() gin.HandlerFunc {
 			if err != nil {
 				c.JSON(http.StatusBadRequest, err.Error())
 				return
+			}
+
+			if err := r.mock(method, strings.Split(params, ","), data, count); err != nil {
+				c.JSON(http.StatusInternalServerError, err.Error())
 			} else {
-				if err := r.mock(method, strings.Split(params, ","), data, count); err != nil {
-					c.JSON(http.StatusInternalServerError, err.Error())
-				} else {
-					c.JSON(http.StatusOK, nil)
-				}
+				c.JSON(http.StatusOK, nil)
 			}
 		}
 	}

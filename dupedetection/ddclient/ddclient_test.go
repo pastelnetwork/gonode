@@ -26,7 +26,7 @@ func (srv *testService) ImageRarenessScore(_ context.Context, _ *pb.RarenessScor
 	return srv.retReply, srv.retError
 }
 
-func startGrpcServer(t *testing.T, wg *sync.WaitGroup, port int, serviceHandler *testService) *grpc.Server {
+func startGrpcServer(_ *testing.T, wg *sync.WaitGroup, port int, serviceHandler *testService) *grpc.Server {
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
 		panic(fmt.Sprintf("failed to listen: %v", err))

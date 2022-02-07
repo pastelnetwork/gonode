@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
@@ -67,7 +66,7 @@ func (s *service) Run(ctx context.Context) error {
 					return err
 				}
 
-				log.MetaDB().WithContext(ctx).WithError(err).Error("failed to run metadb, retrying.")
+				//log.MetaDB().WithContext(ctx).WithError(err).Error("failed to run metadb, retrying.")
 			} else {
 				return nil
 			}

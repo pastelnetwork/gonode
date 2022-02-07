@@ -2,13 +2,15 @@ package mixins
 
 import (
 	"context"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel"
-	"time"
 )
 
+// PastelHandler handles pastel communication
 type PastelHandler struct {
 	PastelClient pastel.Client
 }
@@ -63,6 +65,7 @@ func (pt *PastelHandler) GetBlock(ctx context.Context) (int, string, error) {
 	return int(blockNum), blockInfo.Hash, nil
 }
 
+// CheckBalanceToPayRegistrationFee checks balance
 func (pt *PastelHandler) CheckBalanceToPayRegistrationFee(ctx context.Context, address string, fee float64, maxFee float64) error {
 	if fee == 0 {
 		return errors.Errorf("invalid fee amount to check: %f", fee)
@@ -84,6 +87,7 @@ func (pt *PastelHandler) CheckBalanceToPayRegistrationFee(ctx context.Context, a
 	return nil
 }
 
+// BurnSomeCoins burns coins on the address
 func (pt *PastelHandler) BurnSomeCoins(ctx context.Context, address string, amount int64, percentageOfAmountToBurn uint) (string, error) {
 	if amount <= 0 {
 		return "", errors.Errorf("invalid amount")

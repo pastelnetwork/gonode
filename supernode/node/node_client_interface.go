@@ -9,6 +9,7 @@ package node
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 
@@ -42,10 +43,14 @@ type SuperNodePeerAPIInterface interface {
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 }
 
+// revive:disable:exported
+
 // NodeMaker interface to make concrete node types
 type NodeMaker interface {
 	MakeNode(conn ConnectionInterface) SuperNodePeerAPIInterface
 }
+
+// revive:enable:exported
 
 // RegisterNftInterface represents an interaction stream with supernodes for registering Nft.
 type RegisterNftInterface interface {

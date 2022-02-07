@@ -170,7 +170,7 @@ func (db *Ops) Run(ctx context.Context) error {
 					return err
 				}
 
-				log.MetaDB().WithContext(ctx).WithError(err).Error("failed to run metadb database, retrying.")
+				//log.MetaDB().WithContext(ctx).WithError(err).Error("failed to run metadb database, retrying.")
 			} else {
 				return nil
 			}

@@ -12,6 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
+// Fingerprints ...
 type Fingerprints struct {
 	fingerprintAndScores      *pastel.DDAndFingerprints
 	FingerprintAndScoresBytes []byte // JSON bytes of fingerprintAndScores

@@ -6,6 +6,7 @@ COPY supernode/ /supernode/
 COPY common/  /common/
 COPY dupedetection/ /dupedetection/
 COPY go-webp/ /go-webp/
+COPY mixins/ /mixins/
 COPY metadb/ /metadb/
 COPY pastel/ /pastel/
 COPY p2p/ /p2p/

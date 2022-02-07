@@ -16,6 +16,7 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
+// RQHandler handles rq stuff
 type RQHandler struct {
 	pastelHandler *PastelHandler
 	rqClient      rqnode.ClientInterface
@@ -31,6 +32,7 @@ type RQHandler struct {
 	RQIDsIc        uint32
 }
 
+// NewRQHandler creates new rq handler
 func NewRQHandler(rqClient rqnode.ClientInterface, pastelHandler *PastelHandler, raptorQServiceAddress string, rqFilesDir string,
 	numberRQIDSFiles uint32, maxRQIDs uint32) *RQHandler {
 	return &RQHandler{
@@ -43,6 +45,7 @@ func NewRQHandler(rqClient rqnode.ClientInterface, pastelHandler *PastelHandler,
 	}
 }
 
+// GenRQIdentifiersFiles generates rq id files
 func (h *RQHandler) GenRQIdentifiersFiles(ctx context.Context, file *files.File, operationBlockHash string, callerPastelID string, callerPassphrase string) error {
 	log.Debugf("Connect to %s", h.raptorQServiceAddress)
 	conn, err := h.rqClient.Connect(ctx, h.raptorQServiceAddress)
@@ -67,7 +70,7 @@ func (h *RQHandler) GenRQIdentifiersFiles(ctx context.Context, file *files.File,
 		return errors.Errorf("generate RaptorQ symbols identifiers: %w", err)
 	}
 
-	var rqIDsFilesCount uint32 = 0
+	var rqIDsFilesCount uint32
 	for _, rawSymbolIDFile := range encodeInfo.SymbolIDFiles {
 		err := h.generateRQIDs(ctx, rawSymbolIDFile, callerPastelID, callerPassphrase)
 		if err != nil {
@@ -120,6 +123,7 @@ func (h *RQHandler) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolI
 	return nil
 }
 
+// IsEmpty() ...
 func (h RQHandler) IsEmpty() bool {
 	return len(h.RQIDs) == 0 || len(h.RQIDsFile) == 0 || len(h.RQEncodeParams.Oti) == 0
 }

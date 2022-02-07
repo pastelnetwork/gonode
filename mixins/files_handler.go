@@ -2,13 +2,15 @@ package mixins
 
 import (
 	"context"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/files"
-	"time"
 )
 
+// FilesHandler handles files
 type FilesHandler struct {
 	FileStorage *files.Storage
 	FileDb      storage.KeyValue

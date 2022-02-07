@@ -76,10 +76,10 @@ func (task *UserDataTask) run(ctx context.Context) error {
 		if userDataNode.ResultGet != nil {
 			task.resultChanGet <- userDataNode.ResultGet
 		} else {
-			return errors.Errorf("Error, retrieved nil from userdata node.")
+			return errors.Errorf("error, retrieved nil from userdata node.")
 		}
 
-		log.WithContext(ctx).Debug("Finished retrieve userdata")
+		log.WithContext(ctx).Debug("finished retrieve userdata")
 
 	} else {
 		// PROCESS TO SET/UPDATE USERDATA TO METADATA LAYER

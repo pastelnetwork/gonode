@@ -21,6 +21,7 @@ type hashes struct {
 	pastelID            string
 }
 
+//  NftImageHandler  handles NFT image
 type NftImageHandler struct {
 	pastelHandler *PastelHandler
 
@@ -32,7 +33,7 @@ type NftImageHandler struct {
 	SmallThumbnailHash  []byte
 }
 
-// AddNew adds fingerprints info to 'received' array
+// AddHashes adds fingerprints info to 'received' array
 func (h *NftImageHandler) AddHashes(hashes *hashes) {
 	h.received = append(h.received, hashes)
 }
