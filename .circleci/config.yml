@@ -294,7 +294,7 @@ jobs:
       - run:
           name: Run Integration Tests
           working_directory: ~/project/integration
-          command: go test -v --timeout=10m
+          command: go test -v --timeout=15m
   
   # Run automated tests
   test_common:
