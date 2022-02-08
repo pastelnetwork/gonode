@@ -3,11 +3,10 @@ package test
 import (
 	"context"
 	"fmt"
-	"testing"
-	"time"
-
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	service "github.com/pastelnetwork/gonode/walletnode/services/nftregister"
+	"testing"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/nft_register"
@@ -59,7 +58,7 @@ func TestRegisterNftNodeConnect(t *testing.T) {
 			clientMock := test.NewMockClient(t)
 
 			//listen needed method
-			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterNft().ListenOnRegisterNft()
+			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterNft()
 
 			//set up node client only
 			testCase.node.ClientInterface = clientMock.ClientInterface

@@ -63,7 +63,7 @@ func Test{{.Prefix}}NodeConnect(t *testing.T) {
 			//set up node client only
 			testCase.node.ClientInterface = clientMock.ClientInterface
 
-			testCase.node.NodeMaker = service.{{.Prefix}}NodeMaker{}
+			testCase.node.RealNodeMaker = service.{{.Prefix}}NodeMaker{}
 
 			//assertion error
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
