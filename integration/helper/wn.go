@@ -21,22 +21,22 @@ type ThumbnailCoordinate struct {
 }
 
 type RegistrationReq struct {
-	ArtistName               string              `json:"nft_name"`
-	ArtistPastelid           string              `json:"nft_pastelid"`
-	ArtistPastelidPassphrase string              `json:"nft_pastelid_passphrase"`
-	ArtistWebsiteURL         string              `json:"nft_website_url"`
-	Description              string              `json:"description"`
-	Green                    bool                `json:"green"`
-	ImageID                  string              `json:"image_id"`
-	IssuedCopies             int                 `json:"issued_copies"`
-	Keywords                 string              `json:"keywords"`
-	MaximumFee               int                 `json:"maximum_fee"`
-	Name                     string              `json:"name"`
-	Royalty                  int                 `json:"royalty"`
-	SeriesName               string              `json:"series_name"`
-	SpendableAddress         string              `json:"spendable_address"`
-	YoutubeURL               string              `json:"youtube_url"`
-	ThumbnailCoordinate      ThumbnailCoordinate `json:"thumbnail_coordinate"`
+	CreatorName               string              `json:"creator_name"`
+	CreatorPastelid           string              `json:"creator_pastelid"`
+	CreatorPastelidPassphrase string              `json:"creator_pastelid_passphrase"`
+	CreatorWebsiteURL         string              `json:"creator_website_url"`
+	Description               string              `json:"description"`
+	Green                     bool                `json:"green"`
+	ImageID                   string              `json:"image_id"`
+	IssuedCopies              int                 `json:"issued_copies"`
+	Keywords                  string              `json:"keywords"`
+	MaximumFee                int                 `json:"maximum_fee"`
+	Name                      string              `json:"name"`
+	Royalty                   int                 `json:"royalty"`
+	SeriesName                string              `json:"series_name"`
+	SpendableAddress          string              `json:"spendable_address"`
+	YoutubeURL                string              `json:"youtube_url"`
+	ThumbnailCoordinate       ThumbnailCoordinate `json:"thumbnail_coordinate"`
 }
 
 type RegistrationResp struct {
