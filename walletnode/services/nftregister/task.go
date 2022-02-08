@@ -3,6 +3,7 @@ package nftregister
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -459,9 +460,11 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("send pre-burnt fee txid failed")
 				return err
 			}
-			if !someNode.IsPrimary() && ticketTxid != "" {
+			if !someNode.IsPrimary() && ticketTxid != "" && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
+
 				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, someNode.PastelID())
 			}
+
 			if someNode.IsPrimary() {
 				if ticketTxid == "" {
 					return errors.Errorf("primary node - %s, returned empty txid", someNode.PastelID())

@@ -86,9 +86,6 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 		return 0, "", err
 	}
 
-	// Close all connected connections - setMesh will Connect again
-	//	m.disconnectNodes(ctx, candidatesNodes)
-
 	meshedNodes, err := m.setMesh(ctx, candidatesNodes, m.minNumberSuperNodes)
 	if err != nil {
 		return 0, "", err
@@ -130,11 +127,12 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (Super
 	}
 
 	// Connect to top nodes to find 3SN and validate their info
-	/*candidatesNodes, err = m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n)
+	candidatesNodes, err = m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n)
 	if err != nil {
 		m.task.UpdateStatus(StatusErrorFindRespondingSNs)
 		return nil, errors.Errorf("validate MNs info: %v", err)
-	}*/
+	}
+
 	return candidatesNodes, nil
 }
 
