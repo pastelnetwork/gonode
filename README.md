@@ -4,7 +4,7 @@
 
 ### Walletnode
 
-[`walletnode`](walletnode/README.md) is an API server that provides REST APIs on the client side. The APIs allow the user to search, view & download artworks as well as enable the users to register their own artworks. In addition, it also allows end-users or other applications to use Pastel Network's duplication detection system for the images as well as a storage system. 
+[`walletnode`](walletnode/README.md) is an API server that provides REST APIs on the client side. The APIs allow the user to search, view & download nfts as well as enable the users to register their own nfts. In addition, it also allows end-users or other applications to use Pastel Network's duplication detection system for the images as well as a storage system. 
 
 ### Supernode
 

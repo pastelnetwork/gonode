@@ -152,7 +152,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// pastelClient reads in the json-formatted hostname, port, username, and password and
 	//  connects over gRPC to cNode for access to Blockchain, Masternodes, Tickets, and PastelID databases
 	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
-	// wrap pastelClient in security functionality then allow for calling of artwork, userdata, and sense functions
+	// wrap pastelClient in security functionality then allow for calling of nfts, userdata, and sense functions
 	nodeClient := grpc.NewClient(pastelClient)
 
 	// raptorq client

@@ -21,10 +21,10 @@ type ThumbnailCoordinate struct {
 }
 
 type RegistrationReq struct {
-	ArtistName               string              `json:"artist_name"`
-	ArtistPastelid           string              `json:"artist_pastelid"`
-	ArtistPastelidPassphrase string              `json:"artist_pastelid_passphrase"`
-	ArtistWebsiteURL         string              `json:"artist_website_url"`
+	ArtistName               string              `json:"nft_name"`
+	ArtistPastelid           string              `json:"nft_pastelid"`
+	ArtistPastelidPassphrase string              `json:"nft_pastelid_passphrase"`
+	ArtistWebsiteURL         string              `json:"nft_website_url"`
 	Description              string              `json:"description"`
 	Green                    bool                `json:"green"`
 	ImageID                  string              `json:"image_id"`
@@ -44,13 +44,13 @@ type RegistrationResp struct {
 }
 
 func GetUploadImageURI(baseURI string) string {
-	return fmt.Sprintf("%s/%s", baseURI, "artworks/register/upload")
+	return fmt.Sprintf("%s/%s", baseURI, "nfts/register/upload")
 }
 
 func GetRegistrationURI(baseURI string) string {
-	return fmt.Sprintf("%s/%s", baseURI, "artworks/register")
+	return fmt.Sprintf("%s/%s", baseURI, "nfts/register")
 }
 
 func GetNFTDetailURI(baseURI, txid string) string {
-	return fmt.Sprintf("%s/%s/%s", baseURI, "artworks", txid)
+	return fmt.Sprintf("%s/%s/%s", baseURI, "nfts", txid)
 }

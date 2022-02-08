@@ -48,7 +48,7 @@ func GetRetrieveURI(baseURI, key string) string {
 }
 
 func GetTaskStatePath(taskID string) string {
-	return fmt.Sprintf("artworks/register/%s/state", taskID)
+	return fmt.Sprintf("nfts/register/%s/state", taskID)
 }
 
 // RequestRaw makes a http request onto uri with []byte payload
