@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 
 	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -75,7 +76,6 @@ func fakeRegiterTicket() pastel.RegTicket {
 		AppTicketData: appTicketData,
 	}
 	artTicket, _ := json.Marshal(&nftTicketData)
-	// fmt.Println(string(artTicket))
 	ticketSignature := pastel.RegTicketSignatures{}
 	regTicketData := pastel.RegTicketData{
 		Type:          "type",

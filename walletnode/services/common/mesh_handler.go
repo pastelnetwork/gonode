@@ -87,7 +87,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 	}
 
 	// Close all connected connections - setMesh will Connect again
-	m.disconnectNodes(ctx, candidatesNodes)
+	//	m.disconnectNodes(ctx, candidatesNodes)
 
 	meshedNodes, err := m.setMesh(ctx, candidatesNodes, m.minNumberSuperNodes)
 	if err != nil {
@@ -130,11 +130,11 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (Super
 	}
 
 	// Connect to top nodes to find 3SN and validate their info
-	candidatesNodes, err = m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n)
+	/*candidatesNodes, err = m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n)
 	if err != nil {
 		m.task.UpdateStatus(StatusErrorFindRespondingSNs)
 		return nil, errors.Errorf("validate MNs info: %v", err)
-	}
+	}*/
 	return candidatesNodes, nil
 }
 
@@ -143,6 +143,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList
 	var err error
 
 	var meshedNodes SuperNodeList
+	log.WithContext(ctx).Info("connected nodes: ", candidatesNodes)
 	for primaryRank := range candidatesNodes {
 		meshedNodes, err = m.connectToPrimarySecondary(ctx, candidatesNodes, primaryRank)
 		if err != nil {
@@ -150,6 +151,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList
 			m.disconnectNodes(ctx, candidatesNodes)
 
 			if errors.IsContextCanceled(err) {
+				log.WithContext(ctx).Info("context cancelled")
 				return nil, err
 			}
 			errs = errors.Append(errs, err)
@@ -256,10 +258,10 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 	primary := candidatesNodes[primaryIndex]
 	log.WithContext(ctx).Debugf("Trying to connect to primary node %q", primary)
 	if err := primary.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connect: %w", err)
 	}
 	if err := primary.Session(ctx, true); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("session: %w", err)
 	}
 
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
@@ -389,7 +391,9 @@ func (m *MeshHandler) DisconnectInactiveNodes(ctx context.Context) {
 // disconnectNodes disconnects all passed nodes
 func (m *MeshHandler) disconnectNodes(ctx context.Context, nodes SuperNodeList) {
 	for _, someNode := range nodes {
-		_ = m.disconnectFromNode(ctx, someNode, false)
+		if err := m.disconnectFromNode(ctx, someNode, false); err != nil {
+			log.WithContext(ctx).WithError(err).Error("disconnect node failure")
+		}
 	}
 }
 

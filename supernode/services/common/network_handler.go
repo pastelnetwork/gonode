@@ -2,13 +2,14 @@ package common
 
 import (
 	"context"
+	"sync"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/node"
-	"sync"
 )
 
 // NetworkHandler common functionality related for SNs Mesh and other interconnections
@@ -211,7 +212,7 @@ func (h *NetworkHandler) PastelNodeByExtKey(ctx context.Context, nodeID string) 
 		if masterNode.ExtKey != nodeID {
 			continue
 		}
-		someNode := NewSuperNode(h.NodeClient, masterNode.ExtKey, masterNode.ExtAddress, h.nodeMaker)
+		someNode := NewSuperNode(h.NodeClient, masterNode.ExtAddress, masterNode.ExtKey, h.nodeMaker)
 		return someNode, nil
 	}
 

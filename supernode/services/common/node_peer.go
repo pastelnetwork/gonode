@@ -2,8 +2,9 @@ package common
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/supernode/node"
 	"time"
+
+	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
 const (
@@ -37,10 +38,8 @@ func (node *SuperNodePeer) Connect(ctx context.Context) error {
 }
 
 // NewSuperNode returns a new Node instance.
-func NewSuperNode(client node.ClientInterface,
-	address string, pastelID string,
-	nodeMaker node.NodeMaker,
-) *SuperNodePeer {
+func NewSuperNode(client node.ClientInterface, address string, pastelID string,
+	nodeMaker node.NodeMaker) *SuperNodePeer {
 	return &SuperNodePeer{
 		ClientInterface: client,
 		NodeMaker:       nodeMaker,

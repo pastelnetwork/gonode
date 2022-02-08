@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"text/template"
@@ -19,8 +18,6 @@ func parse(inputFile string, outputFile string, config interface{}) {
 
 	f, err := os.Create(outputFile)
 	if err != nil {
-		fmt.Println("create file: ", err)
-		log.Println("create file: ", err)
 		return
 	}
 

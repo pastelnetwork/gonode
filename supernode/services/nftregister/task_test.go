@@ -5,6 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math/rand"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/storage"
@@ -26,12 +33,6 @@ import (
 	test "github.com/pastelnetwork/gonode/supernode/node/test/nft_register"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"github.com/tj/assert"
-	"io"
-	"math/rand"
-	"os"
-	"strings"
-	"testing"
-	"time"
 )
 
 func makeConnected(task *NftRegistrationTask, status common.Status) *NftRegistrationTask {
@@ -1415,9 +1416,6 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
-				if err != nil {
-					fmt.Println("err: ", err.Error())
-				}
 				assert.Nil(t, err)
 			}
 		})

@@ -64,11 +64,11 @@ func (h *rpcHandler) HandleMasternode(params json.RawMessage) (interface{}, *jrp
 		return nil, err
 	}
 
-	if p.Params[0] != "top" {
+	if !(p.Params[0] == "top" || p.Params[0] == "list") {
 		return nil, &jrpc2.ErrorObject{
 			Code:    jrpc2.InvalidParamsCode,
 			Message: jrpc2.InvalidParamsMsg,
-			Data:    "invalid command not provided",
+			Data:    "invalid command provided",
 		}
 	}
 
