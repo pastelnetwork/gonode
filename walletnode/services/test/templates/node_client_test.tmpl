@@ -61,14 +61,14 @@ func Test{{.Prefix}}NodeConnect(t *testing.T) {
 			clientMock.ListenOnConnect("", testCase.err).ListenOn{{.Prefix}}()
 
 			//set up node client only
-			testCase.node.ClientInterface = clientMock.Client
+			testCase.node.ClientInterface = clientMock.ClientInterface
 
 			testCase.node.NodeMaker = service.{{.Prefix}}NodeMaker{}
 
 			//assertion error
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
 			//mock assertion
-			clientMock.Client.AssertExpectations(t)
+			clientMock.ClientInterface.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address, mock.Anything)
 			clientMock.Assert{{.Prefix}}Call(testCase.numberAPICall)
 		})

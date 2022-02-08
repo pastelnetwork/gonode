@@ -1,6 +1,6 @@
 
 log-config:
-  log-level: info
+  log-level: debug
   log-file: ~/.pastel/walletnode.log
   log-compress: true
   log-max-size-mb: 100

@@ -74,20 +74,25 @@ func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 
 // SetupMeshOfNSupernodesNodes sets Mesh
 func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, string, error) {
+	log.WithContext(ctx).Debug("SetupMeshOfNSupernodesNodes Starting...")
 
 	// Get current block height & hash
 	blockNum, blockHash, err := m.pastelHandler.GetBlock(ctx)
 	if err != nil {
 		return -1, "", errors.Errorf("get block: %v", err)
 	}
+	log.WithContext(ctx).Debugf("Current block is %d", blockNum)
 
-	candidatesNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes)
+	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
 		return 0, "", err
 	}
+	log.WithContext(ctx).Debugf("Found %d valid SuperNodes", len(connectedNodes))
 
-	meshedNodes, err := m.setMesh(ctx, candidatesNodes, m.minNumberSuperNodes)
+	meshedNodes, err := m.setMesh(ctx, connectedNodes, m.minNumberSuperNodes)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("failed setting up Mesh of %d SNs from %d SNs", m.minNumberSuperNodes, len(connectedNodes))
 		return 0, "", err
 	}
 	m.Nodes = meshedNodes
@@ -118,25 +123,31 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (Super
 	// Retrieve supernodes with the highest ranks.
 	candidatesNodes, err := m.getTopNodes(ctx)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("Could not get top masternodes")
 		return nil, errors.Errorf("call masternode top: %w", err)
 	}
 
 	if len(candidatesNodes) < n {
 		m.task.UpdateStatus(StatusErrorNotEnoughSuperNode)
+		log.WithContext(ctx).WithError(err).Errorf("unable to find enough Supernodes: %d", n)
 		return nil, fmt.Errorf("unable to find enough Supernodes: %d", n)
 	}
+	log.WithContext(ctx).Infof("Found %d Supernodes", len(candidatesNodes))
 
 	// Connect to top nodes to find 3SN and validate their info
-	candidatesNodes, err = m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n)
+	foundNodes, err := m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n)
 	if err != nil {
 		m.task.UpdateStatus(StatusErrorFindRespondingSNs)
+		log.WithContext(ctx).WithError(err).Errorf("unable to validate MN")
 		return nil, errors.Errorf("validate MNs info: %v", err)
 	}
-
-	return candidatesNodes, nil
+	log.WithContext(ctx).Infof("Found %d valid Supernodes", len(foundNodes))
+	return foundNodes, nil
 }
 
 func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList, n int) (SuperNodeList, error) {
+	log.WithContext(ctx).Debug("setMesh Starting...")
+
 	var errs error
 	var err error
 
@@ -145,6 +156,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList
 	for primaryRank := range candidatesNodes {
 		meshedNodes, err = m.connectToPrimarySecondary(ctx, candidatesNodes, primaryRank)
 		if err != nil {
+			log.WithContext(ctx).WithError(err).Warn("Connecting to primary ans secondary failed. Disconnecting any still connected")
 			// close connected connections
 			m.disconnectNodes(ctx, candidatesNodes)
 
@@ -160,6 +172,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList
 	}
 	if len(meshedNodes) < n {
 		// close connected connections
+		log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of %d nodes. Disconnecting any still connected", n)
 		m.disconnectNodes(ctx, meshedNodes)
 		return nil, errors.Errorf("Could not create a mesh of %d nodes: %w", n, errs)
 	}
@@ -227,6 +240,7 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 	var nodes SuperNodeList
 	for _, someNode := range candidatesNodes {
 		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 			continue
 		}
 
@@ -238,6 +252,7 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 	}
 
 	if count < n {
+		log.WithContext(ctx).Errorf("Failed to validate enough Supernodes - only found %d good", n)
 		return nil, errors.Errorf("validate %d Supernodes from pastel network", n)
 	}
 
@@ -246,6 +261,7 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 
 // meshNodes establishes communication between supernodes.
 func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesNodes SuperNodeList, primaryIndex int) (SuperNodeList, error) {
+	log.WithContext(ctx).Debug("connectToPrimarySecondary Starting...")
 
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
@@ -256,9 +272,11 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 	primary := candidatesNodes[primaryIndex]
 	log.WithContext(ctx).Debugf("Trying to connect to primary node %q", primary)
 	if err := primary.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("Failed to connect to primary node %q", primary)
 		return nil, fmt.Errorf("connect: %w", err)
 	}
 	if err := primary.Session(ctx, true); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("Failed to open session with primary node %q", primary)
 		return nil, fmt.Errorf("session: %w", err)
 	}
 
@@ -284,9 +302,11 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 					defer errors.Recover(log.Fatal)
 
 					if err := sameNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("Failed to connect to secondary node %q", sameNode.String())
 						return
 					}
 					if err := sameNode.Session(ctx, false); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("Failed to open session with secondary node %q", sameNode.String())
 						return
 					}
 					// Should not run this code in go routine
