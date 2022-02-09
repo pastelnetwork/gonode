@@ -128,7 +128,7 @@ func (task *Task) ListenOnSetStatusNotifyFunc() *Task {
 	return task
 }
 
-// AssertSetStatusNotifyFuncCall SetSTatusNotifyFunc call assertion
+// AssertSetStatusNotifyFuncCall SetStatusNotifyFunc call assertion
 func (task *Task) AssertSetStatusNotifyFuncCall(expectedCalls int, arguments ...interface{}) *Task {
 	if expectedCalls > 0 {
 		task.AssertCalled(task.t, SetStatusNotifyFuncMethod, arguments...)

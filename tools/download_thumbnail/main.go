@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
-	cli "github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/client"
+	cli "github.com/pastelnetwork/gonode/walletnode/api/gen/http/nft/client"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pkg/errors"
 	goahttp "goa.design/goa/v3/http"
 )
@@ -68,7 +68,7 @@ func main() {
 
 	client := doHTTP("http", "localhost:8080", 100, true)
 
-	endpoint := client.ArtworkGet()
+	endpoint := client.NftGet()
 	// create payload
 	/*
 		body := `{
@@ -76,7 +76,7 @@ func main() {
 			"user_pastelid": "jXYX6qAEiQKvTmpLZvNKQuphrzKPLACkx73zo9mE3B1kRQ7sjvnJMit3fHVPGNCY7REwdnVB2H42FaZoG8keAi"
 		  }`
 	*/
-	bodyPayload := &cli.ArtworkGetRequestBody{
+	bodyPayload := &cli.NftGetRequestBody{
 		UserPastelID:   *pastelID,
 		UserPassphrase: *passphrase,
 	}
@@ -86,7 +86,7 @@ func main() {
 		return
 	}
 
-	payload, err := cli.BuildArtworkGetPayload(string(jsonBody), *regNFTTxid)
+	payload, err := cli.BuildNftGetPayload(string(jsonBody), *regNFTTxid)
 	if err != nil {
 		printError(errors.Wrap(err, "error creating payload"))
 		return
@@ -103,7 +103,7 @@ func main() {
 		return
 	}
 
-	result, ok := res.(*artworks.ArtworkDetail)
+	result, ok := res.(*nft.NftDetail)
 	if !ok {
 		printError(errors.New("invalid data"))
 		return

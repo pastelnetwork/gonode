@@ -55,3 +55,18 @@ message ProbeImageReply {
     bytes compressedSignedDDAndFingerprints = 1;
     bool is_valid_burn_txid = 2;
 }
+
+message EncoderParameters {
+    bytes oti = 1;   //12 bytes
+}
+
+message SendSignedActionTicketReply {
+    string action_reg_txid = 1;
+}
+
+message SendActionActRequest {
+    string action_reg_txid = 1;
+}
+
+message SendActionActReply {
+}

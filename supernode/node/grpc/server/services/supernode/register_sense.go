@@ -4,18 +4,23 @@ import (
 	"context"
 	"io"
 
-	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/log"
-	pb "github.com/pastelnetwork/gonode/proto/supernode"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
-	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
+
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
+	sc "github.com/pastelnetwork/gonode/supernode/services/common"
+	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 )
 
-// RegisterSense represents grpc service for registration artwork.
+// this implements SN's GRPC methods that are called by another SNs during Sense Registration
+// meaning - these methods implements server side of SN to SN GRPC communication
+
+// RegisterSense represents grpc service for registration Sense tickets.
 type RegisterSense struct {
 	pb.UnimplementedRegisterSenseServer
 
@@ -27,7 +32,7 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	var task *senseregister.Task
+	var task *senseregister.SenseRegistrationTask
 	isTaskNew := false
 
 	if sessID, ok := service.SessID(ctx); ok {
@@ -35,7 +40,7 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewTask()
+		task = service.NewSenseRegistrationTask()
 		isTaskNew = true
 	}
 	go func() {
@@ -57,7 +62,7 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
-	if err := task.SessionNode(ctx, req.NodeID); err != nil {
+	if err := task.NetworkHandler.SessionNode(ctx, req.NodeID); err != nil {
 		return err
 	}
 
@@ -99,19 +104,19 @@ func (service *RegisterSense) SendSignedDDAndFingerprints(ctx context.Context, r
 
 }
 
-// SendArtTicketSignature implements supernode.RegisterSenseServer.SendArtTicketSignature()
-func (service *RegisterSense) SendArtTicketSignature(ctx context.Context, req *pb.SendArtTicketSignatureRequest) (*pb.SendArtTicketSignatureReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendArtTicketSignature request")
+// SendSenseTicketSignature implements supernode.RegisterSenseServer.SendSenseTicketSignature()
+func (service *RegisterSense) SendSenseTicketSignature(ctx context.Context, req *pb.SendTicketSignatureRequest) (*pb.SendTicketSignatureReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendSenseTicketSignature request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := task.AddPeerArticketSignature(req.NodeID, req.Signature); err != nil {
+	if err := task.AddPeerTicketSignature(req.NodeID, req.Signature, sc.StatusImageProbed); err != nil {
 		return nil, errors.Errorf("add peer signature %w", err)
 	}
 
-	return &pb.SendArtTicketSignatureReply{}, nil
+	return &pb.SendTicketSignatureReply{}, nil
 }
 
 // Desc returns a description of the service.
@@ -120,7 +125,7 @@ func (service *RegisterSense) Desc() *grpc.ServiceDesc {
 }
 
 // NewRegisterSense returns a new RegisterSense instance.
-func NewRegisterSense(service *senseregister.Service) *RegisterSense {
+func NewRegisterSense(service *senseregister.SenseRegistrationService) *RegisterSense {
 	return &RegisterSense{
 		RegisterSense: common.NewRegisterSense(service),
 	}

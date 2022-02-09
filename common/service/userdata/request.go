@@ -23,9 +23,9 @@ type ProcessRequest struct {
 	// Cover photo of the user
 	CoverPhoto UserImageUpload
 	// Artist's PastelID
-	ArtistPastelID string
+	UserPastelID string
 	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string
+	UserPastelIDPassphrase string
 	// Epoch Timestamp of the request (generated, not sending by UI)
 	Timestamp int64
 	// Previous block hash in the chain (generated, not sending by UI)

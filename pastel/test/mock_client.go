@@ -27,6 +27,9 @@ const (
 	// RegTicketMethod represent RegTicket name method
 	RegTicketMethod = "RegTicket"
 
+	// RegisterActTicketMethod is method name of act ticket register
+	RegisterActTicketMethod = "RegisterActTicket"
+
 	// RegTicketsMethod represent RegTickets name method
 	RegTicketsMethod = "RegTickets"
 
@@ -54,11 +57,14 @@ const (
 	// VerifyMethod represents Verify method name
 	VerifyMethod = "Verify"
 
+	// GetBalanceMethod represents Verify method name
+	GetBalanceMethod = "GetBalance"
+
 	// RegisterNFTTicket represents RegisterNFTTicket method name
 	RegisterNFTTicket = "RegisterNFTTicket"
 
-	// RegisterArtTicketMethod represents RegisterArtTicket method
-	RegisterArtTicketMethod = "RegisterArtTicket"
+	// RegisterNftTicketMethod represents RegisterNftTicket method
+	RegisterNftTicketMethod = "RegisterNftTicket"
 
 	// GetRegisterNFTFeeMethod represents GetRegisterNFTFee method
 	GetRegisterNFTFeeMethod = "GetRegisterNFTFee"
@@ -68,12 +74,23 @@ const (
 
 	// RegisterActionTicketMethod represent RegisterActionTicket name method
 	RegisterActionTicketMethod = "RegisterActionTicket"
+
+	// GetActionFeeMethod represents GetActionFee method
+	GetActionFeeMethod = "GetActionFee"
+
+	// ActivateActionTicketMethod represents GetActionFee method
+	ActivateActionTicketMethod = "ActivateActionTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
 type Client struct {
 	t *testing.T
 	*mocks.Client
+}
+
+// BurnAddress returns burn addr
+func (client *Client) BurnAddress() string {
+	return "tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
 }
 
 // NewMockClient new Client instance
@@ -226,7 +243,7 @@ func (client *Client) AssertRegTicketCall(expectedCalls int, arguments ...interf
 
 // ListenOnTicketOwnership listening TicketOwnership call and returns values from args
 func (client *Client) ListenOnTicketOwnership(ttxID string, returnErr error) *Client {
-	client.On(TicketOwnershipMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string("")), mock.IsType(string(""))).Return(ttxID, returnErr)
+	client.On(TicketOwnershipMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(ttxID, returnErr)
 	return client
 }
 
@@ -260,9 +277,34 @@ func (client *Client) ListenOnVerify(isValid bool, returnErr error) *Client {
 	return client
 }
 
-// ListenOnRegisterArtTicket listenes register art ticket & return id & err
-func (client *Client) ListenOnRegisterArtTicket(retID string, retErr error) *Client {
-	client.On(RegisterArtTicketMethod, mock.Anything, mock.Anything).Return(retID, retErr)
+// ListenOnActivateActionTicket listening ActivateActionTicket call and returns values from args
+func (client *Client) ListenOnActivateActionTicket(txid string, returnErr error) *Client {
+	client.On(ActivateActionTicketMethod, mock.Anything, mock.Anything).Return(txid, returnErr)
+	return client
+}
+
+// ListenOnGetActionFee listening action fee and returns values from args
+func (client *Client) ListenOnGetActionFee(res *pastel.GetActionFeesResult, returnErr error) *Client {
+	client.On(GetActionFeeMethod, mock.Anything, mock.Anything).Return(res, returnErr)
+	return client
+}
+
+// ListenOnGetBalance listening balance call
+func (client *Client) ListenOnGetBalance(balance float64, returnErr error) *Client {
+	client.On(GetBalanceMethod, mock.Anything, mock.Anything).Return(balance, returnErr)
+	return client
+}
+
+// ListenOnRegisterNftTicket listenes register art ticket & return id & err
+func (client *Client) ListenOnRegisterNftTicket(retID string, retErr error) *Client {
+	client.On(RegisterNftTicketMethod, mock.Anything, mock.Anything).Return(retID, retErr)
+	return client
+}
+
+// ListenOnRegisterActTicket listenes register art ticket & return id & err
+func (client *Client) ListenOnRegisterActTicket(retID string, retErr error) *Client {
+	client.On(RegisterActTicketMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything, mock.Anything).Return(retID, retErr)
 	return client
 }
 

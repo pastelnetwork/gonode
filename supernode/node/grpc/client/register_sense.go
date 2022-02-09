@@ -2,18 +2,19 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"io"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
+
+// this implements SN's GRPC methods that call another SN during Sense Registration
+// meaning - these methods implements client side of SN to SN GRPC communication
 
 type registerSense struct {
 	conn   *clientConn
@@ -25,12 +26,12 @@ func (service *registerSense) SessID() string {
 	return service.sessID
 }
 
-// Session implements node.RegisterArtwork.Session()
+// Session implements node.RegisterNft.Session()
 func (service *registerSense) Session(ctx context.Context, nodeID, sessID string) error {
 	service.sessID = sessID
 
-	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDSessID(ctx)
+	ctx = contextWithLogPrefix(ctx, service.conn.id)
+	ctx = contextWithMDSessID(ctx, service.sessID)
 
 	stream, err := service.client.Session(ctx)
 	if err != nil {
@@ -73,8 +74,8 @@ func (service *registerSense) Session(ctx context.Context, nodeID, sessID string
 
 // SendSignedDDAndFingerprints implements SendSignedDDAndFingerprints
 func (service *registerSense) SendSignedDDAndFingerprints(ctx context.Context, sessionID string, fromNodeID string, compressedDDAndFingerprints []byte) error {
-	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDSessID(ctx)
+	ctx = contextWithLogPrefix(ctx, service.conn.id)
+	ctx = contextWithMDSessID(ctx, service.sessID)
 	_, err := service.client.SendSignedDDAndFingerprints(ctx, &pb.SendSignedDDAndFingerprintsRequest{
 		SessID:                    sessionID,
 		NodeID:                    fromNodeID,
@@ -84,11 +85,11 @@ func (service *registerSense) SendSignedDDAndFingerprints(ctx context.Context, s
 	return err
 }
 
-// SendArtTicketSignature implements SendArtTicketSignature
-func (service *registerSense) SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
-	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDSessID(ctx)
-	_, err := service.client.SendArtTicketSignature(ctx, &pb.SendArtTicketSignatureRequest{
+// SendSenseTicketSignature implements SendSenseTicketSignature
+func (service *registerSense) SendSenseTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
+	ctx = contextWithLogPrefix(ctx, service.conn.id)
+	ctx = contextWithMDSessID(ctx, service.sessID)
+	_, err := service.client.SendSenseTicketSignature(ctx, &pb.SendTicketSignatureRequest{
 		NodeID:    nodeID,
 		Signature: signature,
 	})
@@ -96,16 +97,7 @@ func (service *registerSense) SendArtTicketSignature(ctx context.Context, nodeID
 	return err
 }
 
-func (service *registerSense) contextWithMDSessID(ctx context.Context) context.Context {
-	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
-	return metadata.NewOutgoingContext(ctx, md)
-}
-
-func (service *registerSense) contextWithLogPrefix(ctx context.Context) context.Context {
-	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
-}
-
-func newRegisterSense(conn *clientConn) node.RegisterSense {
+func newRegisterSense(conn *clientConn) node.RegisterSenseInterface {
 	return &registerSense{
 		conn:   conn,
 		client: pb.NewRegisterSenseClient(conn),

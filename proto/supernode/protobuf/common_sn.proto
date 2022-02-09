@@ -20,10 +20,9 @@ message SendSignedDDAndFingerprintsRequest {
 
 message SendSignedDDAndFingerprintsReply {}
 
-
-message SendArtTicketSignatureRequest {
+message SendTicketSignatureRequest {
     string nodeID = 1;
     bytes  signature = 2;
 }
 
-message SendArtTicketSignatureReply {}
+message SendTicketSignatureReply {}

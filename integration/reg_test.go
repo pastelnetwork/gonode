@@ -34,17 +34,17 @@ var _ = Describe("NFTRegistration", func() {
 
 		uploadImageReply = &helper.UploadImageResp{}
 		regReq = &helper.RegistrationReq{
-			ArtistPastelid:           testconst.ArtistPastelID,
-			ArtistPastelidPassphrase: "passphrase",
-			ArtistWebsiteURL:         "www.example.com",
-			ArtistName:               "integration-test",
-			Description:              "sample-description",
-			MaximumFee:               500,
-			IssuedCopies:             5,
-			Keywords:                 "key,word",
-			Name:                     "test-nft",
-			SpendableAddress:         testconst.RegSpendableAddress,
-			Royalty:                  10,
+			CreatorPastelid:           testconst.ArtistPastelID,
+			CreatorPastelidPassphrase: "passphrase",
+			CreatorWebsiteURL:         "www.example.com",
+			CreatorName:               "integration-test",
+			Description:               "sample-description",
+			MaximumFee:                500,
+			IssuedCopies:              5,
+			Keywords:                  "key,word",
+			Name:                      "test-nft",
+			SpendableAddress:          testconst.RegSpendableAddress,
+			Royalty:                   10,
 			ThumbnailCoordinate: helper.ThumbnailCoordinate{
 				BottomRightX: 640,
 				BottomRightY: 480,

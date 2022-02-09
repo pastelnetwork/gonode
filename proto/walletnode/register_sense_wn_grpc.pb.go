@@ -33,7 +33,7 @@ type RegisterSenseClient interface {
 	// ProbeImage uploads the resampled image compute/burn txid and return a fingerpirnt and MN signature.
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterSense_ProbeImageClient, error)
 	// SendArtTicket sends a signed art-ticket to the supernode.
-	SendSignedActionTicket(ctx context.Context, in *SendSignedActionTicketRequest, opts ...grpc.CallOption) (*SendSignedActionTicketReply, error)
+	SendSignedActionTicket(ctx context.Context, in *SendSignedSenseTicketRequest, opts ...grpc.CallOption) (*SendSignedActionTicketReply, error)
 	// SendActionAc informs to SN that walletnode activated action_reg
 	SendActionAct(ctx context.Context, in *SendActionActRequest, opts ...grpc.CallOption) (*SendActionActReply, error)
 }
@@ -147,7 +147,7 @@ func (x *registerSenseProbeImageClient) CloseAndRecv() (*ProbeImageReply, error)
 	return m, nil
 }
 
-func (c *registerSenseClient) SendSignedActionTicket(ctx context.Context, in *SendSignedActionTicketRequest, opts ...grpc.CallOption) (*SendSignedActionTicketReply, error) {
+func (c *registerSenseClient) SendSignedActionTicket(ctx context.Context, in *SendSignedSenseTicketRequest, opts ...grpc.CallOption) (*SendSignedActionTicketReply, error) {
 	out := new(SendSignedActionTicketReply)
 	err := c.cc.Invoke(ctx, "/walletnode.RegisterSense/SendSignedActionTicket", in, out, opts...)
 	if err != nil {
@@ -184,7 +184,7 @@ type RegisterSenseServer interface {
 	// ProbeImage uploads the resampled image compute/burn txid and return a fingerpirnt and MN signature.
 	ProbeImage(RegisterSense_ProbeImageServer) error
 	// SendArtTicket sends a signed art-ticket to the supernode.
-	SendSignedActionTicket(context.Context, *SendSignedActionTicketRequest) (*SendSignedActionTicketReply, error)
+	SendSignedActionTicket(context.Context, *SendSignedSenseTicketRequest) (*SendSignedActionTicketReply, error)
 	// SendActionAc informs to SN that walletnode activated action_reg
 	SendActionAct(context.Context, *SendActionActRequest) (*SendActionActReply, error)
 	mustEmbedUnimplementedRegisterSenseServer()
@@ -212,7 +212,7 @@ func (UnimplementedRegisterSenseServer) SendRegMetadata(context.Context, *SendRe
 func (UnimplementedRegisterSenseServer) ProbeImage(RegisterSense_ProbeImageServer) error {
 	return status.Errorf(codes.Unimplemented, "method ProbeImage not implemented")
 }
-func (UnimplementedRegisterSenseServer) SendSignedActionTicket(context.Context, *SendSignedActionTicketRequest) (*SendSignedActionTicketReply, error) {
+func (UnimplementedRegisterSenseServer) SendSignedActionTicket(context.Context, *SendSignedSenseTicketRequest) (*SendSignedActionTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendSignedActionTicket not implemented")
 }
 func (UnimplementedRegisterSenseServer) SendActionAct(context.Context, *SendActionActRequest) (*SendActionActReply, error) {
@@ -356,7 +356,7 @@ func (x *registerSenseProbeImageServer) Recv() (*ProbeImageRequest, error) {
 }
 
 func _RegisterSense_SendSignedActionTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendSignedActionTicketRequest)
+	in := new(SendSignedSenseTicketRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -368,7 +368,7 @@ func _RegisterSense_SendSignedActionTicket_Handler(srv interface{}, ctx context.
 		FullMethod: "/walletnode.RegisterSense/SendSignedActionTicket",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterSenseServer).SendSignedActionTicket(ctx, req.(*SendSignedActionTicketRequest))
+		return srv.(RegisterSenseServer).SendSignedActionTicket(ctx, req.(*SendSignedSenseTicketRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

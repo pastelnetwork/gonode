@@ -70,6 +70,4 @@ func main() {
 	if _, err := conn.Read(rdata); err != nil {
 		panic(fmt.Sprintf("conn read: %v", err))
 	}
-
-	fmt.Println("Exchange Done!")
 }

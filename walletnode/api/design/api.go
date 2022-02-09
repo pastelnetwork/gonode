@@ -13,7 +13,7 @@ var _ = API("walletnode", func() {
 	Version("1.0")
 
 	Server("walletnode", func() {
-		Services("artworks", "swagger")
+		Services("nft", "swagger")
 		Services("userdatas", "swagger")
 		Services("sense", "swagger")
 

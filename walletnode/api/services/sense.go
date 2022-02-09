@@ -2,30 +2,26 @@ package services
 
 import (
 	"context"
-	"io"
-	"io/ioutil"
-	"mime/multipart"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/walletnode/api"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 	goahttp "goa.design/goa/v3/http"
 )
 
-// Sense - Sense service
-type Sense struct {
+// SenseAPIHandler - SenseAPIHandler service
+type SenseAPIHandler struct {
 	*Common
-	register *senseregister.Service
+	register *senseregister.SenseRegistrationService
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
-func (service *Sense) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+func (service *SenseAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := sense.NewEndpoints(service)
 
 	srv := server.New(
@@ -37,7 +33,7 @@ func (service *Sense) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Serv
 		nil,
 		&websocket.Upgrader{},
 		nil,
-		SenseUploadImageDecoderFunc,
+		SenseUploadImageDecoderFunc(ctx, service),
 	)
 	server.Mount(mux, srv)
 
@@ -48,36 +44,28 @@ func (service *Sense) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Serv
 }
 
 // UploadImage - Uploads an image and return unique image id
-func (service *Sense) UploadImage(ctx context.Context, p *sense.UploadImagePayload) (res *sense.Image, err error) {
+func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.UploadImagePayload) (res *sense.Image, err error) {
 	if p.Filename == nil {
 		return nil, sense.MakeBadRequest(errors.New("file not specified"))
 	}
 
-	res, err = service.register.StoreImage(ctx, p)
+	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
+	}
+
+	res = &sense.Image{
+		ImageID:   id,
+		ExpiresIn: expiry,
 	}
 
 	return res, nil
 }
 
-// ActionDetails - Starts a action data task
-func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
-	// get imageData from storage based on imageID
-	imgData, err := service.register.GetImgData(p.ImageID)
-	if err != nil {
-		return nil, sense.MakeInternalServerError(errors.Errorf("get image data: %w", err))
-	}
+// ActionDetails - Starts an action data task
+func (service *SenseAPIHandler) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
 
-	ImgSizeInMb := int64(len(imgData)) / (1024 * 1024)
-
-	// Validate image signature
-	err = service.register.VerifyImageSignature(ctx, imgData, p.ActionDataSignature, p.PastelID)
-	if err != nil {
-		return nil, sense.MakeInternalServerError(err)
-	}
-
-	fee, err := service.register.GetEstimatedFee(ctx, ImgSizeInMb)
+	fee, err := service.register.ValidateDetailsAndCalculateFee(ctx, p.ImageID, p.ActionDataSignature, p.PastelID)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}
@@ -91,8 +79,7 @@ func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsP
 }
 
 // StartProcessing - Starts a processing image task
-func (service *Sense) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
-
+func (service *SenseAPIHandler) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
@@ -106,10 +93,10 @@ func (service *Sense) StartProcessing(_ context.Context, p *sense.StartProcessin
 }
 
 // RegisterTaskState - Registers a task state
-func (service *Sense) RegisterTaskState(ctx context.Context, p *sense.RegisterTaskStatePayload, stream sense.RegisterTaskStateServerStream) (err error) {
+func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.RegisterTaskStatePayload, stream sense.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
-	task := service.register.Task(p.TaskID)
+	task := service.register.GetTask(p.TaskID)
 	if task == nil {
 		return sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
@@ -126,7 +113,7 @@ func (service *Sense) RegisterTaskState(ctx context.Context, p *sense.RegisterTa
 				Status: status.String(),
 			}
 			if err := stream.Send(res); err != nil {
-				return artworks.MakeInternalServerError(err)
+				return sense.MakeInternalServerError(err)
 			}
 
 			if status.IsFinal() {
@@ -136,40 +123,10 @@ func (service *Sense) RegisterTaskState(ctx context.Context, p *sense.RegisterTa
 	}
 }
 
-// NewSense returns the swagger OpenAPI implementation.
-func NewSense(register *senseregister.Service) *Sense {
-	return &Sense{
+// NewSenseAPIHandler returns the swagger OpenAPI implementation.
+func NewSenseAPIHandler(register *senseregister.SenseRegistrationService) *SenseAPIHandler {
+	return &SenseAPIHandler{
 		Common:   NewCommon(),
 		register: register,
 	}
-}
-
-// SenseUploadImageDecoderFunc implements the multipart decoder function for the UploadImage service
-func SenseUploadImageDecoderFunc(reader *multipart.Reader, p **sense.UploadImagePayload) error {
-	var res sense.UploadImagePayload
-
-	for {
-		part, err := reader.NextPart()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		filename := part.FileName()
-		if filename != "" {
-			slurp, err := ioutil.ReadAll(part)
-			if err != nil {
-				return errors.Errorf("read file: %w", err)
-			}
-
-			res.Filename = &filename
-			res.Bytes = slurp
-			break
-		}
-	}
-
-	*p = &res
-	return nil
 }

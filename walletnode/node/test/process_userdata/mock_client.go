@@ -27,14 +27,14 @@ const (
 	// MeshNodesMethod represent MeshNodes name method
 	MeshNodesMethod = "MeshNodes"
 
-	// RegisterArtworkMethod represent RegisterArtwork name method
-	RegisterArtworkMethod = "RegisterArtwork"
+	// RegisterNftMethod represent RegisterNft name method
+	RegisterNftMethod = "RegisterNft"
 
-	// DownloadArtworkMethod represent DownloadArtwork name method
-	DownloadArtworkMethod = "DownloadArtwork"
+	// DownloadNftMethod represent DownloadNft name method
+	DownloadNftMethod = "DownloadNft"
 
-	// ProcessUserdataMethod represent ProcessUserdata name method
-	ProcessUserdataMethod = "ProcessUserdata"
+	// ProcessUserdataMethod represent ProcessUserdataInterface name method
+	ProcessUserdataMethod = "ProcessUserdataInterface"
 
 	// SessionMethod represent Session name method
 	SessionMethod = "Session"
@@ -46,57 +46,57 @@ const (
 // Client implementing node.Client mock for testing purpose
 type Client struct {
 	t *testing.T
-	*mocks.Client
-	*mocks.Connection
-	*mocks.ProcessUserdata
+	*mocks.ClientInterface
+	*mocks.ConnectionInterface
+	*mocks.ProcessUserdataInterface
 }
 
 // NewMockClient create new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:               t,
-		Client:          &mocks.Client{},
-		Connection:      &mocks.Connection{},
-		ProcessUserdata: &mocks.ProcessUserdata{},
+		t:                        t,
+		ClientInterface:          &mocks.ClientInterface{},
+		ConnectionInterface:      &mocks.ConnectionInterface{},
+		ProcessUserdataInterface: &mocks.ProcessUserdataInterface{},
 	}
 }
 
-// ListenOnRegisterArtwork listening RegisterArtwork call
-func (client *Client) ListenOnRegisterArtwork() *Client {
-	client.Connection.On(RegisterArtworkMethod).Return(nil)
+// ListenOnRegisterNft listening RegisterNft call
+func (client *Client) ListenOnRegisterNft() *Client {
+	client.ConnectionInterface.On(RegisterNftMethod).Return(nil)
 	return client
 }
 
-// AssertRegisterArtworkCall assertion RegisterArtwork call
-func (client *Client) AssertRegisterArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertRegisterNftCall assertion RegisterNft call
+func (client *Client) AssertRegisterNftCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.Connection.AssertCalled(client.t, RegisterArtworkMethod, arguments...)
+		client.ConnectionInterface.AssertCalled(client.t, RegisterNftMethod, arguments...)
 	}
-	client.Connection.AssertNumberOfCalls(client.t, RegisterArtworkMethod, expectedCalls)
+	client.ConnectionInterface.AssertNumberOfCalls(client.t, RegisterNftMethod, expectedCalls)
 	return client
 }
 
-// ListenOnDownloadArtwork listening DownloadArtwork call
-func (client *Client) ListenOnDownloadArtwork() *Client {
-	client.Connection.On(DownloadArtworkMethod).Return(client.DownloadArtwork)
+// ListenOnDownloadNft listening DownloadNft call
+func (client *Client) ListenOnDownloadNft() *Client {
+	client.ConnectionInterface.On(DownloadNftMethod).Return(client.DownloadNft)
 	return client
 }
 
-// AssertDownloadArtworkCall assertion DownloadArtwork call
-func (client *Client) AssertDownloadArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertDownloadNftCall assertion DownloadNft call
+func (client *Client) AssertDownloadNftCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.Connection.AssertCalled(client.t, DownloadArtworkMethod, arguments...)
+		client.ConnectionInterface.AssertCalled(client.t, DownloadNftMethod, arguments...)
 	}
-	client.Connection.AssertNumberOfCalls(client.t, DownloadArtworkMethod, expectedCalls)
+	client.ConnectionInterface.AssertNumberOfCalls(client.t, DownloadNftMethod, expectedCalls)
 	return client
 }
 
 // ListenOnConnect listening Connect call and returns error from args
 func (client *Client) ListenOnConnect(addr string, returnErr error) *Client {
 	if addr == "" {
-		client.Client.On(ConnectMethod, mock.Anything, mock.IsType(string("")), mock.Anything).Return(client.Connection, returnErr)
+		client.ClientInterface.On(ConnectMethod, mock.Anything, mock.IsType(string("")), mock.Anything).Return(client.ConnectionInterface, returnErr)
 	} else {
-		client.Client.On(ConnectMethod, mock.Anything, addr, mock.Anything).Return(client.Connection, returnErr)
+		client.ClientInterface.On(ConnectMethod, mock.Anything, addr, mock.Anything).Return(client.ConnectionInterface, returnErr)
 	}
 
 	return client
@@ -105,75 +105,75 @@ func (client *Client) ListenOnConnect(addr string, returnErr error) *Client {
 // AssertConnectCall assertion Connect call
 func (client *Client) AssertConnectCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.Client.AssertCalled(client.t, ConnectMethod, arguments...)
+		client.ClientInterface.AssertCalled(client.t, ConnectMethod, arguments...)
 	}
-	client.Client.AssertNumberOfCalls(client.t, ConnectMethod, expectedCalls)
+	client.ClientInterface.AssertNumberOfCalls(client.t, ConnectMethod, expectedCalls)
 	return client
 }
 
 // ListenOnClose listening Close call and returns error from args
 func (client *Client) ListenOnClose(returnErr error) *Client {
-	client.Connection.On(CloseMethod).Return(returnErr)
+	client.ConnectionInterface.On(CloseMethod).Return(returnErr)
 	return client
 }
 
 // AssertCloseCall assertion Close call
 func (client *Client) AssertCloseCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.Connection.AssertCalled(client.t, CloseMethod, arguments...)
+		client.ConnectionInterface.AssertCalled(client.t, CloseMethod, arguments...)
 	}
-	client.Connection.AssertNumberOfCalls(client.t, CloseMethod, expectedCalls)
+	client.ConnectionInterface.AssertNumberOfCalls(client.t, CloseMethod, expectedCalls)
 	return client
 }
 
 // ListenOnDone listening Done call and returns channel from args
 func (client *Client) ListenOnDone() *Client {
-	client.Connection.On(DoneMethod).Return(nil)
+	client.ConnectionInterface.On(DoneMethod).Return(nil)
 	return client
 }
 
 // AssertDoneCall assertion Done call
 func (client *Client) AssertDoneCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.Connection.AssertCalled(client.t, DoneMethod, arguments...)
+		client.ConnectionInterface.AssertCalled(client.t, DoneMethod, arguments...)
 	}
-	client.Connection.AssertNumberOfCalls(client.t, DoneMethod, expectedCalls)
+	client.ConnectionInterface.AssertNumberOfCalls(client.t, DoneMethod, expectedCalls)
 	return client
 }
 
 // ListenOnMeshNodes listening MeshNodes call and returns args value
 func (client *Client) ListenOnMeshNodes(arguments ...interface{}) *Client {
-	client.ProcessUserdata.On(MeshNodesMethod, mock.Anything, mock.Anything).Return(arguments...)
+	client.ProcessUserdataInterface.On(MeshNodesMethod, mock.Anything, mock.Anything).Return(arguments...)
 	return client
 }
 
-// ListenOnProcessUserdata listening ProcessUserdata call
+// ListenOnProcessUserdata listening ProcessUserdataInterface call
 func (client *Client) ListenOnProcessUserdata() *Client {
-	client.Connection.On(ProcessUserdataMethod).Return(client.ProcessUserdata)
+	client.ConnectionInterface.On(ProcessUserdataMethod).Return(client.ProcessUserdataInterface)
 	return client
 }
 
-// AssertProcessUserdataCall assertion ProcessUserdata call
+// AssertProcessUserdataCall assertion ProcessUserdataInterface call
 func (client *Client) AssertProcessUserdataCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.Connection.AssertCalled(client.t, ProcessUserdataMethod, arguments...)
+		client.ConnectionInterface.AssertCalled(client.t, ProcessUserdataMethod, arguments...)
 	}
-	client.Connection.AssertNumberOfCalls(client.t, ProcessUserdataMethod, expectedCalls)
+	client.ConnectionInterface.AssertNumberOfCalls(client.t, ProcessUserdataMethod, expectedCalls)
 	return client
 }
 
 // ListenOnSessionUserdata listening Session call and returns error from args
 func (client *Client) ListenOnSessionUserdata(returnErr error) *Client {
-	client.ProcessUserdata.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+	client.ProcessUserdataInterface.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
 	return client
 }
 
 // AssertSessionCallUserdata assertion Session Call
 func (client *Client) AssertSessionCallUserdata(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.ProcessUserdata.AssertCalled(client.t, SessionMethod, arguments...)
+		client.ProcessUserdataInterface.AssertCalled(client.t, SessionMethod, arguments...)
 	}
-	client.ProcessUserdata.AssertNumberOfCalls(client.t, SessionMethod, expectedCalls)
+	client.ProcessUserdataInterface.AssertNumberOfCalls(client.t, SessionMethod, expectedCalls)
 	return client
 }
 
@@ -185,45 +185,45 @@ func (client *Client) ListenOnAcceptedNodesUserdata(pastelIDs []string, returnEr
 		return pastelIDs
 	}
 
-	client.ProcessUserdata.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
+	client.ProcessUserdataInterface.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
 	return client
 }
 
 // AssertAcceptedNodesCallUserdata assertion AcceptedNodes call
 func (client *Client) AssertAcceptedNodesCallUserdata(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.ProcessUserdata.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
+		client.ProcessUserdataInterface.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
 	}
-	client.ProcessUserdata.AssertNumberOfCalls(client.t, AcceptedNodesMethod, expectedCalls)
+	client.ProcessUserdataInterface.AssertNumberOfCalls(client.t, AcceptedNodesMethod, expectedCalls)
 	return client
 }
 
 // ListenOnConnectToUserdata listening ConnectTo call and returns error from args
 func (client *Client) ListenOnConnectToUserdata(returnErr error) *Client {
-	client.ProcessUserdata.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
+	client.ProcessUserdataInterface.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 
 // AssertConnectToCallUserdata assertion ConnectTo call
 func (client *Client) AssertConnectToCallUserdata(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.ProcessUserdata.AssertCalled(client.t, ConnectToMethod, arguments...)
+		client.ProcessUserdataInterface.AssertCalled(client.t, ConnectToMethod, arguments...)
 	}
-	client.ProcessUserdata.AssertNumberOfCalls(client.t, ConnectToMethod, expectedCalls)
+	client.ProcessUserdataInterface.AssertNumberOfCalls(client.t, ConnectToMethod, expectedCalls)
 	return client
 }
 
 // ListenOnSessIDUserdata listening SessID call and returns sessID from args
 func (client *Client) ListenOnSessIDUserdata(sessID string) *Client {
-	client.ProcessUserdata.On(SessIDMethod).Return(sessID)
+	client.ProcessUserdataInterface.On(SessIDMethod).Return(sessID)
 	return client
 }
 
 // AssertSessIDCallUserdata assertion SessID call
 func (client *Client) AssertSessIDCallUserdata(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.ProcessUserdata.AssertCalled(client.t, SessIDMethod, arguments...)
+		client.ProcessUserdataInterface.AssertCalled(client.t, SessIDMethod, arguments...)
 	}
-	client.ProcessUserdata.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
+	client.ProcessUserdataInterface.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
 	return client
 }

@@ -11,6 +11,7 @@ COPY pastel/ /pastel/
 COPY p2p/ /p2p/
 COPY proto/ /proto/
 COPY raptorq/ /raptorq/
+COPY mixins/ /mixins/
 COPY integration/testdata/ /walletnode/testdata/
 COPY /integration/configs/wn.yml /walletnode/wn.yml
 COPY /integration/configs/p0.conf /walletnode/p0.conf

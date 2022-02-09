@@ -44,7 +44,7 @@ func (db *keyValue) SetWithExpiry(key string, value []byte, expiry time.Duration
 	return nil
 }
 
-// NewKeyValue return new instance key value storage
+// NewKeyValue returns a new key value storage instance
 func NewKeyValue() storage.KeyValue {
 	c := cache.New(-1*time.Minute, 12*time.Hour)
 	return &keyValue{

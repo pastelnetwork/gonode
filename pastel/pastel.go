@@ -149,4 +149,7 @@ type Client interface {
 	// GetBalance returns the amount of PSL stored at address
 	// Command `z_getbalance address`
 	GetBalance(ctx context.Context, address string) (float64, error)
+
+	// BurnAddress ...
+	BurnAddress() string
 }

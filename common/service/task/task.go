@@ -57,7 +57,7 @@ func (task *task) ID() string {
 
 // Run implements Task.Run
 func (task *task) Run(_ context.Context) error {
-	return errors.New("not implemented")
+	return errors.New("task default run func not implemented")
 }
 
 // Cancel implements Task.Cancel

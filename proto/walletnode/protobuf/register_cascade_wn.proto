@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
+
+package walletnode;
+import "common_wn.proto";
+
+// this proto defines GRPC methods that WN uses to talk to SNs during Cascade Registration
+
+service RegisterCascade {
+  // Session informs the supernode its position (primary/secondary).
+  // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
+  // The stream is used by the parties to inform each other about the cancellation of the task.
+  rpc Session(stream SessionRequest) returns (stream SessionReply);
+
+  // AcceptedNodes returns peers of the secondary supernodes connected to it.
+  rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
+
+  // ConnectTo requests to connect to the primary supernode.
+  rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
+
+  // MeshNodes informs to SNs other SNs on same meshNodes created for this registration request
+  rpc MeshNodes(MeshNodesRequest) returns (MeshNodesReply);
+
+  // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
+  rpc SendRegMetadata(SendRegMetadataRequest) returns (SendRegMetadataReply);
+
+  // Upload the asset for storing
+  rpc UploadAsset(stream UploadAssetRequest) returns (UploadAssetReply);
+
+  // SendArtTicket sends a signed art-ticket to the supernode.
+  rpc SendSignedActionTicket(SendSignedCascadeTicketRequest) returns (SendSignedActionTicketReply);
+
+  // SendActionAc informs to SN that walletnode activated action_reg
+  rpc SendActionAct(SendActionActRequest) returns (SendActionActReply);
+}
+
+message SendSignedCascadeTicketRequest {
+  bytes action_ticket = 1;
+  bytes creator_signature = 2;
+  EncoderParameters encode_parameters = 3;
+  bytes rq_files = 4;
+}
+
+message UploadAssetRequest {
+  message MetaData {
+    // size of the data
+    int64 size = 1;
+    // format of data: such as jpeg, png ...
+    string format = 2;
+    // sha3-256 hash of the data
+    bytes hash = 3;
+  }
+  oneof payload {
+    bytes asset_piece = 1;
+    // Should be included in the last piece of image only
+    MetaData meta_data = 2;
+  }
+}
+
+message UploadAssetReply {
+}

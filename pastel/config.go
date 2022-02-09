@@ -5,9 +5,11 @@ import (
 )
 
 const (
-	defaultHostname    = "localhost"
-	defaultMainnetPort = 9932
-	defaultTestnetPort = 19932
+	defaultHostname        = "localhost"
+	defaultMainnetPort     = 9932
+	defaultTestnetPort     = 19932
+	defaultBurnAddressTest = "tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
+	defaultBurnAddressMain = "PtpasteLBurnAddressXXXXXXXXXXbJ5ndd"
 )
 
 // Config Represents the structure of the `pastel.conf` file.
@@ -47,6 +49,15 @@ func (config *Config) port() int {
 	}
 
 	return defaultMainnetPort
+}
+
+// BurnAddress ...
+func (config *Config) BurnAddress() string {
+	if config.Testnet == 1 {
+		return defaultBurnAddressTest
+	}
+
+	return defaultBurnAddressMain
 }
 
 // NewConfig returns a new Config instance.

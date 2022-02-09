@@ -31,7 +31,7 @@ type ddServerClientImpl struct {
 }
 
 func randID() string {
-	id := uuid.NewString()
+	id := uuid.New().String()
 	return id[0:8]
 }
 

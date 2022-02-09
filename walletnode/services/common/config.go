@@ -3,17 +3,29 @@ package common
 import "time"
 
 const (
-	defaultConnectToNodeTimeout = time.Second * 15
+	defaultNumberSuperNodes = 3
+
+	defaultConnectToNextNodeDelay = 200 * time.Millisecond
+	defaultAcceptNodesTimeout     = 30 * time.Second // = 3 * (2* ConnectToNodeTimeout)
+	defaultConnectToNodeTimeout   = time.Second * 15
 )
 
-// Config contains common configuration of the servcies.
+// Config contains common configuration of the services.
 type Config struct {
-	ConnectToNodeTimeout time.Duration
+	NumberSuperNodes int
+
+	ConnectToNodeTimeout   time.Duration
+	ConnectToNextNodeDelay time.Duration
+	AcceptNodesTimeout     time.Duration
 }
 
 // NewConfig returns a new Config instance
 func NewConfig() *Config {
 	return &Config{
-		ConnectToNodeTimeout: defaultConnectToNodeTimeout,
+		NumberSuperNodes: defaultNumberSuperNodes,
+
+		ConnectToNodeTimeout:   defaultConnectToNodeTimeout,
+		ConnectToNextNodeDelay: defaultConnectToNextNodeDelay,
+		AcceptNodesTimeout:     defaultAcceptNodesTimeout,
 	}
 }

@@ -13,27 +13,27 @@ type clientConn struct {
 	id string
 }
 
-// RegisterArtwork implements node.Connection.RegisterArtwork()
-func (conn *clientConn) RegisterArtwork() node.RegisterArtwork {
-	return newRegisterArtwork(conn)
+// RegisterNft implements node.ConnectionInterface.RegisterNft()
+func (conn *clientConn) RegisterNft() node.RegisterNftInterface {
+	return newRegisterNft(conn)
 }
 
-// DownloadArtwork implements node.Connection.DownloadArtwork()
-func (conn *clientConn) DownloadArtwork() node.DownloadArtwork {
-	return newDownloadArtwork(conn)
+// DownloadNft implements node.ConnectionInterface.DownloadNft()
+func (conn *clientConn) DownloadNft() node.DownloadNftInterface {
+	return newDownloadNft(conn)
 }
 
-// ProcessUserdata implements node.Connection.ProcessUserdata()
-func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
-	return newProcessUserdata(conn)
-}
+// ProcessUserdata implements node.ConnectionInterface.ProcessUserdata()
+// func (conn *clientConn) ProcessUserdata() node.ProcessUserdataInterface {
+// 	return newProcessUserdata(conn)
+// }
 
-// RegisterSense implements node.Connection.RegisterSense()
-func (conn *clientConn) RegisterSense() node.RegisterSense {
+// RegisterSense implements node.ConnectionInterface.RegisterSense()
+func (conn *clientConn) RegisterSense() node.RegisterSenseInterface {
 	return newRegisterSense(conn)
 }
 
-func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
+func newClientConn(id string, conn *grpc.ClientConn) node.ConnectionInterface {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),
 		id:         id,

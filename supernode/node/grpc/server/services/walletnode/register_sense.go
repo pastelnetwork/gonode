@@ -6,19 +6,23 @@ import (
 	"io"
 	"runtime/debug"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
 )
 
-// RegisterSense represents grpc service for registration artwork.
+// this implements SN's GRPC methods that are called by WNs during Sense Registration
+// meaning - these methods implements server side of WN to SN GRPC communication
+
+// RegisterSense represents grpc service for registration Sense.
 type RegisterSense struct {
 	pb.UnimplementedRegisterSenseServer
 
@@ -30,14 +34,14 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	var task *senseregister.Task
+	var task *senseregister.SenseRegistrationTask
 
 	if sessID, ok := service.SessID(ctx); ok {
 		if task = service.Task(sessID); task == nil {
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewTask()
+		task = service.NewSenseRegistrationTask()
 	}
 	go func() {
 		<-task.Done()
@@ -55,7 +59,7 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
-	if err := task.Session(ctx, req.IsPrimary); err != nil {
+	if err := task.NetworkHandler.Session(ctx, req.IsPrimary); err != nil {
 		return err
 	}
 
@@ -89,7 +93,7 @@ func (service *RegisterSense) AcceptedNodes(ctx context.Context, req *pb.Accepte
 		return nil, err
 	}
 
-	nodes, err := task.AcceptedNodes(ctx)
+	nodes, err := task.NetworkHandler.AcceptedNodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +120,7 @@ func (service *RegisterSense) ConnectTo(ctx context.Context, req *pb.ConnectToRe
 		return nil, err
 	}
 
-	if err := task.ConnectTo(ctx, req.NodeID, req.SessID); err != nil {
+	if err := task.NetworkHandler.ConnectTo(ctx, req.NodeID, req.SessID); err != nil {
 		return nil, err
 	}
 
@@ -141,7 +145,7 @@ func (service *RegisterSense) MeshNodes(ctx context.Context, req *pb.MeshNodesRe
 		})
 	}
 
-	err = task.MeshNodes(ctx, meshedNodes)
+	err = task.NetworkHandler.MeshNodes(ctx, meshedNodes)
 	return &pb.MeshNodesReply{}, err
 }
 
@@ -247,7 +251,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 }
 
 // SendSignedActionTicket implements walletnode.RegisterSense.SendSignedActionTicket
-func (service *RegisterSense) SendSignedActionTicket(ctx context.Context, req *pb.SendSignedActionTicketRequest) (retRes *pb.SendSignedActionTicketReply, retErr error) {
+func (service *RegisterSense) SendSignedActionTicket(ctx context.Context, req *pb.SendSignedSenseTicketRequest) (retRes *pb.SendSignedActionTicketReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
 		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenSendSignedActionTicket")
 		retErr = recErr
@@ -294,7 +298,7 @@ func (service *RegisterSense) Desc() *grpc.ServiceDesc {
 }
 
 // NewRegisterSense returns a new RegisterSense instance.
-func NewRegisterSense(service *senseregister.Service) *RegisterSense {
+func NewRegisterSense(service *senseregister.SenseRegistrationService) *RegisterSense {
 	return &RegisterSense{
 		RegisterSense: common.NewRegisterSense(service),
 	}

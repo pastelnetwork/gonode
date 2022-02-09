@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/tools/ui-cli
 
-go 1.16
+go 1.17
 
 require (
 	github.com/gorilla/websocket v1.4.2
@@ -15,4 +15,5 @@ replace (
 	github.com/pastelnetwork/gonode/proto => ../../proto
 	github.com/pastelnetwork/gonode/raptorq => ../../raptorq
 	github.com/pastelnetwork/gonode/walletnode => ../../walletnode
+	github.com/pastelnetwork/gonode/mixins => ../../mixins
 )

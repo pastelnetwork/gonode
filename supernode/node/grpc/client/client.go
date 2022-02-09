@@ -24,7 +24,7 @@ type client struct {
 }
 
 // Connect implements node.Client.Connect()
-func (client *client) Connect(ctx context.Context, address string) (node.Connection, error) {
+func (client *client) Connect(ctx context.Context, address string) (node.ConnectionInterface, error) {
 	id, _ := random.String(8, random.Base62Chars)
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
 
@@ -63,7 +63,7 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 }
 
 // New returns a new client instance.
-func New(secClient alts.SecClient, secInfo *alts.SecInfo) node.Client {
+func New(secClient alts.SecClient, secInfo *alts.SecInfo) node.ClientInterface {
 	return &client{
 		secClient: secClient,
 		secInfo:   secInfo,

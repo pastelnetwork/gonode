@@ -34,7 +34,7 @@ const (
 // Client implements node.Client mock for testing purpose
 type Client struct {
 	t *testing.T
-	*mocks.Client
+	*mocks.ClientInterface
 	*mocks.Connection
 	*mocks.RaptorQ
 }
@@ -42,25 +42,25 @@ type Client struct {
 // NewMockClient creates new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:          t,
-		Client:     &mocks.Client{},
-		Connection: &mocks.Connection{},
-		RaptorQ:    &mocks.RaptorQ{},
+		t:               t,
+		ClientInterface: &mocks.ClientInterface{},
+		Connection:      &mocks.Connection{},
+		RaptorQ:         &mocks.RaptorQ{},
 	}
 }
 
 // ListenOnConnect listening Connect call and returns error from args
 func (client *Client) ListenOnConnect(returnErr error) *Client {
-	client.Client.On(ConnectMethod, mock.Anything, mock.IsType(string(""))).Return(client.Connection, returnErr)
+	client.ClientInterface.On(ConnectMethod, mock.Anything, mock.IsType(string(""))).Return(client.Connection, returnErr)
 	return client
 }
 
 // AssertConnectCall assertion Connect call
 func (client *Client) AssertConnectCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.Client.AssertCalled(client.t, ConnectMethod, arguments...)
+		client.ClientInterface.AssertCalled(client.t, ConnectMethod, arguments...)
 	}
-	client.Client.AssertNumberOfCalls(client.t, ConnectMethod, expectedCalls)
+	client.ClientInterface.AssertNumberOfCalls(client.t, ConnectMethod, expectedCalls)
 	return client
 }
 

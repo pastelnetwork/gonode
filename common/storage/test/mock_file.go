@@ -13,13 +13,13 @@ const (
 
 // File implementing storage.File mock for testing purpose
 type File struct {
-	*mocks.File
+	*mocks.FileInterface
 }
 
 // NewMockFile new File instance
 func NewMockFile() *File {
 	return &File{
-		File: &mocks.File{},
+		FileInterface: &mocks.FileInterface{},
 	}
 }
 

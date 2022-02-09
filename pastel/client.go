@@ -23,6 +23,7 @@ const (
 
 type client struct {
 	jsonrpc.RPCClient
+	burnAddress string
 }
 
 // MasterNodeConfig implements pastel.Client.MasterNodeConfig
@@ -550,20 +551,31 @@ func (client *client) callFor(ctx context.Context, object interface{}, method st
 	return client.CallForWithContext(ctx, object, method, params)
 }
 
+func (client *client) BurnAddress() string {
+	return client.burnAddress
+}
+
 // NewClient returns a new Client instance.
-func NewClient(config *Config) Client {
+// This client interface connects to the Core Pastel (cNode) RPC Server providing access to:
+//  the blockchain DB, Masternodes DB, Tickets DB, and PastelID DB.
+// Via testnet, this will connect over 19932, and over mainnet 9932
+func NewClient(config *Config, burnAddress string) Client {
+	//Configure network addressing
 	endpoint := net.JoinHostPort(config.Hostname, strconv.Itoa(config.port()))
 	if !strings.Contains(endpoint, "//") {
 		endpoint = "http://" + endpoint
 	}
 
+	//Parse and configure RPC authorization headers
 	opts := &jsonrpc.RPCClientOpts{
 		CustomHeaders: map[string]string{
 			"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte(config.Username+":"+config.Password)),
 		},
 	}
 
+	//Return a Client interface with the proper RPCClient configurations and burn address
 	return &client{
-		RPCClient: jsonrpc.NewClientWithOpts(endpoint, opts),
+		RPCClient:   jsonrpc.NewClientWithOpts(endpoint, opts),
+		burnAddress: burnAddress,
 	}
 }

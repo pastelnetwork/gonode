@@ -2,13 +2,13 @@ package grpc
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"fmt"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
@@ -33,7 +33,7 @@ func (service *registerSense) SessID() string {
 	return service.sessID
 }
 
-// Session implements node.RegisterArtwork.Session()
+// Session implements node.RegisterNft.Session()
 func (service *registerSense) Session(ctx context.Context, isPrimary bool) error {
 	ctx = service.contextWithLogPrefix(ctx)
 
@@ -77,7 +77,7 @@ func (service *registerSense) Session(ctx context.Context, isPrimary bool) error
 	return nil
 }
 
-// AcceptedNodes implements node.RegisterArtwork.AcceptedNodes()
+// AcceptedNodes implements node.RegisterNft.AcceptedNodes()
 func (service *registerSense) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
@@ -98,7 +98,7 @@ func (service *registerSense) AcceptedNodes(ctx context.Context) (pastelIDs []st
 	return ids, nil
 }
 
-// ConnectTo implements node.RegisterArtwork.ConnectTo()
+// ConnectTo implements node.RegisterNft.ConnectTo()
 func (service *registerSense) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
@@ -164,8 +164,8 @@ func (service *registerSense) SendActionAct(ctx context.Context, actionRegTxid s
 	return err
 }
 
-// ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, bool, error) {
+// ProbeImage implements node.RegisterNft.ProbeImage()
+func (service *registerSense) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -218,7 +218,7 @@ func (service *registerSense) SendSignedTicket(ctx context.Context, ticket []byt
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := pb.SendSignedActionTicketRequest{
+	req := pb.SendSignedSenseTicketRequest{
 		ActionTicket:     ticket,
 		CreatorSignature: signature,
 		DdFpFiles:        ddFp,
@@ -232,7 +232,7 @@ func (service *registerSense) SendSignedTicket(ctx context.Context, ticket []byt
 	return rsp.ActionRegTxid, nil
 }
 
-func newRegisterSense(conn *clientConn) node.RegisterSense {
+func newRegisterSense(conn *clientConn) node.RegisterSenseInterface {
 	return &registerSense{
 		conn:   conn,
 		client: pb.NewRegisterSenseClient(conn),

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	logPrefix = "client"
+	logPrefix = "walletnode-grpc-secclient"
 )
 
 type client struct {
@@ -23,7 +23,7 @@ type client struct {
 }
 
 // Connect implements node.Client.Connect()
-func (client *client) Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (node.Connection, error) {
+func (client *client) Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (node.ConnectionInterface, error) {
 	id, _ := random.String(8, random.Base62Chars)
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
 
@@ -56,8 +56,10 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 	return conn, nil
 }
 
-// NewClient returns a new client instance.
-func NewClient(secClient alts.SecClient) node.Client {
+// NewClient will wrap the input client in the SecClient interface, providing Signing and Verification
+//	functionality.  By wrapping the return in ClientInterface, the resulting client will be able to call
+//  nft registration, userdata, and sense stream functions.
+func NewClient(secClient alts.SecClient) node.ClientInterface {
 	return &client{
 		secClient: secClient,
 	}

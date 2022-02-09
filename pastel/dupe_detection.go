@@ -171,7 +171,7 @@ func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []by
 	return compressed, nil
 }
 
-// GetIDFiles is supposed to generates ID Files for dd_and_fingerprints files and rq_id files
+// GetIDFiles is supposed to generate ID Files for dd_and_fingerprints files and rq_id files
 // file is b64 encoded file appended with signatures and compressed, ic is the initial counter
 // and max is the number of ids to generate
 func GetIDFiles(file []byte, ic uint32, max uint32) (ids []string, files [][]byte, err error) {

@@ -67,6 +67,4 @@ func main() {
 	if _, err := conn.Write(data); err != nil {
 		panic(fmt.Sprintf("conn write: %v", err))
 	}
-
-	fmt.Println("Send Done")
 }
