@@ -175,11 +175,8 @@ func TestTaskRun(t *testing.T) {
 				ListenOnSendSignedTicket(1, nil).
 				ListenOnClose(nil)
 			nodeClient.ConnectionInterface.On("RegisterNft").Return(nodeClient.RegisterNftInterface)
+			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Return("100", nil)
 
-			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return("", nil)
-			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return("", nil)
-			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return("", nil)
-			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return("", nil)
 			nodeClient.RegisterNftInterface.On("MeshNodes", mock.Anything, mock.Anything).Return(nil)
 
 			ddData := &pastel.DDAndFingerprints{
@@ -224,6 +221,7 @@ func TestTaskRun(t *testing.T) {
 			Request.Image = nftFile
 			Request.MaximumFee = 100
 			task := NewNFTRegistrationTask(service, Request)
+			task.skipPrimaryNodeTxidVerify = true
 
 			//create context with timeout to automatically end process after 5 sec
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 5*time.Second)
@@ -231,9 +229,11 @@ func TestTaskRun(t *testing.T) {
 
 			err = task.Run(ctx)
 			if testCase.wantErr != nil {
-				assert.NotNil(t, err)
+				assert.True(t, task.Status().IsFailure())
 			} else {
 				assert.Nil(t, err)
+				assert.True(t, task.Status().Is(common.StatusTaskCompleted))
+
 			}
 		})
 	}

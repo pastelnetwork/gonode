@@ -89,6 +89,8 @@ func (h *ThumbnailHandler) setFetchers(ctx context.Context) error {
 	group, _ := errgroup.WithContext(ctx)
 
 	for _, someNode := range h.meshHandler.Nodes {
+
+		someNode := someNode
 		group.Go(func() error {
 			return h.fetcher(ctx, someNode, someNode.PastelID())
 		})

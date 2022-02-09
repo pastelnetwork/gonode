@@ -2,6 +2,7 @@ package senseregister
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -38,6 +39,9 @@ type SenseRegistrationTask struct {
 	serializedTicket []byte
 
 	regSenseTxid string
+
+	// only set to true for unit tests
+	skipPrimaryNodeTxidVerify bool
 }
 
 // Run starts the task
@@ -197,6 +201,8 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 			//TODO: use assert here
 			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
 		}
+
+		someNode := someNode
 		group.Go(func() (err error) {
 			compress, stateOk, err := senseRegNode.ProbeImage(ctx, file)
 			if err != nil {
@@ -287,13 +293,15 @@ func (task *SenseRegistrationTask) uploadSignedTicket(ctx context.Context) error
 			//TODO: use assert here
 			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
 		}
+
+		someNode := someNode
 		group.Go(func() error {
 			ticketTxid, err := senseRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, ddFpFile)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", senseRegNode).Error("send signed ticket failed")
 				return err
 			}
-			if !someNode.IsPrimary() && ticketTxid != "" {
+			if !someNode.IsPrimary() && ticketTxid != "" && !task.skipPrimaryNodeTxidCheck() {
 				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, someNode.PastelID())
 			}
 			if someNode.IsPrimary() {
@@ -343,6 +351,10 @@ func (task *SenseRegistrationTask) removeArtifacts() {
 	if task.Request != nil {
 		task.RemoveFile(task.Request.Image)
 	}
+}
+
+func (task *SenseRegistrationTask) skipPrimaryNodeTxidCheck() bool {
+	return task.skipPrimaryNodeTxidVerify || os.Getenv("INTEGRATION_TEST_ENV") == "true"
 }
 
 // NewSenseRegisterTask returns a new SenseRegistrationTask instance.

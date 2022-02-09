@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,11 +46,18 @@ type NftRegistrationTask struct {
 	serializedTicket      []byte
 
 	regNFTTxid string
+
+	// only set to true for unit tests
+	skipPrimaryNodeTxidVerify bool
 }
 
 // Run starts the task
 func (task *NftRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.run, task.removeArtifacts)
+}
+
+func (task *NftRegistrationTask) skipPrimaryNodeTxidCheck() bool {
+	return task.skipPrimaryNodeTxidVerify || os.Getenv("INTEGRATION_TEST_ENV") == "true"
 }
 
 // Run sets up a connection to a mesh network of supernodes, then controls the communications to the mesh of nodes.
@@ -233,6 +241,8 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 			//TODO: use assert here
 			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
+
+		someNode := someNode
 		group.Go(func() (err error) {
 			compress, stateOk, err := nftRegNode.ProbeImage(ctx, file)
 			if err != nil {
@@ -296,6 +306,8 @@ func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, f
 			//TODO: use assert here
 			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
+
+		someNode := someNode
 		group.Go(func() error {
 			hash1, hash2, hash3, err := nftRegNode.UploadImageWithThumbnail(ctx, file, thumbnail)
 			if err != nil {
@@ -389,6 +401,8 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 	encoderParams := task.RqHandler.RQEncodeParams
 
 	var fees []int64
+	var feesMtx sync.Mutex
+
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
@@ -405,7 +419,14 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("send signed ticket failed")
 				return err
 			}
-			fees = append(fees, fee)
+
+			func() {
+				feesMtx.Lock()
+				defer feesMtx.Unlock()
+
+				fees = append(fees, fee)
+			}()
+
 			return nil
 		})
 	}
@@ -454,13 +475,14 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 
+		someNode := someNode
 		group.Go(func() error {
 			ticketTxid, err := nftRegNode.SendPreBurntFeeTxid(ctx, burnTxid)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("send pre-burnt fee txid failed")
 				return err
 			}
-			if !someNode.IsPrimary() && ticketTxid != "" && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
+			if !someNode.IsPrimary() && ticketTxid != "" && !task.skipPrimaryNodeTxidCheck() {
 
 				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, someNode.PastelID())
 			}

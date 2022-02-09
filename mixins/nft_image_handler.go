@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -31,21 +32,33 @@ type NftImageHandler struct {
 	PreviewHash         []byte
 	MediumThumbnailHash []byte
 	SmallThumbnailHash  []byte
+
+	hashMtx sync.Mutex
+	thMtx   sync.Mutex
 }
 
 // AddHashes adds fingerprints info to 'received' array
 func (h *NftImageHandler) AddHashes(hashes *hashes) {
+	h.hashMtx.Lock()
+	defer h.hashMtx.Unlock()
+
 	h.received = append(h.received, hashes)
 }
 
 // AddNew creates and adds fingerprints info to 'received' array
 func (h *NftImageHandler) AddNewHashes(preview []byte, mediumThumbnail []byte, smallThumbnail []byte, pastelID string) {
+	h.hashMtx.Lock()
+	defer h.hashMtx.Unlock()
+
 	hashes := &hashes{preview, mediumThumbnail, smallThumbnail, pastelID}
 	h.received = append(h.received, hashes)
 }
 
 // ClearHashes clears stored SNs fingerprints info
 func (h *NftImageHandler) ClearHashes() {
+	h.hashMtx.Lock()
+	defer h.hashMtx.Unlock()
+
 	h.received = nil
 }
 
@@ -107,6 +120,9 @@ func (h *NftImageHandler) CreateCopyWithEncodedFingerprint(ctx context.Context,
 		return errors.Errorf("encode fingerprint into image: %w", err)
 	}
 
+	h.thMtx.Lock()
+	defer h.thMtx.Unlock()
+
 	h.ImageEncodedWithFingerprints = img
 
 	return nil
@@ -130,9 +146,14 @@ func (h *NftImageHandler) MatchThumbnailHashes() error {
 			return errors.Errorf("hash of small thumbnail of nodes %q and %q didn't match", first.pastelID, some.pastelID)
 		}
 	}
+
+	h.thMtx.Lock()
+	defer h.thMtx.Unlock()
+
 	h.PreviewHash = first.previewHash
 	h.MediumThumbnailHash = first.mediumThumbnailHash
 	h.SmallThumbnailHash = first.smallThumbnailHash
+
 	return nil
 }
 
@@ -154,7 +175,7 @@ func NewImageHandler(pastelHandler *PastelHandler) *NftImageHandler {
 	return &NftImageHandler{pastelHandler: pastelHandler}
 }
 
-func (h NftImageHandler) IsEmpty() bool {
+func (h *NftImageHandler) IsEmpty() bool {
 	return len(h.PreviewHash) == 0 || len(h.MediumThumbnailHash) == 0 || len(h.SmallThumbnailHash) == 0
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -156,10 +157,12 @@ func TestTaskRun(t *testing.T) {
 
 			err := task.Run(ctx)
 			if testCase.wantErr != nil {
-				assert.NotNil(t, task.Error())
+
+				assert.True(t, task.Status().IsFailure())
 			} else {
 				assert.Nil(t, err)
 				assert.Nil(t, task.Error())
+				assert.True(t, task.Status().Is(common.StatusTaskCompleted))
 			}
 		})
 	}

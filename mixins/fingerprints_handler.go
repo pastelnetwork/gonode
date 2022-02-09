@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"math/rand"
+	"sync"
 
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -32,6 +33,7 @@ type FingerprintsHandler struct {
 	DDAndFingerprintsIc  uint32
 	DDAndFpFile          []byte
 	SNsSignatures        [][]byte
+	addMtx               sync.Mutex
 }
 
 // NewFingerprintsHandler create new Fingerprints Handler
@@ -41,17 +43,26 @@ func NewFingerprintsHandler(pastelHandler *PastelHandler) *FingerprintsHandler {
 
 // Add adds fingerprints info to 'fingerprints' array
 func (h *FingerprintsHandler) Add(fingerprints *Fingerprints) {
+	h.addMtx.Lock()
+	defer h.addMtx.Unlock()
+
 	h.fingerprints = append(h.fingerprints, fingerprints)
 }
 
 // AddNew creates and adds fingerprints info to 'fingerprints' array
 func (h *FingerprintsHandler) AddNew(ddf *pastel.DDAndFingerprints, bytes []byte, signature []byte, pastelid string) {
+	h.addMtx.Lock()
+	defer h.addMtx.Unlock()
+
 	fingerprints := &Fingerprints{ddf, bytes, signature, pastelid}
 	h.fingerprints = append(h.fingerprints, fingerprints)
 }
 
 // Clear clears stored SNs fingerprints info
 func (h *FingerprintsHandler) Clear() {
+	h.addMtx.Lock()
+	defer h.addMtx.Unlock()
+
 	h.fingerprints = nil
 	h.SNsSignatures = nil
 }
@@ -66,10 +77,7 @@ func (h *FingerprintsHandler) Match(ctx context.Context) error {
 	for _, someNode := range h.fingerprints {
 		// Validate signatures received from supernodes.
 		verified, err := h.pastelHandler.VerifySignature(ctx,
-			someNode.FingerprintAndScoresBytes,
-			string(someNode.signature),
-			someNode.pastelID,
-			pastel.SignAlgorithmED448)
+			someNode.FingerprintAndScoresBytes, string(someNode.signature), someNode.pastelID, pastel.SignAlgorithmED448)
 		if err != nil {
 			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
 		}

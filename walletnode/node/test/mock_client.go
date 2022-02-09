@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
@@ -105,7 +106,7 @@ func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 
 	client.RegisterSenseInterface.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything).Return("", err)
+		mock.Anything).Return(fmt.Sprint(id), err)
 
 	return client
 }

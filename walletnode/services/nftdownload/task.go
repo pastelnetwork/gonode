@@ -3,6 +3,7 @@ package nftdownload
 import (
 	"bytes"
 	"context"
+	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
@@ -30,6 +31,7 @@ type NftDownloadingTask struct {
 	File  []byte
 
 	err error
+	mtx sync.Mutex
 }
 
 // Run starts the task
@@ -109,6 +111,8 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			//TODO: use assert here
 			return nil, errors.Errorf("node %s is not NftRegisterNode", someNode.String())
 		}
+
+		someNode := someNode
 		group.Go(func() error {
 			file, subErr := nftDownNode.Download(ctx, txid, timestamp, signature, ttxid)
 			if subErr != nil {
@@ -117,7 +121,13 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			} else {
 				log.WithContext(ctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
 			}
-			task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
+
+			func() {
+				task.mtx.Lock()
+				defer task.mtx.Unlock()
+				task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
+			}()
+
 			return nil
 		})
 	}

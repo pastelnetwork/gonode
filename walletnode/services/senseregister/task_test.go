@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
+
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/stretchr/testify/mock"
@@ -139,8 +141,17 @@ func TestTaskRun(t *testing.T) {
 				ListenOnSessID(testCase.args.primarySessID).
 				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 				ListenOnDone().
-				ListenOnSendSignedTicket(1, nil).
+				//ListenOnSendSignedTicket(100, nil).
 				ListenOnClose(nil).ListenOnSendActionAct(nil)
+			nodeClient.RegisterSenseInterface.
+				On("SendSignedTicket", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				Return("", nil).Times(1)
+			nodeClient.RegisterSenseInterface.
+				On("SendSignedTicket", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				Return("100", nil).Times(1)
+			nodeClient.RegisterSenseInterface.
+				On("SendSignedTicket", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				Return("", nil).Times(1)
 
 			nodeClient.ConnectionInterface.On("RegisterSense").Return(nodeClient.RegisterSenseInterface)
 			nodeClient.RegisterSenseInterface.On("MeshNodes", mock.Anything, mock.Anything).Return(nil)
@@ -187,8 +198,9 @@ func TestTaskRun(t *testing.T) {
 
 			err = task.Run(ctx)
 			if testCase.wantErr != nil {
-				assert.NotNil(t, err)
+				assert.True(t, task.Status().IsFailure())
 			} else {
+				task.Status().Is(common.StatusTaskCompleted)
 				assert.Nil(t, err)
 			}
 		})
