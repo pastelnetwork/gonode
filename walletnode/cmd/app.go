@@ -7,9 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
-	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
-
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -25,8 +22,11 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/services"
 	"github.com/pastelnetwork/gonode/walletnode/configs"
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
+	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
+	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
+	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 )
 
 const (
@@ -189,6 +189,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftDownload := nftdownload.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
 	//userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
+	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db)
 
 	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.
 	//  Since the API Server has access to the services, this is what finally exposes useful methods like
@@ -197,6 +198,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		services.NewNftAPIHandler(nftRegister, nftSearch, nftDownload),
 		// services.NewUserdataAPIHandler(userdataProcess),
 		services.NewSenseAPIHandler(senseRegister),
+		services.NewCascadeAPIHandler(cascadeRegister),
 		services.NewSwagger(),
 	)
 
@@ -206,5 +208,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	//NB: Tasks are defined individually for each service, and probably override the actual task struct's functions.
 	//  For instance, nftRegister uses the NftRegistrationTask found in services/nftregister/task.go
 	//return runServices(ctx, server, nftRegister, nftSearch, nftDownload, userdataProcess, senseRegister)
-	return runServices(ctx, server, nftRegister, nftSearch, nftDownload, senseRegister)
+	return runServices(ctx, server, nftRegister, nftSearch, nftDownload, senseRegister, cascadeRegister)
 }

@@ -250,7 +250,7 @@ func (service *registerNft) UploadImageWithThumbnail(ctx context.Context, image 
 	hash := hasher.Sum(nil)
 	log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("hash: %s", base64.URLEncoding.EncodeToString(hash))
 
-	thumnailReq := &pb.UploadImageRequest{
+	thumbnailReq := &pb.UploadImageRequest{
 		Payload: &pb.UploadImageRequest_MetaData_{
 			MetaData: &pb.UploadImageRequest_MetaData{
 				Hash:   hash[:],
@@ -266,7 +266,7 @@ func (service *registerNft) UploadImageWithThumbnail(ctx context.Context, image 
 		},
 	}
 
-	if err := stream.Send(thumnailReq); err != nil {
+	if err := stream.Send(thumbnailReq); err != nil {
 		return nil, nil, nil, errors.Errorf("send image thumbnail: %w", err)
 	}
 

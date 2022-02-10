@@ -70,7 +70,7 @@ func (service *SenseRegistrationService) GetTask(id string) *SenseRegistrationTa
 
 // AddTask create ticket request and start a new task with the given payload
 func (service *SenseRegistrationService) AddTask(p *sense.StartProcessingPayload) (string, error) {
-	request := FromSenseRegisterPayload(p)
+	request := FromStartProcessingPayload(p)
 
 	// get image filename from storage based on image_id
 	filename, err := service.ImageHandler.FileDb.Get(p.ImageID)
@@ -118,7 +118,7 @@ func (service *SenseRegistrationService) ValidateDetailsAndCalculateFee(ctx cont
 		return 0.0, errors.Errorf("Signature doesn't match")
 	}
 
-	return service.pastelHandler.GetEstimatedActionFee(ctx, fileDataInMb)
+	return service.pastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
 }
 
 // NewService returns a new Service instance

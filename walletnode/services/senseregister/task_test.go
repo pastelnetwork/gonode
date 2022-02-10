@@ -47,7 +47,7 @@ func TestTaskRun(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Request *SenseRegistrationRequest
+		Request *common.ActionRegistrationRequest
 	}
 
 	type args struct {
@@ -69,7 +69,7 @@ func TestTaskRun(t *testing.T) {
 	}{
 		"success": {
 			fields: fields{
-				Request: &SenseRegistrationRequest{
+				Request: &common.ActionRegistrationRequest{
 					BurnTxID:              "txid",
 					AppPastelID:           testCreatorPastelID,
 					AppPastelIDPassphrase: "passphrase",
@@ -95,7 +95,7 @@ func TestTaskRun(t *testing.T) {
 		"failure": {
 			wantErr: errors.New("test"),
 			fields: fields{
-				Request: &SenseRegistrationRequest{
+				Request: &common.ActionRegistrationRequest{
 					BurnTxID:              "txid",
 					AppPastelID:           testCreatorPastelID,
 					AppPastelIDPassphrase: "passphrase",

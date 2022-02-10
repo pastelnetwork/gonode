@@ -33,6 +33,11 @@ func (conn *clientConn) RegisterSense() node.RegisterSenseInterface {
 	return newRegisterSense(conn)
 }
 
+// RegisterSense implements node.ConnectionInterface.RegisterSense()
+func (conn *clientConn) RegisterCascade() node.RegisterCascadeInterface {
+	return newRegisterCascade(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.ConnectionInterface {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

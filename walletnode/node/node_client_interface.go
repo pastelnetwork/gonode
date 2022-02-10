@@ -1,6 +1,7 @@
 //go:generate mockery --name=ClientInterface
 //go:generate mockery --name=ConnectionInterface
 //go:generate mockery --name=RegisterSenseInterface
+//go:generate mockery --name=RegisterCascadeInterface
 //go:generate mockery --name=RegisterNftInterface
 //go:generate mockery --name=DownloadNftInterface
 //go:generate mockery --name=ProcessUserdataInterface
@@ -38,6 +39,8 @@ type ConnectionInterface interface {
 	// ProcessUserdata() ProcessUserdataInterface
 	// RegisterSense returns new RegisterSense stream
 	RegisterSense() RegisterSenseInterface
+	// RegisterCascade returns new RegisterCascade stream
+	RegisterCascade() RegisterCascadeInterface
 }
 
 // SuperNodeAPIInterface base API interface
@@ -73,6 +76,20 @@ type RegisterSenseInterface interface {
 	SendActionAct(ctx context.Context, actionRegTxid string) error
 }
 
+// RegisterCascadeInterface contains methods for sense register
+type RegisterCascadeInterface interface {
+	SuperNodeAPIInterface
+
+	// SendRegMetadata send metadata of registration to SNs for next steps
+	SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error
+	// UploadAsset uploads asset to supernode for storing
+	UploadAsset(ctx context.Context, asset *files.File) error
+	// SendSignedTicket send a reg-nft ticket signed by cNode to SuperNode
+	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqIdsFile []byte, encoderParams rqnode.EncoderParameters) (string, error)
+	// SendActionAct send action act to SNs for next steps
+	SendActionAct(ctx context.Context, actionRegTxid string) error
+}
+
 // RegisterNftInterface contains methods for registering nft.
 type RegisterNftInterface interface {
 	SuperNodeAPIInterface
@@ -84,7 +101,7 @@ type RegisterNftInterface interface {
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
 	UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) ([]byte, []byte, []byte, error)
 	// SendSignedTicket send a reg-nft ticket signed by cNode to SuperNode
-	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdisFile []byte, ddFpFile []byte, encoderParams rqnode.EncoderParameters) (int64, error)
+	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqIdsFile []byte, ddFpFile []byte, encoderParams rqnode.EncoderParameters) (int64, error)
 	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
 	SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error)
 }

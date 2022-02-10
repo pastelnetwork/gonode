@@ -5,12 +5,9 @@ import (
 )
 
 const (
-	defaultThumbnailSize = 224
-
 	defaultSenseRegTxMinConfirmations = 12
 	defaultSenseActTxMinConfirmations = 5
-
-	defaultWaitTxnValidInterval = 15
+	defaultWaitTxnValidInterval       = 15
 
 	defaultDDAndFingerprintsMax = 50
 )
@@ -19,12 +16,11 @@ const (
 type Config struct {
 	common.Config `mapstructure:",squash" json:"-"`
 
-	SenseRegTxMinConfirmations int `mapstructure:"-" json:"sense_reg_tx_min_confirmations,omitempty"`
-	SenseActTxMinConfirmations int `mapstructure:"-" json:"sense_act_tx_min_confirmations,omitempty"`
+	SenseRegTxMinConfirmations int    `mapstructure:"-" json:"sense_reg_tx_min_confirmations,omitempty"`
+	SenseActTxMinConfirmations int    `mapstructure:"-" json:"sense_act_tx_min_confirmations,omitempty"`
+	WaitTxnValidInterval       uint32 `mapstructure:"-"`
 
 	DDAndFingerprintsMax uint32 `mapstructure:"dd_and_fingerprints_max" json:"dd_and_fingerprints_max,omitempty"`
-	WaitTxnValidInterval uint32 `mapstructure:"-"`
-	thumbnailSize        int
 }
 
 // NewConfig returns a new Config instance.
@@ -33,7 +29,6 @@ func NewConfig() *Config {
 		Config:                     *common.NewConfig(),
 		SenseRegTxMinConfirmations: defaultSenseRegTxMinConfirmations,
 		SenseActTxMinConfirmations: defaultSenseActTxMinConfirmations,
-		thumbnailSize:              defaultThumbnailSize,
 		DDAndFingerprintsMax:       defaultDDAndFingerprintsMax,
 		WaitTxnValidInterval:       defaultWaitTxnValidInterval,
 	}
