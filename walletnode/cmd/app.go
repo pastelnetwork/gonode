@@ -189,7 +189,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftDownload := nftdownload.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
 	//userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
-	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db)
+	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
 
 	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.
 	//  Since the API Server has access to the services, this is what finally exposes useful methods like

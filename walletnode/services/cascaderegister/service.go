@@ -2,10 +2,7 @@ package cascaderegister
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"time"
-
-	"github.com/pastelnetwork/gonode/mixins"
 
 	// Package image/jpeg is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows
@@ -17,7 +14,10 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
@@ -34,6 +34,8 @@ type CascadeRegistrationService struct {
 	ImageHandler  *mixins.FilesHandler
 	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface
+
+	rqClient rqnode.ClientInterface
 }
 
 // Run starts worker.
@@ -51,7 +53,7 @@ func (service *CascadeRegistrationService) Run(ctx context.Context) error {
 	return group.Wait()
 }
 
-// Tasks starts worker. //TODO: make common with the same from NftRegisterService
+// Tasks returns all tasks.
 func (service *CascadeRegistrationService) Tasks() []*CascadeRegistrationTask {
 	var tasks []*CascadeRegistrationTask
 	for _, task := range service.Worker.Tasks() {
@@ -129,7 +131,7 @@ func NewService(
 	pastelClient pastel.Client,
 	nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface,
-	db storage.KeyValue,
+	db storage.KeyValue, raptorqClient rqnode.ClientInterface,
 ) *CascadeRegistrationService {
 	return &CascadeRegistrationService{
 		Worker:        task.NewWorker(),
@@ -137,5 +139,6 @@ func NewService(
 		nodeClient:    nodeClient,
 		ImageHandler:  mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
+		rqClient:      raptorqClient,
 	}
 }

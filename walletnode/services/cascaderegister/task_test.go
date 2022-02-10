@@ -1,15 +1,15 @@
-package senseregister
+package cascaderegister
 
 import (
 	"context"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"image"
 	"image/png"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/DataDog/zstd"
-	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -18,6 +18,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
+	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
@@ -44,21 +46,21 @@ func newTestImageFile() (*files.File, error) {
 
 func TestTaskRun(t *testing.T) {
 	t.Parallel()
-
 	type fields struct {
 		Request *common.ActionRegistrationRequest
 	}
 
 	type args struct {
-		taskID        string
-		ctx           context.Context
-		networkFee    float64
-		masterNodes   pastel.MasterNodes
-		primarySessID string
-		pastelIDS     []string
-		fingerPrint   []byte
-		signature     []byte
-		returnErr     error
+		taskID            string
+		ctx               context.Context
+		networkFee        float64
+		masterNodes       pastel.MasterNodes
+		primarySessID     string
+		pastelIDS         []string
+		signature         []byte
+		returnErr         error
+		connectErr        error
+		encodeInfoReturns *rqnode.EncodeInfo
 	}
 
 	tests := map[string]struct {
@@ -85,9 +87,19 @@ func TestTaskRun(t *testing.T) {
 				},
 				primarySessID: "sesid1",
 				pastelIDS:     []string{"2", "3"},
-				fingerPrint:   []byte("match"),
 				signature:     []byte("sign"),
 				returnErr:     nil,
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": {
+							ID:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelID:          "test-pastel-id",
+						},
+					},
+					EncoderParam: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+				},
 			},
 		},
 
@@ -111,9 +123,19 @@ func TestTaskRun(t *testing.T) {
 				},
 				primarySessID: "sesid1",
 				pastelIDS:     []string{"2", "3"},
-				fingerPrint:   []byte("match"),
 				signature:     []byte("sign"),
 				returnErr:     errors.New("test"),
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": {
+							ID:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelID:          "test-pastel-id",
+						},
+					},
+					EncoderParam: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+				},
 			},
 		},
 	}
@@ -123,15 +145,10 @@ func TestTaskRun(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			senseFile, err := newTestImageFile()
+			cascadeFile, err := newTestImageFile()
 			assert.NoError(t, err)
 
 			// prepare task
-			fg := pastel.Fingerprint{0.1, 0, 2}
-			compressedFg, err := zstd.CompressLevel(nil, fg.Bytes(), 22)
-			assert.Nil(t, err)
-			testCase.args.fingerPrint = compressedFg
-
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", testCase.args.returnErr).
@@ -141,34 +158,21 @@ func TestTaskRun(t *testing.T) {
 				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 				ListenOnDone().
 				//ListenOnSendSignedTicket(100, nil).
-				ListenOnClose(nil).ListenOnSendActionAct(nil)
-			nodeClient.RegisterSenseInterface.
+				ListenOnSendActionAct(nil).
+				ListenOnClose(nil)
+			nodeClient.RegisterCascadeInterface.
 				On("SendSignedTicket", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 				Return("", nil).Times(1)
-			nodeClient.RegisterSenseInterface.
+			nodeClient.RegisterCascadeInterface.
 				On("SendSignedTicket", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 				Return("100", nil).Times(1)
-			nodeClient.RegisterSenseInterface.
+			nodeClient.RegisterCascadeInterface.
 				On("SendSignedTicket", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 				Return("", nil).Times(1)
 
-			nodeClient.ConnectionInterface.On("RegisterSense").Return(nodeClient.RegisterSenseInterface)
-			nodeClient.RegisterSenseInterface.On("MeshNodes", mock.Anything, mock.Anything).Return(nil)
-
-			ddData := &pastel.DDAndFingerprints{
-				InternetRareness:      &pastel.InternetRareness{},
-				AlternativeNSFWScores: &pastel.AlternativeNSFWScores{},
-				FingerprintsStat:      &pastel.FingerprintsStat{},
-				PerceptualImageHashes: &pastel.PerceptualImageHashes{},
-				RarenessScores:        &pastel.RarenessScores{},
-				Maxes:                 &pastel.Maxes{},
-				Percentile:            &pastel.Percentile{},
-			}
-			compressed, err := pastel.ToCompressSignedDDAndFingerprints(ddData, []byte("signature"))
-			assert.Nil(t, err)
-
-			nodeClient.ListenOnProbeImage(compressed, true, testCase.args.returnErr)
-			nodeClient.RegisterSenseInterface.On("SendRegMetadata", mock.Anything, mock.Anything).Return(nil)
+			nodeClient.ConnectionInterface.On("RegisterCascade").Return(nodeClient.RegisterCascadeInterface)
+			nodeClient.RegisterCascadeInterface.On("MeshNodes", mock.Anything, mock.Anything).Return(nil)
+			nodeClient.RegisterCascadeInterface.On("SendRegMetadata", mock.Anything, mock.Anything).Return(nil)
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.
@@ -183,14 +187,19 @@ func TestTaskRun(t *testing.T) {
 				ListenOnActivateActionTicket("txid", nil).
 				ListenOnGetActionFee(&pastel.GetActionFeesResult{CascadeFee: 10, SenseFee: 10}, nil)
 
-			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil)
+			rqClientMock := rqMock.NewMockClient(t)
+			rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)
+			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
+			rqClientMock.ListenOnConnect(testCase.args.connectErr)
+
+			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, rqClientMock)
 			service.config.WaitTxnValidInterval = 1
 
 			go service.Run(testCase.args.ctx)
 
 			Request := testCase.fields.Request
-			Request.Image = senseFile
-			task := NewSenseRegisterTask(service, Request)
+			Request.Image = cascadeFile
+			task := NewCascadeRegisterTask(service, Request)
 
 			//create context with timeout to automatically end process after 5 sec
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 5*time.Second)
