@@ -164,74 +164,91 @@ func TestWaitSynchronizationError(t *testing.T) {
 	assert.Equal(t, err.Error(), errMsg)
 }
 
-/* TODO: update later
-func TestRunTaskSuccessful(t *testing.T) {
-	s := prepareService(t)
-	defer s.db.Close()
-	defer os.Remove(s.config.DataFile)
+// /* TODO: update later
+// func TestRunTaskSuccessful(t *testing.T) {
+// 	s := prepareService(t)
+// 	defer s.db.Close()
+// 	defer os.Remove(s.config.DataFile)
 
-	// Prepare reg art
-	ticket := pastel.RegTicket{}
-	f := fuzz.New()
-	f.Fuzz(&ticket)
-	ticket.Height = 2
+// 	// Prepare reg art
+// 	ticket := pastel.RegTicket{}
+// 	f := fuzz.New()
+// 	f.Fuzz(&ticket)
+// 	ticket.Height = 2
 
-	b, err := json.Marshal(ticket.RegTicketData.NFTTicketData.AppTicketData)
-	if err != nil {
-		t.Fatalf("faied to marshal, err: %s", err)
-	}
-	ticket.RegTicketData.NFTTicketData.AppTicket = b85.Encode(b)
+// 	b, err := json.Marshal(ticket.RegTicketData.NFTTicketData.AppTicketData)
+// 	if err != nil {
+// 		t.Fatalf("faied to marshal, err: %s", err)
+// 	}
+// 	ticket.RegTicketData.NFTTicketData.AppTicket = b85.Encode(b)
 
-	b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
-	if err != nil {
-		t.Fatalf("faied to marshal, err: %s", err)
-	}
-	ticket.RegTicketData.NFTTicket = b
+// 	b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
+// 	if err != nil {
+// 		t.Fatalf("faied to marshal, err: %s", err)
+// 	}
+// 	ticket.RegTicketData.NFTTicket = b
 
-	pMock := pastelMock.NewMockClient(t)
-	pMock.ListenOnRegTickets(pastel.RegTickets{
-		ticket,
-	}, nil)
-	s.pastelClient = pMock
+// 	pMock := pastelMock.NewMockClient(t)
+// 	pMock.ListenOnRegTickets(pastel.RegTickets{
+// 		ticket,
+// 	}, nil)
+// 	s.pastelClient = pMock
 
-	// Prepare latest fingerprint
-	setFp := generateFingerprint(t)
-	ctx := context.Background()
-	err = s.storeFingerprint(ctx, setFp)
-	assert.True(t, err == nil)
-	time.Sleep(1 * time.Second)
+// 	// Prepare latest fingerprint
+// 	setFp := generateFingerprint(t)
+// 	ctx := context.Background()
+// 	err = s.storeFingerprint(ctx, setFp)
+// 	assert.True(t, err == nil)
+// 	time.Sleep(1 * time.Second)
 
-	// Prepare p2p client
-	fp := randFloats(fingerprintSizeModel)
+// 	// Prepare p2p client
+// 	fp := randFloats(fingerprintSizeModel)
 
-	fpBuffer := new(bytes.Buffer)
-	_ = binary.Write(fpBuffer, binary.LittleEndian, fp)
+// 	fpBuffer := new(bytes.Buffer)
+// 	_ = binary.Write(fpBuffer, binary.LittleEndian, fp)
 
-	p2pClient := p2pMock.NewMockClient(t)
-	p2pClient.ListenOnRetrieve(fpBuffer.Bytes(), nil)
-	s.p2pClient = p2pClient
+// 	p2pClient := p2pMock.NewMockClient(t)
+// 	p2pClient.ListenOnRetrieve(fpBuffer.Bytes(), nil)
+// 	s.p2pClient = p2pClient
 
-	err = s.runTask(context.Background())
-	assert.True(t, err == nil)
+// 	err = s.runTask(context.Background())
+// 	assert.True(t, err == nil)
 
-	getFp, err := s.getLatestFingerprint(ctx)
-	fingerprintsHash := ticket.RegTicketData.NFTTicketData.AppTicketData.FingerprintsHash
+// 	getFp, err := s.getLatestFingerprint(ctx)
+// 	// fingerprintsHash := ticket.RegTicketData.NFTTicketData.AppTicketData.FingerprintsHash
+// 	ddFPIDs := ticket.RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
+// 	// if len(ddFPIDs) < 1 {
+// 	// 	return errors.Errorf("RegTicketData does not have properly registered DD and Fingerprint ID's")
+// 	// }
 
-	assert.True(t, err == nil)
-	assert.True(t, getFp != nil)
-	assert.Equal(t, hex.EncodeToString(fingerprintsHash), getFp.Sha256HashOfArtImageFile)
-	// assert.Equal(t, ticket.Height, getFp.NumberOfBlock)
+// 	//just about everything will fail from this point onwards because the AppTicketData either doesn't exist or is randomly generated
+// 	assert.True(t, len(ddFPIDs) > 0)
+// 	check_for_differences := false
+// 	for _, id := range ddFPIDs {
+// 		if id != ddFPIDs[0] {
+// 			check_for_differences = true
+// 		}
+// 	}
+// 	assert.False(t, check_for_differences)
+// 	fingerprintsHash := ddFPIDs[0]
 
-	start, end := 0, fingerprintSizeModel1
-	assert.Equal(t, fp[start:end], getFp.Model1ImageFingerprintVector)
+// 	assert.True(t, err == nil)
+// 	assert.True(t, getFp != nil)
 
-	start, end = start+fingerprintSizeModel1, end+fingerprintSizeModel2
-	assert.Equal(t, fp[start:end], getFp.Model2ImageFingerprintVector)
+// 	assert.Equal(t, hex.EncodeToString([]byte(fingerprintsHash)), getFp.Sha256HashOfArtImageFile)
+// 	// assert.Equal(t, ticket.Height, getFp.NumberOfBlock)
 
-	start, end = start+fingerprintSizeModel2, end+fingerprintSizeModel3
-	assert.Equal(t, fp[start:end], getFp.Model3ImageFingerprintVector)
+// 	start, end := 0, fingerprintSizeModel1
+// 	assert.Equal(t, fp[start:end], getFp.Model1ImageFingerprintVector)
 
-	start, end = start+fingerprintSizeModel3, end+fingerprintSizeModel4
-	assert.Equal(t, fp[start:end], getFp.Model4ImageFingerprintVector)
-}
-*/
+// 	start, end = start+fingerprintSizeModel1, end+fingerprintSizeModel2
+// 	assert.Equal(t, fp[start:end], getFp.Model2ImageFingerprintVector)
+
+// 	start, end = start+fingerprintSizeModel2, end+fingerprintSizeModel3
+// 	assert.Equal(t, fp[start:end], getFp.Model3ImageFingerprintVector)
+
+// 	start, end = start+fingerprintSizeModel3, end+fingerprintSizeModel4
+// 	assert.Equal(t, fp[start:end], getFp.Model4ImageFingerprintVector)
+// }
+
+// */

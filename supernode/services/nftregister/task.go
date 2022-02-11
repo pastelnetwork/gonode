@@ -3,10 +3,11 @@ package nftregister
 import (
 	"context"
 	"encoding/hex"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -74,6 +75,7 @@ func (task *NftRegistrationTask) SendRegMetadata(_ context.Context, regMetadata 
 }
 
 // ProbeImage sends the resampled image to dd-server and return a compression of pastel.DDAndFingerprints
+//  https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration Step 4.A.3
 func (task *NftRegistrationTask) ProbeImage(ctx context.Context, file *files.File) ([]byte, error) {
 	if task.nftRegMetadata == nil || task.nftRegMetadata.BlockHash == "" || task.nftRegMetadata.CreatorPastelID == "" {
 		return nil, errors.Errorf("invalid nftRegMetadata")
@@ -84,6 +86,7 @@ func (task *NftRegistrationTask) ProbeImage(ctx context.Context, file *files.Fil
 }
 
 // validates RQIDs and DdFp IDs file and its IDs
+// Step 11.B.3 - 11.B.4
 func (task *NftRegistrationTask) validateRqIDsAndDdFpIds(ctx context.Context, rq []byte, dd []byte) error {
 	var err error
 
@@ -111,6 +114,9 @@ func (task *NftRegistrationTask) validateRqIDsAndDdFpIds(ctx context.Context, rq
 }
 
 // GetNftRegistrationFee get the fee to register Nft to blockchain
+// Step 11.B ALL SuperNode - Validate signature and IDs in the ticket
+// Step 12. ALL SuperNode - Calculate final Registration Fee
+//  Step 11.B.3 Validate dd_and_fingerprints file signature using PastelID’s of all 3 MNs -- Does this exist?
 func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 	ticket []byte, creatorSignature []byte, key1 string, key2 string,
 	rqidFile []byte, ddFpFile []byte, oti []byte,
@@ -190,6 +196,8 @@ func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 }
 
 // ValidatePreBurnTransaction will get pre-burnt transaction fee txid, wait until it's confirmations meet expectation.
+// Step 15 - 17
+// TODO verify Step 15 "Validate burned transaction (that 10% was really burned)"
 func (task *NftRegistrationTask) ValidatePreBurnTransaction(ctx context.Context, txid string) error {
 	var err error
 	if err = task.RequiredStatus(common.StatusRegistrationFeeCalculated); err != nil {
@@ -230,6 +238,7 @@ func (task *NftRegistrationTask) ValidatePreBurnTransaction(ctx context.Context,
 
 // ActivateAndStoreNft started by primary node only, it waits for signatures from secondaries and create
 // activation ticket and stores everything into P2P
+// Step 18 - 19
 func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string, error) {
 	var err error
 	var nftRegTxid string
@@ -247,6 +256,7 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 				case <-task.AllSignaturesReceivedChn:
 					log.WithContext(ctx).Debug("all signature received so start validation")
 
+					//Step 18
 					if err = task.verifyPeersSignature(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
 						err = errors.Errorf("peers' singature mismatched: %w", err)
@@ -255,10 +265,13 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 
 					nftRegTxid, err = task.registerNft(ctx)
 					if err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
+						log.WithContext(ctx).WithError(err).Errorf("task register nft failure")
 						err = errors.Errorf("register NFT: %w", err)
 						return nil
 					}
+
+					// We aren't waiting because we are returned a transaction ID from registerNft.
+					//	Once we see that on the blockchain, we can proceed.
 
 					// confirmations := task.WaitConfirmation(ctx, nftRegTxid, 10, 30*time.Second, 55)
 					// err = <-confirmations
@@ -266,6 +279,7 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 					// 	return errors.Errorf("wait for confirmation of reg-art ticket %w", err)
 					// }
 
+					// Step 19
 					if err = task.storeRaptorQSymbols(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("store raptor symbols")
 						err = errors.Errorf("store raptor symbols: %w", err)
@@ -359,7 +373,7 @@ func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error
 			},
 		},
 		Mn1PastelID: task.config.PastelID,
-		Pasphase:    task.config.PassPhrase,
+		Passphrase:  task.config.PassPhrase,
 		// TODO: fix this when how to get key1 and key2 are finalized
 		Key1: task.key1,
 		Key2: task.key2,
@@ -373,6 +387,7 @@ func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error
 	return nftRegTxid, nil
 }
 
+// Step 19
 func (task *NftRegistrationTask) storeRaptorQSymbols(ctx context.Context) error {
 	data, err := task.Nft.Bytes()
 	if err != nil {
@@ -381,20 +396,22 @@ func (task *NftRegistrationTask) storeRaptorQSymbols(ctx context.Context) error 
 	return task.storage.StoreRaptorQSymbolsIntoP2P(ctx, data, task.Nft.Name())
 }
 
+// Step 19
 func (task *NftRegistrationTask) storeThumbnails(ctx context.Context) error {
 	if _, err := task.storage.StoreFileIntoP2P(ctx, task.PreviewThumbnail); err != nil {
-		return errors.Errorf("store preview thumbnail into kamedila: %w", err)
+		return errors.Errorf("store preview thumbnail into kademlia: %w", err)
 	}
 	if _, err := task.storage.StoreFileIntoP2P(ctx, task.MediumThumbnail); err != nil {
-		return errors.Errorf("store medium thumbnail into kamedila: %w", err)
+		return errors.Errorf("store medium thumbnail into kademlia: %w", err)
 	}
 	if _, err := task.storage.StoreFileIntoP2P(ctx, task.SmallThumbnail); err != nil {
-		return errors.Errorf("store small thumbnail into kamedila: %w", err)
+		return errors.Errorf("store small thumbnail into kademlia: %w", err)
 	}
 
 	return nil
 }
 
+// Step 19
 func (task *NftRegistrationTask) storeIDFiles(ctx context.Context) error {
 	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.ddFpFiles); err != nil {
 		return errors.Errorf("store ddAndFp files into kademlia: %w", err)

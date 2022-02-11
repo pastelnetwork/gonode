@@ -190,7 +190,7 @@ type RegisterNFTRequest struct {
 	Ticket      *NFTTicket
 	Signatures  *RegTicketSignatures
 	Mn1PastelID string
-	Pasphase    string
+	Passphrase  string
 	Key1        string
 	Key2        string
 	Fee         int64

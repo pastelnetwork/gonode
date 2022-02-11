@@ -5,9 +5,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"github.com/pastelnetwork/gonode/common/storage/files"
 	"io"
 	"runtime/debug"
+
+	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -168,6 +169,10 @@ func (service *RegisterNft) SendRegMetadata(ctx context.Context, req *pb.SendReg
 }
 
 // ProbeImage implements walletnode.RegisterNftServer.ProbeImage()
+
+//As part of register NFT New Art Registration Workflow from
+// https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+// Step number 4.A begins here, with file reception
 func (service *RegisterNft) ProbeImage(stream pb.RegisterNft_ProbeImageServer) (retErr error) {
 	ctx := stream.Context()
 
@@ -224,11 +229,15 @@ func (service *RegisterNft) ProbeImage(stream pb.RegisterNft_ProbeImageServer) (
 		return errors.Errorf("add image format: %w", err)
 	}
 
+	//task.ProbeImage will begin Step 3,
+	// Call dd-service to generate near duplicate fingerprints and dupe-detection info from re-sampled image (img1-r)
 	compressedDDFingerAndScores, err := task.ProbeImage(ctx, image)
 	if err != nil {
 		return err
 	}
 
+	// Ends up at Step 4.B.5
+	// Return base64’ed (and compressed) dd_and_fingerprints and its signature back to the WalletNode over the open gRPC connection
 	resp := &pb.ProbeImageReply{
 		CompressedSignedDDAndFingerprints: compressedDDFingerAndScores,
 	}
@@ -240,6 +249,8 @@ func (service *RegisterNft) ProbeImage(stream pb.RegisterNft_ProbeImageServer) (
 }
 
 // UploadImage implements walletnode.RegisterNft.UploadImageWithThumbnail
+// https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration Step 7
+// All SuperNodes - Generate preview thumbnail from the image and calculate its hash
 func (service *RegisterNft) UploadImage(stream pb.RegisterNft_UploadImageServer) (retErr error) {
 	ctx := stream.Context()
 	defer errors.Recover(func(recErr error) {
@@ -293,14 +304,14 @@ func (service *RegisterNft) UploadImage(stream pb.RegisterNft_UploadImageServer)
 						return errors.Errorf("incomplete payload, send = %d receive=%d", metaData.Size, imageSize)
 					}
 
-					cordinates := metaData.GetThumbnail()
-					if cordinates == nil {
+					coordinates := metaData.GetThumbnail()
+					if coordinates == nil {
 						return errors.Errorf("no thumbnail coordinates")
 					}
-					thumbnail.TopLeftX = cordinates.TopLeftX
-					thumbnail.TopLeftY = cordinates.TopLeftY
-					thumbnail.BottomRightX = cordinates.BottomRightX
-					thumbnail.BottomRightY = cordinates.BottomRightY
+					thumbnail.TopLeftX = coordinates.TopLeftX
+					thumbnail.TopLeftY = coordinates.TopLeftY
+					thumbnail.BottomRightX = coordinates.BottomRightX
+					thumbnail.BottomRightY = coordinates.BottomRightY
 
 					if metaData.Hash == nil {
 						return errors.Errorf("empty hash")
@@ -370,6 +381,8 @@ func (service *RegisterNft) UploadImage(stream pb.RegisterNft_UploadImageServer)
 }
 
 // SendSignedNFTTicket implements walletnode.RegisterNft.SendSignedNFTTicket
+// Step 11.B ALL SuperNode - Validate signature and IDs in the ticket
+// Step 12. ALL SuperNode - Calculate final Registration Fee
 func (service *RegisterNft) SendSignedNFTTicket(ctx context.Context, req *pb.SendSignedNFTTicketRequest) (retRes *pb.SendSignedNFTTicketReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
 		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenSendSignedNFTTicket")
@@ -395,6 +408,7 @@ func (service *RegisterNft) SendSignedNFTTicket(ctx context.Context, req *pb.Sen
 }
 
 // SendPreBurntFeeTxid implements walletnode.RegisterNft.SendPreBurntFeeTxid
+// Receives Step 14, Starts Step 15
 func (service *RegisterNft) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (retRes *pb.SendPreBurntFeeTxidReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
 		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicSendPreBurntFeeTxid")
@@ -406,11 +420,13 @@ func (service *RegisterNft) SendPreBurntFeeTxid(ctx context.Context, req *pb.Sen
 	if err != nil {
 		return nil, errors.Errorf("get task from meta data %w", err)
 	}
-
+	// Step 15-17
 	err = task.ValidatePreBurnTransaction(ctx, req.Txid)
 	if err != nil {
 		return nil, errors.Errorf("validate preburn transaction %w", err)
 	}
+
+	// Step 18 - 19
 	nftRegTxid, err := task.ActivateAndStoreNft(ctx)
 	if err != nil {
 		return nil, errors.Errorf("activate and store NFT %w", err)

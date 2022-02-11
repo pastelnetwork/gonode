@@ -419,7 +419,7 @@ func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFT
 	params = append(params, string(ticketBlob))
 	params = append(params, string(signatures))
 	params = append(params, request.Mn1PastelID)
-	params = append(params, request.Pasphase)
+	params = append(params, request.Passphrase)
 	params = append(params, request.Key1)
 	params = append(params, request.Key2)
 	params = append(params, fmt.Sprint(request.Fee))

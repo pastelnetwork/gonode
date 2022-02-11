@@ -96,13 +96,15 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("probe image: %w", err)
 	}
 
-	// generateDDAndFingerprintsIDs generates dd & fp IDs
+	// Calculate IDs for redundant number of dd_and_fingerprints files
+	// Step 5.4
 	if err := task.FingerprintsHandler.GenerateDDAndFingerprintsIDs(ctx, task.service.config.DDAndFingerprintsMax); err != nil {
 		return errors.Errorf("DD and/or Fingerprint ID error: %w", err)
 	}
 
 	// Create copy of original image and embed fingerprints into it
 	// result is in the - task.NftImageHandler
+	// Step 6
 	if err := task.ImageHandler.CreateCopyWithEncodedFingerprint(ctx,
 		task.Request.CreatorPastelID, task.Request.CreatorPastelID,
 		task.FingerprintsHandler.FinalFingerprints, task.Request.Image); err != nil {
@@ -115,11 +117,13 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// upload image (from task.NftImageHandler) and thumbnail coordinates to supernode(s)
 	// SN will return back: hashes, previews, thumbnails,
+	// Step 6 - 8 for Walletnode
 	if err := task.uploadImage(ctx); err != nil {
 		return errors.Errorf("upload image: %w", err)
 	}
 
 	// connect to rq serivce to get rq symbols identifier
+	// All of step 9
 	if err := task.RqHandler.GenRQIdentifiersFiles(ctx, task.ImageHandler.ImageEncodedWithFingerprints,
 		task.creatorBlockHash, task.Request.CreatorPastelID, task.Request.CreatorPastelIDPassphrase); err != nil {
 		task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
@@ -131,11 +135,13 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	}
 
 	// sign ticket with artist signature
+	// Step 10
 	if err := task.signTicket(ctx); err != nil {
 		return errors.Errorf("sign NFT ticket: %w", err)
 	}
 
 	// send signed ticket to supernodes to calculate registration fee
+	// Step 11.A WalletNode - Upload Signed Ticket; RaptorQ IDs file and dd_and_fingerprints file to the SuperNode’s 1, 2 and 3
 	if err := task.sendSignedTicket(ctx); err != nil {
 		return errors.Errorf("send signed NFT ticket: %w", err)
 	}
@@ -162,6 +168,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
+	//Start Step 20
+
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regNFTTxid, int64(task.service.config.NFTRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
@@ -169,6 +177,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	task.UpdateStatus(common.StatusTicketRegistered)
 
 	// activate reg-nft ticket at previous step
+	// Send Activation ticket and Registration Fee (cNode API)
 	actTxid, err := task.registerActTicket(newCtx)
 	if err != nil {
 		return errors.Errorf("register act ticket: %w", err)
@@ -228,6 +237,8 @@ func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
 	return group.Wait()
 }
 
+// https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+// Controls walletnode interaction from steps 3-5
 func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.File, fileName string) error {
 	log.WithContext(ctx).WithField("filename", fileName).Debug("probe image")
 
@@ -244,6 +255,7 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 
 		someNode := someNode
 		group.Go(func() (err error) {
+			// result is 4.B.5
 			compress, stateOk, err := nftRegNode.ProbeImage(ctx, file)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("probe image failed")
@@ -255,7 +267,7 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("probe image failed")
 				return errors.Errorf("remote node %s: indicated processing error", someNode.String())
 			}
-
+			// Step 5.1
 			fingerprintAndScores, fingerprintAndScoresBytes, signature, err := pastel.ExtractCompressSignedDDAndFingerprints(compress)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", someNode).Error("extract compressed signed DDAandFingerprints failed")
@@ -269,7 +281,7 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 	if err := group.Wait(); err != nil {
 		return errors.Errorf("probing image %s failed: %w", fileName, err)
 	}
-
+	// Step 5.2 - 5.3
 	if err := task.FingerprintsHandler.Match(ctx); err != nil {
 		task.UpdateStatus(common.StatusErrorSignaturesNotMatch)
 		log.WithContext(ctx).WithError(err).WithField("filename", fileName).Error("probe image failed")
@@ -280,6 +292,8 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 	return nil
 }
 
+//https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+// Step 6 - 8 for Walletnode
 func (task *NftRegistrationTask) uploadImage(ctx context.Context) error {
 	// Upload image with pqgsinganature and its thumb to supernodes
 	if err := task.uploadImageWithThumbnail(ctx, task.ImageHandler.ImageEncodedWithFingerprints, task.Request.Thumbnail); err != nil {
@@ -374,6 +388,8 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 	return nil
 }
 
+// Step 10
+// WalletNode - Prepare and sign NFT Ticket
 func (task *NftRegistrationTask) signTicket(ctx context.Context) error {
 	data, err := pastel.EncodeNFTTicket(task.nftRegistrationTicket)
 	if err != nil {
@@ -388,6 +404,8 @@ func (task *NftRegistrationTask) signTicket(ctx context.Context) error {
 	return nil
 }
 
+// Step 11.A WalletNode - Upload Signed Ticket; RaptorQ IDs file and dd_and_fingerprints file to the SuperNode’s 1, 2 and 3
+// As part of step 12, WalletNode will check to make sure that the fee returned is not too high
 func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 	if task.serializedTicket == nil {
 		return errors.Errorf("uploading ticket: serializedTicket is empty")
@@ -461,6 +479,9 @@ func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string,
 		task.Request.CreatorPastelIDPassphrase)
 }
 
+// Step 13 - 14
+// WalletNode - Burn 10% of Registration fee
+// WalletNode - Upload txid of burned transaction to the SuperNode’s 1, 2 and 3
 func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context.Context) error {
 	burnTxid, err := task.service.pastelHandler.BurnSomeCoins(ctx, task.Request.SpendableAddress,
 		task.registrationFee, 10)

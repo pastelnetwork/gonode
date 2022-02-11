@@ -42,8 +42,9 @@ func copyFingerPrintAndScores(origin *DDAndFingerprints) *DDAndFingerprints {
 	return copied
 }
 
-// CombineFingerPrintAndScores determines
-// Refer: https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - 4B
+// CombineFingerPrintAndScores verifies erify dd_and_fingerprints data received from 2 other
+//  SuperNodes and SNs own dd_and_fingerprints are the same or “close enough”
+// Refer: https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - 4.B.3
 // The order of DDAndFingerprints should be higher rank first
 func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerprints, third *DDAndFingerprints) (*DDAndFingerprints, error) {
 	if first == nil || second == nil || third == nil {
@@ -98,10 +99,10 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 
 	//RarenessScores
 	if err := CompareRarenessScores(first.RarenessScores, second.RarenessScores); err != nil {
-		return nil, errors.Errorf("first couple of RarenessScores do not match: %w", err)
+		return nil, errors.Errorf("first and second RarenessScores do not match: %w", err)
 	}
 	if err := CompareRarenessScores(first.RarenessScores, third.RarenessScores); err != nil {
-		return nil, errors.Errorf("second couple of RarenessScores do not third: %w", err)
+		return nil, errors.Errorf("first and third RarenessScores do not match: %w", err)
 	}
 
 	//InternetRareness
