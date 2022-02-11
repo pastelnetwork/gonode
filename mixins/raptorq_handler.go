@@ -46,6 +46,8 @@ func NewRQHandler(rqClient rqnode.ClientInterface, pastelHandler *PastelHandler,
 }
 
 // GenRQIdentifiersFiles generates rq id files
+// https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+// Step 9
 func (h *RQHandler) GenRQIdentifiersFiles(ctx context.Context, file *files.File, operationBlockHash string, callerPastelID string, callerPassphrase string) error {
 	log.Debugf("Connect to %s", h.raptorQServiceAddress)
 	conn, err := h.rqClient.Connect(ctx, h.raptorQServiceAddress)

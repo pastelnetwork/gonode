@@ -150,6 +150,8 @@ func ExtractCompressSignedDDAndFingerprints(compressed []byte) (*DDAndFingerprin
 }
 
 // ToCompressSignedDDAndFingerprints converts dd_and_fingerptints data to compress((b64(dd_and_fp).(sig)))
+// https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+// Step 4.A.4
 func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []byte) ([]byte, error) {
 	ddDataJSON, err := json.Marshal(ddData)
 
@@ -193,7 +195,7 @@ func GetIDFiles(file []byte, ic uint32, max uint32) (ids []string, files [][]byt
 
 		hash, err := utils.Sha3256hash(compressedData)
 		if err != nil {
-			return ids, idFiles, errors.Errorf("sha3256hash: %w", err)
+			return ids, idFiles, errors.Errorf("sha3-256-hash error getting an id file: %w", err)
 		}
 
 		ids = append(ids, base58.Encode(hash))

@@ -89,6 +89,8 @@ func (service *RegisterNft) Session(stream pb.RegisterNft_SessionServer) error {
 }
 
 // SendSignedDDAndFingerprints sends signed dd and fp
+//  https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+//  Step 4.A.5
 func (service *RegisterNft) SendSignedDDAndFingerprints(ctx context.Context, req *pb.SendSignedDDAndFingerprintsRequest) (*pb.SendSignedDDAndFingerprintsReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SendSignedDDAndFingerprints request")
 	task := service.Task(req.SessID)
