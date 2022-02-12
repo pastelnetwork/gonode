@@ -3,10 +3,11 @@ package nftregister
 import (
 	"context"
 	"encoding/hex"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -359,7 +360,7 @@ func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error
 			},
 		},
 		Mn1PastelID: task.config.PastelID,
-		Pasphase:    task.config.PassPhrase,
+		Passphrase:  task.config.PassPhrase,
 		// TODO: fix this when how to get key1 and key2 are finalized
 		Key1: task.key1,
 		Key2: task.key2,
