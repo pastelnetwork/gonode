@@ -39,6 +39,22 @@ type RegistrationReq struct {
 	ThumbnailCoordinate       ThumbnailCoordinate `json:"thumbnail_coordinate"`
 }
 
+type SenseActionDetailReq struct {
+	AppPastelID         string `json:"app_pastelid"`
+	ActionDataHash      string `json:"action_data_hash"`
+	ActionDataSignature string `json:"action_data_signature"`
+}
+
+type SenseActionDetailResp struct {
+	EstimatedFee float64 `json:"estimated_fee"`
+}
+
+type SenseStartTaskReq struct {
+	AppPastelID           string `json:"app_pastelid"`
+	BurnTXID              string `json:"burn_txid"`
+	AppPastelIDPassphrase string `json:"app_pastelid_passphrase"`
+}
+
 type RegistrationResp struct {
 	TaskID string `json:"task_id"`
 }
@@ -53,4 +69,20 @@ func GetRegistrationURI(baseURI string) string {
 
 func GetNFTDetailURI(baseURI, txid string) string {
 	return fmt.Sprintf("%s/%s/%s", baseURI, "nfts", txid)
+}
+
+func GetSenseUploadImageURI(baseURI string) string {
+	return fmt.Sprintf("%s/%s", baseURI, "openapi/sense/upload")
+}
+
+func GetSenseActionURI(baseURI, imageID string) string {
+	return fmt.Sprintf("%s/%s/%s", baseURI, "openapi/sense/details", imageID)
+}
+
+func GetSenseStartTaskURI(baseURI, imageID string) string {
+	return fmt.Sprintf("%s/%s/%s", baseURI, "openapi/sense/start", imageID)
+}
+
+func GetSenseTaskStateURI(taskID string) string {
+	return fmt.Sprintf("openapi/sense/start/%s/state", taskID)
 }

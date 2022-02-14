@@ -117,12 +117,16 @@ func (h *rpcHandler) HandleStorageFee(params json.RawMessage) (interface{}, *jrp
 		return nil, err
 	}
 
-	if p.Params[0] != "getnetworkfee" {
+	if !(p.Params[0] == "getnetworkfee" || p.Params[0] == "getactionfees") {
 		return nil, &jrpc2.ErrorObject{
 			Code:    jrpc2.InvalidParamsCode,
 			Message: jrpc2.InvalidParamsMsg,
 			Data:    "invalid command not provided",
 		}
+	}
+
+	if p.Params[0] == "getactionfees" {
+		p.Params = p.Params[:1]
 	}
 
 	data, err := h.handle("storagefee", p.Params)
@@ -153,7 +157,8 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 			Data:    "invalid command provided",
 		}
 	} else if (p.Params[0] == "tools" && p.Params[1] == "gettotalstoragefee") ||
-		(p.Params[0] == "register") {
+		(p.Params[0] == "register") || (p.Params[0] == "activate") ||
+		(p.Params[0] == "find" && p.Params[1] == "action-act") {
 		p.Params = p.Params[:2]
 	}
 

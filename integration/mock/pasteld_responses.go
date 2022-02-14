@@ -200,6 +200,11 @@ var storageFeeResp = `{
 	  "totalstoragefee":20
   }
   `
+var actionFeeResp = `{
+	"sensefee":30,
+	"cascadefee":40
+}
+`
 
 var getRawTxResp = `{
 	"confirmations":12,
@@ -208,6 +213,10 @@ var getRawTxResp = `{
 `
 
 var getNFTRegisterResp = `{
+	"txid":"c4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef06"
+}
+`
+var getActionRegisterResp = `{
 	"txid":"c4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef06"
 }
 `
