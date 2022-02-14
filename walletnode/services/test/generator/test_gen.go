@@ -42,6 +42,11 @@ func genSupernodeClientTest() {
 			Client:  "sense_register",
 			Prefix:  "RegisterSense",
 		},
+		"../cascade_node_client_test.go": {
+			Service: "cascaderegister",
+			Client:  "cascade_register",
+			Prefix:  "RegisterCascade",
+		},
 		"../nftregistration_node_client_test.go": {
 			Service: "nftregister",
 			Client:  "nft_register",

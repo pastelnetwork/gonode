@@ -5,16 +5,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/storage/files"
-	"github.com/pastelnetwork/gonode/common/utils"
-	"github.com/pastelnetwork/gonode/mixins"
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
-
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
 // SenseRegistrationTask is the task of registering new nft.
@@ -25,7 +24,7 @@ type SenseRegistrationTask struct {
 	FingerprintsHandler *mixins.FingerprintsHandler
 
 	service *SenseRegistrationService
-	Request *SenseRegistrationRequest
+	Request *common.ActionRegistrationRequest
 
 	// data to create ticket
 	creatorBlockHeight int
@@ -92,7 +91,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 
 	fileDataInMb := int64(len(imgBytes)) / (1024 * 1024)
-	fee, err := task.service.pastelHandler.GetEstimatedActionFee(ctx, fileDataInMb)
+	fee, err := task.service.pastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
 	if err != nil {
 		return errors.Errorf("getting estimated fee %w", err)
 	}
@@ -359,7 +358,7 @@ func (task *SenseRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 
 // NewSenseRegisterTask returns a new SenseRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
-func NewSenseRegisterTask(service *SenseRegistrationService, request *SenseRegistrationRequest) *SenseRegistrationTask {
+func NewSenseRegisterTask(service *SenseRegistrationService, request *common.ActionRegistrationRequest) *SenseRegistrationTask {
 	task := common.NewWalletNodeTask(logPrefix)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,

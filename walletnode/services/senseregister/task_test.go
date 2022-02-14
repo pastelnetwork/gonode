@@ -8,10 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
-
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -19,7 +18,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-	"github.com/stretchr/testify/assert"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
 const (
@@ -47,7 +46,7 @@ func TestTaskRun(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Request *SenseRegistrationRequest
+		Request *common.ActionRegistrationRequest
 	}
 
 	type args struct {
@@ -69,7 +68,7 @@ func TestTaskRun(t *testing.T) {
 	}{
 		"success": {
 			fields: fields{
-				Request: &SenseRegistrationRequest{
+				Request: &common.ActionRegistrationRequest{
 					BurnTxID:              "txid",
 					AppPastelID:           testCreatorPastelID,
 					AppPastelIDPassphrase: "passphrase",
@@ -95,7 +94,7 @@ func TestTaskRun(t *testing.T) {
 		"failure": {
 			wantErr: errors.New("test"),
 			fields: fields{
-				Request: &SenseRegistrationRequest{
+				Request: &common.ActionRegistrationRequest{
 					BurnTxID:              "txid",
 					AppPastelID:           testCreatorPastelID,
 					AppPastelIDPassphrase: "passphrase",
@@ -186,6 +185,7 @@ func TestTaskRun(t *testing.T) {
 
 			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil)
 			service.config.WaitTxnValidInterval = 1
+
 			go service.Run(testCase.args.ctx)
 
 			Request := testCase.fields.Request

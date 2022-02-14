@@ -23,11 +23,11 @@ const (
 // NftRegistrationService represents a service for the registration NFT.
 type NftRegistrationService struct {
 	*task.Worker
+	config *Config
 
-	config        *Config
-	nodeClient    node.ClientInterface
 	ImageHandler  *mixins.FilesHandler
 	pastelHandler *mixins.PastelHandler
+	nodeClient    node.ClientInterface
 
 	rqClient rqnode.ClientInterface
 }
@@ -39,6 +39,8 @@ func (service *NftRegistrationService) Run(ctx context.Context) error {
 	group.Go(func() error {
 		return service.ImageHandler.FileStorage.Run(ctx)
 	})
+
+	// Run worker service
 	group.Go(func() error {
 		return service.Worker.Run(ctx)
 	})

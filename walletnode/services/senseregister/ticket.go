@@ -1,25 +1,13 @@
 package senseregister
 
 import (
-	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
-// SenseRegistrationRequest represents a request for the registration sense
-type SenseRegistrationRequest struct {
-	// Image is field
-	Image *files.File `json:"image"`
-	// BurnTxID is field
-	BurnTxID string `json:"burn_txid"`
-	// AppPastelID is field
-	AppPastelID string `json:"app_pastel_id"`
-	// AppPastelIDPassphrase is field
-	AppPastelIDPassphrase string `json:"app_pastel_id_passphrase"`
-}
-
-// FromSenseRegisterPayload convert StartProcessingPayload to SenseRegistrationRequest
-func FromSenseRegisterPayload(payload *sense.StartProcessingPayload) *SenseRegistrationRequest {
-	return &SenseRegistrationRequest{
+// FromStartProcessingPayload convert StartProcessingPayload to ActionRegistrationRequest
+func FromStartProcessingPayload(payload *sense.StartProcessingPayload) *common.ActionRegistrationRequest {
+	return &common.ActionRegistrationRequest{
 		BurnTxID:              payload.BurnTxid,
 		AppPastelID:           payload.AppPastelID,
 		AppPastelIDPassphrase: payload.AppPastelidPassphrase,

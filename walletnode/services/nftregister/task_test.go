@@ -12,19 +12,19 @@ import (
 
 	"github.com/DataDog/zstd"
 	"github.com/google/uuid"
-	"github.com/pastelnetwork/gonode/mixins"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
-	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
-	"github.com/pastelnetwork/gonode/walletnode/node/test"
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-	"github.com/stretchr/testify/assert"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
+	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
 const (
@@ -174,6 +174,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnUploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
 				ListenOnSendSignedTicket(1, nil).
 				ListenOnClose(nil)
+
 			nodeClient.ConnectionInterface.On("RegisterNft").Return(nodeClient.RegisterNftInterface)
 			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Return("100", nil)
 
@@ -231,9 +232,8 @@ func TestTaskRun(t *testing.T) {
 			if testCase.wantErr != nil {
 				assert.True(t, task.Status().IsFailure())
 			} else {
-				assert.Nil(t, err)
 				assert.True(t, task.Status().Is(common.StatusTaskCompleted))
-
+				assert.Nil(t, err)
 			}
 		})
 	}

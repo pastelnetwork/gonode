@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	cassrv "github.com/pastelnetwork/gonode/walletnode/api/gen/http/cascade/server"
 	nftsrv "github.com/pastelnetwork/gonode/walletnode/api/gen/http/nft/server"
 	sensrv "github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
 	nftreg "github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
@@ -49,6 +51,26 @@ func NftRegUploadImageDecoderFunc(ctx context.Context, service *NftAPIHandler) n
 func SenseUploadImageDecoderFunc(ctx context.Context, service *SenseAPIHandler) sensrv.SenseUploadImageDecoderFunc {
 	return func(reader *multipart.Reader, p **sense.UploadImagePayload) error {
 		var res sense.UploadImagePayload
+
+		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage)
+		if err != nil {
+			return &goa.ServiceError{
+				Name:    errType,
+				ID:      goa.NewErrorID(),
+				Message: err.Error(),
+			}
+		}
+
+		res.Filename = &filename
+		*p = &res
+		return nil
+	}
+}
+
+// CascadeUploadImageDecoderFunc decodes image uploaded from request
+func CascadeUploadImageDecoderFunc(ctx context.Context, service *CascadeAPIHandler) cassrv.CascadeUploadImageDecoderFunc {
+	return func(reader *multipart.Reader, p **cascade.UploadImagePayload) error {
+		var res cascade.UploadImagePayload
 
 		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage)
 		if err != nil {

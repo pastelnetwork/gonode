@@ -34,13 +34,22 @@ func (pt *PastelHandler) VerifySignature(ctx context.Context, data []byte, signa
 	return true, nil
 }
 
-// GetEstimatedActionFee returns the estimated Action fee for the given image
-func (pt *PastelHandler) GetEstimatedActionFee(ctx context.Context, ImgSizeInMb int64) (float64, error) {
+// GetEstimatedSenseFee returns the estimated Action fee for the given image
+func (pt *PastelHandler) GetEstimatedSenseFee(ctx context.Context, ImgSizeInMb int64) (float64, error) {
 	actionFees, err := pt.PastelClient.GetActionFee(ctx, ImgSizeInMb)
 	if err != nil {
 		return 0, err
 	}
 	return actionFees.SenseFee, nil
+}
+
+// GetEstimatedSenseFee returns the estimated Action fee for the given image
+func (pt *PastelHandler) GetEstimatedCascadeFee(ctx context.Context, ImgSizeInMb int64) (float64, error) {
+	actionFees, err := pt.PastelClient.GetActionFee(ctx, ImgSizeInMb)
+	if err != nil {
+		return 0, err
+	}
+	return actionFees.CascadeFee, nil
 }
 
 // determine current block height & hash of it

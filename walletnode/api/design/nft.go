@@ -3,8 +3,6 @@ package design
 import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
-	"time"
-
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
 	. "goa.design/goa/v3/dsl"
@@ -56,7 +54,7 @@ var _ = Service("nft", func() {
 		Payload(func() {
 			Extend(RegisterTaskPayload)
 		})
-		StreamingResult(NftRegisterTaskState)
+		StreamingResult(RegisterTaskState)
 
 		HTTP(func() {
 			GET("/register/{taskId}/state")
@@ -337,7 +335,7 @@ var NftRegisterTaskResult = ResultType("application/vnd.nft.register.task", func
 			Example(common.StatusNames()[0])
 			Enum(InterfaceSlice(common.StatusNames())...)
 		})
-		Attribute("states", ArrayOf(NftRegisterTaskState), func() {
+		Attribute("states", ArrayOf(RegisterTaskState), func() {
 			Description("List of states from the very beginning of the process")
 		})
 		Attribute("txid", String, func() {
@@ -357,64 +355,6 @@ var NftRegisterTaskResult = ResultType("application/vnd.nft.register.task", func
 	})
 
 	Required("id", "status", "ticket")
-})
-
-// NftRegisterTaskState is task streaming of the NFT registration.
-var NftRegisterTaskState = Type("TaskState", func() {
-	Attribute("date", String, func() {
-		Description("Date of the status creation")
-		Example(time.RFC3339)
-	})
-	Attribute("status", String, func() {
-		Description("Status of the registration process")
-		Example(common.StatusNames()[0])
-		Enum(InterfaceSlice(common.StatusNames())...)
-	})
-	Required("date", "status")
-})
-
-// ImageUploadPayload represents a payload for uploading image.
-var ImageUploadPayload = Type("ImageUploadPayload", func() {
-	Description("Image upload payload")
-	Attribute("file", Bytes, func() {
-		Meta("struct:field:name", "Bytes")
-		Description("File to upload")
-	})
-	Attribute("filename", String, func() {
-		Meta("swagger:example", "false")
-		Description("For internal use")
-	})
-	Required("file")
-})
-
-// ImageUploadResult is image upload result.
-var ImageUploadResult = ResultType("application/vnd.nft.upload-image", func() {
-	TypeName("Image")
-	Attributes(func() {
-		Attribute("image_id", String, func() {
-			Description("Uploaded image ID")
-			MinLength(8)
-			MaxLength(8)
-			Example("VK7mpAqZ")
-		})
-		Attribute("expires_in", String, func() {
-			Description("Image expiration")
-			Format(FormatDateTime)
-			Example(time.RFC3339)
-		})
-	})
-	Required("image_id", "expires_in")
-})
-
-// RegisterTaskPayload represents a payload for returning task.
-var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
-	Attribute("taskId", String, "Task ID of the registration process", func() {
-		TypeName("taskID")
-		MinLength(8)
-		MaxLength(8)
-		Example("n6Qn6TFM")
-	})
-	Required("taskId")
 })
 
 // FuzzyMatch is search results detail
