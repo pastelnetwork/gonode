@@ -171,6 +171,8 @@ func (task *CascadeRegistrationTask) sendActionMetadata(ctx context.Context) err
 			//TODO: use assert here
 			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
 		}
+		
+		someNode := someNode
 		group.Go(func() (err error) {
 			err = senseRegNode.SendRegMetadata(ctx, regMetadata)
 			if err != nil {
@@ -317,6 +319,8 @@ func (task *CascadeRegistrationTask) uploadActionAct(ctx context.Context, activa
 			//TODO: use assert here
 			return errors.Errorf("node %s is not CascadeRegistrationNode", someNode.String())
 		}
+
+		someNode := someNode
 		if someNode.IsPrimary() {
 			group.Go(func() error {
 				return cascadeRegNode.SendActionAct(ctx, activateTxID)
