@@ -23,7 +23,7 @@ const (
 	HttpPost   = "POST"
 	HttpDelete = "DELETE"
 	// wsExpectedResponseTimeout in seconds until the websocket recieves the expected response
-	wsExpectedResponseTimeout = 60
+	wsExpectedResponseTimeout = 160
 )
 
 // ItHelper is used by integration tests to make requests to server
@@ -72,6 +72,7 @@ func (h *ItHelper) RequestRaw(method string, reqBody []byte, uri string, queryPa
 
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %v", h.token))
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("app_pastelid_passphrase", "passphrase")
 
 	response, err := h.client.Do(request)
 	if err != nil {
@@ -135,7 +136,7 @@ func (h *ItHelper) HTTPCurlUploadFile(method, uri, file, filename string) (resp 
 	return stdout, nil
 }
 
-func (h *ItHelper) DoWebSocketReq(addr, path, expectedKey, expectedValue string) error {
+func DoWebSocketReq(addr, path, expectedKey, expectedValue string) error {
 	ctx := context.Background()
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)

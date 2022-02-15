@@ -3,6 +3,7 @@ package walletnode
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"runtime/debug"
 
@@ -199,7 +200,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 		for {
 			req, subErr := stream.Recv()
 			if subErr != nil {
-				if err == io.EOF {
+				if subErr == io.EOF {
 					break
 				}
 				if status.Code(err) == codes.Canceled {
@@ -209,9 +210,10 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 			}
 
 			if _, subErr := wr.Write(req.Payload); subErr != nil {
-				return errors.Errorf("write to file %q: %w", file.Name(), err)
+				return errors.Errorf("write to file %q: %w", file.Name(), subErr)
 			}
 		}
+
 		return nil
 	}
 
@@ -235,7 +237,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 
 		compressedDDFingerAndScores, err = task.ProbeImage(ctx, image)
 		if err != nil {
-			return err
+			return fmt.Errorf("task.ProbeImage: %w", err)
 		}
 	}
 

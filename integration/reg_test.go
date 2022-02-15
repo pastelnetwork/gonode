@@ -72,10 +72,12 @@ var _ = Describe("NFTRegistration", func() {
 			Expect(status).To(Equal(http.StatusCreated))
 			Expect(json.Unmarshal(regResp, regReply))
 
-			Expect(itHelper.DoWebSocketReq(strings.TrimPrefix(it.WNBaseURI, "http://"), helper.GetTaskStatePath(regReply.TaskID),
+			Expect(helper.DoWebSocketReq(strings.TrimPrefix(it.WNBaseURI, "http://"), helper.GetTaskStatePath(regReply.TaskID),
 				"status", "Task Completed")).To(Succeed())
 		})
 	})
 
-	AfterEach(func() {})
+	AfterEach(func() {
+		Expect(mocker.CleanupAll()).To(Succeed())
+	})
 })

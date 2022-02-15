@@ -55,6 +55,18 @@ func (m *Mocker) MockAllRegExpections() error {
 	return nil
 }
 
+func (m *Mocker) CleanupAll() error {
+	addrs := append(m.pasteldAddrs, m.rqAddrs...)
+	addrs = append(addrs, m.ddAddrs...)
+	for _, addr := range addrs {
+		if err := m.cleanup(addr); err != nil {
+			return fmt.Errorf("server: %s err: %w", addr, err)
+		}
+	}
+
+	return nil
+}
+
 func (m *Mocker) mockDDServerRegExpections(addr string) error {
 	resp, err := getDDServerResponse()
 	if err != nil {
@@ -154,6 +166,24 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
+	// sense
+	if err := m.mockServer([]byte(actionFeeResp), addr, "storagefee", []string{"getactionfees"}, 6); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	if err := m.mockServer([]byte(getActionRegisterResp), addr, "tickets", []string{"register", "action"}, 1); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	if err := m.mockServer([]byte(getActRegisterResp), addr, "tickets", []string{"activate", "action"}, 1); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	if err := m.mockServer([]byte(ticketsFindIDArtistResp), addr, "tickets",
+		[]string{"find", "action-act"}, 3); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
 	return nil
 }
 
@@ -164,6 +194,19 @@ func (m *Mocker) mockServer(payload []byte, addr string, command string, params 
 	query["count"] = fmt.Sprint(times)
 
 	rsp, status, err := m.itHelder.RequestRaw(helper.HttpPost, payload, fmt.Sprintf("%s/%s", addr, "register"), query)
+	if err != nil {
+		return err
+	}
+
+	if status != http.StatusOK {
+		return errors.New(string(rsp))
+	}
+
+	return nil
+}
+
+func (m *Mocker) cleanup(addr string) error {
+	rsp, status, err := m.itHelder.RequestRaw(helper.HttpPost, []byte{}, fmt.Sprintf("%s/%s", addr, "cleanup"), nil)
 	if err != nil {
 		return err
 	}
