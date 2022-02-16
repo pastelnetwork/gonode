@@ -112,7 +112,7 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte("160647"), addr, "getblockcount", []string{""}, 10); err != nil {
+	if err := m.mockServer([]byte("160647"), addr, "getblockcount", []string{""}, 100); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
