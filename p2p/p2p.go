@@ -160,6 +160,20 @@ func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 	return retStats, nil
 }
 
+// NClosestNodes returns a list of n closest masternode to a given string
+func (s *p2p) NClosestNodes(ctx context.Context, n int, key string, ignores ...string) []string {
+	var ret = make([]string, 0)
+	var ignoreNodes = make([]*kademlia.Node, len(ignores))
+	for idx, node := range ignores {
+		ignoreNodes[idx] = &kademlia.Node{ID: []byte(node)}
+	}
+	nodes := s.dht.NClosestNodes(ctx, n, key, ignoreNodes...)
+	for _, node := range nodes {
+		ret = append(ret, string(node.ID))
+	}
+	return ret
+}
+
 // configure the distributed hash table for p2p service
 func (s *p2p) configure(ctx context.Context) error {
 	// new the local storage
