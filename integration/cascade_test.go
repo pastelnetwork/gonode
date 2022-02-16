@@ -14,7 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/integration/mock"
 )
 
-var _ = Describe("Sense", func() {
+var _ = Describe("Cascade", func() {
 	var (
 		itHelper = helper.NewItHelper()
 
@@ -51,31 +51,31 @@ var _ = Describe("Sense", func() {
 		regReply = &helper.RegistrationResp{}
 	})
 
-	Context("when using sense feature", func() {
-		It("should be registered successfully", func() {
+	Context("when using cascade feature", func() {
+		It("should get registered successfully", func() {
 			// Register Mocks
 			Expect(mocker.MockAllRegExpections()).To(Succeed())
 
 			// Upload Image
-			resp, err := itHelper.HTTPCurlUploadFile(helper.HttpPost, helper.GetSenseUploadImageURI(it.WNBaseURI), uploadImageReq.Filename, "test-img")
+			resp, err := itHelper.HTTPCurlUploadFile(helper.HttpPost, helper.GetCascadeUploadImageURI(it.WNBaseURI), uploadImageReq.Filename, "test-img")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(json.Unmarshal(resp, uploadImageReply)).To(Succeed())
 			Expect(uploadImageReply.ImageID).NotTo(BeEmpty())
 
 			// Get Action Detail
-			regResp, status, err := itHelper.Request(helper.HttpPost, actionDetailReq, helper.GetSenseActionURI(it.WNBaseURI, uploadImageReply.ImageID), nil)
+			regResp, status, err := itHelper.Request(helper.HttpPost, actionDetailReq, helper.GetCascadeActionURI(it.WNBaseURI, uploadImageReply.ImageID), nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal(http.StatusCreated))
 			Expect(json.Unmarshal(regResp, actionDetailReply)).To(Succeed())
 
 			// Start Task
-			startResp, status, err := itHelper.Request(helper.HttpPost, startTaskReq, helper.GetSenseStartTaskURI(it.WNBaseURI, uploadImageReply.ImageID), nil)
+			startResp, status, err := itHelper.Request(helper.HttpPost, startTaskReq, helper.GetCascadeStartTaskURI(it.WNBaseURI, uploadImageReply.ImageID), nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal(http.StatusCreated))
 			Expect(json.Unmarshal(startResp, regReply)).To(Succeed())
 
 			// Check status for Task Completed
-			Expect(helper.DoWebSocketReq(strings.TrimPrefix(it.WNBaseURI, "http://"), helper.GetSenseTaskStateURI(regReply.TaskID),
+			Expect(helper.DoWebSocketReq(strings.TrimPrefix(it.WNBaseURI, "http://"), helper.GetCascadeTaskStateURI(regReply.TaskID),
 				"status", "Task Completed")).To(Succeed())
 		})
 	})

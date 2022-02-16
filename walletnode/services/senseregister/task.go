@@ -146,8 +146,8 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("upload action act: %w", err)
 	}
 
-	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-	return err
+	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+	return nil
 }
 
 // sendActionMetadata sends Action Ticket metadata to supernodes

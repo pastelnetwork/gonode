@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -22,12 +23,13 @@ type StorageHandler struct {
 
 // NewStorageHandler creates instance of StorageHandler
 func NewStorageHandler(p2p p2p.Client, rq rqnode.ClientInterface,
-	rqAddress string, rqDir string,
-) *StorageHandler {
+	rqAddress string, rqDir string) *StorageHandler {
+
 	return &StorageHandler{
 		P2PClient: p2p,
 		RqClient:  rq,
-		rqAddress: rqAddress, rqDir: rqDir,
+		rqAddress: rqAddress,
+		rqDir:     rqDir,
 	}
 }
 

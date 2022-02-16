@@ -9,7 +9,7 @@ const (
 
 	defaultCascadeRegTxMinConfirmations = 12
 	defaultCascadeActTxMinConfirmations = 5
-	defaultWaitTxnValidInterval         = 15
+	defaultWaitTxnValidInterval         = 5
 
 	defaultRQIDsMax = 50
 )

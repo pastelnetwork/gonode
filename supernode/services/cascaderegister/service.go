@@ -28,10 +28,11 @@ func (service *CascadeRegistrationService) Run(ctx context.Context) error {
 	return service.RunHelper(ctx, service.config.PastelID, logPrefix)
 }
 
-// NewSenseRegistrationTask runs a new task of the registration Sense and returns its taskID.
-func (service *CascadeRegistrationService) NewSenseRegistrationTask() *CascadeRegistrationTask {
+// NewCascadeRegistrationTask runs a new task of the registration Sense and returns its taskID.
+func (service *CascadeRegistrationService) NewCascadeRegistrationTask() *CascadeRegistrationTask {
 	task := NewCascadeRegistrationTask(service)
 	service.Worker.AddTask(task)
+
 	return task
 }
 
@@ -41,13 +42,10 @@ func (service *CascadeRegistrationService) Task(id string) *CascadeRegistrationT
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config,
-	fileStorage storage.FileStorageInterface,
-	pastelClient pastel.Client,
-	nodeClient node.ClientInterface,
-	p2pClient p2p.Client,
-	rqClient rqnode.ClientInterface,
-) *CascadeRegistrationService {
+func NewService(config *Config, fileStorage storage.FileStorageInterface,
+	pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client,
+	rqClient rqnode.ClientInterface) *CascadeRegistrationService {
+
 	return &CascadeRegistrationService{
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient, rqClient),
 		config:           config,

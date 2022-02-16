@@ -201,16 +201,21 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// metadb := metadb.New(config.MetaDB, config.Node.PastelID, pastelClient)
 	// database := database.NewDatabaseOps(metadb, config.UserDB)
 
+	rqAddr := fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	// raptorq client
-	config.NftRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.NftRegister.RaptorQServiceAddress = rqAddr
 	config.NftRegister.RqFilesDir = config.RqFilesDir
+	config.CascadeRegister.RaptorQServiceAddress = rqAddr
+	config.CascadeRegister.RqFilesDir = config.RqFilesDir
 
 	if config.NumberConnectedNodes > 0 {
 		config.NftRegister.NumberConnectedNodes = config.NumberConnectedNodes
+		config.CascadeRegister.NumberConnectedNodes = config.NumberConnectedNodes
 	}
 
 	if config.PreburntTxMinConfirmations > 0 {
 		config.NftRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
+		config.CascadeRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
 	}
 
 	rqClient := rqgrpc.NewClient()
@@ -223,7 +228,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 
 	// business logic services
-	config.NftDownload.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.NftDownload.RaptorQServiceAddress = rqAddr
 	config.NftDownload.RqFilesDir = config.RqFilesDir
 
 	// business logic services
@@ -273,5 +278,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 	// return runServices(ctx, metadb, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, database, userdataProcess, statsMngr, debugSerivce)
-	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, statsMngr, debugSerivce)
+	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, ddScan, statsMngr, debugSerivce)
 }

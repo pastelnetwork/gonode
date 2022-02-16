@@ -156,8 +156,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nodeClient := grpc.NewClient(pastelClient)
 
 	// raptorq client
-	config.NftRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	rqAddr := fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.NftRegister.RaptorQServiceAddress = rqAddr
 	config.NftRegister.RqFilesDir = config.RqFilesDir
+	config.CascadeRegister.RaptorQServiceAddress = rqAddr
+	config.CascadeRegister.RqFilesDir = config.RqFilesDir
+
 	rqClient := rqgrpc.NewClient()
 
 	// NB: As part of current dev push for Sense and Cascade, we are disabling userdata handling thru rqlite.
@@ -174,11 +178,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	if config.RegTxMinConfirmations > 0 {
 		config.NftRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
 		config.SenseRegister.SenseRegTxMinConfirmations = config.RegTxMinConfirmations
+		config.CascadeRegister.CascadeRegTxMinConfirmations = config.RegTxMinConfirmations
 	}
 
 	if config.ActTxMinConfirmations > 0 {
 		config.NftRegister.NFTActTxMinConfirmations = config.ActTxMinConfirmations
 		config.SenseRegister.SenseActTxMinConfirmations = config.ActTxMinConfirmations
+		config.CascadeRegister.CascadeActTxMinConfirmations = config.ActTxMinConfirmations
 	}
 
 	// These services connect the different clients and configs together to provide tasking and handling for

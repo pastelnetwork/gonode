@@ -2,11 +2,12 @@ package cascaderegister
 
 import (
 	"context"
+	"os"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/mixins"
-	"os"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -89,7 +90,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 
 	fileDataInMb := int64(len(imgBytes)) / (1024 * 1024)
-	fee, err := task.service.pastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
+	fee, err := task.service.pastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
 	if err != nil {
 		return errors.Errorf("getting estimated fee %w", err)
 	}
@@ -144,8 +145,8 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("upload action act: %w", err)
 	}
 
-	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-	return err
+	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+	return nil
 }
 
 // sendActionMetadata sends Action Ticket metadata to supernodes
@@ -171,7 +172,7 @@ func (task *CascadeRegistrationTask) sendActionMetadata(ctx context.Context) err
 			//TODO: use assert here
 			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
 		}
-		
+
 		someNode := someNode
 		group.Go(func() (err error) {
 			err = senseRegNode.SendRegMetadata(ctx, regMetadata)
@@ -227,7 +228,7 @@ func (task *CascadeRegistrationTask) createCascadeTicket(_ context.Context) erro
 		Caller:     task.Request.AppPastelID,
 		BlockNum:   task.creatorBlockHeight,
 		BlockHash:  task.creatorBlockHash,
-		ActionType: pastel.ActionTypeSense,
+		ActionType: pastel.ActionTypeCascade,
 		APITicketData: &pastel.APICascadeTicket{
 			DataHash: task.dataHash,
 			RQIc:     task.RqHandler.RQIDsIc,
@@ -364,5 +365,8 @@ func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common
 		service:        service,
 		Request:        request,
 		MeshHandler:    common.NewMeshHandler(meshHandlerOpts),
+		RqHandler: mixins.NewRQHandler(service.rqClient, service.pastelHandler,
+			service.config.RaptorQServiceAddress, service.config.RqFilesDir,
+			service.config.NumberRQIDSFiles, service.config.RQIDsMax),
 	}
 }
