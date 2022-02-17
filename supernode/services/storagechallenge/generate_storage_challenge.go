@@ -168,8 +168,8 @@ func (task *StorageChallengeTask) sendprocessStorageChallenge(ctx context.Contex
 
 	var mn pastel.MasterNode
 	var ok bool
-	if mn, ok = mapSupernodes[challengeMessage.ChallengingMasternodeId]; !ok {
-		err = fmt.Errorf("cannot get Supernode info of Supernode id %v", challengeMessage.ChallengingMasternodeId)
+	if mn, ok = mapSupernodes[challengeMessage.RespondingMasternodeId]; !ok {
+		err = fmt.Errorf("cannot get Supernode info of Supernode id %v", challengeMessage.RespondingMasternodeId)
 		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendprocessStorageChallenge").Warn(err.Error())
 		return err
 	}

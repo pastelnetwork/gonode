@@ -7,7 +7,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
-	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
 
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
@@ -103,21 +102,15 @@ func (task *StorageChallengeTask) sendVerifyStorageChallenge(ctx context.Context
 		return err
 	}
 
-	mapSupernodes := make(map[string]pastel.MasterNode)
+	SupernodeAddressesIgnoringThisNode := []string{}
 	for _, mn := range Supernodes {
-		mapSupernodes[mn.ExtKey] = mn
+		if mn.ExtKey != task.nodeID {
+			SupernodeAddressesIgnoringThisNode = append(SupernodeAddressesIgnoringThisNode, mn.ExtAddress)
+		}
 	}
-
-	verifierSupernodesAddr := []string{}
-	var mn pastel.MasterNode
-	var ok bool
-	if mn, ok = mapSupernodes[challengeMessage.RespondingMasternodeId]; !ok {
-		return fmt.Errorf("cannot get Supernode info of Supernode id %v", challengeMessage.RespondingMasternodeId)
-	}
-	verifierSupernodesAddr = append(verifierSupernodesAddr, mn.ExtAddress)
 
 	err = nil
-	for _, nodeToConnectTo := range verifierSupernodesAddr {
+	for _, nodeToConnectTo := range SupernodeAddressesIgnoringThisNode {
 		nodeClientConn, err := task.nodeClient.Connect(ctx, nodeToConnectTo)
 		if err != nil {
 			err = fmt.Errorf("Could not use nodeclient to connect to: " + nodeToConnectTo)
