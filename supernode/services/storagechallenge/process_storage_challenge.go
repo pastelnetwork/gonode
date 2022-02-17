@@ -127,6 +127,9 @@ func (task *StorageChallengeTask) sendVerifyStorageChallenge(ctx context.Context
 		storageChallengeIF := nodeClientConn.StorageChallenge()
 		//Sends the process storage challenge message to the connected processing supernode
 		err = storageChallengeIF.VerifyStorageChallenge(ctx, challengeMessage)
+		if err != nil {
+			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("verifierSuperNodeAddress", nodeToConnectTo).Warn("Storage challenge verification failure: ", err.Error())
+		}
 	}
 	if err == nil {
 		log.WithContext(ctx).Println("After calling storage process on " + challengeMessage.ChallengeId + " no nodes returned an error code in verification")

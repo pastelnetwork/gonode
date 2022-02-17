@@ -58,7 +58,7 @@ func (s *StorageChallengeService) Run(ctx context.Context) error {
 			if ok && s.checkNextBlockAvailable(ctx) {
 				newCtx := context.Background()
 				task := s.NewStorageChallengeTask()
-				task.GenerateStorageChallenges(newCtx, 1)
+				task.GenerateStorageChallenges(newCtx)
 			} else {
 				if !ok {
 					log.WithContext(ctx).Println("Ticker not okay")

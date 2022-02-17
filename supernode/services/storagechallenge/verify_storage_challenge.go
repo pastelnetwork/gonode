@@ -6,96 +6,100 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
+
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
-func (s *StorageChallengeService) VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error {
-	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(incomingChallengeMessage.MessageType)
+func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) error {
+	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(incomingChallengeMessage.MessageType)
 	// Incoming challenge message validation
-	if err := s.validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
+	if err := task.validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
 		return err
 	}
 
 	/* ----------------------------------------------- */
 	/* ----- Main logic implementation goes here ----- */
-	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge, true)
+	challengeFileData, err := task.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.ChallengeFile.FileHashToChallenge, true)
 	if err != nil {
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not read file data in to memory", "file.ReadFileIntoMemory", err.Error())
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not read file data in to memory", "file.ReadFileIntoMemory", err.Error())
 		return err
 	}
 
-	challengeCorrectHash := s.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.ChallengeSliceStartIndex, incomingChallengeMessage.ChallengeSliceEndIndex)
-	messageType := storageChallengeVerificationMessage
-	blockNumChallengeVerified, err := s.pclient.GetBlockCount(ctx)
+	challengeCorrectHash := task.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex, incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex)
+	messageType := pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE
+	blockNumChallengeVerified, err := task.pclient.GetBlockCount(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not get current block count")
+		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not get current block count")
 		return err
 	}
 
 	blocksVerifyStorageChallengeInBlocks := blockNumChallengeVerified - incomingChallengeMessage.BlockNumChallengeSent
 
-	var challengeStatus string
+	var challengeStatus pb.StorageChallengeDataStatus
 	var saveStatus string
 
-	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (blocksVerifyStorageChallengeInBlocks <= s.storageChallengeExpiredBlocks) {
+	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (blocksVerifyStorageChallengeInBlocks <= task.storageChallengeExpiredBlocks) {
 
-		challengeStatus = statusSucceeded
+		challengeStatus = pb.StorageChallengeData_Status_SUCCEEDED
 		saveStatus = "succeeded"
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("Supernode %s correctly responded in %d blocks to a storage challenge for file %s", incomingChallengeMessage.RespondingSupernodeID, blocksVerifyStorageChallengeInBlocks, incomingChallengeMessage.FileHashToChallenge))
-		s.repository.SaveChallengMessageState(ctx, "succeeded", incomingChallengeMessage.ChallengeID, incomingChallengeMessage.ChallengingSupernodeID, incomingChallengeMessage.BlockNumChallengeSent)
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(fmt.Sprintf("Supernode %s correctly responded in %d blocks to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeId, blocksVerifyStorageChallengeInBlocks, incomingChallengeMessage.ChallengeFile.FileHashToChallenge))
+		task.repository.SaveChallengMessageState(ctx, "succeeded", incomingChallengeMessage.ChallengeId, incomingChallengeMessage.ChallengingMasternodeId, incomingChallengeMessage.BlockNumChallengeSent)
 	} else if incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash {
 
-		challengeStatus = statusFailedTimeout
+		challengeStatus = pb.StorageChallengeData_Status_FAILED_TIMEOUT
 		saveStatus = "timeout"
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("Supernode %s  correctly responded in %d blocks to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingChallengeMessage.RespondingSupernodeID, blocksVerifyStorageChallengeInBlocks, incomingChallengeMessage.FileHashToChallenge))
-		s.repository.SaveChallengMessageState(ctx, "timeout", incomingChallengeMessage.ChallengeID, incomingChallengeMessage.ChallengingSupernodeID, incomingChallengeMessage.BlockNumChallengeSent)
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(fmt.Sprintf("Supernode %s  correctly responded in %d blocks to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingChallengeMessage.RespondingMasternodeId, blocksVerifyStorageChallengeInBlocks, incomingChallengeMessage.ChallengeFile.FileHashToChallenge))
+		task.repository.SaveChallengMessageState(ctx, "timeout", incomingChallengeMessage.ChallengeId, incomingChallengeMessage.ChallengingMasternodeId, incomingChallengeMessage.BlockNumChallengeSent)
 	} else {
 
-		challengeStatus = statusFailedIncorrectResponse
+		challengeStatus = pb.StorageChallengeData_Status_FAILED_INCORRECT_RESPONSE
 		saveStatus = "failed"
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("Supernode %s failed by incorrectly responding to a storage challenge for file %s", incomingChallengeMessage.RespondingSupernodeID, incomingChallengeMessage.FileHashToChallenge))
-		s.repository.SaveChallengMessageState(ctx, "failed", incomingChallengeMessage.ChallengeID, incomingChallengeMessage.ChallengingSupernodeID, incomingChallengeMessage.BlockNumChallengeSent)
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(fmt.Sprintf("Supernode %s failed by incorrectly responding to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeId, incomingChallengeMessage.ChallengeFile.FileHashToChallenge))
+		task.repository.SaveChallengMessageState(ctx, "failed", incomingChallengeMessage.ChallengeId, incomingChallengeMessage.ChallengingMasternodeId, incomingChallengeMessage.BlockNumChallengeSent)
 	}
 
-	messageIDInputData := incomingChallengeMessage.ChallengingSupernodeID + incomingChallengeMessage.RespondingSupernodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.MerklerootWhenChallengeSent
+	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeId + incomingChallengeMessage.RespondingMasternodeId + incomingChallengeMessage.ChallengeFile.FileHashToChallenge + challengeStatus.String() + messageType.String() + incomingChallengeMessage.MerklerootWhenChallengeSent
 	messageID := utils.GetHashFromString(messageIDInputData)
 
-	var outgoingChallengeMessage = &ChallengeMessage{
-		MessageID:                    messageID,
+	var outgoingChallengeMessage = &pb.StorageChallengeData{
+		MessageId:                    messageID,
 		MessageType:                  messageType,
 		ChallengeStatus:              challengeStatus,
 		BlockNumChallengeSent:        incomingChallengeMessage.BlockNumChallengeSent,
 		BlockNumChallengeRespondedTo: incomingChallengeMessage.BlockNumChallengeRespondedTo,
 		BlockNumChallengeVerified:    blockNumChallengeVerified,
 		MerklerootWhenChallengeSent:  incomingChallengeMessage.MerklerootWhenChallengeSent,
-		ChallengingSupernodeID:       incomingChallengeMessage.ChallengingSupernodeID,
-		RespondingSupernodeID:        incomingChallengeMessage.RespondingSupernodeID,
-		FileHashToChallenge:          incomingChallengeMessage.FileHashToChallenge,
-		ChallengeSliceStartIndex:     incomingChallengeMessage.ChallengeSliceStartIndex,
-		ChallengeSliceEndIndex:       incomingChallengeMessage.ChallengeSliceEndIndex,
-		ChallengeSliceCorrectHash:    challengeCorrectHash,
-		ChallengeResponseHash:        incomingChallengeMessage.ChallengeResponseHash,
-		ChallengeID:                  incomingChallengeMessage.ChallengeID,
+		ChallengingMasternodeId:      incomingChallengeMessage.ChallengingMasternodeId,
+		RespondingMasternodeId:       incomingChallengeMessage.RespondingMasternodeId,
+		ChallengeFile: &pb.StorageChallengeDataChallengeFile{
+			FileHashToChallenge:      incomingChallengeMessage.ChallengeFile.FileHashToChallenge,
+			ChallengeSliceStartIndex: int64(incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex),
+			ChallengeSliceEndIndex:   int64(incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex),
+		},
+		ChallengeSliceCorrectHash: challengeCorrectHash,
+		ChallengeResponseHash:     incomingChallengeMessage.ChallengeResponseHash,
+		ChallengeId:               incomingChallengeMessage.ChallengeId,
 	}
 
 	blocksToRespondToStorageChallenge := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
-	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug("Supernode " + outgoingChallengeMessage.RespondingSupernodeID + " responded to storage challenge for file hash " + outgoingChallengeMessage.FileHashToChallenge + " in " + fmt.Sprint(blocksToRespondToStorageChallenge) + " blocks!")
+	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug("Supernode " + outgoingChallengeMessage.RespondingMasternodeId + " responded to storage challenge for file hash " + outgoingChallengeMessage.ChallengeFile.FileHashToChallenge + " in " + fmt.Sprint(blocksToRespondToStorageChallenge) + " blocks!")
 
-	s.repository.SaveChallengMessageState(
+	task.repository.SaveChallengMessageState(
 		ctx,
 		saveStatus,
-		outgoingChallengeMessage.ChallengeID,
-		outgoingChallengeMessage.ChallengingSupernodeID,
+		outgoingChallengeMessage.ChallengeId,
+		outgoingChallengeMessage.ChallengingMasternodeId,
 		outgoingChallengeMessage.BlockNumChallengeSent,
 	)
 
 	return nil
 }
 
-func (s *StorageChallengeService) validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage *ChallengeMessage) error {
-	if incomingChallengeMessage.ChallengeStatus != statusResponded {
+func (task *StorageChallengeTask) validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage *pb.StorageChallengeData) error {
+	if incomingChallengeMessage.ChallengeStatus != pb.StorageChallengeData_Status_RESPONDED {
 		return fmt.Errorf("incorrect status to verify storage challenge")
 	}
-	if incomingChallengeMessage.MessageType != storageChallengeResponseMessage {
+	if incomingChallengeMessage.MessageType != pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE {
 		return fmt.Errorf("incorrect message type to verify storage challenge")
 	}
 	return nil
