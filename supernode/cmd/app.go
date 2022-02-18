@@ -268,11 +268,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterCascade(cascadeRegister),
 		supernode.NewRegisterCascade(cascadeRegister),
 		walletnode.NewDownloadNft(nftDownload),
-		// supernode.NewStorageChallenger(storageChallenger),
+		supernode.NewStorageChallengeGRPC(storageChallenger),
 		healthcheck.NewHealthCheck(statsMngr),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
-	// return runServices(ctx, metadb, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, database, userdataProcess, statsMngr, debugSerivce)
-	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, statsMngr, debugSerivce, storageChallenger)
+	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, statsMngr, debugSerivce, storageChallenger, cascadeRegister)
 }

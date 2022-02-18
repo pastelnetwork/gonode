@@ -86,6 +86,8 @@ func NewService(cfg *Config, fileStorage storage.FileStorageInterface, pastelCli
 	}
 
 	return &StorageChallengeService{
+		config:                        cfg,
+		SuperNodeService:              common.NewSuperNodeService(fileStorage, pastelClient, p2p, rqClient),
 		nodeClient:                    nodeClient,
 		storageChallengeExpiredBlocks: cfg.StorageChallengeExpiredBlocks,
 		pclient:                       pastelClient,

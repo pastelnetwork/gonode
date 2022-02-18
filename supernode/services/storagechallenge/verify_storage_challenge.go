@@ -39,7 +39,6 @@ func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, in
 	var saveStatus string
 
 	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (blocksVerifyStorageChallengeInBlocks <= task.storageChallengeExpiredBlocks) {
-
 		challengeStatus = pb.StorageChallengeData_Status_SUCCEEDED
 		saveStatus = "succeeded"
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(fmt.Sprintf("Supernode %s correctly responded in %d blocks to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeId, blocksVerifyStorageChallengeInBlocks, incomingChallengeMessage.ChallengeFile.FileHashToChallenge))

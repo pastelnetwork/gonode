@@ -13,7 +13,6 @@ const (
 // Storage challenge task will manage response to storage challenge requests
 type StorageChallengeTask struct {
 	*common.SuperNodeTask
-	*common.DupeDetectionHandler
 	*StorageChallengeService
 
 	storage *common.StorageHandler
