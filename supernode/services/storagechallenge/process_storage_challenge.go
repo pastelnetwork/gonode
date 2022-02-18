@@ -22,7 +22,7 @@ func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, i
 
 	/* ----------------------------------------------- */
 	/* ----- Main logic implementation goes here ----- */
-	challengeFileData, err := task.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.ChallengeFile.FileHashToChallenge, true)
+	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingChallengeMessage.ChallengeFile.FileHashToChallenge, true)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not read file data in to memory")
 		return err
@@ -68,7 +68,7 @@ func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, i
 		return err
 	}
 
-	task.repository.SaveChallengMessageState(
+	task.SaveChallengMessageState(
 		ctx,
 		"respond",
 		outgoingChallengeMessage.ChallengeId,

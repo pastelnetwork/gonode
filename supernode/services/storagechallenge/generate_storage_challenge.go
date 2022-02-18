@@ -19,7 +19,7 @@ func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) 
 	/* ------------------------------------------------- */
 	/* ------- Original implementation goes here ------- */
 	// list all RQ symbol keys from nft ticket
-	sliceOfFileHashes, err := task.repository.ListSymbolFileKeysFromNFTTicket(ctx)
+	sliceOfFileHashes, err := task.ListSymbolFileKeysFromNFTTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
 		return err
@@ -27,7 +27,7 @@ func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) 
 
 	sliceToCheckIfFileContainedByLocalSupernode := make([]bool, 0)
 	for _, currentFileHash := range sliceOfFileHashes {
-		_, err = task.repository.GetSymbolFileByKey(ctx, currentFileHash, true)
+		_, err = task.GetSymbolFileByKey(ctx, currentFileHash, true)
 		if err == nil {
 			sliceToCheckIfFileContainedByLocalSupernode = append(sliceToCheckIfFileContainedByLocalSupernode, true)
 		} else {
@@ -59,7 +59,7 @@ func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) 
 
 	// get all Supernode by pastel client, choose randomly challenging Supernode id from this list
 	//    this seems like a weak way to find a list of supernodes, might need a more solid way later.
-	listOfSupernodes, err := task.repository.GetListOfSupernode(ctx)
+	listOfSupernodes, err := task.GetListOfSupernode(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get list of Supernode using pastel client")
 		return err
@@ -73,7 +73,7 @@ func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) 
 	// 	log.WithContext(ctx).WithError(err).Error("could not get random challenging Supernode from list")
 	// 	return err
 	// }
-	sliceOfChallengingSupernodeIDsForBlock := task.repository.GetNClosestSupernodeIDsToComparisonString(ctx, numberOfSupernodesToIssueChallengePerBlock, merkleroot, listOfSupernodes)
+	sliceOfChallengingSupernodeIDsForBlock := task.GetNClosestSupernodeIDsToComparisonString(ctx, numberOfSupernodesToIssueChallengePerBlock, merkleroot, listOfSupernodes)
 	// challengingSupernodeID := challengingSupernode[0]
 
 	//If we are in the sliceOfChallengingSupernodeIDsForBlock, we need to generate a storage challenge.  Otherwise we don't.
@@ -89,23 +89,23 @@ func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) 
 	challengingSupernodeID := task.nodeID
 
 	comparisonStringForFileHashSelection := merkleroot + challengingSupernodeID
-	sliceOfFileHashesToChallenge := task.repository.GetNClosestFileHashesToAGivenComparisonString(ctx, challengesPerSupernodePerBlock, comparisonStringForFileHashSelection, sliceOfFileHashesStoredByChallenger)
+	sliceOfFileHashesToChallenge := task.GetNClosestFileHashesToAGivenComparisonString(ctx, challengesPerSupernodePerBlock, comparisonStringForFileHashSelection, sliceOfFileHashesStoredByChallenger)
 	sliceOfSupernodesToChallenge := make([]string, len(sliceOfFileHashesToChallenge))
 
 	//log.WithContext(ctx).Infof("Challenging Supernode %s is now selecting file hashes to challenge this block, and then for each one, selecting which Supernode to challenge...", challengingSupernodeID)
 	// find supernodes who have our file
 	for idx1, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
-		sliceOfSupernodesStoringFileHashExcludingChallenger := task.repository.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, task.numberOfChallengeReplicas, currentFileHashToChallenge, task.nodeID)
+		sliceOfSupernodesStoringFileHashExcludingChallenger := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, task.numberOfChallengeReplicas, currentFileHashToChallenge, task.nodeID)
 
 		comparisonStringForSupernodeSelection := merkleroot + currentFileHashToChallenge + challengingSupernodeID + utils.GetHashFromString(fmt.Sprint(idx1))
 
-		respondingSupernodeIDs := task.repository.GetNClosestSupernodeIDsToComparisonString(ctx, 1, comparisonStringForSupernodeSelection, sliceOfSupernodesStoringFileHashExcludingChallenger)
+		respondingSupernodeIDs := task.GetNClosestSupernodeIDsToComparisonString(ctx, 1, comparisonStringForSupernodeSelection, sliceOfSupernodesStoringFileHashExcludingChallenger)
 
 		sliceOfSupernodesToChallenge[idx1] = respondingSupernodeIDs[0]
 	}
 	// challenge those supernodes (they become responder) for the hash selected
 	for idx2, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
-		b, err := task.repository.GetSymbolFileByKey(ctx, currentFileHashToChallenge, false)
+		b, err := task.GetSymbolFileByKey(ctx, currentFileHashToChallenge, false)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("Supernode %s encountered an error generating storage challenges", challengingSupernodeID)
 			continue
@@ -148,7 +148,7 @@ func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) 
 			log.WithContext(ctx).WithError(err).Error("could not send process storage challenge")
 		}
 
-		task.repository.SaveChallengMessageState(ctx, "sent", challengeID, challengingSupernodeID, currentBlockCount)
+		task.SaveChallengMessageState(ctx, "sent", challengeID, challengingSupernodeID, currentBlockCount)
 	}
 
 	return nil

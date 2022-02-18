@@ -4,6 +4,8 @@
 //go:generate mockery --name=ProcessUserdataInterface
 //go:generate mockery --name=RegisterSenseInterface
 //go:generate mockery --name=RegisterCascadeInterface
+//go:generate mockery --name=StorageChallengeInterface
+
 
 package node
 
@@ -83,6 +85,7 @@ type RegisterCascadeInterface interface {
 	SendCascadeTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }
 
+// StorageChallengeInterface represents an interaction stream with supernodes for storage challenge communications
 type StorageChallengeInterface interface {
 	SuperNodePeerAPIInterface
 
