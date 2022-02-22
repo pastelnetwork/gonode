@@ -3,6 +3,8 @@ package cascaderegister
 import (
 	"context"
 	"encoding/hex"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -10,7 +12,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
-	"time"
 )
 
 // CascadeRegistrationTask is the task of registering new Sense.
@@ -21,10 +22,9 @@ type CascadeRegistrationTask struct {
 
 	storage *common.StorageHandler
 
-	cascadeRegMetadata *types.ActionRegMetadata
-	Ticket             *pastel.ActionTicket
-	Asset              *files.File
-	assetSizeBytes     int
+	Ticket         *pastel.ActionTicket
+	Asset          *files.File
+	assetSizeBytes int
 
 	Oti []byte
 
@@ -49,7 +49,7 @@ func (task *CascadeRegistrationTask) SendRegMetadata(_ context.Context, regMetad
 	if err := task.RequiredStatus(common.StatusConnected); err != nil {
 		return err
 	}
-	task.cascadeRegMetadata = regMetadata
+	task.ActionTicketRegMetadata = regMetadata
 
 	return nil
 }
@@ -168,8 +168,8 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 	// Verify APISenseTicket
 	_, err = task.Ticket.APICascadeTicket()
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("invalid api sense ticket")
-		return errors.Errorf("invalid api sense ticket: %w", err)
+		log.WithContext(ctx).WithError(err).Errorf("invalid api cascade ticket")
+		return errors.Errorf("invalid api cascade ticket: %w", err)
 	}
 
 	verified, err := task.PastelClient.Verify(ctx, ticket, string(creatorSignature), task.Ticket.Caller, pastel.SignAlgorithmED448)
@@ -397,6 +397,7 @@ func (task *CascadeRegistrationTask) removeArtifacts() {
 
 // NewCascadeRegistrationTask returns a new Task instance.
 func NewCascadeRegistrationTask(service *CascadeRegistrationService) *CascadeRegistrationTask {
+
 	task := &CascadeRegistrationTask{
 		SuperNodeTask:              common.NewSuperNodeTask(logPrefix),
 		CascadeRegistrationService: service,
@@ -407,12 +408,9 @@ func NewCascadeRegistrationTask(service *CascadeRegistrationService) *CascadeReg
 	task.RegTaskHelper = common.NewRegTaskHelper(task.SuperNodeTask,
 		task.config.PastelID, task.config.PassPhrase,
 		common.NewNetworkHandler(task.SuperNodeTask, service.nodeClient,
-			RegisterCascadeNodeMaker{}, service.PastelClient,
-			task.config.PastelID,
+			RegisterCascadeNodeMaker{}, service.PastelClient, task.config.PastelID,
 			service.config.NumberConnectedNodes),
-		service.PastelClient,
-		task.config.PreburntTxMinConfirmations,
-	)
+		service.PastelClient, task.config.PreburntTxMinConfirmations)
 
 	return task
 }

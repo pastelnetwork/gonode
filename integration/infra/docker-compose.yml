@@ -65,8 +65,6 @@ services:
     container_name: snserver-4
     hostname: snserver-4
     image: gonode-sn-service:0.1
-    logging:
-      driver: none
     environment:
       - INTEGRATION_TEST_ENV=true
     depends_on:

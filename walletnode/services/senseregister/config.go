@@ -7,7 +7,7 @@ import (
 const (
 	defaultSenseRegTxMinConfirmations = 12
 	defaultSenseActTxMinConfirmations = 5
-	defaultWaitTxnValidInterval       = 15
+	defaultWaitTxnValidInterval       = 5
 
 	defaultDDAndFingerprintsMax = 50
 )

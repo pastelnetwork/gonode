@@ -34,6 +34,7 @@ func NewNode() Node {
 		NftDownload: *nftdownload.NewConfig(),
 		API:         api.NewConfig(),
 		// UserdataProcess: *userdataprocess.NewConfig(),
-		SenseRegister: *senseregister.NewConfig(),
+		SenseRegister:   *senseregister.NewConfig(),
+		CascadeRegister: *cascaderegister.NewConfig(),
 	}
 }

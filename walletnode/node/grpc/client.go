@@ -36,6 +36,7 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 			grpc.WithInsecure(),
 			grpc.WithBlock(),
 		)
+
 	} else {
 		grpcConn, err = grpc.DialContext(ctx, address,
 			grpc.WithTransportCredentials(altsTCClient),

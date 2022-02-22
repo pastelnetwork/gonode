@@ -5,12 +5,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+
+	"io"
+	"runtime/debug"
+
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc"
-	"io"
-	"runtime/debug"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -32,7 +34,7 @@ type RegisterCascade struct {
 	*common.RegisterCascade
 }
 
-// Session implements walletnode.RegisterSenseServer.Session()
+// Session implements walletnode.RegisterCascadeServer.Session()
 func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
@@ -44,7 +46,7 @@ func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer)
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewSenseRegistrationTask()
+		task = service.NewCascadeRegistrationTask()
 	}
 	go func() {
 		<-task.Done()
@@ -69,6 +71,7 @@ func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer)
 	resp := &pb.SessionReply{
 		SessID: task.ID(),
 	}
+
 	if err := stream.Send(resp); err != nil {
 		return errors.Errorf("send handshake response: %w", err)
 	}

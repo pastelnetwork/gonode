@@ -275,6 +275,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 		log.WithContext(ctx).WithError(err).Errorf("Failed to connect to primary node %q", primary)
 		return nil, fmt.Errorf("connect: %w", err)
 	}
+
 	if err := primary.Session(ctx, true); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("Failed to open session with primary node %q", primary)
 		return nil, fmt.Errorf("session: %w", err)
