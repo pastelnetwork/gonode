@@ -169,7 +169,6 @@ func (service *RegisterNft) SendRegMetadata(ctx context.Context, req *pb.SendReg
 }
 
 // ProbeImage implements walletnode.RegisterNftServer.ProbeImage()
-
 //As part of register NFT New Art Registration Workflow from
 // https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
 // Step number 4.A begins here, with file reception
