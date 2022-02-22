@@ -2,8 +2,6 @@ package helper
 
 import "fmt"
 
-const ()
-
 type UploadImageReq struct {
 	File     []byte
 	Filename string
@@ -39,17 +37,17 @@ type RegistrationReq struct {
 	ThumbnailCoordinate       ThumbnailCoordinate `json:"thumbnail_coordinate"`
 }
 
-type SenseActionDetailReq struct {
+type ActionDetailReq struct {
 	AppPastelID         string `json:"app_pastelid"`
 	ActionDataHash      string `json:"action_data_hash"`
 	ActionDataSignature string `json:"action_data_signature"`
 }
 
-type SenseActionDetailResp struct {
+type ActionDetailResp struct {
 	EstimatedFee float64 `json:"estimated_fee"`
 }
 
-type SenseStartTaskReq struct {
+type SenseCascadeStartTaskReq struct {
 	AppPastelID           string `json:"app_pastelid"`
 	BurnTXID              string `json:"burn_txid"`
 	AppPastelIDPassphrase string `json:"app_pastelid_passphrase"`
@@ -71,6 +69,8 @@ func GetNFTDetailURI(baseURI, txid string) string {
 	return fmt.Sprintf("%s/%s/%s", baseURI, "nfts", txid)
 }
 
+// Sense
+
 func GetSenseUploadImageURI(baseURI string) string {
 	return fmt.Sprintf("%s/%s", baseURI, "openapi/sense/upload")
 }
@@ -85,4 +85,22 @@ func GetSenseStartTaskURI(baseURI, imageID string) string {
 
 func GetSenseTaskStateURI(taskID string) string {
 	return fmt.Sprintf("openapi/sense/start/%s/state", taskID)
+}
+
+// Cascade
+
+func GetCascadeUploadImageURI(baseURI string) string {
+	return fmt.Sprintf("%s/%s", baseURI, "openapi/cascade/upload")
+}
+
+func GetCascadeActionURI(baseURI, imageID string) string {
+	return fmt.Sprintf("%s/%s/%s", baseURI, "openapi/cascade/details", imageID)
+}
+
+func GetCascadeStartTaskURI(baseURI, imageID string) string {
+	return fmt.Sprintf("%s/%s/%s", baseURI, "openapi/cascade/start", imageID)
+}
+
+func GetCascadeTaskStateURI(taskID string) string {
+	return fmt.Sprintf("openapi/cascade/start/%s/state", taskID)
 }

@@ -23,7 +23,7 @@ const (
 	HttpPost   = "POST"
 	HttpDelete = "DELETE"
 	// wsExpectedResponseTimeout in seconds until the websocket recieves the expected response
-	wsExpectedResponseTimeout = 160
+	wsExpectedResponseTimeout = 200
 )
 
 // ItHelper is used by integration tests to make requests to server
@@ -169,6 +169,8 @@ func DoWebSocketReq(addr, path, expectedKey, expectedValue string) error {
 				log.Printf("ws expected key: %s - response: %s\n", expectedKey, val)
 				if val == expectedValue {
 					done <- true
+				} else if val == "Request Rejected" {
+					done <- false
 				}
 			}
 		}
@@ -179,8 +181,12 @@ func DoWebSocketReq(addr, path, expectedKey, expectedValue string) error {
 		return errors.New("context cancelled")
 	case <-time.After(wsExpectedResponseTimeout * time.Second):
 		return errors.New("timeout")
-	case <-done:
-		return nil
+	case val := <-done:
+		if val {
+			return nil
+		}
+
+		return errors.New("task failed (Request Rejected), please see container logs")
 	}
 
 }

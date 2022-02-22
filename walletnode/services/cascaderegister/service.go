@@ -126,12 +126,8 @@ func (service *CascadeRegistrationService) ValidateDetailsAndCalculateFee(ctx co
 // NewService returns a new Service instance
 // 	NB: Because NewNftApiHandler calls AddTask, a CascadeRegisterTask will actually
 //		be instantiated instead of a generic Task.
-func NewService(
-	config *Config,
-	pastelClient pastel.Client,
-	nodeClient node.ClientInterface,
-	fileStorage storage.FileStorageInterface,
-	db storage.KeyValue, raptorqClient rqnode.ClientInterface,
+func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
+	fileStorage storage.FileStorageInterface, db storage.KeyValue, raptorqClient rqnode.ClientInterface,
 ) *CascadeRegistrationService {
 	return &CascadeRegistrationService{
 		Worker:        task.NewWorker(),

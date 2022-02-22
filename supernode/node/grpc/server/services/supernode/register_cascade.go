@@ -40,9 +40,10 @@ func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer)
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewSenseRegistrationTask()
+		task = service.NewCascadeRegistrationTask()
 		isTaskNew = true
 	}
+
 	go func() {
 		<-task.Done()
 		cancel()
@@ -100,7 +101,7 @@ func (service *RegisterCascade) SendCascadeTicketSignature(ctx context.Context, 
 		return nil, err
 	}
 
-	if err := task.AddPeerTicketSignature(req.NodeID, req.Signature, sc.StatusImageProbed); err != nil {
+	if err := task.AddPeerTicketSignature(req.NodeID, req.Signature, sc.StatusAssetUploaded); err != nil {
 		return nil, errors.Errorf("add peer signature %w", err)
 	}
 

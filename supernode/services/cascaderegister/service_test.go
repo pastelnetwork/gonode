@@ -3,9 +3,10 @@ package cascaderegister
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/files"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -172,7 +173,7 @@ func TestServiceNewTask(t *testing.T) {
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
 			go service.Run(ctx)
-			task := service.NewSenseRegistrationTask()
+			task := service.NewCascadeRegistrationTask()
 			assert.Equal(t, service, task.CascadeRegistrationService)
 		})
 	}
