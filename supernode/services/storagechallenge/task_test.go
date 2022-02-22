@@ -2,6 +2,7 @@ package storagechallenge
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"testing"
 
@@ -24,7 +25,9 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 		storage                 *common.StorageHandler
 	}
 	type args struct {
-		ctx context.Context
+		ctx        context.Context
+		MerkleRoot string
+		PastelID   string
 	}
 	tests := map[string]struct {
 		name    string
@@ -32,8 +35,18 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		"success": {
-			args:    args{},
+		"my_node_not_challenger": {
+			args: args{
+				MerkleRoot: "aaaaaaaaa",
+				PastelID:   "A",
+			},
+			wantErr: false,
+		},
+		"my_node_is_challenger": {
+			args: args{
+				MerkleRoot: hex.EncodeToString([]byte("PrimaryID")),
+				PastelID:   hex.EncodeToString([]byte("PrimaryID")),
+			},
 			wantErr: false,
 		},
 	}
@@ -57,12 +70,24 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 			}
 			ticket.RegTicketData.NFTTicket = b
 
+			nodes := pastel.MasterNodes{}
+			nodes = append(nodes, pastel.MasterNode{ExtKey: "PrimaryID"})
+			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
+			nodes = append(nodes, pastel.MasterNode{ExtKey: "B"})
+			nodes = append(nodes, pastel.MasterNode{ExtKey: "C"})
+			nodes = append(nodes, pastel.MasterNode{ExtKey: "D"})
+			nodes = append(nodes, pastel.MasterNode{ExtKey: "5072696d6172794944"})
+
 			pMock := pastelMock.NewMockClient(t)
 			pMock.ListenOnRegTickets(pastel.RegTickets{
 				ticket,
-			}, nil).ListenOnGetBlockCount(1, nil).ListenOnGetBlockVerbose1(nil, nil)
+			}, nil).ListenOnGetBlockCount(1, nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
+				MerkleRoot: tt.args.MerkleRoot,
+			}, nil).ListenOnMasterNodesExtra(nodes, nil)
 
-			p2pClientMock := p2pMock.NewMockClient(t).ListenOnRetrieve(nil, nil)
+			closestNodes := []string{"A", "B", "C", "D"}
+			retrieveValue := []byte("I retrieved this result")
+			p2pClientMock := p2pMock.NewMockClient(t).ListenOnRetrieve(retrieveValue, nil).ListenOnNClosestNodes(closestNodes[0:2], nil)
 
 			rqClientMock := rqMock.NewMockClient(t)
 			rqClientMock.ListenOnEncodeInfo(&rqnode.EncodeInfo{}, nil)
@@ -70,17 +95,19 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 			// rqClientMock.ListenOnConnect(tt.args.connectErr)
 
 			clientMock := sctest.NewMockClient(t)
-			clientMock.ListenOnConnect("", nil)
+			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().ListenOnProcessStorageChallengeFunc(nil)
 
 			fsMock := storageMock.NewMockFileStorage()
 			// storage := files.NewStorage(fsMock)
 
 			testConfig := NewConfig()
+			testConfig.PastelID = tt.args.PastelID
 
 			task := StorageChallengeTask{
 				SuperNodeTask:           tt.fields.SuperNodeTask,
-				StorageChallengeService: NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, rqClientMock, nil),
+				StorageChallengeService: NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, rqClientMock, defaultChallengeStateLogging{}),
 				storage:                 common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
+				stateStorage:            defaultChallengeStateLogging{},
 			}
 
 			if err := task.GenerateStorageChallenges(tt.args.ctx); (err != nil) != tt.wantErr {

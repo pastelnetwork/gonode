@@ -12,6 +12,8 @@ const (
 	RetrieveMethod = "Retrieve"
 	// StoreMethod represent Store name method
 	StoreMethod = "Store"
+	//NClosestNodes mocks getting the n closest nodes to a given string
+	NClosestMethod = "NClosestNodes"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -48,5 +50,12 @@ func (client *Client) AssertRetrieveCall(expectedCalls int, arguments ...interfa
 //  ListenOnStore listening  Store and returns id and error from args
 func (client *Client) ListenOnStore(id string, err error) *Client {
 	client.On(StoreMethod, mock.Anything, mock.Anything).Return(id, err)
+	return client
+}
+
+// ListenOnNClosestNodes returns retArr and error from args
+func (client *Client) ListenOnNClosestNodes(retArr []string, err error) *Client {
+
+	client.On(NClosestMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(retArr, err)
 	return client
 }

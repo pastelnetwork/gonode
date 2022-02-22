@@ -42,19 +42,19 @@ func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, in
 		challengeStatus = pb.StorageChallengeData_Status_SUCCEEDED
 		saveStatus = "succeeded"
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(fmt.Sprintf("Supernode %s correctly responded in %d blocks to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeId, blocksVerifyStorageChallengeInBlocks, incomingChallengeMessage.ChallengeFile.FileHashToChallenge))
-		task.SaveChallengMessageState(ctx, "succeeded", incomingChallengeMessage.ChallengeId, incomingChallengeMessage.ChallengingMasternodeId, incomingChallengeMessage.BlockNumChallengeSent)
+		task.SaveChallengeMessageState(ctx, "succeeded", incomingChallengeMessage.ChallengeId, incomingChallengeMessage.ChallengingMasternodeId, incomingChallengeMessage.BlockNumChallengeSent)
 	} else if incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash {
 
 		challengeStatus = pb.StorageChallengeData_Status_FAILED_TIMEOUT
 		saveStatus = "timeout"
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(fmt.Sprintf("Supernode %s  correctly responded in %d blocks to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingChallengeMessage.RespondingMasternodeId, blocksVerifyStorageChallengeInBlocks, incomingChallengeMessage.ChallengeFile.FileHashToChallenge))
-		task.SaveChallengMessageState(ctx, "timeout", incomingChallengeMessage.ChallengeId, incomingChallengeMessage.ChallengingMasternodeId, incomingChallengeMessage.BlockNumChallengeSent)
+		task.SaveChallengeMessageState(ctx, "timeout", incomingChallengeMessage.ChallengeId, incomingChallengeMessage.ChallengingMasternodeId, incomingChallengeMessage.BlockNumChallengeSent)
 	} else {
 
 		challengeStatus = pb.StorageChallengeData_Status_FAILED_INCORRECT_RESPONSE
 		saveStatus = "failed"
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(fmt.Sprintf("Supernode %s failed by incorrectly responding to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeId, incomingChallengeMessage.ChallengeFile.FileHashToChallenge))
-		task.SaveChallengMessageState(ctx, "failed", incomingChallengeMessage.ChallengeId, incomingChallengeMessage.ChallengingMasternodeId, incomingChallengeMessage.BlockNumChallengeSent)
+		task.SaveChallengeMessageState(ctx, "failed", incomingChallengeMessage.ChallengeId, incomingChallengeMessage.ChallengingMasternodeId, incomingChallengeMessage.BlockNumChallengeSent)
 	}
 
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeId + incomingChallengeMessage.RespondingMasternodeId + incomingChallengeMessage.ChallengeFile.FileHashToChallenge + challengeStatus.String() + messageType.String() + incomingChallengeMessage.MerklerootWhenChallengeSent
@@ -83,7 +83,7 @@ func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, in
 	blocksToRespondToStorageChallenge := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
 	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug("Supernode " + outgoingChallengeMessage.RespondingMasternodeId + " responded to storage challenge for file hash " + outgoingChallengeMessage.ChallengeFile.FileHashToChallenge + " in " + fmt.Sprint(blocksToRespondToStorageChallenge) + " blocks!")
 
-	task.SaveChallengMessageState(
+	task.SaveChallengeMessageState(
 		ctx,
 		saveStatus,
 		outgoingChallengeMessage.ChallengeId,

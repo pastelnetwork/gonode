@@ -144,17 +144,17 @@ func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) 
 			ChallengeId:               challengeID,
 		}
 
-		if err = task.sendprocessStorageChallenge(ctx, outgoingChallengeMessage); err != nil {
+		if err = task.SendProcessStorageChallenge(ctx, outgoingChallengeMessage); err != nil {
 			log.WithContext(ctx).WithError(err).Error("could not send process storage challenge")
 		}
 
-		task.SaveChallengMessageState(ctx, "sent", challengeID, challengingSupernodeID, currentBlockCount)
+		task.SaveChallengeMessageState(ctx, "sent", challengeID, challengingSupernodeID, currentBlockCount)
 	}
 
 	return nil
 }
 
-func (task *StorageChallengeTask) sendprocessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
+func (task *StorageChallengeTask) SendProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
 	Supernodes, err := task.pclient.MasterNodesExtra(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendprocessStorageChallenge").WithError(err).Warn("could not get Supernode extra: ", err.Error())
@@ -189,6 +189,9 @@ func (task *StorageChallengeTask) sendprocessStorageChallenge(ctx context.Contex
 }
 
 func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashString string, blockHashString string, challengingSupernodeID string) (int, int) {
+	if totalDataLengthInBytes < 200 {
+		return 0, int(totalDataLengthInBytes) - 1
+	}
 	blockHashStringAsInt, _ := strconv.ParseInt(blockHashString, 16, 64)
 	blockHashStringAsIntStr := fmt.Sprint(blockHashStringAsInt)
 	stepSizeForIndicesStr := blockHashStringAsIntStr[len(blockHashStringAsIntStr)-1:] + blockHashStringAsIntStr[0:1]

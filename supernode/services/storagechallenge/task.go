@@ -3,6 +3,7 @@ package storagechallenge
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
@@ -34,6 +35,7 @@ func NewStorageChallengeTask(service *StorageChallengeService) *StorageChallenge
 	task := &StorageChallengeTask{
 		SuperNodeTask:           common.NewSuperNodeTask(logPrefix),
 		StorageChallengeService: service,
+		stateStorage:            &defaultChallengeStateLogging{},
 	}
 	return task
 }
@@ -48,20 +50,36 @@ type SaveChallengeState interface {
 	OnTimeout(ctx context.Context, challengeID, nodeID string, sentBlock int32)
 }
 
-func (task *StorageChallengeTask) SaveChallengMessageState(ctx context.Context, status string, challengeID, nodeID string, sentBlock int32) {
-	var caller func(ctx context.Context, challengeID, nodeID string, sentBlock int32)
+type defaultChallengeStateLogging struct{}
+
+func (cs defaultChallengeStateLogging) OnSent(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+	log.WithContext(ctx).WithPrefix(logPrefix).WithField("challengeID", challengeID).WithField("nodeID", nodeID).WithField("sentBlock", sentBlock).Println("Storage Challenge Sent")
+}
+func (cs defaultChallengeStateLogging) OnResponded(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+	log.WithContext(ctx).WithPrefix(logPrefix).WithField("challengeID", challengeID).WithField("nodeID", nodeID).WithField("sentBlock", sentBlock).Println("Storage Challenge Responded")
+}
+func (cs defaultChallengeStateLogging) OnSucceeded(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+	log.WithContext(ctx).WithPrefix(logPrefix).WithField("challengeID", challengeID).WithField("nodeID", nodeID).WithField("sentBlock", sentBlock).Println("Storage Challenge Succeeded")
+}
+func (cs defaultChallengeStateLogging) OnFailed(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+	log.WithContext(ctx).WithPrefix(logPrefix).WithField("challengeID", challengeID).WithField("nodeID", nodeID).WithField("sentBlock", sentBlock).Println("Storage Challenge Failed")
+}
+func (cs defaultChallengeStateLogging) OnTimeout(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+	log.WithContext(ctx).WithPrefix(logPrefix).WithField("challengeID", challengeID).WithField("nodeID", nodeID).WithField("sentBlock", sentBlock).Println("Storage Challenge Timed Out")
+}
+
+//SaveChallengeMessageState should be a function
+func (task *StorageChallengeTask) SaveChallengeMessageState(ctx context.Context, status string, challengeID, nodeID string, sentBlock int32) {
 	switch status {
 	case "sent":
-		caller = task.stateStorage.OnSent
+		task.stateStorage.OnSent(ctx, challengeID, nodeID, sentBlock)
 	case "respond":
-		caller = task.stateStorage.OnResponded
+		task.stateStorage.OnResponded(ctx, challengeID, nodeID, sentBlock)
 	case "succeeded":
-		caller = task.stateStorage.OnSucceeded
+		task.stateStorage.OnSucceeded(ctx, challengeID, nodeID, sentBlock)
 	case "failed":
-		caller = task.stateStorage.OnFailed
+		task.stateStorage.OnFailed(ctx, challengeID, nodeID, sentBlock)
 	case "timeout":
-		caller = task.stateStorage.OnTimeout
+		task.stateStorage.OnTimeout(ctx, challengeID, nodeID, sentBlock)
 	}
-
-	caller(ctx, challengeID, nodeID, sentBlock)
 }

@@ -19,6 +19,6 @@ type Client interface {
 	// Stats return status of p2p
 	Stats(ctx context.Context) (map[string]interface{}, error)
 
-	// NClosestNodes return n closest supernodes to a given string
+	// NClosestNodes return n closest supernodes to a given key string
 	NClosestNodes(ctx context.Context, n int, key string, ignores ...string) []string
 }

@@ -148,6 +148,10 @@ func ComputeXorDistanceBetweenTwoStrings(string1 string, string2 string) uint64 
 	xorDistance, _ := XORBytes(string1HashAsBytes, string2HashAsBytes)
 	xorDistanceAsInt := BytesToInt(xorDistance)
 	xorDistanceAsString := fmt.Sprint(xorDistanceAsInt)
+	if xorDistanceAsString == "0" {
+		zeroAsUint64, _ := strconv.ParseUint("0", 10, 64)
+		return zeroAsUint64
+	}
 	xorDistanceAsStringRescaled := fmt.Sprint(xorDistanceAsString[:len(xorDistanceAsString)-137])
 	xorDistanceAsUint64, _ := strconv.ParseUint(xorDistanceAsStringRescaled, 10, 64)
 	return xorDistanceAsUint64

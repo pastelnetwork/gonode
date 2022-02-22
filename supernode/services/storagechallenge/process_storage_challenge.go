@@ -68,7 +68,7 @@ func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, i
 		return err
 	}
 
-	task.SaveChallengMessageState(
+	task.SaveChallengeMessageState(
 		ctx,
 		"respond",
 		outgoingChallengeMessage.ChallengeId,
