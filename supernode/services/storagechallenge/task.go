@@ -11,6 +11,12 @@ const (
 	logPrefix = "storage-challenge-task"
 )
 
+// Storage challenge tasking is used to match other service patterns.  Largely just a wrapper for
+//  the individual generation, processing, and verification functions. Does also include
+//  the callbacks for what happens on different storage challenge states.  It is therefore
+//  possible that further development could link the three functions and perform operations
+//  based on state.
+
 // Storage challenge task will manage response to storage challenge requests
 type StorageChallengeTask struct {
 	*common.SuperNodeTask
@@ -42,6 +48,7 @@ func NewStorageChallengeTask(service *StorageChallengeService) *StorageChallenge
 
 //utils below
 
+//SaveChallengeState represents the callbacks for each step in the storage challenge process.
 type SaveChallengeState interface {
 	OnSent(ctx context.Context, challengeID, nodeID string, sentBlock int32)
 	OnResponded(ctx context.Context, challengeID, nodeID string, sentBlock int32)
@@ -50,8 +57,10 @@ type SaveChallengeState interface {
 	OnTimeout(ctx context.Context, challengeID, nodeID string, sentBlock int32)
 }
 
+//Placeholder for storage challenge state operations
 type defaultChallengeStateLogging struct{}
 
+//Below are stub functions that simply log the state and some basic information.  These could be extended later.
 func (cs defaultChallengeStateLogging) OnSent(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
 	log.WithContext(ctx).WithPrefix(logPrefix).WithField("challengeID", challengeID).WithField("nodeID", nodeID).WithField("sentBlock", sentBlock).Println("Storage Challenge Sent")
 }
@@ -68,7 +77,7 @@ func (cs defaultChallengeStateLogging) OnTimeout(ctx context.Context, challengeI
 	log.WithContext(ctx).WithPrefix(logPrefix).WithField("challengeID", challengeID).WithField("nodeID", nodeID).WithField("sentBlock", sentBlock).Println("Storage Challenge Timed Out")
 }
 
-//SaveChallengeMessageState should be a function
+//SaveChallengeMessageState can be called to perform the above functions based on the state of the storage challenge.
 func (task *StorageChallengeTask) SaveChallengeMessageState(ctx context.Context, status string, challengeID, nodeID string, sentBlock int32) {
 	switch status {
 	case "sent":

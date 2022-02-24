@@ -550,7 +550,7 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	return nil
 }
 
-// NClosestNodes get n closets node to a key string
+// NClosestNodes get n closest nodes to a key string
 func (s *DHT) NClosestNodes(_ context.Context, n int, key string, ignores ...*Node) []*Node {
 	nodeList := s.ht.closestContacts(n, base58.Decode(key), ignores)
 	return nodeList.Nodes

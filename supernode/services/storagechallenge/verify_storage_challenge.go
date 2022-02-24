@@ -10,6 +10,13 @@ import (
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
+//Verifying the storage challenge will occur if we are one of the <default 10> closest node ID's to the file hash being challenged.
+//  On receipt of challenge message we:
+// 		Validate it
+//  	Get the file assuming we host it locally (if not, return)
+//  	Compute the hash of the data at the indicated byte range
+//		If the hash is correct and within the given byte range, success is indicated otherwise failure is indicated via SaveChallengeMessageState
+
 func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) error {
 	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(incomingChallengeMessage.MessageType)
 	// Incoming challenge message validation
@@ -17,17 +24,18 @@ func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, in
 		return err
 	}
 
-	/* ----------------------------------------------- */
-	/* ----- Main logic implementation goes here ----- */
+	//Get the file assuming we host it locally (if not, return)
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingChallengeMessage.ChallengeFile.FileHashToChallenge, true)
 	if err != nil {
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not read file data in to memory", "file.ReadFileIntoMemory", err.Error())
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not read local file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
 		return err
 	}
 
+	//Compute the hash of the data at the indicated byte range
 	challengeCorrectHash := task.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex, incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex)
 	messageType := pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE
-	blockNumChallengeVerified, err := task.pclient.GetBlockCount(ctx)
+	//Identify current block count to see if validation was performed within the mandated length of time (default one block)
+	blockNumChallengeVerified, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not get current block count")
 		return err
@@ -38,6 +46,7 @@ func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, in
 	var challengeStatus pb.StorageChallengeDataStatus
 	var saveStatus string
 
+	// determine success or failure
 	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (blocksVerifyStorageChallengeInBlocks <= task.storageChallengeExpiredBlocks) {
 		challengeStatus = pb.StorageChallengeData_Status_SUCCEEDED
 		saveStatus = "succeeded"
@@ -60,6 +69,7 @@ func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, in
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeId + incomingChallengeMessage.RespondingMasternodeId + incomingChallengeMessage.ChallengeFile.FileHashToChallenge + challengeStatus.String() + messageType.String() + incomingChallengeMessage.MerklerootWhenChallengeSent
 	messageID := utils.GetHashFromString(messageIDInputData)
 
+	// Create a complete message - currently this goes nowhere.
 	var outgoingChallengeMessage = &pb.StorageChallengeData{
 		MessageId:                    messageID,
 		MessageType:                  messageType,
