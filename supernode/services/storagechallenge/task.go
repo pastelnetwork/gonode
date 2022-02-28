@@ -28,12 +28,16 @@ type StorageChallengeTask struct {
 
 //	RunHelper's cleanup function is currently nil as WIP will determine what needs to be cleaned.
 func (task *StorageChallengeTask) Run(ctx context.Context) error {
-	return task.RunHelper(ctx, nil)
+	return task.RunHelper(ctx, task.RemoveArtifacts)
 }
 
 // Task returns the task of the Storage Challenge by the id
 func (service *StorageChallengeService) Task(id string) *StorageChallengeTask {
 	return service.Worker.Task(id).(*StorageChallengeTask)
+}
+
+// Cleanup function defined here, can be filled in later
+func (task *StorageChallengeTask) RemoveArtifacts() {
 }
 
 // NewStorageChallengeTask returns a new Task instance.
