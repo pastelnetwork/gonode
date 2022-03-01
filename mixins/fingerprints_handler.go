@@ -3,8 +3,9 @@ package mixins
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
-	"math/rand"
 	"sync"
 
 	"github.com/DataDog/zstd"
@@ -121,6 +122,8 @@ func (h *FingerprintsHandler) GenerateDDAndFingerprintsIDs(_ context.Context, ma
 	}
 
 	ddEncoded := utils.B64Encode(ddDataJSON)
+	//signatures are already base64 encoded, and have been since they were returned from the SNs. This takes place
+	// in gonode/blob/master/pastel/dupe_detection.go
 
 	var buffer bytes.Buffer
 	buffer.Write(ddEncoded)
@@ -132,7 +135,11 @@ func (h *FingerprintsHandler) GenerateDDAndFingerprintsIDs(_ context.Context, ma
 	buffer.Write(h.SNsSignatures[2])
 	ddFpFile := buffer.Bytes()
 
-	ddAndFingerprintsIc := rand.Uint32()
+	//array of 4 random bytes
+	random_bytes := make([]byte, 4)
+	rand.Read(random_bytes)
+	//turn 4 random bytes into a uint32
+	ddAndFingerprintsIc := binary.LittleEndian.Uint32(random_bytes)
 	ids, _, err := pastel.GetIDFiles(ddFpFile, ddAndFingerprintsIc, max)
 	if err != nil {
 		return errors.Errorf("get ID Files: %w", err)

@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"encoding/base64"
+
 	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"fmt"
@@ -155,6 +156,8 @@ func (service *registerNft) SendRegMetadata(ctx context.Context, regMetadata *ty
 }
 
 // ProbeImage implements node.RegisterNft.ProbeImage()
+// https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+// Step 3, expect 4.B.5 in return
 func (service *registerNft) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)

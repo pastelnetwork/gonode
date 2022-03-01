@@ -52,7 +52,7 @@ func createInputDDFile(base string, data []byte, format string) (string, error) 
 	return filePath, nil
 }
 
-// call ddsever's ImageRarenessScore service
+// call ddserver's ImageRarenessScore service
 func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, client pb.DupeDetectionServerClient, img []byte, format string, blockHash string, pastelID string) (*pastel.DDAndFingerprints, error) {
 	if img == nil {
 		return nil, errors.Errorf("invalid data")
@@ -72,6 +72,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	// remove file after use
 	defer os.Remove(inputPath)
 
+	// 2/9/2022, we don't have this implemented yet, so this would fail
 	res, err := client.ImageRarenessScore(ctx, &req)
 	if err != nil {
 		return nil, errors.Errorf("send request: %w", err)
