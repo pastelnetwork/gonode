@@ -84,10 +84,12 @@ func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) 
 		log.WithContext(ctx).WithError(err).Error("could not get list of Supernode using pastel client")
 		return err
 	}
+
+	numberOfSupernodesDividedByThree := int(math.Ceil(float64(len(listOfSupernodes)) / 3))
 	// Calculate the number of supernodes to issue challenge per block
-	numberOfSupernodesToIssueChallengePerBlock := int(math.Ceil(float64(len(listOfSupernodes)) / 3))
+	numberOfSupernodesToIssueChallengePerBlock := numberOfSupernodesDividedByThree
 	// Calculate the challenges per challenger
-	challengesPerSupernodePerBlock := int(math.Ceil(float64(len(listOfSupernodes)) / 3))
+	challengesPerSupernodePerBlock := numberOfSupernodesDividedByThree
 
 	// Identify which supernodes should issue challenges for this block
 	sliceOfChallengingSupernodeIDsForBlock := task.GetNClosestSupernodeIDsToComparisonString(ctx, numberOfSupernodesToIssueChallengePerBlock, merkleroot, listOfSupernodes)

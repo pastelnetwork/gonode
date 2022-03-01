@@ -17,18 +17,18 @@ import (
 //  	Compute the hash of the data at the indicated byte range
 //		If the hash is correct and within the given byte range, success is indicated otherwise failure is indicated via SaveChallengeMessageState
 
-func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) error {
+func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
 	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(incomingChallengeMessage.MessageType)
 	// Incoming challenge message validation
 	if err := task.validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
-		return err
+		return nil, err
 	}
 
 	//Get the file assuming we host it locally (if not, return)
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingChallengeMessage.ChallengeFile.FileHashToChallenge, true)
 	if err != nil {
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not read local file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
-		return err
+		return nil, err
 	}
 
 	//Compute the hash of the data at the indicated byte range
@@ -38,7 +38,7 @@ func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, in
 	blockNumChallengeVerified, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not get current block count")
-		return err
+		return nil, err
 	}
 
 	blocksVerifyStorageChallengeInBlocks := blockNumChallengeVerified - incomingChallengeMessage.BlockNumChallengeSent
@@ -101,7 +101,7 @@ func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, in
 		outgoingChallengeMessage.BlockNumChallengeSent,
 	)
 
-	return nil
+	return outgoingChallengeMessage, nil
 }
 
 func (task *StorageChallengeTask) validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage *pb.StorageChallengeData) error {

@@ -69,19 +69,15 @@ func (s *StorageChallengeService) Run(ctx context.Context) error {
 
 	for {
 		select {
-		case _, ok := <-ticker.C:
+		case _ = <-ticker.C:
 			log.Println("Ticker has ticked")
 
-			if ok && s.CheckNextBlockAvailable(ctx) {
+			if s.CheckNextBlockAvailable(ctx) {
 				newCtx := context.Background()
 				task := s.NewStorageChallengeTask()
 				task.GenerateStorageChallenges(newCtx)
 			} else {
-				if !ok {
-					log.WithContext(ctx).Println("Storage challenge ticker malfunction")
-				} else {
-					log.WithContext(ctx).Println("Block not available")
-				}
+				log.WithContext(ctx).Println("Block not available")
 			}
 		case <-ctx.Done():
 			log.Println("Context done being called in generatestoragechallenge loop in service.go")

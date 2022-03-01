@@ -19,19 +19,19 @@ import (
 //   Sending the response to all other supernodes
 //	 Saving challenge state
 
-func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) error {
+func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
 	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug("Start processing storage challenge")
 
 	// incoming challenge message validation
 	if err := task.validateProcessingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Get the file to hash
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingChallengeMessage.ChallengeFile.FileHashToChallenge, true)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not read file data in to memory")
-		return err
+		return nil, err
 	}
 	// Get the hash of the chunk of the file we're supposed to hash
 	challengeResponseHash := task.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex, incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex)
@@ -42,7 +42,7 @@ func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, i
 	blockNumChallengeRespondedTo, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not get current block count")
-		return err
+		return nil, err
 	}
 
 	//Create the message to be validated
@@ -74,7 +74,7 @@ func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, i
 	// send to Supernodes to validate challenge response hash
 	if err = task.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage); err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not send processed challenge message to verifying node")
-		return err
+		return nil, err
 	}
 
 	task.SaveChallengeMessageState(
@@ -85,7 +85,7 @@ func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, i
 		outgoingChallengeMessage.BlockNumChallengeSent,
 	)
 
-	return err
+	return outgoingChallengeMessage, err
 }
 
 func (task *StorageChallengeTask) validateProcessingStorageChallengeIncomingData(incomingChallengeMessage *pb.StorageChallengeData) error {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	fuzz "github.com/google/gofuzz"
@@ -228,8 +229,9 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 				stateStorage:            defaultChallengeStateLogging{},
 			}
 
-			if err := task.ProcessStorageChallenge(tt.args.ctx, &tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
+			if resp, err := task.ProcessStorageChallenge(tt.args.ctx, &tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
 				t.Errorf("StorageChallengeTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
+				fmt.Println(resp)
 			}
 		})
 	}
@@ -405,8 +407,9 @@ func TestVerifyStorageChallenge(t *testing.T) {
 				stateStorage:            defaultChallengeStateLogging{},
 			}
 
-			if err := task.VerifyStorageChallenge(tt.args.ctx, &tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
+			if resp, err := task.VerifyStorageChallenge(tt.args.ctx, &tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
 				t.Errorf("StorageChallengeTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
+				fmt.Println(resp)
 			}
 		})
 	}
