@@ -350,9 +350,18 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
-		// fingerprintsHash := string(nftTicketData.AppTicketData.FingerprintsHash)
-		// https://pastel-network.atlassian.net/browse/PSL-155 - update it
-		fingerprintsHash := "TBD"
+		//quickly validate that there are DD and Fingerprint ID hashes and all of the hashes are the same
+		ddFPIDs := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
+		if len(ddFPIDs) < 1 {
+			return errors.Errorf("RegTicketData does not have properly registered DD and Fingerprint ID's")
+		}
+		for _, id := range ddFPIDs {
+			if id != ddFPIDs[0] {
+				return errors.Errorf("AppTicketData has DDandFingerprintIDs that don't match")
+			}
+		}
+		fingerprintsHash := ddFPIDs[0]
+
 		compressedFingerprintBytes, err := s.p2pClient.Retrieve(ctx, fingerprintsHash)
 		if err != nil {
 			log.DD().WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to retrieve fingerprint")
