@@ -1,7 +1,10 @@
 package mock
 
 import (
+	"encoding/json"
 	"fmt"
+
+	"github.com/pastelnetwork/gonode/pastel"
 
 	"github.com/pastelnetwork/gonode/integration/fakes/common/testconst"
 )
@@ -221,3 +224,47 @@ var getActionRegisterResp = `{
 }
 `
 var getActRegisterResp = fmt.Sprintf(`{"txid":"%s"}`, testconst.RegActTxID)
+
+var ticketOwnershipResp = `{
+	"NFT":"b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09",
+	"trade":"c4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef06"
+}
+`
+
+func getRegTicket() []byte {
+	ticket := pastel.RegTicket{
+		TXID: "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09",
+		RegTicketData: pastel.RegTicketData{
+			NFTTicketData: pastel.NFTTicket{
+				AppTicketData: pastel.AppTicket{
+					CreatorName: "Alan Majchrowicz",
+					RQIDs: []string{
+						"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
+					},
+					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
+						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+				},
+			},
+		},
+	}
+
+	artTicketBytes, _ := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
+
+	ticket.RegTicketData.NFTTicket = artTicketBytes
+	t, _ := json.Marshal(ticket)
+
+	return t
+}
+
+func getTradeTickets() []byte {
+	ticket := pastel.TradeTicket{
+		TXID: "c4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef06",
+		Ticket: pastel.TradeTicketData{
+			RegistrationTXID: "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09",
+		},
+	}
+
+	t, _ := json.Marshal([]pastel.TradeTicket{ticket})
+
+	return t
+}

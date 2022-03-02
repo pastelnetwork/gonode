@@ -166,7 +166,7 @@ func TestTaskGetSymbolIDs(t *testing.T) {
 
 			service := &NftDownloaderService{}
 			task := NewNftDownloadingTask(service)
-			rqIDs, err := task.getRQSymbolIDs(testCase.args.rqIDsData)
+			rqIDs, err := task.getRQSymbolIDs(context.Background(), "id", testCase.args.rqIDsData)
 			testCase.assertion(t, err)
 			if err == nil {
 				assert.Equal(t, testCase.returnRqIDS[:len(testCase.returnRqIDS)-1], rqIDs)

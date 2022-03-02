@@ -160,6 +160,28 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 		(p.Params[0] == "register") || (p.Params[0] == "activate") ||
 		(p.Params[0] == "find" && p.Params[1] == "action-act") {
 		p.Params = p.Params[:2]
+	} else if len(p.Params) > 4 && p.Params[0] == "tools" && p.Params[1] == "validateownership" {
+		p.Params = p.Params[:5]
+	} else if len(p.Params) > 2 && p.Params[0] == "list" && p.Params[1] == "trade" && p.Params[2] == "available" {
+		key := "tickets" + "*" + strings.Join(p.Params, "*")
+		data, err := h.store.Get(key)
+		if err != nil {
+			return nil, &jrpc2.ErrorObject{
+				Code:    jrpc2.InternalErrorCode,
+				Message: jrpc2.ErrorMsg("unable to fetch " + err.Error()),
+				Data:    "fetch failure",
+			}
+		}
+		toRet := []TradeTicket{}
+		if err := json.Unmarshal(data, &toRet); err != nil {
+			return nil, &jrpc2.ErrorObject{
+				Code:    jrpc2.InternalErrorCode,
+				Message: jrpc2.ErrorMsg("unable to unmarsal " + err.Error()),
+				Data:    "unmarshal failure",
+			}
+		}
+
+		return toRet, nil
 	}
 
 	data, err := h.handle("tickets", p.Params)
@@ -349,4 +371,24 @@ func (h *rpcHandler) HandleSendMany(params json.RawMessage) (interface{}, *jrpc2
 	}
 
 	return string(data), nil
+}
+
+type TradeTicket struct {
+	Height int             `json:"height"`
+	TXID   string          `json:"txid"`
+	Ticket TradeTicketData `json:"ticket"`
+}
+
+// TradeTicketData represents pastel Trade ticket data
+type TradeTicketData struct {
+	Type             string `json:"type"`              // "nft-trade"
+	Version          int    `json:"version"`           // version
+	PastelID         string `json:"pastelID"`          // PastelID of the buyer
+	SellTXID         string `json:"sell_txid"`         // txid with sale ticket
+	BuyTXID          string `json:"buy_txid"`          // txid with buy ticket
+	NFTTXID          string `json:"nft_txid"`          // txid with either 1) NFT activation ticket or 2) trade ticket in it
+	RegistrationTXID string `json:"registration_txid"` // txid with registration ticket
+	Price            string `json:"price"`
+	CopySerialNR     string `json:"copy_serial_nr"`
+	Signature        string `json:"signature"`
 }

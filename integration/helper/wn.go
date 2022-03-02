@@ -11,6 +11,10 @@ type UploadImageResp struct {
 	ImageID string `json:"image_id"`
 }
 
+type DownloadResp struct {
+	File string `json:"file"`
+}
+
 type ThumbnailCoordinate struct {
 	BottomRightX int `json:"bottom_right_x"`
 	BottomRightY int `json:"bottom_right_y"`
@@ -67,6 +71,10 @@ func GetRegistrationURI(baseURI string) string {
 
 func GetNFTDetailURI(baseURI, txid string) string {
 	return fmt.Sprintf("%s/%s/%s", baseURI, "nfts", txid)
+}
+
+func GetDownloadURI(baseURI, pid, txid string) string {
+	return fmt.Sprintf("%s/%s?pid=%s&txid=%s", baseURI, "nfts/download", pid, txid)
 }
 
 // Sense
