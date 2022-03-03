@@ -1,16 +1,20 @@
 package nftdownload
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
+	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 
 	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/utils"
 
 	// taskMock "github.com/pastelnetwork/gonode/common/service/task/test"
 
@@ -24,21 +28,27 @@ import (
 )
 
 func fakeRQIDsData(isValid bool) ([]byte, []string) {
-	rqIDs := []string{
-		"raptorQ ID1",
-		"raptorQ ID2",
-		"signature",
+	rqfile := &rqnode.RawSymbolIDFile{
+		ID:                "09f6c459-ec2a-4db1-a8fe-0648fd97b5cb",
+		PastelID:          "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
+		SymbolIdentifiers: []string{"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z"},
 	}
-	data := "fileID"
-	data += "\n" + "blockhash"
-	data += "\n" + "pastelID"
-	if isValid {
-		for _, id := range rqIDs {
-			data += "\n" + id
-		}
+
+	dataJSON, _ := json.Marshal(rqfile)
+	encoded := utils.B64Encode(dataJSON)
+
+	var buffer bytes.Buffer
+	buffer.Write(encoded)
+	buffer.WriteByte(46)
+	buffer.WriteString("test-signature")
+	buffer.WriteByte(46)
+	buffer.WriteString(strconv.Itoa(55))
+
+	compressedData, _ := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+
+	return compressedData, []string{
+		"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
 	}
-	rqIDsData := []byte(data)
-	return rqIDsData, rqIDs
 }
 
 func fakeRegiterTicket() pastel.RegTicket {
@@ -136,8 +146,7 @@ func TestTaskGetSymbolIDs(t *testing.T) {
 		rqIDsData []byte
 	}
 
-	rqIDsData, rqIDs := fakeRQIDsData(true)
-	invalidRQIDsData, _ := fakeRQIDsData(false)
+	rqIDsData, haveRqIDs := fakeRQIDsData(true)
 
 	testCases := []struct {
 		args        args
@@ -148,15 +157,8 @@ func TestTaskGetSymbolIDs(t *testing.T) {
 			args: args{
 				rqIDsData: rqIDsData,
 			},
-			returnRqIDS: rqIDs,
+			returnRqIDS: haveRqIDs,
 			assertion:   assert.NoError,
-		},
-		{
-			args: args{
-				rqIDsData: invalidRQIDsData,
-			},
-			returnRqIDS: nil,
-			assertion:   assert.Error,
 		},
 	}
 
@@ -167,9 +169,9 @@ func TestTaskGetSymbolIDs(t *testing.T) {
 			service := &NftDownloaderService{}
 			task := NewNftDownloadingTask(service)
 			rqIDs, err := task.getRQSymbolIDs(context.Background(), "id", testCase.args.rqIDsData)
-			testCase.assertion(t, err)
+			assert.Nil(t, err)
 			if err == nil {
-				assert.Equal(t, testCase.returnRqIDS[:len(testCase.returnRqIDS)-1], rqIDs)
+				assert.Equal(t, haveRqIDs, rqIDs)
 			}
 		})
 	}
