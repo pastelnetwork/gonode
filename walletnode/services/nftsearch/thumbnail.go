@@ -32,7 +32,7 @@ type response struct {
 }
 
 type request struct {
-	key    []byte
+	txid   string
 	respCh chan *response
 }
 
@@ -66,8 +66,8 @@ func (h *ThumbnailHandler) FetchMultiple(ctx context.Context, searchResult []*Re
 
 // FetchOne fetches single thumbnails by custom request
 //  The key is base58(thumbnail_hash)
-func (h *ThumbnailHandler) FetchOne(ctx context.Context, key []byte) ([]byte, error) {
-	data, err := h.fetch(ctx, key)
+func (h *ThumbnailHandler) FetchOne(ctx context.Context, txid string) ([]byte, error) {
+	data, err := h.fetch(ctx, txid)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Could not fetch thumbnails")
 		return nil, errors.Errorf("fetch thumbnails: %w", err)
@@ -115,8 +115,8 @@ func (h *ThumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNo
 					return
 				}
 
-				log.WithContext(ctx).Debugf("thumb-key: %v-%v", req.key, nodeID)
-				data, err := nftSearchNode.DownloadThumbnail(ctx, req.key)
+				log.WithContext(ctx).Debugf("thumb-txid: %v-%v", req.txid, nodeID)
+				data, err := nftSearchNode.DownloadThumbnail(ctx, req.txid)
 				req.respCh <- &response{err: err, data: data}
 			}
 		}
@@ -125,6 +125,7 @@ func (h *ThumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNo
 	return nil
 }
 
+//NB returning secondary hash likely broken currently
 func (h *ThumbnailHandler) fetchAll(ctx context.Context, searchResult []*RegTicketSearch, resultChan *chan *RegTicketSearch) error {
 	group, _ := errgroup.WithContext(ctx)
 
@@ -136,14 +137,14 @@ func (h *ThumbnailHandler) fetchAll(ctx context.Context, searchResult []*RegTick
 			tgroup, tgctx := errgroup.WithContext(ctx)
 			var t1Data, t2Data []byte
 			tgroup.Go(func() (err error) {
-				t1Data, err = h.fetch(tgctx, res.RegTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash)
+				t1Data, err = h.fetch(tgctx, res.RegTicket.TXID)
 				return err
 			})
 
-			tgroup.Go(func() (err error) {
-				t2Data, err = h.fetch(tgctx, res.RegTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail2Hash)
-				return err
-			})
+			// tgroup.Go(func() (err error) {
+			// 	t2Data, err = h.fetch(tgctx, res.RegTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail2Hash)
+			// 	return err
+			// })
 
 			if err := tgroup.Wait(); err != nil {
 				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("fetch Thumbnail")
@@ -164,9 +165,9 @@ func (h *ThumbnailHandler) fetchAll(ctx context.Context, searchResult []*RegTick
 }
 
 // fetch gets the actual thumbnail data from the network as bytes to be wrapped by the calling function
-func (h *ThumbnailHandler) fetch(ctx context.Context, key []byte) (data []byte, err error) {
+func (h *ThumbnailHandler) fetch(ctx context.Context, txid string) (data []byte, err error) {
 	respCh := make(chan *response)
-	req := request{key: key, respCh: respCh}
+	req := request{txid: txid, respCh: respCh}
 
 	go func() {
 		h.fetchersChan <- req

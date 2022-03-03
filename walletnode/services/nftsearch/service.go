@@ -72,7 +72,7 @@ func (service *NftSearchingService) GetThumbnail(ctx context.Context, regTicket 
 	if err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel); err != nil {
 		return nil, errors.Errorf("connect and setup fetchers: %w", err)
 	}
-	data, err = nftGetSearchTask.thumbnail.FetchOne(ctx, regTicket.RegTicketData.NFTTicketData.AppTicketData.PreviewHash)
+	data, err = nftGetSearchTask.thumbnail.FetchOne(ctx, regTicket.TXID)
 	if err != nil {
 		return nil, errors.Errorf("nftsearch get thumbnail fetchone error, there may be multiple thumbnails: %w", err)
 	}

@@ -8,6 +8,7 @@ service DownloadNft {
     // Download downloads NFT by given txid, timestamp and signature.
     rpc Download(DownloadRequest) returns (stream DownloadReply);
     rpc DownloadThumbnail(DownloadThumbnailRequest) returns (DownloadThumbnailReply);
+    rpc DownloadDDAndFingerprints(DownloadDDAndFingerprintsRequest) returns (DownloadDDAndFingerprintsReply);
 }
 
 message DownloadRequest {
@@ -22,9 +23,17 @@ message DownloadReply {
 }
 
 message DownloadThumbnailRequest {
-    bytes key = 1;
+    string txid = 1;
 }
 
 message DownloadThumbnailReply {
     bytes thumbnail = 1;
+}
+
+message DownloadDDAndFingerprintsRequest {
+    string txid = 1;
+}
+
+message DownloadDDAndFingerprintsReply {
+    bytes file = 1;
 }

@@ -77,13 +77,36 @@ func (service *DownloadNft) DownloadThumbnail(ctx context.Context, req *pb.Downl
 	defer task.Cancel()
 
 	// Call task download thumbnail
-	data, err := task.DownloadThumbnail(ctx, req.Key)
+	data, err := task.DownloadThumbnail(ctx, req.Txid)
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.DownloadThumbnailReply{
 		Thumbnail: data,
+	}, nil
+}
+
+// DownloadDDAndFingerprints returns ONE DDAndFingerprints file out of the 50 that exist as long as it decodes properly.
+func (service *DownloadNft) DownloadDDAndFingerprints(ctx context.Context, req *pb.DownloadDDAndFingerprintsRequest) (*pb.DownloadDDAndFingerprintsReply, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	// Create new task
+	task := service.NewNftDownloadingTask()
+	go func() {
+		<-task.Done()
+		cancel()
+	}()
+	defer task.Cancel()
+
+	// Call task download thumbnail
+	data, err := task.DownloadDDAndFingerprints(ctx, req.Txid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.DownloadDDAndFingerprintsReply{
+		File: data,
 	}, nil
 }
 

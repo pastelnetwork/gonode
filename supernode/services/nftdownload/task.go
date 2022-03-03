@@ -3,9 +3,12 @@ package nftdownload
 import (
 	"bytes"
 	"context"
-	"github.com/pastelnetwork/gonode/supernode/services/common"
+	"encoding/base64"
+	"encoding/json"
 	"strings"
 	"time"
+
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 
 	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
@@ -36,17 +39,26 @@ func (task *NftDownloadingTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.removeArtifacts)
 }
 
-// DownloadThumbnail downloads thumbnail of given hash.
-func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, key []byte) ([]byte, error) {
+// DownloadThumbnail gets thumbnail file from ticket based on id and returns the thumbnail.
+func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid string) ([]byte, error) {
 	var err error
 	if err = task.RequiredStatus(common.StatusTaskStarted); err != nil {
 		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
 		return nil, errors.Errorf("wrong status: %w", err)
 	}
 
+	regTicket, err := task.PastelClient.RegTicket(ctx, txid)
+	if err != nil {
+		log.WithContext(ctx).WithField("txid", txid).Error("Could not find regticket with txid")
+		return nil, errors.Errorf("Bad txid: %s", err)
+	}
+
+	//just getting the small thumbnail hash right now
+	thumbnailHash := regTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash
+
 	var file []byte
 	<-task.NewAction(func(ctx context.Context) error {
-		base58Key := base58.Encode(key)
+		base58Key := base58.Encode(thumbnailHash)
 		file, err = task.P2PClient.Retrieve(ctx, base58Key)
 		if err != nil {
 			err = errors.Errorf("fetch p2p key : %s, error: %w", string(base58Key), err)
@@ -57,6 +69,137 @@ func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, key []byt
 
 	return file, err
 }
+
+// DownloadDDAndFingerprints gets thumbnail file from ticket based on id and returns the thumbnail.
+func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, txid string) ([]byte, error) {
+	var err error
+	if err = task.RequiredStatus(common.StatusTaskStarted); err != nil {
+		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
+		return nil, errors.Errorf("wrong status: %w", err)
+	}
+
+	regTicket, err := task.PastelClient.RegTicket(ctx, txid)
+	if err != nil {
+		log.WithContext(ctx).WithField("txid", txid).Error("Could not find regticket with txid")
+		return nil, errors.Errorf("Bad txid: %s", err)
+	}
+
+	//just getting the small thumbnail hash right now
+	DDAndFingerprintsIDs := regTicket.RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
+
+	//utility function for getting the DD and Fingerprint Details given
+	//	a list of IDs (presumably from AppTicketData's DDAndFingerprintIDs), fingerprint IC, and fingerprint max
+	//1) iterate over DDAndFingerPrintsIDs to try to get the file from the p2p network
+	//2) try to decompress the file
+	//3) find the 4th to last period in the file. This will be where the separator bytes for signatures and counter were added
+	//4) remove the period and everything after
+	//5) try to base64 decode this
+	//6) try to JSON decode into a pastel.DDAndFingerprints
+	//7) if all these are successful, return this struct
+	//8) else, something got messed up somewhere so keep iterating through the files until successful
+
+	for i := 0; i < len(DDAndFingerprintsIDs); i++ {
+		file, err := task.P2PClient.Retrieve(ctx, DDAndFingerprintsIDs[i])
+		if err != nil {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails tried to get this file and failed. ")
+			continue
+		}
+		decompressedData, err := zstd.Decompress(nil, file)
+		if err != nil {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
+			continue
+		}
+		//base64 dataset doesn't contain periods, so we just find the first index of period and chop it and everything else
+		firstIndexOfSeparator := bytes.IndexByte(decompressedData, pastel.SeparatorByte)
+		if firstIndexOfSeparator < 1 {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails got a bad separator index. ")
+			continue
+		}
+		dataToBase64Decode := decompressedData[:firstIndexOfSeparator]
+		dataToJSONDecode := []byte{}
+		_, err = base64.RawStdEncoding.Decode(dataToJSONDecode, dataToBase64Decode)
+		if err != nil {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not base64 decode. ")
+			continue
+		}
+		ddAndFingerprintsStruct := &pastel.DDAndFingerprints{}
+		err = json.Unmarshal(dataToJSONDecode, ddAndFingerprintsStruct)
+		if err != nil {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not JSON unmarshal. ")
+			continue
+		}
+		//dataToJSONDecode is just the DDAndFingerprints file we'd like to return at this point
+		return dataToJSONDecode, nil
+
+	}
+	return nil, errors.Errorf("Could not get dd and fingerprints for any file tested.")
+}
+
+//utility functions to download dupe detection and fingerprint files
+// //
+// func (service *NftSearchingService) findAndConnectToTopValidSupernode(ctx context.Context, pastelID string, passphrase string) (node.ConnectionInterface, error) {
+// 	mns, err := service.pastelHandler.PastelClient.MasterNodesTop(ctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	topAddress := ""
+// 	gotANode := false
+// 	for _, mn := range mns {
+// 		if !gotANode && mn.ExtKey == "" || mn.ExtAddress == "" {
+// 			continue
+// 		}
+
+// 		// Ensures that the PastelId(mn.ExtKey) of MN node is registered
+// 		_, err = service.pastelHandler.PastelClient.FindTicketByID(ctx, mn.ExtKey)
+// 		if err != nil {
+// 			log.WithContext(ctx).WithField("mn", mn).Warn("FindTicketByID() failed")
+// 			continue
+// 		}
+// 		gotANode = true
+// 		topAddress = mn.ExtAddress
+// 	}
+// 	alts := &alts.SecInfo{
+// 		PastelID:   pastelID,
+// 		PassPhrase: passphrase,
+// 		Algorithm:  "ed448",
+// 	}
+
+// 	conn, err := service.nodeClient.Connect(ctx, topAddress, alts)
+// 	return conn, err
+// }
+
+//utility function for getting the DD and Fingerprint Details given
+//	a list of IDs (presumably from AppTicketData's DDAndFingerprintIDs), fingerprint IC, and fingerprint max
+//1) iterate over DDAndFingerPrintsIDs to try to get the file from the p2p network
+//2) try to decompress the file
+//3) find the 4th to last period in the file. This will be where the separator bytes for signatures and counter were added
+//4) remove the period and everything after
+//5) try to base64 decode this
+//6) try to JSON decode into a pastel.DDAndFingerprints
+//7) if all these are successful, return this struct
+//8) else, something got messed up somewhere so keep iterating through the files until successful
+// func (service *NftSearchingService) GetDDAndFingerprintDetailsFromAppTicketDetails(ctx context.Context, DDAndFingerprintsIDs []string) (*pastel.DDAndFingerprints, error) {
+//connect to a node
+// conn, err := service.findAndConnectToTopValidSupernode(ctx, opts.Configs.PastelID, opts.Configs.PassPhrase)
+// if err != nil {
+// 	log.WithContext(ctx).Warn("Failed to connect to supernode for ")
+// }
+
+// successfulDecoding := false
+// for i := 0; i < len(DDAndFingerprintsIDs) && !successfulDecoding; i++ {
+// 	file, err := conn.DownloadFile().DownloadFile(ctx, []byte(DDAndFingerprintsIDs[i]))
+// 	if err != nil {
+// 		log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails tried to get this file and failed. ")
+// 		continue
+// 	}
+// 	decompressedData, err := zstd.Decompress(nil, file)
+// 	if err != nil {
+// 		log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
+// 		continue
+// 	}
+
+// }
+// }
 
 // Download downloads image and return the image.
 func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {

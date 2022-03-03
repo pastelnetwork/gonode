@@ -23,6 +23,11 @@ func (conn *clientConn) DownloadNft() node.DownloadNftInterface {
 	return newDownloadNft(conn)
 }
 
+// // DownloadFile implements node.ConnectionInterface.DownloadFile()
+// func (conn *clientConn) DownloadFile() node.DownloadFileInterface {
+// 	return newDownloadFile(conn)
+// }
+
 // ProcessUserdata implements node.ConnectionInterface.ProcessUserdata()
 // func (conn *clientConn) ProcessUserdata() node.ProcessUserdataInterface {
 // 	return newProcessUserdata(conn)

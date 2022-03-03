@@ -124,7 +124,7 @@ func TestFetchOne(t *testing.T) {
 			err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel)
 			assert.Nil(t, err)
 
-			data, err := nftGetSearchTask.thumbnail.FetchOne(ctx, []byte{1, 2, 3})
+			data, err := nftGetSearchTask.thumbnail.FetchOne(ctx, "txid")
 			assert.Nil(t, err)
 			assert.Equal(t, data, tc.want)
 
