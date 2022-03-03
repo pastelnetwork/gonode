@@ -29,7 +29,6 @@ const (
 // ItHelper is used by integration tests to make requests to server
 type ItHelper struct {
 	client *http.Client
-	token  string
 }
 
 // NewItHelper returns instance of ItHelper with default http client
@@ -70,7 +69,7 @@ func (h *ItHelper) RequestRaw(method string, reqBody []byte, uri string, queryPa
 		return resp, 0, err
 	}
 
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %v", h.token))
+	request.Header.Set("Authorization", "passphrase")
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("app_pastelid_passphrase", "passphrase")
 

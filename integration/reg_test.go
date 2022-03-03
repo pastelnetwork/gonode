@@ -70,7 +70,7 @@ var _ = Describe("NFTRegistration", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(status).To(Equal(http.StatusCreated))
-			Expect(json.Unmarshal(regResp, regReply))
+			Expect(json.Unmarshal(regResp, regReply)).To(Succeed())
 
 			Expect(helper.DoWebSocketReq(strings.TrimPrefix(it.WNBaseURI, "http://"), helper.GetTaskStatePath(regReply.TaskID),
 				"status", "Task Completed")).To(Succeed())

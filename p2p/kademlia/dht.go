@@ -426,6 +426,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 
 		// stop search
 		if !searchRest && len(nl.Nodes) == 0 {
+			log.P2P().WithContext(ctx).Debugf("search stopped")
 			return nil, nil
 		}
 

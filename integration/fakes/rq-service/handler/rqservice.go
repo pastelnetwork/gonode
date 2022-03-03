@@ -72,7 +72,7 @@ func (service *RQService) EncodeMetaData(ctx context.Context, req *pb.EncodeMeta
 
 // Decode ...
 func (service *RQService) Decode(ctx context.Context, req *pb.DecodeRequest) (*pb.DecodeReply, error) {
-	key := "decode" + "*" + string(req.EncoderParameters) + "*" + req.Path
+	key := "decode" + "*"
 	data, err := service.store.Get(key)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch data: %w", err)

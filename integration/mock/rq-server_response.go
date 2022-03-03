@@ -11,3 +11,7 @@ var encodeResp = `{
 	"symbols_count": 5,
 	"path":"/testdata/symbols"
 }`
+
+var decodeResp = `{
+	"path":"/testdata/test.jpg"
+}`
