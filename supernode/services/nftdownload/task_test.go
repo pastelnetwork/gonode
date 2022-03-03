@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func fakeRQIDsData(isValid bool) ([]byte, []string) {
+func fakeRQIDsData() ([]byte, []string) {
 	rqfile := &rqnode.RawSymbolIDFile{
 		ID:                "09f6c459-ec2a-4db1-a8fe-0648fd97b5cb",
 		PastelID:          "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
@@ -146,7 +146,7 @@ func TestTaskGetSymbolIDs(t *testing.T) {
 		rqIDsData []byte
 	}
 
-	rqIDsData, haveRqIDs := fakeRQIDsData(true)
+	rqIDsData, haveRqIDs := fakeRQIDsData()
 
 	testCases := []struct {
 		args        args
@@ -288,7 +288,7 @@ func TestTaskDownload(t *testing.T) {
 	rqDecode := &rqnode.Decode{
 		File: file,
 	}
-	rqIDsData, _ := fakeRQIDsData(true)
+	rqIDsData, _ := fakeRQIDsData()
 
 	testCases := []struct {
 		args                            args
