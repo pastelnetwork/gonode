@@ -28,12 +28,14 @@ var _ = Describe("NFTDownload", func() {
 
 	BeforeEach(func() {
 		storeReq = &helper.StoreRequest{}
+		storeReply = &helper.StoreReply{}
+
 		downloadRsp = make(map[string]interface{})
 		rqfile = &helper.RawSymbolIDFile{
 			ID:       "09f6c459-ec2a-4db1-a8fe-0648fd97b5cb",
 			PastelID: "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
 		}
-		storeReply = &helper.StoreReply{}
+
 		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, itHelper)
 		symbol = []byte("test-symbol")
 	})

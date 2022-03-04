@@ -231,16 +231,31 @@ var ticketOwnershipResp = `{
 }
 `
 
-func getRegTicket() []byte {
+func getRegTickets() map[string][]byte {
+	resp := make(map[string][]byte)
+	txid := "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09"
 	ticket := pastel.RegTicket{
-		TXID: "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09",
+		TXID: txid,
 		RegTicketData: pastel.RegTicketData{
+			TotalCopies:   5,
+			CreatorHeight: 1,
+			StorageFee:    5,
 			NFTTicketData: pastel.NFTTicket{
+				BlockNum: 1,
+				Copies:   2,
 				AppTicketData: pastel.AppTicket{
-					CreatorName: "Alan Majchrowicz",
+					CreatorName:   "Alan Majchrowicz",
+					NFTTitle:      "nft-1",
+					NFTSeriesName: "nft-series",
 					RQIDs: []string{
 						"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
 					},
+					Thumbnail1Hash: []byte{
+						100, 96, 227, 164, 165, 224, 135, 208, 183, 238, 17, 48, 154, 166, 40,
+						20, 0, 215, 158, 151, 198, 123, 115, 153, 162, 81, 118, 200, 22, 153, 174, 130,
+					},
+					Thumbnail2Hash: []byte{249, 23, 138, 33, 126, 119, 199, 251, 112, 210, 244, 236, 144, 50,
+						149, 172, 64, 148, 230, 63, 44, 221, 144, 63, 173, 131, 97, 25, 227, 105, 181, 127},
 					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
 						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
 				},
@@ -252,8 +267,142 @@ func getRegTicket() []byte {
 
 	ticket.RegTicketData.NFTTicket = artTicketBytes
 	t, _ := json.Marshal(ticket)
+	resp[txid] = t
 
-	return t
+	a := pastel.RegTicket{
+		TXID: "reg_a",
+		RegTicketData: pastel.RegTicketData{
+			NFTTicketData: pastel.NFTTicket{
+				AppTicketData: pastel.AppTicket{
+					Thumbnail1Hash: []byte{
+						100, 96, 227, 164, 165, 224, 135, 208, 183, 238, 17, 48, 154, 166, 40,
+						20, 0, 215, 158, 151, 198, 123, 115, 153, 162, 81, 118, 200, 22, 153, 174, 130,
+					},
+					Thumbnail2Hash: []byte{249, 23, 138, 33, 126, 119, 199, 251, 112, 210, 244, 236, 144, 50,
+						149, 172, 64, 148, 230, 63, 44, 221, 144, 63, 173, 131, 97, 25, 227, 105, 181, 127},
+					CreatorName: "Alan Majchrowicz",
+					NFTTitle:    "Lake Superior Sky III",
+					TotalCopies: 10,
+					CreatorWrittenStatement: `Lakes Why settle for blank walls, when you can
+					 transform them into stunning vista points. Explore Lake Superiorfrom imaginative
+					  scenic abstracts to sublime beach landscapes captured on camera.`,
+					NFTKeywordSet: "Michigan,Midwest,Peninsula,Great Lakes,Lakeview",
+					NFTSeriesName: "Science Art Lake",
+				},
+			},
+			TotalCopies: 10,
+		},
+	}
+
+	artTicketBytes, _ = pastel.EncodeNFTTicket(&a.RegTicketData.NFTTicketData)
+	a.RegTicketData.NFTTicket = artTicketBytes
+	t, _ = json.Marshal(a)
+	resp["reg_a"] = t
+
+	b := pastel.RegTicket{
+		TXID: "reg_b",
+		RegTicketData: pastel.RegTicketData{
+			TotalCopies:   5,
+			CreatorHeight: 1,
+			StorageFee:    5,
+			NFTTicketData: pastel.NFTTicket{
+
+				BlockNum: 1,
+				Copies:   2,
+				AppTicketData: pastel.AppTicket{
+					Thumbnail1Hash: []byte{
+						100, 96, 227, 164, 165, 224, 135, 208, 183, 238, 17, 48, 154, 166, 40,
+						20, 0, 215, 158, 151, 198, 123, 115, 153, 162, 81, 118, 200, 22, 153, 174, 130,
+					},
+					Thumbnail2Hash: []byte{249, 23, 138, 33, 126, 119, 199, 251, 112, 210, 244, 236, 144, 50,
+						149, 172, 64, 148, 230, 63, 44, 221, 144, 63, 173, 131, 97, 25, 227, 105, 181, 127},
+					CreatorName:   "Mona Lisa",
+					NFTTitle:      "Art-b",
+					NFTSeriesName: "nft-series",
+					RQIDs: []string{
+						"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
+					},
+					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
+						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+				},
+			},
+		},
+	}
+
+	artTicketBytes, _ = pastel.EncodeNFTTicket(&b.RegTicketData.NFTTicketData)
+	b.RegTicketData.NFTTicket = artTicketBytes
+	t, _ = json.Marshal(b)
+	resp["reg_b"] = t
+
+	c := pastel.RegTicket{
+		TXID: "reg_c",
+		RegTicketData: pastel.RegTicketData{
+			TotalCopies:   5,
+			CreatorHeight: 1,
+			StorageFee:    5,
+			NFTTicketData: pastel.NFTTicket{
+				BlockNum: 1,
+				Copies:   2,
+				AppTicketData: pastel.AppTicket{
+					Thumbnail1Hash: []byte{
+						100, 96, 227, 164, 165, 224, 135, 208, 183, 238, 17, 48, 154, 166, 40,
+						20, 0, 215, 158, 151, 198, 123, 115, 153, 162, 81, 118, 200, 22, 153, 174, 130,
+					},
+					Thumbnail2Hash: []byte{249, 23, 138, 33, 126, 119, 199, 251, 112, 210, 244, 236, 144, 50,
+						149, 172, 64, 148, 230, 63, 44, 221, 144, 63, 173, 131, 97, 25, 227, 105, 181, 127},
+					CreatorName:   "Alan Border",
+					NFTTitle:      "nft-c",
+					NFTSeriesName: "nft-series-c",
+					RQIDs: []string{
+						"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
+					},
+					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
+						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+				},
+			},
+		},
+	}
+
+	artTicketBytes, _ = pastel.EncodeNFTTicket(&c.RegTicketData.NFTTicketData)
+	c.RegTicketData.NFTTicket = artTicketBytes
+	t, _ = json.Marshal(c)
+	resp["reg_c"] = t
+
+	d := pastel.RegTicket{
+		TXID: "reg_d",
+		RegTicketData: pastel.RegTicketData{
+			TotalCopies:   5,
+			CreatorHeight: 1,
+			StorageFee:    5,
+			NFTTicketData: pastel.NFTTicket{
+				BlockNum: 1,
+				Copies:   2,
+				AppTicketData: pastel.AppTicket{
+					Thumbnail1Hash: []byte{
+						100, 96, 227, 164, 165, 224, 135, 208, 183, 238, 17, 48, 154, 166, 40,
+						20, 0, 215, 158, 151, 198, 123, 115, 153, 162, 81, 118, 200, 22, 153, 174, 130,
+					},
+					Thumbnail2Hash: []byte{249, 23, 138, 33, 126, 119, 199, 251, 112, 210, 244, 236, 144, 50,
+						149, 172, 64, 148, 230, 63, 44, 221, 144, 63, 173, 131, 97, 25, 227, 105, 181, 127},
+					CreatorName:   "Dr watson",
+					NFTTitle:      "nft-d",
+					NFTSeriesName: "new series",
+					RQIDs: []string{
+						"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
+					},
+					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
+						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+				},
+			},
+		},
+	}
+
+	artTicketBytes, _ = pastel.EncodeNFTTicket(&d.RegTicketData.NFTTicketData)
+	d.RegTicketData.NFTTicket = artTicketBytes
+	t, _ = json.Marshal(d)
+	resp["reg_d"] = t
+
+	return resp
 }
 
 func getTradeTickets() []byte {
@@ -265,6 +414,66 @@ func getTradeTickets() []byte {
 	}
 
 	t, _ := json.Marshal([]pastel.TradeTicket{ticket})
+
+	return t
+}
+
+func getSearchActTicketsResponse() []byte {
+	a := pastel.ActTicket{
+		ActTicketData: pastel.ActTicketData{
+			PastelID:      testconst.ArtistPastelID,
+			Signature:     "signature",
+			Type:          "activation",
+			CreatorHeight: 1,
+			RegTXID:       "reg_a",
+			StorageFee:    20,
+			Version:       1,
+		},
+		TXID:   "a",
+		Height: 1,
+	}
+
+	b := pastel.ActTicket{
+		ActTicketData: pastel.ActTicketData{
+			PastelID:      testconst.ArtistPastelID,
+			Signature:     "signature",
+			Type:          "activation",
+			CreatorHeight: 1,
+			RegTXID:       "reg_b",
+			StorageFee:    20,
+			Version:       1,
+		},
+		TXID:   "b",
+		Height: 1,
+	}
+
+	c := pastel.ActTicket{ActTicketData: pastel.ActTicketData{
+		PastelID:      "pasteld-c",
+		Signature:     "signature",
+		Type:          "activation",
+		CreatorHeight: 1,
+		RegTXID:       "reg_c",
+		StorageFee:    20,
+		Version:       1,
+	},
+		TXID:   "c",
+		Height: 1,
+	}
+
+	d := pastel.ActTicket{ActTicketData: pastel.ActTicketData{
+		PastelID:      "pasteld-c",
+		Signature:     "signature",
+		Type:          "activation",
+		CreatorHeight: 1,
+		RegTXID:       "reg_d",
+		StorageFee:    20,
+		Version:       1,
+	},
+		TXID:   "d",
+		Height: 1,
+	}
+
+	t, _ := json.Marshal(pastel.ActTickets{a, b, c, d})
 
 	return t
 }
