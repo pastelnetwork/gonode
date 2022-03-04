@@ -20,6 +20,7 @@ type NftSearchingTask struct {
 	*common.WalletNodeTask
 
 	thumbnail *ThumbnailHandler
+	ddAndFP   *DDFPHandler
 
 	service *NftSearchingService
 	// request is search request from API call
@@ -191,6 +192,7 @@ func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest
 		request:        request,
 		resultChan:     make(chan *RegTicketSearch),
 		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
+		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
 	}
 }
 
@@ -198,6 +200,7 @@ func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest
 type NftGetSearchTask struct {
 	*common.WalletNodeTask
 	thumbnail *ThumbnailHandler
+	ddAndFP   *DDFPHandler
 }
 
 // NewNftGetSearchTask returns a new NftSearchingTask instance.
@@ -221,5 +224,6 @@ func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphra
 	return &NftGetSearchTask{
 		WalletNodeTask: task,
 		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
+		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
 	}
 }

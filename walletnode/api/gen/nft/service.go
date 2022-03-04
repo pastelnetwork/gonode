@@ -3,7 +3,7 @@
 // nft service
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package nft
 
@@ -259,8 +259,15 @@ type NftDetail struct {
 	NsfwScore float32
 	// pastel rareness score
 	RarenessScore float32
-	// internet rareness score
-	InternetRarenessScore *float32
+	// is this nft likely a duplicate
+	IsLikelyDupe *bool
+	// How many matches the scraper found on the first page of the google results
+	MatchesFoundOnFirstPage *uint32
+	// How many pages of search results the scraper found when searching for this
+	// image
+	NumberOfPagesOfResults *uint32
+	// URL of the first match on the first page of search results
+	URLOfFirstMatchInPage *string
 	// nsfw score
 	DrawingNsfwScore *float32
 	// nsfw score

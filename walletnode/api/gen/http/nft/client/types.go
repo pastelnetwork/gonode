@@ -3,7 +3,7 @@
 // nft HTTP client types
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package client
 
@@ -141,8 +141,15 @@ type NftGetResponseBody struct {
 	NsfwScore *float32 `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
 	// pastel rareness score
 	RarenessScore *float32 `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
-	// internet rareness score
-	InternetRarenessScore *float32 `form:"internet_rareness_score,omitempty" json:"internet_rareness_score,omitempty" xml:"internet_rareness_score,omitempty"`
+	// is this nft likely a duplicate
+	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
+	// How many matches the scraper found on the first page of the google results
+	MatchesFoundOnFirstPage *uint32 `form:"matches_found_on_first_page,omitempty" json:"matches_found_on_first_page,omitempty" xml:"matches_found_on_first_page,omitempty"`
+	// How many pages of search results the scraper found when searching for this
+	// image
+	NumberOfPagesOfResults *uint32 `form:"number_of_pages_of_results,omitempty" json:"number_of_pages_of_results,omitempty" xml:"number_of_pages_of_results,omitempty"`
+	// URL of the first match on the first page of search results
+	URLOfFirstMatchInPage *string `form:"URL_of_first_match_in_page,omitempty" json:"URL_of_first_match_in_page,omitempty" xml:"URL_of_first_match_in_page,omitempty"`
 	// nsfw score
 	DrawingNsfwScore *float32 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
 	// nsfw score
@@ -962,31 +969,34 @@ func NewNftSearchInternalServerError(body *NftSearchInternalServerErrorResponseB
 // HTTP "OK" response.
 func NewNftGetNftDetailOK(body *NftGetResponseBody) *nft.NftDetail {
 	v := &nft.NftDetail{
-		Version:               body.Version,
-		GreenAddress:          body.GreenAddress,
-		Royalty:               body.Royalty,
-		StorageFee:            body.StorageFee,
-		NsfwScore:             *body.NsfwScore,
-		RarenessScore:         *body.RarenessScore,
-		InternetRarenessScore: body.InternetRarenessScore,
-		DrawingNsfwScore:      body.DrawingNsfwScore,
-		NeutralNsfwScore:      body.NeutralNsfwScore,
-		SexyNsfwScore:         body.SexyNsfwScore,
-		PornNsfwScore:         body.PornNsfwScore,
-		HentaiNsfwScore:       body.HentaiNsfwScore,
-		PreviewThumbnail:      body.PreviewThumbnail,
-		Thumbnail1:            body.Thumbnail1,
-		Thumbnail2:            body.Thumbnail2,
-		Txid:                  *body.Txid,
-		Title:                 *body.Title,
-		Description:           *body.Description,
-		Keywords:              body.Keywords,
-		SeriesName:            body.SeriesName,
-		Copies:                *body.Copies,
-		YoutubeURL:            body.YoutubeURL,
-		CreatorPastelID:       *body.CreatorPastelID,
-		CreatorName:           *body.CreatorName,
-		CreatorWebsiteURL:     body.CreatorWebsiteURL,
+		Version:                 body.Version,
+		GreenAddress:            body.GreenAddress,
+		Royalty:                 body.Royalty,
+		StorageFee:              body.StorageFee,
+		NsfwScore:               *body.NsfwScore,
+		RarenessScore:           *body.RarenessScore,
+		IsLikelyDupe:            body.IsLikelyDupe,
+		MatchesFoundOnFirstPage: body.MatchesFoundOnFirstPage,
+		NumberOfPagesOfResults:  body.NumberOfPagesOfResults,
+		URLOfFirstMatchInPage:   body.URLOfFirstMatchInPage,
+		DrawingNsfwScore:        body.DrawingNsfwScore,
+		NeutralNsfwScore:        body.NeutralNsfwScore,
+		SexyNsfwScore:           body.SexyNsfwScore,
+		PornNsfwScore:           body.PornNsfwScore,
+		HentaiNsfwScore:         body.HentaiNsfwScore,
+		PreviewThumbnail:        body.PreviewThumbnail,
+		Thumbnail1:              body.Thumbnail1,
+		Thumbnail2:              body.Thumbnail2,
+		Txid:                    *body.Txid,
+		Title:                   *body.Title,
+		Description:             *body.Description,
+		Keywords:                body.Keywords,
+		SeriesName:              body.SeriesName,
+		Copies:                  *body.Copies,
+		YoutubeURL:              body.YoutubeURL,
+		CreatorPastelID:         *body.CreatorPastelID,
+		CreatorName:             *body.CreatorName,
+		CreatorWebsiteURL:       body.CreatorWebsiteURL,
 	}
 
 	return v
@@ -1164,14 +1174,14 @@ func ValidateNftGetResponseBody(body *NftGetResponseBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.rareness_score", *body.RarenessScore, 1, false))
 		}
 	}
-	if body.InternetRarenessScore != nil {
-		if *body.InternetRarenessScore < 0 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.internet_rareness_score", *body.InternetRarenessScore, 0, true))
+	if body.MatchesFoundOnFirstPage != nil {
+		if *body.MatchesFoundOnFirstPage < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.matches_found_on_first_page", *body.MatchesFoundOnFirstPage, 0, true))
 		}
 	}
-	if body.InternetRarenessScore != nil {
-		if *body.InternetRarenessScore > 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.internet_rareness_score", *body.InternetRarenessScore, 1, false))
+	if body.NumberOfPagesOfResults != nil {
+		if *body.NumberOfPagesOfResults < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.number_of_pages_of_results", *body.NumberOfPagesOfResults, 0, true))
 		}
 	}
 	if body.DrawingNsfwScore != nil {

@@ -22,6 +22,8 @@ require (
 	google.golang.org/grpc v1.43.0
 )
 
+require goa.design/goa v2.2.5+incompatible
+
 require (
 	github.com/DataDog/zstd v1.5.0 // indirect
 	github.com/btcsuite/btcutil v1.0.2 // indirect

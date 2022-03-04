@@ -3,7 +3,7 @@
 // nft HTTP server types
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package server
 
@@ -141,8 +141,15 @@ type NftGetResponseBody struct {
 	NsfwScore float32 `form:"nsfw_score" json:"nsfw_score" xml:"nsfw_score"`
 	// pastel rareness score
 	RarenessScore float32 `form:"rareness_score" json:"rareness_score" xml:"rareness_score"`
-	// internet rareness score
-	InternetRarenessScore *float32 `form:"internet_rareness_score,omitempty" json:"internet_rareness_score,omitempty" xml:"internet_rareness_score,omitempty"`
+	// is this nft likely a duplicate
+	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
+	// How many matches the scraper found on the first page of the google results
+	MatchesFoundOnFirstPage *uint32 `form:"matches_found_on_first_page,omitempty" json:"matches_found_on_first_page,omitempty" xml:"matches_found_on_first_page,omitempty"`
+	// How many pages of search results the scraper found when searching for this
+	// image
+	NumberOfPagesOfResults *uint32 `form:"number_of_pages_of_results,omitempty" json:"number_of_pages_of_results,omitempty" xml:"number_of_pages_of_results,omitempty"`
+	// URL of the first match on the first page of search results
+	URLOfFirstMatchInPage *string `form:"URL_of_first_match_in_page,omitempty" json:"URL_of_first_match_in_page,omitempty" xml:"URL_of_first_match_in_page,omitempty"`
 	// nsfw score
 	DrawingNsfwScore *float32 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
 	// nsfw score
@@ -729,31 +736,34 @@ func NewNftSearchResponseBody(res *nft.NftSearchResult) *NftSearchResponseBody {
 // "nftGet" endpoint of the "nft" service.
 func NewNftGetResponseBody(res *nft.NftDetail) *NftGetResponseBody {
 	body := &NftGetResponseBody{
-		Version:               res.Version,
-		GreenAddress:          res.GreenAddress,
-		Royalty:               res.Royalty,
-		StorageFee:            res.StorageFee,
-		NsfwScore:             res.NsfwScore,
-		RarenessScore:         res.RarenessScore,
-		InternetRarenessScore: res.InternetRarenessScore,
-		DrawingNsfwScore:      res.DrawingNsfwScore,
-		NeutralNsfwScore:      res.NeutralNsfwScore,
-		SexyNsfwScore:         res.SexyNsfwScore,
-		PornNsfwScore:         res.PornNsfwScore,
-		HentaiNsfwScore:       res.HentaiNsfwScore,
-		PreviewThumbnail:      res.PreviewThumbnail,
-		Thumbnail1:            res.Thumbnail1,
-		Thumbnail2:            res.Thumbnail2,
-		Txid:                  res.Txid,
-		Title:                 res.Title,
-		Description:           res.Description,
-		Keywords:              res.Keywords,
-		SeriesName:            res.SeriesName,
-		Copies:                res.Copies,
-		YoutubeURL:            res.YoutubeURL,
-		CreatorPastelID:       res.CreatorPastelID,
-		CreatorName:           res.CreatorName,
-		CreatorWebsiteURL:     res.CreatorWebsiteURL,
+		Version:                 res.Version,
+		GreenAddress:            res.GreenAddress,
+		Royalty:                 res.Royalty,
+		StorageFee:              res.StorageFee,
+		NsfwScore:               res.NsfwScore,
+		RarenessScore:           res.RarenessScore,
+		IsLikelyDupe:            res.IsLikelyDupe,
+		MatchesFoundOnFirstPage: res.MatchesFoundOnFirstPage,
+		NumberOfPagesOfResults:  res.NumberOfPagesOfResults,
+		URLOfFirstMatchInPage:   res.URLOfFirstMatchInPage,
+		DrawingNsfwScore:        res.DrawingNsfwScore,
+		NeutralNsfwScore:        res.NeutralNsfwScore,
+		SexyNsfwScore:           res.SexyNsfwScore,
+		PornNsfwScore:           res.PornNsfwScore,
+		HentaiNsfwScore:         res.HentaiNsfwScore,
+		PreviewThumbnail:        res.PreviewThumbnail,
+		Thumbnail1:              res.Thumbnail1,
+		Thumbnail2:              res.Thumbnail2,
+		Txid:                    res.Txid,
+		Title:                   res.Title,
+		Description:             res.Description,
+		Keywords:                res.Keywords,
+		SeriesName:              res.SeriesName,
+		Copies:                  res.Copies,
+		YoutubeURL:              res.YoutubeURL,
+		CreatorPastelID:         res.CreatorPastelID,
+		CreatorName:             res.CreatorName,
+		CreatorWebsiteURL:       res.CreatorWebsiteURL,
 	}
 	return body
 }

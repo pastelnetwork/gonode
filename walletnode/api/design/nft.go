@@ -3,6 +3,7 @@ package design
 import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
+
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
 	. "goa.design/goa/v3/dsl"
@@ -613,11 +614,29 @@ var NftDetail = Type("NftDetail", func() {
 		Maximum(1)
 		Example(1)
 	})
-	Attribute("internet_rareness_score", Float32, func() {
-		Description("internet rareness score")
+	// Attribute("internet_rareness_score", Float32, func() {
+	// 	Description("internet rareness score")
+	// 	Minimum(0)
+	// 	Maximum(1)
+	// 	Example(1)
+	// })
+	Attribute("is_likely_dupe", Boolean, func() {
+		Description("is this nft likely a duplicate")
+		Example(false)
+	})
+	Attribute("matches_found_on_first_page", UInt32, func() {
+		Description("How many matches the scraper found on the first page of the google results")
 		Minimum(0)
-		Maximum(1)
 		Example(1)
+	})
+	Attribute("number_of_pages_of_results", UInt32, func() {
+		Description("How many pages of search results the scraper found when searching for this image")
+		Minimum(0)
+		Example(1)
+	})
+	Attribute("URL_of_first_match_in_page", String, func() {
+		Description("URL of the first match on the first page of search results")
+		Example("https://pastel.network")
 	})
 	Attribute("drawing_nsfw_score", Float32, func() {
 		Description("nsfw score")
