@@ -162,7 +162,32 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 		p.Params = p.Params[:2]
 	} else if len(p.Params) > 4 && p.Params[0] == "tools" && p.Params[1] == "validateownership" {
 		p.Params = p.Params[:5]
-	} else if len(p.Params) > 2 && p.Params[0] == "list" && p.Params[1] == "trade" && p.Params[2] == "available" {
+	} else if len(p.Params) > 2 && p.Params[0] == "list" &&
+		((p.Params[1] == "trade" && p.Params[2] == "available") || p.Params[1] == "act") {
+		if p.Params[1] == "act" {
+			p.Params = p.Params[:2]
+
+			key := "tickets" + "*" + strings.Join(p.Params, "*")
+			data, err := h.store.Get(key)
+			if err != nil {
+				return nil, &jrpc2.ErrorObject{
+					Code:    jrpc2.InternalErrorCode,
+					Message: jrpc2.ErrorMsg("unable to fetch " + err.Error()),
+					Data:    "fetch failure",
+				}
+			}
+			toRet := ActTickets{}
+			if err := json.Unmarshal(data, &toRet); err != nil {
+				return nil, &jrpc2.ErrorObject{
+					Code:    jrpc2.InternalErrorCode,
+					Message: jrpc2.ErrorMsg("unable to unmarsal " + err.Error()),
+					Data:    "unmarshal failure",
+				}
+			}
+
+			return toRet, nil
+		}
+
 		key := "tickets" + "*" + strings.Join(p.Params, "*")
 		data, err := h.store.Get(key)
 		if err != nil {
@@ -173,6 +198,26 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 			}
 		}
 		toRet := []TradeTicket{}
+		if err := json.Unmarshal(data, &toRet); err != nil {
+			return nil, &jrpc2.ErrorObject{
+				Code:    jrpc2.InternalErrorCode,
+				Message: jrpc2.ErrorMsg("unable to unmarsal " + err.Error()),
+				Data:    "unmarshal failure",
+			}
+		}
+
+		return toRet, nil
+	} else if p.Params[0] == "get" {
+		key := "tickets" + "*" + strings.Join(p.Params, "*")
+		data, err := h.store.Get(key)
+		if err != nil {
+			return nil, &jrpc2.ErrorObject{
+				Code:    jrpc2.InternalErrorCode,
+				Message: jrpc2.ErrorMsg("unable to fetch " + err.Error()),
+				Data:    "fetch failure",
+			}
+		}
+		toRet := RegTicket{}
 		if err := json.Unmarshal(data, &toRet); err != nil {
 			return nil, &jrpc2.ErrorObject{
 				Code:    jrpc2.InternalErrorCode,
@@ -391,4 +436,61 @@ type TradeTicketData struct {
 	Price            string `json:"price"`
 	CopySerialNR     string `json:"copy_serial_nr"`
 	Signature        string `json:"signature"`
+}
+
+// RegTickets is a collection of RegTicket
+type RegTickets []RegTicket
+
+// RegTicket represents pastel registration ticket.
+type RegTicket struct {
+	Height        int           `json:"height"`
+	TXID          string        `json:"txid"`
+	RegTicketData RegTicketData `json:"ticket"`
+}
+
+// RegTicketSignatures represents signatures from parties
+type RegTicketSignatures struct {
+	Creator map[string]string `json:"creator,omitempty"`
+	Mn1     map[string]string `json:"mn1,omitempty"`
+	Mn2     map[string]string `json:"mn2,omitempty"`
+	Mn3     map[string]string `json:"mn3,omitempty"`
+}
+
+// RegTicketData is Pastel Registration ticket structure
+type RegTicketData struct {
+	Type           string              `json:"type"`
+	Version        int                 `json:"version"`
+	Signatures     RegTicketSignatures `json:"signatures"`
+	Key1           string              `json:"key1"`
+	Key2           string              `json:"key2"`
+	CreatorHeight  int                 `json:"creator_height"`
+	TotalCopies    int                 `json:"total_copies"`
+	Royalty        float64             `json:"royalty"`
+	RoyaltyAddress string              `json:"royalty_address"`
+	Green          bool                `json:"green"`
+	GreenAddress   string              `json:"green_address"`
+	StorageFee     int                 `json:"storage_fee"`
+	NFTTicket      []byte              `json:"nft_ticket"`
+	//NFTTicketData  NFTTicket           `json:"-"`
+}
+
+// ActTickets is a collection of ActTicket
+type ActTickets []ActTicket
+
+// ActTicket represents pastel activation ticket.
+type ActTicket struct {
+	Height        int           `json:"height"`
+	TXID          string        `json:"txid"`
+	ActTicketData ActTicketData `json:"ticket"`
+}
+
+// ActTicketData represents activation ticket properties
+type ActTicketData struct {
+	PastelID      string `json:"pastelID"`
+	Signature     string `json:"signature"`
+	Type          string `json:"type"`
+	CreatorHeight int    `json:"creator_height"`
+	RegTXID       string `json:"reg_txid"`
+	StorageFee    int    `json:"storage_fee"`
+	Version       int    `json:"version"`
 }

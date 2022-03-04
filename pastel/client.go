@@ -240,7 +240,7 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 	ticket := RegTicket{}
 
 	if err := client.callFor(ctx, &ticket, "tickets", "get", regTxid); err != nil {
-		return ticket, errors.Errorf("failed to get reg ticket: %w", err)
+		return ticket, errors.Errorf("failed to get reg ticket %s: %w", regTxid, err)
 	}
 
 	return ticket, nil

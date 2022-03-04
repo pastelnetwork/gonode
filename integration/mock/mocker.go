@@ -197,16 +197,26 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock ticket ownership err: %w", err)
 	}
 
-	if err := m.mockServer(getRegTicket(), addr, "tickets", []string{"get",
-		"b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09"}, 3); err != nil {
+	for key, val := range getRegTickets() {
 
-		return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
+		if err := m.mockServer(val, addr, "tickets", []string{"get",
+			key}, 3); err != nil {
+
+			return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
+		}
 	}
 
 	if err := m.mockServer(getTradeTickets(), addr, "tickets", []string{"list",
 		"trade", "available"}, 3); err != nil {
 
 		return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
+	}
+
+	//search
+	if err := m.mockServer(getSearchActTicketsResponse(), addr, "tickets", []string{"list",
+		"act"}, 5); err != nil {
+
+		return fmt.Errorf("failed to mock tickets act err: %w", err)
 	}
 
 	return nil

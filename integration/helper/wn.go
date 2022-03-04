@@ -1,6 +1,9 @@
 package helper
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type UploadImageReq struct {
 	File     []byte
@@ -95,8 +98,17 @@ func GetSenseTaskStateURI(taskID string) string {
 	return fmt.Sprintf("openapi/sense/start/%s/state", taskID)
 }
 
-// Cascade
+func GetNFTSearchURI(queryParams map[string]string) string {
+	uri := "nfts/search?"
+	for key, val := range queryParams {
+		uri = uri + key + "=" + val + "&"
+	}
+	uri = strings.TrimSuffix(uri, "&")
 
+	return uri
+}
+
+// Cascade
 func GetCascadeUploadImageURI(baseURI string) string {
 	return fmt.Sprintf("%s/%s", baseURI, "openapi/cascade/upload")
 }
