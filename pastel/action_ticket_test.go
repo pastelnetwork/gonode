@@ -1,7 +1,6 @@
 package pastel
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -32,7 +31,6 @@ func TestEncodeActionTicket(t *testing.T) {
 	outputTicket, err := DecodeActionTicket(encoded)
 
 	assert.Nil(t, err)
-	fmt.Println(string(encoded))
 	assert.Equal(t, inputTicket.Version, outputTicket.Version)
 	assert.Equal(t, inputTicket.Caller, outputTicket.Caller)
 	assert.Equal(t, inputTicket.BlockNum, outputTicket.BlockNum)

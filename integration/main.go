@@ -4,6 +4,9 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/pastelnetwork/gonode/integration/helper"
 	"github.com/pastelnetwork/gonode/integration/mock"
 )
@@ -78,5 +81,58 @@ func main() {
 	mocker := mock.New(PasteldServers, DDServers, RQServers, SNServers, itHelper)
 	if err := mocker.MockAllRegExpections(); err != nil {
 		panic(err)
+	}
+
+	// insert thumbnails for search
+	storeReq := &helper.StoreRequest{}
+	storeReq.Value = []byte("thumbnail-one")
+
+	resp, status, err := itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(SN1BaseURI), nil)
+	if err != nil {
+		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", err.Error()))
+	} else if status != http.StatusOK {
+		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", string(resp)))
+	}
+
+	storeReq.Value = []byte("thumbnail-two")
+	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(SN1BaseURI), nil)
+	if err != nil {
+		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", err.Error()))
+	} else if status != http.StatusOK {
+		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", string(resp)))
+	}
+
+	rqfile := &helper.RawSymbolIDFile{
+		ID:       "09f6c459-ec2a-4db1-a8fe-0648fd97b5cb",
+		PastelID: "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
+	}
+
+	symbol := []byte("test-symbol")
+	storeReq.Value = symbol
+	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(SN1BaseURI), nil)
+	if err != nil {
+		panic(fmt.Sprintf("store thumbnail for search tests: %s", err.Error()))
+	} else if status != http.StatusOK {
+		panic(fmt.Sprintf("store thumbnail for search tests: %s", string(resp)))
+	}
+
+	storeReq = &helper.StoreRequest{}
+
+	id, err := helper.GetP2PID(symbol)
+	if err != nil {
+		panic(fmt.Sprintf("generate p2p id of symbol for download tests: %s", err.Error()))
+	}
+	rqfile.SymbolIdentifiers = []string{id}
+	idFile, err := rqfile.GetIDFile()
+	if err != nil {
+		panic(fmt.Sprintf("store generate id file for download tests: %s", err.Error()))
+	}
+
+	storeReq.Value = idFile
+	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(SN1BaseURI), nil)
+	if err != nil {
+		panic(fmt.Sprintf("store rq_id file for download tests: %s", err.Error()))
+	} else if status != http.StatusOK {
+		panic(fmt.Sprintf("store rq_id file for download tests: %s", string(resp)))
 	}
 }

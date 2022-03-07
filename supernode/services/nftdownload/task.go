@@ -351,6 +351,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		file, err = task.restoreFile(ctx, &nftRegTicket)
 		if err != nil {
 			err = errors.Errorf("restore file: %w", err)
+			task.UpdateStatus(common.StatusFileRestoreFailed)
 			return nil
 		}
 

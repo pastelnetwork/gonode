@@ -520,6 +520,11 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 	return group.Wait()
 }
 
+// Error returns task err
+func (task *NftRegistrationTask) Error() error {
+	return task.WalletNodeTask.Error()
+}
+
 func (task *NftRegistrationTask) removeArtifacts() {
 	if task.Request != nil {
 		task.RemoveFile(task.Request.Image)

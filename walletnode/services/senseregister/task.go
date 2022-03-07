@@ -48,6 +48,11 @@ func (task *SenseRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
+// Error returns task err
+func (task *SenseRegistrationTask) Error() error {
+	return task.WalletNodeTask.Error()
+}
+
 func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

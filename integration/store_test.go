@@ -16,7 +16,6 @@ var _ = Describe("StoreRetrieve", func() {
 		storeReq   *helper.StoreRequest
 		storeReply *helper.StoreReply
 		getReply   *helper.RetrieveResponse
-		//err        error
 	)
 
 	BeforeEach(func() {
@@ -58,7 +57,7 @@ var _ = Describe("StoreRetrieve", func() {
 			Expect(json.Unmarshal(getResp, getReply)).To(Succeed())
 
 			Expect(getReply.Key).To(Equal(storeReply.Key))
-			Expect(getReply.Value).To(Equal(getReply.Value))
+			Expect(storeReq.Value).To(Equal(getReply.Value))
 		})
 	})
 
@@ -76,7 +75,7 @@ var _ = Describe("StoreRetrieve", func() {
 			Expect(json.Unmarshal(getResp, getReply)).To(Succeed())
 
 			Expect(getReply.Key).To(Equal(storeReply.Key))
-			Expect(getReply.Value).To(Equal(getReply.Value))
+			Expect(storeReq.Value).To(Equal(getReply.Value))
 		})
 	})
 
@@ -94,7 +93,7 @@ var _ = Describe("StoreRetrieve", func() {
 			Expect(json.Unmarshal(getResp, getReply)).To(Succeed())
 
 			Expect(getReply.Key).To(Equal(storeReply.Key))
-			Expect(getReply.Value).To(Equal(getReply.Value))
+			Expect(storeReq.Value).To(Equal(getReply.Value))
 		})
 	})
 
@@ -112,7 +111,7 @@ var _ = Describe("StoreRetrieve", func() {
 			Expect(json.Unmarshal(getResp, getReply)).To(Succeed())
 
 			Expect(getReply.Key).To(Equal(storeReply.Key))
-			Expect(getReply.Value).To(Equal(getReply.Value))
+			Expect(storeReq.Value).To(Equal(getReply.Value))
 		})
 	})
 

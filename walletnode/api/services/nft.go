@@ -181,7 +181,11 @@ func (service *NftAPIHandler) Download(ctx context.Context, p *nft.NftDownloadPa
 					return nil, nft.MakeBadRequest(errors.New("failed to verify ownership"))
 				}
 
-				return nil, nft.MakeInternalServerError(task.Error())
+				errStr := fmt.Errorf("internal processing error: %s", status.String())
+				if task.Error() != nil {
+					errStr = task.Error()
+				}
+				return nil, nft.MakeInternalServerError(errStr)
 			}
 
 			if status.IsFinal() {
