@@ -40,7 +40,7 @@ func (task *NftDownloadingTask) Run(ctx context.Context) error {
 }
 
 // DownloadThumbnail gets thumbnail file from ticket based on id and returns the thumbnail.
-func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid string) ([]byte, error) {
+func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid string, numnails int32) (map[int][]byte, error) {
 	var err error
 	if err = task.RequiredStatus(common.StatusTaskStarted); err != nil {
 		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
@@ -53,13 +53,12 @@ func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid stri
 		return nil, errors.Errorf("Bad txid: %s", err)
 	}
 
-	//just getting the small thumbnail hash right now
 	thumbnailHash := regTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash
 
-	var file []byte
+	var file1, file2 []byte
 	<-task.NewAction(func(ctx context.Context) error {
 		base58Key := base58.Encode(thumbnailHash)
-		file, err = task.P2PClient.Retrieve(ctx, base58Key)
+		file1, err = task.P2PClient.Retrieve(ctx, base58Key)
 		if err != nil {
 			err = errors.Errorf("fetch p2p key : %s, error: %w", string(base58Key), err)
 			task.UpdateStatus(common.StatusKeyNotFound)
@@ -67,7 +66,22 @@ func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid stri
 		return nil
 	})
 
-	return file, err
+	if numnails > 1 {
+		thumbnailHash = regTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail2Hash
+		<-task.NewAction(func(ctx context.Context) error {
+			base58Key := base58.Encode(thumbnailHash)
+			file2, err = task.P2PClient.Retrieve(ctx, base58Key)
+			if err != nil {
+				err = errors.Errorf("fetch p2p key : %s, error: %w", string(base58Key), err)
+				task.UpdateStatus(common.StatusKeyNotFound)
+			}
+			return nil
+		})
+	}
+	resMap := make(map[int][]byte)
+	resMap[0] = file1
+	resMap[1] = file2
+	return resMap, err
 }
 
 // DownloadDDAndFingerprints gets thumbnail file from ticket based on id and returns the thumbnail.

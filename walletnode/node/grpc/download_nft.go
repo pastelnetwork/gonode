@@ -53,10 +53,11 @@ func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signa
 	return
 }
 
-func (service *downloadNft) DownloadThumbnail(ctx context.Context, txid string) (file []byte, err error) {
+func (service *downloadNft) DownloadThumbnail(ctx context.Context, txid string, numNails int) (files map[int][]byte, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	in := &pb.DownloadThumbnailRequest{
-		Txid: txid,
+		Txid:     txid,
+		Numnails: int32(numNails),
 	}
 
 	res, err := service.client.DownloadThumbnail(ctx, in)
@@ -65,11 +66,17 @@ func (service *downloadNft) DownloadThumbnail(ctx context.Context, txid string) 
 		return nil, err
 	}
 
-	if res.Thumbnail == nil {
+	if res.Thumbnailone == nil {
 		return nil, errors.New("nil thumbnail")
 	}
 
-	return res.Thumbnail, nil
+	if res.Thumbnailtwo == nil && numNails > 1 {
+		return nil, errors.New("nil thumbnail2")
+	}
+	rMap := make(map[int][]byte)
+	rMap[0] = res.Thumbnailone
+	rMap[1] = res.Thumbnailtwo
+	return rMap, nil
 }
 
 func (service *downloadNft) DownloadDDAndFingerprints(ctx context.Context, txid string) (file []byte, err error) {

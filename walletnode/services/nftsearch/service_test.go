@@ -126,19 +126,19 @@ func TestGetThumbnail(t *testing.T) {
 
 	testCases := map[string]struct {
 		args args
-		want []byte
+		want map[int][]byte
 	}{
 		"simple-a": {
 			args: args{
 				regTicket: &regTicketA,
 			},
-			want: []byte{2, 15},
+			want: map[int][]byte{0: {2, 15}},
 		},
 		"simple-b": {
 			args: args{
 				regTicket: &regTicketA,
 			},
-			want: []byte{14, 44},
+			want: map[int][]byte{0: {14, 44}},
 		},
 	}
 
@@ -166,7 +166,7 @@ func TestGetThumbnail(t *testing.T) {
 
 			result, err := service.GetThumbnail(ctx, testCase.args.regTicket, "", "")
 			assert.Nil(t, err)
-			assert.Equal(t, testCase.want, result)
+			assert.Equal(t, testCase.want[0], result)
 		})
 	}
 }

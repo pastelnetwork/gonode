@@ -137,11 +137,11 @@ type NftGetResponseBody struct {
 	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// Storage fee %
 	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
-	// nsfw score
+	// NSFW Average score
 	NsfwScore float32 `form:"nsfw_score" json:"nsfw_score" xml:"nsfw_score"`
-	// pastel rareness score
+	// Average pastel rareness score
 	RarenessScore float32 `form:"rareness_score" json:"rareness_score" xml:"rareness_score"`
-	// is this nft likely a duplicate
+	// Is this image likely a duplicate of another known image
 	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
 	// How many matches the scraper found on the first page of the google results
 	MatchesFoundOnFirstPage *uint32 `form:"matches_found_on_first_page,omitempty" json:"matches_found_on_first_page,omitempty" xml:"matches_found_on_first_page,omitempty"`
@@ -628,6 +628,12 @@ type NftSummaryResponseBody struct {
 	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
 	// Artist website URL
 	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
+	// NSFW Average score
+	NsfwScore *float32 `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
+	// Average pastel rareness score
+	RarenessScore *float32 `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
+	// Is this image likely a duplicate of another known image
+	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
 }
 
 // FuzzyMatchResponseBody is used to define fields on response body types.
@@ -1066,7 +1072,7 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *nft.UploadImagePayload
 }
 
 // NewNftSearchPayload builds a nft service nftSearch endpoint payload.
-func NewNftSearchPayload(artist *string, limit int, query string, creatorName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *float64, maxRarenessScore *float64, minNsfwScore *float64, maxNsfwScore *float64, minInternetRarenessScore *float64, maxInternetRarenessScore *float64, userPastelid *string, userPassphrase *string) *nft.NftSearchPayload {
+func NewNftSearchPayload(artist *string, limit int, query string, creatorName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, isLikelyDupe *bool, minRarenessScore *float64, maxRarenessScore *float64, minNsfwScore *float64, maxNsfwScore *float64, userPastelid *string, userPassphrase *string) *nft.NftSearchPayload {
 	v := &nft.NftSearchPayload{}
 	v.Artist = artist
 	v.Limit = limit
@@ -1080,12 +1086,11 @@ func NewNftSearchPayload(artist *string, limit int, query string, creatorName bo
 	v.MaxCopies = maxCopies
 	v.MinBlock = minBlock
 	v.MaxBlock = maxBlock
+	v.IsLikelyDupe = isLikelyDupe
 	v.MinRarenessScore = minRarenessScore
 	v.MaxRarenessScore = maxRarenessScore
 	v.MinNsfwScore = minNsfwScore
 	v.MaxNsfwScore = maxNsfwScore
-	v.MinInternetRarenessScore = minInternetRarenessScore
-	v.MaxInternetRarenessScore = maxInternetRarenessScore
 	v.UserPastelid = userPastelid
 	v.UserPassphrase = userPassphrase
 

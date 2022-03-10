@@ -61,6 +61,9 @@ const (
 	// DownloadThumbnailMethod represent DownloadThumbnail name method
 	DownloadThumbnailMethod = "DownloadThumbnail"
 
+	// DownloadDDAndFPMethod represent DownloadDDAndFP name method
+	DownloadDDAndFPMethod = "DownloadDDAndFingerprints"
+
 	// SendActionActMethod represent SendActionAct method
 	SendActionActMethod = "SendActionAct"
 
@@ -337,6 +340,13 @@ func (client *Client) ListenOnDownload(arguments ...interface{}) *Client {
 // ListenOnDownloadThumbnail listening DownloadThumbnail call and returns args value
 func (client *Client) ListenOnDownloadThumbnail(arguments ...interface{}) *Client {
 	client.DownloadNftInterface.On(DownloadThumbnailMethod, mock.Anything,
+		mock.Anything, mock.Anything).Return(arguments...)
+	return client
+}
+
+// ListenOnDownloadThumbnail listening DownloadThumbnail call and returns args value
+func (client *Client) ListenOnDownloadDDAndFP(arguments ...interface{}) *Client {
+	client.DownloadNftInterface.On(DownloadDDAndFPMethod, mock.Anything,
 		mock.Anything).Return(arguments...)
 	return client
 }

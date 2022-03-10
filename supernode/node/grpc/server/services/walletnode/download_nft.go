@@ -77,13 +77,14 @@ func (service *DownloadNft) DownloadThumbnail(ctx context.Context, req *pb.Downl
 	defer task.Cancel()
 
 	// Call task download thumbnail
-	data, err := task.DownloadThumbnail(ctx, req.Txid)
+	data, err := task.DownloadThumbnail(ctx, req.Txid, req.Numnails)
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.DownloadThumbnailReply{
-		Thumbnail: data,
+		Thumbnailone: data[0],
+		Thumbnailtwo: data[1],
 	}, nil
 }
 

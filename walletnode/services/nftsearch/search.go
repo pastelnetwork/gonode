@@ -13,6 +13,9 @@ type RegTicketSearch struct {
 	MaxScore          int
 	Matches           []Match
 	MatchIndex        int
+	OpenNSFWScore     float32
+	RarenessScore     float32
+	IsLikelyDupe      bool
 }
 
 // Match represents a matched string.

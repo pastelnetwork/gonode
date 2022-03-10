@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConnect(t *testing.T) {
+func TestDDFPConnect(t *testing.T) {
 	t.Parallel()
 	nodes := pastel.MasterNodes{}
 	for i := 0; i < 10; i++ {
@@ -23,7 +23,7 @@ func TestConnect(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		thumbnail   ThumbnailHandler
+		ddFP        DDFPHandler
 		connections int
 		nodeErr     error
 		nodesRet    pastel.MasterNodes
@@ -66,10 +66,10 @@ func TestConnect(t *testing.T) {
 				Configs:       &common.MeshHandlerConfig{},
 			}
 
-			thumbnail := NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts))
+			ddFP := NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts))
 
 			_, cancel := context.WithCancel(context.Background())
-			err := thumbnail.Connect(context.Background(), tc.connections, cancel)
+			err := ddFP.Connect(context.Background(), tc.connections, cancel)
 			if tc.err != nil {
 				assert.NotNil(t, err)
 			} else {
@@ -80,7 +80,7 @@ func TestConnect(t *testing.T) {
 	}
 }
 
-func TestFetchOne(t *testing.T) {
+func TestFetch(t *testing.T) {
 	t.Parallel()
 	nodes := pastel.MasterNodes{}
 	for i := 0; i < 10; i++ {
@@ -88,13 +88,12 @@ func TestFetchOne(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		want    map[int][]byte
+		want    []byte
 		wantErr error
-		//map[int][]byte{0: {2, 15}}
 	}{
-		"a": {want: map[int][]byte{0: {2, 78, 67, 33}}, wantErr: nil},
-		"b": {want: map[int][]byte{0: {98, 22, 11}}, wantErr: nil},
-		"c": {want: map[int][]byte{0: {11, 45, 19}}, wantErr: nil},
+		"a": {want: []byte{2, 78, 67, 33}, wantErr: nil},
+		"b": {want: []byte{98, 22, 11}, wantErr: nil},
+		"c": {want: []byte{11, 45, 19}, wantErr: nil},
 	}
 
 	for name, tc := range tests {
@@ -106,7 +105,7 @@ func TestFetchOne(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(nodes, nil).ListenOnFindTicketByID(&pastel.IDTicket{TXID: "txid"}, nil)
 
 			nodeClientMock := nodeMock.NewMockClient(t)
-			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadNft().ListenOnDownloadThumbnail(tc.want, nil).ListenOnClose(nil)
+			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadNft().ListenOnDownloadDDAndFP(tc.want, nil).ListenOnClose(nil)
 			nodeClientMock.ConnectionInterface.On("DownloadNft").Return(nodeClientMock.DownloadNftInterface)
 			doneCh := make(<-chan struct{})
 			nodeClientMock.ConnectionInterface.On("Done").Return(doneCh)
@@ -122,12 +121,12 @@ func TestFetchOne(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel)
+			err := nftGetSearchTask.ddAndFP.Connect(ctx, 1, cancel)
 			assert.Nil(t, err)
 
-			data, err := nftGetSearchTask.thumbnail.FetchOne(ctx, "txid")
+			data, err := nftGetSearchTask.ddAndFP.Fetch(ctx, "txid")
 			assert.Nil(t, err)
-			assert.Equal(t, data, tc.want[0])
+			assert.Equal(t, data, tc.want)
 
 		})
 	}

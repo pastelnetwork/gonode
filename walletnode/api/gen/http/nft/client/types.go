@@ -137,11 +137,11 @@ type NftGetResponseBody struct {
 	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// Storage fee %
 	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
-	// nsfw score
+	// NSFW Average score
 	NsfwScore *float32 `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
-	// pastel rareness score
+	// Average pastel rareness score
 	RarenessScore *float32 `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
-	// is this nft likely a duplicate
+	// Is this image likely a duplicate of another known image
 	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
 	// How many matches the scraper found on the first page of the google results
 	MatchesFoundOnFirstPage *uint32 `form:"matches_found_on_first_page,omitempty" json:"matches_found_on_first_page,omitempty" xml:"matches_found_on_first_page,omitempty"`
@@ -651,6 +651,12 @@ type NftSummaryResponseBody struct {
 	CreatorName *string `form:"creator_name,omitempty" json:"creator_name,omitempty" xml:"creator_name,omitempty"`
 	// Artist website URL
 	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
+	// NSFW Average score
+	NsfwScore *float32 `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
+	// Average pastel rareness score
+	RarenessScore *float32 `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
+	// Is this image likely a duplicate of another known image
+	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
 }
 
 // FuzzyMatchResponseBody is used to define fields on response body types.
@@ -2141,6 +2147,26 @@ func ValidateNftSummaryResponseBody(body *NftSummaryResponseBody) (err error) {
 	if body.CreatorWebsiteURL != nil {
 		if utf8.RuneCountInString(*body.CreatorWebsiteURL) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_website_url", *body.CreatorWebsiteURL, utf8.RuneCountInString(*body.CreatorWebsiteURL), 256, false))
+		}
+	}
+	if body.NsfwScore != nil {
+		if *body.NsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.nsfw_score", *body.NsfwScore, 0, true))
+		}
+	}
+	if body.NsfwScore != nil {
+		if *body.NsfwScore > 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.nsfw_score", *body.NsfwScore, 1, false))
+		}
+	}
+	if body.RarenessScore != nil {
+		if *body.RarenessScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.rareness_score", *body.RarenessScore, 0, true))
+		}
+	}
+	if body.RarenessScore != nil {
+		if *body.RarenessScore > 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.rareness_score", *body.RarenessScore, 1, false))
 		}
 	}
 	return

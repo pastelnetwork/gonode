@@ -1,8 +1,9 @@
 package services
 
 import (
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"time"
+
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 
 	"github.com/pastelnetwork/gonode/pastel"
 
@@ -28,10 +29,13 @@ func toNftSearchResult(srch *nftsearch.RegTicketSearch) *nft.NftSearchResult {
 	ticketData := srch.RegTicketData.NFTTicketData.AppTicketData
 	res := &nft.NftSearchResult{
 		Nft: &nft.NftSummary{
-			Txid:       srch.TXID,
-			Thumbnail1: srch.Thumbnail,
-			Thumbnail2: srch.ThumbnailSecondry,
-			Title:      ticketData.NFTTitle,
+			Txid:          srch.TXID,
+			Thumbnail1:    srch.Thumbnail,
+			Thumbnail2:    srch.ThumbnailSecondry,
+			NsfwScore:     &srch.OpenNSFWScore,
+			RarenessScore: &srch.RarenessScore,
+			IsLikelyDupe:  &srch.IsLikelyDupe,
+			Title:         ticketData.NFTTitle,
 
 			Copies:            srch.RegTicketData.NFTTicketData.Copies,
 			CreatorName:       ticketData.CreatorName,

@@ -343,6 +343,11 @@ paths:
         required: false
         type: integer
         minimum: 1
+      - name: is_likely_dupe
+        in: query
+        description: Is this image likely a duplicate of another known image
+        required: false
+        type: boolean
       - name: min_rareness_score
         in: query
         description: Minimum pastel rareness score
@@ -367,20 +372,6 @@ paths:
       - name: max_nsfw_score
         in: query
         description: Maximum nsfw score
-        required: false
-        type: number
-        maximum: 1
-        minimum: 0
-      - name: min_internet_rareness_score
-        in: query
-        description: Minimum internet rareness score
-        required: false
-        type: number
-        maximum: 1
-        minimum: 0
-      - name: max_internet_rareness_score
-        in: query
-        description: Maximum internet rareness score
         required: false
         type: number
         maximum: 1
@@ -1832,7 +1823,7 @@ definitions:
         maximum: 1
       is_likely_dupe:
         type: boolean
-        description: is this nft likely a duplicate
+        description: Is this image likely a duplicate of another known image
         example: false
       keywords:
         type: string
@@ -1853,7 +1844,7 @@ definitions:
         maximum: 1
       nsfw_score:
         type: number
-        description: nsfw score
+        description: NSFW Average score
         example: 1
         minimum: 0
         maximum: 1
@@ -1889,7 +1880,7 @@ definitions:
         format: byte
       rareness_score:
         type: number
-        description: pastel rareness score
+        description: Average pastel rareness score
         example: 1
         minimum: 0
         maximum: 1
@@ -2267,7 +2258,10 @@ definitions:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
+        is_likely_dupe: false
         keywords: Renaissance, sfumato, portrait
+        nsfw_score: 1
+        rareness_score: 1
         series_name: Famous artist
         thumbnail_1:
         - 86
@@ -3189,11 +3183,27 @@ definitions:
           writer Leonardo da Vinci. Likely completed in 1506, the piece features a
           portrait of a seated woman set against an imaginary landscape.
         maxLength: 1024
+      is_likely_dupe:
+        type: boolean
+        description: Is this image likely a duplicate of another known image
+        example: false
       keywords:
         type: string
         description: Keywords
         example: Renaissance, sfumato, portrait
         maxLength: 256
+      nsfw_score:
+        type: number
+        description: NSFW Average score
+        example: 1
+        minimum: 0
+        maximum: 1
+      rareness_score:
+        type: number
+        description: Average pastel rareness score
+        example: 1
+        minimum: 0
+        maximum: 1
       series_name:
         type: string
         description: Series name
@@ -3290,7 +3300,10 @@ definitions:
       description: The Mona Lisa is an oil painting by Italian artist, inventor, and
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
+      is_likely_dupe: false
       keywords: Renaissance, sfumato, portrait
+      nsfw_score: 1
+      rareness_score: 1
       series_name: Famous artist
       thumbnail_1:
       - 81

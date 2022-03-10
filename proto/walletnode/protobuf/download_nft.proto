@@ -24,10 +24,12 @@ message DownloadReply {
 
 message DownloadThumbnailRequest {
     string txid = 1;
+    int32 numnails = 2;
 }
 
 message DownloadThumbnailReply {
-    bytes thumbnail = 1;
+    bytes thumbnailone = 1;
+    bytes thumbnailtwo = 2;
 }
 
 message DownloadDDAndFingerprintsRequest {

@@ -141,12 +141,12 @@ var _ = Service("nft", func() {
 				Param("max_copies")
 				Param("min_block")
 				Param("max_block")
+				Param("is_likely_dupe")
 				Param("min_rareness_score")
 				Param("max_rareness_score")
 				Param("min_nsfw_score")
 				Param("max_nsfw_score")
-				Param("min_internet_rareness_score")
-				Param("max_internet_rareness_score")
+				Param("is_likely_dupe")
 			})
 			Header("user_pastelid")
 			Header("user_passphrase")
@@ -480,18 +480,9 @@ var SearchNftParams = func() {
 		Maximum(1)
 		Example(1)
 	})
-
-	Attribute("min_internet_rareness_score", Float64, func() {
-		Description("Minimum internet rareness score")
-		Minimum(0)
-		Maximum(1)
-		Example(1)
-	})
-	Attribute("max_internet_rareness_score", Float64, func() {
-		Description("Maximum internet rareness score")
-		Minimum(0)
-		Maximum(1)
-		Example(1)
+	Attribute("is_likely_dupe", Boolean, func() {
+		Description("Is this image likely a duplicate of another known image")
+		Example(false)
 	})
 	Attribute("user_pastelid", String, func() {
 		Description("User's PastelID")
@@ -578,7 +569,22 @@ var NftSummary = Type("NftSummary", func() {
 		MaxLength(256)
 		Example("https://www.leonardodavinci.net")
 	})
-
+	Attribute("nsfw_score", Float32, func() {
+		Description("NSFW Average score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("rareness_score", Float32, func() {
+		Description("Average pastel rareness score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("is_likely_dupe", Boolean, func() {
+		Description("Is this image likely a duplicate of another known image")
+		Example(false)
+	})
 	Required("title", "description", "creator_name", "copies", "creator_pastelid", "txid")
 })
 

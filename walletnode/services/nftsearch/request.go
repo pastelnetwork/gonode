@@ -60,17 +60,15 @@ type NftSearchingRequest struct {
 	// Maximum number of created copies
 	MaxCopies *int
 	// Minimum nsfw score
-	MinNsfwScore *float64
+	MinNsfwScore float64
 	// Maximum nsfw score
-	MaxNsfwScore *float64
+	MaxNsfwScore float64
 	// Minimum rareness score
-	MinRarenessScore *float64
+	MinRarenessScore float64
 	// Maximum rareness score
-	MaxRarenessScore *float64
-	// MinInternetRarenessScore
-	MinInternetRarenessScore *float64
-	// MaxInternetRarenessScore
-	MaxInternetRarenessScore *float64
+	MaxRarenessScore float64
+	// Is Likely Dupe
+	IsLikelyDupe bool
 	//UserPastelID
 	UserPastelID string
 	//UserPastelID
@@ -92,10 +90,10 @@ func FromNftSearchRequest(req *nft.NftSearchPayload) *NftSearchingRequest {
 		MaxBlock:         req.MaxBlock,
 		MinCopies:        req.MinCopies,
 		MaxCopies:        req.MaxCopies,
-		MinNsfwScore:     req.MinNsfwScore,
-		MaxNsfwScore:     req.MaxNsfwScore,
-		MinRarenessScore: req.MinRarenessScore,
-		MaxRarenessScore: req.MaxRarenessScore,
+		MinNsfwScore:     *req.MinNsfwScore,
+		MaxNsfwScore:     *req.MaxNsfwScore,
+		MinRarenessScore: *req.MinRarenessScore,
+		MaxRarenessScore: *req.MaxRarenessScore,
 	}
 
 	if req.UserPastelid != nil {

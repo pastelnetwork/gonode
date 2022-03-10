@@ -584,6 +584,9 @@ func EncodeNftSearchRequest(encoder func(*http.Request) goahttp.Encoder) func(*h
 		if p.MaxBlock != nil {
 			values.Add("max_block", fmt.Sprintf("%v", *p.MaxBlock))
 		}
+		if p.IsLikelyDupe != nil {
+			values.Add("is_likely_dupe", fmt.Sprintf("%v", *p.IsLikelyDupe))
+		}
 		if p.MinRarenessScore != nil {
 			values.Add("min_rareness_score", fmt.Sprintf("%v", *p.MinRarenessScore))
 		}
@@ -595,12 +598,6 @@ func EncodeNftSearchRequest(encoder func(*http.Request) goahttp.Encoder) func(*h
 		}
 		if p.MaxNsfwScore != nil {
 			values.Add("max_nsfw_score", fmt.Sprintf("%v", *p.MaxNsfwScore))
-		}
-		if p.MinInternetRarenessScore != nil {
-			values.Add("min_internet_rareness_score", fmt.Sprintf("%v", *p.MinInternetRarenessScore))
-		}
-		if p.MaxInternetRarenessScore != nil {
-			values.Add("max_internet_rareness_score", fmt.Sprintf("%v", *p.MaxInternetRarenessScore))
 		}
 		req.URL.RawQuery = values.Encode()
 		return nil
@@ -1099,6 +1096,9 @@ func unmarshalNftSummaryResponseBodyToNftNftSummary(v *NftSummaryResponseBody) *
 		CreatorPastelID:   *v.CreatorPastelID,
 		CreatorName:       *v.CreatorName,
 		CreatorWebsiteURL: v.CreatorWebsiteURL,
+		NsfwScore:         v.NsfwScore,
+		RarenessScore:     v.RarenessScore,
+		IsLikelyDupe:      v.IsLikelyDupe,
 	}
 
 	return res

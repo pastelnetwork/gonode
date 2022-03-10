@@ -2,6 +2,7 @@ package nftsearch
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -41,10 +42,6 @@ func (task *NftSearchingTask) Run(ctx context.Context) error {
 }
 
 func (task *NftSearchingTask) run(ctx context.Context) error {
-	if err := task.search(ctx); err != nil {
-		return errors.Errorf("search tickets: %w", err)
-	}
-
 	pastelConnections := task.service.config.NumberSuperNodes
 	if len(task.searchResult) < pastelConnections {
 		pastelConnections = len(task.searchResult)
@@ -52,6 +49,14 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	if err := task.ddAndFP.Connect(ctx, pastelConnections, cancel); err != nil {
+		return errors.Errorf("connect and setup fetchers: %w", err)
+	}
+
+	if err := task.search(ctx); err != nil {
+		return errors.Errorf("search tickets: %w", err)
+	}
 
 	if err := task.thumbnail.Connect(ctx, pastelConnections, cancel); err != nil {
 		return errors.Errorf("connect and setup fetchers: %w", err)
@@ -90,7 +95,7 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 				return fmt.Errorf("reg ticket - txid: %s - err: %s", ticket.TXID, err)
 			}
 
-			if srch, isMatched := task.filterRegTicket(&regTicket); isMatched {
+			if srch, isMatched := task.filterRegTicket(ctx, &regTicket); isMatched {
 				task.addMatchedResult(srch)
 			}
 
@@ -118,22 +123,33 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 }
 
 // filterRegTicket filters ticket against request params & checks if its a match
-func (task *NftSearchingTask) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
-	// --------- WIP: PSL-142------------------
-	/* if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore),
-		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
+func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
+
+	// Get DD and FP data so we can filter on it.
+	ddAndFpData, err := task.ddAndFP.Fetch(ctx, regTicket.TXID)
+	if err != nil {
+		//purposefully not breaking the entire search here
+		log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
+	}
+	ddAndFpStruct := &pastel.DDAndFingerprints{}
+	json.Unmarshal(ddAndFpData, ddAndFpStruct)
+
+	//rareness score
+	if !(task.request.MinRarenessScore == float64(0) && task.request.MinRarenessScore == task.request.MaxRarenessScore) && !common.InFloatRange(float64(ddAndFpStruct.RarenessScores.OverallAverageRarenessScore),
+		&task.request.MinRarenessScore, &task.request.MaxRarenessScore) {
 		return srch, false
 	}
 
-		if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore),
-			task.request.MinNsfwScore, task.request.MaxNsfwScore) {
-			return srch, false
-		}
-
-	if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore),
-		task.request.MinInternetRarenessScore, task.request.MaxInternetRarenessScore) {
+	//opennsfw score
+	if !(task.request.MinNsfwScore == float64(0) && task.request.MinNsfwScore == task.request.MaxNsfwScore) && !common.InFloatRange(float64(ddAndFpStruct.OpenNSFWScore),
+		&task.request.MinNsfwScore, &task.request.MaxNsfwScore) {
 		return srch, false
-	}*/
+	}
+
+	//Is likely dupe
+	if task.request.IsLikelyDupe != ddAndFpStruct.IsLikelyDupe {
+		return srch, false
+	}
 
 	if !common.InIntRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.TotalCopies,
 		task.request.MinCopies, task.request.MaxCopies) {
@@ -141,9 +157,13 @@ func (task *NftSearchingTask) filterRegTicket(regTicket *pastel.RegTicket) (srch
 	}
 
 	regSearch := &RegTicketSearch{
-		RegTicket: regTicket,
+		RegTicket:     regTicket,
+		RarenessScore: ddAndFpStruct.RarenessScores.OverallAverageRarenessScore,
+		OpenNSFWScore: ddAndFpStruct.OpenNSFWScore,
+		IsLikelyDupe:  ddAndFpStruct.IsLikelyDupe,
 	}
 
+	//performs fuzzy matching on string portions of search
 	return regSearch.Search(task.request)
 }
 

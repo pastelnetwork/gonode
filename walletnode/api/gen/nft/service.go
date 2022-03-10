@@ -214,10 +214,8 @@ type NftSearchPayload struct {
 	MinRarenessScore *float64
 	// Maximum pastel rareness score
 	MaxRarenessScore *float64
-	// Minimum internet rareness score
-	MinInternetRarenessScore *float64
-	// Maximum internet rareness score
-	MaxInternetRarenessScore *float64
+	// Is this image likely a duplicate of another known image
+	IsLikelyDupe *bool
 	// User's PastelID
 	UserPastelid *string
 	// Passphrase of the User PastelID
@@ -255,11 +253,11 @@ type NftDetail struct {
 	Royalty *float64
 	// Storage fee %
 	StorageFee *int
-	// nsfw score
+	// NSFW Average score
 	NsfwScore float32
-	// pastel rareness score
+	// Average pastel rareness score
 	RarenessScore float32
-	// is this nft likely a duplicate
+	// Is this image likely a duplicate of another known image
 	IsLikelyDupe *bool
 	// How many matches the scraper found on the first page of the google results
 	MatchesFoundOnFirstPage *uint32
@@ -395,6 +393,12 @@ type NftSummary struct {
 	CreatorName string
 	// Artist website URL
 	CreatorWebsiteURL *string
+	// NSFW Average score
+	NsfwScore *float32
+	// Average pastel rareness score
+	RarenessScore *float32
+	// Is this image likely a duplicate of another known image
+	IsLikelyDupe *bool
 }
 
 type FuzzyMatch struct {

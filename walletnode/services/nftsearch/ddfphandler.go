@@ -104,41 +104,6 @@ func (h *DDFPHandler) fetcher(ctx context.Context, someNode *common.SuperNodeCli
 	return nil
 }
 
-//NB Needs work
-func (h *DDFPHandler) fetchAll(ctx context.Context, searchResult []*RegTicketSearch, resultChan *chan *RegTicketSearch) error {
-	group, _ := errgroup.WithContext(ctx)
-
-	for i, res := range searchResult {
-		res := res
-		res.MatchIndex = i
-
-		group.Go(func() error {
-			tgroup, tgctx := errgroup.WithContext(ctx)
-			var t1Data, t2Data []byte
-			tgroup.Go(func() (err error) {
-				t1Data, err = h.Fetch(tgctx, res.RegTicket.TXID)
-				return err
-			})
-
-			if err := tgroup.Wait(); err != nil {
-				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("fetch dd and fp")
-				return fmt.Errorf("fetch dd and fp: txid: %s - err: %s", res.TXID, err)
-			}
-
-			//this should be changed from thumbnail to include dd and fp stuff
-			res.Thumbnail = t1Data
-			res.ThumbnailSecondry = t2Data
-			// Post on result channel
-			*resultChan <- res
-
-			log.WithContext(ctx).WithField("search_result", res).Debug("Posted search result")
-
-			return nil
-		})
-	}
-	return group.Wait()
-}
-
 // fetch gets the actual thumbnail data from the network as bytes to be wrapped by the calling function
 func (h *DDFPHandler) Fetch(ctx context.Context, txid string) (data []byte, err error) {
 	respCh := make(chan *ddfpResponse)

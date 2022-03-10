@@ -370,27 +370,26 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 func DecodeNftSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			artist                   *string
-			limit                    int
-			query                    string
-			creatorName              bool
-			artTitle                 bool
-			series                   bool
-			descr                    bool
-			keyword                  bool
-			minCopies                *int
-			maxCopies                *int
-			minBlock                 int
-			maxBlock                 *int
-			minRarenessScore         *float64
-			maxRarenessScore         *float64
-			minNsfwScore             *float64
-			maxNsfwScore             *float64
-			minInternetRarenessScore *float64
-			maxInternetRarenessScore *float64
-			userPastelid             *string
-			userPassphrase           *string
-			err                      error
+			artist           *string
+			limit            int
+			query            string
+			creatorName      bool
+			artTitle         bool
+			series           bool
+			descr            bool
+			keyword          bool
+			minCopies        *int
+			maxCopies        *int
+			minBlock         int
+			maxBlock         *int
+			isLikelyDupe     *bool
+			minRarenessScore *float64
+			maxRarenessScore *float64
+			minNsfwScore     *float64
+			maxNsfwScore     *float64
+			userPastelid     *string
+			userPassphrase   *string
+			err              error
 		)
 		artistRaw := r.URL.Query().Get("artist")
 		if artistRaw != "" {
@@ -557,6 +556,16 @@ func DecodeNftSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			}
 		}
 		{
+			isLikelyDupeRaw := r.URL.Query().Get("is_likely_dupe")
+			if isLikelyDupeRaw != "" {
+				v, err2 := strconv.ParseBool(isLikelyDupeRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("isLikelyDupe", isLikelyDupeRaw, "boolean"))
+				}
+				isLikelyDupe = &v
+			}
+		}
+		{
 			minRarenessScoreRaw := r.URL.Query().Get("min_rareness_score")
 			if minRarenessScoreRaw != "" {
 				v, err2 := strconv.ParseFloat(minRarenessScoreRaw, 64)
@@ -636,46 +645,6 @@ func DecodeNftSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 				err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1, false))
 			}
 		}
-		{
-			minInternetRarenessScoreRaw := r.URL.Query().Get("min_internet_rareness_score")
-			if minInternetRarenessScoreRaw != "" {
-				v, err2 := strconv.ParseFloat(minInternetRarenessScoreRaw, 64)
-				if err2 != nil {
-					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minInternetRarenessScore", minInternetRarenessScoreRaw, "float"))
-				}
-				minInternetRarenessScore = &v
-			}
-		}
-		if minInternetRarenessScore != nil {
-			if *minInternetRarenessScore < 0 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 0, true))
-			}
-		}
-		if minInternetRarenessScore != nil {
-			if *minInternetRarenessScore > 1 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1, false))
-			}
-		}
-		{
-			maxInternetRarenessScoreRaw := r.URL.Query().Get("max_internet_rareness_score")
-			if maxInternetRarenessScoreRaw != "" {
-				v, err2 := strconv.ParseFloat(maxInternetRarenessScoreRaw, 64)
-				if err2 != nil {
-					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxInternetRarenessScore", maxInternetRarenessScoreRaw, "float"))
-				}
-				maxInternetRarenessScore = &v
-			}
-		}
-		if maxInternetRarenessScore != nil {
-			if *maxInternetRarenessScore < 0 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 0, true))
-			}
-		}
-		if maxInternetRarenessScore != nil {
-			if *maxInternetRarenessScore > 1 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1, false))
-			}
-		}
 		userPastelidRaw := r.Header.Get("user_pastelid")
 		if userPastelidRaw != "" {
 			userPastelid = &userPastelidRaw
@@ -700,7 +669,7 @@ func DecodeNftSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 		if err != nil {
 			return nil, err
 		}
-		payload := NewNftSearchPayload(artist, limit, query, creatorName, artTitle, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore, minInternetRarenessScore, maxInternetRarenessScore, userPastelid, userPassphrase)
+		payload := NewNftSearchPayload(artist, limit, query, creatorName, artTitle, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, isLikelyDupe, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore, userPastelid, userPassphrase)
 
 		return payload, nil
 	}
@@ -1122,6 +1091,9 @@ func marshalNftNftSummaryToNftSummaryResponseBody(v *nft.NftSummary) *NftSummary
 		CreatorPastelID:   v.CreatorPastelID,
 		CreatorName:       v.CreatorName,
 		CreatorWebsiteURL: v.CreatorWebsiteURL,
+		NsfwScore:         v.NsfwScore,
+		RarenessScore:     v.RarenessScore,
+		IsLikelyDupe:      v.IsLikelyDupe,
 	}
 
 	return res

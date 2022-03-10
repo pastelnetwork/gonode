@@ -206,7 +206,7 @@ func BuildUploadImagePayload(nftUploadImageBody string) (*nft.UploadImagePayload
 
 // BuildNftSearchPayload builds the payload for the nft nftSearch endpoint from
 // CLI flags.
-func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, nftNftSearchQuery string, nftNftSearchCreatorName string, nftNftSearchArtTitle string, nftNftSearchSeries string, nftNftSearchDescr string, nftNftSearchKeyword string, nftNftSearchMinCopies string, nftNftSearchMaxCopies string, nftNftSearchMinBlock string, nftNftSearchMaxBlock string, nftNftSearchMinRarenessScore string, nftNftSearchMaxRarenessScore string, nftNftSearchMinNsfwScore string, nftNftSearchMaxNsfwScore string, nftNftSearchMinInternetRarenessScore string, nftNftSearchMaxInternetRarenessScore string, nftNftSearchUserPastelid string, nftNftSearchUserPassphrase string) (*nft.NftSearchPayload, error) {
+func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, nftNftSearchQuery string, nftNftSearchCreatorName string, nftNftSearchArtTitle string, nftNftSearchSeries string, nftNftSearchDescr string, nftNftSearchKeyword string, nftNftSearchMinCopies string, nftNftSearchMaxCopies string, nftNftSearchMinBlock string, nftNftSearchMaxBlock string, nftNftSearchIsLikelyDupe string, nftNftSearchMinRarenessScore string, nftNftSearchMaxRarenessScore string, nftNftSearchMinNsfwScore string, nftNftSearchMaxNsfwScore string, nftNftSearchUserPastelid string, nftNftSearchUserPassphrase string) (*nft.NftSearchPayload, error) {
 	var err error
 	var artist *string
 	{
@@ -378,6 +378,17 @@ func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, 
 			}
 		}
 	}
+	var isLikelyDupe *bool
+	{
+		if nftNftSearchIsLikelyDupe != "" {
+			var val bool
+			val, err = strconv.ParseBool(nftNftSearchIsLikelyDupe)
+			isLikelyDupe = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for isLikelyDupe, must be BOOL")
+			}
+		}
+	}
 	var minRarenessScore *float64
 	{
 		if nftNftSearchMinRarenessScore != "" {
@@ -470,52 +481,6 @@ func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, 
 			}
 		}
 	}
-	var minInternetRarenessScore *float64
-	{
-		if nftNftSearchMinInternetRarenessScore != "" {
-			val, err := strconv.ParseFloat(nftNftSearchMinInternetRarenessScore, 64)
-			minInternetRarenessScore = &val
-			if err != nil {
-				return nil, fmt.Errorf("invalid value for minInternetRarenessScore, must be FLOAT64")
-			}
-			if minInternetRarenessScore != nil {
-				if *minInternetRarenessScore < 0 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 0, true))
-				}
-			}
-			if minInternetRarenessScore != nil {
-				if *minInternetRarenessScore > 1 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1, false))
-				}
-			}
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	var maxInternetRarenessScore *float64
-	{
-		if nftNftSearchMaxInternetRarenessScore != "" {
-			val, err := strconv.ParseFloat(nftNftSearchMaxInternetRarenessScore, 64)
-			maxInternetRarenessScore = &val
-			if err != nil {
-				return nil, fmt.Errorf("invalid value for maxInternetRarenessScore, must be FLOAT64")
-			}
-			if maxInternetRarenessScore != nil {
-				if *maxInternetRarenessScore < 0 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 0, true))
-				}
-			}
-			if maxInternetRarenessScore != nil {
-				if *maxInternetRarenessScore > 1 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1, false))
-				}
-			}
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
 	var userPastelid *string
 	{
 		if nftNftSearchUserPastelid != "" {
@@ -557,12 +522,11 @@ func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, 
 	v.MaxCopies = maxCopies
 	v.MinBlock = minBlock
 	v.MaxBlock = maxBlock
+	v.IsLikelyDupe = isLikelyDupe
 	v.MinRarenessScore = minRarenessScore
 	v.MaxRarenessScore = maxRarenessScore
 	v.MinNsfwScore = minNsfwScore
 	v.MaxNsfwScore = maxNsfwScore
-	v.MinInternetRarenessScore = minInternetRarenessScore
-	v.MaxInternetRarenessScore = maxInternetRarenessScore
 	v.UserPastelid = userPastelid
 	v.UserPassphrase = userPassphrase
 
