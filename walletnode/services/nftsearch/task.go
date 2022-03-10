@@ -47,25 +47,24 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 		pastelConnections = len(task.searchResult)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	newCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if err := task.ddAndFP.Connect(ctx, pastelConnections, cancel); err != nil {
+	if err := task.ddAndFP.Connect(newCtx, pastelConnections, cancel); err != nil {
 		return errors.Errorf("connect and setup fetchers: %w", err)
 	}
-
 	if err := task.search(ctx); err != nil {
 		return errors.Errorf("search tickets: %w", err)
 	}
 
-	if err := task.thumbnail.Connect(ctx, pastelConnections, cancel); err != nil {
+	if err := task.thumbnail.Connect(newCtx, pastelConnections, cancel); err != nil {
 		return errors.Errorf("connect and setup fetchers: %w", err)
 	}
-	if err := task.thumbnail.FetchMultiple(ctx, task.searchResult, &task.resultChan); err != nil {
+	if err := task.thumbnail.FetchMultiple(newCtx, task.searchResult, &task.resultChan); err != nil {
 		return errors.Errorf("fetch multiple thumbnails: %w", err)
 	}
 
-	return task.thumbnail.CloseAll(ctx)
+	return task.thumbnail.CloseAll(newCtx)
 }
 
 func (task *NftSearchingTask) search(ctx context.Context) error {
@@ -73,7 +72,6 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("act ticket: %s", err)
 	}
-
 	group, gctx := errgroup.WithContext(ctx)
 	for _, ticket := range actTickets {
 		ticket := ticket
@@ -130,12 +128,11 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 
 // filterRegTicket filters ticket against request params & checks if its a match
 func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
-
 	// Get DD and FP data so we can filter on it.
 	ddAndFpData, err := task.ddAndFP.Fetch(ctx, regTicket.TXID)
 	if err != nil {
-		//purposefully not breaking the entire search here
 		log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
+		return srch, false
 	}
 	ddAndFpStruct := &pastel.DDAndFingerprints{}
 	json.Unmarshal(ddAndFpData, ddAndFpStruct)
@@ -168,7 +165,6 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 		OpenNSFWScore: ddAndFpStruct.OpenNSFWScore,
 		IsLikelyDupe:  ddAndFpStruct.IsLikelyDupe,
 	}
-
 	//performs fuzzy matching on string portions of search
 	return regSearch.Search(task.request)
 }

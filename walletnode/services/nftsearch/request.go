@@ -78,22 +78,18 @@ type NftSearchingRequest struct {
 // FromNftSearchRequest from one to another
 func FromNftSearchRequest(req *nft.NftSearchPayload) *NftSearchingRequest {
 	rq := &NftSearchingRequest{
-		Artist:           req.Artist,
-		Limit:            req.Limit,
-		Query:            req.Query,
-		ArtistName:       req.CreatorName,
-		ArtTitle:         req.ArtTitle,
-		Series:           req.Series,
-		Descr:            req.Descr,
-		Keyword:          req.Keyword,
-		MinBlock:         req.MinBlock,
-		MaxBlock:         req.MaxBlock,
-		MinCopies:        req.MinCopies,
-		MaxCopies:        req.MaxCopies,
-		MinNsfwScore:     *req.MinNsfwScore,
-		MaxNsfwScore:     *req.MaxNsfwScore,
-		MinRarenessScore: *req.MinRarenessScore,
-		MaxRarenessScore: *req.MaxRarenessScore,
+		Artist:     req.Artist,
+		Limit:      req.Limit,
+		Query:      req.Query,
+		ArtistName: req.CreatorName,
+		ArtTitle:   req.ArtTitle,
+		Series:     req.Series,
+		Descr:      req.Descr,
+		Keyword:    req.Keyword,
+		MinBlock:   req.MinBlock,
+		MaxBlock:   req.MaxBlock,
+		MinCopies:  req.MinCopies,
+		MaxCopies:  req.MaxCopies,
 	}
 
 	if req.UserPastelid != nil {
@@ -102,6 +98,26 @@ func FromNftSearchRequest(req *nft.NftSearchPayload) *NftSearchingRequest {
 
 	if req.UserPassphrase != nil {
 		rq.UserPassphrase = *req.UserPassphrase
+	}
+
+	if req.MinNsfwScore != nil {
+		rq.MinNsfwScore = *req.MinNsfwScore
+	}
+
+	if req.MaxNsfwScore != nil {
+		rq.MaxNsfwScore = *req.MaxNsfwScore
+	}
+
+	if req.MinRarenessScore != nil {
+		rq.MinRarenessScore = *req.MinRarenessScore
+	}
+
+	if req.MaxRarenessScore != nil {
+		rq.MaxRarenessScore = *req.MaxRarenessScore
+	}
+
+	if req.IsLikelyDupe != nil {
+		rq.IsLikelyDupe = *req.IsLikelyDupe
 	}
 
 	return rq

@@ -201,7 +201,6 @@ func (service *NftAPIHandler) Download(ctx context.Context, p *nft.NftDownloadPa
 // NftSearch searches for NFT & streams the result based on filters
 func (service *NftAPIHandler) NftSearch(ctx context.Context, p *nft.NftSearchPayload, stream nft.NftSearchServerStream) error {
 	defer stream.Close()
-
 	taskID := service.search.AddTask(p)
 	task := service.search.GetTask(taskID)
 

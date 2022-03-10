@@ -12,7 +12,7 @@ const (
 	RetrieveMethod = "Retrieve"
 	// StoreMethod represent Store name method
 	StoreMethod = "Store"
-	//NClosestNodes mocks getting the n closest nodes to a given string
+	//NClosestMethod mocks getting the n closest nodes to a given string
 	NClosestMethod = "NClosestNodes"
 )
 

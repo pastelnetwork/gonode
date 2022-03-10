@@ -67,6 +67,27 @@ func TestRunTask(t *testing.T) {
 		want []RegTicketSearch
 		fail bool
 	}{
+		"weird-ddfpvals": {
+			args: args{
+				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
+				regTickets: pastel.RegTickets{regTicketA},
+				req: &NftSearchingRequest{
+					Query:        "alan",
+					ArtistName:   true,
+					Limit:        10,
+					IsLikelyDupe: false,
+				},
+				ddAndFp: pastel.DDAndFingerprints{
+					OpenNSFWScore: float32(0.5),
+					IsLikelyDupe:  false,
+					RarenessScores: &pastel.RarenessScores{
+						OverallAverageRarenessScore: 0.5,
+					},
+				},
+			},
+			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketA}},
+			fail: false,
+		},
 		"match": {
 			args: args{
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
