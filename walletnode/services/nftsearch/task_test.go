@@ -165,7 +165,7 @@ func TestRunTask(t *testing.T) {
 
 			nodeClientMock := nodeMock.NewMockClient(t)
 			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterNft().
-				ListenOnClose(nil).ListenOnDownloadNft().ListenOnDownloadThumbnail([]byte{}, nil)
+				ListenOnClose(nil).ListenOnDownloadNft().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnDone()
 			nodeClientMock.ConnectionInterface.On("DownloadNft").Return(nodeClientMock.DownloadNftInterface)
 			if len(testCase.args.actTickets) != len(testCase.args.regTickets) {
 				t.Fatalf("#act_tickets != # reg_tickets")

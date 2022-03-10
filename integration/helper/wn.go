@@ -1,6 +1,9 @@
 package helper
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type UploadImageReq struct {
 	File     []byte
@@ -9,6 +12,10 @@ type UploadImageReq struct {
 
 type UploadImageResp struct {
 	ImageID string `json:"image_id"`
+}
+
+type DownloadResp struct {
+	File string `json:"file"`
 }
 
 type ThumbnailCoordinate struct {
@@ -69,6 +76,10 @@ func GetNFTDetailURI(baseURI, txid string) string {
 	return fmt.Sprintf("%s/%s/%s", baseURI, "nfts", txid)
 }
 
+func GetDownloadURI(baseURI, pid, txid string) string {
+	return fmt.Sprintf("%s/%s?pid=%s&txid=%s", baseURI, "nfts/download", pid, txid)
+}
+
 // Sense
 
 func GetSenseUploadImageURI(baseURI string) string {
@@ -87,8 +98,17 @@ func GetSenseTaskStateURI(taskID string) string {
 	return fmt.Sprintf("openapi/sense/start/%s/state", taskID)
 }
 
-// Cascade
+func GetNFTSearchURI(queryParams map[string]string) string {
+	uri := "nfts/search?"
+	for key, val := range queryParams {
+		uri = uri + key + "=" + val + "&"
+	}
+	uri = strings.TrimSuffix(uri, "&")
 
+	return uri
+}
+
+// Cascade
 func GetCascadeUploadImageURI(baseURI string) string {
 	return fmt.Sprintf("%s/%s", baseURI, "openapi/cascade/upload")
 }

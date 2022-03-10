@@ -393,6 +393,7 @@ func (task *NftRegistrationTask) storeRaptorQSymbols(ctx context.Context) error 
 	if err != nil {
 		return errors.Errorf("read image data: %w", err)
 	}
+
 	return task.storage.StoreRaptorQSymbolsIntoP2P(ctx, data, task.Nft.Name())
 }
 

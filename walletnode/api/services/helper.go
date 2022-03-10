@@ -1,8 +1,9 @@
 package services
 
 import (
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"time"
+
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 
 	"github.com/pastelnetwork/gonode/pastel"
 
@@ -26,6 +27,7 @@ func toNftStates(statuses []*state.Status) []*nft.TaskState {
 // NFT Search
 func toNftSearchResult(srch *nftsearch.RegTicketSearch) *nft.NftSearchResult {
 	ticketData := srch.RegTicketData.NFTTicketData.AppTicketData
+
 	res := &nft.NftSearchResult{
 		Nft: &nft.NftSummary{
 			Txid:       srch.TXID,
