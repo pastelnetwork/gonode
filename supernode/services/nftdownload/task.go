@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/supernode/services/common"
@@ -16,13 +15,9 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
-)
-
-const (
-	minRQIDsFileLine = 4
-	rqSymbolsDirName = "symbols"
 )
 
 // NftDownloadingTask is the task of registering new Nft.
@@ -357,17 +352,10 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, nftRegTicket *p
 			continue
 		}
 
-		fileContent, err := zstd.Decompress(nil, rqIDsData)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Decompress compressed symbol IDs file failed")
-			lastErr = errors.Errorf("decompress symbol IDs file: %w", err)
-			task.UpdateStatus(common.StatusSymbolFileInvalid)
-			continue
-		}
+		log.WithContext(ctx).WithField("rqIDsData", string(rqIDsData)).Debugf("rqIDs Data")
 
-		log.WithContext(ctx).WithField("Content", string(fileContent)).Debugf("symbol IDs file")
 		var rqIDs []string
-		rqIDs, err = task.getRQSymbolIDs(fileContent)
+		rqIDs, err = task.getRQSymbolIDs(ctx, id, rqIDsData)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Parse symbol IDs failed")
 			lastErr = errors.Errorf("parse symbol IDs: %w", err)
@@ -389,6 +377,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, nftRegTicket *p
 
 			// Validate that the hash of each "symbol/chunk" matches its id
 			h := sha3.Sum256(symbol)
+
 			storedID := base58.Encode(h[:])
 			if storedID != id {
 				log.WithContext(ctx).Warnf("Symbol ID mismatched, expect %v, got %v", id, storedID)
@@ -450,22 +439,37 @@ func (task *NftDownloadingTask) decodeRegTicket(nftRegTicket *pastel.RegTicket) 
 	return nil
 }
 
-func (task NftDownloadingTask) getRQSymbolIDs(rqIDsData []byte) (rqIDs []string, err error) {
-	lines := strings.Split(string(rqIDsData), "\n")
-	// First line is RANDOM-GUID
-	// Second line is BLOCK_HASH
-	// Third line is PASTELID
-	// All the rest are rq IDs
-
-	if len(lines) < minRQIDsFileLine {
-		err = errors.Errorf("Invalid symbol identifiers file: %s", string(rqIDsData))
-		return
+func (task *NftDownloadingTask) getRQSymbolIDs(ctx context.Context, id string, rqIDsData []byte) (rqIDs []string, err error) {
+	fileContent, err := zstd.Decompress(nil, rqIDsData)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Decompress compressed symbol IDs file failed")
+		task.UpdateStatus(common.StatusSymbolFileInvalid)
 	}
 
-	l := len(lines)
-	rqIDs = lines[3 : l-1]
+	log.WithContext(ctx).WithField("Content", string(fileContent)).Debugf("symbol IDs file")
 
-	return
+	var rqData []byte
+	for i := 0; i < len(fileContent); i++ {
+		if fileContent[i] == pastel.SeparatorByte {
+			rqData = fileContent[:i]
+			if i+1 >= len(fileContent) {
+				return rqIDs, errors.New("invalid rqIDs data")
+			}
+			break
+		}
+	}
+
+	rqDataJSON, err := utils.B64Decode(rqData)
+	if err != nil {
+		return rqIDs, errors.Errorf("decode %s failed: %w", string(rqData), err)
+	}
+
+	file := rqnode.RawSymbolIDFile{}
+	if err := json.Unmarshal(rqDataJSON, &file); err != nil {
+		return rqIDs, errors.Errorf("parsing file: %s - err: %w", string(rqIDsData), err)
+	}
+
+	return file.SymbolIdentifiers, nil
 }
 
 func (task *NftDownloadingTask) removeArtifacts() {

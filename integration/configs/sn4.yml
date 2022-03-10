@@ -6,7 +6,7 @@ log-config:
   log-max-backups: 10   # set the maximum number of old log files to retain
   log-levels:           # log level of individual files 
     common: debug
-    p2p: info
+    p2p: debug
     metadb: info
     dd: info
 temp-dir:

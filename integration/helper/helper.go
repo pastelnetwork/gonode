@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -29,7 +30,6 @@ const (
 // ItHelper is used by integration tests to make requests to server
 type ItHelper struct {
 	client *http.Client
-	token  string
 }
 
 // NewItHelper returns instance of ItHelper with default http client
@@ -70,7 +70,7 @@ func (h *ItHelper) RequestRaw(method string, reqBody []byte, uri string, queryPa
 		return resp, 0, err
 	}
 
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %v", h.token))
+	request.Header.Set("Authorization", "passphrase")
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("app_pastelid_passphrase", "passphrase")
 
@@ -134,6 +134,82 @@ func (h *ItHelper) HTTPCurlUploadFile(method, uri, file, filename string) (resp 
 	}
 
 	return stdout, nil
+}
+
+func DoNFTSearchWSReq(addr string, path string, expectedKey []string, expectedValue []string) error {
+	ctx := context.Background()
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
+	u := fmt.Sprintf("ws://%s/%s", addr, path)
+	log.Printf("connecting %s", u)
+
+	c, _, err := websocket.DefaultDialer.Dial(u, nil)
+	if err != nil {
+		return fmt.Errorf("dial: %w", err)
+	}
+	defer c.Close()
+
+	done := make(chan bool)
+
+	go func() {
+		for {
+			_, message, err := c.ReadMessage()
+			if err != nil {
+				log.Println("read:", err)
+				return
+			}
+
+			resp := make(map[string]interface{})
+			if err := json.Unmarshal(message, &resp); err != nil {
+				continue
+			}
+
+			count := 0
+			for i := 0; i < len(expectedKey); i++ {
+				resp := resp
+				key := expectedKey[i]
+				keysSplit := strings.Split(key, ".")
+				if len(keysSplit) > 1 {
+					resp = resp[keysSplit[0]].(map[string]interface{})
+					key = keysSplit[1]
+				}
+
+				val, ok := resp[key]
+				log.Printf("ws key: %s - expected response: %s - got response: %s\n",
+					key, expectedValue[i], val)
+				if ok {
+					if val == expectedValue[i] {
+						count++
+						continue
+					} else if val == "Request Rejected" {
+						done <- false
+					}
+				}
+			}
+
+			if count == len(expectedKey) {
+				done <- true
+			} else {
+				log.Printf("expected matches: %d - got matches: %d\n", len(expectedKey), count)
+				done <- false
+			}
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return errors.New("context cancelled")
+	case <-time.After(wsExpectedResponseTimeout * time.Second):
+		return errors.New("timeout")
+	case val := <-done:
+		if val {
+			return nil
+		}
+
+		return errors.New("task failed (Request Rejected), please see container logs")
+	}
+
 }
 
 func DoWebSocketReq(addr, path, expectedKey, expectedValue string) error {

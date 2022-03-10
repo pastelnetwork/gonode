@@ -175,4 +175,5 @@ func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
 	artTicketBytes, err := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
 	assert.Nil(t, err)
 	ticket.RegTicketData.NFTTicket = artTicketBytes
+	ticket.RegTicketData.NFTTicketData = pastel.NFTTicket{}
 }

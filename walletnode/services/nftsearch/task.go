@@ -90,10 +90,16 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 			//request art registration tickets
 			regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(gctx, ticket.ActTicketData.RegTXID)
 			if err != nil {
-				log.WithContext(gctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg request")
-
-				return fmt.Errorf("reg ticket - txid: %s - err: %s", ticket.TXID, err)
+				log.WithContext(gctx).WithField("txid", ticket.ActTicketData.RegTXID).WithError(err).Error("Reg request")
+				return err
 			}
+
+			nftData, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+				return nil
+			}
+			regTicket.RegTicketData.NFTTicketData = *nftData
 
 			if srch, isMatched := task.filterRegTicket(ctx, &regTicket); isMatched {
 				task.addMatchedResult(srch)

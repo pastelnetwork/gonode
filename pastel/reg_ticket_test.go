@@ -29,6 +29,7 @@ func TestEncodeNFTTicket(t *testing.T) {
 	}
 
 	encoded, err := EncodeNFTTicket(&inputTicket)
+
 	assert.Nil(t, err)
 	outputTicket, err := DecodeNFTTicket(encoded)
 	outputAppData := outputTicket.AppTicketData

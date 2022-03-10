@@ -92,6 +92,11 @@ func (m *Mocker) mockRqRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock encode err: %w", err)
 	}
 
+	if err := m.mockServer([]byte(decodeResp), addr, "decode",
+		[]string{""}, 6); err != nil {
+		return fmt.Errorf("failed to mock decode err: %w", err)
+	}
+
 	return nil
 }
 
@@ -182,6 +187,36 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 	if err := m.mockServer([]byte(ticketsFindIDArtistResp), addr, "tickets",
 		[]string{"find", "action-act"}, 3); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	// download
+	if err := m.mockServer([]byte(ticketOwnershipResp), addr, "tickets",
+		[]string{"tools", "validateownership", "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09",
+			testconst.ArtistPastelID, "passphrase"}, 3); err != nil {
+
+		return fmt.Errorf("failed to mock ticket ownership err: %w", err)
+	}
+
+	for key, val := range getRegTickets() {
+
+		if err := m.mockServer(val, addr, "tickets", []string{"get",
+			key}, 3); err != nil {
+
+			return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
+		}
+	}
+
+	if err := m.mockServer(getTradeTickets(), addr, "tickets", []string{"list",
+		"trade", "available"}, 3); err != nil {
+
+		return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
+	}
+
+	//search
+	if err := m.mockServer(getSearchActTicketsResponse(), addr, "tickets", []string{"list",
+		"act"}, 5); err != nil {
+
+		return fmt.Errorf("failed to mock tickets act err: %w", err)
 	}
 
 	return nil
