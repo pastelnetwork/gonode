@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/supernode/services/common"
@@ -13,6 +14,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"golang.org/x/crypto/sha3"
 
+	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -36,42 +38,63 @@ func (task *NftDownloadingTask) Run(ctx context.Context) error {
 
 // DownloadThumbnail gets thumbnail file from ticket based on id and returns the thumbnail.
 func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid string, numnails int32) (map[int][]byte, error) {
-	var err error
+	var err, err2 error
 	if err = task.RequiredStatus(common.StatusTaskStarted); err != nil {
 		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
 		return nil, errors.Errorf("wrong status: %w", err)
 	}
-
 	regTicket, err := task.PastelClient.RegTicket(ctx, txid)
 	if err != nil {
 		log.WithContext(ctx).WithField("txid", txid).Error("Could not find regticket with txid")
 		return nil, errors.Errorf("Bad txid: %s", err)
 	}
 
-	thumbnailHash := regTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash
+	//decode the nft ticket
+	nftTicket := &pastel.NFTTicket{}
+	json.Unmarshal(regTicket.RegTicketData.NFTTicket, nftTicket)
 
+	//decode the appticketdata
+	appTicketData, err := b85.Decode(nftTicket.AppTicket)
+	if err != nil {
+		log.Warnf("b85 decoding failed, trying to base64 decode - err: %v", err)
+		appTicketData, err = base64.StdEncoding.DecodeString(regTicket.RegTicketData.NFTTicketData.AppTicket)
+		if err != nil {
+			return nil, fmt.Errorf("b64 decode: %v", err)
+		}
+	}
+
+	appTicket := &pastel.AppTicket{}
+	json.Unmarshal(appTicketData, appTicket)
+
+	thumbnailHash := appTicket.Thumbnail1Hash
 	var file1, file2 []byte
 	<-task.NewAction(func(ctx context.Context) error {
 		base58Key := base58.Encode(thumbnailHash)
 		file1, err = task.P2PClient.Retrieve(ctx, base58Key)
 		if err != nil {
-			err = errors.Errorf("fetch p2p key : %s, error: %w", string(base58Key), err)
+			err = errors.Errorf("fetch p2p key : %s, base58 key: %s,error: %w", thumbnailHash, string(base58Key), err)
 			task.UpdateStatus(common.StatusKeyNotFound)
 		}
 		return nil
 	})
-
 	if numnails > 1 {
-		thumbnailHash = regTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail2Hash
+		thumbnailHash = appTicket.Thumbnail2Hash
 		<-task.NewAction(func(ctx context.Context) error {
 			base58Key := base58.Encode(thumbnailHash)
-			file2, err = task.P2PClient.Retrieve(ctx, base58Key)
+			file2, err2 = task.P2PClient.Retrieve(ctx, base58Key)
 			if err != nil {
-				err = errors.Errorf("fetch p2p key : %s, error: %w", string(base58Key), err)
+				err2 = errors.Errorf("fetch p2p key2 : %s, base58 key2: %s,error: %w", thumbnailHash, string(base58Key), err)
 				task.UpdateStatus(common.StatusKeyNotFound)
 			}
 			return nil
 		})
+	}
+	if err2 != nil {
+		if err == nil {
+			err = err2
+		} else {
+			err = errors.Errorf(err.Error() + " " + err2.Error())
+		}
 	}
 	resMap := make(map[int][]byte)
 	resMap[0] = file1
@@ -79,8 +102,9 @@ func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid stri
 	return resMap, err
 }
 
-// DownloadDDAndFingerprints gets thumbnail file from ticket based on id and returns the thumbnail.
+// DownloadDDAndFingerprints gets dd and fp file from ticket based on id and returns the file.
 func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, txid string) ([]byte, error) {
+	log.WithContext(ctx).WithField("txid", txid).Println("Getting dd and fingerprints for txid")
 	var err error
 	if err = task.RequiredStatus(common.StatusTaskStarted); err != nil {
 		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
@@ -93,8 +117,25 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 		return nil, errors.Errorf("Bad txid: %s", err)
 	}
 
-	//just getting the small thumbnail hash right now
-	DDAndFingerprintsIDs := regTicket.RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
+	//decode the nft ticket
+	nftTicket := &pastel.NFTTicket{}
+	json.Unmarshal(regTicket.RegTicketData.NFTTicket, nftTicket)
+
+	//decode the appticketdata
+	appTicketData, err := b85.Decode(nftTicket.AppTicket)
+	if err != nil {
+		log.Warnf("b85 decoding failed, trying to base64 decode - err: %v", err)
+		appTicketData, err = base64.StdEncoding.DecodeString(regTicket.RegTicketData.NFTTicketData.AppTicket)
+		if err != nil {
+			return nil, fmt.Errorf("b64 decode: %v", err)
+		}
+	}
+
+	appTicket := &pastel.AppTicket{}
+	json.Unmarshal(appTicketData, appTicket)
+
+	DDAndFingerprintsIDs := appTicket.DDAndFingerprintsIDs
+	log.WithContext(ctx).WithField("ddandfpids", DDAndFingerprintsIDs).WithField("NFTTicket", nftTicket).Println("Found dd and fp ids")
 
 	//utility function for getting the DD and Fingerprint Details given
 	//	a list of IDs (presumably from AppTicketData's DDAndFingerprintIDs), fingerprint IC, and fingerprint max
@@ -113,11 +154,13 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails tried to get this file and failed. ")
 			continue
 		}
+		log.WithContext(ctx).WithField("file", file).Println("Got the file")
 		decompressedData, err := zstd.Decompress(nil, file)
 		if err != nil {
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
 			continue
 		}
+		log.WithContext(ctx).Println("Decompressed the file")
 		//base64 dataset doesn't contain periods, so we just find the first index of period and chop it and everything else
 		firstIndexOfSeparator := bytes.IndexByte(decompressedData, pastel.SeparatorByte)
 		if firstIndexOfSeparator < 1 {
@@ -125,18 +168,20 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 			continue
 		}
 		dataToBase64Decode := decompressedData[:firstIndexOfSeparator]
-		dataToJSONDecode := []byte{}
-		_, err = base64.RawStdEncoding.Decode(dataToJSONDecode, dataToBase64Decode)
+		log.WithContext(ctx).WithField("first index of separator", firstIndexOfSeparator).WithField("decompd data", string(decompressedData)).WithField("datatobase64decode", string(dataToBase64Decode)).Println("About to base64 decode file")
+		dataToJSONDecode, err := utils.B64Decode(dataToBase64Decode)
 		if err != nil {
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not base64 decode. ")
 			continue
 		}
+		log.WithContext(ctx).Println("base64 decoded the file")
 		ddAndFingerprintsStruct := &pastel.DDAndFingerprints{}
 		err = json.Unmarshal(dataToJSONDecode, ddAndFingerprintsStruct)
 		if err != nil {
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not JSON unmarshal. ")
 			continue
 		}
+		log.WithContext(ctx).WithField("ddfpstruct", ddAndFingerprintsStruct).Println("Returning this file in byte form, this was json unmarshallable")
 		//dataToJSONDecode is just the DDAndFingerprints file we'd like to return at this point
 		return dataToJSONDecode, nil
 

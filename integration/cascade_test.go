@@ -31,7 +31,7 @@ var _ = Describe("Cascade", func() {
 	)
 
 	BeforeEach(func() {
-		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, itHelper)
+		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, it.SNServers, itHelper)
 
 		uploadImageReq = &helper.UploadImageReq{
 			Filename: filepath.Join(filepath.Dir("."), "testdata", "test.jpg"),

@@ -136,21 +136,25 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 	}
 	ddAndFpStruct := &pastel.DDAndFingerprints{}
 	json.Unmarshal(ddAndFpData, ddAndFpStruct)
+	log.WithContext(ctx).WithField("ddandfpstruct", ddAndFpStruct).Println("Successfully unmarshalled dd and fp struct")
 
 	//rareness score
 	if !(task.request.MinRarenessScore == float64(0) && task.request.MinRarenessScore == task.request.MaxRarenessScore) && !common.InFloatRange(float64(ddAndFpStruct.RarenessScores.OverallAverageRarenessScore),
 		&task.request.MinRarenessScore, &task.request.MaxRarenessScore) {
+		log.WithContext(ctx).WithField("task.request.minrarenessscore", task.request.MinRarenessScore).WithField("task.request.maxrarenessscore", task.request.MaxRarenessScore).WithField("overallaveragerarnessscore", ddAndFpStruct.RarenessScores.OverallAverageRarenessScore).Println("rareness score outside of range")
 		return srch, false
 	}
 
 	//opennsfw score
 	if !(task.request.MinNsfwScore == float64(0) && task.request.MinNsfwScore == task.request.MaxNsfwScore) && !common.InFloatRange(float64(ddAndFpStruct.OpenNSFWScore),
 		&task.request.MinNsfwScore, &task.request.MaxNsfwScore) {
+		log.WithContext(ctx).WithField("task.request.minnsfwscore", task.request.MinNsfwScore).WithField("task.request.maxnsfwscore", task.request.MaxNsfwScore).WithField("opennsfscore", ddAndFpStruct.OpenNSFWScore).Println("nsfw score outside of range")
 		return srch, false
 	}
 
 	//Is likely dupe
 	if task.request.IsLikelyDupe != ddAndFpStruct.IsLikelyDupe {
+		log.WithContext(ctx).WithField("task.request.islikelydupe", task.request.IsLikelyDupe).WithField("ddandfpstruct.islikelydupe", ddAndFpStruct.IsLikelyDupe).Println("IsLikelyDupe not match")
 		return srch, false
 	}
 
@@ -166,6 +170,7 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 		IsLikelyDupe:  ddAndFpStruct.IsLikelyDupe,
 	}
 	//performs fuzzy matching on string portions of search
+	log.WithContext(ctx).WithField("RegSearch", regSearch).Println("filter reg ticket match, sending to fuzzy match")
 	return regSearch.Search(task.request)
 }
 

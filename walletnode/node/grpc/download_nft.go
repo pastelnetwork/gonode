@@ -59,7 +59,7 @@ func (service *downloadNft) DownloadThumbnail(ctx context.Context, txid string, 
 		Txid:     txid,
 		Numnails: int32(numNails),
 	}
-
+	log.WithContext(ctx).Println("Sending sn download thumbnail request")
 	res, err := service.client.DownloadThumbnail(ctx, in)
 
 	if err != nil {
