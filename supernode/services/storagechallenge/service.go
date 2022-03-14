@@ -41,6 +41,8 @@ type SCService struct {
 	numberOfVerifyingNodes        int
 	// repository                    Repository
 	currentBlockCount int32
+	// currently unimplemented, default always used instead.
+	challengeStatusObserver SaveChallengeState
 }
 
 //CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -69,7 +71,7 @@ func (service *SCService) Run(ctx context.Context) error {
 
 	for {
 		select {
-		case _ = <-ticker.C:
+		case <-ticker.C:
 			log.Println("Ticker has ticked")
 
 			if service.CheckNextBlockAvailable(ctx) {
@@ -109,6 +111,7 @@ func NewService(cfg *Config, fileStorage storage.FileStorageInterface, pastelCli
 		nodeID:                    cfg.PastelID,
 		numberOfChallengeReplicas: cfg.NumberOfChallengeReplicas,
 		numberOfVerifyingNodes:    cfg.NumberOfVerifyingNodes,
+		challengeStatusObserver:   challengeStatusObserver,
 	}
 }
 
@@ -132,7 +135,7 @@ func (service *SCService) ListSymbolFileKeysFromNFTTicket(ctx context.Context) (
 
 // GetSymbolFileByKey : Wrapper for p2p file storage service - retrieves a file from kademlia based on its key. Here, they should be raptorq symbol files.
 func (service *SCService) GetSymbolFileByKey(ctx context.Context, key string, getFromLocalOnly bool) ([]byte, error) {
-	return service.P2PClient.Retrieve(ctx, key)
+	return service.P2PClient.Retrieve(ctx, key, getFromLocalOnly)
 }
 
 // StoreSymbolFile : Wrapper for p2p file storage service - stores a file in kademlia based on its key

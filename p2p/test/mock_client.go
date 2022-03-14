@@ -32,7 +32,7 @@ func NewMockClient(t *testing.T) *Client {
 
 // ListenOnRetrieve listening Retrieve and returns data, and error from args
 func (client *Client) ListenOnRetrieve(data []byte, err error) *Client {
-	client.On(RetrieveMethod, mock.Anything, mock.Anything).Return(data, err)
+	client.On(RetrieveMethod, mock.Anything, mock.Anything, mock.Anything).Return(data, err)
 	return client
 }
 

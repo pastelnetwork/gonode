@@ -2110,7 +2110,6 @@ components:
           description: How many matches the scraper found on the first page of the
             google results
           example: 1
-          minimum: 0
         neutral_nsfw_score:
           type: number
           description: nsfw score
@@ -2128,7 +2127,6 @@ components:
           description: How many pages of search results the scraper found when searching
             for this image
           example: 1
-          minimum: 0
         porn_nsfw_score:
           type: number
           description: nsfw score
@@ -2525,7 +2523,7 @@ components:
           minLength: 35
           maxLength: 35
         thumbnail_coordinate:
-          $ref: '#/components/schemas/Thumbnailcoordinate2'
+          $ref: '#/components/schemas/ThumbnailcoordinateResponseBody'
         youtube_url:
           type: string
           description: NFT creation video youtube URL
@@ -3409,7 +3407,7 @@ components:
       - top_left_y
       - bottom_right_x
       - bottom_right_y
-    Thumbnailcoordinate2:
+    ThumbnailcoordinateResponseBody:
       type: object
       properties:
         bottom_right_x:
@@ -3436,7 +3434,7 @@ components:
           default: 0
           example: 0
           format: int64
-      description: Coordinate of the thumbnail
+      description: Coordinate of the thumbnail (default view)
       example:
         bottom_right_x: 640
         bottom_right_y: 480

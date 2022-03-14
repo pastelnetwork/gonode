@@ -24,7 +24,6 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 	type fields struct {
 		SuperNodeTask *common.SuperNodeTask
 		SCService     *SCService
-		storage       *common.StorageHandler
 	}
 	type args struct {
 		ctx        context.Context
@@ -125,7 +124,6 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 	type fields struct {
 		SuperNodeTask *common.SuperNodeTask
 		SCService     *SCService
-		storage       *common.StorageHandler
 	}
 	type args struct {
 		ctx                      context.Context
@@ -243,7 +241,6 @@ func TestVerifyStorageChallenge(t *testing.T) {
 	type fields struct {
 		SuperNodeTask *common.SuperNodeTask
 		SCService     *SCService
-		storage       *common.StorageHandler
 	}
 	type args struct {
 		ctx                      context.Context

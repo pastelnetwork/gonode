@@ -1835,7 +1835,7 @@ definitions:
         description: How many matches the scraper found on the first page of the google
           results
         example: 1
-        minimum: 0
+        format: int32
       neutral_nsfw_score:
         type: number
         description: nsfw score
@@ -1853,7 +1853,7 @@ definitions:
         description: How many pages of search results the scraper found when searching
           for this image
         example: 1
-        minimum: 0
+        format: int32
       porn_nsfw_score:
         type: number
         description: nsfw score
@@ -4384,7 +4384,7 @@ definitions:
         default: 0
         example: 0
         format: int64
-    description: Coordinate of the thumbnail
+    description: Coordinate of the thumbnail (default view)
     example:
       bottom_right_x: 640
       bottom_right_y: 480
@@ -4423,7 +4423,7 @@ definitions:
         default: 0
         example: 0
         format: int64
-    description: Coordinate of the thumbnail
+    description: Coordinate of the thumbnail (default view)
     example:
       bottom_right_x: 640
       bottom_right_y: 480

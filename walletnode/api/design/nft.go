@@ -632,12 +632,10 @@ var NftDetail = Type("NftDetail", func() {
 	})
 	Attribute("matches_found_on_first_page", UInt32, func() {
 		Description("How many matches the scraper found on the first page of the google results")
-		Minimum(0)
 		Example(1)
 	})
 	Attribute("number_of_pages_of_results", UInt32, func() {
 		Description("How many pages of search results the scraper found when searching for this image")
-		Minimum(0)
 		Example(1)
 	})
 	Attribute("URL_of_first_match_in_page", String, func() {

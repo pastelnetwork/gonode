@@ -118,14 +118,14 @@ func (s *p2p) Store(ctx context.Context, data []byte) (string, error) {
 }
 
 // Retrieve retrive the data from the kademlia network
-func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
+func (s *p2p) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]byte, error) {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if !s.running {
 		return nil, errors.New("p2p service is not running")
 	}
 
-	return s.dht.Retrieve(ctx, key)
+	return s.dht.Retrieve(ctx, key, localOnly...)
 }
 
 // Delete delete key in local node

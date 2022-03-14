@@ -23,12 +23,6 @@ require (
 )
 
 require (
-	github.com/cweill/gotests v1.6.0 // indirect
-	golang.org/x/mod v0.5.1 // indirect
-	golang.org/x/tools v0.1.9 // indirect
-)
-
-require (
 	github.com/anacrolix/missinggo v1.2.1 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/sync v0.2.0 // indirect
