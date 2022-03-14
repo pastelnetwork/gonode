@@ -10,14 +10,13 @@ import (
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
-//Verifying the storage challenge will occur if we are one of the <default 10> closest node ID's to the file hash being challenged.
+//VerifyStorageChallenge : Verifying the storage challenge will occur if we are one of the <default 10> closest node ID's to the file hash being challenged.
 //  On receipt of challenge message we:
 // 		Validate it
 //  	Get the file assuming we host it locally (if not, return)
 //  	Compute the hash of the data at the indicated byte range
 //		If the hash is correct and within the given byte range, success is indicated otherwise failure is indicated via SaveChallengeMessageState
-
-func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
+func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
 	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(incomingChallengeMessage.MessageType)
 	// Incoming challenge message validation
 	if err := task.validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
@@ -104,7 +103,7 @@ func (task *StorageChallengeTask) VerifyStorageChallenge(ctx context.Context, in
 	return outgoingChallengeMessage, nil
 }
 
-func (task *StorageChallengeTask) validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage *pb.StorageChallengeData) error {
+func (task *SCTask) validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage *pb.StorageChallengeData) error {
 	if incomingChallengeMessage.ChallengeStatus != pb.StorageChallengeData_Status_RESPONDED {
 		return fmt.Errorf("incorrect status to verify storage challenge")
 	}

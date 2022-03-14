@@ -11,7 +11,7 @@ import (
 
 // StorageChallenge represents common grpc service for registration NFTs.
 type StorageChallenge struct {
-	*storagechallenge.StorageChallengeService
+	*storagechallenge.SCService
 }
 
 // SessID retrieves SessID from the metadata.
@@ -29,7 +29,7 @@ func (service *StorageChallenge) SessID(ctx context.Context) (string, bool) {
 }
 
 // TaskFromMD returns task by SessID from the metadata.
-func (service *StorageChallenge) TaskFromMD(ctx context.Context) (*storagechallenge.StorageChallengeTask, error) {
+func (service *StorageChallenge) TaskFromMD(ctx context.Context) (*storagechallenge.SCTask, error) {
 	sessID, ok := service.SessID(ctx)
 	if !ok {
 		return nil, errors.New("not found sessID in metadata")
@@ -43,8 +43,8 @@ func (service *StorageChallenge) TaskFromMD(ctx context.Context) (*storagechalle
 }
 
 // NewStorageChallenge returns a new StorageChallenge instance.
-func NewStorageChallenge(service *storagechallenge.StorageChallengeService) *StorageChallenge {
+func NewStorageChallenge(service *storagechallenge.SCService) *StorageChallenge {
 	return &StorageChallenge{
-		StorageChallengeService: service,
+		SCService: service,
 	}
 }

@@ -39,7 +39,7 @@ func TestNewService(t *testing.T) {
 
 	testCases := []struct {
 		args args
-		want *StorageChallengeService
+		want *SCService
 	}{
 		{
 			args: args{
@@ -49,7 +49,7 @@ func TestNewService(t *testing.T) {
 				raptorQClient: raptorQClient.ClientInterface,
 				nodeClient:    nodeClient,
 			},
-			want: &StorageChallengeService{
+			want: &SCService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
@@ -111,7 +111,7 @@ func TestServiceRun(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			p2pClient := p2pMock.NewMockClient(t)
 			raptorQClient := rqmock.NewMockClient(t)
-			service := &StorageChallengeService{
+			service := &SCService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
@@ -161,7 +161,7 @@ func TestServiceNewTask(t *testing.T) {
 			p2pClient := p2pMock.NewMockClient(t)
 			raptorQClient := rqmock.NewMockClient(t)
 
-			service := &StorageChallengeService{
+			service := &SCService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
 					PastelClient: pastelClient.Client,
@@ -173,8 +173,8 @@ func TestServiceNewTask(t *testing.T) {
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
 			go service.Run(ctx)
-			task := service.NewStorageChallengeTask()
-			assert.Equal(t, service, task.StorageChallengeService)
+			task := service.NewSCTask()
+			assert.Equal(t, service, task.SCService)
 		})
 	}
 }

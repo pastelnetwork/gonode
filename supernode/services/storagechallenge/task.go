@@ -17,35 +17,35 @@ const (
 //  possible that further development could link the three functions and perform operations
 //  based on state.
 
-// Storage challenge task will manage response to storage challenge requests
-type StorageChallengeTask struct {
+// SCTask : Storage challenge task will manage response to storage challenge requests
+type SCTask struct {
 	*common.SuperNodeTask
-	*StorageChallengeService
+	*SCService
 
 	storage      *common.StorageHandler
 	stateStorage SaveChallengeState
 }
 
-//	RunHelper's cleanup function is currently nil as WIP will determine what needs to be cleaned.
-func (task *StorageChallengeTask) Run(ctx context.Context) error {
+// Run : RunHelper's cleanup function is currently nil as WIP will determine what needs to be cleaned.
+func (task *SCTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.RemoveArtifacts)
 }
 
 // Task returns the task of the Storage Challenge by the id
-func (service *StorageChallengeService) Task(id string) *StorageChallengeTask {
-	return service.Worker.Task(id).(*StorageChallengeTask)
+func (service *SCService) Task(id string) *SCTask {
+	return service.Worker.Task(id).(*SCTask)
 }
 
-// Cleanup function defined here, can be filled in later
-func (task *StorageChallengeTask) RemoveArtifacts() {
+// RemoveArtifacts : Cleanup function defined here, can be filled in later
+func (task *SCTask) RemoveArtifacts() {
 }
 
-// NewStorageChallengeTask returns a new Task instance.
-func NewStorageChallengeTask(service *StorageChallengeService) *StorageChallengeTask {
-	task := &StorageChallengeTask{
-		SuperNodeTask:           common.NewSuperNodeTask(logPrefix),
-		StorageChallengeService: service,
-		stateStorage:            &defaultChallengeStateLogging{},
+// NewSCTask returns a new Task instance.
+func NewSCTask(service *SCService) *SCTask {
+	task := &SCTask{
+		SuperNodeTask: common.NewSuperNodeTask(logPrefix),
+		SCService:     service,
+		stateStorage:  &defaultChallengeStateLogging{},
 	}
 	return task
 }
@@ -82,7 +82,7 @@ func (cs defaultChallengeStateLogging) OnTimeout(ctx context.Context, challengeI
 }
 
 //SaveChallengeMessageState can be called to perform the above functions based on the state of the storage challenge.
-func (task *StorageChallengeTask) SaveChallengeMessageState(ctx context.Context, status string, challengeID, nodeID string, sentBlock int32) {
+func (task *SCTask) SaveChallengeMessageState(ctx context.Context, status string, challengeID, nodeID string, sentBlock int32) {
 	switch status {
 	case "sent":
 		task.stateStorage.OnSent(ctx, challengeID, nodeID, sentBlock)

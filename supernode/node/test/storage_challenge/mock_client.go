@@ -29,12 +29,13 @@ const (
 	// SessIDMethod represent SessID name method
 	SessIDMethod = "SessID"
 
-	//ProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error
+	//ProcessStorageChallengeMethod intercepts the ProcessStorageChallenge method
 	ProcessStorageChallengeMethod = "ProcessStorageChallenge"
 
-	//VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error
+	//VerifyStorageChallengeMethod intercepts the VerifyStorageChallenge method
 	VerifyStorageChallengeMethod = "VerifyStorageChallenge"
 
+	//StorageChallengeInterfaceMethod intercepts the StorageChallenge interface
 	StorageChallengeInterfaceMethod = "StorageChallenge"
 )
 
@@ -56,7 +57,7 @@ func NewMockClient(t *testing.T) *Client {
 	}
 }
 
-// ListenOnRegisterNft listening RegisterNftInterface call
+// ListenOnStorageChallengeInterface listening RegisterNftInterface call
 func (client *Client) ListenOnStorageChallengeInterface() *Client {
 	client.ConnectionInterface.On(StorageChallengeInterfaceMethod).Return(client.StorageChallengeInterface)
 	return client
@@ -80,7 +81,7 @@ func (client *Client) ListenOnProcessStorageChallengeFunc(returnErr error) *Clie
 	return client
 }
 
-// ListenOnProcessStorageChallengeFunc returns returnErr
+// ListenOnVerifyStorageChallengeFunc returns returnErr
 func (client *Client) ListenOnVerifyStorageChallengeFunc(returnErr error) *Client {
 	client.StorageChallengeInterface.On(VerifyStorageChallengeMethod, mock.Anything, mock.Anything).Return(returnErr)
 

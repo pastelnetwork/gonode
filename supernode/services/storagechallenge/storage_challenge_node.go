@@ -4,17 +4,17 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
-// RegisterSenseNodeMaker makes concrete instance of SenseRegistrationNode
-type StorageChallengeNodeMaker struct {
+// SCNodeMaker makes concrete instance of StorageChallengeNode
+type SCNodeMaker struct {
 	node.NodeMaker
 }
 
-// MakeNode makes concrete instance of SenseRegistrationNode
-func (maker StorageChallengeNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodePeerAPIInterface {
-	return &StorageChallengeNode{StorageChallengeInterface: conn.StorageChallenge()}
+// MakeNode makes concrete instance of StorageChallengeNode
+func (maker SCNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodePeerAPIInterface {
+	return &SCNode{StorageChallengeInterface: conn.StorageChallenge()}
 }
 
-// SenseRegistrationNode represent supernode connection.
-type StorageChallengeNode struct {
+// SCNode (for Storage Challenge Node) represent supernode connection.
+type SCNode struct {
 	node.StorageChallengeInterface
 }

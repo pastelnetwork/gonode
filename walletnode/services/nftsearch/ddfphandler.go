@@ -104,7 +104,7 @@ func (h *DDFPHandler) fetcher(ctx context.Context, someNode *common.SuperNodeCli
 	return nil
 }
 
-// fetch gets the actual thumbnail data from the network as bytes to be wrapped by the calling function
+// Fetch gets the actual thumbnail data from the network as bytes to be wrapped by the calling function
 func (h *DDFPHandler) Fetch(ctx context.Context, txid string) (data []byte, err error) {
 	respCh := make(chan *ddfpResponse)
 	req := ddfpRequest{txid: txid, respCh: respCh}

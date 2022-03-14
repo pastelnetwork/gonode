@@ -186,7 +186,7 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 		return dataToJSONDecode, nil
 
 	}
-	return nil, errors.Errorf("Could not get dd and fingerprints for any file tested.")
+	return nil, errors.Errorf("could not get dd and fingerprints for any file tested")
 }
 
 //utility functions to download dupe detection and fingerprint files

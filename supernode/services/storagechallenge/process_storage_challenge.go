@@ -12,14 +12,13 @@ import (
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
-// Processing the storage challenge consists of:
+//ProcessStorageChallenge consists of:
 //	 Getting the file,
 //   Hashing the indicated portion of the file ("responding"),
 //   Identifying the proper validators,
 //   Sending the response to all other supernodes
 //	 Saving challenge state
-
-func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
+func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
 	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug("Start processing storage challenge")
 
 	// incoming challenge message validation
@@ -88,7 +87,7 @@ func (task *StorageChallengeTask) ProcessStorageChallenge(ctx context.Context, i
 	return outgoingChallengeMessage, err
 }
 
-func (task *StorageChallengeTask) validateProcessingStorageChallengeIncomingData(incomingChallengeMessage *pb.StorageChallengeData) error {
+func (task *SCTask) validateProcessingStorageChallengeIncomingData(incomingChallengeMessage *pb.StorageChallengeData) error {
 	if incomingChallengeMessage.ChallengeStatus != pb.StorageChallengeData_Status_PENDING {
 		return fmt.Errorf("incorrect status to processing storage challenge")
 	}
@@ -98,7 +97,7 @@ func (task *StorageChallengeTask) validateProcessingStorageChallengeIncomingData
 	return nil
 }
 
-func (task *StorageChallengeTask) computeHashOfFileSlice(fileData []byte, challengeSliceStartIndex, challengeSliceEndIndex int64) string {
+func (task *SCTask) computeHashOfFileSlice(fileData []byte, challengeSliceStartIndex, challengeSliceEndIndex int64) string {
 	challengeDataSlice := fileData[challengeSliceStartIndex:challengeSliceEndIndex]
 	algorithm := sha3.New256()
 	algorithm.Write(challengeDataSlice)
@@ -106,7 +105,7 @@ func (task *StorageChallengeTask) computeHashOfFileSlice(fileData []byte, challe
 }
 
 // Send our verification message to (default 10) other supernodes that might host this file.
-func (task *StorageChallengeTask) sendVerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
+func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
 	//Get the <default 10> closest super node id's to the file hash.
 	sliceOfSupernodesStoringFileHashExcludingChallenger := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, task.numberOfVerifyingNodes, challengeMessage.ChallengeFile.FileHashToChallenge, task.nodeID)
 	//turn this into a map so we don't have to do 10n iterations through supernodes in case there are lots of supernodes

@@ -15,19 +15,19 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// StorageChallenge represents common grpc service for registration NFTs.
+// StorageChallengeGRPC represents common grpc service for registration NFTs.
 type StorageChallengeGRPC struct {
 	pb.UnimplementedStorageChallengeServer
 
 	*common.StorageChallenge
 }
 
-// Session
+// Session represents a continuous storage challenge session stream.  This stream may be more fully implemented as storage challenge expands.
 func (service *StorageChallengeGRPC) Session(stream pb.StorageChallenge_SessionServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	var task *storagechallenge.StorageChallengeTask
+	var task *storagechallenge.SCTask
 	isTaskNew := false
 
 	if sessID, ok := service.SessID(ctx); ok {
@@ -35,7 +35,7 @@ func (service *StorageChallengeGRPC) Session(stream pb.StorageChallenge_SessionS
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewStorageChallengeTask()
+		task = service.NewSCTask()
 		isTaskNew = true
 	}
 
@@ -89,7 +89,7 @@ func (service *StorageChallengeGRPC) Desc() *grpc.ServiceDesc {
 	return &pb.StorageChallenge_ServiceDesc
 }
 
-// Server side of storage challenge processing GRPC comms
+//ProcessStorageChallenge is the server side of storage challenge processing GRPC comms
 func (service *StorageChallengeGRPC) ProcessStorageChallenge(ctx context.Context, scRequest *pb.ProcessStorageChallengeRequest) (*pb.ProcessStorageChallengeReply, error) {
 	log.WithContext(ctx).WithField("req", scRequest).Debugf("Process Storage Challenge Request")
 	task, err := service.TaskFromMD(ctx)
@@ -104,7 +104,7 @@ func (service *StorageChallengeGRPC) ProcessStorageChallenge(ctx context.Context
 	return &pb.ProcessStorageChallengeReply{Data: data}, err
 }
 
-// Server side of storage challenge verification GRPC comms
+// Verify is the server side of storage challenge verification GRPC comms
 func (service *StorageChallengeGRPC) Verify(ctx context.Context, scRequest *pb.VerifyStorageChallengeRequest) (*pb.VerifyStorageChallengeReply, error) {
 	log.WithContext(ctx).WithField("req", scRequest).Debugf("Verify Storage Challenge Request")
 	task, err := service.TaskFromMD(ctx)
@@ -119,8 +119,8 @@ func (service *StorageChallengeGRPC) Verify(ctx context.Context, scRequest *pb.V
 	return &pb.VerifyStorageChallengeReply{Data: data}, err
 }
 
-// NewStorageChallenge returns a new StorageChallenge instance.
-func NewStorageChallengeGRPC(service *storagechallenge.StorageChallengeService) *StorageChallengeGRPC {
+// NewStorageChallengeGRPC returns a new StorageChallenge instance.
+func NewStorageChallengeGRPC(service *storagechallenge.SCService) *StorageChallengeGRPC {
 	return &StorageChallengeGRPC{
 		StorageChallenge: common.NewStorageChallenge(service),
 	}

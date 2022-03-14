@@ -22,9 +22,9 @@ import (
 
 func TestTaskGenerateStorageChallenges(t *testing.T) {
 	type fields struct {
-		SuperNodeTask           *common.SuperNodeTask
-		StorageChallengeService *StorageChallengeService
-		storage                 *common.StorageHandler
+		SuperNodeTask *common.SuperNodeTask
+		SCService     *SCService
+		storage       *common.StorageHandler
 	}
 	type args struct {
 		ctx        context.Context
@@ -105,15 +105,15 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 			testConfig := NewConfig()
 			testConfig.PastelID = tt.args.PastelID
 
-			task := StorageChallengeTask{
-				SuperNodeTask:           tt.fields.SuperNodeTask,
-				StorageChallengeService: NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, rqClientMock, defaultChallengeStateLogging{}),
-				storage:                 common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
-				stateStorage:            defaultChallengeStateLogging{},
+			task := SCTask{
+				SuperNodeTask: tt.fields.SuperNodeTask,
+				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, rqClientMock, defaultChallengeStateLogging{}),
+				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
+				stateStorage:  defaultChallengeStateLogging{},
 			}
 
 			if err := task.GenerateStorageChallenges(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("StorageChallengeTask.GenerateStorageChallenges() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("SCTask.GenerateStorageChallenges() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -123,9 +123,9 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 
 func TestTaskProcessStorageChallenge(t *testing.T) {
 	type fields struct {
-		SuperNodeTask           *common.SuperNodeTask
-		StorageChallengeService *StorageChallengeService
-		storage                 *common.StorageHandler
+		SuperNodeTask *common.SuperNodeTask
+		SCService     *SCService
+		storage       *common.StorageHandler
 	}
 	type args struct {
 		ctx                      context.Context
@@ -222,15 +222,15 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 			testConfig := NewConfig()
 			testConfig.PastelID = tt.args.PastelID
 
-			task := StorageChallengeTask{
-				SuperNodeTask:           tt.fields.SuperNodeTask,
-				StorageChallengeService: NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, rqClientMock, defaultChallengeStateLogging{}),
-				storage:                 common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
-				stateStorage:            defaultChallengeStateLogging{},
+			task := SCTask{
+				SuperNodeTask: tt.fields.SuperNodeTask,
+				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, rqClientMock, defaultChallengeStateLogging{}),
+				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
+				stateStorage:  defaultChallengeStateLogging{},
 			}
 
 			if resp, err := task.ProcessStorageChallenge(tt.args.ctx, tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
-				t.Errorf("StorageChallengeTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("SCTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
 				fmt.Println(resp)
 			}
 		})
@@ -241,9 +241,9 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 
 func TestVerifyStorageChallenge(t *testing.T) {
 	type fields struct {
-		SuperNodeTask           *common.SuperNodeTask
-		StorageChallengeService *StorageChallengeService
-		storage                 *common.StorageHandler
+		SuperNodeTask *common.SuperNodeTask
+		SCService     *SCService
+		storage       *common.StorageHandler
 	}
 	type args struct {
 		ctx                      context.Context
@@ -400,15 +400,15 @@ func TestVerifyStorageChallenge(t *testing.T) {
 			testConfig := NewConfig()
 			testConfig.PastelID = tt.args.PastelID
 
-			task := StorageChallengeTask{
-				SuperNodeTask:           tt.fields.SuperNodeTask,
-				StorageChallengeService: NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, rqClientMock, defaultChallengeStateLogging{}),
-				storage:                 common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
-				stateStorage:            defaultChallengeStateLogging{},
+			task := SCTask{
+				SuperNodeTask: tt.fields.SuperNodeTask,
+				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, rqClientMock, defaultChallengeStateLogging{}),
+				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
+				stateStorage:  defaultChallengeStateLogging{},
 			}
 
 			if resp, err := task.VerifyStorageChallenge(tt.args.ctx, tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
-				t.Errorf("StorageChallengeTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("SCTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
 				fmt.Println(resp)
 			}
 		})

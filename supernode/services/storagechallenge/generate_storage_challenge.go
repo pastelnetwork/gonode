@@ -32,9 +32,9 @@ import (
 // Send the storage challenge message for processing by the responder
 // Save the challenge state
 
-//Called from service run, generate storage challenges will determine if we should issue a storage challenge,
+//GenerateStorageChallenges is called from service run, generate storage challenges will determine if we should issue a storage challenge,
 // and if so calculate and issue it.
-func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) error {
+func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	log.WithContext(ctx).Println("Generating Storage Challenges called.")
 	// List all NFT tickets, get their raptorq ids
 	// list all RQ symbol keys from nft ticket
@@ -176,8 +176,8 @@ func (task StorageChallengeTask) GenerateStorageChallenges(ctx context.Context) 
 	return nil
 }
 
-// Send the storage challenge message to the responding node
-func (task *StorageChallengeTask) SendProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
+// SendProcessStorageChallenge will send the storage challenge message to the responding node
+func (task *SCTask) SendProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
 	//Get masternodes (supernodes)
 	Supernodes, err := task.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
 	if err != nil {

@@ -344,7 +344,7 @@ func (client *Client) ListenOnDownloadThumbnail(arguments ...interface{}) *Clien
 	return client
 }
 
-// ListenOnDownloadThumbnail listening DownloadThumbnail call and returns args value
+// ListenOnDownloadDDAndFP listens for a ListenOnDownloadDDAndFP call and returns args value
 func (client *Client) ListenOnDownloadDDAndFP(arguments ...interface{}) *Client {
 	client.DownloadNftInterface.On(DownloadDDAndFPMethod, mock.Anything,
 		mock.Anything).Return(arguments...)
