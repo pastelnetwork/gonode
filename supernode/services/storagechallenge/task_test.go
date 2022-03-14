@@ -129,7 +129,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 	}
 	type args struct {
 		ctx                      context.Context
-		incomingChallengeMessage pb.StorageChallengeData
+		incomingChallengeMessage *pb.StorageChallengeData
 		PastelID                 string
 		MerkleRoot               string
 	}
@@ -141,7 +141,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				incomingChallengeMessage: pb.StorageChallengeData{
+				incomingChallengeMessage: &pb.StorageChallengeData{
 					MessageId:                    "0edd3e067b93ff597fd7e0d83ddd05161ba9b678b01c4c2fae7874b9274e6181",
 					MessageType:                  pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE,
 					ChallengeStatus:              pb.StorageChallengeData_Status_PENDING,
@@ -229,7 +229,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 				stateStorage:            defaultChallengeStateLogging{},
 			}
 
-			if resp, err := task.ProcessStorageChallenge(tt.args.ctx, &tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
+			if resp, err := task.ProcessStorageChallenge(tt.args.ctx, tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
 				t.Errorf("StorageChallengeTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
 				fmt.Println(resp)
 			}
@@ -247,7 +247,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 	}
 	type args struct {
 		ctx                      context.Context
-		incomingChallengeMessage pb.StorageChallengeData
+		incomingChallengeMessage *pb.StorageChallengeData
 		PastelID                 string
 		MerkleRoot               string
 		currentBlockCount        int
@@ -260,7 +260,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				incomingChallengeMessage: pb.StorageChallengeData{
+				incomingChallengeMessage: &pb.StorageChallengeData{
 					MessageId:                    "be0771c56e1cb07748550f7b4650f7dba23c5af2f20f71a679eb217ddc88f7c4",
 					MessageType:                  pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE,
 					ChallengeStatus:              pb.StorageChallengeData_Status_RESPONDED,
@@ -287,7 +287,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 		},
 		"tooManyBlocksPassed": {
 			args: args{
-				incomingChallengeMessage: pb.StorageChallengeData{
+				incomingChallengeMessage: &pb.StorageChallengeData{
 					MessageId:                    "be0771c56e1cb07748550f7b4650f7dba23c5af2f20f71a679eb217ddc88f7c4",
 					MessageType:                  pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE,
 					ChallengeStatus:              pb.StorageChallengeData_Status_RESPONDED,
@@ -314,7 +314,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 		},
 		"badBlockHash": {
 			args: args{
-				incomingChallengeMessage: pb.StorageChallengeData{
+				incomingChallengeMessage: &pb.StorageChallengeData{
 					MessageId:                    "be0771c56e1cb07748550f7b4650f7dba23c5af2f20f71a679eb217ddc88f7c4",
 					MessageType:                  pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE,
 					ChallengeStatus:              pb.StorageChallengeData_Status_RESPONDED,
@@ -407,7 +407,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 				stateStorage:            defaultChallengeStateLogging{},
 			}
 
-			if resp, err := task.VerifyStorageChallenge(tt.args.ctx, &tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
+			if resp, err := task.VerifyStorageChallenge(tt.args.ctx, tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
 				t.Errorf("StorageChallengeTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
 				fmt.Println(resp)
 			}
