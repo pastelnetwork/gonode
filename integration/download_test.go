@@ -36,7 +36,7 @@ var _ = Describe("NFTDownload", func() {
 			PastelID: "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
 		}
 
-		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, itHelper)
+		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, it.SNServers, itHelper)
 		symbol = []byte("test-symbol")
 	})
 

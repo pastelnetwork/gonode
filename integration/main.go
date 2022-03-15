@@ -75,7 +75,7 @@ var PasteldServers = []string{
 func main() {
 	itHelper := helper.NewItHelper()
 
-	mocker := mock.New(PasteldServers, DDServers, RQServers, itHelper)
+	mocker := mock.New(PasteldServers, DDServers, RQServers, SNServers, itHelper)
 	if err := mocker.MockAllRegExpections(); err != nil {
 		panic(err)
 	}

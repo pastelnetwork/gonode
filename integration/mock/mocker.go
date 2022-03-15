@@ -21,14 +21,16 @@ type Mocker struct {
 	pasteldAddrs []string
 	ddAddrs      []string
 	rqAddrs      []string
+	snAddrs      []string
 	itHelder     *helper.ItHelper
 }
 
-func New(pasteldAddrs []string, ddAddrs []string, rqAddrs []string, h *helper.ItHelper) *Mocker {
+func New(pasteldAddrs []string, ddAddrs []string, rqAddrs []string, snAddrs []string, h *helper.ItHelper) *Mocker {
 	return &Mocker{
 		pasteldAddrs: pasteldAddrs,
 		ddAddrs:      ddAddrs,
 		rqAddrs:      rqAddrs,
+		snAddrs:      snAddrs,
 		itHelder:     h,
 	}
 }
@@ -48,6 +50,12 @@ func (m *Mocker) MockAllRegExpections() error {
 
 	for _, addr := range m.ddAddrs {
 		if err := m.mockDDServerRegExpections(addr); err != nil {
+			return fmt.Errorf("server: %s err: %w", addr, err)
+		}
+	}
+
+	for _, addr := range m.snAddrs {
+		if err := m.mockSNFilesExpectations(addr); err != nil {
 			return fmt.Errorf("server: %s err: %w", addr, err)
 		}
 	}
@@ -129,7 +137,7 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte("160647"), addr, "getblockcount", []string{""}, 10); err != nil {
+	if err := m.mockServer([]byte("160647"), addr, "getblockcount", []string{""}, 100); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
@@ -198,9 +206,8 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 	}
 
 	for key, val := range getRegTickets() {
-
 		if err := m.mockServer(val, addr, "tickets", []string{"get",
-			key}, 3); err != nil {
+			key}, 20); err != nil {
 
 			return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
 		}
@@ -218,6 +225,14 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 
 		return fmt.Errorf("failed to mock tickets act err: %w", err)
 	}
+
+	return nil
+}
+
+func (m *Mocker) mockSNFilesExpectations(addr string) error {
+	//send each ticket's AppTicketData.DDAndFingerprintsIDs to storage
+
+	storeDDAndFpFile(ddAndFpFile, m.itHelder, addr)
 
 	return nil
 }

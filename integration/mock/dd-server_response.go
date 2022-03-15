@@ -29,14 +29,14 @@ func getDDServerResponse() ([]byte, error) {
 		InternetRareness: &InternetRareness{
 			MatchesFoundOnFirstPage: 0,
 			NumberOfPagesOfResults:  0,
-			UrlOfFirstMatchInPage:   "",
+			URLOfFirstMatchInPage:   "",
 		},
 		PerceptualImageHashes: &PerceptualImageHashes{
-			PdqHash:        "abc",
+			PDQHash:        "abc",
 			PerceptualHash: "bcd",
 			AverageHash:    "tyf",
 			DifferenceHash: "dsc",
-			NeuralhashHash: "uip",
+			NeuralHash:     "uip",
 		},
 		Maxes: &Maxes{
 			PearsonMax:           0.94,
@@ -48,22 +48,22 @@ func getDDServerResponse() ([]byte, error) {
 			XgbimportanceMax:     0.67,
 		},
 		Percentile: &Percentile{
-			PearsonTop_1BpsPercentile:             78.2,
-			SpearmanTop_1BpsPercentile:            22.3,
-			KendallTop_1BpsPercentile:             76.3,
-			HoeffdingTop_10BpsPercentile:          45.3,
-			MutualInformationTop_100BpsPercentile: 33.23,
-			HsicTop_100BpsPercentile:              87.33,
-			XgbimportanceTop_100BpsPercentile:     20.3,
+			PearsonTop1BpsPercentile:             78.2,
+			SpearmanTop1BpsPercentile:            22.3,
+			KendallTop1BpsPercentile:             76.3,
+			HoeffdingTop10BpsPercentile:          45.3,
+			MutualInformationTop100BpsPercentile: 33.23,
+			HsicTop100BpsPercentile:              87.33,
+			XgbimportanceTop100BpsPercentile:     20.3,
 		},
 		FingerprintsStat: &FingerprintsStat{
-			NumberOfFingerprintsRequiringFurtherTesting_1: 0,
-			NumberOfFingerprintsRequiringFurtherTesting_2: 0,
-			NumberOfFingerprintsRequiringFurtherTesting_3: 0,
-			NumberOfFingerprintsRequiringFurtherTesting_4: 0,
-			NumberOfFingerprintsRequiringFurtherTesting_5: 0,
-			NumberOfFingerprintsRequiringFurtherTesting_6: 0,
-			NumberOfFingerprintsOfSuspectedDupes:          0,
+			NumberOfFingerprintsRequiringFurtherTesting1: 0,
+			NumberOfFingerprintsRequiringFurtherTesting2: 0,
+			NumberOfFingerprintsRequiringFurtherTesting3: 0,
+			NumberOfFingerprintsRequiringFurtherTesting4: 0,
+			NumberOfFingerprintsRequiringFurtherTesting5: 0,
+			NumberOfFingerprintsRequiringFurtherTesting6: 0,
+			NumberOfFingerprintsOfSuspectedDupes:         0,
 		},
 	}
 
@@ -99,7 +99,7 @@ type RarenessScores struct {
 type InternetRareness struct {
 	MatchesFoundOnFirstPage uint32 `json:"matches_found_on_first_page,omitempty"`
 	NumberOfPagesOfResults  uint32 `json:"number_of_pages_of_results,omitempty"`
-	UrlOfFirstMatchInPage   string `json:"url_of_first_match_in_page,omitempty"`
+	URLOfFirstMatchInPage   string `json:"url_of_first_match_in_page,omitempty"`
 }
 
 type AltNsfwScores struct {
@@ -111,21 +111,21 @@ type AltNsfwScores struct {
 }
 
 type PerceptualImageHashes struct {
-	PdqHash        string `json:"pdq_hash,omitempty"`
+	PDQHash        string `json:"pdq_hash,omitempty"`
 	PerceptualHash string `json:"perceptual_hash,omitempty"`
 	AverageHash    string `json:"average_hash,omitempty"`
 	DifferenceHash string `json:"difference_hash,omitempty"`
-	NeuralhashHash string `json:"neuralhash_hash,omitempty"`
+	NeuralHash     string `json:"neuralhash_hash,omitempty"`
 }
 
 type FingerprintsStat struct {
-	NumberOfFingerprintsRequiringFurtherTesting_1 uint32 `json:"number_of_fingerprints_requiring_further_testing_1,omitempty"`
-	NumberOfFingerprintsRequiringFurtherTesting_2 uint32 `json:"number_of_fingerprints_requiring_further_testing_2,omitempty"`
-	NumberOfFingerprintsRequiringFurtherTesting_3 uint32 `json:"number_of_fingerprints_requiring_further_testing_3,omitempty"`
-	NumberOfFingerprintsRequiringFurtherTesting_4 uint32 `json:"number_of_fingerprints_requiring_further_testing_4,omitempty"`
-	NumberOfFingerprintsRequiringFurtherTesting_5 uint32 `json:"number_of_fingerprints_requiring_further_testing_5,omitempty"`
-	NumberOfFingerprintsRequiringFurtherTesting_6 uint32 `json:"number_of_fingerprints_requiring_further_testing_6,omitempty"`
-	NumberOfFingerprintsOfSuspectedDupes          uint32 `json:"number_of_fingerprints_of_suspected_dupes,omitempty"`
+	NumberOfFingerprintsRequiringFurtherTesting1 uint32 `json:"number_of_fingerprints_requiring_further_testing_1,omitempty"`
+	NumberOfFingerprintsRequiringFurtherTesting2 uint32 `json:"number_of_fingerprints_requiring_further_testing_2,omitempty"`
+	NumberOfFingerprintsRequiringFurtherTesting3 uint32 `json:"number_of_fingerprints_requiring_further_testing_3,omitempty"`
+	NumberOfFingerprintsRequiringFurtherTesting4 uint32 `json:"number_of_fingerprints_requiring_further_testing_4,omitempty"`
+	NumberOfFingerprintsRequiringFurtherTesting5 uint32 `json:"number_of_fingerprints_requiring_further_testing_5,omitempty"`
+	NumberOfFingerprintsRequiringFurtherTesting6 uint32 `json:"number_of_fingerprints_requiring_further_testing_6,omitempty"`
+	NumberOfFingerprintsOfSuspectedDupes         uint32 `json:"number_of_fingerprints_of_suspected_dupes,omitempty"`
 }
 
 type Maxes struct {
@@ -139,11 +139,11 @@ type Maxes struct {
 }
 
 type Percentile struct {
-	PearsonTop_1BpsPercentile             float32 `json:"pearson_top_1_bps_percentile,omitempty"`
-	SpearmanTop_1BpsPercentile            float32 `json:"spearman_top_1_bps_percentile,omitempty"`
-	KendallTop_1BpsPercentile             float32 `json:"kendall_top_1_bps_percentile,omitempty"`
-	HoeffdingTop_10BpsPercentile          float32 `json:"hoeffding_top_10_bps_percentile,omitempty"`
-	MutualInformationTop_100BpsPercentile float32 `json:"mutual_information_top_100_bps_percentile,omitempty"`
-	HsicTop_100BpsPercentile              float32 `json:"hsic_top_100_bps_percentile,omitempty"`
-	XgbimportanceTop_100BpsPercentile     float32 `json:"xgbimportance_top_100_bps_percentile,omitempty"`
+	PearsonTop1BpsPercentile             float32 `json:"pearson_top_1_bps_percentile,omitempty"`
+	SpearmanTop1BpsPercentile            float32 `json:"spearman_top_1_bps_percentile,omitempty"`
+	KendallTop1BpsPercentile             float32 `json:"kendall_top_1_bps_percentile,omitempty"`
+	HoeffdingTop10BpsPercentile          float32 `json:"hoeffding_top_10_bps_percentile,omitempty"`
+	MutualInformationTop100BpsPercentile float32 `json:"mutual_information_top_100_bps_percentile,omitempty"`
+	HsicTop100BpsPercentile              float32 `json:"hsic_top_100_bps_percentile,omitempty"`
+	XgbimportanceTop100BpsPercentile     float32 `json:"xgbimportance_top_100_bps_percentile,omitempty"`
 }

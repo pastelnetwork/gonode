@@ -88,12 +88,13 @@ func TestFetchOne(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		want    []byte
+		want    map[int][]byte
 		wantErr error
+		//map[int][]byte{0: {2, 15}}
 	}{
-		"a": {want: []byte{2, 78, 67, 33}, wantErr: nil},
-		"b": {want: []byte{98, 22, 11}, wantErr: nil},
-		"c": {want: []byte{11, 45, 19}, wantErr: nil},
+		"a": {want: map[int][]byte{0: {2, 78, 67, 33}}, wantErr: nil},
+		"b": {want: map[int][]byte{0: {98, 22, 11}}, wantErr: nil},
+		"c": {want: map[int][]byte{0: {11, 45, 19}}, wantErr: nil},
 	}
 
 	for name, tc := range tests {
@@ -124,9 +125,9 @@ func TestFetchOne(t *testing.T) {
 			err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel)
 			assert.Nil(t, err)
 
-			data, err := nftGetSearchTask.thumbnail.FetchOne(ctx, []byte{1, 2, 3})
+			data, err := nftGetSearchTask.thumbnail.FetchOne(ctx, "txid")
 			assert.Nil(t, err)
-			assert.Equal(t, data, tc.want)
+			assert.Equal(t, data, tc.want[0])
 
 		})
 	}

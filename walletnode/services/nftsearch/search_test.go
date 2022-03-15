@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//Test the fuzzy matching of the string fields
 func TestGetSearchableFields(t *testing.T) {
 	t.Parallel()
 	regTicket := &pastel.RegTicket{

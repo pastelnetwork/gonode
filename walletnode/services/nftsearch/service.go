@@ -72,12 +72,30 @@ func (service *NftSearchingService) GetThumbnail(ctx context.Context, regTicket 
 	if err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel); err != nil {
 		return nil, errors.Errorf("connect and setup fetchers: %w", err)
 	}
-	data, err = nftGetSearchTask.thumbnail.FetchOne(ctx, regTicket.RegTicketData.NFTTicketData.AppTicketData.PreviewHash)
+	data, err = nftGetSearchTask.thumbnail.FetchOne(ctx, regTicket.TXID)
 	if err != nil {
 		return nil, errors.Errorf("nftsearch get thumbnail fetchone error, there may be multiple thumbnails: %w", err)
 	}
 
 	return data, nftGetSearchTask.thumbnail.CloseAll(ctx)
+}
+
+// GetDDAndFP gets dupe detection and fingerprint file
+func (service *NftSearchingService) GetDDAndFP(ctx context.Context, regTicket *pastel.RegTicket, pastelID string, passphrase string) (data []byte, err error) {
+	nftGetSearchTask := NewNftGetSearchTask(service, pastelID, passphrase)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	if err := nftGetSearchTask.ddAndFP.Connect(ctx, 1, cancel); err != nil {
+		return nil, errors.Errorf("connect and setup fetchers: %w", err)
+	}
+	data, err = nftGetSearchTask.ddAndFP.Fetch(ctx, regTicket.TXID)
+	if err != nil {
+		return nil, errors.Errorf("nftsearch get dd and fp fetchone error: %w", err)
+	}
+
+	return data, nftGetSearchTask.ddAndFP.CloseAll(ctx)
 }
 
 // RegTicket pull NFT registration ticket from cNode & decodes base64 encoded fields

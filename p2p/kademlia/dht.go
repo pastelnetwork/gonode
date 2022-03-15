@@ -220,7 +220,7 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 
 // Retrieve data from the networking using key. Key is the base58 encoded
 // identifier of the data.
-func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
+func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]byte, error) {
 	decoded := base58.Decode(key)
 	if len(decoded) != B/8 {
 		return nil, fmt.Errorf("invalid key: %v", key)
@@ -230,6 +230,11 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil {
 		return value, nil
+	}
+
+	// if local only option is set, do not search just return error
+	if len(localOnly) > 0 && localOnly[0] {
+		return nil, fmt.Errorf("local-only failed to get properly: " + err.Error())
 	}
 
 	log.P2P().WithContext(ctx).WithError(err).WithField("key", key).Debug("local store retrieve failed, trying to retrieve from peers...")
@@ -549,4 +554,10 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	s.ht.routeTable[index] = bucket
 
 	return nil
+}
+
+// NClosestNodes get n closest nodes to a key string
+func (s *DHT) NClosestNodes(_ context.Context, n int, key string, ignores ...*Node) []*Node {
+	nodeList := s.ht.closestContacts(n, base58.Decode(key), ignores)
+	return nodeList.Nodes
 }

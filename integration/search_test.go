@@ -21,7 +21,7 @@ var _ = Describe("NFTSearch", func() {
 	)
 
 	BeforeEach(func() {
-		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, itHelper)
+		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, it.SNServers, itHelper)
 		Expect(mocker.MockAllRegExpections()).To(Succeed())
 
 		storeReq = &helper.StoreRequest{}
@@ -39,6 +39,39 @@ var _ = Describe("NFTSearch", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(status).To(Equal(http.StatusOK))
 		Expect(json.Unmarshal(resp, storeReply)).To(Succeed())
+
+		storeReq = &helper.StoreRequest{}
+		storeReply = &helper.StoreReply{}
+		storeReq.Value = []byte("thumbnail-one")
+
+		resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(it.SN2BaseURI), nil)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(status).To(Equal(http.StatusOK))
+		Expect(json.Unmarshal(resp, storeReply)).To(Succeed())
+
+		storeReq.Value = []byte("thumbnail-two")
+
+		resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(it.SN2BaseURI), nil)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(status).To(Equal(http.StatusOK))
+		Expect(json.Unmarshal(resp, storeReply)).To(Succeed())
+
+		storeReq = &helper.StoreRequest{}
+		storeReply = &helper.StoreReply{}
+		storeReq.Value = []byte("thumbnail-one")
+
+		resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(it.SN3BaseURI), nil)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(status).To(Equal(http.StatusOK))
+		Expect(json.Unmarshal(resp, storeReply)).To(Succeed())
+
+		storeReq.Value = []byte("thumbnail-two")
+
+		resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(it.SN3BaseURI), nil)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(status).To(Equal(http.StatusOK))
+		Expect(json.Unmarshal(resp, storeReply)).To(Succeed())
+
 	})
 
 	Context("when searching an existing nft with matching creator name", func() {

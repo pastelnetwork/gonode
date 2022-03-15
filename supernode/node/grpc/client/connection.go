@@ -28,10 +28,10 @@ func (conn *clientConn) RegisterCascade() node.RegisterCascadeInterface {
 	return newRegisterCascade(conn)
 }
 
-// ProcessUserdata implements node.ConnectionInterface.ProcessUserdata()
-// func (conn *clientConn) ProcessUserdata() node.ProcessUserdataInterface {
-// 	return newProcessUserdata(conn)
-// }
+// StorageChallenge implements node.Connection.StorageChallenge()
+func (conn *clientConn) StorageChallenge() node.StorageChallengeInterface {
+	return newStorageChallengeGRPCClient(conn)
+}
 
 func newClientConn(id string, conn *grpc.ClientConn) node.ConnectionInterface {
 	return &clientConn{

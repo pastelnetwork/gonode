@@ -1,0 +1,67 @@
+// Copyright (c) 2021-2021 The Pastel Core developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode;supernode";
+
+package supernode;
+
+import "common_sn.proto";
+
+service StorageChallenge {
+  rpc Session(stream SessionRequest) returns (stream SessionReply);
+  rpc ProcessStorageChallenge(ProcessStorageChallengeRequest) returns (ProcessStorageChallengeReply);
+  rpc VerifyStorageChallenge(VerifyStorageChallengeRequest) returns (VerifyStorageChallengeReply);
+}
+
+message StorageChallengeData {
+  string message_id = 1;
+  enum messageType {
+    MessageType_UNKNOWN = 0;
+    MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE = 1;
+    MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE = 2;
+    MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE = 3;
+  }
+  messageType message_type = 2;
+  enum status {
+    Status_UNKNOWN = 0;
+    Status_PENDING = 1;
+    Status_RESPONDED = 2;
+    Status_SUCCEEDED = 3;
+    Status_FAILED_TIMEOUT = 4;
+    Status_FAILED_INCORRECT_RESPONSE = 5;
+  }
+  status challenge_status = 3;
+  int32 block_num_challenge_sent = 4;
+  int32 block_num_challenge_responded_to = 5;
+  int32 block_num_challenge_verified = 6;
+  string merkleroot_when_challenge_sent = 7;
+  string challenging_masternode_id = 8;
+  string responding_masternode_id = 9;
+  message challengeFile {
+    string file_hash_to_challenge = 1;
+    int64 challenge_slice_start_index = 2;
+    int64 challenge_slice_end_index = 3;
+  }
+  challengeFile challenge_file = 10;
+  string challenge_slice_correct_hash = 11;
+  string challenge_response_hash = 12;
+  string challenge_id = 13;
+}
+
+message ProcessStorageChallengeRequest {
+  StorageChallengeData data = 1;
+}
+
+message ProcessStorageChallengeReply {
+  StorageChallengeData data = 1;
+}
+
+message VerifyStorageChallengeRequest {
+  StorageChallengeData data = 1;
+}
+
+message VerifyStorageChallengeReply {
+  StorageChallengeData data = 1;
+}

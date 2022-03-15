@@ -1,12 +1,18 @@
 package mock
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
 
+	"github.com/DataDog/zstd"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 
 	"github.com/pastelnetwork/gonode/integration/fakes/common/testconst"
+	"github.com/pastelnetwork/gonode/integration/helper"
 )
 
 var masterNodeExtraResp = `{
@@ -231,8 +237,12 @@ var ticketOwnershipResp = `{
 }
 `
 
+var ddAndFpFile = makeDDAndFpFile()
+var ddAndFpFileHash, _ = helper.GetP2PID(ddAndFpFile)
+
 func getRegTickets() map[string][]byte {
 	resp := make(map[string][]byte)
+
 	txid := "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09"
 	ticket := pastel.RegTicket{
 		TXID: txid,
@@ -258,6 +268,7 @@ func getRegTickets() map[string][]byte {
 						149, 172, 64, 148, 230, 63, 44, 221, 144, 63, 173, 131, 97, 25, 227, 105, 181, 127},
 					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
 						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+					DDAndFingerprintsIDs: []string{ddAndFpFileHash},
 				},
 			},
 		},
@@ -286,8 +297,9 @@ func getRegTickets() map[string][]byte {
 					CreatorWrittenStatement: `Lakes Why settle for blank walls, when you can
 					 transform them into stunning vista points. Explore Lake Superiorfrom imaginative
 					  scenic abstracts to sublime beach landscapes captured on camera.`,
-					NFTKeywordSet: "Michigan,Midwest,Peninsula,Great Lakes,Lakeview",
-					NFTSeriesName: "Science Art Lake",
+					NFTKeywordSet:        "Michigan,Midwest,Peninsula,Great Lakes,Lakeview",
+					NFTSeriesName:        "Science Art Lake",
+					DDAndFingerprintsIDs: []string{ddAndFpFileHash},
 				},
 			},
 			TotalCopies: 10,
@@ -324,6 +336,7 @@ func getRegTickets() map[string][]byte {
 					},
 					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
 						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+					DDAndFingerprintsIDs: []string{ddAndFpFileHash},
 				},
 			},
 		},
@@ -358,6 +371,7 @@ func getRegTickets() map[string][]byte {
 					},
 					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
 						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+					DDAndFingerprintsIDs: []string{ddAndFpFileHash},
 				},
 			},
 		},
@@ -392,6 +406,7 @@ func getRegTickets() map[string][]byte {
 					},
 					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
 						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+					DDAndFingerprintsIDs: []string{ddAndFpFileHash},
 				},
 			},
 		},
@@ -476,4 +491,77 @@ func getSearchActTicketsResponse() []byte {
 	t, _ := json.Marshal(pastel.ActTickets{a, b, c, d})
 
 	return t
+}
+
+func makeDDAndFpFile() []byte {
+	//create a dd and fp file, common throughout for now
+	rawImageRarenessData, _ := getDDServerResponse()
+	imageRarenessScore := &ImageRarenessScoreReply{}
+	json.Unmarshal(rawImageRarenessData, imageRarenessScore)
+	ddAndFp := &pastel.DDAndFingerprints{
+		Block:                      imageRarenessScore.Block,
+		Principal:                  imageRarenessScore.Principal,
+		DupeDetectionSystemVersion: imageRarenessScore.DupeDetectionSystemVersion,
+
+		IsLikelyDupe:     imageRarenessScore.IsLikelyDupe,
+		IsRareOnInternet: imageRarenessScore.IsRareOnInternet,
+
+		RarenessScores:   (*pastel.RarenessScores)(imageRarenessScore.RarenessScores),
+		InternetRareness: (*pastel.InternetRareness)(imageRarenessScore.InternetRareness),
+
+		OpenNSFWScore:         imageRarenessScore.OpenNsfwScore,
+		AlternativeNSFWScores: (*pastel.AlternativeNSFWScores)(imageRarenessScore.AlternativeNsfwScores),
+
+		ImageFingerprintOfCandidateImageFile: imageRarenessScore.ImageFingerprintOfCandidateImageFile,
+		FingerprintsStat:                     (*pastel.FingerprintsStat)(imageRarenessScore.FingerprintsStat),
+
+		HashOfCandidateImageFile:   imageRarenessScore.HashOfCandidateImageFile,
+		PerceptualImageHashes:      (*pastel.PerceptualImageHashes)(imageRarenessScore.PerceptualImageHashes),
+		PerceptualHashOverlapCount: imageRarenessScore.PerceptualHashOverlapCount,
+
+		Maxes:      (*pastel.Maxes)(imageRarenessScore.Maxes),
+		Percentile: (*pastel.Percentile)(imageRarenessScore.Percentile),
+	}
+	dataJSON, err := json.Marshal(ddAndFp)
+	if err != nil {
+		fmt.Println("Failed to marshal a dd and fp file")
+		return nil
+	}
+
+	encoded := utils.B64Encode(dataJSON)
+
+	var buffer bytes.Buffer
+	buffer.Write(encoded)
+	buffer.WriteByte(46)
+	buffer.WriteString("test-signature")
+	buffer.WriteByte(46)
+	buffer.WriteString(strconv.Itoa(55))
+
+	compressedData, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+	if err != nil {
+		fmt.Println("Failed to compress a dd and fp file")
+		return nil
+	}
+	return compressedData
+
+}
+
+func storeDDAndFpFile(f []byte, h *helper.ItHelper, uri string) {
+	//f should be compressed dd and fp file
+	storeReq := &helper.StoreRequest{
+		Value: f,
+	}
+
+	resp, status, err := h.Request(helper.HttpPost, storeReq, helper.GetStoreURI(uri), nil)
+	if err != nil || status != http.StatusOK {
+		fmt.Println("Failed to store a dd and fp file ")
+		return
+	}
+	repl := &helper.StoreReply{}
+	json.Unmarshal(resp, repl)
+	if repl.Key != ddAndFpFileHash {
+		fmt.Println("Stored dd and fp file at different file hash: " + repl.Key)
+		return
+	}
+	//fmt.Println("Successfully stored dd and fp file")
 }

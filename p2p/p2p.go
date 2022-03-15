@@ -118,14 +118,14 @@ func (s *p2p) Store(ctx context.Context, data []byte) (string, error) {
 }
 
 // Retrieve retrive the data from the kademlia network
-func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
+func (s *p2p) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]byte, error) {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if !s.running {
 		return nil, errors.New("p2p service is not running")
 	}
 
-	return s.dht.Retrieve(ctx, key)
+	return s.dht.Retrieve(ctx, key, localOnly...)
 }
 
 // Delete delete key in local node
@@ -158,6 +158,20 @@ func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 
 	retStats["disk-info"] = &diskUse
 	return retStats, nil
+}
+
+// NClosestNodes returns a list of n closest masternode to a given string
+func (s *p2p) NClosestNodes(ctx context.Context, n int, key string, ignores ...string) []string {
+	var ret = make([]string, 0)
+	var ignoreNodes = make([]*kademlia.Node, len(ignores))
+	for idx, node := range ignores {
+		ignoreNodes[idx] = &kademlia.Node{ID: []byte(node)}
+	}
+	nodes := s.dht.NClosestNodes(ctx, n, key, ignoreNodes...)
+	for _, node := range nodes {
+		ret = append(ret, string(node.ID))
+	}
+	return ret
 }
 
 // configure the distributed hash table for p2p service

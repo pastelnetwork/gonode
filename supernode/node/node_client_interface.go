@@ -4,6 +4,8 @@
 //go:generate mockery --name=ProcessUserdataInterface
 //go:generate mockery --name=RegisterSenseInterface
 //go:generate mockery --name=RegisterCascadeInterface
+//go:generate mockery --name=StorageChallengeInterface
+
 
 package node
 
@@ -11,6 +13,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
 // ClientInterface represents a base connection interface.
@@ -33,6 +36,8 @@ type ConnectionInterface interface {
 	RegisterSense() RegisterSenseInterface
 	// RegisterCascade returns a new RegisterCascade stream
 	RegisterCascade() RegisterCascadeInterface
+
+	StorageChallenge() StorageChallengeInterface
 }
 
 // SuperNodePeerAPIInterface base interface for other Node API interfaces
@@ -78,6 +83,15 @@ type RegisterCascadeInterface interface {
 
 	// Send signature of ticket to primary supernode
 	SendCascadeTicketSignature(ctx context.Context, nodeID string, signature []byte) error
+}
+
+// StorageChallengeInterface represents an interaction stream with supernodes for storage challenge communications
+type StorageChallengeInterface interface {
+	SuperNodePeerAPIInterface
+
+	ProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error
+
+	VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error
 }
 
 // ProcessUserdataInterface represents an interaction stream with supernodes for sending userdata.

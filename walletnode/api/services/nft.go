@@ -2,11 +2,14 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"strings"
 	"time"
+
+	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -198,7 +201,6 @@ func (service *NftAPIHandler) Download(ctx context.Context, p *nft.NftDownloadPa
 // NftSearch searches for NFT & streams the result based on filters
 func (service *NftAPIHandler) NftSearch(ctx context.Context, p *nft.NftSearchPayload, stream nft.NftSearchServerStream) error {
 	defer stream.Close()
-
 	taskID := service.search.AddTask(p)
 	task := service.search.GetTask(taskID)
 
@@ -237,6 +239,26 @@ func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 		return nil, nft.MakeInternalServerError(err)
 	}
 	res.PreviewThumbnail = data
+
+	ddAndFpData, err := service.search.GetDDAndFP(ctx, ticket, p.UserPastelID, p.UserPassphrase)
+	if err != nil {
+		return nil, nft.MakeInternalServerError(err)
+	}
+	ddAndFpStruct := &pastel.DDAndFingerprints{}
+	json.Unmarshal(ddAndFpData, ddAndFpStruct)
+
+	res.NsfwScore = ddAndFpStruct.OpenNSFWScore
+	res.HentaiNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Hentai
+	res.PornNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Porn
+	res.SexyNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Sexy
+	res.DrawingNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Drawings
+	res.NeutralNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Neutral
+
+	res.RarenessScore = ddAndFpStruct.RarenessScores.OverallAverageRarenessScore
+	res.IsLikelyDupe = &ddAndFpStruct.IsLikelyDupe
+	res.MatchesFoundOnFirstPage = &ddAndFpStruct.InternetRareness.MatchesFoundOnFirstPage
+	res.NumberOfPagesOfResults = &ddAndFpStruct.InternetRareness.NumberOfPagesOfResults
+	res.URLOfFirstMatchInPage = &ddAndFpStruct.InternetRareness.URLOfFirstMatchInPage
 
 	return res, nil
 }

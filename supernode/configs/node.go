@@ -6,6 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/nftdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
+	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 )
 
 // Node contains the SuperNode configuration itself.
@@ -21,8 +22,8 @@ type Node struct {
 	NumberConnectedNodes       int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
 	PreburntTxMinConfirmations int `mapstructure:"preburnt_tx_min_confirmations" json:"preburnt_tx_min_confirmations,omitempty"`
 
-	NftDownload nftdownload.Config `mapstructure:",squash" json:"nft_download,omitempty"`
-	// UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
+	NftDownload      nftdownload.Config      `mapstructure:",squash" json:"nft_download,omitempty"`
+	StorageChallenge storagechallenge.Config `mapstructure:",squash" json:"storage_challenge,omitempty"`
 }
 
 // NewNode returns a new Node instance

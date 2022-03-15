@@ -3,9 +3,14 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"math/big"
 	"net/http"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -106,4 +111,73 @@ func EqualStrList(a, b []string) error {
 	}
 
 	return nil
+}
+
+// GetHashFromString generate sha256 hash from a given string
+func GetHashFromString(inputString string) string {
+	h := sha3.New256()
+	h.Write([]byte(inputString))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// XORBytes returns xor 2 same length bytes data
+func XORBytes(a, b []byte) ([]byte, error) {
+	if len(a) != len(b) {
+		return nil, fmt.Errorf("length of byte slices is not equivalent: %d != %d", len(a), len(b))
+	}
+	buf := make([]byte, len(a))
+	for i := range a {
+		buf[i] = a[i] ^ b[i]
+	}
+	return buf, nil
+}
+
+// BytesToInt convert input bytes data to big.Int value
+func BytesToInt(inputBytes []byte) *big.Int {
+	z := new(big.Int)
+	z.SetBytes(inputBytes)
+	return z
+}
+
+// ComputeXorDistanceBetweenTwoStrings func
+func ComputeXorDistanceBetweenTwoStrings(string1 string, string2 string) uint64 {
+	string1Hash := GetHashFromString(string1)
+	string2Hash := GetHashFromString(string2)
+	string1HashAsBytes := []byte(string1Hash)
+	string2HashAsBytes := []byte(string2Hash)
+	xorDistance, _ := XORBytes(string1HashAsBytes, string2HashAsBytes)
+	xorDistanceAsInt := BytesToInt(xorDistance)
+	xorDistanceAsString := fmt.Sprint(xorDistanceAsInt)
+	if xorDistanceAsString == "0" {
+		zeroAsUint64, _ := strconv.ParseUint("0", 10, 64)
+		return zeroAsUint64
+	}
+	xorDistanceAsStringRescaled := fmt.Sprint(xorDistanceAsString[:len(xorDistanceAsString)-137])
+	xorDistanceAsUint64, _ := strconv.ParseUint(xorDistanceAsStringRescaled, 10, 64)
+	return xorDistanceAsUint64
+}
+
+// GetNClosestXORDistanceStringToAGivenComparisonString func
+func GetNClosestXORDistanceStringToAGivenComparisonString(n int, comparisonString string, sliceOfComputingXORDistance []string, ignores ...string) []string {
+	sliceOfXORDistance := make([]uint64, 0)
+	XORDistanceToComputingStringMap := make(map[uint64]string)
+	for _, currentComputing := range sliceOfComputingXORDistance {
+		currentXORDistance := ComputeXorDistanceBetweenTwoStrings(currentComputing, comparisonString)
+		for _, ignore := range ignores {
+			if ignore == currentComputing {
+				currentXORDistance = ^(uint64(0))
+				break
+			}
+		}
+		sliceOfXORDistance = append(sliceOfXORDistance, currentXORDistance)
+		XORDistanceToComputingStringMap[currentXORDistance] = currentComputing
+	}
+	sort.Slice(sliceOfXORDistance, func(i, j int) bool { return sliceOfXORDistance[i] < sliceOfXORDistance[j] })
+	sliceOfTopNClosestString := make([]string, n)
+	for ii, currentXORDistance := range sliceOfXORDistance {
+		if ii < n {
+			sliceOfTopNClosestString[ii] = XORDistanceToComputingStringMap[currentXORDistance]
+		}
+	}
+	return sliceOfTopNClosestString
 }

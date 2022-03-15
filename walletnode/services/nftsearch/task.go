@@ -2,6 +2,7 @@ package nftsearch
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -20,6 +21,7 @@ type NftSearchingTask struct {
 	*common.WalletNodeTask
 
 	thumbnail *ThumbnailHandler
+	ddAndFP   *DDFPHandler
 
 	service *NftSearchingService
 	// request is search request from API call
@@ -40,26 +42,29 @@ func (task *NftSearchingTask) Run(ctx context.Context) error {
 }
 
 func (task *NftSearchingTask) run(ctx context.Context) error {
-	if err := task.search(ctx); err != nil {
-		return errors.Errorf("search tickets: %w", err)
-	}
-
 	pastelConnections := task.service.config.NumberSuperNodes
 	if len(task.searchResult) < pastelConnections {
 		pastelConnections = len(task.searchResult)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	newCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if err := task.thumbnail.Connect(ctx, pastelConnections, cancel); err != nil {
+	if err := task.ddAndFP.Connect(newCtx, pastelConnections, cancel); err != nil {
 		return errors.Errorf("connect and setup fetchers: %w", err)
 	}
-	if err := task.thumbnail.FetchMultiple(ctx, task.searchResult, &task.resultChan); err != nil {
+	if err := task.search(ctx); err != nil {
+		return errors.Errorf("search tickets: %w", err)
+	}
+
+	if err := task.thumbnail.Connect(newCtx, pastelConnections, cancel); err != nil {
+		return errors.Errorf("connect and setup fetchers: %w", err)
+	}
+	if err := task.thumbnail.FetchMultiple(newCtx, task.searchResult, &task.resultChan); err != nil {
 		return errors.Errorf("fetch multiple thumbnails: %w", err)
 	}
 
-	return task.thumbnail.CloseAll(ctx)
+	return task.thumbnail.CloseAll(newCtx)
 }
 
 func (task *NftSearchingTask) search(ctx context.Context) error {
@@ -67,7 +72,6 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("act ticket: %s", err)
 	}
-
 	group, gctx := errgroup.WithContext(ctx)
 	for _, ticket := range actTickets {
 		ticket := ticket
@@ -95,7 +99,7 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 			}
 			regTicket.RegTicketData.NFTTicketData = *nftData
 
-			if srch, isMatched := task.filterRegTicket(&regTicket); isMatched {
+			if srch, isMatched := task.filterRegTicket(ctx, &regTicket); isMatched {
 				task.addMatchedResult(srch)
 			}
 
@@ -123,22 +127,36 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 }
 
 // filterRegTicket filters ticket against request params & checks if its a match
-func (task *NftSearchingTask) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
-	// --------- WIP: PSL-142------------------
-	/* if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore),
-		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
+func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
+	// Get DD and FP data so we can filter on it.
+	ddAndFpData, err := task.ddAndFP.Fetch(ctx, regTicket.TXID)
+	if err != nil {
+		log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
+		return srch, false
+	}
+	ddAndFpStruct := &pastel.DDAndFingerprints{}
+	json.Unmarshal(ddAndFpData, ddAndFpStruct)
+	log.WithContext(ctx).WithField("ddandfpstruct", ddAndFpStruct).Println("Successfully unmarshalled dd and fp struct")
+
+	//rareness score
+	if !(task.request.MinRarenessScore == float64(0) && task.request.MinRarenessScore == task.request.MaxRarenessScore) && !common.InFloatRange(float64(ddAndFpStruct.RarenessScores.OverallAverageRarenessScore),
+		&task.request.MinRarenessScore, &task.request.MaxRarenessScore) {
+		log.WithContext(ctx).WithField("task.request.minrarenessscore", task.request.MinRarenessScore).WithField("task.request.maxrarenessscore", task.request.MaxRarenessScore).WithField("overallaveragerarnessscore", ddAndFpStruct.RarenessScores.OverallAverageRarenessScore).Println("rareness score outside of range")
 		return srch, false
 	}
 
-		if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore),
-			task.request.MinNsfwScore, task.request.MaxNsfwScore) {
-			return srch, false
-		}
-
-	if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore),
-		task.request.MinInternetRarenessScore, task.request.MaxInternetRarenessScore) {
+	//opennsfw score
+	if !(task.request.MinNsfwScore == float64(0) && task.request.MinNsfwScore == task.request.MaxNsfwScore) && !common.InFloatRange(float64(ddAndFpStruct.OpenNSFWScore),
+		&task.request.MinNsfwScore, &task.request.MaxNsfwScore) {
+		log.WithContext(ctx).WithField("task.request.minnsfwscore", task.request.MinNsfwScore).WithField("task.request.maxnsfwscore", task.request.MaxNsfwScore).WithField("opennsfscore", ddAndFpStruct.OpenNSFWScore).Println("nsfw score outside of range")
 		return srch, false
-	}*/
+	}
+
+	//Is likely dupe
+	if task.request.IsLikelyDupe != ddAndFpStruct.IsLikelyDupe {
+		log.WithContext(ctx).WithField("task.request.islikelydupe", task.request.IsLikelyDupe).WithField("ddandfpstruct.islikelydupe", ddAndFpStruct.IsLikelyDupe).Println("IsLikelyDupe not match")
+		return srch, false
+	}
 
 	if !common.InIntRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.TotalCopies,
 		task.request.MinCopies, task.request.MaxCopies) {
@@ -146,9 +164,13 @@ func (task *NftSearchingTask) filterRegTicket(regTicket *pastel.RegTicket) (srch
 	}
 
 	regSearch := &RegTicketSearch{
-		RegTicket: regTicket,
+		RegTicket:     regTicket,
+		RarenessScore: ddAndFpStruct.RarenessScores.OverallAverageRarenessScore,
+		OpenNSFWScore: ddAndFpStruct.OpenNSFWScore,
+		IsLikelyDupe:  ddAndFpStruct.IsLikelyDupe,
 	}
-
+	//performs fuzzy matching on string portions of search
+	log.WithContext(ctx).WithField("RegSearch", regSearch).Println("filter reg ticket match, sending to fuzzy match")
 	return regSearch.Search(task.request)
 }
 
@@ -197,6 +219,7 @@ func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest
 		request:        request,
 		resultChan:     make(chan *RegTicketSearch),
 		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
+		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
 	}
 }
 
@@ -204,6 +227,7 @@ func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest
 type NftGetSearchTask struct {
 	*common.WalletNodeTask
 	thumbnail *ThumbnailHandler
+	ddAndFP   *DDFPHandler
 }
 
 // NewNftGetSearchTask returns a new NftSearchingTask instance.
@@ -227,5 +251,6 @@ func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphra
 	return &NftGetSearchTask{
 		WalletNodeTask: task,
 		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
+		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
 	}
 }

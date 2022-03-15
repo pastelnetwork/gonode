@@ -1,6 +1,7 @@
 package nftsearch
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -58,6 +59,7 @@ func TestRunTask(t *testing.T) {
 		req           *NftSearchingRequest
 		actTicketsErr error
 		regTicketErr  error
+		ddAndFp       pastel.DDAndFingerprints
 	}
 
 	testCases := map[string]struct {
@@ -65,14 +67,43 @@ func TestRunTask(t *testing.T) {
 		want []RegTicketSearch
 		fail bool
 	}{
+		"weird-ddfpvals": {
+			args: args{
+				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
+				regTickets: pastel.RegTickets{regTicketA},
+				req: &NftSearchingRequest{
+					Query:        "alan",
+					ArtistName:   true,
+					Limit:        10,
+					IsLikelyDupe: false,
+				},
+				ddAndFp: pastel.DDAndFingerprints{
+					OpenNSFWScore: float32(0.5),
+					IsLikelyDupe:  false,
+					RarenessScores: &pastel.RarenessScores{
+						OverallAverageRarenessScore: 0.5,
+					},
+				},
+			},
+			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketA}},
+			fail: false,
+		},
 		"match": {
 			args: args{
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
 				regTickets: pastel.RegTickets{regTicketA},
 				req: &NftSearchingRequest{
-					Query:      "alan",
-					ArtistName: true,
-					Limit:      10,
+					Query:        "alan",
+					ArtistName:   true,
+					Limit:        10,
+					IsLikelyDupe: false,
+				},
+				ddAndFp: pastel.DDAndFingerprints{
+					OpenNSFWScore: float32(0.5),
+					IsLikelyDupe:  false,
+					RarenessScores: &pastel.RarenessScores{
+						OverallAverageRarenessScore: 0.5,
+					},
 				},
 			},
 			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketA}},
@@ -89,6 +120,13 @@ func TestRunTask(t *testing.T) {
 					ArtistName: true,
 					ArtTitle:   true,
 					Limit:      10,
+				},
+				ddAndFp: pastel.DDAndFingerprints{
+					OpenNSFWScore: float32(0.5),
+					IsLikelyDupe:  false,
+					RarenessScores: &pastel.RarenessScores{
+						OverallAverageRarenessScore: 0.5,
+					},
 				},
 			},
 			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketB, MatchIndex: 0},
@@ -107,6 +145,59 @@ func TestRunTask(t *testing.T) {
 					ArtistName: true,
 					Series:     true,
 				},
+				ddAndFp: pastel.DDAndFingerprints{
+					OpenNSFWScore: float32(0.5),
+					IsLikelyDupe:  false,
+					RarenessScores: &pastel.RarenessScores{
+						OverallAverageRarenessScore: 0.5,
+					},
+				},
+			},
+			want: []RegTicketSearch{},
+			fail: false,
+		},
+
+		"no-match-is-likely-dupe": {
+			args: args{
+				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}},
+					pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDB}}},
+				regTickets: pastel.RegTickets{regTicketA, regTicketB},
+				req: &NftSearchingRequest{
+					Query:        "Alan",
+					ArtistName:   true,
+					ArtTitle:     true,
+					Limit:        10,
+					IsLikelyDupe: false,
+				},
+				ddAndFp: pastel.DDAndFingerprints{
+					OpenNSFWScore: float32(0.5),
+					IsLikelyDupe:  true,
+					RarenessScores: &pastel.RarenessScores{
+						OverallAverageRarenessScore: 0.5,
+					},
+				},
+			},
+			want: []RegTicketSearch{},
+			fail: false,
+		},
+		"no-match-is-opennsfw-range": {
+			args: args{
+				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
+				regTickets: pastel.RegTickets{regTicketA},
+				req: &NftSearchingRequest{
+					Query:        "alan",
+					ArtistName:   true,
+					Limit:        10,
+					IsLikelyDupe: false,
+					MaxNsfwScore: 0.2,
+				},
+				ddAndFp: pastel.DDAndFingerprints{
+					OpenNSFWScore: float32(0.5),
+					IsLikelyDupe:  false,
+					RarenessScores: &pastel.RarenessScores{
+						OverallAverageRarenessScore: 0.5,
+					},
+				},
 			},
 			want: []RegTicketSearch{},
 			fail: false,
@@ -122,6 +213,13 @@ func TestRunTask(t *testing.T) {
 					ArtistName: true,
 				},
 				actTicketsErr: errors.New("test-err"),
+				ddAndFp: pastel.DDAndFingerprints{
+					OpenNSFWScore: float32(0.5),
+					IsLikelyDupe:  false,
+					RarenessScores: &pastel.RarenessScores{
+						OverallAverageRarenessScore: 0.5,
+					},
+				},
 			},
 
 			want: []RegTicketSearch{},
@@ -138,6 +236,13 @@ func TestRunTask(t *testing.T) {
 					ArtistName: true,
 				},
 				regTicketErr: errors.New("test-err"),
+				ddAndFp: pastel.DDAndFingerprints{
+					OpenNSFWScore: float32(0.5),
+					IsLikelyDupe:  false,
+					RarenessScores: &pastel.RarenessScores{
+						OverallAverageRarenessScore: 0.5,
+					},
+				},
 			},
 
 			want: []RegTicketSearch{},
@@ -150,6 +255,8 @@ func TestRunTask(t *testing.T) {
 		testCase := testCase
 
 		t.Run(fmt.Sprintf("testCase- %v", name), func(t *testing.T) {
+			ddAndFpMarshalled, _ := json.Marshal(testCase.args.ddAndFp)
+
 			pastelClientMock := pastelMock.NewMockClient(t)
 
 			nodes := pastel.MasterNodes{}
@@ -165,8 +272,12 @@ func TestRunTask(t *testing.T) {
 
 			nodeClientMock := nodeMock.NewMockClient(t)
 			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterNft().
-				ListenOnClose(nil).ListenOnDownloadNft().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnDone()
+				ListenOnClose(nil).ListenOnDownloadNft().ListenOnDownloadThumbnail(map[int][]byte{}, nil).ListenOnDownloadDDAndFP(ddAndFpMarshalled, nil)
 			nodeClientMock.ConnectionInterface.On("DownloadNft").Return(nodeClientMock.DownloadNftInterface)
+
+			doneCh := make(<-chan struct{})
+			nodeClientMock.ConnectionInterface.On("Done").Return(doneCh)
+
 			if len(testCase.args.actTickets) != len(testCase.args.regTickets) {
 				t.Fatalf("#act_tickets != # reg_tickets")
 			}

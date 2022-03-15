@@ -3,6 +3,7 @@ package design
 import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
+
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
 	. "goa.design/goa/v3/dsl"
@@ -140,12 +141,12 @@ var _ = Service("nft", func() {
 				Param("max_copies")
 				Param("min_block")
 				Param("max_block")
+				Param("is_likely_dupe")
 				Param("min_rareness_score")
 				Param("max_rareness_score")
 				Param("min_nsfw_score")
 				Param("max_nsfw_score")
-				Param("min_internet_rareness_score")
-				Param("max_internet_rareness_score")
+				Param("is_likely_dupe")
 			})
 			Header("user_pastelid")
 			Header("user_passphrase")
@@ -479,18 +480,9 @@ var SearchNftParams = func() {
 		Maximum(1)
 		Example(1)
 	})
-
-	Attribute("min_internet_rareness_score", Float64, func() {
-		Description("Minimum internet rareness score")
-		Minimum(0)
-		Maximum(1)
-		Example(1)
-	})
-	Attribute("max_internet_rareness_score", Float64, func() {
-		Description("Maximum internet rareness score")
-		Minimum(0)
-		Maximum(1)
-		Example(1)
+	Attribute("is_likely_dupe", Boolean, func() {
+		Description("Is this image likely a duplicate of another known image")
+		Example(false)
 	})
 	Attribute("user_pastelid", String, func() {
 		Description("User's PastelID")
@@ -577,7 +569,22 @@ var NftSummary = Type("NftSummary", func() {
 		MaxLength(256)
 		Example("https://www.leonardodavinci.net")
 	})
-
+	Attribute("nsfw_score", Float32, func() {
+		Description("NSFW Average score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("rareness_score", Float32, func() {
+		Description("Average pastel rareness score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("is_likely_dupe", Boolean, func() {
+		Description("Is this image likely a duplicate of another known image")
+		Example(false)
+	})
 	Required("title", "description", "creator_name", "copies", "creator_pastelid", "txid")
 })
 
@@ -613,11 +620,27 @@ var NftDetail = Type("NftDetail", func() {
 		Maximum(1)
 		Example(1)
 	})
-	Attribute("internet_rareness_score", Float32, func() {
-		Description("internet rareness score")
-		Minimum(0)
-		Maximum(1)
+	// Attribute("internet_rareness_score", Float32, func() {
+	// 	Description("internet rareness score")
+	// 	Minimum(0)
+	// 	Maximum(1)
+	// 	Example(1)
+	// })
+	Attribute("is_likely_dupe", Boolean, func() {
+		Description("is this nft likely a duplicate")
+		Example(false)
+	})
+	Attribute("matches_found_on_first_page", UInt32, func() {
+		Description("How many matches the scraper found on the first page of the google results")
 		Example(1)
+	})
+	Attribute("number_of_pages_of_results", UInt32, func() {
+		Description("How many pages of search results the scraper found when searching for this image")
+		Example(1)
+	})
+	Attribute("URL_of_first_match_in_page", String, func() {
+		Description("URL of the first match on the first page of search results")
+		Example("https://pastel.network")
 	})
 	Attribute("drawing_nsfw_score", Float32, func() {
 		Description("nsfw score")

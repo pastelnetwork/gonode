@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/nftdownload"
@@ -66,6 +67,7 @@ func (service *DownloadNft) Download(m *pb.DownloadRequest, stream pb.DownloadNf
 
 // DownloadThumbnail returns thumbnail of given hash
 func (service *DownloadNft) DownloadThumbnail(ctx context.Context, req *pb.DownloadThumbnailRequest) (*pb.DownloadThumbnailReply, error) {
+	log.WithContext(ctx).Println("Received download thumbnail request")
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	// Create new task
@@ -77,13 +79,38 @@ func (service *DownloadNft) DownloadThumbnail(ctx context.Context, req *pb.Downl
 	defer task.Cancel()
 
 	// Call task download thumbnail
-	data, err := task.DownloadThumbnail(ctx, req.Key)
+	log.WithContext(ctx).WithField("txid", req.Txid).WithField("numnails", req.Numnails).Println("Downloading thumbnail")
+	data, err := task.DownloadThumbnail(ctx, req.Txid, req.Numnails)
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.DownloadThumbnailReply{
-		Thumbnail: data,
+		Thumbnailone: data[0],
+		Thumbnailtwo: data[1],
+	}, nil
+}
+
+// DownloadDDAndFingerprints returns ONE DDAndFingerprints file out of the 50 that exist as long as it decodes properly.
+func (service *DownloadNft) DownloadDDAndFingerprints(ctx context.Context, req *pb.DownloadDDAndFingerprintsRequest) (*pb.DownloadDDAndFingerprintsReply, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	// Create new task
+	task := service.NewNftDownloadingTask()
+	go func() {
+		<-task.Done()
+		cancel()
+	}()
+	defer task.Cancel()
+
+	// Call task download thumbnail
+	data, err := task.DownloadDDAndFingerprints(ctx, req.Txid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.DownloadDDAndFingerprintsReply{
+		File: data,
 	}, nil
 }
 

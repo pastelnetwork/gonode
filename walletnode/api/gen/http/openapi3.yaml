@@ -41,6 +41,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/NftDetail'
               example:
+                URL_of_first_match_in_page: https://pastel.network
                 copies: 1
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -51,10 +52,12 @@ paths:
                 drawing_nsfw_score: 1
                 green_address: false
                 hentai_nsfw_score: 1
-                internet_rareness_score: 1
+                is_likely_dupe: false
                 keywords: Renaissance, sfumato, portrait
+                matches_found_on_first_page: 1
                 neutral_nsfw_score: 1
                 nsfw_score: 1
+                number_of_pages_of_results: 1
                 porn_nsfw_score: 1
                 preview_thumbnail:
                 - 69
@@ -837,6 +840,15 @@ paths:
           example: 688261453695203164
           minimum: 1
         example: 7437383627185335986
+      - name: is_likely_dupe
+        in: query
+        description: Is this image likely a duplicate of another known image
+        allowEmptyValue: true
+        schema:
+          type: boolean
+          description: Is this image likely a duplicate of another known image
+          example: false
+        example: false
       - name: min_rareness_score
         in: query
         description: Minimum pastel rareness score
@@ -877,28 +889,6 @@ paths:
         schema:
           type: number
           description: Maximum nsfw score
-          example: 1
-          minimum: 0
-          maximum: 1
-        example: 1
-      - name: min_internet_rareness_score
-        in: query
-        description: Minimum internet rareness score
-        allowEmptyValue: true
-        schema:
-          type: number
-          description: Minimum internet rareness score
-          example: 1
-          minimum: 0
-          maximum: 1
-        example: 1
-      - name: max_internet_rareness_score
-        in: query
-        description: Maximum internet rareness score
-        allowEmptyValue: true
-        schema:
-          type: number
-          description: Maximum internet rareness score
           example: 1
           minimum: 0
           maximum: 1
@@ -957,7 +947,10 @@ paths:
                     inventor, and writer Leonardo da Vinci. Likely completed in 1506,
                     the piece features a portrait of a seated woman set against an
                     imaginary landscape.
+                  is_likely_dupe: false
                   keywords: Renaissance, sfumato, portrait
+                  nsfw_score: 1
+                  rareness_score: 1
                   series_name: Famous artist
                   thumbnail_1:
                   - 86
@@ -2052,6 +2045,10 @@ components:
     NftDetail:
       type: object
       properties:
+        URL_of_first_match_in_page:
+          type: string
+          description: URL of the first match on the first page of search results
+          example: https://pastel.network
         copies:
           type: integer
           description: Number of copies
@@ -2099,17 +2096,20 @@ components:
           example: 1
           minimum: 0
           maximum: 1
-        internet_rareness_score:
-          type: number
-          description: internet rareness score
-          example: 1
-          minimum: 0
-          maximum: 1
+        is_likely_dupe:
+          type: boolean
+          description: Is this image likely a duplicate of another known image
+          example: false
         keywords:
           type: string
           description: Keywords
           example: Renaissance, sfumato, portrait
           maxLength: 256
+        matches_found_on_first_page:
+          type: integer
+          description: How many matches the scraper found on the first page of the
+            google results
+          example: 1
         neutral_nsfw_score:
           type: number
           description: nsfw score
@@ -2118,10 +2118,15 @@ components:
           maximum: 1
         nsfw_score:
           type: number
-          description: nsfw score
+          description: NSFW Average score
           example: 1
           minimum: 0
           maximum: 1
+        number_of_pages_of_results:
+          type: integer
+          description: How many pages of search results the scraper found when searching
+            for this image
+          example: 1
         porn_nsfw_score:
           type: number
           description: nsfw score
@@ -2163,7 +2168,7 @@ components:
           format: binary
         rareness_score:
           type: number
-          description: pastel rareness score
+          description: Average pastel rareness score
           example: 1
           minimum: 0
           maximum: 1
@@ -2272,6 +2277,7 @@ components:
           example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
           maxLength: 128
       example:
+        URL_of_first_match_in_page: https://pastel.network
         copies: 1
         creator_name: Leonardo da Vinci
         creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -2282,10 +2288,12 @@ components:
         drawing_nsfw_score: 1
         green_address: true
         hentai_nsfw_score: 1
-        internet_rareness_score: 1
+        is_likely_dupe: false
         keywords: Renaissance, sfumato, portrait
+        matches_found_on_first_page: 1
         neutral_nsfw_score: 1
         nsfw_score: 1
+        number_of_pages_of_results: 1
         porn_nsfw_score: 1
         preview_thumbnail:
         - 80
@@ -2515,7 +2523,7 @@ components:
           minLength: 35
           maxLength: 35
         thumbnail_coordinate:
-          $ref: '#/components/schemas/Thumbnailcoordinate2'
+          $ref: '#/components/schemas/ThumbnailcoordinateResponseBody'
         youtube_url:
           type: string
           description: NFT creation video youtube URL
@@ -2636,7 +2644,10 @@ components:
           description: The Mona Lisa is an oil painting by Italian artist, inventor,
             and writer Leonardo da Vinci. Likely completed in 1506, the piece features
             a portrait of a seated woman set against an imaginary landscape.
+          is_likely_dupe: false
           keywords: Renaissance, sfumato, portrait
+          nsfw_score: 1
+          rareness_score: 1
           series_name: Famous artist
           thumbnail_1:
           - 86
@@ -2722,11 +2733,27 @@ components:
             writer Leonardo da Vinci. Likely completed in 1506, the piece features
             a portrait of a seated woman set against an imaginary landscape.
           maxLength: 1024
+        is_likely_dupe:
+          type: boolean
+          description: Is this image likely a duplicate of another known image
+          example: false
         keywords:
           type: string
           description: Keywords
           example: Renaissance, sfumato, portrait
           maxLength: 256
+        nsfw_score:
+          type: number
+          description: NSFW Average score
+          example: 1
+          minimum: 0
+          maximum: 1
+        rareness_score:
+          type: number
+          description: Average pastel rareness score
+          example: 1
+          minimum: 0
+          maximum: 1
         series_name:
           type: string
           description: Series name
@@ -2793,7 +2820,10 @@ components:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
+        is_likely_dupe: false
         keywords: Renaissance, sfumato, portrait
+        nsfw_score: 1
+        rareness_score: 1
         series_name: Famous artist
         thumbnail_1:
         - 69
@@ -3377,7 +3407,7 @@ components:
       - top_left_y
       - bottom_right_x
       - bottom_right_y
-    Thumbnailcoordinate2:
+    ThumbnailcoordinateResponseBody:
       type: object
       properties:
         bottom_right_x:
@@ -3404,7 +3434,7 @@ components:
           default: 0
           example: 0
           format: int64
-      description: Coordinate of the thumbnail
+      description: Coordinate of the thumbnail (default view)
       example:
         bottom_right_x: 640
         bottom_right_y: 480

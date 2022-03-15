@@ -3,8 +3,9 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/types"
 	"io"
+
+	"github.com/pastelnetwork/gonode/common/types"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -52,23 +53,49 @@ func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signa
 	return
 }
 
-func (service *downloadNft) DownloadThumbnail(ctx context.Context, key []byte) (file []byte, err error) {
+func (service *downloadNft) DownloadThumbnail(ctx context.Context, txid string, numNails int) (files map[int][]byte, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	in := &pb.DownloadThumbnailRequest{
-		Key: key,
+		Txid:     txid,
+		Numnails: int32(numNails),
 	}
-
+	log.WithContext(ctx).Println("Sending sn download thumbnail request")
 	res, err := service.client.DownloadThumbnail(ctx, in)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if res.Thumbnail == nil {
+	if res.Thumbnailone == nil {
 		return nil, errors.New("nil thumbnail")
 	}
 
-	return res.Thumbnail, nil
+	if res.Thumbnailtwo == nil && numNails > 1 {
+		return nil, errors.New("nil thumbnail2")
+	}
+	rMap := make(map[int][]byte)
+	rMap[0] = res.Thumbnailone
+	rMap[1] = res.Thumbnailtwo
+	return rMap, nil
+}
+
+func (service *downloadNft) DownloadDDAndFingerprints(ctx context.Context, txid string) (file []byte, err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	in := &pb.DownloadDDAndFingerprintsRequest{
+		Txid: txid,
+	}
+
+	res, err := service.client.DownloadDDAndFingerprints(ctx, in)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if res.File == nil {
+		return nil, errors.New("nil dd and fingerprints file")
+	}
+
+	return res.File, nil
 }
 
 func (service *downloadNft) contextWithLogPrefix(ctx context.Context) context.Context {

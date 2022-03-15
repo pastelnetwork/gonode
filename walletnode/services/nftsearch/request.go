@@ -60,17 +60,15 @@ type NftSearchingRequest struct {
 	// Maximum number of created copies
 	MaxCopies *int
 	// Minimum nsfw score
-	MinNsfwScore *float64
+	MinNsfwScore float64
 	// Maximum nsfw score
-	MaxNsfwScore *float64
+	MaxNsfwScore float64
 	// Minimum rareness score
-	MinRarenessScore *float64
+	MinRarenessScore float64
 	// Maximum rareness score
-	MaxRarenessScore *float64
-	// MinInternetRarenessScore
-	MinInternetRarenessScore *float64
-	// MaxInternetRarenessScore
-	MaxInternetRarenessScore *float64
+	MaxRarenessScore float64
+	// Is Likely Dupe
+	IsLikelyDupe bool
 	//UserPastelID
 	UserPastelID string
 	//UserPastelID
@@ -80,22 +78,18 @@ type NftSearchingRequest struct {
 // FromNftSearchRequest from one to another
 func FromNftSearchRequest(req *nft.NftSearchPayload) *NftSearchingRequest {
 	rq := &NftSearchingRequest{
-		Artist:           req.Artist,
-		Limit:            req.Limit,
-		Query:            req.Query,
-		ArtistName:       req.CreatorName,
-		ArtTitle:         req.ArtTitle,
-		Series:           req.Series,
-		Descr:            req.Descr,
-		Keyword:          req.Keyword,
-		MinBlock:         req.MinBlock,
-		MaxBlock:         req.MaxBlock,
-		MinCopies:        req.MinCopies,
-		MaxCopies:        req.MaxCopies,
-		MinNsfwScore:     req.MinNsfwScore,
-		MaxNsfwScore:     req.MaxNsfwScore,
-		MinRarenessScore: req.MinRarenessScore,
-		MaxRarenessScore: req.MaxRarenessScore,
+		Artist:     req.Artist,
+		Limit:      req.Limit,
+		Query:      req.Query,
+		ArtistName: req.CreatorName,
+		ArtTitle:   req.ArtTitle,
+		Series:     req.Series,
+		Descr:      req.Descr,
+		Keyword:    req.Keyword,
+		MinBlock:   req.MinBlock,
+		MaxBlock:   req.MaxBlock,
+		MinCopies:  req.MinCopies,
+		MaxCopies:  req.MaxCopies,
 	}
 
 	if req.UserPastelid != nil {
@@ -104,6 +98,26 @@ func FromNftSearchRequest(req *nft.NftSearchPayload) *NftSearchingRequest {
 
 	if req.UserPassphrase != nil {
 		rq.UserPassphrase = *req.UserPassphrase
+	}
+
+	if req.MinNsfwScore != nil {
+		rq.MinNsfwScore = *req.MinNsfwScore
+	}
+
+	if req.MaxNsfwScore != nil {
+		rq.MaxNsfwScore = *req.MaxNsfwScore
+	}
+
+	if req.MinRarenessScore != nil {
+		rq.MinRarenessScore = *req.MinRarenessScore
+	}
+
+	if req.MaxRarenessScore != nil {
+		rq.MaxRarenessScore = *req.MaxRarenessScore
+	}
+
+	if req.IsLikelyDupe != nil {
+		rq.IsLikelyDupe = *req.IsLikelyDupe
 	}
 
 	return rq
