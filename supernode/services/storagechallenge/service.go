@@ -72,12 +72,13 @@ func (service *SCService) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-ticker.C:
-			log.Println("Ticker has ticked")
+			//log.Println("Ticker has ticked")
 
 			if service.CheckNextBlockAvailable(ctx) {
-				newCtx := context.Background()
-				task := service.NewSCTask()
-				task.GenerateStorageChallenges(newCtx)
+				// newCtx := context.Background()
+				// task := service.NewSCTask()
+				//task.GenerateStorageChallenges(newCtx)
+				log.WithContext(ctx).Println("Would normally generate a storage challenge")
 			} else {
 				log.WithContext(ctx).Println("Block not available")
 			}
