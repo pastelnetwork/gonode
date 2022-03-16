@@ -30,14 +30,12 @@ type NftDownloadingTask struct {
 	files []downFile
 	File  []byte
 
-	err error
 	mtx sync.Mutex
 }
 
 // Run starts the task
 func (task *NftDownloadingTask) Run(ctx context.Context) error {
-	task.err = task.RunHelper(ctx, task.run, task.removeArtifacts)
-	return nil
+	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
 func (task *NftDownloadingTask) run(ctx context.Context) error {
@@ -155,7 +153,7 @@ func (task *NftDownloadingTask) MatchFiles() error {
 
 // Error returns task err
 func (task *NftDownloadingTask) Error() error {
-	return task.err
+	return task.WalletNodeTask.Error()
 }
 
 func (task *NftDownloadingTask) removeArtifacts() {

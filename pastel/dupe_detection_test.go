@@ -3,7 +3,6 @@ package pastel
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -100,20 +99,18 @@ func TestToCompressSignedDDAndFingerprints(t *testing.T) {
 
 			gotDD, _, gotSig, err := ExtractCompressSignedDDAndFingerprints(reply)
 			assert.Nil(t, err)
-			if err == nil {
-				assert.Equal(t, tc.sig, gotSig)
-				assert.Equal(t, tc.dd.Block, gotDD.Block)
-				assert.Equal(t, tc.dd.Principal, gotDD.Principal)
-				assert.Equal(t, tc.dd.IsLikelyDupe, gotDD.IsLikelyDupe)
-				assert.Equal(t, tc.dd.IsRareOnInternet, gotDD.IsRareOnInternet)
-				assert.Equal(t, tc.dd.DupeDetectionSystemVersion, gotDD.DupeDetectionSystemVersion)
-				assert.Equal(t, tc.dd.AlternativeNSFWScores.Porn, gotDD.AlternativeNSFWScores.Porn)
-				assert.Equal(t, tc.dd.AlternativeNSFWScores.Hentai, gotDD.AlternativeNSFWScores.Hentai)
-				assert.Equal(t, tc.dd.AlternativeNSFWScores.Sexy, gotDD.AlternativeNSFWScores.Sexy)
-				assert.Equal(t, tc.dd.AlternativeNSFWScores.Drawings, gotDD.AlternativeNSFWScores.Drawings)
-			} else {
-				fmt.Println("err: ", err.Error())
-			}
+
+			assert.Equal(t, tc.sig, gotSig)
+			assert.Equal(t, tc.dd.Block, gotDD.Block)
+			assert.Equal(t, tc.dd.Principal, gotDD.Principal)
+			assert.Equal(t, tc.dd.IsLikelyDupe, gotDD.IsLikelyDupe)
+			assert.Equal(t, tc.dd.IsRareOnInternet, gotDD.IsRareOnInternet)
+			assert.Equal(t, tc.dd.DupeDetectionSystemVersion, gotDD.DupeDetectionSystemVersion)
+			assert.Equal(t, tc.dd.AlternativeNSFWScores.Porn, gotDD.AlternativeNSFWScores.Porn)
+			assert.Equal(t, tc.dd.AlternativeNSFWScores.Hentai, gotDD.AlternativeNSFWScores.Hentai)
+			assert.Equal(t, tc.dd.AlternativeNSFWScores.Sexy, gotDD.AlternativeNSFWScores.Sexy)
+			assert.Equal(t, tc.dd.AlternativeNSFWScores.Drawings, gotDD.AlternativeNSFWScores.Drawings)
+
 		})
 	}
 }

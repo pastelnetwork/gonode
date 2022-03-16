@@ -191,8 +191,10 @@ func (s *p2p) configure(ctx context.Context) error {
 		PeerAuth:       true, // Enable peer authentication
 	}
 
+	// We Set ExternalIP only for integration tests
 	if s.config.BootstrapIPs != "" && s.config.ExternalIP != "" {
 		kadOpts.ExternalIP = s.config.ExternalIP
+		kadOpts.PeerAuth = false
 	}
 
 	// new a kademlia distributed hash table

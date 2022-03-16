@@ -38,7 +38,9 @@ var _ = BeforeSuite(func() {
 	identifier := strings.ToLower(uuid.New().String())
 	compose = tc.NewLocalDockerCompose([]string{composeFilePath}, identifier)
 
-	Expect(compose.WithCommand([]string{"up", "-d", "--build"}).Invoke().Error).To(Succeed())
+	if os.Getenv("IT_DOCKER_OFF") != "true" {
+		Expect(compose.WithCommand([]string{"up", "-d", "--build"}).Invoke().Error).To(Succeed())
+	}
 
 	// Backoff wait for api-server container to be available
 	helper := helper.NewItHelper()
@@ -68,5 +70,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	Expect(compose.Down().Error).NotTo(HaveOccurred(), "should do docker-compose down")
+	if os.Getenv("IT_DOCKER_OFF") != "true" {
+		Expect(compose.Down().Error).NotTo(HaveOccurred(), "should do docker-compose down")
+	}
 })

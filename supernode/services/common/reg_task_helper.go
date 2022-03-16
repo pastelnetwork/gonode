@@ -3,7 +3,6 @@ package common
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -203,24 +202,18 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 // ValidateBurnTxID - validates the pre-burnt fee transaction created by the caller
 func (h *RegTaskHelper) ValidateBurnTxID(_ context.Context) error {
 	var err error
-	fmt.Println("here nill")
 	<-h.NewAction(func(ctx context.Context) error {
-		fmt.Println("here nill 2")
-		if h.ActionTicketRegMetadata == nil {
-			fmt.Println("here action nil")
-		}
 		confirmationChn := h.WaitConfirmation(ctx, h.ActionTicketRegMetadata.BurnTxID, int64(h.preburntTxMinConfirmations), 15*time.Second)
-		fmt.Println("here nill 3")
 		log.WithContext(ctx).Debug("waiting for confimation")
 		if err = <-confirmationChn; err != nil {
-			fmt.Println("here nill 4")
 			h.UpdateStatus(StatusErrorInvalidBurnTxID)
 			log.WithContext(ctx).WithError(err).Errorf("validate preburn transaction validation")
 			err = errors.Errorf("validate preburn transaction validation :%w", err)
-			fmt.Println("here nill 7")
 			return err
 		}
+
 		log.WithContext(ctx).Debug("confirmation done")
+
 		return nil
 	})
 

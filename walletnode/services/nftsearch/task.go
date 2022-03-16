@@ -30,15 +30,12 @@ type NftSearchingTask struct {
 	searchResult   []*RegTicketSearch
 	resultChan     chan *RegTicketSearch
 	searchResMutex sync.Mutex
-
-	err error
 }
 
 // Run starts the task
 func (task *NftSearchingTask) Run(ctx context.Context) error {
 	defer close(task.resultChan)
-	task.err = task.RunHelper(ctx, task.run, task.removeArtifacts)
-	return nil
+	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
 func (task *NftSearchingTask) run(ctx context.Context) error {
@@ -189,7 +186,7 @@ func (task *NftSearchingTask) SubscribeSearchResult() <-chan *RegTicketSearch {
 
 // Error returns task err
 func (task *NftSearchingTask) Error() error {
-	return task.err
+	return task.WalletNodeTask.Error()
 }
 
 func (task *NftSearchingTask) removeArtifacts() {

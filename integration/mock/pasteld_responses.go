@@ -365,7 +365,7 @@ func getRegTickets() map[string][]byte {
 						149, 172, 64, 148, 230, 63, 44, 221, 144, 63, 173, 131, 97, 25, 227, 105, 181, 127},
 					CreatorName:   "Alan Border",
 					NFTTitle:      "nft-c",
-					NFTSeriesName: "nft-series-c",
+					NFTSeriesName: "nft-series",
 					RQIDs: []string{
 						"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
 					},

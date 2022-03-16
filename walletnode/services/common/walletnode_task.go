@@ -21,6 +21,7 @@ type WalletNodeTask struct {
 	task.Task
 
 	LogPrefix string
+	err       error
 }
 
 // RunHelper starts the task
@@ -36,6 +37,7 @@ func (task *WalletNodeTask) RunHelper(ctx context.Context, run TaskRunnerFunc, c
 
 	defer clean()
 	if err := run(ctx); err != nil {
+		task.err = err
 		task.UpdateStatus(StatusTaskRejected)
 		log.WithContext(ctx).WithErrorStack(err).Error("Task is rejected")
 		return nil
@@ -53,6 +55,11 @@ func (task *WalletNodeTask) RemoveFile(file *files.File) {
 			log.Debugf("remove file failed: %s", err.Error())
 		}
 	}
+}
+
+// Error returns the task err
+func (task *WalletNodeTask) Error() error {
+	return task.err
 }
 
 // NewWalletNodeTask returns a new WalletNodeTask instance.

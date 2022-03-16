@@ -1670,7 +1670,6 @@ func Test_JSON1(t *testing.T) {
 		t.Fatalf("failed to perform simple SELECT: %s", err.Error())
 	}
 
-	fmt.Println("q: ", q)
 	if exp, got := `[{"columns":["phone"],"types":[""],"values":[["{\"mobile\":\"789111\",\"home\":\"123456\"}"]]}]`, asJSON(q); exp != got {
 		t.Fatalf("unexpected results for simple query, expected %s, got %s", exp, got)
 	}

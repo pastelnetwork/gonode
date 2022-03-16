@@ -341,6 +341,11 @@ func (task *CascadeRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 	return task.skipPrimaryNodeTxidVerify || os.Getenv("INTEGRATION_TEST_ENV") == "true"
 }
 
+// Error returns task err
+func (task *CascadeRegistrationTask) Error() error {
+	return task.WalletNodeTask.Error()
+}
+
 // NewCascadeRegisterTask returns a new SenseRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
 func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common.ActionRegistrationRequest) *CascadeRegistrationTask {

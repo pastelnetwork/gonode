@@ -116,6 +116,18 @@ var _ = Describe("NFTSearch", func() {
 		})
 	})
 
+	Context("when searching an existing nft with matching string in series", func() {
+		It("should be found & returned", func() {
+			searchParams := make(map[string]string)
+			searchParams["query"] = "nft-series"
+			searchParams["series"] = "true"
+
+			Expect(helper.DoNFTSearchWSReq(strings.TrimPrefix(it.WNBaseURI, "http://"), helper.GetNFTSearchURI(searchParams),
+				[]string{"nft.series_name", "nft.thumbnail_1", "nft.thumbnail_2"},
+				[]string{"nft-series", "dGh1bWJuYWlsLW9uZQ==", "dGh1bWJuYWlsLXR3bw=="})).To(Succeed())
+		})
+	})
+
 	AfterEach(func() {
 		Expect(mocker.CleanupAll()).To(Succeed())
 	})
