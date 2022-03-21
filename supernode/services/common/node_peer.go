@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultConnectToNodeTimeout = time.Second * 15
+	defaultConnectToNodeTimeout = time.Second * 20
 )
 
 // SuperNodePeer represents a single supernode

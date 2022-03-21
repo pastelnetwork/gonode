@@ -65,6 +65,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 	}
 
 	var err error
+	var retCompressed []byte
 
 	<-h.NewAction(func(ctx context.Context) error {
 		defer errors.Recover(func(recErr error) {
@@ -73,7 +74,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		h.UpdateStatus(StatusImageProbed)
 
 		//SuperNode makes ImageRarenessScore gRPC call to dd-service
-		h.myDDAndFingerprints, err = h.GenFingerprintsData(ctx, file, blockHash, creatorPastelID)
+		compressed, err := h.GenFingerprintsData(ctx, file, blockHash, creatorPastelID)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
 			err = errors.Errorf("generate fingerprints data: %w", err)
@@ -83,7 +84,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		// Begin send signed DDAndFingerprints to other SNs
 		// Send base64’ed (and compressed) dd_and_fingerprints and its signature to the 2 OTHER SNs
 		// step 4.A.5
-		if h.NetworkHandler.meshedNodes == nil || len(h.NetworkHandler.meshedNodes) != 3 {
+		if len(h.NetworkHandler.meshedNodes) != 3 {
 			log.WithContext(ctx).Error("Not enough meshed SuperNodes")
 			err = errors.New("not enough meshed SuperNodes")
 			return nil
@@ -114,7 +115,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 			}
 
 			//supernode/services/nftregister/task.go
-			if err = tasker.SendDDFBack(ctx, node.SuperNodePeerAPIInterface, &nodeInfo, h.ServerPastelID, h.myDDAndFingerprints.ZstdCompressedFingerprint); err != nil {
+			if err = tasker.SendDDFBack(ctx, node.SuperNodePeerAPIInterface, &nodeInfo, h.ServerPastelID, compressed); err != nil {
 				log.WithContext(ctx).WithFields(log.Fields{
 					"nodeID":  nodeInfo.NodeID,
 					"sessID":  nodeInfo.SessID,
@@ -174,17 +175,16 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 			}
 
 			// Creates compress(Base64(dd_and_fingerprints).Base64(signature))
-			var compressed []byte
-			compressed, err = h.compressAndSignDDAndFingerprints(ctx, h.calculatedDDAndFingerprints)
+			retCompressed, err = h.compressAndSignDDAndFingerprints(ctx, h.calculatedDDAndFingerprints)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Errorf("compress combine DDAndFingerPrintAndScore failed")
 
 				err = errors.Errorf("compress combine DDAndFingerPrintAndScore failed: %w", err)
 				return nil
 			}
-			h.calculatedDDAndFingerprints.ZstdCompressedFingerprint = compressed
+
 			return nil
-		case <-time.After(30 * time.Second):
+		case <-time.After(60 * time.Second):
 			log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers timeout")
 			err = errors.New("waiting for DDAndFingerprints timeout")
 			return nil
@@ -194,8 +194,8 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 	if err != nil {
 		return nil, err
 	}
-
-	return h.calculatedDDAndFingerprints.ZstdCompressedFingerprint, nil
+	log.Println("here ret compressed: ", retCompressed)
+	return retCompressed, nil
 }
 
 // GenFingerprintsData calls DD server to get DD and FP data
@@ -203,7 +203,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 // Call dd-service to generate near duplicate fingerprints and dupe-detection info from re-sampled image (img1-r)
 // Sign dd_and_fingerprints with SN own PastelID (private key) using cNode API
 // Step 4.A.3 - 4.A.4
-func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *files.File, blockHash string, creatorPastelID string) (*pastel.DDAndFingerprints, error) {
+func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *files.File, blockHash string, creatorPastelID string) ([]byte, error) {
 	img, err := file.Bytes()
 	if err != nil {
 		return nil, errors.Errorf("get content of image %s: %w", file.Name(), err)
@@ -211,7 +211,7 @@ func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *fi
 
 	// Get DDAndFingerprints
 	// SuperNode makes ImageRarenessScore gRPC call to dd-service
-	ddAndFingerprints, err := h.DdClient.ImageRarenessScore(
+	h.myDDAndFingerprints, err = h.DdClient.ImageRarenessScore(
 		ctx,
 		img,
 		file.Format().String(),
@@ -225,13 +225,12 @@ func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *fi
 
 	// Creates compress(Base64(dd_and_fingerprints).Base64(signature))
 	//Sign dd_and_fingerprints with SN own PastelID (private key) using cNode API
-	compressed, err := h.compressAndSignDDAndFingerprints(ctx, ddAndFingerprints)
+	compressed, err := h.compressAndSignDDAndFingerprints(ctx, h.myDDAndFingerprints)
 	if err != nil {
 		return nil, errors.Errorf("call compressSignedDDAndFingerprints failed: %w", err)
 	}
 
-	ddAndFingerprints.ZstdCompressedFingerprint = compressed
-	return ddAndFingerprints, nil
+	return compressed, nil
 }
 
 //  https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration

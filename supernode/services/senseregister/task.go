@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -68,6 +69,22 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 		return nil, errors.Errorf("invalid senseRegMetadata")
 	}
 	task.Asset = file
+
+	var fileBytes []byte
+	fileBytes, err := file.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("read image file")
+		return nil, errors.Errorf("read image file: %w", err)
+	}
+
+	fileDataInMb := int64(len(fileBytes)) / (1024 * 1024)
+	fee, err := task.PastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
+	if err != nil {
+		return nil, errors.Errorf("getting estimated fee %w", err)
+	}
+
+	task.registrationFee = int64(fee)
+
 	return task.DupeDetectionHandler.ProbeImage(ctx, file,
 		task.ActionTicketRegMetadata.BlockHash, task.ActionTicketRegMetadata.CreatorPastelID, &tasker{})
 }
@@ -203,10 +220,10 @@ func (task *SenseRegistrationTask) ValidateActionActAndStore(ctx context.Context
 	var err error
 
 	// Wait for action ticket to be activated by walletnode
-	confirmations := task.waitActionActivation(ctx, actionRegTxID, 2, 30*time.Second)
+	confirmations := task.waitActionActivation(ctx, actionRegTxID, 3, 30*time.Second)
 	err = <-confirmations
 	if err != nil {
-		return errors.Errorf("wait for confirmation of reg-art ticket %w", err)
+		return errors.Errorf("wait for confirmation of sense ticket %w", err)
 	}
 
 	// Store dd_and_fingerprints into Kademlia
@@ -308,7 +325,7 @@ func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, 
 			APITicketData: task.Ticket.APITicketData,
 		},
 		Signatures: &pastel.ActionTicketSignatures{
-			Caller: map[string]string{
+			Principal: map[string]string{
 				task.Ticket.Caller: string(task.creatorSignature),
 			},
 			Mn1: map[string]string{
@@ -324,6 +341,8 @@ func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, 
 		Mn1PastelID: task.config.PastelID,
 		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
+		Key1:        "key1-" + uuid.New().String(),
+		Key2:        "key2-" + uuid.New().String(),
 	}
 
 	nftRegTxid, err := task.PastelClient.RegisterActionTicket(ctx, req)

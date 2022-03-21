@@ -158,10 +158,10 @@ func DecodeActionTicket(b []byte) (*ActionTicket, error) {
 
 // ActionTicketSignatures represents signatures from parties
 type ActionTicketSignatures struct {
-	Caller map[string]string `json:"caller,omitempty"`
-	Mn1    map[string]string `json:"mn1,omitempty"`
-	Mn2    map[string]string `json:"mn2,omitempty"`
-	Mn3    map[string]string `json:"mn3,omitempty"`
+	Principal map[string]string `json:"principal,omitempty"`
+	Mn1       map[string]string `json:"mn1,omitempty"`
+	Mn2       map[string]string `json:"mn2,omitempty"`
+	Mn3       map[string]string `json:"mn3,omitempty"`
 }
 
 // EncodeActionSignatures encodes ActionTicketSignatures into byte array

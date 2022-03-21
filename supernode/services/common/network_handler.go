@@ -201,7 +201,7 @@ func (h *NetworkHandler) CheckNodeInMeshedNodes(nodeID string) error {
 
 // PastelNodeByExtKey returns information about SN by its PastelID
 func (h *NetworkHandler) PastelNodeByExtKey(ctx context.Context, nodeID string) (*SuperNodePeer, error) {
-	masterNodes, err := h.PastelHandler.PastelClient.MasterNodesTop(ctx)
+	masterNodes, err := h.PastelHandler.PastelClient.MasterNodesExtra(ctx)
 	log.WithContext(ctx).Debugf("master node %v", masterNodes)
 
 	if err != nil {

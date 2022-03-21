@@ -53,11 +53,11 @@ type tasker struct {
 }
 
 func (t *tasker) SendDDFBack(ctx context.Context, node node.SuperNodePeerAPIInterface, nodeInfo *types.MeshedSuperNode, pastelID string, data []byte) error {
-	senseNode, ok := node.(*NftRegistrationNode)
+	regNode, ok := node.(*NftRegistrationNode)
 	if !ok {
-		return errors.Errorf("node is not SenseRegistrationNode")
+		return errors.Errorf("node is not NFTRegistrationNode")
 	}
-	return senseNode.SendSignedDDAndFingerprints(ctx, nodeInfo.SessID, pastelID, data)
+	return regNode.SendSignedDDAndFingerprints(ctx, nodeInfo.SessID, pastelID, data)
 }
 
 // Run starts the task

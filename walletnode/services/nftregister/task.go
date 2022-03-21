@@ -106,7 +106,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// result is in the - task.NftImageHandler
 	// Step 6
 	if err := task.ImageHandler.CreateCopyWithEncodedFingerprint(ctx,
-		task.Request.CreatorPastelID, task.Request.CreatorPastelID,
+		task.Request.CreatorPastelID, task.Request.CreatorPastelIDPassphrase,
 		task.FingerprintsHandler.FinalFingerprints, task.Request.Image); err != nil {
 		return errors.Errorf("encode image with fingerprint: %w", err)
 	}
