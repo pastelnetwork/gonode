@@ -140,7 +140,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	log.Debugf("Active txid is confirmed")
 
 	// Send ActionAct request to primary node
-	if err := task.uploadActionAct(newCtx, activateTxID); err != nil {
+	if err := task.uploadActionAct(newCtx, task.regCascadeTxid); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("upload action act: %w", err)
 	}
