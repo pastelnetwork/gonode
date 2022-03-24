@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
-	"io"
-	"strings"
-	"testing"
-	"time"
 
 	"github.com/tj/assert"
 
@@ -200,7 +201,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
 			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 
@@ -400,7 +401,7 @@ func TestTaskSessionNode(t *testing.T) {
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
 			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 			task.UpdateStatus(tc.args.status)
@@ -483,7 +484,7 @@ func TestTaskAddPeerCascadeTicketSignature(t *testing.T) {
 			}
 			nodes = append(nodes, pastel.MasterNode{ExtKey: tc.args.nodeID})
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
 			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 			task.UpdateStatus(tc.args.status)

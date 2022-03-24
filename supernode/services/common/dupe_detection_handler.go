@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -65,7 +66,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 	}
 
 	var err error
-	var retCompressed []byte
+	var retCompressed, compressed []byte
 
 	<-h.NewAction(func(ctx context.Context) error {
 		defer errors.Recover(func(recErr error) {
@@ -74,7 +75,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		h.UpdateStatus(StatusImageProbed)
 
 		//SuperNode makes ImageRarenessScore gRPC call to dd-service
-		compressed, err := h.GenFingerprintsData(ctx, file, blockHash, creatorPastelID)
+		compressed, err = h.GenFingerprintsData(ctx, file, blockHash, creatorPastelID)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
 			err = errors.Errorf("generate fingerprints data: %w", err)
@@ -103,6 +104,8 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 					"nodeID":  nodeInfo.NodeID,
 					"context": "SendDDAndFingerprints",
 				}).WithError(err).Errorf("get node by extID")
+
+				err = errors.Errorf("get node by extID: %w", err)
 				return nil
 			}
 
@@ -111,6 +114,8 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 					"nodeID":  nodeInfo.NodeID,
 					"context": "SendDDAndFingerprints",
 				}).WithError(err).Errorf("connect to node")
+				err = errors.Errorf("connect to node: %w", err)
+
 				return nil
 			}
 
@@ -121,6 +126,8 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 					"sessID":  nodeInfo.SessID,
 					"context": "SendDDAndFingerprints",
 				}).WithError(err).Errorf("send signed DDAndFingerprints failed")
+				err = errors.Errorf("send signed DDAndFingerprints failed: %w", err)
+
 				return nil
 			}
 		}
@@ -171,6 +178,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Errorf("call CombineFingerPrintAndScores() failed")
+				err = errors.Errorf("call CombineFingerPrintAndScores() failed")
 				return nil
 			}
 
@@ -194,7 +202,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 	if err != nil {
 		return nil, err
 	}
-	log.Println("here ret compressed: ", retCompressed)
+
 	return retCompressed, nil
 }
 
@@ -220,6 +228,7 @@ func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *fi
 	)
 
 	if err != nil {
+		fmt.Println("returning err: ", err.Error())
 		return nil, errors.Errorf("call ImageRarenessScore(): %w", err)
 	}
 
