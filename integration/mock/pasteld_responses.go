@@ -17,26 +17,26 @@ import (
 
 var masterNodeExtraResp = `{
 	"8edc210250df035a748ef15da1d10c330049c1ce3a76c9987dab4a5f14da21a8-0": {
-	  "extAddress": "sn-server-1:14444",
-	  "extP2P": "sn-server-1:14445",
+	  "extAddress": "snserver-1:14444",
+	  "extP2P": "snserver-1:14445",
 	  "extKey": "jXZX9sH6Fp5EUhqKQJteiivbNyGhsjPQKYXqVUVHRDTpH9UzGeEuG92c2S5tMTzUz1CLARVohpzjsWLUyZXSGN",
 	  "extCfg": ""
 	},
 	"0acba0281ee5d753d8fede2bde5e9e1c05351258465365a1f25d79f3808c756a-1": {
-	  "extAddress": "sn-server-2:14444",
-	  "extP2P": "sn-server-2:14445",
+	  "extAddress": "snserver-2:14444",
+	  "extP2P": "snserver-2:14445",
 	  "extKey": "jXZFvrCSNQGfrRA8RaXpzm2TEV38hQiyesNZg7joEjBNjXGieM8ZTyhKYxkBrqdtTpYcACRKQjMLQrmKNpfrL8",
 	  "extCfg": ""
 	},
 	"13313ea422bbe97b746782a1ef3770202a5496ee9c239b831062c8aa03a3eed7-1": {
-	  "extAddress": "sn-server-3:14444",
-	  "extP2P": "sn-server-3:14445",
+	  "extAddress": "snserver-3:14444",
+	  "extP2P": "snserver-3:14445",
 	  "extKey": "jXXaQm7VuD4p8vG32XyZPq3Z8WBZWdpaRPM92nfZZvcW5pvjVf7RsEnB55qQ214WzuuXr7LoNJsZZKth3ArKAU",
 	  "extCfg": ""
 	},
 	"b2734441a24ecfe8a699e62f3711311100c53cb534f40e6c885948515e410525-1": {
-		"extAddress": "sn-server-4:14444",
-		"extP2P": "sn-server-4:14445",
+		"extAddress": "snserver-4:14444",
+		"extP2P": "snserver-4:14445",
 		"extKey": "jXYegY26dJ1auzTj5xy1LSUHy3vEn91pMjQrMwAb97nVzH1859xBzbdiU1RsAhJiQ6Z8VbJwQeH5pwGbFAAaHc",
 		"extCfg": ""
 	  }
@@ -52,7 +52,7 @@ var masterNodesTopResp = `{
 		"lastseen": 0,
 		"activeseconds": -1640641036,
 		"extAddress": "snserver-1:14444",
-		"extP2P": "snserver-114445",
+		"extP2P": "snserver-14445",
 		"extKey": "jXZX9sH6Fp5EUhqKQJteiivbNyGhsjPQKYXqVUVHRDTpH9UzGeEuG92c2S5tMTzUz1CLARVohpzjsWLUyZXSGN",
 		"extCfg": ""
 	  },
