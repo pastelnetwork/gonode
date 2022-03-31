@@ -5,9 +5,9 @@ import "time"
 const (
 	defaultNumberSuperNodes = 3
 
-	defaultConnectToNextNodeDelay = 200 * time.Millisecond
-	defaultAcceptNodesTimeout     = 30 * time.Second // = 3 * (2* ConnectToNodeTimeout)
-	defaultConnectToNodeTimeout   = time.Second * 15
+	defaultConnectToNextNodeDelay = 400 * time.Millisecond
+	defaultAcceptNodesTimeout     = 180 * time.Second // = 3 * (2* ConnectToNodeTimeout)
+	defaultConnectToNodeTimeout   = time.Second * 20
 )
 
 // Config contains common configuration of the services.

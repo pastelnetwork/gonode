@@ -371,7 +371,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
 			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
 
@@ -924,7 +924,7 @@ func TestTaskProbeImage(t *testing.T) {
 				nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
 				nodes = append(nodes, pastel.MasterNode{ExtKey: "B"})
 
-				pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
+				pastelClientMock.ListenOnMasterNodesTop(nodes, nil).ListenOnMasterNodesExtra(nodes, nil)
 
 				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(genfingerAndScoresFunc(), []byte("signature"))
 				go task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
@@ -1083,7 +1083,7 @@ func TestTaskSessionNode(t *testing.T) {
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
 			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
 			task.UpdateStatus(tc.args.status)
@@ -1166,7 +1166,7 @@ func TestTaskAddPeerNftTicketSignature(t *testing.T) {
 			}
 			nodes = append(nodes, pastel.MasterNode{ExtKey: tc.args.nodeID})
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
 			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
 			task.UpdateStatus(tc.args.status)

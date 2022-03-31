@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -77,6 +78,14 @@ func (task *CascadeRegistrationTask) UploadAsset(_ context.Context, file *files.
 		}
 		task.assetSizeBytes = len(fileBytes)
 
+		fileDataInMb := int64(task.assetSizeBytes) / (1024 * 1024)
+		fee, err := task.PastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
+		if err != nil {
+			err = errors.Errorf("getting estimated fee %w", err)
+			return nil
+		}
+		task.registrationFee = int64(fee)
+
 		return nil
 	})
 
@@ -97,14 +106,16 @@ func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if err = task.validateSignedTicketFromWN(ctx, ticket, creatorSignature, rqidFile); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("validateSignedTicketFromWN")
+			err = errors.Errorf("validateSignedTicketFromWN: %w", err)
 			return nil
 		}
 
 		// sign the ticket if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
 		if err = task.signAndSendCascadeTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("signed and send NFT ticket")
-			err = errors.Errorf("signed and send NFT ticket")
+			log.WithContext(ctx).WithError(err).Errorf("signed and send Cascade ticket")
+			err = errors.Errorf("signed and send NFT ticket: %w", err)
 			return nil
 		}
 
@@ -165,7 +176,7 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 		return errors.Errorf("decode action ticket: %w", err)
 	}
 
-	// Verify APISenseTicket
+	// Verify APICascadeTicket
 	_, err = task.Ticket.APICascadeTicket()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("invalid api cascade ticket")
@@ -174,8 +185,8 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 
 	verified, err := task.PastelClient.Verify(ctx, ticket, string(creatorSignature), task.Ticket.Caller, pastel.SignAlgorithmED448)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("verify ticket signature")
-		return errors.Errorf("verify ticket signature %w", err)
+		log.WithContext(ctx).WithError(err).Errorf("verify cascade ticket signature")
+		return errors.Errorf("verify cascade ticket signature %w", err)
 	}
 
 	if !verified {
@@ -201,8 +212,7 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 
 // validates RQIDs file
 func (task *CascadeRegistrationTask) validateRqIDs(ctx context.Context, dd []byte) error {
-
-	pastelIDs := task.NetworkHandler.MeshedNodesPastelID()
+	pastelIDs := []string{task.Ticket.Caller}
 
 	apiCascadeTicket, err := task.Ticket.APICascadeTicket()
 	if err != nil {
@@ -215,7 +225,7 @@ func (task *CascadeRegistrationTask) validateRqIDs(ctx context.Context, dd []byt
 		pastelIDs,
 		task.PastelClient)
 	if err != nil {
-		return errors.Errorf("validate dd_and_fingerprints: %w", err)
+		return errors.Errorf("validate rq_ids file: %w", err)
 	}
 
 	return nil
@@ -275,7 +285,7 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 			APITicketData: task.Ticket.APITicketData,
 		},
 		Signatures: &pastel.ActionTicketSignatures{
-			Caller: map[string]string{
+			Principal: map[string]string{
 				task.Ticket.Caller: string(task.creatorSignature),
 			},
 			Mn1: map[string]string{
@@ -291,6 +301,8 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 		Mn1PastelID: task.config.PastelID,
 		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
+		Key1:        "key1-" + uuid.New().String(),
+		Key2:        "key2-" + uuid.New().String(),
 	}
 
 	nftRegTxid, err := task.PastelClient.RegisterActionTicket(ctx, req)
@@ -305,7 +317,7 @@ func (task *CascadeRegistrationTask) ValidateActionActAndStore(ctx context.Conte
 	var err error
 
 	// Wait for action ticket to be activated by walletnode
-	confirmations := task.waitActionActivation(ctx, actionRegTxID, 2, 30*time.Second)
+	confirmations := task.waitActionActivation(ctx, actionRegTxID, 3, 30*time.Second)
 	err = <-confirmations
 	if err != nil {
 		return errors.Errorf("wait for confirmation of reg-art ticket %w", err)

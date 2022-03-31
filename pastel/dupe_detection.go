@@ -38,10 +38,6 @@ type DDAndFingerprints struct {
 
 	Maxes      *Maxes      `json:"maxes"`
 	Percentile *Percentile `json:"percentile"`
-
-	// DD-Server does not directly return these comporessed fingerprints
-	// We generate and assign to this field to avoid repeated operations
-	ZstdCompressedFingerprint []byte `json:"zstd_compressed_fingerprint,omitempty"`
 }
 
 // RarenessScores defined rareness scores

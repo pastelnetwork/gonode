@@ -126,6 +126,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
+	log.Infof("RegSense txid is confirmed: %s\n", task.regSenseTxid)
 
 	// activate sense ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
@@ -143,10 +144,10 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("wait activate txid valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketActivated)
-	log.Debugf("Active txid is confirmed")
+	log.Infof("Active txid is confirmed: %s\n", activateTxID)
 
 	// Send ActionAct request to primary node
-	if err := task.uploadActionAct(newCtx, activateTxID); err != nil {
+	if err := task.uploadActionAct(newCtx, task.regSenseTxid); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("upload action act: %w", err)
 	}

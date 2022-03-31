@@ -37,7 +37,7 @@ type CascadeRegistrationTask struct {
 	actionTicket     *pastel.ActionTicket
 	serializedTicket []byte
 
-	regSenseTxid string
+	regCascadeTxid string
 
 	// only set to true for unit tests
 	skipPrimaryNodeTxidVerify bool
@@ -102,18 +102,18 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 
 	// sign ticket with creator signature
 	if err := task.signTicket(ctx); err != nil {
-		return errors.Errorf("sign sense ticket: %w", err)
+		return errors.Errorf("sign cascade ticket: %w", err)
 	}
 
 	// UPLOAD signed ticket to supernodes to validate and register action with the network
 	if err := task.uploadSignedTicket(ctx); err != nil {
-		return errors.Errorf("send signed sense ticket: %w", err)
+		return errors.Errorf("send signed cascade ticket: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketAccepted)
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
+	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
@@ -121,7 +121,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
 
-	// activate sense ticket registered at previous step by SN
+	// activate cascade ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
 	if err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
@@ -140,7 +140,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	log.Debugf("Active txid is confirmed")
 
 	// Send ActionAct request to primary node
-	if err := task.uploadActionAct(newCtx, activateTxID); err != nil {
+	if err := task.uploadActionAct(newCtx, task.regCascadeTxid); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("upload action act: %w", err)
 	}
@@ -167,17 +167,17 @@ func (task *CascadeRegistrationTask) sendActionMetadata(ctx context.Context) err
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
+		cascadeRegNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
 		if !ok {
 			//TODO: use assert here
-			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
+			return errors.Errorf("node %s is not CascadeRegistrationNode", someNode.String())
 		}
 
 		someNode := someNode
 		group.Go(func() (err error) {
-			err = senseRegNode.SendRegMetadata(ctx, regMetadata)
+			err = cascadeRegNode.SendRegMetadata(ctx, regMetadata)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", senseRegNode).Error("send registration metadata failed")
+				log.WithContext(ctx).WithError(err).WithField("node", cascadeRegNode).Error("send registration metadata failed")
 				return errors.Errorf("node %s: %w", someNode.String(), err)
 			}
 
@@ -245,18 +245,18 @@ func (task *CascadeRegistrationTask) createCascadeTicket(_ context.Context) erro
 func (task *CascadeRegistrationTask) signTicket(ctx context.Context) error {
 	data, err := pastel.EncodeActionTicket(task.actionTicket)
 	if err != nil {
-		return errors.Errorf("encode sense ticket %w", err)
+		return errors.Errorf("encode cascade ticket %w", err)
 	}
 
 	task.creatorSignature, err = task.service.pastelHandler.PastelClient.Sign(ctx, data, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
-		return errors.Errorf("sign sense ticket %w", err)
+		return errors.Errorf("sign cascade ticket %w", err)
 	}
 	task.serializedTicket = data
 	return nil
 }
 
-// uploadSignedTicket uploads sense ticket  and its signature to super nodes
+// uploadSignedTicket uploads cascade ticket  and its signature to super nodes
 func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) error {
 	if task.serializedTicket == nil {
 		return errors.Errorf("uploading ticket: serializedTicket is empty")
@@ -270,7 +270,7 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
+		cascadeRegNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
 		if !ok {
 			//TODO: use assert here
 			return errors.Errorf("node %s is not CascadeRegistrationNode", someNode.String())
@@ -278,9 +278,9 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 
 		someNode := someNode
 		group.Go(func() error {
-			ticketTxid, err := senseRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, rqidsFile, encoderParams)
+			ticketTxid, err := cascadeRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, rqidsFile, encoderParams)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", senseRegNode).Error("send signed ticket failed")
+				log.WithContext(ctx).WithError(err).WithField("node", cascadeRegNode).Error("send signed ticket failed")
 				return err
 			}
 			if !someNode.IsPrimary() && ticketTxid != "" && !task.skipPrimaryNodeTxidCheck() {
@@ -290,7 +290,7 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 				if ticketTxid == "" {
 					return errors.Errorf("primary node - %s, returned empty txid", someNode.PastelID())
 				}
-				task.regSenseTxid = ticketTxid
+				task.regCascadeTxid = ticketTxid
 			}
 			return nil
 		})
@@ -300,7 +300,7 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 
 func (task *CascadeRegistrationTask) activateActionTicket(ctx context.Context) (string, error) {
 	request := pastel.ActivateActionRequest{
-		RegTxID:    task.regSenseTxid,
+		RegTxID:    task.regCascadeTxid,
 		BlockNum:   task.creatorBlockHeight,
 		Fee:        task.registrationFee,
 		PastelID:   task.Request.AppPastelID,
@@ -346,7 +346,7 @@ func (task *CascadeRegistrationTask) Error() error {
 	return task.WalletNodeTask.Error()
 }
 
-// NewCascadeRegisterTask returns a new SenseRegistrationTask instance.
+// NewCascadeRegisterTask returns a new CascadeRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
 func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common.ActionRegistrationRequest) *CascadeRegistrationTask {
 	task := common.NewWalletNodeTask(logPrefix)

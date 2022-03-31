@@ -365,7 +365,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
 			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
 
@@ -645,7 +645,9 @@ func TestTaskProbeImage(t *testing.T) {
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnSign([]byte("signature"), nil).ListenOnVerify(true, nil)
+			pastelClientMock.ListenOnSign([]byte("signature"), nil).
+				ListenOnGetActionFee(&pastel.GetActionFeesResult{SenseFee: 10,
+					CascadeFee: 10}, nil).ListenOnVerify(true, nil)
 
 			var clientMock *test.Client
 			if tc.wantErr == nil {
@@ -671,7 +673,7 @@ func TestTaskProbeImage(t *testing.T) {
 				nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
 				nodes = append(nodes, pastel.MasterNode{ExtKey: "B"})
 
-				pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
+				pastelClientMock.ListenOnMasterNodesTop(nodes, nil).ListenOnMasterNodesExtra(nodes, nil)
 
 				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(genfingerAndScoresFunc(), []byte("signature"))
 				go task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
@@ -741,7 +743,7 @@ func TestTaskSessionNode(t *testing.T) {
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
 			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
 			task.UpdateStatus(tc.args.status)
@@ -824,7 +826,7 @@ func TestTaskAddPeerSenseTicketSignature(t *testing.T) {
 			}
 			nodes = append(nodes, pastel.MasterNode{ExtKey: tc.args.nodeID})
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
 			task := makeEmptySenseRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
 			task.UpdateStatus(tc.args.status)
