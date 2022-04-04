@@ -6,7 +6,7 @@ defaults: &defaults
   parameters:
     version:
       type: string
-      default: "latest"
+      default: "1.17"
   docker:
     - image: "circleci/golang:<< parameters.version >>"
   environment:

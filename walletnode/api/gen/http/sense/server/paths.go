@@ -3,7 +3,7 @@
 // HTTP request path constructors for the sense service.
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package server
 
@@ -29,4 +29,9 @@ func StartProcessingSensePath(imageID string) string {
 // RegisterTaskStateSensePath returns the URL path to the sense service registerTaskState HTTP endpoint.
 func RegisterTaskStateSensePath(taskID string) string {
 	return fmt.Sprintf("/openapi/sense/start/%v/state", taskID)
+}
+
+// DownloadSensePath returns the URL path to the sense service download HTTP endpoint.
+func DownloadSensePath() string {
+	return "/openapi/sense/download"
 }

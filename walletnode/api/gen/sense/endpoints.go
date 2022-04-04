@@ -3,7 +3,7 @@
 // sense endpoints
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package sense
 
@@ -19,6 +19,7 @@ type Endpoints struct {
 	ActionDetails     goa.Endpoint
 	StartProcessing   goa.Endpoint
 	RegisterTaskState goa.Endpoint
+	Download          goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -38,6 +39,7 @@ func NewEndpoints(s Service) *Endpoints {
 		ActionDetails:     NewActionDetailsEndpoint(s),
 		StartProcessing:   NewStartProcessingEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
+		Download:          NewDownloadEndpoint(s),
 	}
 }
 
@@ -47,6 +49,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.ActionDetails = m(e.ActionDetails)
 	e.StartProcessing = m(e.StartProcessing)
 	e.RegisterTaskState = m(e.RegisterTaskState)
+	e.Download = m(e.Download)
 }
 
 // NewUploadImageEndpoint returns an endpoint function that calls the method
@@ -97,5 +100,14 @@ func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		ep := req.(*RegisterTaskStateEndpointInput)
 		return nil, s.RegisterTaskState(ctx, ep.Payload, ep.Stream)
+	}
+}
+
+// NewDownloadEndpoint returns an endpoint function that calls the method
+// "download" of service "sense".
+func NewDownloadEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*SenseDownloadPayload)
+		return s.Download(ctx, p)
 	}
 }

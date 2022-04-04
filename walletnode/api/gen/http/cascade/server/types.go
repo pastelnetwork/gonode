@@ -3,7 +3,7 @@
 // cascade HTTP server types
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package server
 
@@ -74,6 +74,13 @@ type RegisterTaskStateResponseBody struct {
 	Date string `form:"date" json:"date" xml:"date"`
 	// Status of the registration process
 	Status string `form:"status" json:"status" xml:"status"`
+}
+
+// DownloadResponseBody is the type of the "cascade" service "download"
+// endpoint HTTP response body.
+type DownloadResponseBody struct {
+	// File downloaded
+	File []byte `form:"file" json:"file" xml:"file"`
 }
 
 // UploadImageBadRequestResponseBody is the type of the "cascade" service
@@ -224,6 +231,42 @@ type RegisterTaskStateInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// DownloadNotFoundResponseBody is the type of the "cascade" service "download"
+// endpoint HTTP response body for the "NotFound" error.
+type DownloadNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DownloadInternalServerErrorResponseBody is the type of the "cascade" service
+// "download" endpoint HTTP response body for the "InternalServerError" error.
+type DownloadInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // NewUploadImageResponseBody builds the HTTP response body from the result of
 // the "uploadImage" endpoint of the "cascade" service.
 func NewUploadImageResponseBody(res *cascadeviews.ImageView) *UploadImageResponseBody {
@@ -258,6 +301,15 @@ func NewRegisterTaskStateResponseBody(res *cascade.TaskState) *RegisterTaskState
 	body := &RegisterTaskStateResponseBody{
 		Date:   res.Date,
 		Status: res.Status,
+	}
+	return body
+}
+
+// NewDownloadResponseBody builds the HTTP response body from the result of the
+// "download" endpoint of the "cascade" service.
+func NewDownloadResponseBody(res *cascade.DownloadResult) *DownloadResponseBody {
+	body := &DownloadResponseBody{
+		File: res.File,
 	}
 	return body
 }
@@ -377,6 +429,34 @@ func NewRegisterTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) 
 	return body
 }
 
+// NewDownloadNotFoundResponseBody builds the HTTP response body from the
+// result of the "download" endpoint of the "cascade" service.
+func NewDownloadNotFoundResponseBody(res *goa.ServiceError) *DownloadNotFoundResponseBody {
+	body := &DownloadNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewDownloadInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "download" endpoint of the "cascade" service.
+func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *DownloadInternalServerErrorResponseBody {
+	body := &DownloadInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewUploadImagePayload builds a cascade service uploadImage endpoint payload.
 func NewUploadImagePayload(body *UploadImageRequestBody) *cascade.UploadImagePayload {
 	v := &cascade.UploadImagePayload{
@@ -418,6 +498,17 @@ func NewStartProcessingPayload(body *StartProcessingRequestBody, imageID string,
 func NewRegisterTaskStatePayload(taskID string) *cascade.RegisterTaskStatePayload {
 	v := &cascade.RegisterTaskStatePayload{}
 	v.TaskID = taskID
+
+	return v
+}
+
+// NewDownloadNftDownloadPayload builds a cascade service download endpoint
+// payload.
+func NewDownloadNftDownloadPayload(txid string, pid string, key string) *cascade.NftDownloadPayload {
+	v := &cascade.NftDownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
 
 	return v
 }

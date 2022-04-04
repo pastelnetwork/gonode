@@ -3,7 +3,7 @@
 // cascade HTTP client CLI support package
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 
@@ -24,7 +24,7 @@ func BuildUploadImagePayload(cascadeUploadImageBody string) (*cascade.UploadImag
 	{
 		err = json.Unmarshal([]byte(cascadeUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"TW9kaSBuaXNpIGVvcyBibGFuZGl0aWlzIGVpdXMu\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"RW9zIGJsYW5kaXRpaXMgZWl1cy4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -172,6 +172,49 @@ func BuildRegisterTaskStatePayload(cascadeRegisterTaskStateTaskID string) (*casc
 	}
 	v := &cascade.RegisterTaskStatePayload{}
 	v.TaskID = taskID
+
+	return v, nil
+}
+
+// BuildDownloadPayload builds the payload for the cascade download endpoint
+// from CLI flags.
+func BuildDownloadPayload(cascadeDownloadTxid string, cascadeDownloadPid string, cascadeDownloadKey string) (*cascade.NftDownloadPayload, error) {
+	var err error
+	var txid string
+	{
+		txid = cascadeDownloadTxid
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
+		}
+		if utf8.RuneCountInString(txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var pid string
+	{
+		pid = cascadeDownloadPid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var key string
+	{
+		key = cascadeDownloadKey
+	}
+	v := &cascade.NftDownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
 
 	return v, nil
 }

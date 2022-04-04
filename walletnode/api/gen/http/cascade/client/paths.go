@@ -3,7 +3,7 @@
 // HTTP request path constructors for the cascade service.
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 
@@ -29,4 +29,9 @@ func StartProcessingCascadePath(imageID string) string {
 // RegisterTaskStateCascadePath returns the URL path to the cascade service registerTaskState HTTP endpoint.
 func RegisterTaskStateCascadePath(taskID string) string {
 	return fmt.Sprintf("/openapi/cascade/start/%v/state", taskID)
+}
+
+// DownloadCascadePath returns the URL path to the cascade service download HTTP endpoint.
+func DownloadCascadePath() string {
+	return "/openapi/cascade/download"
 }

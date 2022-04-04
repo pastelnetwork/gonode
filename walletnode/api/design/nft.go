@@ -181,7 +181,7 @@ var _ = Service("nft", func() {
 		Security(APIKeyAuth)
 
 		Payload(NftDownloadPayload)
-		Result(NftDownloadResult)
+		Result(DownloadResult)
 
 		HTTP(func() {
 			GET("/download")
@@ -712,36 +712,13 @@ var ThumbnailCoordinate = ResultType("ThumbnailCoordinate", func() {
 	Required("top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y")
 })
 
-// NftDownloadPayload is NFT download payload.
-var NftDownloadPayload = Type("NftDownloadPayload", func() {
-	Attribute("txid", String, func() {
-		Description("Nft Registration Request transaction ID")
-		MinLength(64)
-		MaxLength(64)
-		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
-	})
-	Attribute("pid", String, func() {
-		Meta("struct:field:name", "Pid")
-		Description("Owner's PastelID")
-		MinLength(86)
-		MaxLength(86)
-		Pattern(`^[a-zA-Z0-9]+$`)
-		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
-	})
-	APIKey("api_key", "key", String, func() {
-		Description("Passphrase of the owner's PastelID")
-		Example("Basic abcdef12345")
-	})
-	Required("txid", "pid", "key")
-})
-
 // APIKeyAuth is donwload security schemes.
 var APIKeyAuth = APIKeySecurity("api_key", func() {
 	Description("Nft Owner's passphrase to authenticate")
 })
 
-// NftDownloadResult is NFT download result.
-var NftDownloadResult = Type("DownloadResult", func() {
+// DownloadResult is NFT download result.
+var DownloadResult = Type("DownloadResult", func() {
 	Description("NFT download response")
 	Attribute("file", Bytes, func() {
 		Description("File downloaded")

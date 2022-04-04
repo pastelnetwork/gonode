@@ -3,7 +3,7 @@
 // cascade client
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package cascade
 
@@ -19,15 +19,17 @@ type Client struct {
 	ActionDetailsEndpoint     goa.Endpoint
 	StartProcessingEndpoint   goa.Endpoint
 	RegisterTaskStateEndpoint goa.Endpoint
+	DownloadEndpoint          goa.Endpoint
 }
 
 // NewClient initializes a "cascade" service client given the endpoints.
-func NewClient(uploadImage, actionDetails, startProcessing, registerTaskState goa.Endpoint) *Client {
+func NewClient(uploadImage, actionDetails, startProcessing, registerTaskState, download goa.Endpoint) *Client {
 	return &Client{
 		UploadImageEndpoint:       uploadImage,
 		ActionDetailsEndpoint:     actionDetails,
 		StartProcessingEndpoint:   startProcessing,
 		RegisterTaskStateEndpoint: registerTaskState,
+		DownloadEndpoint:          download,
 	}
 }
 
@@ -71,4 +73,14 @@ func (c *Client) RegisterTaskState(ctx context.Context, p *RegisterTaskStatePayl
 		return
 	}
 	return ires.(RegisterTaskStateClientStream), nil
+}
+
+// Download calls the "download" endpoint of the "cascade" service.
+func (c *Client) Download(ctx context.Context, p *NftDownloadPayload) (res *DownloadResult, err error) {
+	var ires interface{}
+	ires, err = c.DownloadEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*DownloadResult), nil
 }

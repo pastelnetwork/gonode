@@ -3,7 +3,7 @@
 // sense service
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package sense
 
@@ -24,6 +24,8 @@ type Service interface {
 	StartProcessing(context.Context, *StartProcessingPayload) (res *StartProcessingResult, err error)
 	// Streams the state of the registration process.
 	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
+	// Download sense Artifact.
+	Download(context.Context, *SenseDownloadPayload) (res *DownloadResult, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -34,7 +36,7 @@ const ServiceName = "sense"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [4]string{"uploadImage", "actionDetails", "startProcessing", "registerTaskState"}
+var MethodNames = [5]string{"uploadImage", "actionDetails", "startProcessing", "registerTaskState", "download"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -72,6 +74,12 @@ type ActionDetailsPayload struct {
 	ActionDataSignature string
 }
 
+// DownloadResult is the result type of the sense service download method.
+type DownloadResult struct {
+	// File downloaded
+	File []byte
+}
+
 // Image is the result type of the sense service uploadImage method.
 type Image struct {
 	// Uploaded image ID
@@ -85,6 +93,13 @@ type Image struct {
 type RegisterTaskStatePayload struct {
 	// Task ID of the registration process
 	TaskID string
+}
+
+// SenseDownloadPayload is the payload type of the sense service download
+// method.
+type SenseDownloadPayload struct {
+	// Sense Registration Request transaction ID
+	Txid string
 }
 
 // StartProcessingPayload is the payload type of the sense service

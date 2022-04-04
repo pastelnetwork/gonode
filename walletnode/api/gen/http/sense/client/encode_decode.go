@@ -3,7 +3,7 @@
 // sense HTTP client encoders and decoders
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 
@@ -476,6 +476,108 @@ func DecodeRegisterTaskStateResponse(decoder func(*http.Response) goahttp.Decode
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("sense", "registerTaskState", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildDownloadRequest instantiates a HTTP request object with method and path
+// set to call the "sense" service "download" endpoint
+func (c *Client) BuildDownloadRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DownloadSensePath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("sense", "download", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeDownloadRequest returns an encoder for requests sent to the sense
+// download server.
+func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*sense.SenseDownloadPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("sense", "download", "*sense.SenseDownloadPayload", v)
+		}
+		values := req.URL.Query()
+		values.Add("txid", p.Txid)
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeDownloadResponse returns a decoder for responses returned by the sense
+// download endpoint. restoreBody controls whether the response body should be
+// restored after having been read.
+// DecodeDownloadResponse may return the following errors:
+//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body DownloadResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("sense", "download", err)
+			}
+			err = ValidateDownloadResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("sense", "download", err)
+			}
+			res := NewDownloadResultOK(&body)
+			return res, nil
+		case http.StatusNotFound:
+			var (
+				body DownloadNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("sense", "download", err)
+			}
+			err = ValidateDownloadNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("sense", "download", err)
+			}
+			return nil, NewDownloadNotFound(&body)
+		case http.StatusInternalServerError:
+			var (
+				body DownloadInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("sense", "download", err)
+			}
+			err = ValidateDownloadInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("sense", "download", err)
+			}
+			return nil, NewDownloadInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("sense", "download", resp.StatusCode, string(body))
 		}
 	}
 }
