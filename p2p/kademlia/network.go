@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultConnDeadline   = 30 * time.Second
+	defaultConnDeadline   = 60 * time.Minute
 	defaultConnRate       = 500
 	defaultMaxPayloadSize = 16 * 1024 * 1024 // 16MB
 )
