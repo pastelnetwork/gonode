@@ -65,13 +65,13 @@ func main() {
 
 			for {
 				data := make([]byte, 1024)
-				len, err := conn.Read(data)
+				l, err := conn.Read(data)
 				if err != nil {
 					fmt.Printf("socket read: %v\n", err)
 					return
 				}
 
-				fmt.Printf("received :%s\n", string(data[0:len]))
+				fmt.Printf("received :%s\n", string(data[0:l]))
 			}
 		}(rawConn)
 	}
