@@ -204,7 +204,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		services.NewNftAPIHandler(nftRegister, nftSearch, nftDownload),
 		// services.NewUserdataAPIHandler(userdataProcess),
 		services.NewSenseAPIHandler(senseRegister),
-		services.NewCascadeAPIHandler(cascadeRegister),
+		services.NewCascadeAPIHandler(cascadeRegister, nftDownload),
 		services.NewSwagger(),
 	)
 
