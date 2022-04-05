@@ -272,6 +272,7 @@ func (s *Service) handleConn(conn net.Conn) {
 					resp.Error = err.Error()
 				} else {
 					resp.Results = make([]*command.ExecuteResult, len(res))
+					//lint:ignore S1001 we want to ignore this for now
 					for i := range res {
 						resp.Results[i] = res[i]
 					}
@@ -302,6 +303,7 @@ func (s *Service) handleConn(conn net.Conn) {
 					resp.Error = err.Error()
 				} else {
 					resp.Rows = make([]*command.QueryRows, len(res))
+					//lint:ignore S1001 we want to ignore this for now
 					for i := range res {
 						resp.Rows[i] = res[i]
 					}
