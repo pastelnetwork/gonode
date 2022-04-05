@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -37,6 +38,7 @@ type NftRegistrationTask struct {
 	// task data to create RegArt ticket
 	creatorBlockHeight int
 	creatorBlockHash   string
+	creationTimestamp  string
 	dataHash           []byte
 	registrationFee    int64
 
@@ -81,6 +83,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	}
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
+	//set timestamp for nft reg metadata
+	task.creationTimestamp = time.Now().Format("YYYY-MM-DD hh:mm:ss")
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
@@ -215,6 +219,8 @@ func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
 	regMetadata := &types.NftRegMetadata{
 		BlockHash:       task.creatorBlockHash,
 		CreatorPastelID: task.Request.CreatorPastelID,
+		BlockHeight:     strconv.Itoa(task.creatorBlockHeight),
+		Timestamp:       task.creationTimestamp,
 	}
 
 	group, _ := errgroup.WithContext(ctx)

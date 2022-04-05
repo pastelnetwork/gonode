@@ -60,7 +60,7 @@ func NewDupeDetectionTaskHelper(task *SuperNodeTask,
 // ProbeImage uploads the resampled image compute and return a compression of pastel.DDAndFingerprints
 //  Implementing https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration starting with step 4.A.3
 //  Call dd-service to generate near duplicate fingerprints and dupe-detection info from re-sampled image (img1-r)
-func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, blockHash string, creatorPastelID string, tasker Tasker) ([]byte, error) {
+func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, blockHash string, blockHeight string, timestamp string, creatorPastelID string, tasker Tasker) ([]byte, error) {
 	if err := h.RequiredStatus(StatusConnected); err != nil {
 		return nil, err
 	}
@@ -74,20 +74,51 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		})
 		h.UpdateStatus(StatusImageProbed)
 
-		//SuperNode makes ImageRarenessScore gRPC call to dd-service
-		compressed, err = h.GenFingerprintsData(ctx, file, blockHash, creatorPastelID)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
-			err = errors.Errorf("generate fingerprints data: %w", err)
-			return nil
-		}
-
 		// Begin send signed DDAndFingerprints to other SNs
 		// Send base64’ed (and compressed) dd_and_fingerprints and its signature to the 2 OTHER SNs
 		// step 4.A.5
 		if len(h.NetworkHandler.meshedNodes) != 3 {
 			log.WithContext(ctx).Error("Not enough meshed SuperNodes")
 			err = errors.New("not enough meshed SuperNodes")
+			return nil
+		}
+
+		registeringSupernode1 := h.NetworkHandler.meshedNodes[0].NodeID
+		registeringSupernode2 := h.NetworkHandler.meshedNodes[1].NodeID
+		registeringSupernode3 := h.NetworkHandler.meshedNodes[2].NodeID
+
+		//SuperNode makes ImageRarenessScore gRPC call to dd-service
+		//This is the original python logic
+		// if valid_image:
+		// 	sense_output_json_file_path = sense_api_json_results_path + sha256_hash_of_image_file + '.' + 'json'
+		// 	image_filepath = output_path_for_image_file.replace('./','/home/ubuntu/sense_demo_api/')
+		// 	pastel_block_hash_when_request_submitted = '00000000819d1ddc92d6a2f78d59c2554c3d47f4ec443c286fde29f84523a607'
+		// 	pastel_block_height_when_request_submitted = '240669'
+		// 	utc_timestamp_when_request_submitted = datetime.strftime(datetime.utcnow(), '%Y-%m-%d %H:%M:%S')
+		// 	pastel_id_of_submitter = 'jXIGc0SbVWHFRKemuDSpkTIrCybP3tFbT2c5LOZZuKgBZf95eFZ62QkBP4mmFoZrQkVB0bmn70Oran3vg5fW1X'
+		// 	pastel_id_of_registeringSupernode1 = 'jXYiHNqO9B7psxFQZb1thEgDNykZjL8GkHMZNPZx3iCYre1j3g0zHynlTQ9TdvY6dcRlYIsNfwIQ6nVXBSVJis'
+		// 	pastel_id_of_registeringSupernode2 = 'jXpDb5K6S81ghCusMOXLP6k0RvqgFhkBJSFf6OhjEmpvCWGZiptRyRgfQ9cTD709sA58m5czpipFnvpoHuPX0F'
+		// 	pastel_id_of_registeringSupernode3 = 'jXS9NIXHj8pd9mLNsP2uKgIh1b3EH2aq5dwupUF7hoaltTE8Zlf6R7Pke0cGr071kxYxqXHQmfVO5dA4jH0ejQ'
+		// 	isPastelOpenapiRequest = 'False'
+		// 	openAPISubsetIDString = ''
+
+		// 	command_string = 'python3 /home/ubuntu/pastel/dd-service/tools/grpc-client.py 50052 ' + \
+		// 	image_filepath + ' ' + \
+		// 	pastel_block_hash_when_request_submitted + ' ' + \
+		// 	pastel_block_height_when_request_submitted + ' ' + \
+		// 	utc_timestamp_when_request_submitted + ' ' + \
+		// 	pastel_id_of_submitter + ' ' + \
+		// 	pastel_id_of_registeringSupernode1 + ' ' + \
+		// 	pastel_id_of_registeringSupernode2 + ' ' + \
+		// 	pastel_id_of_registeringSupernode3 + ' ' + \
+		// 	isPastelOpenapiRequest + ' ' + \
+		// 	openAPISubsetIDString
+		//
+		// NB currently isPastelOpenapiRequest and openAPISubsetIDString are both fixed values here.
+		compressed, err = h.GenFingerprintsData(ctx, file, blockHash, blockHeight, timestamp, creatorPastelID, registeringSupernode1, registeringSupernode2, registeringSupernode3, false, "")
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
+			err = errors.Errorf("generate fingerprints data: %w", err)
 			return nil
 		}
 
@@ -211,7 +242,8 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 // Call dd-service to generate near duplicate fingerprints and dupe-detection info from re-sampled image (img1-r)
 // Sign dd_and_fingerprints with SN own PastelID (private key) using cNode API
 // Step 4.A.3 - 4.A.4
-func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *files.File, blockHash string, creatorPastelID string) ([]byte, error) {
+//GenFingerprintsData(ctx, file, blockHash, blockHeight, timestamp, creatorPastelID, registeringSupernode1, registeringSupernode2, registeringSupernode3, false, "")
+func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *files.File, blockHash string, blockHeight string, timestamp string, creatorPastelID string, registeringSupernode1 string, registeringSupernode2 string, registeringSupernode3 string, isPastelOpenapiRequest bool, openAPISubsetIDString string) ([]byte, error) {
 	img, err := file.Bytes()
 	if err != nil {
 		return nil, errors.Errorf("get content of image %s: %w", file.Name(), err)
@@ -219,12 +251,20 @@ func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *fi
 
 	// Get DDAndFingerprints
 	// SuperNode makes ImageRarenessScore gRPC call to dd-service
+	//   ctx context.Context, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string, sn_1 string, sn_2 string, sn_3 string, openapi_request bool, open_api_subset_id string
 	h.myDDAndFingerprints, err = h.DdClient.ImageRarenessScore(
 		ctx,
 		img,
 		file.Format().String(),
 		blockHash,
+		blockHeight,
+		timestamp,
 		creatorPastelID,
+		registeringSupernode1,
+		registeringSupernode2,
+		registeringSupernode3,
+		isPastelOpenapiRequest,
+		openAPISubsetIDString,
 	)
 
 	if err != nil {

@@ -86,7 +86,9 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 	task.registrationFee = int64(fee)
 
 	return task.DupeDetectionHandler.ProbeImage(ctx, file,
-		task.ActionTicketRegMetadata.BlockHash, task.ActionTicketRegMetadata.CreatorPastelID, &tasker{})
+		task.ActionTicketRegMetadata.BlockHash, task.ActionTicketRegMetadata.BlockHeight, task.ActionTicketRegMetadata.Timestamp, task.ActionTicketRegMetadata.CreatorPastelID, &tasker{})
+	//return task.DupeDetectionHandler.ProbeImage(ctx, file,
+	//	task.nftRegMetadata.BlockHash, task.nftRegMetadata.BlockHeight, task.nftRegMetadata.Timestamp, task.nftRegMetadata.CreatorPastelID, &tasker{})
 }
 
 func (task *SenseRegistrationTask) validateDdFpIds(ctx context.Context, dd []byte) error {

@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/storage/files"
 
 	"fmt"
@@ -146,6 +147,8 @@ func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *
 		BlockHash:       regMetadata.BlockHash,
 		CreatorPastelID: regMetadata.CreatorPastelID,
 		BurnTxid:        regMetadata.BurnTxID,
+		BlockHeight:     regMetadata.BlockHeight,
+		Timestamp:       regMetadata.Timestamp,
 	}
 
 	_, err := service.client.SendRegMetadata(ctx, request)

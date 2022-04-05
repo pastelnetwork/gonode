@@ -11,7 +11,14 @@ service DupeDetectionServer {
 message RarenessScoreRequest {
     string path = 1;
     string block_hash = 2;
-    string pastel_id = 3;
+    string block_height = 3;
+    string timestamp = 4;
+    string pastel_id = 5;
+    string registering_sn1 = 6;
+    string registering_sn2 = 7;
+    string registering_sn3 = 8;
+    bool is_pastel_openapi_request = 9;
+    string open_api_subset_id_string = 10;
 }
 
 message ImageRarenessScoreReply {

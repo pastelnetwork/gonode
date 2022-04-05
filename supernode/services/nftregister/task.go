@@ -65,7 +65,7 @@ func (task *NftRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.removeArtifacts)
 }
 
-// SendRegMetadata sends reg metadata
+// SendRegMetadata sends reg metadata NB this method should really be called SET regMetadata
 func (task *NftRegistrationTask) SendRegMetadata(_ context.Context, regMetadata *types.NftRegMetadata) error {
 	if err := task.RequiredStatus(common.StatusConnected); err != nil {
 		return err
@@ -77,12 +77,12 @@ func (task *NftRegistrationTask) SendRegMetadata(_ context.Context, regMetadata 
 // ProbeImage sends the resampled image to dd-server and return a compression of pastel.DDAndFingerprints
 //  https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration Step 4.A.3
 func (task *NftRegistrationTask) ProbeImage(ctx context.Context, file *files.File) ([]byte, error) {
-	if task.nftRegMetadata == nil || task.nftRegMetadata.BlockHash == "" || task.nftRegMetadata.CreatorPastelID == "" {
+	if task.nftRegMetadata == nil || task.nftRegMetadata.BlockHash == "" || task.nftRegMetadata.CreatorPastelID == "" || task.nftRegMetadata.BlockHeight == "" || task.nftRegMetadata.Timestamp == "" {
 		return nil, errors.Errorf("invalid nftRegMetadata")
 	}
 	task.ResampledNft = file
 	return task.DupeDetectionHandler.ProbeImage(ctx, file,
-		task.nftRegMetadata.BlockHash, task.nftRegMetadata.CreatorPastelID, &tasker{})
+		task.nftRegMetadata.BlockHash, task.nftRegMetadata.BlockHeight, task.nftRegMetadata.Timestamp, task.nftRegMetadata.CreatorPastelID, &tasker{})
 }
 
 // validates RQIDs and DdFp IDs file and its IDs

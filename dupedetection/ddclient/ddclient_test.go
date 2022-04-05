@@ -70,7 +70,8 @@ func TestDDClientError(t *testing.T) {
 	client := NewDDServerClient(config)
 	data := []byte{1, 2, 3, 4, 5}
 
-	_, err := client.ImageRarenessScore(context.Background(), data, "png", "testBlockHash", "testPastelID")
+	//ctx context.Context, img []byte, format string, blockHash string, blockHeight int, timestamp string, pastelID string, sn_1 string, sn_2 string, sn_3 string, openapi_request bool, open_api_subset_id string
+	_, err := client.ImageRarenessScore(context.Background(), data, "png", "testBlockHash", "240669", "2022-03-31 16:55:28", "testPastelID", "jXYiHNqO9B7psxFQZb1thEgDNykZjL8GkHMZNPZx3iCYre1j3g0zHynlTQ9TdvY6dcRlYIsNfwIQ6nVXBSVJis", "jXpDb5K6S81ghCusMOXLP6k0RvqgFhkBJSFf6OhjEmpvCWGZiptRyRgfQ9cTD709sA58m5czpipFnvpoHuPX0F", "jXS9NIXHj8pd9mLNsP2uKgIh1b3EH2aq5dwupUF7hoaltTE8Zlf6R7Pke0cGr071kxYxqXHQmfVO5dA4jH0ejQ", false, "")
 	assert.NotNil(t, err)
 }
 
@@ -110,6 +111,6 @@ func TestDDClientSuccess(t *testing.T) {
 	client := NewDDServerClient(config)
 	data := []byte{1, 2, 3, 4, 5}
 
-	_, err := client.ImageRarenessScore(context.Background(), data, "png", "testBlockHash", "testPastelID")
+	_, err := client.ImageRarenessScore(context.Background(), data, "png", "testBlockHash", "240669", "2022-03-31 16:55:28", "testPastelID", "jXYiHNqO9B7psxFQZb1thEgDNykZjL8GkHMZNPZx3iCYre1j3g0zHynlTQ9TdvY6dcRlYIsNfwIQ6nVXBSVJis", "jXpDb5K6S81ghCusMOXLP6k0RvqgFhkBJSFf6OhjEmpvCWGZiptRyRgfQ9cTD709sA58m5czpipFnvpoHuPX0F", "jXS9NIXHj8pd9mLNsP2uKgIh1b3EH2aq5dwupUF7hoaltTE8Zlf6R7Pke0cGr071kxYxqXHQmfVO5dA4jH0ejQ", false, "")
 	assert.Nil(t, err)
 }
