@@ -313,7 +313,9 @@ func NewRegisterTaskStateHandler(
 			return
 		}
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithCancel(ctx)
+		_, cancel = context.WithCancel(ctx)
+		defer cancel()
+
 		v := &sense.RegisterTaskStateEndpointInput{
 			Stream: &RegisterTaskStateServerStream{
 				upgrader:   upgrader,
