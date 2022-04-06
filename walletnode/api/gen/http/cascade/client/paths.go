@@ -30,3 +30,8 @@ func StartProcessingCascadePath(imageID string) string {
 func RegisterTaskStateCascadePath(taskID string) string {
 	return fmt.Sprintf("/openapi/cascade/start/%v/state", taskID)
 }
+
+// DownloadCascadePath returns the URL path to the cascade service download HTTP endpoint.
+func DownloadCascadePath() string {
+	return "/openapi/cascade/download"
+}

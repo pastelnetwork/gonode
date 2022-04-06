@@ -123,6 +123,11 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 	}
 }
 
+// Download registered NFT
+func (service *SenseAPIHandler) Download(_ context.Context, _ *sense.SenseDownloadPayload) (res *sense.DownloadResult, err error) {
+	return
+}
+
 // NewSenseAPIHandler returns the swagger OpenAPI implementation.
 func NewSenseAPIHandler(register *senseregister.SenseRegistrationService) *SenseAPIHandler {
 	return &SenseAPIHandler{

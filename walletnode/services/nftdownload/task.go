@@ -66,7 +66,7 @@ func (task *NftDownloadingTask) run(ctx context.Context) error {
 	// cancel any ongoing context if the connections are broken
 	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 	//send download requests to ALL Supernodes, number defined by mesh handler's "minNumberSuperNodes" (really just set in a config file as NumberSuperNodes)
-	downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid)
+	downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.Request.Type)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not download files")
 		task.UpdateStatus(common.StatusErrorDownloadFailed)
@@ -99,7 +99,7 @@ func (task *NftDownloadingTask) run(ctx context.Context) error {
 }
 
 // Download downloads image from supernodes.
-func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]error, error) {
+func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string) ([]error, error) {
 	group, _ := errgroup.WithContext(ctx)
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
 
@@ -112,7 +112,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 
 		someNode := someNode
 		group.Go(func() error {
-			file, subErr := nftDownNode.Download(ctx, txid, timestamp, signature, ttxid)
+			file, subErr := nftDownNode.Download(ctx, txid, timestamp, signature, ttxid, ttype)
 			if subErr != nil {
 				log.WithContext(ctx).WithField("address", someNode.String()).WithError(subErr).Error("Could not download from supernode")
 				errChan <- subErr

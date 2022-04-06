@@ -76,6 +76,13 @@ type RegisterTaskStateResponseBody struct {
 	Status string `form:"status" json:"status" xml:"status"`
 }
 
+// DownloadResponseBody is the type of the "sense" service "download" endpoint
+// HTTP response body.
+type DownloadResponseBody struct {
+	// File downloaded
+	File []byte `form:"file" json:"file" xml:"file"`
+}
+
 // UploadImageBadRequestResponseBody is the type of the "sense" service
 // "uploadImage" endpoint HTTP response body for the "BadRequest" error.
 type UploadImageBadRequestResponseBody struct {
@@ -224,6 +231,42 @@ type RegisterTaskStateInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// DownloadNotFoundResponseBody is the type of the "sense" service "download"
+// endpoint HTTP response body for the "NotFound" error.
+type DownloadNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DownloadInternalServerErrorResponseBody is the type of the "sense" service
+// "download" endpoint HTTP response body for the "InternalServerError" error.
+type DownloadInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // NewUploadImageResponseBody builds the HTTP response body from the result of
 // the "uploadImage" endpoint of the "sense" service.
 func NewUploadImageResponseBody(res *senseviews.ImageView) *UploadImageResponseBody {
@@ -258,6 +301,15 @@ func NewRegisterTaskStateResponseBody(res *sense.TaskState) *RegisterTaskStateRe
 	body := &RegisterTaskStateResponseBody{
 		Date:   res.Date,
 		Status: res.Status,
+	}
+	return body
+}
+
+// NewDownloadResponseBody builds the HTTP response body from the result of the
+// "download" endpoint of the "sense" service.
+func NewDownloadResponseBody(res *sense.DownloadResult) *DownloadResponseBody {
+	body := &DownloadResponseBody{
+		File: res.File,
 	}
 	return body
 }
@@ -376,6 +428,34 @@ func NewRegisterTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) 
 	return body
 }
 
+// NewDownloadNotFoundResponseBody builds the HTTP response body from the
+// result of the "download" endpoint of the "sense" service.
+func NewDownloadNotFoundResponseBody(res *goa.ServiceError) *DownloadNotFoundResponseBody {
+	body := &DownloadNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewDownloadInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "download" endpoint of the "sense" service.
+func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *DownloadInternalServerErrorResponseBody {
+	body := &DownloadInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewUploadImagePayload builds a sense service uploadImage endpoint payload.
 func NewUploadImagePayload(body *UploadImageRequestBody) *sense.UploadImagePayload {
 	v := &sense.UploadImagePayload{
@@ -417,6 +497,15 @@ func NewStartProcessingPayload(body *StartProcessingRequestBody, imageID string,
 func NewRegisterTaskStatePayload(taskID string) *sense.RegisterTaskStatePayload {
 	v := &sense.RegisterTaskStatePayload{}
 	v.TaskID = taskID
+
+	return v
+}
+
+// NewDownloadSenseDownloadPayload builds a sense service download endpoint
+// payload.
+func NewDownloadSenseDownloadPayload(txid string) *sense.SenseDownloadPayload {
+	v := &sense.SenseDownloadPayload{}
+	v.Txid = txid
 
 	return v
 }

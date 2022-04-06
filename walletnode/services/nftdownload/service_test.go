@@ -3,10 +3,11 @@ package nftdownload
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/mixins"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/mixins"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -108,7 +109,7 @@ func TestServiceAddTask(t *testing.T) {
 		Pid:  "pastelid",
 		Key:  "passphrase",
 	}
-	request := FromDownloadPayload(payload)
+	request := FromDownloadPayload(payload, "")
 
 	testCases := []struct {
 		args args
@@ -141,7 +142,7 @@ func TestServiceAddTask(t *testing.T) {
 			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
-			taskID := service.AddTask(testCase.args.payload)
+			taskID := service.AddTask(testCase.args.payload, "")
 			task := service.GetTask(taskID)
 			assert.Equal(t, testCase.want, task.Request)
 		})
@@ -211,7 +212,7 @@ func TestServiceListTasks(t *testing.T) {
 		Key:  "passphrase",
 	}
 	var requests []*NftDownloadingRequest
-	requests = append(requests, FromDownloadPayload(payload))
+	requests = append(requests, FromDownloadPayload(payload, ""))
 
 	var payloads []*nft.NftDownloadPayload
 	payloads = append(payloads, payload)
@@ -249,7 +250,7 @@ func TestServiceListTasks(t *testing.T) {
 			go service.Run(ctx)
 			var listTaskID []string
 			for _, ticket := range testCase.args.payloads {
-				listTaskID = append(listTaskID, service.AddTask(ticket))
+				listTaskID = append(listTaskID, service.AddTask(ticket, ""))
 			}
 
 			for i := range listTaskID {

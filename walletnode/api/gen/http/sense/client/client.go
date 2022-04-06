@@ -37,6 +37,10 @@ type Client struct {
 	// registerTaskState endpoint.
 	RegisterTaskStateDoer goahttp.Doer
 
+	// Download Doer is the HTTP client used to make requests to the download
+	// endpoint.
+	DownloadDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -75,6 +79,7 @@ func NewClient(
 		ActionDetailsDoer:     doer,
 		StartProcessingDoer:   doer,
 		RegisterTaskStateDoer: doer,
+		DownloadDoer:          doer,
 		CORSDoer:              doer,
 		RestoreResponseBody:   restoreBody,
 		scheme:                scheme,
@@ -169,9 +174,11 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
+
 		var cancel context.CancelFunc
 		_, cancel = context.WithCancel(ctx)
 		defer cancel()
+
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {
@@ -193,5 +200,29 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		}()
 		stream := &RegisterTaskStateClientStream{conn: conn}
 		return stream, nil
+	}
+}
+
+// Download returns an endpoint that makes HTTP requests to the sense service
+// download server.
+func (c *Client) Download() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDownloadRequest(c.encoder)
+		decodeResponse = DecodeDownloadResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildDownloadRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DownloadDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("sense", "download", err)
+		}
+		return decodeResponse(resp)
 	}
 }

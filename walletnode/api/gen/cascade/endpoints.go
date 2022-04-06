@@ -11,6 +11,7 @@ import (
 	"context"
 
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/goa/v3/security"
 )
 
 // Endpoints wraps the "cascade" service endpoints.
@@ -19,6 +20,7 @@ type Endpoints struct {
 	ActionDetails     goa.Endpoint
 	StartProcessing   goa.Endpoint
 	RegisterTaskState goa.Endpoint
+	Download          goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -33,11 +35,14 @@ type RegisterTaskStateEndpointInput struct {
 
 // NewEndpoints wraps the methods of the "cascade" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
+	// Casting service to Auther interface
+	a := s.(Auther)
 	return &Endpoints{
 		UploadImage:       NewUploadImageEndpoint(s),
 		ActionDetails:     NewActionDetailsEndpoint(s),
 		StartProcessing:   NewStartProcessingEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
+		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
 	}
 }
 
@@ -47,6 +52,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.ActionDetails = m(e.ActionDetails)
 	e.StartProcessing = m(e.StartProcessing)
 	e.RegisterTaskState = m(e.RegisterTaskState)
+	e.Download = m(e.Download)
 }
 
 // NewUploadImageEndpoint returns an endpoint function that calls the method
@@ -97,5 +103,24 @@ func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		ep := req.(*RegisterTaskStateEndpointInput)
 		return nil, s.RegisterTaskState(ctx, ep.Payload, ep.Stream)
+	}
+}
+
+// NewDownloadEndpoint returns an endpoint function that calls the method
+// "download" of service "cascade".
+func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*NftDownloadPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.Download(ctx, p)
 	}
 }

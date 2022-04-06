@@ -18,7 +18,7 @@ type downloadNft struct {
 	client pb.DownloadNftClient
 }
 
-func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signature, ttxid string) (file []byte, err error) {
+func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string) (file []byte, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 
 	in := &pb.DownloadRequest{
@@ -26,6 +26,7 @@ func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signa
 		Timestamp: timestamp,
 		Signature: signature,
 		Ttxid:     ttxid,
+		Ttype:     ttype,
 	}
 
 	var stream pb.DownloadNft_DownloadClient
