@@ -79,16 +79,8 @@ func TestDDClientError(t *testing.T) {
 func TestDDClientSuccess(t *testing.T) {
 	testErr := error(nil)
 	testReply := &pb.ImageRarenessScoreReply{
-
-		RarenessScores:        &pb.RarenessScores{},
 		InternetRareness:      &pb.InternetRareness{},
 		AlternativeNsfwScores: &pb.AltNsfwScores{},
-		FingerprintsStat:      &pb.FingerprintsStat{},
-
-		PerceptualImageHashes: &pb.PerceptualImageHashes{},
-
-		Maxes:      &pb.Maxes{},
-		Percentile: &pb.Percentile{},
 	}
 	testPort := 50054
 	serviceHandler := &testService{

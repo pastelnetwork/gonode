@@ -123,14 +123,9 @@ type NftDetail struct {
 	// Average pastel rareness score
 	RarenessScore float32
 	// Is this image likely a duplicate of another known image
-	IsLikelyDupe *bool
-	// How many matches the scraper found on the first page of the google results
-	MatchesFoundOnFirstPage *uint32
-	// How many pages of search results the scraper found when searching for this
-	// image
-	NumberOfPagesOfResults *uint32
-	// URL of the first match on the first page of search results
-	URLOfFirstMatchInPage *string
+	IsLikelyDupe bool
+	// is this nft rare on the internet
+	IsRareOnInternet bool
 	// nsfw score
 	DrawingNsfwScore *float32
 	// nsfw score
@@ -143,6 +138,16 @@ type NftDetail struct {
 	HentaiNsfwScore *float32
 	// Preview Image
 	PreviewThumbnail []byte
+	// Base64 Compressed JSON Table of Rare On Internet Summary
+	RareOnInternetSummaryTableJSONB64 *string
+	// Base64 Compressed JSON of Rare On Internet Graph
+	RareOnInternetGraphJSONB64 *string
+	// Base64 Compressed Json of Alternative Rare On Internet Dict
+	AltRareOnInternetDictJSONB64 *string
+	// Minimum Number of Exact Matches on Page
+	MinNumExactMatchesOnPage *uint32
+	// Earliest Available Date of Internet Results
+	EarliestDateOfResults *string
 	// Thumbnail_1 image
 	Thumbnail1 []byte
 	// Thumbnail_2 image

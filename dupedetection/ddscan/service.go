@@ -34,26 +34,20 @@ const (
 	synchronizationIntervalSec       = 5
 	synchronizationTimeoutSec        = 60
 	runTaskInterval                  = 2 * time.Minute
-	fingerprintSizeModel1            = 4032
-	fingerprintSizeModel2            = 2560
-	fingerprintSizeModel3            = 1920
-	fingerprintSizeModel4            = 1536
-	fingerprintSizeModel             = 10048
 	masterNodeSuccessfulStatus       = "Masternode successfully started"
 	getLatestFingerprintStatement    = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
-	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector) VALUES(?,?,?,?,?)`
+	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database, thumbnail_of_image, request_type, open_api_subset_id_string) VALUES(?,?,?,?,?,?,?)`
 	getNumberOfFingerprintsStatement = `SELECT COUNT(*) FROM image_hash_to_image_fingerprint_table`
 )
 
 type dupeDetectionFingerprints struct {
 	Sha256HashOfArtImageFile           string    `json:"sha256_hash_of_art_image_file,omitempty"`
 	PathToArtImageFile                 string    `json:"path_to_art_image_file,omitempty"`
-	NumberOfBlock                      int       `json:"number_of_block,omitempty"`
-	DatetimeFingerprintAddedToDatabase time.Time `json:"datetime_fingerprint_added_to_database,omitempty"`
-	Model1ImageFingerprintVector       []float64 `json:"model_1_image_fingerprint_vector,omitempty"`
-	Model2ImageFingerprintVector       []float64 `json:"model_2_image_fingerprint_vector,omitempty"`
-	Model3ImageFingerprintVector       []float64 `json:"model_3_image_fingerprint_vector,omitempty"`
-	Model4ImageFingerprintVector       []float64 `json:"model_4_image_fingerprint_vector,omitempty"`
+	ImageFingerprintVector             []float64 `json:"new_model_image_fingerprint_vector,omitempty"`
+	DatetimeFingerprintAddedToDatabase string    `json:"datetime_fingerprint_added_to_database,omitempty"`
+	ImageThumbnailAsBase64             string    `json:"thumbnail_of_image,omitempty"`
+	RequestType                        string    `json:"request_type,omitempty"`
+	IDString                           string    `json:"open_api_subset_id_string,omitempty"`
 }
 
 type service struct {
@@ -62,6 +56,7 @@ type service struct {
 	p2pClient          p2p.Client
 	db                 *db.DB
 	isMasterNodeSynced bool
+	latestBlockHeight  int
 }
 
 func toFloat64Array(data []float32) []float64 {
@@ -191,13 +186,6 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 	for i := 0; i < len(row[0].Columns); i++ {
 		switch w := row[0].Values[0].GetParameters()[i].GetValue().(type) {
 		case *command.Parameter_Y:
-			// FIXME: these follow columns are nil, skip them
-			if row[0].Columns[i] == "model_5_image_fingerprint_vector" ||
-				row[0].Columns[i] == "model_6_image_fingerprint_vector" ||
-				row[0].Columns[i] == "model_7_image_fingerprint_vector" {
-				continue
-			}
-
 			val := values.GetParameters()[i].GetY()
 			if val == nil {
 				log.DD().WithContext(ctx).Errorf("nil value at column: %s", row[0].Columns[i])
@@ -242,6 +230,16 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 	return ddFingerprint, nil
 }
 
+// type dupeDetectionFingerprints struct {
+// 	Sha256HashOfArtImageFile           string    `json:"sha256_hash_of_art_image_file,omitempty"`
+// 	PathToArtImageFile                 string    `json:"path_to_art_image_file,omitempty"`
+// 	ImageFingerprintVector             []float64 `json:"image_fingerprint_vector,omitempty"`
+// 	DatetimeFingerprintAddedToDatabase string `json:"datetime_fingerprint_added_to_database,omitempty"`
+// 	ImageThumbnailAsBase64             string    `json:"image_thumbnail_as_base64_string,omitempty"`
+// 	RequestType                        string    `json:"request_type,omitempty"`
+// 	IDString                           string    `json:"id_String,omitempty"`
+// }
+
 func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFingerprints) error {
 	encodeFloat2Npy := func(v []float64) ([]byte, error) {
 		// create numpy matrix Nx1
@@ -253,22 +251,7 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 		return f.Bytes(), nil
 	}
 
-	fp1, err := encodeFloat2Npy(input.Model1ImageFingerprintVector)
-	if err != nil {
-		return err
-	}
-
-	fp2, err := encodeFloat2Npy(input.Model2ImageFingerprintVector)
-	if err != nil {
-		return err
-	}
-
-	fp3, err := encodeFloat2Npy(input.Model3ImageFingerprintVector)
-	if err != nil {
-		return err
-	}
-
-	fp4, err := encodeFloat2Npy(input.Model4ImageFingerprintVector)
+	fp, err := encodeFloat2Npy(input.ImageFingerprintVector)
 	if err != nil {
 		return err
 	}
@@ -284,23 +267,33 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 						},
 					},
 					{
-						Value: &command.Parameter_Y{
-							Y: fp1,
+						Value: &command.Parameter_S{
+							S: input.PathToArtImageFile,
 						},
 					},
 					{
 						Value: &command.Parameter_Y{
-							Y: fp2,
+							Y: fp,
 						},
 					},
 					{
-						Value: &command.Parameter_Y{
-							Y: fp3,
+						Value: &command.Parameter_S{
+							S: input.DatetimeFingerprintAddedToDatabase,
 						},
 					},
 					{
-						Value: &command.Parameter_Y{
-							Y: fp4,
+						Value: &command.Parameter_S{
+							S: input.ImageThumbnailAsBase64,
+						},
+					},
+					{
+						Value: &command.Parameter_S{
+							S: input.RequestType,
+						},
+					},
+					{
+						Value: &command.Parameter_S{
+							S: input.IDString,
 						},
 					},
 				},
@@ -308,12 +301,43 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 		},
 	}
 
-	_, err = s.db.Execute(req, false)
-	if err != nil {
+	executeResult, err := s.db.Execute(req, false)
+	log.WithContext(ctx).WithField("execute result", executeResult).Debug("Execute result of adding new fp")
+	if err != nil || executeResult[0].Error != "" {
 		log.DD().WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
 		return err
 	}
 	return nil
+}
+
+//Utility function to get dd and fp file from an id hash, where the file should be stored
+func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash string) (*pastel.DDAndFingerprints, error) {
+	rawFile, err := s.p2pClient.Retrieve(ctx, hash)
+	if err != nil {
+		return nil, errors.Errorf("Error finding dd and fp file: %w", err)
+	}
+
+	dec, err := utils.B64Decode(rawFile)
+	if err != nil {
+		return nil, errors.Errorf("decode data: %w", err)
+	}
+
+	decData, err := zstd.Decompress(nil, dec)
+	if err != nil {
+		return nil, errors.Errorf("decompress: %w", err)
+	}
+
+	splits := bytes.Split(decData, []byte{pastel.SeparatorByte})
+	file, err := utils.B64Decode(splits[0])
+	if err != nil {
+		return nil, errors.Errorf("decode file: %w", err)
+	}
+
+	ddFingerprint := &pastel.DDAndFingerprints{}
+	if err := json.Unmarshal(file, ddFingerprint); err != nil {
+		return nil, errors.Errorf("unmarshal json: %w", err)
+	}
+	return ddFingerprint, nil
 }
 
 func (s *service) runTask(ctx context.Context) error {
@@ -334,13 +358,12 @@ func (s *service) runTask(ctx context.Context) error {
 		return nil
 	}
 
-	lastestFp, err := s.getLatestFingerprint(ctx)
-	if err != nil {
-		return errors.Errorf("get lastest fingerprint: %w", err)
-	}
+	//track latest block height, but don't set it until we check all the nft reg tickets and the sense tickets.
+	latestBlockHeight := s.latestBlockHeight
 
+	//loop through nft tickets and store newly found nft reg tickets
 	for i := 0; i < len(nftRegTickets); i++ {
-		if nftRegTickets[i].Height <= lastestFp.NumberOfBlock {
+		if nftRegTickets[i].Height <= s.latestBlockHeight {
 			continue
 		}
 
@@ -350,74 +373,123 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
-		//quickly validate that there are DD and Fingerprint ID hashes and all of the hashes are the same
 		ddFPIDs := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
-		if len(ddFPIDs) < 1 {
-			return errors.Errorf("RegTicketData does not have properly registered DD and Fingerprint ID's")
-		}
+
+		ddAndFpFromTicket := &pastel.DDAndFingerprints{}
+		//Get the dd and fp file from the ticket
 		for _, id := range ddFPIDs {
-			if id != ddFPIDs[0] {
-				return errors.Errorf("AppTicketData has DDandFingerprintIDs that don't match")
+			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
+			if err != nil {
+				break
 			}
 		}
-		fingerprintsHash := ddFPIDs[0]
-
-		compressedFingerprintBytes, err := s.p2pClient.Retrieve(ctx, fingerprintsHash)
-		if err != nil {
-			log.DD().WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to retrieve fingerprint")
+		if ddAndFpFromTicket == nil {
+			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
 			continue
 		}
 
-		fingerprintFromBytes, err := zstd.Decompress(nil, compressedFingerprintBytes)
-		if err != nil {
-			log.DD().WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to decompress fingerprint")
-			continue
-		}
-
-		fingerprint, err := pastel.FingerprintFromBytes(fingerprintFromBytes)
-
-		if err != nil {
-			log.DD().WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to convert fingerprint")
-			continue
-		}
-
-		size := len(fingerprint)
-		if size != fingerprintSizeModel {
-			log.DD().WithContext(ctx).Errorf("invaild size fingerprint, size: %d", size)
-			continue
-		}
-
-		fingerprint64 := toFloat64Array(fingerprint)
-
-		model1ImageFingerprintVector := make([]float64, fingerprintSizeModel1)
-		model2ImageFingerprintVector := make([]float64, fingerprintSizeModel2)
-		model3ImageFingerprintVector := make([]float64, fingerprintSizeModel3)
-		model4ImageFingerprintVector := make([]float64, fingerprintSizeModel4)
-
-		start, end := 0, fingerprintSizeModel1
-		copy(model1ImageFingerprintVector, fingerprint64[start:end])
-
-		start, end = start+fingerprintSizeModel1, end+fingerprintSizeModel2
-		copy(model2ImageFingerprintVector, fingerprint64[start:end])
-
-		start, end = start+fingerprintSizeModel2, end+fingerprintSizeModel3
-		copy(model3ImageFingerprintVector, fingerprint64[start:end])
-
-		start, end = start+fingerprintSizeModel3, end+fingerprintSizeModel4
-		copy(model4ImageFingerprintVector, fingerprint64[start:end])
+		// thumbnailHash := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash
+		// thumbnail, err := s.p2pClient.Retrieve(ctx, string(thumbnailHash))
+		// if err != nil {
+		// 	log.WithContext(ctx).WithField("thumbnailHash", nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash).Warnf("Could not get the thumbnail with this hash for nftticketdata")
+		// 	continue
+		// }
 
 		if err := s.storeFingerprint(ctx, &dupeDetectionFingerprints{
-			Sha256HashOfArtImageFile:           fingerprintsHash,
-			Model1ImageFingerprintVector:       model1ImageFingerprintVector,
-			Model2ImageFingerprintVector:       model2ImageFingerprintVector,
-			Model3ImageFingerprintVector:       model3ImageFingerprintVector,
-			Model4ImageFingerprintVector:       model4ImageFingerprintVector,
-			NumberOfBlock:                      nftRegTickets[i].Height,
-			DatetimeFingerprintAddedToDatabase: time.Now(),
+			Sha256HashOfArtImageFile:           ddAndFpFromTicket.HashOfCandidateImageFile,
+			ImageFingerprintVector:             toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
+			DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
+			PathToArtImageFile:                 "",
+			ImageThumbnailAsBase64:             "",
+			RequestType:                        nftRegTickets[i].RegTicketData.Type,
+			IDString:                           "",
 		}); err != nil {
 			log.DD().WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
+		if nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum > latestBlockHeight {
+			latestBlockHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
+		}
 	}
+	//loop through action tickets and store newly found nft reg tickets
+
+	senseRegTickets, err := s.pastelClient.ActionTickets(ctx)
+	if err != nil {
+		return errors.Errorf("get registered ticket: %w", err)
+	}
+
+	if len(senseRegTickets) == 0 {
+		return nil
+	}
+	for i := 0; i < len(senseRegTickets); i++ {
+		if senseRegTickets[i].ActionTicketData.BlockNum <= s.latestBlockHeight {
+			continue
+		}
+		if senseRegTickets[i].Type != "sense-reg" {
+			continue
+		}
+
+		senseTicket, err := senseRegTickets[i].ActionTicketData.APISenseTicket()
+		if err != nil {
+			log.WithContext(ctx).WithField("senseRegTickets.ActionTicketData", senseRegTickets[i].ActionTicketData).Warnf("Could not get sense ticket for action ticket data")
+			continue
+		}
+
+		ddAndFpFromTicket := &pastel.DDAndFingerprints{}
+		//Get the dd and fp file from the ticket
+		for _, id := range senseTicket.DDAndFingerprintsIDs {
+			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
+			if err != nil {
+				break
+			}
+		}
+		if ddAndFpFromTicket == nil {
+			log.WithContext(ctx).WithField("senseTicket", senseTicket).Warnf("None of the dd and fp id files for thissense reg ticket could be properly unmarshalled")
+			continue
+		}
+
+		// imgFileHash := senseTicket.DataHash
+		//Below code might be kept in case we want to add the ability to get thumbnails to sense
+		// imgFile, err := s.p2pClient.Retrieve(ctx, string(imgFileHash))
+		// if err != nil {
+		// 	log.WithContext(ctx).WithField("imgFileHash", imgFileHash).Warnf("Could not get the image with this hash for senseTicket")
+		// 	continue
+		// }
+
+		// imgBuffer := bytes.NewBuffer(imgFile)
+		// src, err := imaging.Decode(imgBuffer)
+		// if err != nil {
+		// 	log.WithContext(ctx).WithField("imgFileHash", imgFileHash).Warnf("Could not open bytes as image")
+		// 	continue
+		// }
+
+		// dstImage := imaging.Thumbnail(src, 200, 200, imaging.Lanczos)
+
+		// var thumbByteArr bytes.Buffer
+
+		// if err := webp.Encode(&thumbByteArr, dstImage, &webp.Options{Quality: 25}); err != nil {
+		// 	log.WithContext(ctx).WithField("imgFileHash", imgFileHash).Warnf("Failed to encode thumbnail image")
+		// 	continue
+		// }
+
+		// readableThumbnailStr := utils.B64Encode(thumbByteArr.Bytes())
+
+		if err := s.storeFingerprint(ctx, &dupeDetectionFingerprints{
+			Sha256HashOfArtImageFile:           ddAndFpFromTicket.HashOfCandidateImageFile,
+			ImageFingerprintVector:             toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
+			DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
+			PathToArtImageFile:                 "",
+			ImageThumbnailAsBase64:             "",
+			RequestType:                        senseRegTickets[i].Type,
+			IDString:                           "",
+		}); err != nil {
+			log.DD().WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
+		}
+		if senseRegTickets[i].ActionTicketData.BlockNum > latestBlockHeight {
+			latestBlockHeight = senseRegTickets[i].ActionTicketData.BlockNum
+		}
+	}
+
+	s.latestBlockHeight = latestBlockHeight
 
 	return nil
 }

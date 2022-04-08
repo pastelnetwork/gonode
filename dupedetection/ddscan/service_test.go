@@ -2,10 +2,10 @@ package ddscan
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/hex"
 	"io/ioutil"
-	"math/big"
+	"math"
+	"math/rand"
 
 	"os"
 	"testing"
@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const createTableStatement = `CREATE TABLE image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text, path_to_art_image_file, model_1_image_fingerprint_vector array, model_2_image_fingerprint_vector array, model_3_image_fingerprint_vector array, model_4_image_fingerprint_vector array, datetime_fingerprint_added_to_database TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (sha256_hash_of_art_image_file))`
+const createTableStatement = `CREATE TABLE image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text, open_api_subset_id_string text)`
 
 func prepareService(_ *testing.T) *service {
 	tmpfile, err := ioutil.TempFile("", "dupe_detection_image_fingerprint_database.sqlite")
@@ -47,31 +47,22 @@ func prepareService(_ *testing.T) *service {
 }
 
 func randFloats(n int) []float64 {
-	nBig, _ := rand.Int(rand.Reader, big.NewInt(5))
-	f := nBig.Int64()
-
 	res := make([]float64, n)
 	for i := range res {
-		res[i] = 0.0 + float64(f)*(0.0-1.0)
+		res[i] = 0.0 + rand.Float64()*(math.MaxFloat64)
 	}
 	return res
 }
 
 func generateFingerprint(_ *testing.T) *dupeDetectionFingerprints {
-	fp1 := randFloats(fingerprintSizeModel1)
-	fp2 := randFloats(fingerprintSizeModel2)
-	fp3 := randFloats(fingerprintSizeModel3)
-	fp4 := randFloats(fingerprintSizeModel4)
+	fps := randFloats(1500)
 
 	b := make([]byte, 10)
 	rand.Read(b)
 	return &dupeDetectionFingerprints{
 		Sha256HashOfArtImageFile:           hex.EncodeToString(b),
-		Model1ImageFingerprintVector:       fp1,
-		Model2ImageFingerprintVector:       fp2,
-		Model3ImageFingerprintVector:       fp3,
-		Model4ImageFingerprintVector:       fp4,
-		DatetimeFingerprintAddedToDatabase: time.Now(),
+		ImageFingerprintVector:             fps,
+		DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
 	}
 }
 
@@ -110,10 +101,7 @@ func TestGetSetFingerprint(t *testing.T) {
 	assert.True(t, err == nil)
 	assert.True(t, getFp != nil)
 	assert.Equal(t, setFp.Sha256HashOfArtImageFile, getFp.Sha256HashOfArtImageFile)
-	assert.Equal(t, setFp.Model1ImageFingerprintVector, getFp.Model1ImageFingerprintVector)
-	assert.Equal(t, setFp.Model2ImageFingerprintVector, getFp.Model2ImageFingerprintVector)
-	assert.Equal(t, setFp.Model3ImageFingerprintVector, getFp.Model3ImageFingerprintVector)
-	assert.Equal(t, setFp.Model4ImageFingerprintVector, getFp.Model4ImageFingerprintVector)
+	assert.Equal(t, setFp.ImageFingerprintVector, getFp.ImageFingerprintVector)
 }
 
 func TestWaitSynchronizationSuccessful(t *testing.T) {

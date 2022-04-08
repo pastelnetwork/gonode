@@ -292,6 +292,7 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 						return nil
 					}
 
+					//This includes adding fingerprints to the dd-service fingerprint sqlite database
 					if err = task.storeIDFiles(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("store id files")
 						err = errors.Errorf("store id files: %w", err)

@@ -136,9 +136,9 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 	log.WithContext(ctx).WithField("ddandfpstruct", ddAndFpStruct).Println("Successfully unmarshalled dd and fp struct")
 
 	//rareness score
-	if !(task.request.MinRarenessScore == float64(0) && task.request.MinRarenessScore == task.request.MaxRarenessScore) && !common.InFloatRange(float64(ddAndFpStruct.RarenessScores.OverallAverageRarenessScore),
+	if !(task.request.MinRarenessScore == float64(0) && task.request.MinRarenessScore == task.request.MaxRarenessScore) && !common.InFloatRange(float64(ddAndFpStruct.OverallRarenessScore),
 		&task.request.MinRarenessScore, &task.request.MaxRarenessScore) {
-		log.WithContext(ctx).WithField("task.request.minrarenessscore", task.request.MinRarenessScore).WithField("task.request.maxrarenessscore", task.request.MaxRarenessScore).WithField("overallaveragerarnessscore", ddAndFpStruct.RarenessScores.OverallAverageRarenessScore).Println("rareness score outside of range")
+		log.WithContext(ctx).WithField("task.request.minrarenessscore", task.request.MinRarenessScore).WithField("task.request.maxrarenessscore", task.request.MaxRarenessScore).WithField("overallaveragerarnessscore", ddAndFpStruct.OverallRarenessScore).Println("rareness score outside of range")
 		return srch, false
 	}
 
@@ -162,7 +162,7 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 
 	regSearch := &RegTicketSearch{
 		RegTicket:     regTicket,
-		RarenessScore: ddAndFpStruct.RarenessScores.OverallAverageRarenessScore,
+		RarenessScore: ddAndFpStruct.OverallRarenessScore,
 		OpenNSFWScore: ddAndFpStruct.OpenNSFWScore,
 		IsLikelyDupe:  ddAndFpStruct.IsLikelyDupe,
 	}

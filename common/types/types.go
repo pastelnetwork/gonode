@@ -21,4 +21,5 @@ type ActionRegMetadata struct {
 	BurnTxID        string
 	BlockHeight     string
 	Timestamp       string
+	OpenAPISubsetID string
 }

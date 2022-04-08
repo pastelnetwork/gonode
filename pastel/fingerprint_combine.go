@@ -8,36 +8,37 @@ import (
 )
 
 func copyFingerPrintAndScores(origin *DDAndFingerprints) *DDAndFingerprints {
-	copiedRarenessScores := *origin.RarenessScores
 	copiedInternetRareness := *origin.InternetRareness
 	copiedAlternativeNSFWScores := *origin.AlternativeNSFWScores
-	copiedFingerprintsStat := *origin.FingerprintsStat
-	copiedPerceptualImageHashes := *origin.PerceptualImageHashes
-	copiedPercentile := *origin.Percentile
-	copiedMaxes := *origin.Maxes
 	copied := &DDAndFingerprints{
-		Block:                      origin.Block,
-		Principal:                  origin.Principal,
+		BlockHash:                  origin.BlockHash,
+		BlockHeight:                origin.BlockHeight,
+		TimestampOfRequest:         origin.TimestampOfRequest,
+		SubmitterPastelID:          origin.SubmitterPastelID,
+		SN1PastelID:                origin.SN1PastelID,
+		SN2PastelID:                origin.SN2PastelID,
+		SN3PastelID:                origin.SN3PastelID,
+		IsOpenAPIRequest:           origin.IsOpenAPIRequest,
+		OpenAPISubsetID:            origin.OpenAPISubsetID,
 		DupeDetectionSystemVersion: origin.DupeDetectionSystemVersion,
+		IsLikelyDupe:               origin.IsLikelyDupe,
+		IsRareOnInternet:           origin.IsRareOnInternet,
+		OverallRarenessScore:       origin.OverallRarenessScore,
 
-		IsLikelyDupe:     origin.IsLikelyDupe,
-		IsRareOnInternet: origin.IsRareOnInternet,
+		PctOfTop10MostSimilarWithDupeProbAbove25pct: origin.PctOfTop10MostSimilarWithDupeProbAbove25pct,
+		PctOfTop10MostSimilarWithDupeProbAbove33pct: origin.PctOfTop10MostSimilarWithDupeProbAbove33pct,
+		PctOfTop10MostSimilarWithDupeProbAbove50pct: origin.PctOfTop10MostSimilarWithDupeProbAbove50pct,
 
-		RarenessScores:   &copiedRarenessScores,
+		RarenessScoresTableJSONCompressedB64: origin.RarenessScoresTableJSONCompressedB64,
+
 		InternetRareness: &copiedInternetRareness,
 
 		OpenNSFWScore:         origin.OpenNSFWScore, // Update later
 		AlternativeNSFWScores: &copiedAlternativeNSFWScores,
 
 		ImageFingerprintOfCandidateImageFile: origin.ImageFingerprintOfCandidateImageFile,
-		FingerprintsStat:                     &copiedFingerprintsStat,
 
-		HashOfCandidateImageFile:   origin.HashOfCandidateImageFile,
-		PerceptualImageHashes:      &copiedPerceptualImageHashes,
-		PerceptualHashOverlapCount: origin.PerceptualHashOverlapCount,
-
-		Maxes:      &copiedMaxes,
-		Percentile: &copiedPercentile,
+		HashOfCandidateImageFile: origin.HashOfCandidateImageFile,
 	}
 	return copied
 }
@@ -53,21 +54,84 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 
 	finalResult := copyFingerPrintAndScores(first)
 
-	// Block
-	if !strings.EqualFold(first.Block, second.Block) {
-		return nil, errors.Errorf("block not matched: first(%s) != second(%s)", first.Block, second.Block)
+	// BlockHash
+	if !strings.EqualFold(first.BlockHash, second.BlockHash) {
+		return nil, errors.Errorf("BlockHash not matched: first(%s) != second(%s)", first.BlockHash, second.BlockHash)
 	}
 
-	if !strings.EqualFold(first.Block, third.Block) {
-		return nil, errors.Errorf("block not matched: first(%s) != third(%s)", first.Block, third.Block)
+	if !strings.EqualFold(first.BlockHash, third.BlockHash) {
+		return nil, errors.Errorf("BlockHash not matched: first(%s) != third(%s)", first.BlockHash, third.BlockHash)
 	}
 
-	// Principal
-	if !strings.EqualFold(first.Principal, second.Principal) {
-		return nil, errors.Errorf("principal not matched: first(%s) != second(%s)", first.Principal, second.Principal)
+	// BlockHeight
+	if !strings.EqualFold(first.BlockHeight, second.BlockHeight) {
+		return nil, errors.Errorf("BlockHeight not matched: first(%s) != second(%s)", first.BlockHeight, second.BlockHeight)
 	}
-	if !strings.EqualFold(first.Principal, third.Principal) {
-		return nil, errors.Errorf("principal not matched: first(%s) != third(%s)", first.Principal, third.Principal)
+
+	if !strings.EqualFold(first.BlockHeight, third.BlockHeight) {
+		return nil, errors.Errorf("BlockHeight not matched: first(%s) != third(%s)", first.BlockHeight, third.BlockHeight)
+	}
+
+	// TimestampOfRequest
+	if !strings.EqualFold(first.TimestampOfRequest, second.TimestampOfRequest) {
+		return nil, errors.Errorf("TimestampOfRequest not matched: first(%s) != second(%s)", first.TimestampOfRequest, second.TimestampOfRequest)
+	}
+
+	if !strings.EqualFold(first.TimestampOfRequest, third.TimestampOfRequest) {
+		return nil, errors.Errorf("TimestampOfRequest not matched: first(%s) != third(%s)", first.TimestampOfRequest, third.TimestampOfRequest)
+	}
+
+	// SubmitterPastelID
+	if !strings.EqualFold(first.SubmitterPastelID, second.SubmitterPastelID) {
+		return nil, errors.Errorf("SubmitterPastelID not matched: first(%s) != second(%s)", first.SubmitterPastelID, second.SubmitterPastelID)
+	}
+
+	if !strings.EqualFold(first.SubmitterPastelID, third.SubmitterPastelID) {
+		return nil, errors.Errorf("SubmitterPastelID not matched: first(%s) != third(%s)", first.SubmitterPastelID, third.SubmitterPastelID)
+	}
+
+	// SN1PastelID
+	if !strings.EqualFold(first.SN1PastelID, second.SN1PastelID) {
+		return nil, errors.Errorf("SN1PastelID not matched: first(%s) != second(%s)", first.SN1PastelID, second.SN1PastelID)
+	}
+
+	if !strings.EqualFold(first.SN1PastelID, third.SN1PastelID) {
+		return nil, errors.Errorf("SN1PastelID not matched: first(%s) != third(%s)", first.SN1PastelID, third.SN1PastelID)
+	}
+
+	// SN2PastelID
+	if !strings.EqualFold(first.SN2PastelID, second.SN2PastelID) {
+		return nil, errors.Errorf("SN2PastelID not matched: first(%s) != second(%s)", first.SN2PastelID, second.SN2PastelID)
+	}
+
+	if !strings.EqualFold(first.SN2PastelID, third.SN2PastelID) {
+		return nil, errors.Errorf("SN2PastelID not matched: first(%s) != third(%s)", first.SN2PastelID, third.SN2PastelID)
+	}
+
+	// SN3PastelID
+	if !strings.EqualFold(first.SN3PastelID, second.SN3PastelID) {
+		return nil, errors.Errorf("SN3PastelID not matched: first(%s) != second(%s)", first.SN3PastelID, second.SN3PastelID)
+	}
+
+	if !strings.EqualFold(first.SN3PastelID, third.SN3PastelID) {
+		return nil, errors.Errorf("SN3PastelID not matched: first(%s) != third(%s)", first.SN3PastelID, third.SN3PastelID)
+	}
+
+	// IsOpenAPIRequest
+	if first.IsOpenAPIRequest != second.IsOpenAPIRequest {
+		return nil, errors.Errorf("IsOpenAPIRequest not matched: first(%t) != second(%t)", first.IsOpenAPIRequest, second.IsOpenAPIRequest)
+	}
+	if first.IsOpenAPIRequest != third.IsOpenAPIRequest {
+		return nil, errors.Errorf("IsOpenAPIRequest not matched: first(%t) != third(%t)", first.IsOpenAPIRequest, third.IsOpenAPIRequest)
+	}
+
+	// OpenAPISubsetID
+	if !strings.EqualFold(first.OpenAPISubsetID, second.OpenAPISubsetID) {
+		return nil, errors.Errorf("OpenAPISubsetID not matched: first(%s) != second(%s)", first.OpenAPISubsetID, second.OpenAPISubsetID)
+	}
+
+	if !strings.EqualFold(first.OpenAPISubsetID, third.OpenAPISubsetID) {
+		return nil, errors.Errorf("OpenAPISubsetID not matched: first(%s) != third(%s)", first.OpenAPISubsetID, third.OpenAPISubsetID)
 	}
 
 	// DupeDetectionSystemVersion
@@ -87,23 +151,55 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 		return nil, errors.Errorf("is_likely_dupe not matched: first(%t) != third(%t)", first.IsLikelyDupe, third.IsLikelyDupe)
 	}
 
-	// IsRareOnInternet
-	// if first.IsRareOnInternet != second.IsRareOnInternet {
-	// 	return nil, errors.Errorf("is_rare_on_internet not matched: first(%t) != second(%t)", first.IsRareOnInternet, second.IsRareOnInternet)
-	// }
-
-	// if first.IsRareOnInternet != third.IsRareOnInternet {
-	// 	return nil, errors.Errorf("is_rare_on_internet not matched: first(%t) != third(%t)", first.IsRareOnInternet, third.IsRareOnInternet)
-	// }
 	finalResult.IsRareOnInternet = combineBool(first.IsRareOnInternet, second.IsRareOnInternet, third.IsRareOnInternet)
 
-	//RarenessScores
-	if err := CompareRarenessScores(first.RarenessScores, second.RarenessScores); err != nil {
-		return nil, errors.Errorf("first and second RarenessScores do not match: %w", err)
+	//OverallRarenessScore
+	if !compareFloat(first.OverallRarenessScore, second.OverallRarenessScore) {
+		return nil, errors.Errorf("OverallRarenessScore do not match: first(%f) != second(%f)", first.OverallRarenessScore, second.OverallRarenessScore)
 	}
-	if err := CompareRarenessScores(first.RarenessScores, third.RarenessScores); err != nil {
-		return nil, errors.Errorf("first and third RarenessScores do not match: %w", err)
+	if !compareFloat(first.OverallRarenessScore, third.OverallRarenessScore) {
+		return nil, errors.Errorf("OverallRarenessScore do not match: first(%f) != third(%f)", first.OverallRarenessScore, third.OverallRarenessScore)
 	}
+
+	//PctOfTop10MostSimilarWithDupeProbAbove25pct
+	if !compareFloat(first.PctOfTop10MostSimilarWithDupeProbAbove25pct, second.PctOfTop10MostSimilarWithDupeProbAbove25pct) {
+		return nil, errors.Errorf("PctOfTop10MostSimilarWithDupeProbAbove25pct do not match: first(%f) != second(%f)", first.PctOfTop10MostSimilarWithDupeProbAbove25pct, second.PctOfTop10MostSimilarWithDupeProbAbove25pct)
+	}
+	if !compareFloat(first.PctOfTop10MostSimilarWithDupeProbAbove25pct, third.PctOfTop10MostSimilarWithDupeProbAbove25pct) {
+		return nil, errors.Errorf("PctOfTop10MostSimilarWithDupeProbAbove25pct do not match: first(%f) != third(%f)", first.PctOfTop10MostSimilarWithDupeProbAbove25pct, third.PctOfTop10MostSimilarWithDupeProbAbove25pct)
+	}
+
+	//PctOfTop10MostSimilarWithDupeProbAbove33pct
+	if !compareFloat(first.PctOfTop10MostSimilarWithDupeProbAbove33pct, second.PctOfTop10MostSimilarWithDupeProbAbove33pct) {
+		return nil, errors.Errorf("PctOfTop10MostSimilarWithDupeProbAbove33pct do not match: first(%f) != second(%f)", first.PctOfTop10MostSimilarWithDupeProbAbove33pct, second.PctOfTop10MostSimilarWithDupeProbAbove33pct)
+	}
+	if !compareFloat(first.PctOfTop10MostSimilarWithDupeProbAbove33pct, third.PctOfTop10MostSimilarWithDupeProbAbove33pct) {
+		return nil, errors.Errorf("PctOfTop10MostSimilarWithDupeProbAbove33pct do not match: first(%f) != third(%f)", first.PctOfTop10MostSimilarWithDupeProbAbove33pct, third.PctOfTop10MostSimilarWithDupeProbAbove33pct)
+	}
+
+	//PctOfTop10MostSimilarWithDupeProbAbove50pct
+	if !compareFloat(first.PctOfTop10MostSimilarWithDupeProbAbove50pct, second.PctOfTop10MostSimilarWithDupeProbAbove50pct) {
+		return nil, errors.Errorf("PctOfTop10MostSimilarWithDupeProbAbove50pct do not match: first(%f) != second(%f)", first.PctOfTop10MostSimilarWithDupeProbAbove50pct, second.PctOfTop10MostSimilarWithDupeProbAbove50pct)
+	}
+	if !compareFloat(first.PctOfTop10MostSimilarWithDupeProbAbove50pct, third.PctOfTop10MostSimilarWithDupeProbAbove50pct) {
+		return nil, errors.Errorf("PctOfTop10MostSimilarWithDupeProbAbove50pct do not match: first(%f) != third(%f)", first.PctOfTop10MostSimilarWithDupeProbAbove50pct, third.PctOfTop10MostSimilarWithDupeProbAbove50pct)
+	}
+
+	// RarenessScoresTableJSONCompressedB64
+	if !strings.EqualFold(first.RarenessScoresTableJSONCompressedB64, second.RarenessScoresTableJSONCompressedB64) {
+		return nil, errors.Errorf("RarenessScoresTableJSONCompressedB64 not matched: first(%s) != second(%s)", first.RarenessScoresTableJSONCompressedB64, second.RarenessScoresTableJSONCompressedB64)
+	}
+
+	if !strings.EqualFold(first.RarenessScoresTableJSONCompressedB64, third.RarenessScoresTableJSONCompressedB64) {
+		return nil, errors.Errorf("RarenessScoresTableJSONCompressedB64 not matched: first(%s) != third(%s)", first.RarenessScoresTableJSONCompressedB64, third.RarenessScoresTableJSONCompressedB64)
+	}
+	// //RarenessScores
+	// if err := CompareRarenessScores(first.RarenessScores, second.RarenessScores); err != nil {
+	// 	return nil, errors.Errorf("first and second RarenessScores do not match: %w", err)
+	// }
+	// if err := CompareRarenessScores(first.RarenessScores, third.RarenessScores); err != nil {
+	// 	return nil, errors.Errorf("first and third RarenessScores do not match: %w", err)
+	// }
 
 	//InternetRareness
 	// if err := CompareInternetRareness(first.InternetRareness, second.InternetRareness); err != nil {
@@ -112,20 +208,30 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 	// if err := CompareInternetRareness(first.InternetRareness, third.InternetRareness); err != nil {
 	// 	return nil, errors.Errorf("second couple of InternetRareness do not third: %w", err)
 	// }
-	finalResult.InternetRareness.MatchesFoundOnFirstPage = combineUint32(
-		first.InternetRareness.MatchesFoundOnFirstPage,
-		second.InternetRareness.MatchesFoundOnFirstPage,
-		third.InternetRareness.MatchesFoundOnFirstPage,
+	finalResult.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64 = combineString(
+		first.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64,
+		second.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64,
+		third.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64,
 	)
-	finalResult.InternetRareness.NumberOfPagesOfResults = combineUint32(
-		first.InternetRareness.NumberOfPagesOfResults,
-		second.InternetRareness.NumberOfPagesOfResults,
-		third.InternetRareness.NumberOfPagesOfResults,
+	finalResult.InternetRareness.RareOnInternetGraphJSONCompressedB64 = combineString(
+		first.InternetRareness.RareOnInternetGraphJSONCompressedB64,
+		second.InternetRareness.RareOnInternetGraphJSONCompressedB64,
+		third.InternetRareness.RareOnInternetGraphJSONCompressedB64,
 	)
-	finalResult.InternetRareness.URLOfFirstMatchInPage = combineString(
-		first.InternetRareness.URLOfFirstMatchInPage,
-		second.InternetRareness.URLOfFirstMatchInPage,
-		third.InternetRareness.URLOfFirstMatchInPage,
+	finalResult.InternetRareness.AlternativeRareOnInternetDictAsJSONCompressedB64 = combineString(
+		first.InternetRareness.AlternativeRareOnInternetDictAsJSONCompressedB64,
+		second.InternetRareness.AlternativeRareOnInternetDictAsJSONCompressedB64,
+		third.InternetRareness.AlternativeRareOnInternetDictAsJSONCompressedB64,
+	)
+	finalResult.InternetRareness.MinNumberOfExactMatchesInPage = combineUint32(
+		first.InternetRareness.MinNumberOfExactMatchesInPage,
+		second.InternetRareness.MinNumberOfExactMatchesInPage,
+		third.InternetRareness.MinNumberOfExactMatchesInPage,
+	)
+	finalResult.InternetRareness.EarliestAvailableDateOfInternetResults = combineString(
+		first.InternetRareness.EarliestAvailableDateOfInternetResults,
+		second.InternetRareness.EarliestAvailableDateOfInternetResults,
+		third.InternetRareness.EarliestAvailableDateOfInternetResults,
 	)
 
 	//open_nsfw_score
@@ -152,52 +258,12 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 		return nil, errors.New("second couple of image_fingerprint_of_candidate_image_file nsfw score do not match")
 	}
 
-	//alternative_nsfw_scores
-	if err := CompareFingerprintsStat(first.FingerprintsStat, second.FingerprintsStat); err != nil {
-		return nil, errors.Errorf("first couple of alternative_nsfw_scores do not match: %w", err)
-	}
-	if err := CompareFingerprintsStat(first.FingerprintsStat, third.FingerprintsStat); err != nil {
-		return nil, errors.Errorf("second couple of alternative_nsfw_scores  do not match: %w", err)
-	}
-
 	//hash_of_candidate_image_file
 	if !reflect.DeepEqual(first.HashOfCandidateImageFile, second.HashOfCandidateImageFile) {
 		return nil, errors.New("first couple of hash_of_candidate_image_filedo not match")
 	}
 	if !reflect.DeepEqual(first.HashOfCandidateImageFile, third.HashOfCandidateImageFile) {
 		return nil, errors.New("second couple of hash_of_candidate_image_file do not match")
-	}
-
-	//perceptual_image_hashes
-	if err := ComparePerceptualImageHashes(first.PerceptualImageHashes, second.PerceptualImageHashes); err != nil {
-		return nil, errors.Errorf("first couple of perceptual_image_hashes do not match: %w", err)
-	}
-	if err := ComparePerceptualImageHashes(first.PerceptualImageHashes, third.PerceptualImageHashes); err != nil {
-		return nil, errors.Errorf("second couple of perceptual_image_hashes do not match: %w", err)
-	}
-
-	//perceptual_hash_overlap_count
-	if first.PerceptualHashOverlapCount != second.PerceptualHashOverlapCount {
-		return nil, errors.Errorf("perceptual_hash_overlap_count not matched: first(%d) != second(%d)", first.PerceptualHashOverlapCount, second.PerceptualHashOverlapCount)
-	}
-	if first.PerceptualHashOverlapCount != third.PerceptualHashOverlapCount {
-		return nil, errors.Errorf("perceptual_hash_overlap_count not matched: first(%d) != third(%d)", first.PerceptualHashOverlapCount, second.PerceptualHashOverlapCount)
-	}
-
-	//maxes
-	if err := CompareMaxes(first.Maxes, second.Maxes); err != nil {
-		return nil, errors.Errorf("first maxes compare not match: %w", err)
-	}
-	if err := CompareMaxes(first.Maxes, third.Maxes); err != nil {
-		return nil, errors.Errorf("second maxes compare not match: %w", err)
-	}
-
-	//percentile
-	if err := ComparePercentile(first.Percentile, second.Percentile); err != nil {
-		return nil, errors.Errorf("first couple of percentile compare not match: %w", err)
-	}
-	if err := ComparePercentile(first.Percentile, third.Percentile); err != nil {
-		return nil, errors.Errorf("second couple of percentile compare not match: %w", err)
 	}
 
 	return finalResult, nil

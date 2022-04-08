@@ -16,43 +16,49 @@ const SeparatorByte byte = 46
 
 // DDAndFingerprints represents  the dd & fingerprints data returned by dd-service & SN
 type DDAndFingerprints struct {
-	Block                      string `json:"block"`
-	Principal                  string `json:"principal"`
+	BlockHash   string `json:"pastel_block_hash_when_request_submitted"`
+	BlockHeight string `json:"pastel_block_height_when_request_submitted"`
+
+	TimestampOfRequest string `json:"utc_timestamp_when_request_submitted"`
+	SubmitterPastelID  string `json:"pastel_id_of_submitter"`
+	SN1PastelID        string `json:"pastel_id_of_registering_supernode_1"`
+	SN2PastelID        string `json:"pastel_id_of_registering_supernode_2"`
+	SN3PastelID        string `json:"pastel_id_of_registering_supernode_3"`
+
+	IsOpenAPIRequest bool `json:"is_pastel_openapi_request"`
+
+	OpenAPISubsetID string `json:"open_api_subset_id_string"`
+
 	DupeDetectionSystemVersion string `json:"dupe_detection_system_version"`
 
-	IsLikelyDupe     bool `json:"is_likely_dupe"`
-	IsRareOnInternet bool `json:"is_rare_on_internet"`
+	IsLikelyDupe         bool    `json:"is_likely_dupe"`
+	IsRareOnInternet     bool    `json:"is_rare_on_internet"`
+	OverallRarenessScore float32 `json:"overall_rareness_score "`
 
-	RarenessScores   *RarenessScores   `json:"rareness_scores"`
+	PctOfTop10MostSimilarWithDupeProbAbove25pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct"`
+	PctOfTop10MostSimilarWithDupeProbAbove33pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct"`
+	PctOfTop10MostSimilarWithDupeProbAbove50pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct"`
+
+	RarenessScoresTableJSONCompressedB64 string `json:"rareness_scores_table_json_compressed_b64"`
+
 	InternetRareness *InternetRareness `json:"internet_rareness"`
 
-	OpenNSFWScore         float32                `json:"open_nsfw_score"`
+	OpenNSFWScore float32 `json:"open_nsfw_score"`
+
 	AlternativeNSFWScores *AlternativeNSFWScores `json:"alternative_nsfw_scores"`
 
-	ImageFingerprintOfCandidateImageFile []float32         `json:"image_fingerprint_of_candidate_image_file"`
-	FingerprintsStat                     *FingerprintsStat `json:"fingerprints_stat"`
+	ImageFingerprintOfCandidateImageFile []float32 `json:"image_fingerprint_of_candidate_image_file"`
 
-	HashOfCandidateImageFile   string                 `json:"hash_of_candidate_image_file"`
-	PerceptualImageHashes      *PerceptualImageHashes `json:"perceptual_image_hashes"`
-	PerceptualHashOverlapCount uint32                 `json:"perceptual_hash_overlap_count"`
-
-	Maxes      *Maxes      `json:"maxes"`
-	Percentile *Percentile `json:"percentile"`
-}
-
-// RarenessScores defined rareness scores
-type RarenessScores struct {
-	CombinedRarenessScore         float32 `json:"combined_rareness_score"`
-	XgboostPredictedRarenessScore float32 `json:"xgboost_predicted_rareness_score"`
-	NnPredictedRarenessScore      float32 `json:"nn_predicted_rareness_score"`
-	OverallAverageRarenessScore   float32 `json:"overall_average_rareness_score"`
+	HashOfCandidateImageFile string `json:"hash_of_candidate_image_file"`
 }
 
 // InternetRareness defines internet rareness scores
 type InternetRareness struct {
-	MatchesFoundOnFirstPage uint32 `json:"matches_found_on_first_page"`
-	NumberOfPagesOfResults  uint32 `json:"number_of_pages_of_results"`
-	URLOfFirstMatchInPage   string `json:"url_of_first_match_in_page"`
+	RareOnInternetSummaryTableAsJSONCompressedB64    string `json:"rare_on_internet_summary_table_as_json_compressed_b64"`
+	RareOnInternetGraphJSONCompressedB64             string `json:"rare_on_internet_graph_json_compressed_b64"`
+	AlternativeRareOnInternetDictAsJSONCompressedB64 string `json:"alternative_rare_on_internet_dict_as_json_compressed_b64"`
+	MinNumberOfExactMatchesInPage                    uint32 `json:"min_number_of_exact_matches_in_page"`
+	EarliestAvailableDateOfInternetResults           string `json:"earliest_available_date_of_internet_results"`
 }
 
 // AlternativeNSFWScores represents the not-safe-for-work of an image
@@ -64,47 +70,47 @@ type AlternativeNSFWScores struct {
 	Sexy     float32 `json:"sexy"`
 }
 
-// Percentile represents percentile values
-type Percentile struct {
-	PearsonTop1BpsPercentile             float32 `json:"pearson_top_1_bps_percentile"`
-	SpearmanTop1BpsPercentile            float32 `json:"spearman_top_1_bps_percentile"`
-	KendallTop1BpsPercentile             float32 `json:"kendall_top_1_bps_percentile"`
-	HoeffdingTop10BpsPercentile          float32 `json:"hoeffding_top_10_bps_percentile"`
-	MutualInformationTop100BpsPercentile float32 `json:"mutual_information_top_100_bps_percentile"`
-	HsicTop100BpsPercentile              float32 `json:"hsic_top_100_bps_percentile"`
-	XgbimportanceTop100BpsPercentile     float32 `json:"xgbimportance_top_100_bps_percentile"`
-}
+// // Percentile represents percentile values
+// type Percentile struct {
+// 	PearsonTop1BpsPercentile             float32 `json:"pearson_top_1_bps_percentile"`
+// 	SpearmanTop1BpsPercentile            float32 `json:"spearman_top_1_bps_percentile"`
+// 	KendallTop1BpsPercentile             float32 `json:"kendall_top_1_bps_percentile"`
+// 	HoeffdingTop10BpsPercentile          float32 `json:"hoeffding_top_10_bps_percentile"`
+// 	MutualInformationTop100BpsPercentile float32 `json:"mutual_information_top_100_bps_percentile"`
+// 	HsicTop100BpsPercentile              float32 `json:"hsic_top_100_bps_percentile"`
+// 	XgbimportanceTop100BpsPercentile     float32 `json:"xgbimportance_top_100_bps_percentile"`
+// }
 
-// FingerprintsStat represents stat of fringerprints
-type FingerprintsStat struct {
-	NumberOfFingerprintsRequiringFurtherTesting1 uint32 `json:"number_of_fingerprints_requiring_further_testing_1"`
-	NumberOfFingerprintsRequiringFurtherTesting2 uint32 `json:"number_of_fingerprints_requiring_further_testing_2"`
-	NumberOfFingerprintsRequiringFurtherTesting3 uint32 `json:"number_of_fingerprints_requiring_further_testing_3"`
-	NumberOfFingerprintsRequiringFurtherTesting4 uint32 `json:"number_of_fingerprints_requiring_further_testing_4"`
-	NumberOfFingerprintsRequiringFurtherTesting5 uint32 `json:"number_of_fingerprints_requiring_further_testing_5"`
-	NumberOfFingerprintsRequiringFurtherTesting6 uint32 `json:"number_of_fingerprints_requiring_further_testing_6"`
-	NumberOfFingerprintsOfSuspectedDupes         uint32 `json:"number_of_fingerprints_of_suspected_dupes"`
-}
+// // FingerprintsStat represents stat of fringerprints
+// type FingerprintsStat struct {
+// 	NumberOfFingerprintsRequiringFurtherTesting1 uint32 `json:"number_of_fingerprints_requiring_further_testing_1"`
+// 	NumberOfFingerprintsRequiringFurtherTesting2 uint32 `json:"number_of_fingerprints_requiring_further_testing_2"`
+// 	NumberOfFingerprintsRequiringFurtherTesting3 uint32 `json:"number_of_fingerprints_requiring_further_testing_3"`
+// 	NumberOfFingerprintsRequiringFurtherTesting4 uint32 `json:"number_of_fingerprints_requiring_further_testing_4"`
+// 	NumberOfFingerprintsRequiringFurtherTesting5 uint32 `json:"number_of_fingerprints_requiring_further_testing_5"`
+// 	NumberOfFingerprintsRequiringFurtherTesting6 uint32 `json:"number_of_fingerprints_requiring_further_testing_6"`
+// 	NumberOfFingerprintsOfSuspectedDupes         uint32 `json:"number_of_fingerprints_of_suspected_dupes"`
+// }
 
-// Maxes represents max values
-type Maxes struct {
-	PearsonMax           float32 `json:"pearson_max"`
-	SpearmanMax          float32 `json:"spearman_max"`
-	KendallMax           float32 `json:"kendall_max"`
-	HoeffdingMax         float32 `json:"hoeffding_max"`
-	MutualInformationMax float32 `json:"mutual_information_max"`
-	HsicMax              float32 `json:"hsic_max"`
-	XgbimportanceMax     float32 `json:"xgbimportance_max"`
-}
+// // Maxes represents max values
+// type Maxes struct {
+// 	PearsonMax           float32 `json:"pearson_max"`
+// 	SpearmanMax          float32 `json:"spearman_max"`
+// 	KendallMax           float32 `json:"kendall_max"`
+// 	HoeffdingMax         float32 `json:"hoeffding_max"`
+// 	MutualInformationMax float32 `json:"mutual_information_max"`
+// 	HsicMax              float32 `json:"hsic_max"`
+// 	XgbimportanceMax     float32 `json:"xgbimportance_max"`
+// }
 
-// PerceptualImageHashes represents image hashes from dupe detection service
-type PerceptualImageHashes struct {
-	PDQHash        string `json:"pdq_hash"`
-	PerceptualHash string `json:"perceptual_hash"`
-	AverageHash    string `json:"average_hash"`
-	DifferenceHash string `json:"difference_hash"`
-	NeuralHash     string `json:"neuralhash_hash"`
-}
+// // PerceptualImageHashes represents image hashes from dupe detection service
+// type PerceptualImageHashes struct {
+// 	PDQHash        string `json:"pdq_hash"`
+// 	PerceptualHash string `json:"perceptual_hash"`
+// 	AverageHash    string `json:"average_hash"`
+// 	DifferenceHash string `json:"difference_hash"`
+// 	NeuralHash     string `json:"neuralhash_hash"`
+// }
 
 // ExtractCompressSignedDDAndFingerprints  decompresses & decodes
 // the probe image reply which is: Base64URL(compress(dd_and_fingerprints.signature))
@@ -169,7 +175,7 @@ func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []by
 	return compressed, nil
 }
 
-// GetIDFiles is supposed to generate ID Files for dd_and_fingerprints files and rq_id files
+// GetIDFiles generates ID Files for dd_and_fingerprints files and rq_id files
 // file is b64 encoded file appended with signatures and compressed, ic is the initial counter
 // and max is the number of ids to generate
 func GetIDFiles(file []byte, ic uint32, max uint32) (ids []string, files [][]byte, err error) {

@@ -142,14 +142,9 @@ type NftGetResponseBody struct {
 	// Average pastel rareness score
 	RarenessScore float32 `form:"rareness_score" json:"rareness_score" xml:"rareness_score"`
 	// Is this image likely a duplicate of another known image
-	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
-	// How many matches the scraper found on the first page of the google results
-	MatchesFoundOnFirstPage *uint32 `form:"matches_found_on_first_page,omitempty" json:"matches_found_on_first_page,omitempty" xml:"matches_found_on_first_page,omitempty"`
-	// How many pages of search results the scraper found when searching for this
-	// image
-	NumberOfPagesOfResults *uint32 `form:"number_of_pages_of_results,omitempty" json:"number_of_pages_of_results,omitempty" xml:"number_of_pages_of_results,omitempty"`
-	// URL of the first match on the first page of search results
-	URLOfFirstMatchInPage *string `form:"URL_of_first_match_in_page,omitempty" json:"URL_of_first_match_in_page,omitempty" xml:"URL_of_first_match_in_page,omitempty"`
+	IsLikelyDupe bool `form:"is_likely_dupe" json:"is_likely_dupe" xml:"is_likely_dupe"`
+	// is this nft rare on the internet
+	IsRareOnInternet bool `form:"is_rare_on_internet" json:"is_rare_on_internet" xml:"is_rare_on_internet"`
 	// nsfw score
 	DrawingNsfwScore *float32 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
 	// nsfw score
@@ -162,6 +157,16 @@ type NftGetResponseBody struct {
 	HentaiNsfwScore *float32 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
 	// Preview Image
 	PreviewThumbnail []byte `form:"preview_thumbnail,omitempty" json:"preview_thumbnail,omitempty" xml:"preview_thumbnail,omitempty"`
+	// Base64 Compressed JSON Table of Rare On Internet Summary
+	RareOnInternetSummaryTableJSONB64 *string `form:"rare_on_internet_summary_table_json_b64,omitempty" json:"rare_on_internet_summary_table_json_b64,omitempty" xml:"rare_on_internet_summary_table_json_b64,omitempty"`
+	// Base64 Compressed JSON of Rare On Internet Graph
+	RareOnInternetGraphJSONB64 *string `form:"rare_on_internet_graph_json_b64,omitempty" json:"rare_on_internet_graph_json_b64,omitempty" xml:"rare_on_internet_graph_json_b64,omitempty"`
+	// Base64 Compressed Json of Alternative Rare On Internet Dict
+	AltRareOnInternetDictJSONB64 *string `form:"alt_rare_on_internet_dict_json_b64,omitempty" json:"alt_rare_on_internet_dict_json_b64,omitempty" xml:"alt_rare_on_internet_dict_json_b64,omitempty"`
+	// Minimum Number of Exact Matches on Page
+	MinNumExactMatchesOnPage *uint32 `form:"min_num_exact_matches_on_page,omitempty" json:"min_num_exact_matches_on_page,omitempty" xml:"min_num_exact_matches_on_page,omitempty"`
+	// Earliest Available Date of Internet Results
+	EarliestDateOfResults *string `form:"earliest_date_of_results,omitempty" json:"earliest_date_of_results,omitempty" xml:"earliest_date_of_results,omitempty"`
 	// Thumbnail_1 image
 	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
 	// Thumbnail_2 image
@@ -742,34 +747,37 @@ func NewNftSearchResponseBody(res *nft.NftSearchResult) *NftSearchResponseBody {
 // "nftGet" endpoint of the "nft" service.
 func NewNftGetResponseBody(res *nft.NftDetail) *NftGetResponseBody {
 	body := &NftGetResponseBody{
-		Version:                 res.Version,
-		GreenAddress:            res.GreenAddress,
-		Royalty:                 res.Royalty,
-		StorageFee:              res.StorageFee,
-		NsfwScore:               res.NsfwScore,
-		RarenessScore:           res.RarenessScore,
-		IsLikelyDupe:            res.IsLikelyDupe,
-		MatchesFoundOnFirstPage: res.MatchesFoundOnFirstPage,
-		NumberOfPagesOfResults:  res.NumberOfPagesOfResults,
-		URLOfFirstMatchInPage:   res.URLOfFirstMatchInPage,
-		DrawingNsfwScore:        res.DrawingNsfwScore,
-		NeutralNsfwScore:        res.NeutralNsfwScore,
-		SexyNsfwScore:           res.SexyNsfwScore,
-		PornNsfwScore:           res.PornNsfwScore,
-		HentaiNsfwScore:         res.HentaiNsfwScore,
-		PreviewThumbnail:        res.PreviewThumbnail,
-		Thumbnail1:              res.Thumbnail1,
-		Thumbnail2:              res.Thumbnail2,
-		Txid:                    res.Txid,
-		Title:                   res.Title,
-		Description:             res.Description,
-		Keywords:                res.Keywords,
-		SeriesName:              res.SeriesName,
-		Copies:                  res.Copies,
-		YoutubeURL:              res.YoutubeURL,
-		CreatorPastelID:         res.CreatorPastelID,
-		CreatorName:             res.CreatorName,
-		CreatorWebsiteURL:       res.CreatorWebsiteURL,
+		Version:                           res.Version,
+		GreenAddress:                      res.GreenAddress,
+		Royalty:                           res.Royalty,
+		StorageFee:                        res.StorageFee,
+		NsfwScore:                         res.NsfwScore,
+		RarenessScore:                     res.RarenessScore,
+		IsLikelyDupe:                      res.IsLikelyDupe,
+		IsRareOnInternet:                  res.IsRareOnInternet,
+		DrawingNsfwScore:                  res.DrawingNsfwScore,
+		NeutralNsfwScore:                  res.NeutralNsfwScore,
+		SexyNsfwScore:                     res.SexyNsfwScore,
+		PornNsfwScore:                     res.PornNsfwScore,
+		HentaiNsfwScore:                   res.HentaiNsfwScore,
+		PreviewThumbnail:                  res.PreviewThumbnail,
+		RareOnInternetSummaryTableJSONB64: res.RareOnInternetSummaryTableJSONB64,
+		RareOnInternetGraphJSONB64:        res.RareOnInternetGraphJSONB64,
+		AltRareOnInternetDictJSONB64:      res.AltRareOnInternetDictJSONB64,
+		MinNumExactMatchesOnPage:          res.MinNumExactMatchesOnPage,
+		EarliestDateOfResults:             res.EarliestDateOfResults,
+		Thumbnail1:                        res.Thumbnail1,
+		Thumbnail2:                        res.Thumbnail2,
+		Txid:                              res.Txid,
+		Title:                             res.Title,
+		Description:                       res.Description,
+		Keywords:                          res.Keywords,
+		SeriesName:                        res.SeriesName,
+		Copies:                            res.Copies,
+		YoutubeURL:                        res.YoutubeURL,
+		CreatorPastelID:                   res.CreatorPastelID,
+		CreatorName:                       res.CreatorName,
+		CreatorWebsiteURL:                 res.CreatorWebsiteURL,
 	}
 	return body
 }

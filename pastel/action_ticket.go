@@ -19,6 +19,9 @@ const (
 	ActionTypeCascade = "cascade"
 )
 
+// ActionTicketDatas is a collection of ActionTicketData (Note type here)
+type ActionTicketDatas []ActionTicketData
+
 // ActionTicketData is Pastel Action ticket structure
 type ActionTicketData struct {
 	Type       string                 `json:"type"`

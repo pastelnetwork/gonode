@@ -46,14 +46,47 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 		return errors.New("nil input")
 	}
 
-	// Block
-	if !strings.EqualFold(lhs.Block, rhs.Block) {
-		return errors.Errorf("block not matched: lhs(%s) != rhs(%s)", lhs.Block, rhs.Block)
+	// BlockHash
+	if !strings.EqualFold(lhs.BlockHash, rhs.BlockHash) {
+		return errors.Errorf("block hash not matched: lhs(%s) != rhs(%s)", lhs.BlockHash, rhs.BlockHash)
 	}
 
-	// Principal
-	if !strings.EqualFold(lhs.Principal, rhs.Principal) {
-		return errors.Errorf("principal not matched: lhs(%s) != rhs(%s)", lhs.Principal, rhs.Principal)
+	// BlockHeight
+	if !strings.EqualFold(lhs.BlockHeight, rhs.BlockHeight) {
+		return errors.Errorf("block height not matched: lhs(%s) != rhs(%s)", lhs.BlockHeight, rhs.BlockHeight)
+	}
+
+	// Timestamp
+	if !strings.EqualFold(lhs.TimestampOfRequest, rhs.TimestampOfRequest) {
+		return errors.Errorf("timestamp not matched: lhs(%s) != rhs(%s)", lhs.TimestampOfRequest, rhs.TimestampOfRequest)
+	}
+
+	// SubmitterPastelID
+	if !strings.EqualFold(lhs.SubmitterPastelID, rhs.SubmitterPastelID) {
+		return errors.Errorf("SubmitterPastelID not matched: lhs(%s) != rhs(%s)", lhs.SubmitterPastelID, rhs.SubmitterPastelID)
+	}
+
+	// SN1PastelID
+	if !strings.EqualFold(lhs.SN1PastelID, rhs.SN1PastelID) {
+		return errors.Errorf("SN1PastelID not matched: lhs(%s) != rhs(%s)", lhs.SN1PastelID, rhs.SN1PastelID)
+	}
+	// SN2PastelID
+	if !strings.EqualFold(lhs.SN2PastelID, rhs.SN2PastelID) {
+		return errors.Errorf("SN2PastelID not matched: lhs(%s) != rhs(%s)", lhs.SN2PastelID, rhs.SN2PastelID)
+	}
+	// SN3PastelID
+	if !strings.EqualFold(lhs.SN3PastelID, rhs.SN3PastelID) {
+		return errors.Errorf("SN3PastelID not matched: lhs(%s) != rhs(%s)", lhs.SN3PastelID, rhs.SN3PastelID)
+	}
+
+	// IsOpenAPIRequest
+	if lhs.IsOpenAPIRequest != rhs.IsOpenAPIRequest {
+		return errors.Errorf("IsOpenAPIRequest not matched: lhs(%t) != rhs(%t)", lhs.IsOpenAPIRequest, rhs.IsOpenAPIRequest)
+	}
+
+	// OpenAPISubsetID
+	if !strings.EqualFold(lhs.OpenAPISubsetID, rhs.OpenAPISubsetID) {
+		return errors.Errorf("OpenAPISubsetID not matched: lhs(%s) != rhs(%s)", lhs.OpenAPISubsetID, rhs.OpenAPISubsetID)
 	}
 
 	// DupeDetectionSystemVersion
@@ -71,9 +104,27 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 		return errors.Errorf("is_rare_on_internet not matched: lhs(%t) != rhs(%t)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
 	}
 
-	//RarenessScores
-	if err := CompareRarenessScores(lhs.RarenessScores, rhs.RarenessScores); err != nil {
-		return err
+	// OverallRarenessScore
+	if !compareFloat(lhs.OverallRarenessScore, rhs.OverallRarenessScore) {
+		return errors.Errorf("OverallRarenessScore do not match: lhs(%f) != rhs(%f)", lhs.OverallRarenessScore, rhs.OverallRarenessScore)
+	}
+
+	// PctOfTop10MostSimilarWithDupeProbAbove25pct
+	if !compareFloat(lhs.PctOfTop10MostSimilarWithDupeProbAbove25pct, rhs.PctOfTop10MostSimilarWithDupeProbAbove25pct) {
+		return errors.Errorf("PctOfTop10MostSimilarWithDupeProbAbove25pct do not match: lhs(%f) != rhs(%f)", lhs.PctOfTop10MostSimilarWithDupeProbAbove25pct, rhs.PctOfTop10MostSimilarWithDupeProbAbove25pct)
+	}
+	// PctOfTop10MostSimilarWithDupeProbAbove33pct
+	if !compareFloat(lhs.PctOfTop10MostSimilarWithDupeProbAbove33pct, rhs.PctOfTop10MostSimilarWithDupeProbAbove33pct) {
+		return errors.Errorf("PctOfTop10MostSimilarWithDupeProbAbove33pct do not match: lhs(%f) != rhs(%f)", lhs.PctOfTop10MostSimilarWithDupeProbAbove33pct, rhs.PctOfTop10MostSimilarWithDupeProbAbove33pct)
+	}
+	// PctOfTop10MostSimilarWithDupeProbAbove50pct
+	if !compareFloat(lhs.PctOfTop10MostSimilarWithDupeProbAbove50pct, rhs.PctOfTop10MostSimilarWithDupeProbAbove50pct) {
+		return errors.Errorf("PctOfTop10MostSimilarWithDupeProbAbove50pct do not match: lhs(%f) != rhs(%f)", lhs.PctOfTop10MostSimilarWithDupeProbAbove50pct, rhs.PctOfTop10MostSimilarWithDupeProbAbove50pct)
+	}
+
+	// RarenessScoresTableJSONCompressedB64
+	if !strings.EqualFold(lhs.RarenessScoresTableJSONCompressedB64, rhs.RarenessScoresTableJSONCompressedB64) {
+		return errors.Errorf("RarenessScoresTableJSONCompressedB64 not matched: lhs(%s) != rhs(%s)", lhs.RarenessScoresTableJSONCompressedB64, rhs.RarenessScoresTableJSONCompressedB64)
 	}
 
 	//InternetRareness
@@ -96,59 +147,50 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 		return errors.New("image_fingerprint_of_candidate_image_file nsfw score do not match")
 	}
 
-	//alternative_nsfw_scores
-	if err := CompareFingerprintsStat(lhs.FingerprintsStat, rhs.FingerprintsStat); err != nil {
-		return err
-	}
-
 	//hash_of_candidate_image_file
 	if !reflect.DeepEqual(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {
 		return errors.New("image hash do not match")
 	}
 
-	//perceptual_image_hashes
-	if err := ComparePerceptualImageHashes(lhs.PerceptualImageHashes, rhs.PerceptualImageHashes); err != nil {
-		return errors.Errorf("image hashes do not match: %w", err)
-	}
+	// //perceptual_image_hashes
+	// if err := ComparePerceptualImageHashes(lhs.PerceptualImageHashes, rhs.PerceptualImageHashes); err != nil {
+	// 	return errors.Errorf("image hashes do not match: %w", err)
+	// }
 
-	//perceptual_hash_overlap_count
-	if lhs.PerceptualHashOverlapCount != rhs.PerceptualHashOverlapCount {
-		return errors.Errorf("perceptual_hash_overlap_count not matched: lhs(%d) != rhs(%d)", lhs.PerceptualHashOverlapCount, rhs.PerceptualHashOverlapCount)
-	}
+	// //maxes
+	// if err := CompareMaxes(lhs.Maxes, rhs.Maxes); err != nil {
+	// 	return err
+	// }
 
-	//maxes
-	if err := CompareMaxes(lhs.Maxes, rhs.Maxes); err != nil {
-		return err
-	}
-
-	//percentile
-	return ComparePercentile(lhs.Percentile, rhs.Percentile)
+	// //percentile
+	// return ComparePercentile(lhs.Percentile, rhs.Percentile)
+	return nil
 }
 
 // CompareRarenessScores  return nil if two RarenessScores are equal
-func CompareRarenessScores(lhs *RarenessScores, rhs *RarenessScores) error {
-	if lhs == nil || rhs == nil {
-		return errors.New("nil rareness_scores")
-	}
+// func CompareRarenessScores(lhs *RarenessScores, rhs *RarenessScores) error {
+// 	if lhs == nil || rhs == nil {
+// 		return errors.New("nil rareness_scores")
+// 	}
 
-	if !compareFloat(lhs.CombinedRarenessScore, rhs.CombinedRarenessScore) {
-		return errors.Errorf("combined_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.CombinedRarenessScore, rhs.CombinedRarenessScore)
-	}
+// 	if !compareFloat(lhs.CombinedRarenessScore, rhs.CombinedRarenessScore) {
+// 		return errors.Errorf("combined_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.CombinedRarenessScore, rhs.CombinedRarenessScore)
+// 	}
 
-	if !compareFloat(lhs.XgboostPredictedRarenessScore, rhs.XgboostPredictedRarenessScore) {
-		return errors.Errorf("xgboost_predicted_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.XgboostPredictedRarenessScore, rhs.XgboostPredictedRarenessScore)
-	}
+// 	if !compareFloat(lhs.XgboostPredictedRarenessScore, rhs.XgboostPredictedRarenessScore) {
+// 		return errors.Errorf("xgboost_predicted_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.XgboostPredictedRarenessScore, rhs.XgboostPredictedRarenessScore)
+// 	}
 
-	if !compareFloat(lhs.NnPredictedRarenessScore, rhs.NnPredictedRarenessScore) {
-		return errors.Errorf("nn_predicted_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.NnPredictedRarenessScore, rhs.NnPredictedRarenessScore)
-	}
+// 	if !compareFloat(lhs.NnPredictedRarenessScore, rhs.NnPredictedRarenessScore) {
+// 		return errors.Errorf("nn_predicted_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.NnPredictedRarenessScore, rhs.NnPredictedRarenessScore)
+// 	}
 
-	if !compareFloat(lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore) {
-		return errors.Errorf("overall_average_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore)
-	}
+// 	if !compareFloat(lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore) {
+// 		return errors.Errorf("overall_average_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 // CompareInternetRareness return nil if two InternetRareness are equal
 func CompareInternetRareness(lhs *InternetRareness, rhs *InternetRareness) error {
@@ -156,16 +198,24 @@ func CompareInternetRareness(lhs *InternetRareness, rhs *InternetRareness) error
 		return errors.New("nil internet_rareness")
 	}
 
-	if lhs.MatchesFoundOnFirstPage != rhs.MatchesFoundOnFirstPage {
-		return errors.Errorf("matches_found_on_first_page not matched: lhs(%d) != rhs(%d)", lhs.MatchesFoundOnFirstPage, rhs.MatchesFoundOnFirstPage)
+	if !strings.EqualFold(lhs.RareOnInternetSummaryTableAsJSONCompressedB64, rhs.RareOnInternetSummaryTableAsJSONCompressedB64) {
+		return errors.Errorf("RareOnInternetSummaryTableAsJSONCompressedB64 not matched: lhs(%s) != rhs(%s)", lhs.RareOnInternetSummaryTableAsJSONCompressedB64, rhs.RareOnInternetSummaryTableAsJSONCompressedB64)
 	}
 
-	if lhs.NumberOfPagesOfResults != rhs.NumberOfPagesOfResults {
-		return errors.Errorf("number_of_pages_of_results not matched: lhs(%d) != rhs(%d)", lhs.NumberOfPagesOfResults, rhs.NumberOfPagesOfResults)
+	if !strings.EqualFold(lhs.RareOnInternetGraphJSONCompressedB64, rhs.RareOnInternetGraphJSONCompressedB64) {
+		return errors.Errorf("RareOnInternetGraphJSONCompressedB64 not matched: lhs(%s) != rhs(%s)", lhs.RareOnInternetGraphJSONCompressedB64, rhs.RareOnInternetGraphJSONCompressedB64)
 	}
 
-	if !strings.EqualFold(lhs.URLOfFirstMatchInPage, rhs.URLOfFirstMatchInPage) {
-		return errors.Errorf("url_of_first_match_in_page not matched: lhs(%s) != rhs(%s)", lhs.URLOfFirstMatchInPage, rhs.URLOfFirstMatchInPage)
+	if !strings.EqualFold(lhs.AlternativeRareOnInternetDictAsJSONCompressedB64, rhs.AlternativeRareOnInternetDictAsJSONCompressedB64) {
+		return errors.Errorf("AlternativeRareOnInternetDictAsJSONCompressedB64 not matched: lhs(%s) != rhs(%s)", lhs.AlternativeRareOnInternetDictAsJSONCompressedB64, rhs.AlternativeRareOnInternetDictAsJSONCompressedB64)
+	}
+
+	if lhs.MinNumberOfExactMatchesInPage != rhs.MinNumberOfExactMatchesInPage {
+		return errors.Errorf("MinNumberOfExactMatchesInPage not matched: lhs(%d) != rhs(%d)", lhs.MinNumberOfExactMatchesInPage, rhs.MinNumberOfExactMatchesInPage)
+	}
+
+	if !strings.EqualFold(lhs.EarliestAvailableDateOfInternetResults, rhs.EarliestAvailableDateOfInternetResults) {
+		return errors.Errorf("EarliestAvailableDateOfInternetResults not matched: lhs(%s) != rhs(%s)", lhs.EarliestAvailableDateOfInternetResults, rhs.EarliestAvailableDateOfInternetResults)
 	}
 	return nil
 }
@@ -195,124 +245,124 @@ func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScores, rhs *AlternativeNSF
 }
 
 // CompareFingerprintsStat compares two FingerprintsStat
-func CompareFingerprintsStat(lhs *FingerprintsStat, rhs *FingerprintsStat) error {
-	if lhs == nil || rhs == nil {
-		return errors.New("nil fingerprints_stat")
-	}
+// func CompareFingerprintsStat(lhs *FingerprintsStat, rhs *FingerprintsStat) error {
+// 	if lhs == nil || rhs == nil {
+// 		return errors.New("nil fingerprints_stat")
+// 	}
 
-	if lhs.NumberOfFingerprintsRequiringFurtherTesting1 != rhs.NumberOfFingerprintsRequiringFurtherTesting1 {
-		return errors.Errorf("number_of_fingerprints_requiring_further_testing_1 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting1, rhs.NumberOfFingerprintsRequiringFurtherTesting1)
-	}
+// 	if lhs.NumberOfFingerprintsRequiringFurtherTesting1 != rhs.NumberOfFingerprintsRequiringFurtherTesting1 {
+// 		return errors.Errorf("number_of_fingerprints_requiring_further_testing_1 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting1, rhs.NumberOfFingerprintsRequiringFurtherTesting1)
+// 	}
 
-	if lhs.NumberOfFingerprintsRequiringFurtherTesting2 != rhs.NumberOfFingerprintsRequiringFurtherTesting2 {
-		return errors.Errorf("number_of_fingerprints_requiring_further_testing_2 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting2, rhs.NumberOfFingerprintsRequiringFurtherTesting2)
-	}
+// 	if lhs.NumberOfFingerprintsRequiringFurtherTesting2 != rhs.NumberOfFingerprintsRequiringFurtherTesting2 {
+// 		return errors.Errorf("number_of_fingerprints_requiring_further_testing_2 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting2, rhs.NumberOfFingerprintsRequiringFurtherTesting2)
+// 	}
 
-	if lhs.NumberOfFingerprintsRequiringFurtherTesting3 != rhs.NumberOfFingerprintsRequiringFurtherTesting3 {
-		return errors.Errorf("number_of_fingerprints_requiring_further_testing_3 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting3, rhs.NumberOfFingerprintsRequiringFurtherTesting3)
-	}
+// 	if lhs.NumberOfFingerprintsRequiringFurtherTesting3 != rhs.NumberOfFingerprintsRequiringFurtherTesting3 {
+// 		return errors.Errorf("number_of_fingerprints_requiring_further_testing_3 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting3, rhs.NumberOfFingerprintsRequiringFurtherTesting3)
+// 	}
 
-	if lhs.NumberOfFingerprintsRequiringFurtherTesting4 != rhs.NumberOfFingerprintsRequiringFurtherTesting4 {
-		return errors.Errorf("number_of_fingerprints_requiring_further_testing_4 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting4, rhs.NumberOfFingerprintsRequiringFurtherTesting4)
-	}
+// 	if lhs.NumberOfFingerprintsRequiringFurtherTesting4 != rhs.NumberOfFingerprintsRequiringFurtherTesting4 {
+// 		return errors.Errorf("number_of_fingerprints_requiring_further_testing_4 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting4, rhs.NumberOfFingerprintsRequiringFurtherTesting4)
+// 	}
 
-	if lhs.NumberOfFingerprintsRequiringFurtherTesting5 != rhs.NumberOfFingerprintsRequiringFurtherTesting5 {
-		return errors.Errorf("number_of_fingerprints_requiring_further_testing_5 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting5, rhs.NumberOfFingerprintsRequiringFurtherTesting5)
-	}
+// 	if lhs.NumberOfFingerprintsRequiringFurtherTesting5 != rhs.NumberOfFingerprintsRequiringFurtherTesting5 {
+// 		return errors.Errorf("number_of_fingerprints_requiring_further_testing_5 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting5, rhs.NumberOfFingerprintsRequiringFurtherTesting5)
+// 	}
 
-	if lhs.NumberOfFingerprintsRequiringFurtherTesting6 != rhs.NumberOfFingerprintsRequiringFurtherTesting6 {
-		return errors.Errorf("number_of_fingerprints_requiring_further_testing_6 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting6, rhs.NumberOfFingerprintsRequiringFurtherTesting6)
-	}
+// 	if lhs.NumberOfFingerprintsRequiringFurtherTesting6 != rhs.NumberOfFingerprintsRequiringFurtherTesting6 {
+// 		return errors.Errorf("number_of_fingerprints_requiring_further_testing_6 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting6, rhs.NumberOfFingerprintsRequiringFurtherTesting6)
+// 	}
 
-	if lhs.NumberOfFingerprintsOfSuspectedDupes != rhs.NumberOfFingerprintsOfSuspectedDupes {
-		return errors.Errorf("number_of_fingerprints_of_suspected_dupes not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsOfSuspectedDupes, rhs.NumberOfFingerprintsOfSuspectedDupes)
-	}
-	return nil
-}
+// 	if lhs.NumberOfFingerprintsOfSuspectedDupes != rhs.NumberOfFingerprintsOfSuspectedDupes {
+// 		return errors.Errorf("number_of_fingerprints_of_suspected_dupes not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsOfSuspectedDupes, rhs.NumberOfFingerprintsOfSuspectedDupes)
+// 	}
+// 	return nil
+// }
 
-// ComparePerceptualImageHashes return nil if two PerceptualImageHashes are equal
-func ComparePerceptualImageHashes(lhs *PerceptualImageHashes, rhs *PerceptualImageHashes) error {
-	if lhs == nil || rhs == nil {
-		return errors.New("nil perceptual_image_hashes")
-	}
+// // ComparePerceptualImageHashes return nil if two PerceptualImageHashes are equal
+// func ComparePerceptualImageHashes(lhs *PerceptualImageHashes, rhs *PerceptualImageHashes) error {
+// 	if lhs == nil || rhs == nil {
+// 		return errors.New("nil perceptual_image_hashes")
+// 	}
 
-	if !strings.EqualFold(lhs.PDQHash, rhs.PDQHash) {
-		return errors.Errorf("pdq_hash not matched: lhs(%s) != rhs(%s)", lhs.PDQHash, rhs.PDQHash)
-	}
-	if !strings.EqualFold(lhs.PerceptualHash, rhs.PerceptualHash) {
-		return errors.Errorf("perceptual_hash not matched: lhs(%s) != rhs(%s)", lhs.PerceptualHash, rhs.PerceptualHash)
-	}
-	if !strings.EqualFold(lhs.AverageHash, rhs.AverageHash) {
-		return errors.Errorf("average_hash not matched: lhs(%s) != rhs(%s)", lhs.AverageHash, rhs.AverageHash)
-	}
-	if !strings.EqualFold(lhs.DifferenceHash, rhs.DifferenceHash) {
-		return errors.Errorf("difference_hash not matched: lhs(%s) != rhs(%s)", lhs.DifferenceHash, rhs.DifferenceHash)
-	}
-	if !strings.EqualFold(lhs.NeuralHash, rhs.NeuralHash) {
-		return errors.Errorf("neuralhash_hash not matched: lhs(%s) != rhs(%s)", lhs.NeuralHash, rhs.NeuralHash)
-	}
-	return nil
-}
+// 	if !strings.EqualFold(lhs.PDQHash, rhs.PDQHash) {
+// 		return errors.Errorf("pdq_hash not matched: lhs(%s) != rhs(%s)", lhs.PDQHash, rhs.PDQHash)
+// 	}
+// 	if !strings.EqualFold(lhs.PerceptualHash, rhs.PerceptualHash) {
+// 		return errors.Errorf("perceptual_hash not matched: lhs(%s) != rhs(%s)", lhs.PerceptualHash, rhs.PerceptualHash)
+// 	}
+// 	if !strings.EqualFold(lhs.AverageHash, rhs.AverageHash) {
+// 		return errors.Errorf("average_hash not matched: lhs(%s) != rhs(%s)", lhs.AverageHash, rhs.AverageHash)
+// 	}
+// 	if !strings.EqualFold(lhs.DifferenceHash, rhs.DifferenceHash) {
+// 		return errors.Errorf("difference_hash not matched: lhs(%s) != rhs(%s)", lhs.DifferenceHash, rhs.DifferenceHash)
+// 	}
+// 	if !strings.EqualFold(lhs.NeuralHash, rhs.NeuralHash) {
+// 		return errors.Errorf("neuralhash_hash not matched: lhs(%s) != rhs(%s)", lhs.NeuralHash, rhs.NeuralHash)
+// 	}
+// 	return nil
+// }
 
-// CompareMaxes return nil if two Maxes are equal
-func CompareMaxes(lhs *Maxes, rhs *Maxes) error {
-	if lhs == nil || rhs == nil {
-		return errors.New("nil maxes")
-	}
+// // CompareMaxes return nil if two Maxes are equal
+// func CompareMaxes(lhs *Maxes, rhs *Maxes) error {
+// 	if lhs == nil || rhs == nil {
+// 		return errors.New("nil maxes")
+// 	}
 
-	if !compareFloat(lhs.PearsonMax, rhs.PearsonMax) {
-		return errors.Errorf("pearson_max not matched: lhs(%f) != rhs(%f)", lhs.PearsonMax, rhs.PearsonMax)
-	}
-	if !compareFloat(lhs.SpearmanMax, rhs.SpearmanMax) {
-		return errors.Errorf("spearman_max not matched: lhs(%f) != rhs(%f)", lhs.SpearmanMax, rhs.SpearmanMax)
-	}
-	if !compareFloat(lhs.KendallMax, rhs.KendallMax) {
-		return errors.Errorf("kendall_max not matched: lhs(%f) != rhs(%f)", lhs.KendallMax, rhs.KendallMax)
-	}
-	if !compareFloat(lhs.HoeffdingMax, rhs.HoeffdingMax) {
-		return errors.Errorf("hoeffding_maxnot matched: lhs(%f) != rhs(%f)", lhs.HoeffdingMax, rhs.HoeffdingMax)
-	}
-	if !compareFloat(lhs.MutualInformationMax, rhs.MutualInformationMax) {
-		return errors.Errorf("mutual_information_max not matched: lhs(%f) != rhs(%f)", lhs.MutualInformationMax, rhs.MutualInformationMax)
-	}
-	if !compareFloat(lhs.HsicMax, rhs.HsicMax) {
-		return errors.Errorf("hsic_max not matched: lhs(%f) != rhs(%f)", lhs.HsicMax, rhs.HsicMax)
-	}
-	if !compareFloat(lhs.XgbimportanceMax, rhs.XgbimportanceMax) {
-		return errors.Errorf("xgbimportance_max not matched: lhs(%f) != rhs(%f)", lhs.XgbimportanceMax, rhs.XgbimportanceMax)
-	}
-	return nil
-}
+// 	if !compareFloat(lhs.PearsonMax, rhs.PearsonMax) {
+// 		return errors.Errorf("pearson_max not matched: lhs(%f) != rhs(%f)", lhs.PearsonMax, rhs.PearsonMax)
+// 	}
+// 	if !compareFloat(lhs.SpearmanMax, rhs.SpearmanMax) {
+// 		return errors.Errorf("spearman_max not matched: lhs(%f) != rhs(%f)", lhs.SpearmanMax, rhs.SpearmanMax)
+// 	}
+// 	if !compareFloat(lhs.KendallMax, rhs.KendallMax) {
+// 		return errors.Errorf("kendall_max not matched: lhs(%f) != rhs(%f)", lhs.KendallMax, rhs.KendallMax)
+// 	}
+// 	if !compareFloat(lhs.HoeffdingMax, rhs.HoeffdingMax) {
+// 		return errors.Errorf("hoeffding_maxnot matched: lhs(%f) != rhs(%f)", lhs.HoeffdingMax, rhs.HoeffdingMax)
+// 	}
+// 	if !compareFloat(lhs.MutualInformationMax, rhs.MutualInformationMax) {
+// 		return errors.Errorf("mutual_information_max not matched: lhs(%f) != rhs(%f)", lhs.MutualInformationMax, rhs.MutualInformationMax)
+// 	}
+// 	if !compareFloat(lhs.HsicMax, rhs.HsicMax) {
+// 		return errors.Errorf("hsic_max not matched: lhs(%f) != rhs(%f)", lhs.HsicMax, rhs.HsicMax)
+// 	}
+// 	if !compareFloat(lhs.XgbimportanceMax, rhs.XgbimportanceMax) {
+// 		return errors.Errorf("xgbimportance_max not matched: lhs(%f) != rhs(%f)", lhs.XgbimportanceMax, rhs.XgbimportanceMax)
+// 	}
+// 	return nil
+// }
 
-// ComparePercentile return nil if two Percentile are equal
-func ComparePercentile(lhs *Percentile, rhs *Percentile) error {
-	if lhs == nil || rhs == nil {
-		return errors.New("nil percentile")
-	}
+// // ComparePercentile return nil if two Percentile are equal
+// func ComparePercentile(lhs *Percentile, rhs *Percentile) error {
+// 	if lhs == nil || rhs == nil {
+// 		return errors.New("nil percentile")
+// 	}
 
-	if !compareFloat(lhs.PearsonTop1BpsPercentile, rhs.PearsonTop1BpsPercentile) {
-		return errors.Errorf("pearson_top_1_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.PearsonTop1BpsPercentile, rhs.PearsonTop1BpsPercentile)
-	}
-	if !compareFloat(lhs.SpearmanTop1BpsPercentile, rhs.SpearmanTop1BpsPercentile) {
-		return errors.Errorf("spearman_top_1_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.SpearmanTop1BpsPercentile, rhs.SpearmanTop1BpsPercentile)
-	}
-	if !compareFloat(lhs.KendallTop1BpsPercentile, rhs.KendallTop1BpsPercentile) {
-		return errors.Errorf("kendall_top_1_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.KendallTop1BpsPercentile, rhs.KendallTop1BpsPercentile)
-	}
-	if !compareFloat(lhs.HoeffdingTop10BpsPercentile, rhs.HoeffdingTop10BpsPercentile) {
-		return errors.Errorf("hoeffding_top_10_bps_percentile matched: lhs(%f) != rhs(%f)", lhs.HoeffdingTop10BpsPercentile, rhs.HoeffdingTop10BpsPercentile)
-	}
-	if !compareFloat(lhs.MutualInformationTop100BpsPercentile, rhs.MutualInformationTop100BpsPercentile) {
-		return errors.Errorf("mutual_information_top_100_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.MutualInformationTop100BpsPercentile, rhs.MutualInformationTop100BpsPercentile)
-	}
-	if !compareFloat(lhs.HsicTop100BpsPercentile, rhs.HsicTop100BpsPercentile) {
-		return errors.Errorf("hsic_top_100_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.HsicTop100BpsPercentile, rhs.HsicTop100BpsPercentile)
-	}
-	if !compareFloat(lhs.XgbimportanceTop100BpsPercentile, rhs.XgbimportanceTop100BpsPercentile) {
-		return errors.Errorf("xgbimportance_top_100_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.XgbimportanceTop100BpsPercentile, rhs.XgbimportanceTop100BpsPercentile)
-	}
-	return nil
-}
+// 	if !compareFloat(lhs.PearsonTop1BpsPercentile, rhs.PearsonTop1BpsPercentile) {
+// 		return errors.Errorf("pearson_top_1_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.PearsonTop1BpsPercentile, rhs.PearsonTop1BpsPercentile)
+// 	}
+// 	if !compareFloat(lhs.SpearmanTop1BpsPercentile, rhs.SpearmanTop1BpsPercentile) {
+// 		return errors.Errorf("spearman_top_1_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.SpearmanTop1BpsPercentile, rhs.SpearmanTop1BpsPercentile)
+// 	}
+// 	if !compareFloat(lhs.KendallTop1BpsPercentile, rhs.KendallTop1BpsPercentile) {
+// 		return errors.Errorf("kendall_top_1_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.KendallTop1BpsPercentile, rhs.KendallTop1BpsPercentile)
+// 	}
+// 	if !compareFloat(lhs.HoeffdingTop10BpsPercentile, rhs.HoeffdingTop10BpsPercentile) {
+// 		return errors.Errorf("hoeffding_top_10_bps_percentile matched: lhs(%f) != rhs(%f)", lhs.HoeffdingTop10BpsPercentile, rhs.HoeffdingTop10BpsPercentile)
+// 	}
+// 	if !compareFloat(lhs.MutualInformationTop100BpsPercentile, rhs.MutualInformationTop100BpsPercentile) {
+// 		return errors.Errorf("mutual_information_top_100_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.MutualInformationTop100BpsPercentile, rhs.MutualInformationTop100BpsPercentile)
+// 	}
+// 	if !compareFloat(lhs.HsicTop100BpsPercentile, rhs.HsicTop100BpsPercentile) {
+// 		return errors.Errorf("hsic_top_100_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.HsicTop100BpsPercentile, rhs.HsicTop100BpsPercentile)
+// 	}
+// 	if !compareFloat(lhs.XgbimportanceTop100BpsPercentile, rhs.XgbimportanceTop100BpsPercentile) {
+// 		return errors.Errorf("xgbimportance_top_100_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.XgbimportanceTop100BpsPercentile, rhs.XgbimportanceTop100BpsPercentile)
+// 	}
+// 	return nil
+// }
 
 func compareFloat(l float32, r float32) bool {
 	if compareFloatWithPrecision(l, r, 5.0) {
