@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-const defaultCapacity = 128
+const defaultCapacity = 256
 
 type connectionItem struct {
 	lastAccess time.Time

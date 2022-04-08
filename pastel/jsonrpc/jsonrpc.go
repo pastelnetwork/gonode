@@ -489,7 +489,7 @@ func (client *rpcClient) doBatchCall(rpcRequest []*RPCRequest) ([]*RPCResponse, 
 	}
 
 	// response body empty
-	if rpcResponse == nil || len(rpcResponse) == 0 {
+	if len(rpcResponse) == 0 {
 		// if we have some http error, return it
 		if httpResponse.StatusCode >= 400 {
 			return nil, &HTTPError{
