@@ -519,7 +519,7 @@ func (s *service) getRecordCount(ctx context.Context) (int64, error) {
 
 }
 
-// Stats return status of dupde detection
+// Stats return status of dupe detection
 func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	stats := map[string]interface{}{}
 
@@ -540,6 +540,7 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	return stats, nil
 }
 
+// NewService returns a new ddscan service
 func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client) (Service, error) {
 	file := config.DataFile
 	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
