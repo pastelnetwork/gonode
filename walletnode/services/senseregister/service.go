@@ -97,7 +97,7 @@ func (service *SenseRegistrationService) StoreFile(ctx context.Context, fileName
 }
 
 // ValidateDetailsAndCalculateFee stores file into walletnode file storage
-func (service *SenseRegistrationService) ValidateDetailsAndCalculateFee(ctx context.Context, fileID string, fileSignature string, pastelID string) (float64, error) {
+func (service *SenseRegistrationService) ValidateDetailsAndCalculateFee(ctx context.Context, fileID string /*, fileSignature string, pastelID string*/) (float64, error) {
 	fileData, err := service.ImageHandler.GetImgData(fileID)
 	if err != nil {
 		return 0.0, err
@@ -105,19 +105,20 @@ func (service *SenseRegistrationService) ValidateDetailsAndCalculateFee(ctx cont
 
 	fileDataInMb := int64(len(fileData)) / (1024 * 1024)
 
-	// Validate image signature
-	ok, err := service.pastelHandler.VerifySignature(ctx,
-		fileData,
-		fileSignature,
-		pastelID,
-		pastel.SignAlgorithmED448)
-	if err != nil {
-		return 0.0, err
-	}
-	if !ok {
-		return 0.0, errors.Errorf("Signature doesn't match")
-	}
-
+	/*	THIS IS NOT NEEDED ANYMORE (AYK)
+		// Validate image signature
+		ok, err := service.pastelHandler.VerifySignature(ctx,
+			fileData,
+			fileSignature,
+			pastelID,
+			pastel.SignAlgorithmED448)
+		if err != nil {
+			return 0.0, err
+		}
+		if !ok {
+			return 0.0, errors.Errorf("Signature doesn't match")
+		}
+	*/
 	return service.pastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
 }
 

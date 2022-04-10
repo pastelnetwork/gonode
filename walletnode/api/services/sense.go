@@ -65,7 +65,7 @@ func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.Upload
 // ActionDetails - Starts an action data task
 func (service *SenseAPIHandler) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
 
-	fee, err := service.register.ValidateDetailsAndCalculateFee(ctx, p.ImageID, p.ActionDataSignature, p.PastelID)
+	fee, err := service.register.ValidateDetailsAndCalculateFee(ctx, p.ImageID /*, p.ActionDataSignature, p.PastelID*/)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}

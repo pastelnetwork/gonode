@@ -65,7 +65,7 @@ func (service *CascadeAPIHandler) UploadImage(ctx context.Context, p *cascade.Up
 // ActionDetails - Starts an action data task
 func (service *CascadeAPIHandler) ActionDetails(ctx context.Context, p *cascade.ActionDetailsPayload) (res *cascade.ActionDetailResult, err error) {
 
-	fee, err := service.register.ValidateDetailsAndCalculateFee(ctx, p.ImageID, p.ActionDataSignature, p.PastelID)
+	fee, err := service.register.ValidateDetailsAndCalculateFee(ctx, p.ImageID /*, p.ActionDataSignature, p.PastelID*/)
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(err)
 	}
