@@ -29,6 +29,7 @@ type NftDownloadingTask struct {
 	*NftDownloaderService
 
 	RQSymbolsDir string
+	ttype        string
 }
 
 // Run starts the task
@@ -111,31 +112,10 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 		return nil, errors.Errorf("wrong status: %w", err)
 	}
 
-	regTicket, err := task.PastelClient.RegTicket(ctx, txid)
-	if err != nil {
-		log.WithContext(ctx).WithField("txid", txid).Error("Could not find regticket with txid")
-		return nil, errors.Errorf("Bad txid: %s", err)
-	}
+	info := task.getTicketInfo(ctx, txid)
 
-	//decode the nft ticket
-	nftTicket := &pastel.NFTTicket{}
-	json.Unmarshal(regTicket.RegTicketData.NFTTicket, nftTicket)
-
-	//decode the appticketdata
-	appTicketData, err := b85.Decode(nftTicket.AppTicket)
-	if err != nil {
-		log.Warnf("b85 decoding failed, trying to base64 decode - err: %v", err)
-		appTicketData, err = base64.StdEncoding.DecodeString(regTicket.RegTicketData.NFTTicketData.AppTicket)
-		if err != nil {
-			return nil, fmt.Errorf("b64 decode: %v", err)
-		}
-	}
-
-	appTicket := &pastel.AppTicket{}
-	json.Unmarshal(appTicketData, appTicket)
-
-	DDAndFingerprintsIDs := appTicket.DDAndFingerprintsIDs
-	log.WithContext(ctx).WithField("ddandfpids", DDAndFingerprintsIDs).WithField("NFTTicket", nftTicket).Println("Found dd and fp ids")
+	DDAndFingerprintsIDs := info.ddAndFpIDs
+	log.WithContext(ctx).WithField("ddandfpids", info.ddAndFpIDs).Info("Found dd and fp ids")
 
 	//utility function for getting the DD and Fingerprint Details given
 	//	a list of IDs (presumably from AppTicketData's DDAndFingerprintIDs), fingerprint IC, and fingerprint max
@@ -189,39 +169,6 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 	return nil, errors.Errorf("could not get dd and fingerprints for any file tested")
 }
 
-//utility functions to download dupe detection and fingerprint files
-// //
-// func (service *NftSearchingService) findAndConnectToTopValidSupernode(ctx context.Context, pastelID string, passphrase string) (node.ConnectionInterface, error) {
-// 	mns, err := service.pastelHandler.PastelClient.MasterNodesTop(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	topAddress := ""
-// 	gotANode := false
-// 	for _, mn := range mns {
-// 		if !gotANode && mn.ExtKey == "" || mn.ExtAddress == "" {
-// 			continue
-// 		}
-
-// 		// Ensures that the PastelId(mn.ExtKey) of MN node is registered
-// 		_, err = service.pastelHandler.PastelClient.FindTicketByID(ctx, mn.ExtKey)
-// 		if err != nil {
-// 			log.WithContext(ctx).WithField("mn", mn).Warn("FindTicketByID() failed")
-// 			continue
-// 		}
-// 		gotANode = true
-// 		topAddress = mn.ExtAddress
-// 	}
-// 	alts := &alts.SecInfo{
-// 		PastelID:   pastelID,
-// 		PassPhrase: passphrase,
-// 		Algorithm:  "ed448",
-// 	}
-
-// 	conn, err := service.nodeClient.Connect(ctx, topAddress, alts)
-// 	return conn, err
-// }
-
 //utility function for getting the DD and Fingerprint Details given
 //	a list of IDs (presumably from AppTicketData's DDAndFingerprintIDs), fingerprint IC, and fingerprint max
 //1) iterate over DDAndFingerPrintsIDs to try to get the file from the p2p network
@@ -232,41 +179,26 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 //6) try to JSON decode into a pastel.DDAndFingerprints
 //7) if all these are successful, return this struct
 //8) else, something got messed up somewhere so keep iterating through the files until successful
-// func (service *NftSearchingService) GetDDAndFingerprintDetailsFromAppTicketDetails(ctx context.Context, DDAndFingerprintsIDs []string) (*pastel.DDAndFingerprints, error) {
-//connect to a node
-// conn, err := service.findAndConnectToTopValidSupernode(ctx, opts.Configs.PastelID, opts.Configs.PassPhrase)
-// if err != nil {
-// 	log.WithContext(ctx).Warn("Failed to connect to supernode for ")
-// }
 
-// successfulDecoding := false
-// for i := 0; i < len(DDAndFingerprintsIDs) && !successfulDecoding; i++ {
-// 	file, err := conn.DownloadFile().DownloadFile(ctx, []byte(DDAndFingerprintsIDs[i]))
-// 	if err != nil {
-// 		log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails tried to get this file and failed. ")
-// 		continue
-// 	}
-// 	decompressedData, err := zstd.Decompress(nil, file)
-// 	if err != nil {
-// 		log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
-// 		continue
-// 	}
+type restoreInfo struct {
+	pastelID   string
+	rqIDs      []string
+	rqOti      []byte
+	dataHash   []byte
+	ddAndFpIDs []string
+}
 
-// }
-// }
+func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) (info restoreInfo) {
 
-func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string, ttype string) (pastelID string, rqIDs []string,
-	rqOti []byte, dataHash []byte) {
-
-	switch ttype {
-	case pastel.ActionTypeCascade:
+	switch task.ttype {
+	case pastel.ActionTypeCascade, pastel.ActionTypeSense:
 		ticket, err := task.PastelClient.ActionRegTicket(ctx, txid)
 		if err != nil {
 			err = errors.Errorf("could not get action registered ticket: %w, txid: %s", err, txid)
 			task.UpdateStatus(common.StatusNftRegGettingFailed)
 			return
 		}
-		fmt.Println("got ticket: ", ticket)
+
 		actionTicket, err := pastel.DecodeActionTicket([]byte(ticket.ActionTicketData.ActionTicket))
 		if err != nil {
 			err = errors.Errorf("cloud not decode action ticket: %w", err)
@@ -276,17 +208,29 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string, 
 		ticket.ActionTicketData.ActionTicketData = *actionTicket
 
 		log.WithContext(ctx).Debugf("Art ticket: %s", string(ticket.ActionTicketData.ActionTicket))
-		cTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
-		if err != nil {
-			err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
-			task.UpdateStatus(common.StatusNftRegDecodingFailed)
-			return
-		}
 
-		pastelID = ticket.ActionTicketData.ActionTicketData.Caller
-		rqIDs = cTicket.RQIDs
-		rqOti = cTicket.RQOti
-		dataHash = cTicket.DataHash
+		if task.ttype == pastel.ActionTypeCascade {
+			cTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
+			if err != nil {
+				err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
+				task.UpdateStatus(common.StatusNftRegDecodingFailed)
+				return
+			}
+
+			info.pastelID = ticket.ActionTicketData.ActionTicketData.Caller
+			info.rqIDs = cTicket.RQIDs
+			info.rqOti = cTicket.RQOti
+			info.dataHash = cTicket.DataHash
+		} else {
+			sTicket, err := ticket.ActionTicketData.ActionTicketData.APISenseTicket()
+			if err != nil {
+				err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
+				task.UpdateStatus(common.StatusNftRegDecodingFailed)
+				return
+			}
+			info.ddAndFpIDs = sTicket.DDAndFingerprintsIDs
+			info.dataHash = sTicket.DataHash
+		}
 	default:
 		nftRegTicket, err := task.PastelClient.RegTicket(ctx, txid)
 		if err != nil {
@@ -303,13 +247,14 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string, 
 			task.UpdateStatus(common.StatusNftRegDecodingFailed)
 			return
 		}
-		pastelID = nftRegTicket.RegTicketData.NFTTicketData.Author
-		rqIDs = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs
-		rqOti = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQOti
-		dataHash = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.DataHash
+		info.pastelID = nftRegTicket.RegTicketData.NFTTicketData.Author
+		info.rqIDs = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs
+		info.rqOti = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQOti
+		info.dataHash = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.DataHash
+		info.ddAndFpIDs = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
 	}
 
-	return
+	return info
 }
 
 // Download downloads image and return the image.
@@ -332,9 +277,29 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			task.UpdateStatus(common.StatusRequestTooLate)
 			return nil
 		}
+		task.ttype = ttype
 
-		pastelID, rqIDs, rqOti, dataHash := task.getTicketInfo(ctx, txid, ttype)
-		if pastelID == "" {
+		if ttype == pastel.ActionTypeSense {
+			data, err := task.DownloadDDAndFingerprints(ctx, txid)
+			if err != nil {
+				err = errors.Errorf("downloa dd & fingerprints file: %w", err)
+				task.UpdateStatus(common.StatusFileRestoreFailed)
+				return nil
+			}
+
+			file = data
+
+			if len(file) == 0 {
+				err = errors.New("nil restored file")
+				task.UpdateStatus(common.StatusFileEmpty)
+			}
+
+			return nil
+		}
+
+		info := task.getTicketInfo(ctx, txid)
+		pastelID := info.pastelID
+		if info.pastelID == "" {
 			// err in retrieval
 			err = errors.New("getTicketInfo failed")
 			return nil
@@ -392,7 +357,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		// Get the list of "symbols/chunks" from Kademlia by using symbol identifiers from file
 		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_oti)
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-		file, err = task.restoreFile(ctx, rqIDs, rqOti, dataHash)
+		file, err = task.restoreFile(ctx, info.rqIDs, info.rqOti, info.dataHash)
 		if err != nil {
 			err = errors.Errorf("restore file: %w", err)
 			task.UpdateStatus(common.StatusFileRestoreFailed)

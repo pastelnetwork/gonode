@@ -12,6 +12,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"unicode/utf8"
 
 	sense "github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
@@ -386,6 +387,8 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 	return func(r *http.Request) (interface{}, error) {
 		var (
 			txid string
+			pid  string
+			key  string
 			err  error
 		)
 		txid = r.URL.Query().Get("txid")
@@ -398,10 +401,30 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if utf8.RuneCountInString(txid) > 64 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
 		}
+		pid = r.URL.Query().Get("pid")
+		if pid == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("pid", "query string"))
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		key = r.Header.Get("Authorization")
+		if key == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "header"))
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDownloadSenseDownloadPayload(txid)
+		payload := NewDownloadNftDownloadPayload(txid, pid, key)
+		if strings.Contains(payload.Key, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Key, " ", 2)[1]
+			payload.Key = cred
+		}
 
 		return payload, nil
 	}

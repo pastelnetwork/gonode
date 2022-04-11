@@ -106,31 +106,22 @@ var _ = Service("sense", func() {
 	})
 
 	Method("download", func() {
-		Description("Download sense Artifact.")
-		Meta("swagger:summary", "Downloads sense artifact")
+		Description("Download sense result; duplication detection results file.")
+		Meta("swagger:summary", "Download sense result; duplication detection results file.")
 
-		Payload(SenseDownloadPayload)
+		Security(APIKeyAuth)
+
+		Payload(NftDownloadPayload)
 		Result(NftDownloadResult)
 
 		HTTP(func() {
 			GET("/download")
 			Param("txid")
+			Param("pid")
 			// Header("key:Authorization") // Provide the key in Authorization header (default)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
 		})
 	})
-})
-
-// SenseDownloadPayload is Sense download payload.
-var SenseDownloadPayload = Type("SenseDownloadPayload", func() {
-	Attribute("txid", String, func() {
-		Description("Sense Registration Request transaction ID")
-		MinLength(64)
-		MaxLength(64)
-		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
-	})
-
-	Required("txid")
 })

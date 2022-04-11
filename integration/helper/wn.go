@@ -108,6 +108,10 @@ func GetNFTSearchURI(queryParams map[string]string) string {
 	return uri
 }
 
+func GetSenseDownloadURI(baseURI, pid, txid string) string {
+	return fmt.Sprintf("%s/%s?pid=%s&txid=%s", baseURI, "openapi/sense/download", pid, txid)
+}
+
 // Cascade
 func GetCascadeUploadImageURI(baseURI string) string {
 	return fmt.Sprintf("%s/%s", baseURI, "openapi/cascade/upload")

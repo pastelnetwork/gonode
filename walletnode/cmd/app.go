@@ -203,7 +203,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	server := api.NewAPIServer(config.API,
 		services.NewNftAPIHandler(nftRegister, nftSearch, nftDownload),
 		// services.NewUserdataAPIHandler(userdataProcess),
-		services.NewSenseAPIHandler(senseRegister),
+		services.NewSenseAPIHandler(senseRegister, nftDownload),
 		services.NewCascadeAPIHandler(cascadeRegister, nftDownload),
 		services.NewSwagger(),
 	)

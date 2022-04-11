@@ -123,6 +123,35 @@ var _ = Describe("Download", func() {
 		})
 	})
 
+	When("user tries to download an existing Sense dd and fp file ", func() {
+		Context("user owns the artifact", func() {
+			It("should download ddAndFp file successfully", func() {
+				downResp, status, err := itHelper.Request(helper.HttpGet, nil,
+					helper.GetSenseDownloadURI(it.WNBaseURI, testconst.ArtistPastelID,
+						testconst.TestSenseRegTXID), nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(status).To(Equal(http.StatusOK))
+
+				Expect(json.Unmarshal(downResp, &downloadRsp)).To(Succeed())
+				Expect(len(fmt.Sprintf("%v", downloadRsp["file"]))).NotTo(BeZero())
+			})
+		})
+
+		Context("user does not own the Artifact", func() {
+			It("should still download ddAndFp file", func() {
+				downResp, status, err := itHelper.Request(helper.HttpGet, nil,
+					// Passing a different PastelID
+					helper.GetSenseDownloadURI(it.WNBaseURI, "j2Y1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gY",
+						testconst.TestSenseRegTXID), nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(status).To(Equal(http.StatusBadRequest))
+
+				Expect(json.Unmarshal(downResp, &downloadRsp)).To(Succeed())
+				Expect(fmt.Sprintf("%v", downloadRsp["message"])).To(Equal("failed to verify ownership"))
+			})
+		})
+	})
+
 	AfterEach(func() {
 		Expect(mocker.CleanupAll()).To(Succeed())
 	})

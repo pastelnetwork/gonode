@@ -499,12 +499,17 @@ func (c *Client) BuildDownloadRequest(ctx context.Context, v interface{}) (*http
 // download server.
 func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
 	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*sense.SenseDownloadPayload)
+		p, ok := v.(*sense.NftDownloadPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("sense", "download", "*sense.SenseDownloadPayload", v)
+			return goahttp.ErrInvalidType("sense", "download", "*sense.NftDownloadPayload", v)
+		}
+		{
+			head := p.Key
+			req.Header.Set("Authorization", head)
 		}
 		values := req.URL.Query()
 		values.Add("txid", p.Txid)
+		values.Add("pid", p.Pid)
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}

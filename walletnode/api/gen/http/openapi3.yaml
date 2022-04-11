@@ -1335,22 +1335,35 @@ paths:
     get:
       tags:
       - sense
-      summary: Downloads sense artifact
-      description: Download sense Artifact.
+      summary: Download sense result; duplication detection results file.
+      description: Download sense result; duplication detection results file.
       operationId: sense#download
       parameters:
       - name: txid
         in: query
-        description: Sense Registration Request transaction ID
+        description: Nft Registration Request transaction ID
         allowEmptyValue: true
         required: true
         schema:
           type: string
-          description: Sense Registration Request transaction ID
+          description: Nft Registration Request transaction ID
           example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
           minLength: 64
           maxLength: 64
         example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      - name: pid
+        in: query
+        description: Owner's PastelID
+        allowEmptyValue: true
+        required: true
+        schema:
+          type: string
+          description: Owner's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
       responses:
         "200":
           description: OK response.
@@ -1412,6 +1425,8 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
+      security:
+      - api_key_header_Authorization: []
   /openapi/sense/start/{image_id}:
     post:
       tags:

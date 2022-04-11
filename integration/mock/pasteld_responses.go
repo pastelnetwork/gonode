@@ -281,6 +281,39 @@ func getRegTickets() map[string][]byte {
 	fmt.Println(string(ctJSON))
 	resp[cascadeTxid] = ctJSON
 
+	senseTxid := "c2fe52d207beaf107ad248612e2ad3580562aa2e0e1a7a567b89997c2fb382po"
+	st := pastel.ActionRegTicket{
+		Height: 1,
+		TXID:   senseTxid,
+		ActionTicketData: pastel.ActionTicketData{
+			Type:       "action-reg",
+			ActionType: "sense",
+			Key1:       "key1",
+			Key2:       "key2",
+			StorageFee: 5,
+			ActionTicketData: pastel.ActionTicket{
+				Caller:     "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
+				ActionType: "sense",
+				BlockNum:   1,
+				BlockHash:  "",
+				APITicketData: pastel.APISenseTicket{
+					DDAndFingerprintsIDs: []string{ddAndFpFileHash},
+					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
+						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+				},
+			},
+		},
+	}
+	actionByte, err = pastel.EncodeActionTicket(&st.ActionTicketData.ActionTicketData)
+	if err != nil {
+		panic(err)
+	}
+	st.ActionTicketData.ActionTicket = actionByte
+
+	stJSON, _ := json.Marshal(st)
+	fmt.Println(string(stJSON))
+	resp[senseTxid] = stJSON
+
 	txid := "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09"
 	ticket := pastel.RegTicket{
 		TXID: txid,
@@ -601,5 +634,4 @@ func storeDDAndFpFile(f []byte, h *helper.ItHelper, uri string) {
 		fmt.Println("Stored dd and fp file at different file hash: " + repl.Key)
 		return
 	}
-	//fmt.Println("Successfully stored dd and fp file")
 }
