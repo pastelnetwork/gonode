@@ -78,7 +78,7 @@ func (task *CascadeRegistrationTask) UploadAsset(_ context.Context, file *files.
 		}
 		task.assetSizeBytes = len(fileBytes)
 
-		fileDataInMb := int64(task.assetSizeBytes) / (1024 * 1024)
+		fileDataInMb := float64(len(fileBytes)) / (1024 * 1024)
 		fee, err := task.PastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
 		if err != nil {
 			err = errors.Errorf("getting estimated fee %w", err)

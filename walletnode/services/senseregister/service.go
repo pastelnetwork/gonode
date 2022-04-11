@@ -103,7 +103,7 @@ func (service *SenseRegistrationService) ValidateDetailsAndCalculateFee(ctx cont
 		return 0.0, err
 	}
 
-	fileDataInMb := int64(len(fileData)) / (1024 * 1024)
+	fileDataInMb := float64(len(fileData)) / (1024 * 1024)
 
 	// Validate image signature
 	ok, err := service.pastelHandler.VerifySignature(ctx,
