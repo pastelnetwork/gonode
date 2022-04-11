@@ -230,16 +230,6 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 	return ddFingerprint, nil
 }
 
-// type dupeDetectionFingerprints struct {
-// 	Sha256HashOfArtImageFile           string    `json:"sha256_hash_of_art_image_file,omitempty"`
-// 	PathToArtImageFile                 string    `json:"path_to_art_image_file,omitempty"`
-// 	ImageFingerprintVector             []float64 `json:"image_fingerprint_vector,omitempty"`
-// 	DatetimeFingerprintAddedToDatabase string `json:"datetime_fingerprint_added_to_database,omitempty"`
-// 	ImageThumbnailAsBase64             string    `json:"image_thumbnail_as_base64_string,omitempty"`
-// 	RequestType                        string    `json:"request_type,omitempty"`
-// 	IDString                           string    `json:"id_String,omitempty"`
-// }
-
 func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFingerprints) error {
 	encodeFloat2Npy := func(v []float64) ([]byte, error) {
 		// create numpy matrix Nx1

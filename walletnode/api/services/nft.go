@@ -268,10 +268,6 @@ func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 	res.MinNumExactMatchesOnPage = &ddAndFpStruct.InternetRareness.MinNumberOfExactMatchesInPage
 	res.EarliestDateOfResults = &ddAndFpStruct.InternetRareness.EarliestAvailableDateOfInternetResults
 
-	// res.MatchesFoundOnFirstPage = &ddAndFpStruct.InternetRareness.MatchesFoundOnFirstPage
-	// res.NumberOfPagesOfResults = &ddAndFpStruct.InternetRareness.NumberOfPagesOfResults
-	// res.URLOfFirstMatchInPage = &ddAndFpStruct.InternetRareness.URLOfFirstMatchInPage
-
 	return res, nil
 }
 
