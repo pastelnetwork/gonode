@@ -236,12 +236,50 @@ var ticketOwnershipResp = `{
 	"trade":"c4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef06"
 }
 `
+var cascadeticketOwnershipResp = `{
+	"NFT":"",
+	"trade":""
+}`
 
 var ddAndFpFile = makeDDAndFpFile()
 var ddAndFpFileHash, _ = helper.GetP2PID(ddAndFpFile)
 
 func getRegTickets() map[string][]byte {
 	resp := make(map[string][]byte)
+	cascadeTxid := "b2fe52d207beaf107ad248612e2ad3580562aa2e0e1a7a567b89997c2fb382cd"
+	ct := pastel.ActionRegTicket{
+		Height: 1,
+		TXID:   cascadeTxid,
+		ActionTicketData: pastel.ActionTicketData{
+			Type:       "action-reg",
+			ActionType: "cascade",
+			Key1:       "key1",
+			Key2:       "key2",
+			StorageFee: 5,
+			ActionTicketData: pastel.ActionTicket{
+				Caller:     "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
+				ActionType: "cascade",
+				BlockNum:   1,
+				BlockHash:  "",
+				APITicketData: pastel.APICascadeTicket{
+					RQIDs: []string{
+						"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
+					},
+					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
+						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+				},
+			},
+		},
+	}
+	actionByte, err := pastel.EncodeActionTicket(&ct.ActionTicketData.ActionTicketData)
+	if err != nil {
+		panic(err)
+	}
+	ct.ActionTicketData.ActionTicket = actionByte
+
+	ctJSON, _ := json.Marshal(ct)
+	fmt.Println(string(ctJSON))
+	resp[cascadeTxid] = ctJSON
 
 	txid := "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09"
 	ticket := pastel.RegTicket{

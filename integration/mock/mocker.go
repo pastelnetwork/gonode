@@ -205,6 +205,13 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock ticket ownership err: %w", err)
 	}
 
+	if err := m.mockServer([]byte(cascadeticketOwnershipResp), addr, "tickets",
+		[]string{"tools", "validateownership", testconst.TestCascadeRegTXID,
+			testconst.ArtistPastelID, "passphrase"}, 3); err != nil {
+
+		return fmt.Errorf("failed to mock ticket ownership err: %w", err)
+	}
+
 	for key, val := range getRegTickets() {
 		if err := m.mockServer(val, addr, "tickets", []string{"get",
 			key}, 20); err != nil {

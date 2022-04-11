@@ -2,22 +2,32 @@ package services
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
+	"fmt"
+	"strings"
 	"time"
+
+	"github.com/pastelnetwork/gonode/pastel"
+
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/cascade/server"
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
+	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload"
 	goahttp "goa.design/goa/v3/http"
+	"goa.design/goa/v3/security"
 )
 
 // CascadeAPIHandler - CascadeAPIHandler service
 type CascadeAPIHandler struct {
 	*Common
 	register *cascaderegister.CascadeRegistrationService
+	download *nftdownload.NftDownloadingService
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
@@ -123,10 +133,55 @@ func (service *CascadeAPIHandler) RegisterTaskState(ctx context.Context, p *casc
 	}
 }
 
+// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+func (service *CascadeAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
+	return ctx, nil
+}
+
+// Download registered NFT
+func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.NftDownloadPayload) (res *cascade.DownloadResult, err error) {
+	log.WithContext(ctx).Info("Start downloading")
+	defer log.WithContext(ctx).Info("Finished downloading")
+	taskID := service.download.AddTask(&nft.NftDownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade)
+	task := service.download.GetTask(taskID)
+	defer task.Cancel()
+
+	sub := task.SubscribeStatus()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, nft.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
+		case status := <-sub():
+			if status.IsFailure() {
+				if strings.Contains(utils.SafeErrStr(task.Error()), "ticket ownership") {
+					return nil, nft.MakeBadRequest(errors.New("failed to verify ownership"))
+				}
+
+				errStr := fmt.Errorf("internal processing error: %s", status.String())
+				if task.Error() != nil {
+					errStr = task.Error()
+				}
+				return nil, nft.MakeInternalServerError(errStr)
+			}
+
+			if status.IsFinal() {
+				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("NFT downloaded")
+				res = &cascade.DownloadResult{
+					File: task.File,
+				}
+
+				return res, nil
+			}
+		}
+	}
+}
+
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.
-func NewCascadeAPIHandler(register *cascaderegister.CascadeRegistrationService) *CascadeAPIHandler {
+func NewCascadeAPIHandler(register *cascaderegister.CascadeRegistrationService, download *nftdownload.NftDownloadingService) *CascadeAPIHandler {
 	return &CascadeAPIHandler{
 		Common:   NewCommon(),
 		register: register,
+		download: download,
 	}
 }

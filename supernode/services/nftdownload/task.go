@@ -255,8 +255,65 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 // }
 // }
 
+func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string, ttype string) (pastelID string, rqIDs []string,
+	rqOti []byte, dataHash []byte) {
+
+	switch ttype {
+	case pastel.ActionTypeCascade:
+		ticket, err := task.PastelClient.ActionRegTicket(ctx, txid)
+		if err != nil {
+			err = errors.Errorf("could not get action registered ticket: %w, txid: %s", err, txid)
+			task.UpdateStatus(common.StatusNftRegGettingFailed)
+			return
+		}
+		fmt.Println("got ticket: ", ticket)
+		actionTicket, err := pastel.DecodeActionTicket([]byte(ticket.ActionTicketData.ActionTicket))
+		if err != nil {
+			err = errors.Errorf("cloud not decode action ticket: %w", err)
+			task.UpdateStatus(common.StatusNftRegDecodingFailed)
+			return
+		}
+		ticket.ActionTicketData.ActionTicketData = *actionTicket
+
+		log.WithContext(ctx).Debugf("Art ticket: %s", string(ticket.ActionTicketData.ActionTicket))
+		cTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
+		if err != nil {
+			err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
+			task.UpdateStatus(common.StatusNftRegDecodingFailed)
+			return
+		}
+
+		pastelID = ticket.ActionTicketData.ActionTicketData.Caller
+		rqIDs = cTicket.RQIDs
+		rqOti = cTicket.RQOti
+		dataHash = cTicket.DataHash
+	default:
+		nftRegTicket, err := task.PastelClient.RegTicket(ctx, txid)
+		if err != nil {
+			err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
+			task.UpdateStatus(common.StatusNftRegGettingFailed)
+			return
+		}
+
+		log.WithContext(ctx).Debugf("Art ticket: %s", string(nftRegTicket.RegTicketData.NFTTicket))
+
+		// Decode Art Request
+		err = task.decodeRegTicket(&nftRegTicket)
+		if err != nil {
+			task.UpdateStatus(common.StatusNftRegDecodingFailed)
+			return
+		}
+		pastelID = nftRegTicket.RegTicketData.NFTTicketData.Author
+		rqIDs = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs
+		rqOti = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQOti
+		dataHash = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.DataHash
+	}
+
+	return
+}
+
 // Download downloads image and return the image.
-func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
+func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string) ([]byte, error) {
 	var err error
 	if err = task.RequiredStatus(common.StatusTaskStarted); err != nil {
 		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
@@ -264,7 +321,6 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 	}
 
 	var file []byte
-	var nftRegTicket pastel.RegTicket
 
 	<-task.NewAction(func(ctx context.Context) error {
 		// Validate timestamp is not older than 10 minutes
@@ -277,24 +333,12 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			return nil
 		}
 
-		// Get Nft Registration ticket by txid
-		nftRegTicket, err = task.PastelClient.RegTicket(ctx, txid)
-		if err != nil {
-			err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
-			task.UpdateStatus(common.StatusNftRegGettingFailed)
+		pastelID, rqIDs, rqOti, dataHash := task.getTicketInfo(ctx, txid, ttype)
+		if pastelID == "" {
+			// err in retrieval
+			err = errors.New("getTicketInfo failed")
 			return nil
 		}
-
-		log.WithContext(ctx).Debugf("Art ticket: %s", string(nftRegTicket.RegTicketData.NFTTicket))
-
-		// Decode Art Request
-		err = task.decodeRegTicket(&nftRegTicket)
-		if err != nil {
-			task.UpdateStatus(common.StatusNftRegDecodingFailed)
-			return nil
-		}
-
-		pastelID := nftRegTicket.RegTicketData.NFTTicketData.Author
 
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
@@ -348,7 +392,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		// Get the list of "symbols/chunks" from Kademlia by using symbol identifiers from file
 		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_oti)
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-		file, err = task.restoreFile(ctx, &nftRegTicket)
+		file, err = task.restoreFile(ctx, rqIDs, rqOti, dataHash)
 		if err != nil {
 			err = errors.Errorf("restore file: %w", err)
 			task.UpdateStatus(common.StatusFileRestoreFailed)
@@ -366,12 +410,12 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 	return file, err
 }
 
-func (task *NftDownloadingTask) restoreFile(ctx context.Context, nftRegTicket *pastel.RegTicket) ([]byte, error) {
+func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqIDs []string, rqOti []byte, dataHash []byte) ([]byte, error) {
 	var file []byte
 	var lastErr error
 	var err error
 
-	if len(nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs) == 0 {
+	if len(rqIDs) == 0 {
 		task.UpdateStatus(common.StatusNftRegTicketInvalid)
 		return file, errors.Errorf("ticket has empty symbol identifier files")
 	}
@@ -388,7 +432,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, nftRegTicket *p
 	}
 	rqService := rqConnection.RaptorQ(rqNodeConfig)
 
-	for _, id := range nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs {
+	for _, id := range rqIDs {
 		var rqIDsData []byte
 		rqIDsData, err = task.P2PClient.Retrieve(ctx, id)
 		if err != nil {
@@ -444,7 +488,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, nftRegTicket *p
 		encodeInfo := rqnode.Encode{
 			Symbols: symbols,
 			EncoderParam: rqnode.EncoderParameters{
-				Oti: nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQOti,
+				Oti: rqOti,
 			},
 		}
 
@@ -462,7 +506,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, nftRegTicket *p
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
 		fileHash := sha3.Sum256(decodeInfo.File)
 
-		if !bytes.Equal(fileHash[:], nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.DataHash) {
+		if !bytes.Equal(fileHash[:], dataHash) {
 			log.WithContext(ctx).WithField("SymbolIDsFileId", id).Warn("hash file mismatched")
 			lastErr = errors.New("hash file mismatched")
 			task.UpdateStatus(common.StatusFileMismatched)

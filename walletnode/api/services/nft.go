@@ -165,7 +165,7 @@ func (service *NftAPIHandler) RegisterTasks(_ context.Context) (res nft.TaskColl
 func (service *NftAPIHandler) Download(ctx context.Context, p *nft.NftDownloadPayload) (res *nft.DownloadResult, err error) {
 	log.WithContext(ctx).Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
-	taskID := service.download.AddTask(p)
+	taskID := service.download.AddTask(p, "")
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
 

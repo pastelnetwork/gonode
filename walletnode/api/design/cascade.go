@@ -104,4 +104,24 @@ var _ = Service("cascade", func() {
 			Response(StatusOK)
 		})
 	})
+
+	Method("download", func() {
+		Description("Download cascade Artifact.")
+		Meta("swagger:summary", "Downloads cascade artifact")
+
+		Security(APIKeyAuth)
+
+		Payload(NftDownloadPayload)
+		Result(NftDownloadResult)
+
+		HTTP(func() {
+			GET("/download")
+			Param("txid")
+			Param("pid")
+			// Header("key:Authorization") // Provide the key in Authorization header (default)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
 })

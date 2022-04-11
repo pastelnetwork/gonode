@@ -22,6 +22,13 @@ const (
 // ActionTicketDatas is a collection of ActionTicketData (Note type here)
 type ActionTicketDatas []ActionTicketData
 
+// ActionRegTicket represents pastel registration ticket.
+type ActionRegTicket struct {
+	Height           int              `json:"height"`
+	TXID             string           `json:"txid"`
+	ActionTicketData ActionTicketData `json:"ticket"`
+}
+
 // ActionTicketData is Pastel Action ticket structure
 type ActionTicketData struct {
 	Type       string                 `json:"type"`

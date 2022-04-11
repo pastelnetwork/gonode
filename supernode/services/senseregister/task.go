@@ -77,7 +77,7 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 		return nil, errors.Errorf("read image file: %w", err)
 	}
 
-	fileDataInMb := int64(len(fileBytes)) / (1024 * 1024)
+	fileDataInMb := float64(len(fileBytes)) / (1024 * 1024)
 	fee, err := task.PastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
 	if err != nil {
 		return nil, errors.Errorf("getting estimated fee %w", err)

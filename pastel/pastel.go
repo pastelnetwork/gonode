@@ -68,6 +68,10 @@ type Client interface {
 	// Command `tickets get <txid>`.
 	RegTicket(ctx context.Context, regTxid string) (RegTicket, error)
 
+	// ActionRegTicket returns NFT registration tickets.
+	// Command `tickets get <txid>`.
+	ActionRegTicket(ctx context.Context, regTxid string) (ActionRegTicket, error)
+
 	// RegTickets returns all NFT registration tickets.
 	// Command `tickets list art`.
 	RegTickets(ctx context.Context) (RegTickets, error)

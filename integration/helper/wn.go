@@ -124,3 +124,7 @@ func GetCascadeStartTaskURI(baseURI, imageID string) string {
 func GetCascadeTaskStateURI(taskID string) string {
 	return fmt.Sprintf("openapi/cascade/start/%s/state", taskID)
 }
+
+func GetCascadeDownloadURI(baseURI, pid, txid string) string {
+	return fmt.Sprintf("%s/%s?pid=%s&txid=%s", baseURI, "openapi/cascade/download", pid, txid)
+}
