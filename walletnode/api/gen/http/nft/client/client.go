@@ -140,9 +140,11 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
+
 		var cancel context.CancelFunc
 		_, cancel = context.WithCancel(ctx)
 		defer cancel()
+
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {
@@ -245,9 +247,11 @@ func (c *Client) NftSearch() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
+
 		var cancel context.CancelFunc
 		_, cancel = context.WithCancel(ctx)
 		defer cancel()
+
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {

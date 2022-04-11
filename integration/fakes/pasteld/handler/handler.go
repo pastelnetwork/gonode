@@ -208,6 +208,7 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 
 		return toRet, nil
 	} else if p.Params[0] == "get" {
+		fmt.Println("params: ", p.Params[len(p.Params)-1], p.Params[len(p.Params)-2])
 		key := "tickets" + "*" + strings.Join(p.Params, "*")
 		data, err := h.store.Get(key)
 		if err != nil {
@@ -216,6 +217,18 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 				Message: jrpc2.ErrorMsg("unable to fetch " + err.Error()),
 				Data:    "fetch failure",
 			}
+		}
+		if p.Params[len(p.Params)-1] == testconst.TestCascadeRegTXID {
+			toRet := ActionRegTicket{}
+			if err := json.Unmarshal(data, &toRet); err != nil {
+				return nil, &jrpc2.ErrorObject{
+					Code:    jrpc2.InternalErrorCode,
+					Message: jrpc2.ErrorMsg("unable to unmarsal " + err.Error()),
+					Data:    "unmarshal failure",
+				}
+			}
+
+			return toRet, nil
 		}
 		toRet := RegTicket{}
 		if err := json.Unmarshal(data, &toRet); err != nil {
@@ -456,6 +469,14 @@ type RegTicketSignatures struct {
 	Mn3     map[string]string `json:"mn3,omitempty"`
 }
 
+// ActionTicketSignatures represents signatures from parties
+type ActionTicketSignatures struct {
+	Principal map[string]string `json:"principal,omitempty"`
+	Mn1       map[string]string `json:"mn1,omitempty"`
+	Mn2       map[string]string `json:"mn2,omitempty"`
+	Mn3       map[string]string `json:"mn3,omitempty"`
+}
+
 // RegTicketData is Pastel Registration ticket structure
 type RegTicketData struct {
 	Type           string              `json:"type"`
@@ -493,4 +514,29 @@ type ActTicketData struct {
 	RegTXID       string `json:"reg_txid"`
 	StorageFee    int    `json:"storage_fee"`
 	Version       int    `json:"version"`
+}
+
+// ActionRegTicket represents pastel registration ticket.
+type ActionRegTicket struct {
+	Height           int              `json:"height"`
+	TXID             string           `json:"txid"`
+	ActionTicketData ActionTicketData `json:"ticket"`
+}
+
+// ActionTicketData is Pastel Action ticket structure
+type ActionTicketData struct {
+	Type       string                 `json:"type"`
+	Version    int                    `json:"version"`
+	ActionType string                 `json:"action_type"`
+	Signatures ActionTicketSignatures `json:"signatures"`
+	Key1       string                 `json:"key1"`
+	Key2       string                 `json:"key2"`
+	// is used to check if the SNs that created this ticket was indeed top SN
+	// when that action call was made
+	CalledAt int `json:"called_at"` // block at which action was requested,
+	// fee in PSL
+	StorageFee int `json:"storage_fee"`
+
+	ActionTicket string `json:"action_ticket"`
+	//ActionTicketData ActionTicket `json:"-"`
 }

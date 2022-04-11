@@ -333,6 +333,7 @@ func (client *Client) ListenOnDownload(arguments ...interface{}) *Client {
 		mock.IsType(string("")),
 		mock.IsType(string("")),
 		mock.IsType(string("")),
+		mock.IsType(string("")),
 		mock.IsType(string(""))).Return(arguments...)
 	return client
 }

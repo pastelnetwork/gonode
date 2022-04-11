@@ -16,6 +16,7 @@ message DownloadRequest {
     string timestamp = 2;
     string signature = 3;
     string ttxid = 4;
+    string ttype = 5;
 }
 
 message DownloadReply {

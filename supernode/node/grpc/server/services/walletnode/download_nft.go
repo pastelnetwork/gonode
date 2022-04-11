@@ -35,7 +35,7 @@ func (service *DownloadNft) Download(m *pb.DownloadRequest, stream pb.DownloadNf
 	defer task.Cancel()
 
 	// Call task download
-	data, err := task.Download(ctx, m.GetTxid(), m.GetTimestamp(), m.GetSignature(), m.GetTtxid())
+	data, err := task.Download(ctx, m.GetTxid(), m.GetTimestamp(), m.GetSignature(), m.GetTtxid(), m.GetTtype())
 	if err != nil {
 		return err
 	}

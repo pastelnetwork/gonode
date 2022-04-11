@@ -30,3 +30,8 @@ func StartProcessingSensePath(imageID string) string {
 func RegisterTaskStateSensePath(taskID string) string {
 	return fmt.Sprintf("/openapi/sense/start/%v/state", taskID)
 }
+
+// DownloadSensePath returns the URL path to the sense service download HTTP endpoint.
+func DownloadSensePath() string {
+	return "/openapi/sense/download"
+}

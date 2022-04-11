@@ -407,7 +407,7 @@ func TestTaskDownload(t *testing.T) {
 
 			go task.RunAction(ctx)
 
-			file, _ := task.Download(ctx, testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid)
+			file, _ := task.Download(ctx, testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid, "")
 
 			assert.Equal(t, testCase.returnFile, file)
 

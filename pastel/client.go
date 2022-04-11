@@ -246,6 +246,17 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 	return ticket, nil
 }
 
+// ActionRegTicket implements pastel.Client.RegTicket
+func (client *client) ActionRegTicket(ctx context.Context, regTxid string) (ActionRegTicket, error) {
+	ticket := ActionRegTicket{}
+
+	if err := client.callFor(ctx, &ticket, "tickets", "get", regTxid); err != nil {
+		return ticket, errors.Errorf("failed to get reg ticket %s: %w", regTxid, err)
+	}
+
+	return ticket, nil
+}
+
 // RegTickets implements pastel.Client.RegTickets
 func (client *client) RegTickets(ctx context.Context) (RegTickets, error) {
 	tickets := RegTickets{}

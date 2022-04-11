@@ -14,7 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/integration/mock"
 )
 
-var _ = Describe("NFTDownload", func() {
+var _ = Describe("Download", func() {
 	var (
 		itHelper    = helper.NewItHelper()
 		mocker      *mock.Mocker
@@ -85,6 +85,35 @@ var _ = Describe("NFTDownload", func() {
 					// Passing a different PastelID
 					helper.GetDownloadURI(it.WNBaseURI, "j2Y1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gY",
 						testconst.TestRegTXID), nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(status).To(Equal(http.StatusBadRequest))
+
+				Expect(json.Unmarshal(downResp, &downloadRsp)).To(Succeed())
+				Expect(fmt.Sprintf("%v", downloadRsp["message"])).To(Equal("failed to verify ownership"))
+			})
+		})
+	})
+
+	When("user tries to download an existing Cascade artifact ", func() {
+		Context("user owns the artifact", func() {
+			It("should download artifact successfully", func() {
+				downResp, status, err := itHelper.Request(helper.HttpGet, nil,
+					helper.GetCascadeDownloadURI(it.WNBaseURI, testconst.ArtistPastelID,
+						testconst.TestCascadeRegTXID), nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(status).To(Equal(http.StatusOK))
+
+				Expect(json.Unmarshal(downResp, &downloadRsp)).To(Succeed())
+				Expect(len(fmt.Sprintf("%v", downloadRsp["file"]))).NotTo(BeZero())
+			})
+		})
+
+		Context("user does not own the Artifact", func() {
+			It("should not download artifact", func() {
+				downResp, status, err := itHelper.Request(helper.HttpGet, nil,
+					// Passing a different PastelID
+					helper.GetCascadeDownloadURI(it.WNBaseURI, "j2Y1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gY",
+						testconst.TestCascadeRegTXID), nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(status).To(Equal(http.StatusBadRequest))
 

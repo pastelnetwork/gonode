@@ -479,3 +479,110 @@ func DecodeRegisterTaskStateResponse(decoder func(*http.Response) goahttp.Decode
 		}
 	}
 }
+
+// BuildDownloadRequest instantiates a HTTP request object with method and path
+// set to call the "cascade" service "download" endpoint
+func (c *Client) BuildDownloadRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DownloadCascadePath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("cascade", "download", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeDownloadRequest returns an encoder for requests sent to the cascade
+// download server.
+func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*cascade.NftDownloadPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("cascade", "download", "*cascade.NftDownloadPayload", v)
+		}
+		{
+			head := p.Key
+			req.Header.Set("Authorization", head)
+		}
+		values := req.URL.Query()
+		values.Add("txid", p.Txid)
+		values.Add("pid", p.Pid)
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeDownloadResponse returns a decoder for responses returned by the
+// cascade download endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeDownloadResponse may return the following errors:
+//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body DownloadResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "download", err)
+			}
+			err = ValidateDownloadResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "download", err)
+			}
+			res := NewDownloadResultOK(&body)
+			return res, nil
+		case http.StatusNotFound:
+			var (
+				body DownloadNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "download", err)
+			}
+			err = ValidateDownloadNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "download", err)
+			}
+			return nil, NewDownloadNotFound(&body)
+		case http.StatusInternalServerError:
+			var (
+				body DownloadInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "download", err)
+			}
+			err = ValidateDownloadInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "download", err)
+			}
+			return nil, NewDownloadInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("cascade", "download", resp.StatusCode, string(body))
+		}
+	}
+}
