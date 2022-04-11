@@ -645,17 +645,30 @@ paths:
     get:
       tags:
       - sense
-      summary: Downloads sense artifact
-      description: Download sense Artifact.
+      summary: Download sense result; duplication detection results file.
+      description: Download sense result; duplication detection results file.
       operationId: sense#download
       parameters:
       - name: txid
         in: query
-        description: Sense Registration Request transaction ID
+        description: Nft Registration Request transaction ID
         required: true
         type: string
         maxLength: 64
         minLength: 64
+      - name: pid
+        in: query
+        description: Owner's PastelID
+        required: true
+        type: string
+        maxLength: 86
+        minLength: 86
+        pattern: ^[a-zA-Z0-9]+$
+      - name: Authorization
+        in: header
+        description: Passphrase of the owner's PastelID
+        required: true
+        type: string
       responses:
         "200":
           description: OK response.
@@ -673,6 +686,8 @@ paths:
             $ref: '#/definitions/SenseDownloadInternalServerErrorResponseBody'
       schemes:
       - http
+      security:
+      - api_key_header_Authorization: []
   /openapi/sense/start/{image_id}:
     post:
       tags:

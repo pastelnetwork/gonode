@@ -75,7 +75,7 @@ func (c *Client) RegisterTaskState(ctx context.Context, p *RegisterTaskStatePayl
 }
 
 // Download calls the "download" endpoint of the "sense" service.
-func (c *Client) Download(ctx context.Context, p *SenseDownloadPayload) (res *DownloadResult, err error) {
+func (c *Client) Download(ctx context.Context, p *NftDownloadPayload) (res *DownloadResult, err error) {
 	var ires interface{}
 	ires, err = c.DownloadEndpoint(ctx, p)
 	if err != nil {

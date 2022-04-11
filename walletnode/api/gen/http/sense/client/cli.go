@@ -178,7 +178,7 @@ func BuildRegisterTaskStatePayload(senseRegisterTaskStateTaskID string) (*sense.
 
 // BuildDownloadPayload builds the payload for the sense download endpoint from
 // CLI flags.
-func BuildDownloadPayload(senseDownloadTxid string) (*sense.SenseDownloadPayload, error) {
+func BuildDownloadPayload(senseDownloadTxid string, senseDownloadPid string, senseDownloadKey string) (*sense.NftDownloadPayload, error) {
 	var err error
 	var txid string
 	{
@@ -193,8 +193,28 @@ func BuildDownloadPayload(senseDownloadTxid string) (*sense.SenseDownloadPayload
 			return nil, err
 		}
 	}
-	v := &sense.SenseDownloadPayload{}
+	var pid string
+	{
+		pid = senseDownloadPid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var key string
+	{
+		key = senseDownloadKey
+	}
+	v := &sense.NftDownloadPayload{}
 	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
 
 	return v, nil
 }

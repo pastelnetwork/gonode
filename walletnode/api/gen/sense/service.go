@@ -12,6 +12,7 @@ import (
 
 	senseviews "github.com/pastelnetwork/gonode/walletnode/api/gen/sense/views"
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/goa/v3/security"
 )
 
 // OpenAPI Sense service
@@ -24,8 +25,14 @@ type Service interface {
 	StartProcessing(context.Context, *StartProcessingPayload) (res *StartProcessingResult, err error)
 	// Streams the state of the registration process.
 	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
-	// Download sense Artifact.
-	Download(context.Context, *SenseDownloadPayload) (res *DownloadResult, err error)
+	// Download sense result; duplication detection results file.
+	Download(context.Context, *NftDownloadPayload) (res *DownloadResult, err error)
+}
+
+// Auther defines the authorization functions to be implemented by the service.
+type Auther interface {
+	// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+	APIKeyAuth(ctx context.Context, key string, schema *security.APIKeyScheme) (context.Context, error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -88,18 +95,21 @@ type Image struct {
 	ExpiresIn string
 }
 
+// NftDownloadPayload is the payload type of the sense service download method.
+type NftDownloadPayload struct {
+	// Nft Registration Request transaction ID
+	Txid string
+	// Owner's PastelID
+	Pid string
+	// Passphrase of the owner's PastelID
+	Key string
+}
+
 // RegisterTaskStatePayload is the payload type of the sense service
 // registerTaskState method.
 type RegisterTaskStatePayload struct {
 	// Task ID of the registration process
 	TaskID string
-}
-
-// SenseDownloadPayload is the payload type of the sense service download
-// method.
-type SenseDownloadPayload struct {
-	// Sense Registration Request transaction ID
-	Txid string
 }
 
 // StartProcessingPayload is the payload type of the sense service

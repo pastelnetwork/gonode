@@ -501,11 +501,13 @@ func NewRegisterTaskStatePayload(taskID string) *sense.RegisterTaskStatePayload 
 	return v
 }
 
-// NewDownloadSenseDownloadPayload builds a sense service download endpoint
+// NewDownloadNftDownloadPayload builds a sense service download endpoint
 // payload.
-func NewDownloadSenseDownloadPayload(txid string) *sense.SenseDownloadPayload {
-	v := &sense.SenseDownloadPayload{}
+func NewDownloadNftDownloadPayload(txid string, pid string, key string) *sense.NftDownloadPayload {
+	v := &sense.NftDownloadPayload{}
 	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
 
 	return v
 }
