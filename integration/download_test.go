@@ -144,10 +144,10 @@ var _ = Describe("Download", func() {
 					helper.GetSenseDownloadURI(it.WNBaseURI, "j2Y1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gY",
 						testconst.TestSenseRegTXID), nil)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(status).To(Equal(http.StatusBadRequest))
+				Expect(status).To(Equal(http.StatusOK))
 
 				Expect(json.Unmarshal(downResp, &downloadRsp)).To(Succeed())
-				Expect(fmt.Sprintf("%v", downloadRsp["message"])).To(Equal("failed to verify ownership"))
+				Expect(len(fmt.Sprintf("%v", downloadRsp["file"]))).NotTo(BeZero())
 			})
 		})
 	})
