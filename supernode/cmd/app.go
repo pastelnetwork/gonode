@@ -32,7 +32,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
-	"github.com/pastelnetwork/gonode/supernode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 )
@@ -234,7 +234,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// business logic services
 	nftRegister := nftregister.NewService(&config.NftRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
-	nftDownload := nftdownload.NewService(&config.NftDownload, pastelClient, p2p, rqClient)
+	nftDownload := download.NewService(&config.NftDownload, pastelClient, p2p, rqClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
 	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, rqClient, nil)

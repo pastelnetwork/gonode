@@ -19,14 +19,12 @@ import (
 type Service interface {
 	// Upload the image
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
-	// Provide action details
-	ActionDetails(context.Context, *ActionDetailsPayload) (res *ActionDetailResult, err error)
 	// Start processing the image
 	StartProcessing(context.Context, *StartProcessingPayload) (res *StartProcessingResult, err error)
 	// Streams the state of the registration process.
 	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
 	// Download sense result; duplication detection results file.
-	Download(context.Context, *NftDownloadPayload) (res *DownloadResult, err error)
+	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -43,7 +41,7 @@ const ServiceName = "sense"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [5]string{"uploadImage", "actionDetails", "startProcessing", "registerTaskState", "download"}
+var MethodNames = [4]string{"uploadImage", "startProcessing", "registerTaskState", "download"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -61,24 +59,14 @@ type RegisterTaskStateClientStream interface {
 	Recv() (*TaskState, error)
 }
 
-// ActionDetailResult is the result type of the sense service actionDetails
-// method.
-type ActionDetailResult struct {
-	// Estimated fee
-	EstimatedFee float64
-}
-
-// ActionDetailsPayload is the payload type of the sense service actionDetails
-// method.
-type ActionDetailsPayload struct {
-	// Uploaded image ID
-	ImageID string
-	// 3rd party app's PastelID
-	PastelID string
-	// Hash (SHA3-256) of the Action Data
-	ActionDataHash string
-	// The signature (base64) of the Action Data
-	ActionDataSignature string
+// DownloadPayload is the payload type of the sense service download method.
+type DownloadPayload struct {
+	// Nft Registration Request transaction ID
+	Txid string
+	// Owner's PastelID
+	Pid string
+	// Passphrase of the owner's PastelID
+	Key string
 }
 
 // DownloadResult is the result type of the sense service download method.
@@ -93,16 +81,8 @@ type Image struct {
 	ImageID string
 	// Image expiration
 	ExpiresIn string
-}
-
-// NftDownloadPayload is the payload type of the sense service download method.
-type NftDownloadPayload struct {
-	// Nft Registration Request transaction ID
-	Txid string
-	// Owner's PastelID
-	Pid string
-	// Passphrase of the owner's PastelID
-	Key string
+	// Estimated fee
+	EstimatedFee float64
 }
 
 // RegisterTaskStatePayload is the payload type of the sense service
@@ -188,19 +168,6 @@ func NewViewedImage(res *Image, view string) *senseviews.Image {
 	return &senseviews.Image{Projected: p, View: "default"}
 }
 
-// NewActionDetailResult initializes result type ActionDetailResult from viewed
-// result type ActionDetailResult.
-func NewActionDetailResult(vres *senseviews.ActionDetailResult) *ActionDetailResult {
-	return newActionDetailResult(vres.Projected)
-}
-
-// NewViewedActionDetailResult initializes viewed result type
-// ActionDetailResult from result type ActionDetailResult using the given view.
-func NewViewedActionDetailResult(res *ActionDetailResult, view string) *senseviews.ActionDetailResult {
-	p := newActionDetailResultView(res)
-	return &senseviews.ActionDetailResult{Projected: p, View: "default"}
-}
-
 // NewStartProcessingResult initializes result type StartProcessingResult from
 // viewed result type StartProcessingResult.
 func NewStartProcessingResult(vres *senseviews.StartProcessingResult) *StartProcessingResult {
@@ -224,23 +191,6 @@ func newImage(vres *senseviews.ImageView) *Image {
 	if vres.ExpiresIn != nil {
 		res.ExpiresIn = *vres.ExpiresIn
 	}
-	return res
-}
-
-// newImageView projects result type Image to projected type ImageView using
-// the "default" view.
-func newImageView(res *Image) *senseviews.ImageView {
-	vres := &senseviews.ImageView{
-		ImageID:   &res.ImageID,
-		ExpiresIn: &res.ExpiresIn,
-	}
-	return vres
-}
-
-// newActionDetailResult converts projected type ActionDetailResult to service
-// type ActionDetailResult.
-func newActionDetailResult(vres *senseviews.ActionDetailResultView) *ActionDetailResult {
-	res := &ActionDetailResult{}
 	if vres.EstimatedFee != nil {
 		res.EstimatedFee = *vres.EstimatedFee
 	}
@@ -250,10 +200,12 @@ func newActionDetailResult(vres *senseviews.ActionDetailResultView) *ActionDetai
 	return res
 }
 
-// newActionDetailResultView projects result type ActionDetailResult to
-// projected type ActionDetailResultView using the "default" view.
-func newActionDetailResultView(res *ActionDetailResult) *senseviews.ActionDetailResultView {
-	vres := &senseviews.ActionDetailResultView{
+// newImageView projects result type Image to projected type ImageView using
+// the "default" view.
+func newImageView(res *Image) *senseviews.ImageView {
+	vres := &senseviews.ImageView{
+		ImageID:      &res.ImageID,
+		ExpiresIn:    &res.ExpiresIn,
 		EstimatedFee: &res.EstimatedFee,
 	}
 	return vres

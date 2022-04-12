@@ -128,6 +128,8 @@ type ImageView struct {
 	ImageID *string
 	// Image expiration
 	ExpiresIn *string
+	// Estimated fee
+	EstimatedFee *float64
 }
 
 var (
@@ -176,6 +178,7 @@ var (
 		"default": {
 			"image_id",
 			"expires_in",
+			"estimated_fee",
 		},
 	}
 	// ThumbnailcoordinateMap is a map indexing the attribute names of
@@ -539,6 +542,9 @@ func ValidateImageView(result *ImageView) (err error) {
 	if result.ExpiresIn == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("expires_in", "result"))
 	}
+	if result.EstimatedFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("estimated_fee", "result"))
+	}
 	if result.ImageID != nil {
 		if utf8.RuneCountInString(*result.ImageID) < 8 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, true))
@@ -551,6 +557,11 @@ func ValidateImageView(result *ImageView) (err error) {
 	}
 	if result.ExpiresIn != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.expires_in", *result.ExpiresIn, goa.FormatDateTime))
+	}
+	if result.EstimatedFee != nil {
+		if *result.EstimatedFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.estimated_fee", *result.EstimatedFee, 1e-05, true))
+		}
 	}
 	return
 }

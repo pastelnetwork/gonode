@@ -43,28 +43,6 @@ var _ = Service("sense", func() {
 		})
 	})
 
-	Method("actionDetails", func() {
-		Description("Provide action details")
-		Meta("swagger:summary", "Provides action details")
-
-		Payload(func() {
-			Extend(ActionDetailsPayload)
-		})
-		Result(ActionDetailsResult)
-
-		HTTP(func() {
-			POST("/details/{image_id}")
-			Params(func() {
-				Param("image_id", String)
-			})
-
-			// Define error HTTP statuses.
-			Response("BadRequest", StatusBadRequest)
-			Response("InternalServerError", StatusInternalServerError)
-			Response(StatusCreated)
-		})
-	})
-
 	Method("startProcessing", func() {
 		Description("Start processing the image")
 		Meta("swagger:summary", "Starts processing the image")
@@ -111,8 +89,8 @@ var _ = Service("sense", func() {
 
 		Security(APIKeyAuth)
 
-		Payload(NftDownloadPayload)
-		Result(NftDownloadResult)
+		Payload(DownloadPayload)
+		Result(DownloadResult)
 
 		HTTP(func() {
 			GET("/download")

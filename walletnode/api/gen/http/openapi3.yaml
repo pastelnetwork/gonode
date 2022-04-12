@@ -624,6 +624,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Image'
               example:
+                estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
         "400":
@@ -661,9 +662,9 @@ paths:
         schema:
           type: string
           description: Artist PastelID or special value; mine
-          example: e1t
+          example: w0u
           maxLength: 256
-        example: 7o3
+        example: m0g
       - name: limit
         in: query
         description: Number of results to be return
@@ -684,8 +685,8 @@ paths:
         schema:
           type: string
           description: Query is search query entered by user
-          example: Eius est assumenda aut.
-        example: Iste rem ex qui consequatur.
+          example: Autem quis et quidem iusto ipsam.
+        example: Quos architecto corporis voluptatum rerum.
       - name: creator_name
         in: query
         description: Name of the nft creator
@@ -715,7 +716,7 @@ paths:
           description: NFT series name
           default: true
           example: true
-        example: false
+        example: true
       - name: descr
         in: query
         description: Artist written statement
@@ -724,7 +725,7 @@ paths:
           type: boolean
           description: Artist written statement
           default: true
-          example: false
+          example: true
         example: false
       - name: keyword
         in: query
@@ -735,7 +736,7 @@ paths:
           description: Keyword that Artist assigns to NFT
           default: true
           example: false
-        example: false
+        example: true
       - name: min_copies
         in: query
         description: Minimum number of created copies
@@ -766,9 +767,9 @@ paths:
           type: integer
           description: Minimum blocknum
           default: 1
-          example: 7163585082911917721
+          example: 1991169579948483968
           minimum: 1
-        example: 214853060345676409
+        example: 7706059752848430445
       - name: max_block
         in: query
         description: Maximum blocknum
@@ -776,9 +777,9 @@ paths:
         schema:
           type: integer
           description: Maximum blocknum
-          example: 4934493894069213380
+          example: 4352290973769942076
           minimum: 1
-        example: 876338420434569713
+        example: 2682414861392972873
       - name: is_likely_dupe
         in: query
         description: Is this image likely a duplicate of another known image
@@ -926,64 +927,6 @@ paths:
                   title: Mona Lisa
                   txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-        "400":
-          description: Bad Request response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-        "500":
-          description: Internal Server Error response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-  /openapi/cascade/details/{image_id}:
-    post:
-      tags:
-      - cascade
-      summary: Provides action details
-      description: Provide action details
-      operationId: cascade#actionDetails
-      parameters:
-      - name: image_id
-        in: path
-        description: Uploaded image ID
-        required: true
-        schema:
-          type: string
-          description: Uploaded image ID
-          example: VK7mpAqZ
-          minLength: 8
-          maxLength: 8
-        example: VK7mpAqZ
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ActionDetailsRequestBody'
-            example:
-              action_data_hash: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
-              action_data_signature: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
-              app_pastelid: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
-      responses:
-        "201":
-          description: Created response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ActionDetailResult'
-              example:
-                estimated_fee: 100
         "400":
           description: Bad Request response.
           content:
@@ -1251,66 +1194,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Image'
               example:
+                estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
-        "400":
-          description: Bad Request response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-        "500":
-          description: Internal Server Error response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-  /openapi/sense/details/{image_id}:
-    post:
-      tags:
-      - sense
-      summary: Provides action details
-      description: Provide action details
-      operationId: sense#actionDetails
-      parameters:
-      - name: image_id
-        in: path
-        description: Uploaded image ID
-        required: true
-        schema:
-          type: string
-          description: Uploaded image ID
-          example: VK7mpAqZ
-          minLength: 8
-          maxLength: 8
-        example: VK7mpAqZ
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ActionDetailsRequestBody'
-            example:
-              action_data_hash: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
-              action_data_signature: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
-              app_pastelid: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
-      responses:
-        "201":
-          description: Created response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ActionDetailResult'
-              example:
-                estimated_fee: 100
         "400":
           description: Bad Request response.
           content:
@@ -1609,6 +1495,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Image'
               example:
+                estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
         "400":
@@ -1847,51 +1734,6 @@ paths:
                 name: bad_request
 components:
   schemas:
-    ActionDetailResult:
-      type: object
-      properties:
-        estimated_fee:
-          type: number
-          description: Estimated fee
-          default: 1
-          example: 100
-          minimum: 1e-05
-      example:
-        estimated_fee: 100
-      required:
-      - estimated_fee
-    ActionDetailsRequestBody:
-      type: object
-      properties:
-        action_data_hash:
-          type: string
-          description: Hash (SHA3-256) of the Action Data
-          example: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
-          pattern: ^[a-fA-F0-9]
-          minLength: 64
-          maxLength: 64
-        action_data_signature:
-          type: string
-          description: The signature (base64) of the Action Data
-          example: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
-          pattern: ^[a-zA-Z0-9\/+]
-          minLength: 152
-          maxLength: 152
-        app_pastelid:
-          type: string
-          description: 3rd party app's PastelID
-          example: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
-          pattern: ^[a-zA-Z0-9]
-          minLength: 86
-          maxLength: 86
-      example:
-        action_data_hash: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
-        action_data_signature: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
-        app_pastelid: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
-      required:
-      - app_pastelid
-      - action_data_hash
-      - action_data_signature
     CreateUserdataRequestBody:
       type: object
       properties:
@@ -1977,69 +1819,54 @@ components:
           type: string
           description: File downloaded
           example:
-          - 80
-          - 114
-          - 97
-          - 101
-          - 115
-          - 101
+          - 73
           - 110
+          - 32
+          - 102
+          - 117
+          - 103
+          - 97
+          - 32
+          - 97
+          - 117
           - 116
-          - 105
-          - 117
-          - 109
           - 32
-          - 113
-          - 117
-          - 97
           - 115
-          - 105
-          - 32
-          - 109
           - 97
-          - 105
-          - 111
-          - 114
           - 101
-          - 115
+          - 112
+          - 101
           - 46
           format: binary
       example:
         file:
-        - 85
-        - 116
-        - 32
-        - 113
-        - 117
-        - 105
-        - 115
-        - 113
-        - 117
-        - 97
+        - 84
+        - 101
         - 109
-        - 32
-        - 99
-        - 117
-        - 109
-        - 113
-        - 117
+        - 112
+        - 111
+        - 114
         - 101
         - 32
-        - 102
-        - 117
-        - 103
+        - 115
         - 105
         - 116
         - 32
-        - 113
-        - 117
-        - 105
+        - 109
         - 97
+        - 120
+        - 105
+        - 109
+        - 101
         - 32
-        - 113
-        - 117
-        - 105
         - 97
+        - 117
+        - 116
+        - 32
+        - 115
+        - 117
+        - 110
+        - 116
         - 46
       required:
       - file
@@ -2049,7 +1876,7 @@ components:
         fault:
           type: boolean
           description: Is the error a server-side fault?
-          example: false
+          example: true
         id:
           type: string
           description: ID is a unique identifier for this particular occurrence of
@@ -2067,7 +1894,7 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: false
+          example: true
         timeout:
           type: boolean
           description: Is the error a timeout?
@@ -2089,7 +1916,7 @@ components:
         field_type:
           type: string
           description: Field that is matched
-          example: keyword
+          example: art_title
           enum:
           - creator_name
           - art_title
@@ -2100,34 +1927,41 @@ components:
           type: array
           items:
             type: integer
-            example: 6800949856273661722
+            example: 6859355644575382252
             format: int64
           description: The indexes of matched characters. Useful for highlighting
             matches
           example:
-          - 7255549832734117914
-          - 8019144698680751720
+          - 2098760847494614058
+          - 393781650632371893
+          - 4923593646240523578
+          - 3989556234548773899
         score:
           type: integer
           description: Score used to rank matches
-          example: 8462888387199855879
+          example: 8669887911145106255
           format: int64
         str:
           type: string
           description: String that is matched
-          example: Placeat optio quaerat.
+          example: Praesentium quibusdam est id dolores tempore.
       example:
-        field_type: art_title
+        field_type: series
         matched_indexes:
-        - 72132323315575940
-        - 7530258138337984816
-        - 1392098802136953784
-        - 8865053212183898648
-        score: 5970008988226187702
-        str: Aut adipisci odio minus iusto.
+        - 8667790520664327278
+        - 7701035760807916577
+        - 382637033162113434
+        score: 6800949856273661722
+        str: Voluptatum quia omnis aspernatur fugit maiores nihil.
     Image:
       type: object
       properties:
+        estimated_fee:
+          type: number
+          description: Estimated fee
+          default: 1
+          example: 100
+          minimum: 1e-05
         expires_in:
           type: string
           description: Image expiration
@@ -2140,11 +1974,13 @@ components:
           minLength: 8
           maxLength: 8
       example:
+        estimated_fee: 100
         expires_in: 2006-01-02T15:04:05Z07:00
         image_id: VK7mpAqZ
       required:
       - image_id
       - expires_in
+      - estimated_fee
     NftDetail:
       type: object
       properties:
@@ -2240,38 +2076,31 @@ components:
           type: string
           description: Preview Image
           example:
-          - 84
-          - 101
-          - 110
-          - 101
-          - 116
-          - 117
-          - 114
-          - 32
-          - 113
-          - 117
-          - 105
+          - 65
           - 100
-          - 101
-          - 109
-          - 32
+          - 105
+          - 112
           - 105
           - 115
-          - 116
-          - 101
-          - 32
-          - 113
-          - 117
+          - 99
           - 105
-          - 97
           - 32
-          - 116
-          - 101
-          - 109
-          - 112
           - 111
-          - 114
-          - 97
+          - 100
+          - 105
+          - 111
+          - 32
+          - 109
+          - 105
+          - 110
+          - 117
+          - 115
+          - 32
+          - 105
+          - 117
+          - 115
+          - 116
+          - 111
           - 46
           format: binary
         rareness_score:
@@ -2283,7 +2112,7 @@ components:
         royalty:
           type: number
           description: how much artist should get on all future resales
-          example: 0.9647285796506442
+          example: 0.6972208922660669
           format: double
         series_name:
           type: string
@@ -2305,101 +2134,68 @@ components:
           type: string
           description: Thumbnail_1 image
           example:
-          - 69
-          - 120
-          - 101
-          - 114
-          - 99
-          - 105
-          - 116
-          - 97
-          - 116
-          - 105
-          - 111
-          - 110
-          - 101
-          - 109
-          - 32
-          - 118
-          - 101
-          - 108
-          - 105
-          - 116
-          - 32
-          - 113
+          - 81
           - 117
           - 111
-          - 100
-          - 32
-          - 97
-          - 108
-          - 105
-          - 113
-          - 117
-          - 97
-          - 109
-          - 32
-          - 105
-          - 112
           - 115
-          - 97
           - 32
-          - 114
-          - 101
-          - 114
+          - 97
+          - 108
+          - 105
+          - 113
           - 117
+          - 97
           - 109
+          - 32
+          - 98
+          - 108
+          - 97
+          - 110
+          - 100
+          - 105
+          - 116
+          - 105
+          - 105
+          - 115
           - 46
           format: binary
         thumbnail_2:
           type: string
           description: Thumbnail_2 image
           example:
-          - 78
-          - 111
-          - 110
-          - 32
-          - 114
-          - 101
-          - 99
-          - 117
-          - 115
-          - 97
-          - 110
-          - 100
-          - 97
-          - 101
-          - 32
-          - 101
-          - 108
-          - 105
-          - 103
-          - 101
-          - 110
-          - 100
-          - 105
-          - 32
-          - 110
-          - 101
+          - 73
           - 109
-          - 111
+          - 112
+          - 101
+          - 100
+          - 105
+          - 116
           - 32
-          - 110
+          - 118
           - 111
-          - 110
+          - 108
+          - 117
+          - 112
+          - 116
+          - 97
+          - 116
+          - 117
+          - 109
           - 32
           - 113
           - 117
           - 105
-          - 97
-          - 32
           - 100
-          - 111
-          - 108
-          - 111
-          - 114
           - 101
-          - 115
+          - 109
+          - 32
+          - 116
+          - 101
+          - 110
+          - 101
+          - 116
+          - 117
+          - 114
           - 46
           format: binary
         title:
@@ -2443,8 +2239,20 @@ components:
         number_of_pages_of_results: 1
         porn_nsfw_score: 1
         preview_thumbnail:
-        - 69
+        - 67
+        - 117
+        - 109
+        - 113
+        - 117
+        - 101
+        - 32
         - 116
+        - 101
+        - 110
+        - 101
+        - 116
+        - 117
+        - 114
         - 32
         - 113
         - 117
@@ -2452,91 +2260,71 @@ components:
         - 100
         - 101
         - 109
-        - 32
-        - 105
-        - 117
-        - 115
-        - 116
-        - 111
-        - 32
-        - 105
-        - 112
-        - 115
-        - 97
-        - 109
         - 46
         rareness_score: 1
-        royalty: 0.17198138250167108
+        royalty: 0.4558969290721013
         series_name: Famous artist
         sexy_nsfw_score: 1
         storage_fee: 100
         thumbnail_1:
         - 81
         - 117
-        - 111
-        - 115
-        - 32
-        - 97
-        - 114
-        - 99
-        - 104
         - 105
+        - 97
+        - 32
         - 116
         - 101
-        - 99
-        - 116
-        - 111
-        - 32
-        - 99
-        - 111
-        - 114
+        - 109
         - 112
         - 111
         - 114
-        - 105
-        - 115
-        - 32
-        - 118
-        - 111
-        - 108
-        - 117
-        - 112
-        - 116
         - 97
-        - 116
-        - 117
-        - 109
-        - 32
-        - 114
-        - 101
-        - 114
-        - 117
-        - 109
         - 46
         thumbnail_2:
-        - 86
-        - 111
-        - 108
-        - 117
-        - 112
+        - 69
+        - 120
+        - 101
+        - 114
+        - 99
+        - 105
         - 116
         - 97
         - 116
+        - 105
+        - 111
+        - 110
         - 101
         - 109
         - 32
+        - 118
+        - 101
+        - 108
+        - 105
+        - 116
+        - 32
         - 113
         - 117
-        - 105
-        - 32
-        - 110
         - 111
-        - 110
+        - 100
         - 32
+        - 97
+        - 108
+        - 105
         - 113
         - 117
-        - 105
         - 97
+        - 109
+        - 32
+        - 105
+        - 112
+        - 115
+        - 97
+        - 32
+        - 114
+        - 101
+        - 114
+        - 117
+        - 109
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -2696,7 +2484,7 @@ components:
           type: integer
           description: Sort index of the match based on score.This must be used to
             sort results on UI.
-          example: 2720471430557741674
+          example: 8321207843875254208
           format: int64
         matches:
           type: array
@@ -2716,16 +2504,10 @@ components:
             - 2772256600432396467
             score: 3665340228007184473
             str: Nostrum expedita ducimus voluptatem repudiandae.
-          - field_type: series
-            matched_indexes:
-            - 3865197007286316431
-            - 2772256600432396467
-            score: 3665340228007184473
-            str: Nostrum expedita ducimus voluptatem repudiandae.
         nft:
           $ref: '#/components/schemas/NftSummary'
       example:
-        match_index: 2331351322272737655
+        match_index: 7255549832734117914
         matches:
         - field_type: series
           matched_indexes:
@@ -2869,56 +2651,72 @@ components:
           type: string
           description: Thumbnail_1 image
           example:
-          - 73
-          - 100
+          - 69
+          - 115
+          - 116
           - 32
-          - 100
-          - 111
           - 108
+          - 97
+          - 98
           - 111
           - 114
-          - 101
-          - 115
+          - 117
+          - 109
           - 32
+          - 101
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 110
+          - 101
+          - 109
+          - 111
+          - 32
+          - 97
+          - 100
+          - 32
+          - 101
+          - 116
+          - 32
+          - 97
+          - 117
           - 116
           - 101
           - 109
-          - 112
-          - 111
-          - 114
-          - 101
-          - 32
-          - 97
-          - 98
           - 46
           format: binary
         thumbnail_2:
           type: string
           description: Thumbnail_2 image
           example:
-          - 69
-          - 117
-          - 109
+          - 78
+          - 105
+          - 104
+          - 105
+          - 108
           - 32
-          - 100
+          - 109
           - 111
           - 108
-          - 111
-          - 114
-          - 101
-          - 32
-          - 113
-          - 117
+          - 108
           - 105
-          - 32
+          - 116
           - 105
-          - 117
-          - 114
-          - 101
+          - 97
           - 32
+          - 112
+          - 114
+          - 97
           - 101
           - 115
+          - 101
+          - 110
           - 116
+          - 105
+          - 117
+          - 109
           - 46
           format: binary
         title:
@@ -2952,33 +2750,32 @@ components:
         rareness_score: 1
         series_name: Famous artist
         thumbnail_1:
-        - 68
-        - 111
-        - 108
+        - 77
+        - 97
+        - 105
         - 111
         - 114
+        - 101
+        - 115
         - 32
-        - 118
-        - 111
-        - 108
-        - 117
-        - 112
-        - 116
+        - 102
         - 97
-        - 116
+        - 99
+        - 101
+        - 114
+        - 101
+        - 32
         - 117
-        - 109
+        - 116
         - 32
         - 113
         - 117
         - 105
-        - 97
-        - 32
-        - 111
-        - 109
-        - 110
-        - 105
         - 115
+        - 113
+        - 117
+        - 97
+        - 109
         - 46
         thumbnail_2:
         - 70
@@ -2987,13 +2784,10 @@ components:
         - 105
         - 116
         - 32
-        - 109
-        - 97
+        - 113
+        - 117
         - 105
-        - 111
-        - 114
-        - 101
-        - 115
+        - 97
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -3529,42 +3323,24 @@ components:
           type: string
           description: File to upload
           example:
-          - 65
-          - 117
-          - 116
-          - 32
-          - 115
-          - 117
-          - 110
-          - 116
-          - 32
-          - 109
+          - 83
           - 97
-          - 103
-          - 110
-          - 97
-          - 109
-          - 32
-          - 110
           - 101
-          - 109
-          - 111
-          - 32
-          - 110
+          - 112
           - 101
-          - 109
-          - 111
           - 32
-          - 108
-          - 97
-          - 98
-          - 111
+          - 118
+          - 101
           - 114
-          - 101
+          - 105
+          - 116
+          - 97
+          - 116
+          - 105
+          - 115
           - 32
           - 101
-          - 115
-          - 116
+          - 97
           - 46
           format: binary
         filename:
@@ -3572,22 +3348,62 @@ components:
           description: For internal use
       example:
         file:
-        - 69
+        - 68
+        - 111
+        - 108
+        - 111
+        - 114
+        - 101
+        - 115
+        - 32
         - 97
+        - 108
+        - 105
         - 113
         - 117
-        - 101
-        - 32
-        - 110
-        - 101
-        - 109
-        - 111
-        - 32
-        - 97
+        - 105
         - 100
         - 32
+        - 97
+        - 108
+        - 105
+        - 113
+        - 117
+        - 105
+        - 100
+        - 32
+        - 112
+        - 108
+        - 97
+        - 99
         - 101
+        - 97
         - 116
+        - 32
+        - 105
+        - 110
+        - 99
+        - 105
+        - 100
+        - 117
+        - 110
+        - 116
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 105
+        - 115
+        - 116
+        - 101
         - 46
       required:
       - file

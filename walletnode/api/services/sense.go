@@ -15,7 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
-	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 	goahttp "goa.design/goa/v3/http"
 	"goa.design/goa/v3/security"
@@ -25,7 +25,7 @@ import (
 type SenseAPIHandler struct {
 	*Common
 	register *senseregister.SenseRegistrationService
-	download *nftdownload.NftDownloadingService
+	download *download.NftDownloadingService
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
@@ -62,24 +62,14 @@ func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.Upload
 		return nil, sense.MakeInternalServerError(err)
 	}
 
-	res = &sense.Image{
-		ImageID:   id,
-		ExpiresIn: expiry,
-	}
-
-	return res, nil
-}
-
-// ActionDetails - Starts an action data task
-func (service *SenseAPIHandler) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
-
-	fee, err := service.register.ValidateDetailsAndCalculateFee(ctx, p.ImageID, p.ActionDataSignature, p.PastelID)
+	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}
 
-	// Return data
-	res = &sense.ActionDetailResult{
+	res = &sense.Image{
+		ImageID:      id,
+		ExpiresIn:    expiry,
 		EstimatedFee: fee,
 	}
 
@@ -137,10 +127,10 @@ func (service *SenseAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *sec
 }
 
 // Download registered NFT
-func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.NftDownloadPayload) (res *sense.DownloadResult, err error) {
+func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadPayload) (res *sense.DownloadResult, err error) {
 	log.WithContext(ctx).Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
-	taskID := service.download.AddTask(&nft.NftDownloadPayload{Txid: p.Txid}, pastel.ActionTypeSense)
+	taskID := service.download.AddTask(&nft.DownloadPayload{Txid: p.Txid}, pastel.ActionTypeSense)
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
 
@@ -176,7 +166,7 @@ func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.NftDownlo
 }
 
 // NewSenseAPIHandler returns the swagger OpenAPI implementation.
-func NewSenseAPIHandler(register *senseregister.SenseRegistrationService, download *nftdownload.NftDownloadingService) *SenseAPIHandler {
+func NewSenseAPIHandler(register *senseregister.SenseRegistrationService, download *download.NftDownloadingService) *SenseAPIHandler {
 	return &SenseAPIHandler{
 		Common:   NewCommon(),
 		register: register,

@@ -1,4 +1,4 @@
-package nftdownload
+package download
 
 import "github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 
@@ -15,7 +15,7 @@ type NftDownloadingRequest struct {
 }
 
 // FromDownloadPayload is NFT Download request
-func FromDownloadPayload(payload *nft.NftDownloadPayload, ticketType string) *NftDownloadingRequest {
+func FromDownloadPayload(payload *nft.DownloadPayload, ticketType string) *NftDownloadingRequest {
 	return &NftDownloadingRequest{
 		Txid:               payload.Txid,
 		PastelID:           payload.Pid,

@@ -23,7 +23,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/configs"
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
-	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
@@ -192,7 +192,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	//	later through the API Server.
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
 	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient)
-	nftDownload := nftdownload.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
+	nftDownload := download.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
 	//userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, rqClient)

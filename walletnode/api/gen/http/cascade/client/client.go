@@ -25,10 +25,6 @@ type Client struct {
 	// endpoint.
 	UploadImageDoer goahttp.Doer
 
-	// ActionDetails Doer is the HTTP client used to make requests to the
-	// actionDetails endpoint.
-	ActionDetailsDoer goahttp.Doer
-
 	// StartProcessing Doer is the HTTP client used to make requests to the
 	// startProcessing endpoint.
 	StartProcessingDoer goahttp.Doer
@@ -76,7 +72,6 @@ func NewClient(
 	}
 	return &Client{
 		UploadImageDoer:       doer,
-		ActionDetailsDoer:     doer,
 		StartProcessingDoer:   doer,
 		RegisterTaskStateDoer: doer,
 		DownloadDoer:          doer,
@@ -110,30 +105,6 @@ func (c *Client) UploadImage(cascadeUploadImageEncoderFn CascadeUploadImageEncod
 		resp, err := c.UploadImageDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("cascade", "uploadImage", err)
-		}
-		return decodeResponse(resp)
-	}
-}
-
-// ActionDetails returns an endpoint that makes HTTP requests to the cascade
-// service actionDetails server.
-func (c *Client) ActionDetails() goa.Endpoint {
-	var (
-		encodeRequest  = EncodeActionDetailsRequest(c.encoder)
-		decodeResponse = DecodeActionDetailsResponse(c.decoder, c.RestoreResponseBody)
-	)
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildActionDetailsRequest(ctx, v)
-		if err != nil {
-			return nil, err
-		}
-		err = encodeRequest(req, v)
-		if err != nil {
-			return nil, err
-		}
-		resp, err := c.ActionDetailsDoer.Do(req)
-		if err != nil {
-			return nil, goahttp.ErrRequestError("cascade", "actionDetails", err)
 		}
 		return decodeResponse(resp)
 	}
