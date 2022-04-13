@@ -429,8 +429,8 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 
-		ticketId := fmt.Sprintf("%s.%d.%s", task.Request.CreatorPastelID, task.creatorBlockHeight, task.dataHash)
-		key1 := ticketId
+		ticketID := fmt.Sprintf("%s.%d.%s", task.Request.CreatorPastelID, task.creatorBlockHeight, task.dataHash)
+		key1 := ticketID
 		key2 := uuid.New().String()
 		group.Go(func() error {
 			fee, err := nftRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, key1, key2, rqidsFile, ddFpFile, encoderParams)

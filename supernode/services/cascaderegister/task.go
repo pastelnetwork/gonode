@@ -279,7 +279,7 @@ func (task *CascadeRegistrationTask) signAndSendCascadeTicket(ctx context.Contex
 func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
-	ticketId := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, task.dataHash)
+	ticketID := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, task.dataHash)
 
 	req := pastel.RegisterActionRequest{
 		Ticket: &pastel.ActionTicket{
@@ -307,7 +307,7 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 		Mn1PastelID: task.config.PastelID,
 		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
-		Key1:        ticketId,
+		Key1:        ticketID,
 		Key2:        "key2-" + uuid.New().String(),
 	}
 
