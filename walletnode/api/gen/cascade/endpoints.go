@@ -17,7 +17,6 @@ import (
 // Endpoints wraps the "cascade" service endpoints.
 type Endpoints struct {
 	UploadImage       goa.Endpoint
-	ActionDetails     goa.Endpoint
 	StartProcessing   goa.Endpoint
 	RegisterTaskState goa.Endpoint
 	Download          goa.Endpoint
@@ -39,7 +38,6 @@ func NewEndpoints(s Service) *Endpoints {
 	a := s.(Auther)
 	return &Endpoints{
 		UploadImage:       NewUploadImageEndpoint(s),
-		ActionDetails:     NewActionDetailsEndpoint(s),
 		StartProcessing:   NewStartProcessingEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
 		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
@@ -49,7 +47,6 @@ func NewEndpoints(s Service) *Endpoints {
 // Use applies the given middleware to all the "cascade" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UploadImage = m(e.UploadImage)
-	e.ActionDetails = m(e.ActionDetails)
 	e.StartProcessing = m(e.StartProcessing)
 	e.RegisterTaskState = m(e.RegisterTaskState)
 	e.Download = m(e.Download)
@@ -65,20 +62,6 @@ func NewUploadImageEndpoint(s Service) goa.Endpoint {
 			return nil, err
 		}
 		vres := NewViewedImage(res, "default")
-		return vres, nil
-	}
-}
-
-// NewActionDetailsEndpoint returns an endpoint function that calls the method
-// "actionDetails" of service "cascade".
-func NewActionDetailsEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*ActionDetailsPayload)
-		res, err := s.ActionDetails(ctx, p)
-		if err != nil {
-			return nil, err
-		}
-		vres := NewViewedActionDetailResult(res, "default")
 		return vres, nil
 	}
 }
@@ -110,7 +93,7 @@ func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
 // "download" of service "cascade".
 func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*NftDownloadPayload)
+		p := req.(*DownloadPayload)
 		var err error
 		sc := security.APIKeyScheme{
 			Name:           "api_key",

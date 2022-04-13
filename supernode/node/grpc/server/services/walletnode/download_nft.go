@@ -7,7 +7,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
-	"github.com/pastelnetwork/gonode/supernode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"google.golang.org/grpc"
 )
 
@@ -120,7 +120,7 @@ func (service *DownloadNft) Desc() *grpc.ServiceDesc {
 }
 
 // NewDownloadNft returns a new DownloadNft instance.
-func NewDownloadNft(service *nftdownload.NftDownloaderService) *DownloadNft {
+func NewDownloadNft(service *download.NftDownloaderService) *DownloadNft {
 	return &DownloadNft{
 		DownloadNft: common.NewDownloadNft(service),
 	}

@@ -159,7 +159,7 @@ func NewNftGetEndpoint(s Service) goa.Endpoint {
 // "download" of service "nft".
 func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*NftDownloadPayload)
+		p := req.(*DownloadPayload)
 		var err error
 		sc := security.APIKeyScheme{
 			Name:           "api_key",

@@ -18,7 +18,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/cascade/server"
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
-	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	goahttp "goa.design/goa/v3/http"
 	"goa.design/goa/v3/security"
 )
@@ -27,7 +27,7 @@ import (
 type CascadeAPIHandler struct {
 	*Common
 	register *cascaderegister.CascadeRegistrationService
-	download *nftdownload.NftDownloadingService
+	download *download.NftDownloadingService
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
@@ -64,24 +64,14 @@ func (service *CascadeAPIHandler) UploadImage(ctx context.Context, p *cascade.Up
 		return nil, cascade.MakeInternalServerError(err)
 	}
 
-	res = &cascade.Image{
-		ImageID:   id,
-		ExpiresIn: expiry,
-	}
-
-	return res, nil
-}
-
-// ActionDetails - Starts an action data task
-func (service *CascadeAPIHandler) ActionDetails(ctx context.Context, p *cascade.ActionDetailsPayload) (res *cascade.ActionDetailResult, err error) {
-
-	fee, err := service.register.ValidateDetailsAndCalculateFee(ctx, p.ImageID, p.ActionDataSignature, p.PastelID)
+	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(err)
 	}
 
-	// Return data
-	res = &cascade.ActionDetailResult{
+	res = &cascade.Image{
+		ImageID:      id,
+		ExpiresIn:    expiry,
 		EstimatedFee: fee,
 	}
 
@@ -139,10 +129,10 @@ func (service *CascadeAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 }
 
 // Download registered NFT
-func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.NftDownloadPayload) (res *cascade.DownloadResult, err error) {
+func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) (res *cascade.DownloadResult, err error) {
 	log.WithContext(ctx).Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
-	taskID := service.download.AddTask(&nft.NftDownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade)
+	taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade)
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
 
@@ -178,7 +168,7 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.NftDo
 }
 
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.
-func NewCascadeAPIHandler(register *cascaderegister.CascadeRegistrationService, download *nftdownload.NftDownloadingService) *CascadeAPIHandler {
+func NewCascadeAPIHandler(register *cascaderegister.CascadeRegistrationService, download *download.NftDownloadingService) *CascadeAPIHandler {
 	return &CascadeAPIHandler{
 		Common:   NewCommon(),
 		register: register,

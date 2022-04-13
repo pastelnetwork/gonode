@@ -885,7 +885,7 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDownloadNftDownloadPayload(txid, pid, key)
+		payload := NewDownloadPayload(txid, pid, key)
 		if strings.Contains(payload.Key, " ") {
 			// Remove authorization scheme prefix (e.g. "Bearer")
 			cred := strings.SplitN(payload.Key, " ", 2)[1]

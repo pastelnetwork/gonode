@@ -1,7 +1,8 @@
-package nftdownload
+package download
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"

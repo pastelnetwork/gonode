@@ -3,7 +3,7 @@ package configs
 import (
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
-	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
@@ -16,7 +16,7 @@ type Node struct {
 
 	NftRegister     nftregister.Config     `mapstructure:",squash" json:"nft_register,omitempty"`
 	NftSearch       nftsearch.Config       `mapstructure:",squash" json:"nft_search,omitempty"`
-	NftDownload     nftdownload.Config     `mapstructure:",squash" json:"nft_download,omitempty"`
+	NftDownload     download.Config     `mapstructure:",squash" json:"nft_download,omitempty"`
 	SenseRegister   senseregister.Config   `mapstructure:"sense_register" json:"sense_register,omitempty"`
 	CascadeRegister cascaderegister.Config `mapstructure:"cascade_register" json:"cascade_register,omitempty"`
 
@@ -31,7 +31,7 @@ func NewNode() Node {
 	return Node{
 		NftSearch:   *nftsearch.NewConfig(),
 		NftRegister: *nftregister.NewConfig(),
-		NftDownload: *nftdownload.NewConfig(),
+		NftDownload: *download.NewConfig(),
 		API:         api.NewConfig(),
 		// UserdataProcess: *userdataprocess.NewConfig(),
 		SenseRegister:   *senseregister.NewConfig(),
