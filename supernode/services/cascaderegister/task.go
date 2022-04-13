@@ -3,6 +3,7 @@ package cascaderegister
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,6 +27,7 @@ type CascadeRegistrationTask struct {
 	Ticket         *pastel.ActionTicket
 	Asset          *files.File
 	assetSizeBytes int
+	dataHash       []byte
 
 	Oti []byte
 
@@ -177,7 +179,7 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 	}
 
 	// Verify APICascadeTicket
-	_, err = task.Ticket.APICascadeTicket()
+	apiTicket, err := task.Ticket.APICascadeTicket()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("invalid api cascade ticket")
 		return errors.Errorf("invalid api cascade ticket: %w", err)
@@ -206,6 +208,8 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 		err = errors.Errorf("generate rqids: %w", err)
 		return nil
 	}
+
+	task.dataHash = apiTicket.DataHash
 
 	return nil
 }
@@ -275,6 +279,8 @@ func (task *CascadeRegistrationTask) signAndSendCascadeTicket(ctx context.Contex
 func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
+	ticketId := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, task.dataHash)
+
 	req := pastel.RegisterActionRequest{
 		Ticket: &pastel.ActionTicket{
 			Version:       task.Ticket.Version,
@@ -301,7 +307,7 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 		Mn1PastelID: task.config.PastelID,
 		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
-		Key1:        "key1-" + uuid.New().String(),
+		Key1:        ticketId,
 		Key2:        "key2-" + uuid.New().String(),
 	}
 
