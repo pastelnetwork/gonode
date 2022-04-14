@@ -74,14 +74,14 @@ func (service *SCService) Run(ctx context.Context) error {
 		case <-ticker.C:
 			//log.Println("Ticker has ticked")
 
-			if service.CheckNextBlockAvailable(ctx) {
-				// newCtx := context.Background()
-				// task := service.NewSCTask()
-				//task.GenerateStorageChallenges(newCtx)
-				log.WithContext(ctx).Println("Would normally generate a storage challenge")
-			} else {
-				log.WithContext(ctx).Println("Block not available")
-			}
+			// if service.CheckNextBlockAvailable(ctx) {
+			// newCtx := context.Background()
+			// task := service.NewSCTask()
+			//task.GenerateStorageChallenges(newCtx)
+			//log.WithContext(ctx).Println("Would normally generate a storage challenge")
+			// } else {
+			//log.WithContext(ctx).Println("Block not available")
+			// }
 		case <-ctx.Done():
 			log.Println("Context done being called in generatestoragechallenge loop in service.go")
 			return nil
