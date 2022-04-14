@@ -6,8 +6,9 @@ import (
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
 
-	. "goa.design/goa/v3/dsl"
 	"time"
+
+	. "goa.design/goa/v3/dsl"
 	//revive:enable:dot-imports
 )
 
@@ -67,6 +68,15 @@ var RegisterTaskState = Type("TaskState", func() {
 		Enum(InterfaceSlice(common.StatusNames())...)
 	})
 	Required("date", "status")
+})
+
+// TaskHistory is a list of strings containing all past task histories.
+var TaskHistory = Type("TaskHistory", func() {
+	Attribute("list", String, func() {
+		Description("List of past status strings")
+		Example("[ Started, Image Probed, Downloaded... ]")
+	})
+	Required("list")
 })
 
 // ActionDetailsPayload - Payload for posting action details

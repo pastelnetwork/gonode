@@ -131,6 +131,26 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 	}
 }
 
+// GetTaskHistory - Gets a task's history
+func (service *SenseAPIHandler) GetTaskHistory(ctx context.Context, p *sense.GetTaskHistoryPayload) (res *sense.TaskHistory, err error) {
+	task := service.register.GetTask(p.TaskID)
+	if task == nil {
+		return nil, sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+	}
+
+	var statuses []string
+
+	statusHistory := task.StatusHistory()
+	for _, status := range statusHistory {
+		statuses = append(statuses, status.String())
+	}
+
+	return &sense.TaskHistory{
+		List: strings.Join(statuses[:], ","),
+	}, nil
+	// return &sense.TaskHistory(), nil
+}
+
 // APIKeyAuth implements the authorization logic for the APIKey security scheme.
 func (service *SenseAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
 	return ctx, nil

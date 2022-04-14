@@ -110,7 +110,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("send signed cascade ticket: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketAccepted)
-
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validating Cascade Cascade Reg TXID: ",
+		StatusString:  task.regCascadeTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 	// new context because the old context already cancelled
 	newCtx := context.Background()
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
@@ -120,6 +125,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validated Cascade Cascade Reg TXID: ",
+		StatusString:  task.regCascadeTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 
 	// activate cascade ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
@@ -128,6 +139,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("active action ticket: %w", err)
 	}
 	log.Debugf("Active action ticket txid: %s", activateTxID)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Activating Cascade Action Ticket TXID: ",
+		StatusString:  activateTxID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 
 	// Wait until activateTxID is valid
 	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.CascadeActTxMinConfirmations),
@@ -138,6 +155,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(common.StatusTicketActivated)
 	log.Debugf("Active txid is confirmed")
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Activated Cascade Action Ticket TXID: ",
+		StatusString:  activateTxID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 
 	// Send ActionAct request to primary node
 	if err := task.uploadActionAct(newCtx, task.regCascadeTxid); err != nil {

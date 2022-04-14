@@ -76,6 +76,13 @@ type RegisterTaskStateResponseBody struct {
 	Status string `form:"status" json:"status" xml:"status"`
 }
 
+// GetTaskHistoryResponseBody is the type of the "cascade" service
+// "getTaskHistory" endpoint HTTP response body.
+type GetTaskHistoryResponseBody struct {
+	// List of past status strings
+	List string `form:"list" json:"list" xml:"list"`
+}
+
 // DownloadResponseBody is the type of the "cascade" service "download"
 // endpoint HTTP response body.
 type DownloadResponseBody struct {
@@ -231,6 +238,43 @@ type RegisterTaskStateInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// GetTaskHistoryNotFoundResponseBody is the type of the "cascade" service
+// "getTaskHistory" endpoint HTTP response body for the "NotFound" error.
+type GetTaskHistoryNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// GetTaskHistoryInternalServerErrorResponseBody is the type of the "cascade"
+// service "getTaskHistory" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetTaskHistoryInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // DownloadNotFoundResponseBody is the type of the "cascade" service "download"
 // endpoint HTTP response body for the "NotFound" error.
 type DownloadNotFoundResponseBody struct {
@@ -301,6 +345,15 @@ func NewRegisterTaskStateResponseBody(res *cascade.TaskState) *RegisterTaskState
 	body := &RegisterTaskStateResponseBody{
 		Date:   res.Date,
 		Status: res.Status,
+	}
+	return body
+}
+
+// NewGetTaskHistoryResponseBody builds the HTTP response body from the result
+// of the "getTaskHistory" endpoint of the "cascade" service.
+func NewGetTaskHistoryResponseBody(res *cascade.TaskHistory) *GetTaskHistoryResponseBody {
+	body := &GetTaskHistoryResponseBody{
+		List: res.List,
 	}
 	return body
 }
@@ -429,6 +482,35 @@ func NewRegisterTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) 
 	return body
 }
 
+// NewGetTaskHistoryNotFoundResponseBody builds the HTTP response body from the
+// result of the "getTaskHistory" endpoint of the "cascade" service.
+func NewGetTaskHistoryNotFoundResponseBody(res *goa.ServiceError) *GetTaskHistoryNotFoundResponseBody {
+	body := &GetTaskHistoryNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetTaskHistoryInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "getTaskHistory" endpoint of the "cascade"
+// service.
+func NewGetTaskHistoryInternalServerErrorResponseBody(res *goa.ServiceError) *GetTaskHistoryInternalServerErrorResponseBody {
+	body := &GetTaskHistoryInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewDownloadNotFoundResponseBody builds the HTTP response body from the
 // result of the "download" endpoint of the "cascade" service.
 func NewDownloadNotFoundResponseBody(res *goa.ServiceError) *DownloadNotFoundResponseBody {
@@ -497,6 +579,15 @@ func NewStartProcessingPayload(body *StartProcessingRequestBody, imageID string,
 // endpoint payload.
 func NewRegisterTaskStatePayload(taskID string) *cascade.RegisterTaskStatePayload {
 	v := &cascade.RegisterTaskStatePayload{}
+	v.TaskID = taskID
+
+	return v
+}
+
+// NewGetTaskHistoryPayload builds a cascade service getTaskHistory endpoint
+// payload.
+func NewGetTaskHistoryPayload(taskID string) *cascade.GetTaskHistoryPayload {
+	v := &cascade.GetTaskHistoryPayload{}
 	v.TaskID = taskID
 
 	return v

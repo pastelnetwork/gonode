@@ -19,16 +19,18 @@ type Client struct {
 	ActionDetailsEndpoint     goa.Endpoint
 	StartProcessingEndpoint   goa.Endpoint
 	RegisterTaskStateEndpoint goa.Endpoint
+	GetTaskHistoryEndpoint    goa.Endpoint
 	DownloadEndpoint          goa.Endpoint
 }
 
 // NewClient initializes a "cascade" service client given the endpoints.
-func NewClient(uploadImage, actionDetails, startProcessing, registerTaskState, download goa.Endpoint) *Client {
+func NewClient(uploadImage, actionDetails, startProcessing, registerTaskState, getTaskHistory, download goa.Endpoint) *Client {
 	return &Client{
 		UploadImageEndpoint:       uploadImage,
 		ActionDetailsEndpoint:     actionDetails,
 		StartProcessingEndpoint:   startProcessing,
 		RegisterTaskStateEndpoint: registerTaskState,
+		GetTaskHistoryEndpoint:    getTaskHistory,
 		DownloadEndpoint:          download,
 	}
 }
@@ -73,6 +75,16 @@ func (c *Client) RegisterTaskState(ctx context.Context, p *RegisterTaskStatePayl
 		return
 	}
 	return ires.(RegisterTaskStateClientStream), nil
+}
+
+// GetTaskHistory calls the "getTaskHistory" endpoint of the "cascade" service.
+func (c *Client) GetTaskHistory(ctx context.Context, p *GetTaskHistoryPayload) (res *TaskHistory, err error) {
+	var ires interface{}
+	ires, err = c.GetTaskHistoryEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*TaskHistory), nil
 }
 
 // Download calls the "download" endpoint of the "cascade" service.

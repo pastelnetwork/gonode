@@ -121,3 +121,21 @@ func StatusNames() []string {
 	}
 	return list
 }
+
+// EphemeralStatus allows a task to add something like "Created txid: <txid>" to the task history
+type EphemeralStatus struct {
+	StatusTitle   string
+	StatusString  string
+	IsFinalBool   bool
+	IsFailureBool bool
+}
+
+func (status EphemeralStatus) String() string {
+	return status.StatusTitle + status.StatusString
+}
+func (status EphemeralStatus) IsFinal() bool {
+	return status.IsFinalBool
+}
+func (status EphemeralStatus) IsFailure() bool {
+	return status.IsFailureBool
+}
