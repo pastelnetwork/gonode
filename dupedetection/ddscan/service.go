@@ -318,6 +318,9 @@ func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash stri
 	}
 
 	splits := bytes.Split(decData, []byte{pastel.SeparatorByte})
+	if (len(splits)) < 2 {
+		return nil, errors.Errorf("Error separating file by separator bytes, separator not found.")
+	}
 	file, err := utils.B64Decode(splits[0])
 	if err != nil {
 		return nil, errors.Errorf("decode file: %w", err)

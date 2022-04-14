@@ -79,10 +79,9 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	// remove file after use
 	defer os.Remove(inputPath)
 
-	// 2/9/2022, we don't have this implemented yet, so this would fail
 	res, err := client.ImageRarenessScore(ctx, &req)
 	if err != nil {
-		return nil, errors.Errorf("send request: %w", err)
+		return nil, errors.Errorf("Error calling image rareness score: %w", err)
 	}
 
 	output := &pastel.DDAndFingerprints{
