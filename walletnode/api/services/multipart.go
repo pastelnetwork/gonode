@@ -2,12 +2,13 @@ package services
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"io"
 	"mime"
 	"mime/multipart"
 	"path/filepath"
 	"strings"
+
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"

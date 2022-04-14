@@ -161,6 +161,8 @@ func (service *RegisterNft) SendRegMetadata(ctx context.Context, req *pb.SendReg
 	reqMetadata := &types.NftRegMetadata{
 		BlockHash:       req.BlockHash,
 		CreatorPastelID: req.CreatorPastelID,
+		BlockHeight:     req.BlockHeight,
+		Timestamp:       req.Timestamp,
 	}
 
 	err = task.SendRegMetadata(ctx, reqMetadata)

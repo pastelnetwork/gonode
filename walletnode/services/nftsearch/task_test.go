@@ -78,11 +78,9 @@ func TestRunTask(t *testing.T) {
 					IsLikelyDupe: false,
 				},
 				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore: float32(0.5),
-					IsLikelyDupe:  false,
-					RarenessScores: &pastel.RarenessScores{
-						OverallAverageRarenessScore: 0.5,
-					},
+					OpenNSFWScore:        float32(0.5),
+					IsLikelyDupe:         false,
+					OverallRarenessScore: 0.5,
 				},
 			},
 			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketA}},
@@ -99,11 +97,9 @@ func TestRunTask(t *testing.T) {
 					IsLikelyDupe: false,
 				},
 				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore: float32(0.5),
-					IsLikelyDupe:  false,
-					RarenessScores: &pastel.RarenessScores{
-						OverallAverageRarenessScore: 0.5,
-					},
+					OpenNSFWScore:        float32(0.5),
+					IsLikelyDupe:         false,
+					OverallRarenessScore: 0.5,
 				},
 			},
 			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketA}},
@@ -122,11 +118,9 @@ func TestRunTask(t *testing.T) {
 					Limit:      10,
 				},
 				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore: float32(0.5),
-					IsLikelyDupe:  false,
-					RarenessScores: &pastel.RarenessScores{
-						OverallAverageRarenessScore: 0.5,
-					},
+					OpenNSFWScore:        float32(0.5),
+					IsLikelyDupe:         false,
+					OverallRarenessScore: 0.5,
 				},
 			},
 			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketB, MatchIndex: 0},
@@ -146,11 +140,9 @@ func TestRunTask(t *testing.T) {
 					Series:     true,
 				},
 				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore: float32(0.5),
-					IsLikelyDupe:  false,
-					RarenessScores: &pastel.RarenessScores{
-						OverallAverageRarenessScore: 0.5,
-					},
+					OpenNSFWScore:        float32(0.5),
+					IsLikelyDupe:         false,
+					OverallRarenessScore: 0.5,
 				},
 			},
 			want: []RegTicketSearch{},
@@ -170,11 +162,9 @@ func TestRunTask(t *testing.T) {
 					IsLikelyDupe: false,
 				},
 				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore: float32(0.5),
-					IsLikelyDupe:  true,
-					RarenessScores: &pastel.RarenessScores{
-						OverallAverageRarenessScore: 0.5,
-					},
+					OpenNSFWScore:        float32(0.5),
+					IsLikelyDupe:         true,
+					OverallRarenessScore: 0.5,
 				},
 			},
 			want: []RegTicketSearch{},
@@ -192,11 +182,9 @@ func TestRunTask(t *testing.T) {
 					MaxNsfwScore: 0.2,
 				},
 				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore: float32(0.5),
-					IsLikelyDupe:  false,
-					RarenessScores: &pastel.RarenessScores{
-						OverallAverageRarenessScore: 0.5,
-					},
+					OpenNSFWScore:        float32(0.5),
+					IsLikelyDupe:         false,
+					OverallRarenessScore: 0.5,
 				},
 			},
 			want: []RegTicketSearch{},
@@ -214,11 +202,9 @@ func TestRunTask(t *testing.T) {
 				},
 				actTicketsErr: errors.New("test-err"),
 				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore: float32(0.5),
-					IsLikelyDupe:  false,
-					RarenessScores: &pastel.RarenessScores{
-						OverallAverageRarenessScore: 0.5,
-					},
+					OpenNSFWScore:        float32(0.5),
+					IsLikelyDupe:         false,
+					OverallRarenessScore: 0.5,
 				},
 			},
 
@@ -237,11 +223,9 @@ func TestRunTask(t *testing.T) {
 				},
 				regTicketErr: errors.New("test-err"),
 				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore: float32(0.5),
-					IsLikelyDupe:  false,
-					RarenessScores: &pastel.RarenessScores{
-						OverallAverageRarenessScore: 0.5,
-					},
+					OpenNSFWScore:        float32(0.5),
+					IsLikelyDupe:         false,
+					OverallRarenessScore: 0.5,
 				},
 			},
 

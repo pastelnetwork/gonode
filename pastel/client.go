@@ -534,6 +534,17 @@ func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid strin
 	return txID.TxID, nil
 }
 
+// ActionTickets implements pastel.Client.ActionTickets
+func (client *client) ActionTickets(ctx context.Context) (ActionTicketDatas, error) {
+	tickets := ActionTicketDatas{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "action"); err != nil {
+		return nil, errors.Errorf("failed to get action tickets: %w", err)
+	}
+
+	return tickets, nil
+}
+
 func (client *client) GetBalance(ctx context.Context, address string) (float64, error) {
 	var balance float64
 	if err := client.callFor(ctx, &balance, "z_getbalance", address); err != nil {

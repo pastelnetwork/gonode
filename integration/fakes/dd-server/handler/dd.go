@@ -37,7 +37,7 @@ func (service *DDService) SessID(ctx context.Context) (string, bool) {
 func (service *DDService) ImageRarenessScore(ctx context.Context, req *pb.RarenessScoreRequest) (*pb.ImageRarenessScoreReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("ImageRarenessScore request")
 
-	key := "rareness" + "*" + req.PastelId
+	key := "rareness" + "*" + req.PastelIdOfSubmitter
 	data, err := service.store.Get(key)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch data: %w", err)

@@ -146,6 +146,10 @@ type Client interface {
 	// Command `tickets find id <pastelid>`
 	FindTicketByID(ctx context.Context, pastelid string) (*IDTicket, error)
 
+	// ActionTickets returns action tickets similar to RegTickets, but for action tickets
+	// Command `tickets list action`
+	ActionTickets(ctx context.Context) (ActionTicketDatas, error)
+
 	// FindActionActByActionRegTxid returns the action activation ticket by ActionReg ticket txid
 	// Command `tickets find action-act <action-reg-ticket-txid>`
 	FindActionActByActionRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error)

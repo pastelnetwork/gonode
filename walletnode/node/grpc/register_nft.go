@@ -149,6 +149,8 @@ func (service *registerNft) SendRegMetadata(ctx context.Context, regMetadata *ty
 	request := &pb.SendRegMetadataRequest{
 		BlockHash:       regMetadata.BlockHash,
 		CreatorPastelID: regMetadata.CreatorPastelID,
+		BlockHeight:     regMetadata.BlockHeight,
+		Timestamp:       regMetadata.Timestamp,
 	}
 
 	_, err := service.client.SendRegMetadata(ctx, request)

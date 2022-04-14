@@ -6,7 +6,6 @@
 //go:generate mockery --name=RegisterCascadeInterface
 //go:generate mockery --name=StorageChallengeInterface
 
-
 package node
 
 import (

@@ -187,23 +187,37 @@ func TestTaskRegisterArt(t *testing.T) {
 func TestTaskGenFingerprintsData(t *testing.T) {
 	genfingerAndScoresFunc := func() *pastel.DDAndFingerprints {
 		return &pastel.DDAndFingerprints{
-			Block:                      "Block",
-			Principal:                  "Principal",
+			BlockHash:   "BlockHash",
+			BlockHeight: "BlockHeight",
+
+			TimestampOfRequest: "Timestamp",
+			SubmitterPastelID:  "PastelID",
+			SN1PastelID:        "SN1PastelID",
+			SN2PastelID:        "SN2PastelID",
+			SN3PastelID:        "SN3PastelID",
+
+			IsOpenAPIRequest: false,
+			OpenAPISubsetID:  "",
+
 			DupeDetectionSystemVersion: "v1.0",
 
 			IsLikelyDupe:     true,
 			IsRareOnInternet: true,
 
-			RarenessScores: &pastel.RarenessScores{
-				CombinedRarenessScore:         0,
-				XgboostPredictedRarenessScore: 0,
-				NnPredictedRarenessScore:      0,
-				OverallAverageRarenessScore:   0,
-			},
+			OverallRarenessScore: 0.5,
+
+			PctOfTop10MostSimilarWithDupeProbAbove25pct: 12.0,
+			PctOfTop10MostSimilarWithDupeProbAbove33pct: 12.0,
+			PctOfTop10MostSimilarWithDupeProbAbove50pct: 12.0,
+
+			RarenessScoresTableJSONCompressedB64: "RarenessScoresTableJSONCompressedB64",
+
 			InternetRareness: &pastel.InternetRareness{
-				MatchesFoundOnFirstPage: 0,
-				NumberOfPagesOfResults:  0,
-				URLOfFirstMatchInPage:   "",
+				RareOnInternetSummaryTableAsJSONCompressedB64:    "RareOnInternetSummaryTableAsJSONCompressedB64",
+				RareOnInternetGraphJSONCompressedB64:             "RareOnInternetGraphJSONCompressedB64",
+				AlternativeRareOnInternetDictAsJSONCompressedB64: "AlternativeRareOnInternetDictAsJSONCompressedB64",
+				MinNumberOfExactMatchesInPage:                    4,
+				EarliestAvailableDateOfInternetResults:           "EarliestAvailableDateOfInternetResults",
 			},
 
 			OpenNSFWScore: 0.1,
@@ -216,44 +230,8 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			},
 
 			ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
-			FingerprintsStat: &pastel.FingerprintsStat{
-				NumberOfFingerprintsRequiringFurtherTesting1: 1,
-				NumberOfFingerprintsRequiringFurtherTesting2: 2,
-				NumberOfFingerprintsRequiringFurtherTesting3: 3,
-				NumberOfFingerprintsRequiringFurtherTesting4: 4,
-				NumberOfFingerprintsRequiringFurtherTesting5: 5,
-				NumberOfFingerprintsRequiringFurtherTesting6: 6,
-				NumberOfFingerprintsOfSuspectedDupes:         7,
-			},
 
 			HashOfCandidateImageFile: "HashOfCandidateImageFile",
-			PerceptualImageHashes: &pastel.PerceptualImageHashes{
-				PDQHash:        "PdqHash",
-				PerceptualHash: "PerceptualHash",
-				AverageHash:    "AverageHash",
-				DifferenceHash: "DifferenceHash",
-				NeuralHash:     "NeuralhashHash",
-			},
-			PerceptualHashOverlapCount: 1,
-
-			Maxes: &pastel.Maxes{
-				PearsonMax:           1.0,
-				SpearmanMax:          2.0,
-				KendallMax:           3.0,
-				HoeffdingMax:         4.0,
-				MutualInformationMax: 5.0,
-				HsicMax:              6.0,
-				XgbimportanceMax:     7.0,
-			},
-			Percentile: &pastel.Percentile{
-				PearsonTop1BpsPercentile:             1.0,
-				SpearmanTop1BpsPercentile:            2.0,
-				KendallTop1BpsPercentile:             3.0,
-				HoeffdingTop10BpsPercentile:          4.0,
-				MutualInformationTop100BpsPercentile: 5.0,
-				HsicTop100BpsPercentile:              6.0,
-				XgbimportanceTop100BpsPercentile:     7.0,
-			},
 		}
 	}
 
@@ -314,9 +292,9 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 
 			task := makeEmptyNftRegTask(&Config{}, fsMock, pastelClientMock, nil, nil, nil, ddmock)
 			task = add2NodesAnd2TicketSignatures(task)
-			task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+			task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID", BlockHeight: "testBlockHeight", Timestamp: "2022-03-31 16:55:28"}
 
-			_, err := task.GenFingerprintsData(context.Background(), file, "testBlockHash", "creatorPastelID")
+			_, err := task.GenFingerprintsData(context.Background(), file, "testBlockHash", "testBlockHeight", "2022-03-31 16:55:28", "creatorPastelID", "jXYiHNqO9B7psxFQZb1thEgDNykZjL8GkHMZNPZx3iCYre1j3g0zHynlTQ9TdvY6dcRlYIsNfwIQ6nVXBSVJis", "jXpDb5K6S81ghCusMOXLP6k0RvqgFhkBJSFf6OhjEmpvCWGZiptRyRgfQ9cTD709sA58m5czpipFnvpoHuPX0F", "jXS9NIXHj8pd9mLNsP2uKgIh1b3EH2aq5dwupUF7hoaltTE8Zlf6R7Pke0cGr071kxYxqXHQmfVO5dA4jH0ejQ", false, "")
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -768,23 +746,37 @@ func TestTaskWaitConfirmation(t *testing.T) {
 func TestTaskProbeImage(t *testing.T) {
 	genfingerAndScoresFunc := func() *pastel.DDAndFingerprints {
 		return &pastel.DDAndFingerprints{
-			Block:                      "Block",
-			Principal:                  "Principal",
+			BlockHash:   "BlockHash",
+			BlockHeight: "BlockHeight",
+
+			TimestampOfRequest: "Timestamp",
+			SubmitterPastelID:  "PastelID",
+			SN1PastelID:        "SN1PastelID",
+			SN2PastelID:        "SN2PastelID",
+			SN3PastelID:        "SN3PastelID",
+
+			IsOpenAPIRequest: false,
+			OpenAPISubsetID:  "",
+
 			DupeDetectionSystemVersion: "v1.0",
 
 			IsLikelyDupe:     true,
 			IsRareOnInternet: true,
 
-			RarenessScores: &pastel.RarenessScores{
-				CombinedRarenessScore:         0,
-				XgboostPredictedRarenessScore: 0,
-				NnPredictedRarenessScore:      0,
-				OverallAverageRarenessScore:   0,
-			},
+			OverallRarenessScore: 0.5,
+
+			PctOfTop10MostSimilarWithDupeProbAbove25pct: 12.0,
+			PctOfTop10MostSimilarWithDupeProbAbove33pct: 12.0,
+			PctOfTop10MostSimilarWithDupeProbAbove50pct: 12.0,
+
+			RarenessScoresTableJSONCompressedB64: "RarenessScoresTableJSONCompressedB64",
+
 			InternetRareness: &pastel.InternetRareness{
-				MatchesFoundOnFirstPage: 0,
-				NumberOfPagesOfResults:  0,
-				URLOfFirstMatchInPage:   "",
+				RareOnInternetSummaryTableAsJSONCompressedB64:    "RareOnInternetSummaryTableAsJSONCompressedB64",
+				RareOnInternetGraphJSONCompressedB64:             "RareOnInternetGraphJSONCompressedB64",
+				AlternativeRareOnInternetDictAsJSONCompressedB64: "AlternativeRareOnInternetDictAsJSONCompressedB64",
+				MinNumberOfExactMatchesInPage:                    4,
+				EarliestAvailableDateOfInternetResults:           "EarliestAvailableDateOfInternetResults",
 			},
 
 			OpenNSFWScore: 0.1,
@@ -797,44 +789,8 @@ func TestTaskProbeImage(t *testing.T) {
 			},
 
 			ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
-			FingerprintsStat: &pastel.FingerprintsStat{
-				NumberOfFingerprintsRequiringFurtherTesting1: 1,
-				NumberOfFingerprintsRequiringFurtherTesting2: 2,
-				NumberOfFingerprintsRequiringFurtherTesting3: 3,
-				NumberOfFingerprintsRequiringFurtherTesting4: 4,
-				NumberOfFingerprintsRequiringFurtherTesting5: 5,
-				NumberOfFingerprintsRequiringFurtherTesting6: 6,
-				NumberOfFingerprintsOfSuspectedDupes:         7,
-			},
 
 			HashOfCandidateImageFile: "HashOfCandidateImageFile",
-			PerceptualImageHashes: &pastel.PerceptualImageHashes{
-				PDQHash:        "PdqHash",
-				PerceptualHash: "PerceptualHash",
-				AverageHash:    "AverageHash",
-				DifferenceHash: "DifferenceHash",
-				NeuralHash:     "NeuralhashHash",
-			},
-			PerceptualHashOverlapCount: 1,
-
-			Maxes: &pastel.Maxes{
-				PearsonMax:           1.0,
-				SpearmanMax:          2.0,
-				KendallMax:           3.0,
-				HoeffdingMax:         4.0,
-				MutualInformationMax: 5.0,
-				HsicMax:              6.0,
-				XgbimportanceMax:     7.0,
-			},
-			Percentile: &pastel.Percentile{
-				PearsonTop1BpsPercentile:             1.0,
-				SpearmanTop1BpsPercentile:            2.0,
-				KendallTop1BpsPercentile:             3.0,
-				HoeffdingTop10BpsPercentile:          4.0,
-				MutualInformationTop100BpsPercentile: 5.0,
-				HsicTop100BpsPercentile:              6.0,
-				XgbimportanceTop100BpsPercentile:     7.0,
-			},
 		}
 	}
 
@@ -911,7 +867,7 @@ func TestTaskProbeImage(t *testing.T) {
 			task = add2NodesAnd2TicketSignatures(task)
 			task = makeConnected(task, tc.args.status)
 
-			task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+			task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID", BlockHeight: "testBlockHeight", Timestamp: "2022-03-31 16:55:28"}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1274,23 +1230,37 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 				},
 
 				fg: &pastel.DDAndFingerprints{
-					Block:                      "Block",
-					Principal:                  "Principal",
+					BlockHash:   "BlockHash",
+					BlockHeight: "BlockHeight",
+
+					TimestampOfRequest: "Timestamp",
+					SubmitterPastelID:  "PastelID",
+					SN1PastelID:        "SN1PastelID",
+					SN2PastelID:        "SN2PastelID",
+					SN3PastelID:        "SN3PastelID",
+
+					IsOpenAPIRequest: false,
+					OpenAPISubsetID:  "",
+
 					DupeDetectionSystemVersion: "v1.0",
 
 					IsLikelyDupe:     true,
 					IsRareOnInternet: true,
 
-					RarenessScores: &pastel.RarenessScores{
-						CombinedRarenessScore:         0,
-						XgboostPredictedRarenessScore: 0,
-						NnPredictedRarenessScore:      0,
-						OverallAverageRarenessScore:   0,
-					},
+					OverallRarenessScore: 0.5,
+
+					PctOfTop10MostSimilarWithDupeProbAbove25pct: 12.0,
+					PctOfTop10MostSimilarWithDupeProbAbove33pct: 12.0,
+					PctOfTop10MostSimilarWithDupeProbAbove50pct: 12.0,
+
+					RarenessScoresTableJSONCompressedB64: "RarenessScoresTableJSONCompressedB64",
+
 					InternetRareness: &pastel.InternetRareness{
-						MatchesFoundOnFirstPage: 0,
-						NumberOfPagesOfResults:  0,
-						URLOfFirstMatchInPage:   "",
+						RareOnInternetSummaryTableAsJSONCompressedB64:    "RareOnInternetSummaryTableAsJSONCompressedB64",
+						RareOnInternetGraphJSONCompressedB64:             "RareOnInternetGraphJSONCompressedB64",
+						AlternativeRareOnInternetDictAsJSONCompressedB64: "AlternativeRareOnInternetDictAsJSONCompressedB64",
+						MinNumberOfExactMatchesInPage:                    4,
+						EarliestAvailableDateOfInternetResults:           "EarliestAvailableDateOfInternetResults",
 					},
 
 					OpenNSFWScore: 0.1,
@@ -1303,44 +1273,8 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 					},
 
 					ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
-					FingerprintsStat: &pastel.FingerprintsStat{
-						NumberOfFingerprintsRequiringFurtherTesting1: 1,
-						NumberOfFingerprintsRequiringFurtherTesting2: 2,
-						NumberOfFingerprintsRequiringFurtherTesting3: 3,
-						NumberOfFingerprintsRequiringFurtherTesting4: 4,
-						NumberOfFingerprintsRequiringFurtherTesting5: 5,
-						NumberOfFingerprintsRequiringFurtherTesting6: 6,
-						NumberOfFingerprintsOfSuspectedDupes:         7,
-					},
 
 					HashOfCandidateImageFile: "HashOfCandidateImageFile",
-					PerceptualImageHashes: &pastel.PerceptualImageHashes{
-						PDQHash:        "PdqHash",
-						PerceptualHash: "PerceptualHash",
-						AverageHash:    "AverageHash",
-						DifferenceHash: "DifferenceHash",
-						NeuralHash:     "NeuralhashHash",
-					},
-					PerceptualHashOverlapCount: 1,
-
-					Maxes: &pastel.Maxes{
-						PearsonMax:           1.0,
-						SpearmanMax:          2.0,
-						KendallMax:           3.0,
-						HoeffdingMax:         4.0,
-						MutualInformationMax: 5.0,
-						HsicMax:              6.0,
-						XgbimportanceMax:     7.0,
-					},
-					Percentile: &pastel.Percentile{
-						PearsonTop1BpsPercentile:             1.0,
-						SpearmanTop1BpsPercentile:            2.0,
-						KendallTop1BpsPercentile:             3.0,
-						HoeffdingTop10BpsPercentile:          4.0,
-						MutualInformationTop100BpsPercentile: 5.0,
-						HsicTop100BpsPercentile:              6.0,
-						XgbimportanceTop100BpsPercentile:     7.0,
-					},
 				},
 				status: common.StatusImageProbed,
 			},

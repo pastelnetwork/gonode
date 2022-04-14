@@ -19,6 +19,9 @@ const (
 	ActionTypeCascade = "cascade"
 )
 
+// ActionTicketDatas is a collection of ActionTicketData (Note type here)
+type ActionTicketDatas []ActionTicketData
+
 // ActionRegTicket represents pastel registration ticket.
 type ActionRegTicket struct {
 	Height           int              `json:"height"`
