@@ -5,10 +5,9 @@ import (
 
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
-
 	. "goa.design/goa/v3/dsl"
-	"time"
 	//revive:enable:dot-imports
+	"time"
 )
 
 // ImageUploadPayload represents a payload for uploading image.
@@ -40,8 +39,15 @@ var ImageUploadResult = ResultType("application/vnd.nft.upload-image", func() {
 			Format(FormatDateTime)
 			Example(time.RFC3339)
 		})
+
+		Attribute("estimated_fee", Float64, func() {
+			Description("Estimated fee")
+			Minimum(0.00001)
+			Default(1)
+			Example(100)
+		})
 	})
-	Required("image_id", "expires_in")
+	Required("image_id", "expires_in", "estimated_fee")
 })
 
 // RegisterTaskPayload represents a payload for returning task.
@@ -67,57 +73,6 @@ var RegisterTaskState = Type("TaskState", func() {
 		Enum(InterfaceSlice(common.StatusNames())...)
 	})
 	Required("date", "status")
-})
-
-// ActionDetailsPayload - Payload for posting action details
-var ActionDetailsPayload = Type("ActionDetailsPayload", func() {
-	Description("Provide Action Details Payload")
-	Attribute("image_id", String, func() {
-		Description("Uploaded image ID")
-		MinLength(8)
-		MaxLength(8)
-		Example("VK7mpAqZ")
-	})
-	Attribute("app_pastelid", String, func() {
-		Meta("struct:field:name", "PastelID")
-		Description("3rd party app's PastelID")
-		MinLength(86)
-		MaxLength(86)
-		Pattern(`^[a-zA-Z0-9]`)
-		Example("jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY")
-	})
-	Attribute("action_data_hash", String, func() {
-		Meta("struct:field:name", "action_data_hash")
-		Description("Hash (SHA3-256) of the Action Data")
-		MinLength(64)
-		MaxLength(64)
-		Pattern(`^[a-fA-F0-9]`)
-		Example("7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265")
-	})
-	Attribute("action_data_signature", String, func() {
-		Meta("struct:field:name", "action_data_signature")
-		Description("The signature (base64) of the Action Data")
-		MinLength(152)
-		MaxLength(152)
-		Pattern(`^[a-zA-Z0-9\/+]`)
-		Example("bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A")
-	})
-
-	Required("image_id", "app_pastelid", "action_data_hash", "action_data_signature")
-})
-
-// ActionDetailsResult - result of posting action details
-var ActionDetailsResult = ResultType("application/sense.start-action", func() {
-	TypeName("actionDetailResult")
-	Attributes(func() {
-		Attribute("estimated_fee", Float64, func() {
-			Description("Estimated fee")
-			Minimum(0.00001)
-			Default(1)
-			Example(100)
-		})
-	})
-	Required("estimated_fee")
 })
 
 // StartProcessingPayload - Payload for starting processing
@@ -164,4 +119,36 @@ var StartProcessingResult = ResultType("application/sense.start-processing", fun
 		})
 	})
 	Required("task_id")
+})
+
+// DownloadPayload is asset download payload.
+var DownloadPayload = Type("DownloadPayload", func() {
+	Attribute("txid", String, func() {
+		Description("Nft Registration Request transaction ID")
+		MinLength(64)
+		MaxLength(64)
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
+	Attribute("pid", String, func() {
+		Meta("struct:field:name", "Pid")
+		Description("Owner's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+	APIKey("api_key", "key", String, func() {
+		Description("Passphrase of the owner's PastelID")
+		Example("Basic abcdef12345")
+	})
+	Required("txid", "pid", "key")
+})
+
+// DownloadResult is Asset download result.
+var DownloadResult = Type("DownloadResult", func() {
+	Description("Asset download response")
+	Attribute("file", Bytes, func() {
+		Description("File downloaded")
+	})
+	Required("file")
 })

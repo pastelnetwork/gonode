@@ -2,22 +2,30 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 	goahttp "goa.design/goa/v3/http"
+	"goa.design/goa/v3/security"
 )
 
 // SenseAPIHandler - SenseAPIHandler service
 type SenseAPIHandler struct {
 	*Common
 	register *senseregister.SenseRegistrationService
+	download *download.NftDownloadingService
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
@@ -54,24 +62,14 @@ func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.Upload
 		return nil, sense.MakeInternalServerError(err)
 	}
 
-	res = &sense.Image{
-		ImageID:   id,
-		ExpiresIn: expiry,
-	}
-
-	return res, nil
-}
-
-// ActionDetails - Starts an action data task
-func (service *SenseAPIHandler) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
-
-	fee, err := service.register.ValidateDetailsAndCalculateFee(ctx, p.ImageID, p.ActionDataSignature, p.PastelID)
+	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}
 
-	// Return data
-	res = &sense.ActionDetailResult{
+	res = &sense.Image{
+		ImageID:      id,
+		ExpiresIn:    expiry,
 		EstimatedFee: fee,
 	}
 
@@ -123,15 +121,55 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 	}
 }
 
+// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+func (service *SenseAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
+	return ctx, nil
+}
+
 // Download registered NFT
-func (service *SenseAPIHandler) Download(_ context.Context, _ *sense.SenseDownloadPayload) (res *sense.DownloadResult, err error) {
-	return
+func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadPayload) (res *sense.DownloadResult, err error) {
+	log.WithContext(ctx).Info("Start downloading")
+	defer log.WithContext(ctx).Info("Finished downloading")
+	taskID := service.download.AddTask(&nft.DownloadPayload{Txid: p.Txid}, pastel.ActionTypeSense)
+	task := service.download.GetTask(taskID)
+	defer task.Cancel()
+
+	sub := task.SubscribeStatus()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, nft.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
+		case status := <-sub():
+			if status.IsFailure() {
+				if strings.Contains(utils.SafeErrStr(task.Error()), "ticket ownership") {
+					return nil, nft.MakeBadRequest(errors.New("failed to verify ownership"))
+				}
+
+				errStr := fmt.Errorf("internal processing error: %s", status.String())
+				if task.Error() != nil {
+					errStr = task.Error()
+				}
+				return nil, nft.MakeInternalServerError(errStr)
+			}
+
+			if status.IsFinal() {
+				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("NFT downloaded")
+				res = &sense.DownloadResult{
+					File: task.File,
+				}
+
+				return res, nil
+			}
+		}
+	}
 }
 
 // NewSenseAPIHandler returns the swagger OpenAPI implementation.
-func NewSenseAPIHandler(register *senseregister.SenseRegistrationService) *SenseAPIHandler {
+func NewSenseAPIHandler(register *senseregister.SenseRegistrationService, download *download.NftDownloadingService) *SenseAPIHandler {
 	return &SenseAPIHandler{
 		Common:   NewCommon(),
 		register: register,
+		download: download,
 	}
 }

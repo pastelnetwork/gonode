@@ -12,6 +12,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"unicode/utf8"
 
 	sense "github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
@@ -95,101 +96,6 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 				body = formatter(res)
 			} else {
 				body = NewUploadImageInternalServerErrorResponseBody(res)
-			}
-			w.Header().Set("goa-error", res.ErrorName())
-			w.WriteHeader(http.StatusInternalServerError)
-			return enc.Encode(body)
-		default:
-			return encodeError(ctx, w, v)
-		}
-	}
-}
-
-// EncodeActionDetailsResponse returns an encoder for responses returned by the
-// sense actionDetails endpoint.
-func EncodeActionDetailsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
-	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(*senseviews.ActionDetailResult)
-		enc := encoder(ctx, w)
-		body := NewActionDetailsResponseBody(res.Projected)
-		w.WriteHeader(http.StatusCreated)
-		return enc.Encode(body)
-	}
-}
-
-// DecodeActionDetailsRequest returns a decoder for requests sent to the sense
-// actionDetails endpoint.
-func DecodeActionDetailsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
-	return func(r *http.Request) (interface{}, error) {
-		var (
-			body ActionDetailsRequestBody
-			err  error
-		)
-		err = decoder(r).Decode(&body)
-		if err != nil {
-			if err == io.EOF {
-				return nil, goa.MissingPayloadError()
-			}
-			return nil, goa.DecodePayloadError(err.Error())
-		}
-		err = ValidateActionDetailsRequestBody(&body)
-		if err != nil {
-			return nil, err
-		}
-
-		var (
-			imageID string
-
-			params = mux.Vars(r)
-		)
-		imageID = params["image_id"]
-		if utf8.RuneCountInString(imageID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, true))
-		}
-		if utf8.RuneCountInString(imageID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, false))
-		}
-		if err != nil {
-			return nil, err
-		}
-		payload := NewActionDetailsPayload(&body, imageID)
-
-		return payload, nil
-	}
-}
-
-// EncodeActionDetailsError returns an encoder for errors returned by the
-// actionDetails sense endpoint.
-func EncodeActionDetailsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
-	encodeError := goahttp.ErrorEncoder(encoder, formatter)
-	return func(ctx context.Context, w http.ResponseWriter, v error) error {
-		var en ErrorNamer
-		if !errors.As(v, &en) {
-			return encodeError(ctx, w, v)
-		}
-		switch en.ErrorName() {
-		case "BadRequest":
-			var res *goa.ServiceError
-			errors.As(v, &res)
-			enc := encoder(ctx, w)
-			var body interface{}
-			if formatter != nil {
-				body = formatter(res)
-			} else {
-				body = NewActionDetailsBadRequestResponseBody(res)
-			}
-			w.Header().Set("goa-error", res.ErrorName())
-			w.WriteHeader(http.StatusBadRequest)
-			return enc.Encode(body)
-		case "InternalServerError":
-			var res *goa.ServiceError
-			errors.As(v, &res)
-			enc := encoder(ctx, w)
-			var body interface{}
-			if formatter != nil {
-				body = formatter(res)
-			} else {
-				body = NewActionDetailsInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.ErrorName())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -386,6 +292,8 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 	return func(r *http.Request) (interface{}, error) {
 		var (
 			txid string
+			pid  string
+			key  string
 			err  error
 		)
 		txid = r.URL.Query().Get("txid")
@@ -398,10 +306,30 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if utf8.RuneCountInString(txid) > 64 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
 		}
+		pid = r.URL.Query().Get("pid")
+		if pid == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("pid", "query string"))
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		key = r.Header.Get("Authorization")
+		if key == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "header"))
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDownloadSenseDownloadPayload(txid)
+		payload := NewDownloadPayload(txid, pid, key)
+		if strings.Contains(payload.Key, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Key, " ", 2)[1]
+			payload.Key = cred
+		}
 
 		return payload, nil
 	}

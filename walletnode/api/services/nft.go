@@ -19,7 +19,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/nft/server"
-	"github.com/pastelnetwork/gonode/walletnode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 
@@ -36,7 +36,7 @@ type NftAPIHandler struct {
 	*Common
 	register *nftregister.NftRegistrationService
 	search   *nftsearch.NftSearchingService
-	download *nftdownload.NftDownloadingService
+	download *download.NftDownloadingService
 	db       storage.KeyValue
 	imageTTL time.Duration
 }
@@ -162,7 +162,7 @@ func (service *NftAPIHandler) RegisterTasks(_ context.Context) (res nft.TaskColl
 }
 
 // Download registered NFT
-func (service *NftAPIHandler) Download(ctx context.Context, p *nft.NftDownloadPayload) (res *nft.DownloadResult, err error) {
+func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPayload) (res *nft.DownloadResult, err error) {
 	log.WithContext(ctx).Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
 	taskID := service.download.AddTask(p, "")
@@ -272,7 +272,7 @@ func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 }
 
 // NewNftAPIHandler returns the nft NftAPIHandler implementation.
-func NewNftAPIHandler(register *nftregister.NftRegistrationService, search *nftsearch.NftSearchingService, download *nftdownload.NftDownloadingService) *NftAPIHandler {
+func NewNftAPIHandler(register *nftregister.NftRegistrationService, search *nftsearch.NftSearchingService, download *download.NftDownloadingService) *NftAPIHandler {
 	return &NftAPIHandler{
 		Common:   NewCommon(),
 		register: register,

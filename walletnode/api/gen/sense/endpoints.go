@@ -11,12 +11,12 @@ import (
 	"context"
 
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/goa/v3/security"
 )
 
 // Endpoints wraps the "sense" service endpoints.
 type Endpoints struct {
 	UploadImage       goa.Endpoint
-	ActionDetails     goa.Endpoint
 	StartProcessing   goa.Endpoint
 	RegisterTaskState goa.Endpoint
 	Download          goa.Endpoint
@@ -34,19 +34,19 @@ type RegisterTaskStateEndpointInput struct {
 
 // NewEndpoints wraps the methods of the "sense" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
+	// Casting service to Auther interface
+	a := s.(Auther)
 	return &Endpoints{
 		UploadImage:       NewUploadImageEndpoint(s),
-		ActionDetails:     NewActionDetailsEndpoint(s),
 		StartProcessing:   NewStartProcessingEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
-		Download:          NewDownloadEndpoint(s),
+		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
 	}
 }
 
 // Use applies the given middleware to all the "sense" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UploadImage = m(e.UploadImage)
-	e.ActionDetails = m(e.ActionDetails)
 	e.StartProcessing = m(e.StartProcessing)
 	e.RegisterTaskState = m(e.RegisterTaskState)
 	e.Download = m(e.Download)
@@ -62,20 +62,6 @@ func NewUploadImageEndpoint(s Service) goa.Endpoint {
 			return nil, err
 		}
 		vres := NewViewedImage(res, "default")
-		return vres, nil
-	}
-}
-
-// NewActionDetailsEndpoint returns an endpoint function that calls the method
-// "actionDetails" of service "sense".
-func NewActionDetailsEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*ActionDetailsPayload)
-		res, err := s.ActionDetails(ctx, p)
-		if err != nil {
-			return nil, err
-		}
-		vres := NewViewedActionDetailResult(res, "default")
 		return vres, nil
 	}
 }
@@ -105,9 +91,19 @@ func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
 
 // NewDownloadEndpoint returns an endpoint function that calls the method
 // "download" of service "sense".
-func NewDownloadEndpoint(s Service) goa.Endpoint {
+func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*SenseDownloadPayload)
+		p := req.(*DownloadPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
 		return s.Download(ctx, p)
 	}
 }

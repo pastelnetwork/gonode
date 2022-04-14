@@ -32,7 +32,7 @@ type Service interface {
 	// Gets the NFT detail
 	NftGet(context.Context, *NftGetPayload) (res *NftDetail, err error)
 	// Download registered NFT.
-	Download(context.Context, *NftDownloadPayload) (res *DownloadResult, err error)
+	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -83,6 +83,16 @@ type NftSearchClientStream interface {
 	Recv() (*NftSearchResult, error)
 }
 
+// DownloadPayload is the payload type of the nft service download method.
+type DownloadPayload struct {
+	// Nft Registration Request transaction ID
+	Txid string
+	// Owner's PastelID
+	Pid string
+	// Passphrase of the owner's PastelID
+	Key string
+}
+
 // DownloadResult is the result type of the nft service download method.
 type DownloadResult struct {
 	// File downloaded
@@ -106,6 +116,8 @@ type Image struct {
 	ImageID string
 	// Image expiration
 	ExpiresIn string
+	// Estimated fee
+	EstimatedFee float64
 }
 
 // NftDetail is the result type of the nft service nftGet method.
@@ -172,16 +184,6 @@ type NftDetail struct {
 	CreatorName string
 	// Artist website URL
 	CreatorWebsiteURL *string
-}
-
-// NftDownloadPayload is the payload type of the nft service download method.
-type NftDownloadPayload struct {
-	// Nft Registration Request transaction ID
-	Txid string
-	// Owner's PastelID
-	Pid string
-	// Passphrase of the owner's PastelID
-	Key string
 }
 
 // NftGetPayload is the payload type of the nft service nftGet method.
@@ -709,6 +711,12 @@ func newImage(vres *nftviews.ImageView) *Image {
 	if vres.ExpiresIn != nil {
 		res.ExpiresIn = *vres.ExpiresIn
 	}
+	if vres.EstimatedFee != nil {
+		res.EstimatedFee = *vres.EstimatedFee
+	}
+	if vres.EstimatedFee == nil {
+		res.EstimatedFee = 1
+	}
 	return res
 }
 
@@ -716,8 +724,9 @@ func newImage(vres *nftviews.ImageView) *Image {
 // the "default" view.
 func newImageView(res *Image) *nftviews.ImageView {
 	vres := &nftviews.ImageView{
-		ImageID:   &res.ImageID,
-		ExpiresIn: &res.ExpiresIn,
+		ImageID:      &res.ImageID,
+		ExpiresIn:    &res.ExpiresIn,
+		EstimatedFee: &res.EstimatedFee,
 	}
 	return vres
 }

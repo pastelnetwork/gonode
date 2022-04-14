@@ -1,4 +1,4 @@
-package nftdownload
+package download
 
 import "github.com/pastelnetwork/gonode/walletnode/node"
 

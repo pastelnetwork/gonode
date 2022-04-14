@@ -1,10 +1,12 @@
-package nftdownload
+package download
 
 import (
 	"bytes"
 	"context"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/pastel"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 
@@ -45,7 +47,7 @@ func (task *NftDownloadingTask) run(ctx context.Context) error {
 	//validate download requested - ensure that the pastelID belongs either to the
 	//  creator of the non-sold NFT or the latest buyer of the NFT
 	ttxid, err := task.service.pastelHandler.PastelClient.TicketOwnership(ctx, task.Request.Txid, task.Request.PastelID, task.Request.PastelIDPassphrase)
-	if err != nil {
+	if err != nil && task.Request.Type != pastel.ActionTypeSense {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("pastelid", task.Request.PastelID).Error("Could not get ticket ownership")
 		return errors.Errorf("get ticket ownership: %w", err)
 	}

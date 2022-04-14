@@ -823,9 +823,9 @@ func (c *Client) BuildDownloadRequest(ctx context.Context, v interface{}) (*http
 // download server.
 func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
 	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*nft.NftDownloadPayload)
+		p, ok := v.(*nft.DownloadPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("nft", "download", "*nft.NftDownloadPayload", v)
+			return goahttp.ErrInvalidType("nft", "download", "*nft.DownloadPayload", v)
 		}
 		{
 			head := p.Key

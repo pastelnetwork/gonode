@@ -3,7 +3,7 @@ package configs
 import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
-	"github.com/pastelnetwork/gonode/supernode/services/nftdownload"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
@@ -22,7 +22,7 @@ type Node struct {
 	NumberConnectedNodes       int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
 	PreburntTxMinConfirmations int `mapstructure:"preburnt_tx_min_confirmations" json:"preburnt_tx_min_confirmations,omitempty"`
 
-	NftDownload      nftdownload.Config      `mapstructure:",squash" json:"nft_download,omitempty"`
+	NftDownload      download.Config      `mapstructure:",squash" json:"nft_download,omitempty"`
 	StorageChallenge storagechallenge.Config `mapstructure:",squash" json:"storage_challenge,omitempty"`
 }
 
@@ -32,7 +32,7 @@ func NewNode() Node {
 		NftRegister:     *nftregister.NewConfig(),
 		SenseRegister:   *senseregister.NewConfig(),
 		CascadeRegister: *cascaderegister.NewConfig(),
-		NftDownload:     *nftdownload.NewConfig(),
+		NftDownload:     *download.NewConfig(),
 		// UserdataProcess: *userdataprocess.NewConfig(),
 		Server: server.NewConfig(),
 	}

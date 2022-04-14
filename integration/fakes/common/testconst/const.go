@@ -16,3 +16,4 @@ var SNsPastelIDs = []string{
 var ArtistPastelID = "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW"
 var TestRegTXID = "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09"
 var TestCascadeRegTXID = "b2fe52d207beaf107ad248612e2ad3580562aa2e0e1a7a567b89997c2fb382cd"
+var TestSenseRegTXID = "c2fe52d207beaf107ad248612e2ad3580562aa2e0e1a7a567b89997c2fb382po"

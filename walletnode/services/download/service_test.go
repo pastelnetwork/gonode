@@ -1,4 +1,4 @@
-package nftdownload
+package download
 
 import (
 	"context"
@@ -102,9 +102,9 @@ func TestServiceRun(t *testing.T) {
 func TestServiceAddTask(t *testing.T) {
 	type args struct {
 		ctx     context.Context
-		payload *nft.NftDownloadPayload
+		payload *nft.DownloadPayload
 	}
-	payload := &nft.NftDownloadPayload{
+	payload := &nft.DownloadPayload{
 		Txid: "txid",
 		Pid:  "pastelid",
 		Key:  "passphrase",
@@ -204,9 +204,9 @@ func TestServiceGetTask(t *testing.T) {
 func TestServiceListTasks(t *testing.T) {
 	type args struct {
 		ctx      context.Context
-		payloads []*nft.NftDownloadPayload
+		payloads []*nft.DownloadPayload
 	}
-	payload := &nft.NftDownloadPayload{
+	payload := &nft.DownloadPayload{
 		Txid: "txid",
 		Pid:  "pastelid",
 		Key:  "passphrase",
@@ -214,7 +214,7 @@ func TestServiceListTasks(t *testing.T) {
 	var requests []*NftDownloadingRequest
 	requests = append(requests, FromDownloadPayload(payload, ""))
 
-	var payloads []*nft.NftDownloadPayload
+	var payloads []*nft.DownloadPayload
 	payloads = append(payloads, payload)
 
 	testCases := []struct {

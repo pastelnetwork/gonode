@@ -11,7 +11,8 @@ type UploadImageReq struct {
 }
 
 type UploadImageResp struct {
-	ImageID string `json:"image_id"`
+	ImageID      string  `json:"image_id"`
+	EstimatedFee float64 `json:"estimated_fee"`
 }
 
 type DownloadResp struct {
@@ -42,16 +43,6 @@ type RegistrationReq struct {
 	SpendableAddress          string              `json:"spendable_address"`
 	YoutubeURL                string              `json:"youtube_url"`
 	ThumbnailCoordinate       ThumbnailCoordinate `json:"thumbnail_coordinate"`
-}
-
-type ActionDetailReq struct {
-	AppPastelID         string `json:"app_pastelid"`
-	ActionDataHash      string `json:"action_data_hash"`
-	ActionDataSignature string `json:"action_data_signature"`
-}
-
-type ActionDetailResp struct {
-	EstimatedFee float64 `json:"estimated_fee"`
 }
 
 type SenseCascadeStartTaskReq struct {
@@ -106,6 +97,10 @@ func GetNFTSearchURI(queryParams map[string]string) string {
 	uri = strings.TrimSuffix(uri, "&")
 
 	return uri
+}
+
+func GetSenseDownloadURI(baseURI, pid, txid string) string {
+	return fmt.Sprintf("%s/%s?pid=%s&txid=%s", baseURI, "openapi/sense/download", pid, txid)
 }
 
 // Cascade

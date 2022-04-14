@@ -142,121 +142,6 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 	}
 }
 
-// BuildActionDetailsRequest instantiates a HTTP request object with method and
-// path set to call the "sense" service "actionDetails" endpoint
-func (c *Client) BuildActionDetailsRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	var (
-		imageID string
-	)
-	{
-		p, ok := v.(*sense.ActionDetailsPayload)
-		if !ok {
-			return nil, goahttp.ErrInvalidType("sense", "actionDetails", "*sense.ActionDetailsPayload", v)
-		}
-		imageID = p.ImageID
-	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ActionDetailsSensePath(imageID)}
-	req, err := http.NewRequest("POST", u.String(), nil)
-	if err != nil {
-		return nil, goahttp.ErrInvalidURL("sense", "actionDetails", u.String(), err)
-	}
-	if ctx != nil {
-		req = req.WithContext(ctx)
-	}
-
-	return req, nil
-}
-
-// EncodeActionDetailsRequest returns an encoder for requests sent to the sense
-// actionDetails server.
-func EncodeActionDetailsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
-	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*sense.ActionDetailsPayload)
-		if !ok {
-			return goahttp.ErrInvalidType("sense", "actionDetails", "*sense.ActionDetailsPayload", v)
-		}
-		body := NewActionDetailsRequestBody(p)
-		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("sense", "actionDetails", err)
-		}
-		return nil
-	}
-}
-
-// DecodeActionDetailsResponse returns a decoder for responses returned by the
-// sense actionDetails endpoint. restoreBody controls whether the response body
-// should be restored after having been read.
-// DecodeActionDetailsResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
-func DecodeActionDetailsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
-	return func(resp *http.Response) (interface{}, error) {
-		if restoreBody {
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
-			}
-			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			defer func() {
-				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			}()
-		} else {
-			defer resp.Body.Close()
-		}
-		switch resp.StatusCode {
-		case http.StatusCreated:
-			var (
-				body ActionDetailsResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("sense", "actionDetails", err)
-			}
-			p := NewActionDetailsActionDetailResultCreated(&body)
-			view := "default"
-			vres := &senseviews.ActionDetailResult{Projected: p, View: view}
-			if err = senseviews.ValidateActionDetailResult(vres); err != nil {
-				return nil, goahttp.ErrValidationError("sense", "actionDetails", err)
-			}
-			res := sense.NewActionDetailResult(vres)
-			return res, nil
-		case http.StatusBadRequest:
-			var (
-				body ActionDetailsBadRequestResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("sense", "actionDetails", err)
-			}
-			err = ValidateActionDetailsBadRequestResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("sense", "actionDetails", err)
-			}
-			return nil, NewActionDetailsBadRequest(&body)
-		case http.StatusInternalServerError:
-			var (
-				body ActionDetailsInternalServerErrorResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("sense", "actionDetails", err)
-			}
-			err = ValidateActionDetailsInternalServerErrorResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("sense", "actionDetails", err)
-			}
-			return nil, NewActionDetailsInternalServerError(&body)
-		default:
-			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("sense", "actionDetails", resp.StatusCode, string(body))
-		}
-	}
-}
-
 // BuildStartProcessingRequest instantiates a HTTP request object with method
 // and path set to call the "sense" service "startProcessing" endpoint
 func (c *Client) BuildStartProcessingRequest(ctx context.Context, v interface{}) (*http.Request, error) {
@@ -499,12 +384,17 @@ func (c *Client) BuildDownloadRequest(ctx context.Context, v interface{}) (*http
 // download server.
 func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
 	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*sense.SenseDownloadPayload)
+		p, ok := v.(*sense.DownloadPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("sense", "download", "*sense.SenseDownloadPayload", v)
+			return goahttp.ErrInvalidType("sense", "download", "*sense.DownloadPayload", v)
+		}
+		{
+			head := p.Key
+			req.Header.Set("Authorization", head)
 		}
 		values := req.URL.Query()
 		values.Add("txid", p.Txid)
+		values.Add("pid", p.Pid)
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}

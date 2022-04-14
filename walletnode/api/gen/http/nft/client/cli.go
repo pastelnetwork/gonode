@@ -578,7 +578,7 @@ func BuildNftGetPayload(nftNftGetBody string, nftNftGetTxid string) (*nft.NftGet
 
 // BuildDownloadPayload builds the payload for the nft download endpoint from
 // CLI flags.
-func BuildDownloadPayload(nftDownloadTxid string, nftDownloadPid string, nftDownloadKey string) (*nft.NftDownloadPayload, error) {
+func BuildDownloadPayload(nftDownloadTxid string, nftDownloadPid string, nftDownloadKey string) (*nft.DownloadPayload, error) {
 	var err error
 	var txid string
 	{
@@ -611,7 +611,7 @@ func BuildDownloadPayload(nftDownloadTxid string, nftDownloadPid string, nftDown
 	{
 		key = nftDownloadKey
 	}
-	v := &nft.NftDownloadPayload{}
+	v := &nft.DownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key

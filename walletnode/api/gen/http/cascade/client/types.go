@@ -22,17 +22,6 @@ type UploadImageRequestBody struct {
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
 
-// ActionDetailsRequestBody is the type of the "cascade" service
-// "actionDetails" endpoint HTTP request body.
-type ActionDetailsRequestBody struct {
-	// 3rd party app's PastelID
-	PastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
-	// Hash (SHA3-256) of the Action Data
-	ActionDataHash string `form:"action_data_hash" json:"action_data_hash" xml:"action_data_hash"`
-	// The signature (base64) of the Action Data
-	ActionDataSignature string `form:"action_data_signature" json:"action_data_signature" xml:"action_data_signature"`
-}
-
 // StartProcessingRequestBody is the type of the "cascade" service
 // "startProcessing" endpoint HTTP request body.
 type StartProcessingRequestBody struct {
@@ -49,11 +38,6 @@ type UploadImageResponseBody struct {
 	ImageID *string `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Image expiration
 	ExpiresIn *string `form:"expires_in,omitempty" json:"expires_in,omitempty" xml:"expires_in,omitempty"`
-}
-
-// ActionDetailsResponseBody is the type of the "cascade" service
-// "actionDetails" endpoint HTTP response body.
-type ActionDetailsResponseBody struct {
 	// Estimated fee
 	EstimatedFee *float64 `form:"estimated_fee,omitempty" json:"estimated_fee,omitempty" xml:"estimated_fee,omitempty"`
 }
@@ -103,43 +87,6 @@ type UploadImageBadRequestResponseBody struct {
 // service "uploadImage" endpoint HTTP response body for the
 // "InternalServerError" error.
 type UploadImageInternalServerErrorResponseBody struct {
-	// Name is the name of this class of errors.
-	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
-	// Is the error temporary?
-	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
-	// Is the error a timeout?
-	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
-	// Is the error a server-side fault?
-	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
-}
-
-// ActionDetailsBadRequestResponseBody is the type of the "cascade" service
-// "actionDetails" endpoint HTTP response body for the "BadRequest" error.
-type ActionDetailsBadRequestResponseBody struct {
-	// Name is the name of this class of errors.
-	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
-	// Is the error temporary?
-	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
-	// Is the error a timeout?
-	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
-	// Is the error a server-side fault?
-	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
-}
-
-// ActionDetailsInternalServerErrorResponseBody is the type of the "cascade"
-// service "actionDetails" endpoint HTTP response body for the
-// "InternalServerError" error.
-type ActionDetailsInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -275,17 +222,6 @@ func NewUploadImageRequestBody(p *cascade.UploadImagePayload) *UploadImageReques
 	return body
 }
 
-// NewActionDetailsRequestBody builds the HTTP request body from the payload of
-// the "actionDetails" endpoint of the "cascade" service.
-func NewActionDetailsRequestBody(p *cascade.ActionDetailsPayload) *ActionDetailsRequestBody {
-	body := &ActionDetailsRequestBody{
-		PastelID:            p.PastelID,
-		ActionDataHash:      p.ActionDataHash,
-		ActionDataSignature: p.ActionDataSignature,
-	}
-	return body
-}
-
 // NewStartProcessingRequestBody builds the HTTP request body from the payload
 // of the "startProcessing" endpoint of the "cascade" service.
 func NewStartProcessingRequestBody(p *cascade.StartProcessingPayload) *StartProcessingRequestBody {
@@ -300,8 +236,9 @@ func NewStartProcessingRequestBody(p *cascade.StartProcessingPayload) *StartProc
 // result from a HTTP "Created" response.
 func NewUploadImageImageCreated(body *UploadImageResponseBody) *cascadeviews.ImageView {
 	v := &cascadeviews.ImageView{
-		ImageID:   body.ImageID,
-		ExpiresIn: body.ExpiresIn,
+		ImageID:      body.ImageID,
+		ExpiresIn:    body.ExpiresIn,
+		EstimatedFee: body.EstimatedFee,
 	}
 
 	return v
@@ -325,46 +262,6 @@ func NewUploadImageBadRequest(body *UploadImageBadRequestResponseBody) *goa.Serv
 // NewUploadImageInternalServerError builds a cascade service uploadImage
 // endpoint InternalServerError error.
 func NewUploadImageInternalServerError(body *UploadImageInternalServerErrorResponseBody) *goa.ServiceError {
-	v := &goa.ServiceError{
-		Name:      *body.Name,
-		ID:        *body.ID,
-		Message:   *body.Message,
-		Temporary: *body.Temporary,
-		Timeout:   *body.Timeout,
-		Fault:     *body.Fault,
-	}
-
-	return v
-}
-
-// NewActionDetailsActionDetailResultCreated builds a "cascade" service
-// "actionDetails" endpoint result from a HTTP "Created" response.
-func NewActionDetailsActionDetailResultCreated(body *ActionDetailsResponseBody) *cascadeviews.ActionDetailResultView {
-	v := &cascadeviews.ActionDetailResultView{
-		EstimatedFee: body.EstimatedFee,
-	}
-
-	return v
-}
-
-// NewActionDetailsBadRequest builds a cascade service actionDetails endpoint
-// BadRequest error.
-func NewActionDetailsBadRequest(body *ActionDetailsBadRequestResponseBody) *goa.ServiceError {
-	v := &goa.ServiceError{
-		Name:      *body.Name,
-		ID:        *body.ID,
-		Message:   *body.Message,
-		Temporary: *body.Temporary,
-		Timeout:   *body.Timeout,
-		Fault:     *body.Fault,
-	}
-
-	return v
-}
-
-// NewActionDetailsInternalServerError builds a cascade service actionDetails
-// endpoint InternalServerError error.
-func NewActionDetailsInternalServerError(body *ActionDetailsInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -551,54 +448,6 @@ func ValidateUploadImageBadRequestResponseBody(body *UploadImageBadRequestRespon
 // ValidateUploadImageInternalServerErrorResponseBody runs the validations
 // defined on uploadImage_InternalServerError_response_body
 func ValidateUploadImageInternalServerErrorResponseBody(body *UploadImageInternalServerErrorResponseBody) (err error) {
-	if body.Name == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
-	}
-	if body.ID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
-	}
-	if body.Message == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
-	}
-	if body.Temporary == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
-	}
-	if body.Timeout == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
-	}
-	if body.Fault == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
-	}
-	return
-}
-
-// ValidateActionDetailsBadRequestResponseBody runs the validations defined on
-// actionDetails_BadRequest_response_body
-func ValidateActionDetailsBadRequestResponseBody(body *ActionDetailsBadRequestResponseBody) (err error) {
-	if body.Name == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
-	}
-	if body.ID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
-	}
-	if body.Message == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
-	}
-	if body.Temporary == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
-	}
-	if body.Timeout == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
-	}
-	if body.Fault == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
-	}
-	return
-}
-
-// ValidateActionDetailsInternalServerErrorResponseBody runs the validations
-// defined on actionDetails_InternalServerError_response_body
-func ValidateActionDetailsInternalServerErrorResponseBody(body *ActionDetailsInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

@@ -218,7 +218,8 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 				Data:    "fetch failure",
 			}
 		}
-		if p.Params[len(p.Params)-1] == testconst.TestCascadeRegTXID {
+		if p.Params[len(p.Params)-1] == testconst.TestCascadeRegTXID ||
+			p.Params[len(p.Params)-1] == testconst.TestSenseRegTXID {
 			toRet := ActionRegTicket{}
 			if err := json.Unmarshal(data, &toRet); err != nil {
 				return nil, &jrpc2.ErrorObject{
