@@ -21,15 +21,6 @@ type Image struct {
 	View string
 }
 
-// ActionDetailResult is the viewed result type that is projected based on a
-// view.
-type ActionDetailResult struct {
-	// Type to project
-	Projected *ActionDetailResultView
-	// View to render
-	View string
-}
-
 // StartProcessingResult is the viewed result type that is projected based on a
 // view.
 type StartProcessingResult struct {
@@ -45,10 +36,6 @@ type ImageView struct {
 	ImageID *string
 	// Image expiration
 	ExpiresIn *string
-}
-
-// ActionDetailResultView is a type that runs validations on a projected type.
-type ActionDetailResultView struct {
 	// Estimated fee
 	EstimatedFee *float64
 }
@@ -66,12 +53,6 @@ var (
 		"default": {
 			"image_id",
 			"expires_in",
-		},
-	}
-	// ActionDetailResultMap is a map indexing the attribute names of
-	// ActionDetailResult by view name.
-	ActionDetailResultMap = map[string][]string{
-		"default": {
 			"estimated_fee",
 		},
 	}
@@ -89,18 +70,6 @@ func ValidateImage(result *Image) (err error) {
 	switch result.View {
 	case "default", "":
 		err = ValidateImageView(result.Projected)
-	default:
-		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
-	}
-	return
-}
-
-// ValidateActionDetailResult runs the validations defined on the viewed result
-// type ActionDetailResult.
-func ValidateActionDetailResult(result *ActionDetailResult) (err error) {
-	switch result.View {
-	case "default", "":
-		err = ValidateActionDetailResultView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
 	}
@@ -128,6 +97,9 @@ func ValidateImageView(result *ImageView) (err error) {
 	if result.ExpiresIn == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("expires_in", "result"))
 	}
+	if result.EstimatedFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("estimated_fee", "result"))
+	}
 	if result.ImageID != nil {
 		if utf8.RuneCountInString(*result.ImageID) < 8 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, true))
@@ -140,15 +112,6 @@ func ValidateImageView(result *ImageView) (err error) {
 	}
 	if result.ExpiresIn != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.expires_in", *result.ExpiresIn, goa.FormatDateTime))
-	}
-	return
-}
-
-// ValidateActionDetailResultView runs the validations defined on
-// ActionDetailResultView using the "default" view.
-func ValidateActionDetailResultView(result *ActionDetailResultView) (err error) {
-	if result.EstimatedFee == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("estimated_fee", "result"))
 	}
 	if result.EstimatedFee != nil {
 		if *result.EstimatedFee < 1e-05 {

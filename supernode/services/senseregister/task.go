@@ -2,6 +2,7 @@ package senseregister
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,8 +24,9 @@ type SenseRegistrationTask struct {
 
 	storage *common.StorageHandler
 
-	Ticket *pastel.ActionTicket
-	Asset  *files.File
+	Ticket   *pastel.ActionTicket
+	Asset    *files.File
+	dataHash []byte
 
 	// signature of ticket data signed by this node's pastelID
 	ownSignature []byte
@@ -122,7 +124,7 @@ func (task *SenseRegistrationTask) validateSignedTicketFromWN(ctx context.Contex
 	}
 
 	// Verify APISenseTicket
-	_, err = task.Ticket.APISenseTicket()
+	apiTicket, err := task.Ticket.APISenseTicket()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("invalid api sense ticket")
 		return errors.Errorf("invalid api sense ticket: %w", err)
@@ -145,6 +147,9 @@ func (task *SenseRegistrationTask) validateSignedTicketFromWN(ctx context.Contex
 
 		return errors.Errorf("validate rq & dd id files %w", err)
 	}
+
+	task.dataHash = apiTicket.DataHash
+
 	return nil
 }
 
@@ -315,6 +320,8 @@ func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, i
 func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
+	ticketID := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, task.dataHash)
+
 	req := pastel.RegisterActionRequest{
 		Ticket: &pastel.ActionTicket{
 			Version:       task.Ticket.Version,
@@ -341,7 +348,7 @@ func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, 
 		Mn1PastelID: task.config.PastelID,
 		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
-		Key1:        "key1-" + uuid.New().String(),
+		Key1:        ticketID,
 		Key2:        "key2-" + uuid.New().String(),
 	}
 

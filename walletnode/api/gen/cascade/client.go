@@ -16,7 +16,6 @@ import (
 // Client is the "cascade" service client.
 type Client struct {
 	UploadImageEndpoint       goa.Endpoint
-	ActionDetailsEndpoint     goa.Endpoint
 	StartProcessingEndpoint   goa.Endpoint
 	RegisterTaskStateEndpoint goa.Endpoint
 	GetTaskHistoryEndpoint    goa.Endpoint
@@ -27,7 +26,6 @@ type Client struct {
 func NewClient(uploadImage, actionDetails, startProcessing, registerTaskState, getTaskHistory, download goa.Endpoint) *Client {
 	return &Client{
 		UploadImageEndpoint:       uploadImage,
-		ActionDetailsEndpoint:     actionDetails,
 		StartProcessingEndpoint:   startProcessing,
 		RegisterTaskStateEndpoint: registerTaskState,
 		GetTaskHistoryEndpoint:    getTaskHistory,
@@ -43,16 +41,6 @@ func (c *Client) UploadImage(ctx context.Context, p *UploadImagePayload) (res *I
 		return
 	}
 	return ires.(*Image), nil
-}
-
-// ActionDetails calls the "actionDetails" endpoint of the "cascade" service.
-func (c *Client) ActionDetails(ctx context.Context, p *ActionDetailsPayload) (res *ActionDetailResult, err error) {
-	var ires interface{}
-	ires, err = c.ActionDetailsEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.(*ActionDetailResult), nil
 }
 
 // StartProcessing calls the "startProcessing" endpoint of the "cascade"
@@ -88,7 +76,7 @@ func (c *Client) GetTaskHistory(ctx context.Context, p *GetTaskHistoryPayload) (
 }
 
 // Download calls the "download" endpoint of the "cascade" service.
-func (c *Client) Download(ctx context.Context, p *NftDownloadPayload) (res *DownloadResult, err error) {
+func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res *DownloadResult, err error) {
 	var ires interface{}
 	ires, err = c.DownloadEndpoint(ctx, p)
 	if err != nil {

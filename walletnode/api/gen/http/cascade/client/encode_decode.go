@@ -142,121 +142,6 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 	}
 }
 
-// BuildActionDetailsRequest instantiates a HTTP request object with method and
-// path set to call the "cascade" service "actionDetails" endpoint
-func (c *Client) BuildActionDetailsRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	var (
-		imageID string
-	)
-	{
-		p, ok := v.(*cascade.ActionDetailsPayload)
-		if !ok {
-			return nil, goahttp.ErrInvalidType("cascade", "actionDetails", "*cascade.ActionDetailsPayload", v)
-		}
-		imageID = p.ImageID
-	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ActionDetailsCascadePath(imageID)}
-	req, err := http.NewRequest("POST", u.String(), nil)
-	if err != nil {
-		return nil, goahttp.ErrInvalidURL("cascade", "actionDetails", u.String(), err)
-	}
-	if ctx != nil {
-		req = req.WithContext(ctx)
-	}
-
-	return req, nil
-}
-
-// EncodeActionDetailsRequest returns an encoder for requests sent to the
-// cascade actionDetails server.
-func EncodeActionDetailsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
-	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*cascade.ActionDetailsPayload)
-		if !ok {
-			return goahttp.ErrInvalidType("cascade", "actionDetails", "*cascade.ActionDetailsPayload", v)
-		}
-		body := NewActionDetailsRequestBody(p)
-		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("cascade", "actionDetails", err)
-		}
-		return nil
-	}
-}
-
-// DecodeActionDetailsResponse returns a decoder for responses returned by the
-// cascade actionDetails endpoint. restoreBody controls whether the response
-// body should be restored after having been read.
-// DecodeActionDetailsResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
-func DecodeActionDetailsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
-	return func(resp *http.Response) (interface{}, error) {
-		if restoreBody {
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
-			}
-			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			defer func() {
-				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			}()
-		} else {
-			defer resp.Body.Close()
-		}
-		switch resp.StatusCode {
-		case http.StatusCreated:
-			var (
-				body ActionDetailsResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("cascade", "actionDetails", err)
-			}
-			p := NewActionDetailsActionDetailResultCreated(&body)
-			view := "default"
-			vres := &cascadeviews.ActionDetailResult{Projected: p, View: view}
-			if err = cascadeviews.ValidateActionDetailResult(vres); err != nil {
-				return nil, goahttp.ErrValidationError("cascade", "actionDetails", err)
-			}
-			res := cascade.NewActionDetailResult(vres)
-			return res, nil
-		case http.StatusBadRequest:
-			var (
-				body ActionDetailsBadRequestResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("cascade", "actionDetails", err)
-			}
-			err = ValidateActionDetailsBadRequestResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("cascade", "actionDetails", err)
-			}
-			return nil, NewActionDetailsBadRequest(&body)
-		case http.StatusInternalServerError:
-			var (
-				body ActionDetailsInternalServerErrorResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("cascade", "actionDetails", err)
-			}
-			err = ValidateActionDetailsInternalServerErrorResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("cascade", "actionDetails", err)
-			}
-			return nil, NewActionDetailsInternalServerError(&body)
-		default:
-			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("cascade", "actionDetails", resp.StatusCode, string(body))
-		}
-	}
-}
-
 // BuildStartProcessingRequest instantiates a HTTP request object with method
 // and path set to call the "cascade" service "startProcessing" endpoint
 func (c *Client) BuildStartProcessingRequest(ctx context.Context, v interface{}) (*http.Request, error) {
@@ -596,9 +481,9 @@ func (c *Client) BuildDownloadRequest(ctx context.Context, v interface{}) (*http
 // download server.
 func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
 	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*cascade.NftDownloadPayload)
+		p, ok := v.(*cascade.DownloadPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("cascade", "download", "*cascade.NftDownloadPayload", v)
+			return goahttp.ErrInvalidType("cascade", "download", "*cascade.DownloadPayload", v)
 		}
 		{
 			head := p.Key

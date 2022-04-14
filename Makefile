@@ -1,3 +1,23 @@
+VERSION = $(shell git describe --tag)
+arch = "amd64"
+ifeq ($(OS),Windows_NT)
+	os = "windows"
+	ext = ".exe"
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		os = "linux"
+		ext = ""
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		os = "darwin"
+		ext = ""
+	endif
+endif
+LDFLAGS="-s -w -X github.com/pastelnetwork/gonode/common/version.version=$(VERSION)"
+BINARY_SN ?= supernode
+BINARY_WN ?= walletnode
+
 wn-unit-tests:
 	cd ./walletnode && go test -race ./...
 	cd ./common && go test -race ./...
@@ -45,3 +65,9 @@ build:
 clean-proto:
 	rm -f ./proto/supernode/*.go
 	rm -f ./proto/walletnode/*.go
+release:
+	cd ./supernode && go build -ldflags=$(LDFLAGS) -o $(BINARY_SN)
+	strip -v supernode/$(BINARY_SN) -o dist/$(BINARY_SN)-linux-$(arch)
+
+	cd ./walletnode && go build -ldflags=$(LDFLAGS) -o $(BINARY_WN)
+	strip -v walletnode/$(BINARY_WN) -o dist/$(BINARY_WN)-$(os)-$(arch)$(ext)

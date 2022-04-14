@@ -16,11 +16,6 @@ func UploadImageCascadePath() string {
 	return "/openapi/cascade/upload"
 }
 
-// ActionDetailsCascadePath returns the URL path to the cascade service actionDetails HTTP endpoint.
-func ActionDetailsCascadePath(imageID string) string {
-	return fmt.Sprintf("/openapi/cascade/details/%v", imageID)
-}
-
 // StartProcessingCascadePath returns the URL path to the cascade service startProcessing HTTP endpoint.
 func StartProcessingCascadePath(imageID string) string {
 	return fmt.Sprintf("/openapi/cascade/start/%v", imageID)

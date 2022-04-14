@@ -624,6 +624,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Image'
               example:
+                estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
         "400":
@@ -661,9 +662,9 @@ paths:
         schema:
           type: string
           description: Artist PastelID or special value; mine
-          example: d9x
+          example: e1t
           maxLength: 256
-        example: hs0
+        example: 7o3
       - name: limit
         in: query
         description: Number of results to be return
@@ -684,8 +685,8 @@ paths:
         schema:
           type: string
           description: Query is search query entered by user
-          example: Deleniti atque accusamus cupiditate ut voluptas porro.
-        example: Enim cumque.
+          example: Eius est assumenda aut.
+        example: Iste rem ex qui consequatur.
       - name: creator_name
         in: query
         description: Name of the nft creator
@@ -694,7 +695,7 @@ paths:
           type: boolean
           description: Name of the nft creator
           default: true
-          example: true
+          example: false
         example: false
       - name: art_title
         in: query
@@ -704,7 +705,7 @@ paths:
           type: boolean
           description: Title of NFT
           default: true
-          example: true
+          example: false
         example: true
       - name: series
         in: query
@@ -715,7 +716,7 @@ paths:
           description: NFT series name
           default: true
           example: true
-        example: true
+        example: false
       - name: descr
         in: query
         description: Artist written statement
@@ -725,7 +726,7 @@ paths:
           description: Artist written statement
           default: true
           example: false
-        example: true
+        example: false
       - name: keyword
         in: query
         description: Keyword that Artist assigns to NFT
@@ -734,8 +735,8 @@ paths:
           type: boolean
           description: Keyword that Artist assigns to NFT
           default: true
-          example: true
-        example: true
+          example: false
+        example: false
       - name: min_copies
         in: query
         description: Minimum number of created copies
@@ -766,9 +767,9 @@ paths:
           type: integer
           description: Minimum blocknum
           default: 1
-          example: 5455845249127942523
+          example: 7163585082911917721
           minimum: 1
-        example: 2822541399489506456
+        example: 214853060345676409
       - name: max_block
         in: query
         description: Maximum blocknum
@@ -776,9 +777,9 @@ paths:
         schema:
           type: integer
           description: Maximum blocknum
-          example: 3517297032448960599
+          example: 4934493894069213380
           minimum: 1
-        example: 1198630462170886338
+        example: 876338420434569713
       - name: is_likely_dupe
         in: query
         description: Is this image likely a duplicate of another known image
@@ -926,64 +927,6 @@ paths:
                   title: Mona Lisa
                   txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-        "400":
-          description: Bad Request response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-        "500":
-          description: Internal Server Error response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-  /openapi/cascade/details/{image_id}:
-    post:
-      tags:
-      - cascade
-      summary: Provides action details
-      description: Provide action details
-      operationId: cascade#actionDetails
-      parameters:
-      - name: image_id
-        in: path
-        description: Uploaded image ID
-        required: true
-        schema:
-          type: string
-          description: Uploaded image ID
-          example: VK7mpAqZ
-          minLength: 8
-          maxLength: 8
-        example: VK7mpAqZ
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ActionDetailsRequestBody'
-            example:
-              action_data_hash: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
-              action_data_signature: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
-              app_pastelid: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
-      responses:
-        "201":
-          description: Created response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ActionDetailResult'
-              example:
-                estimated_fee: 100
         "400":
           description: Bad Request response.
           content:
@@ -1299,66 +1242,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Image'
               example:
+                estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
-        "400":
-          description: Bad Request response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-        "500":
-          description: Internal Server Error response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-  /openapi/sense/details/{image_id}:
-    post:
-      tags:
-      - sense
-      summary: Provides action details
-      description: Provide action details
-      operationId: sense#actionDetails
-      parameters:
-      - name: image_id
-        in: path
-        description: Uploaded image ID
-        required: true
-        schema:
-          type: string
-          description: Uploaded image ID
-          example: VK7mpAqZ
-          minLength: 8
-          maxLength: 8
-        example: VK7mpAqZ
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ActionDetailsRequestBody'
-            example:
-              action_data_hash: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
-              action_data_signature: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
-              app_pastelid: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
-      responses:
-        "201":
-          description: Created response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ActionDetailResult'
-              example:
-                estimated_fee: 100
         "400":
           description: Bad Request response.
           content:
@@ -1705,6 +1591,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Image'
               example:
+                estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
         "400":
@@ -1943,51 +1830,6 @@ paths:
                 name: bad_request
 components:
   schemas:
-    ActionDetailResult:
-      type: object
-      properties:
-        estimated_fee:
-          type: number
-          description: Estimated fee
-          default: 1
-          example: 100
-          minimum: 1e-05
-      example:
-        estimated_fee: 100
-      required:
-      - estimated_fee
-    ActionDetailsRequestBody:
-      type: object
-      properties:
-        action_data_hash:
-          type: string
-          description: Hash (SHA3-256) of the Action Data
-          example: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
-          pattern: ^[a-fA-F0-9]
-          minLength: 64
-          maxLength: 64
-        action_data_signature:
-          type: string
-          description: The signature (base64) of the Action Data
-          example: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
-          pattern: ^[a-zA-Z0-9\/+]
-          minLength: 152
-          maxLength: 152
-        app_pastelid:
-          type: string
-          description: 3rd party app's PastelID
-          example: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
-          pattern: ^[a-zA-Z0-9]
-          minLength: 86
-          maxLength: 86
-      example:
-        action_data_hash: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
-        action_data_signature: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
-        app_pastelid: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
-      required:
-      - app_pastelid
-      - action_data_hash
-      - action_data_signature
     CreateUserdataRequestBody:
       type: object
       properties:
@@ -2073,59 +1915,69 @@ components:
           type: string
           description: File downloaded
           example:
-          - 69
-          - 120
-          - 32
-          - 112
-          - 108
+          - 80
+          - 114
           - 97
-          - 99
           - 101
-          - 97
-          - 116
-          - 32
-          - 111
-          - 112
+          - 115
+          - 101
+          - 110
           - 116
           - 105
-          - 111
+          - 117
+          - 109
           - 32
           - 113
           - 117
           - 97
-          - 101
-          - 114
-          - 97
-          - 116
-          - 32
-          - 110
-          - 97
-          - 109
-          - 32
-          - 114
-          - 101
-          - 112
-          - 114
-          - 101
-          - 104
-          - 101
-          - 110
-          - 100
-          - 101
-          - 114
+          - 115
           - 105
-          - 116
+          - 32
+          - 109
+          - 97
+          - 105
+          - 111
+          - 114
+          - 101
+          - 115
           - 46
           format: binary
       example:
         file:
-        - 78
-        - 111
-        - 110
-        - 32
-        - 97
-        - 117
+        - 85
         - 116
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 99
+        - 117
+        - 109
+        - 113
+        - 117
+        - 101
+        - 32
+        - 102
+        - 117
+        - 103
+        - 105
+        - 116
+        - 32
+        - 113
+        - 117
+        - 105
+        - 97
+        - 32
+        - 113
+        - 117
+        - 105
+        - 97
         - 46
       required:
       - file
@@ -2175,7 +2027,7 @@ components:
         field_type:
           type: string
           description: Field that is matched
-          example: creator_name
+          example: keyword
           enum:
           - creator_name
           - art_title
@@ -2186,35 +2038,40 @@ components:
           type: array
           items:
             type: integer
-            example: 56608276829013425
+            example: 6800949856273661722
             format: int64
           description: The indexes of matched characters. Useful for highlighting
             matches
           example:
-          - 1112505717733003447
-          - 2045520581263280705
-          - 9065383425313663567
+          - 7255549832734117914
+          - 8019144698680751720
         score:
           type: integer
           description: Score used to rank matches
-          example: 9656980696001401
+          example: 8462888387199855879
           format: int64
         str:
           type: string
           description: String that is matched
-          example: Tenetur quidem iste quia tempora.
+          example: Placeat optio quaerat.
       example:
         field_type: art_title
         matched_indexes:
-        - 3190580574071112234
-        - 3932270001175192975
-        - 4484114350816735501
-        - 1332623221769331170
-        score: 4843529427194309936
-        str: Non recusandae eligendi nemo non quia dolores.
+        - 72132323315575940
+        - 7530258138337984816
+        - 1392098802136953784
+        - 8865053212183898648
+        score: 5970008988226187702
+        str: Aut adipisci odio minus iusto.
     Image:
       type: object
       properties:
+        estimated_fee:
+          type: number
+          description: Estimated fee
+          default: 1
+          example: 100
+          minimum: 1e-05
         expires_in:
           type: string
           description: Image expiration
@@ -2227,11 +2084,13 @@ components:
           minLength: 8
           maxLength: 8
       example:
+        estimated_fee: 100
         expires_in: 2006-01-02T15:04:05Z07:00
         image_id: VK7mpAqZ
       required:
       - image_id
       - expires_in
+      - estimated_fee
     NftDetail:
       type: object
       properties:
@@ -2327,23 +2186,38 @@ components:
           type: string
           description: Preview Image
           example:
-          - 85
-          - 116
-          - 32
-          - 118
-          - 111
-          - 108
-          - 117
-          - 112
-          - 116
-          - 97
-          - 116
+          - 84
           - 101
-          - 109
+          - 110
+          - 101
+          - 116
+          - 117
+          - 114
           - 32
           - 113
           - 117
           - 105
+          - 100
+          - 101
+          - 109
+          - 32
+          - 105
+          - 115
+          - 116
+          - 101
+          - 32
+          - 113
+          - 117
+          - 105
+          - 97
+          - 32
+          - 116
+          - 101
+          - 109
+          - 112
+          - 111
+          - 114
+          - 97
           - 46
           format: binary
         rareness_score:
@@ -2355,7 +2229,7 @@ components:
         royalty:
           type: number
           description: how much artist should get on all future resales
-          example: 0.8215901302982885
+          example: 0.9647285796506442
           format: double
         series_name:
           type: string
@@ -2377,57 +2251,93 @@ components:
           type: string
           description: Thumbnail_1 image
           example:
-          - 81
-          - 117
-          - 105
-          - 97
-          - 32
-          - 113
-          - 117
-          - 111
-          - 32
-          - 109
-          - 111
-          - 108
+          - 69
+          - 120
           - 101
-          - 115
+          - 114
+          - 99
+          - 105
+          - 116
+          - 97
           - 116
           - 105
-          - 97
-          - 101
-          - 32
           - 111
-          - 109
           - 110
-          - 105
-          - 115
-          - 32
-          - 100
-          - 111
-          - 108
-          - 111
-          - 114
           - 101
           - 109
           - 32
           - 118
           - 101
-          - 114
+          - 108
           - 105
           - 116
+          - 32
+          - 113
+          - 117
+          - 111
+          - 100
+          - 32
           - 97
-          - 116
+          - 108
           - 105
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 105
+          - 112
           - 115
+          - 97
+          - 32
+          - 114
+          - 101
+          - 114
+          - 117
+          - 109
           - 46
           format: binary
         thumbnail_2:
           type: string
           description: Thumbnail_2 image
           example:
-          - 65
+          - 78
+          - 111
+          - 110
+          - 32
+          - 114
+          - 101
+          - 99
           - 117
-          - 116
+          - 115
+          - 97
+          - 110
+          - 100
+          - 97
+          - 101
+          - 32
+          - 101
+          - 108
+          - 105
+          - 103
+          - 101
+          - 110
+          - 100
+          - 105
+          - 32
+          - 110
+          - 101
+          - 109
+          - 111
+          - 32
+          - 110
+          - 111
+          - 110
+          - 32
+          - 113
+          - 117
+          - 105
+          - 97
           - 32
           - 100
           - 111
@@ -2469,7 +2379,7 @@ components:
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
         drawing_nsfw_score: 1
-        green_address: true
+        green_address: false
         hentai_nsfw_score: 1
         is_likely_dupe: false
         keywords: Renaissance, sfumato, portrait
@@ -2479,70 +2389,100 @@ components:
         number_of_pages_of_results: 1
         porn_nsfw_score: 1
         preview_thumbnail:
-        - 65
-        - 115
-        - 115
-        - 117
-        - 109
-        - 101
-        - 110
-        - 100
-        - 97
-        - 32
-        - 97
-        - 117
+        - 69
         - 116
+        - 32
+        - 113
+        - 117
+        - 105
+        - 100
+        - 101
+        - 109
+        - 32
+        - 105
+        - 117
+        - 115
+        - 116
+        - 111
+        - 32
+        - 105
+        - 112
+        - 115
+        - 97
+        - 109
         - 46
         rareness_score: 1
-        royalty: 0.9450391532344382
+        royalty: 0.17198138250167108
         series_name: Famous artist
         sexy_nsfw_score: 1
         storage_fee: 100
         thumbnail_1:
-        - 73
+        - 81
+        - 117
+        - 111
         - 115
+        - 32
+        - 97
+        - 114
+        - 99
+        - 104
+        - 105
         - 116
         - 101
-        - 32
-        - 114
-        - 101
-        - 109
-        - 32
-        - 101
-        - 120
-        - 32
-        - 113
-        - 117
-        - 105
+        - 99
+        - 116
+        - 111
         - 32
         - 99
         - 111
-        - 110
+        - 114
+        - 112
+        - 111
+        - 114
+        - 105
         - 115
-        - 101
-        - 113
+        - 32
+        - 118
+        - 111
+        - 108
         - 117
+        - 112
+        - 116
         - 97
         - 116
         - 117
+        - 109
+        - 32
         - 114
+        - 101
+        - 114
+        - 117
+        - 109
         - 46
         thumbnail_2:
-        - 79
-        - 109
-        - 110
-        - 105
-        - 115
-        - 32
-        - 101
-        - 110
-        - 105
-        - 109
-        - 32
-        - 115
+        - 86
+        - 111
+        - 108
         - 117
-        - 110
+        - 112
         - 116
+        - 97
+        - 116
+        - 101
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 32
+        - 110
+        - 111
+        - 110
+        - 32
+        - 113
+        - 117
+        - 105
+        - 97
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -2702,7 +2642,7 @@ components:
           type: integer
           description: Sort index of the match based on score.This must be used to
             sort results on UI.
-          example: 8898050604704377128
+          example: 2720471430557741674
           format: int64
         matches:
           type: array
@@ -2722,11 +2662,23 @@ components:
             - 2772256600432396467
             score: 3665340228007184473
             str: Nostrum expedita ducimus voluptatem repudiandae.
+          - field_type: series
+            matched_indexes:
+            - 3865197007286316431
+            - 2772256600432396467
+            score: 3665340228007184473
+            str: Nostrum expedita ducimus voluptatem repudiandae.
         nft:
           $ref: '#/components/schemas/NftSummary'
       example:
-        match_index: 4893327340758507211
+        match_index: 2331351322272737655
         matches:
+        - field_type: series
+          matched_indexes:
+          - 3865197007286316431
+          - 2772256600432396467
+          score: 3665340228007184473
+          str: Nostrum expedita ducimus voluptatem repudiandae.
         - field_type: series
           matched_indexes:
           - 3865197007286316431
@@ -2863,36 +2815,56 @@ components:
           type: string
           description: Thumbnail_1 image
           example:
-          - 79
+          - 73
           - 100
-          - 105
-          - 111
           - 32
-          - 109
-          - 105
-          - 110
-          - 117
+          - 100
+          - 111
+          - 108
+          - 111
+          - 114
+          - 101
           - 115
+          - 32
+          - 116
+          - 101
+          - 109
+          - 112
+          - 111
+          - 114
+          - 101
+          - 32
+          - 97
+          - 98
           - 46
           format: binary
         thumbnail_2:
           type: string
           description: Thumbnail_2 image
           example:
-          - 77
+          - 69
+          - 117
+          - 109
+          - 32
+          - 100
           - 111
           - 108
-          - 101
-          - 115
-          - 116
-          - 105
-          - 97
+          - 111
+          - 114
           - 101
           - 32
           - 113
           - 117
-          - 111
+          - 105
+          - 32
+          - 105
+          - 117
+          - 114
+          - 101
+          - 32
+          - 101
           - 115
+          - 116
           - 46
           format: binary
         title:
@@ -2926,33 +2898,11 @@ components:
         rareness_score: 1
         series_name: Famous artist
         thumbnail_1:
-        - 66
-        - 108
-        - 97
-        - 110
-        - 100
-        - 105
-        - 116
-        - 105
-        - 105
-        - 115
-        - 32
-        - 118
+        - 68
         - 111
         - 108
-        - 117
-        - 112
-        - 116
-        - 97
-        - 115
-        - 32
-        - 105
-        - 109
-        - 112
-        - 101
-        - 100
-        - 105
-        - 116
+        - 111
+        - 114
         - 32
         - 118
         - 111
@@ -2968,20 +2918,28 @@ components:
         - 113
         - 117
         - 105
-        - 100
-        - 101
+        - 97
+        - 32
+        - 111
         - 109
+        - 110
+        - 105
+        - 115
         - 46
         thumbnail_2:
-        - 77
-        - 105
-        - 110
+        - 70
         - 117
-        - 115
+        - 103
+        - 105
+        - 116
         - 32
-        - 110
+        - 109
+        - 97
+        - 105
         - 111
-        - 110
+        - 114
+        - 101
+        - 115
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -3195,8 +3153,6 @@ components:
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
         status: Task Started
         ticket:
           creator_name: Leonardo da Vinci
@@ -3405,56 +3361,6 @@ components:
             top_left_y: 0
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-      - id: n6Qn6TFM
-        status: Task Started
-        ticket:
-          creator_name: Leonardo da Vinci
-          creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-          creator_pastelid_passphrase: qwerasdf1234
-          creator_website_url: https://www.leonardodavinci.net
-          description: The Mona Lisa is an oil painting by Italian artist, inventor,
-            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
-            a portrait of a seated woman set against an imaginary landscape.
-          green: false
-          issued_copies: 1
-          keywords: Renaissance, sfumato, portrait
-          maximum_fee: 100
-          name: Mona Lisa
-          royalty: 12
-          series_name: Famous artist
-          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
-          thumbnail_coordinate:
-            bottom_right_x: 640
-            bottom_right_y: 480
-            top_left_x: 0
-            top_left_y: 0
-          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-      - id: n6Qn6TFM
-        status: Task Started
-        ticket:
-          creator_name: Leonardo da Vinci
-          creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-          creator_pastelid_passphrase: qwerasdf1234
-          creator_website_url: https://www.leonardodavinci.net
-          description: The Mona Lisa is an oil painting by Italian artist, inventor,
-            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
-            a portrait of a seated woman set against an imaginary landscape.
-          green: false
-          issued_copies: 1
-          keywords: Renaissance, sfumato, portrait
-          maximum_fee: 100
-          name: Mona Lisa
-          royalty: 12
-          series_name: Famous artist
-          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
-          thumbnail_coordinate:
-            bottom_right_x: 640
-            bottom_right_y: 480
-            top_left_x: 0
-            top_left_y: 0
-          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     TaskState:
       type: object
       properties:
@@ -3580,23 +3486,36 @@ components:
           type: string
           description: File to upload
           example:
-          - 69
+          - 65
           - 117
+          - 116
+          - 32
+          - 115
+          - 117
+          - 110
+          - 116
+          - 32
+          - 109
+          - 97
+          - 103
+          - 110
+          - 97
           - 109
           - 32
-          - 100
-          - 111
-          - 108
-          - 111
-          - 114
+          - 110
           - 101
+          - 109
+          - 111
           - 32
-          - 113
-          - 117
-          - 105
+          - 110
+          - 101
+          - 109
+          - 111
           - 32
-          - 105
-          - 117
+          - 108
+          - 97
+          - 98
+          - 111
           - 114
           - 101
           - 32
@@ -3610,33 +3529,22 @@ components:
           description: For internal use
       example:
         file:
-        - 68
-        - 111
-        - 108
-        - 111
-        - 114
-        - 32
-        - 118
-        - 111
-        - 108
-        - 117
-        - 112
-        - 116
+        - 69
         - 97
-        - 116
-        - 117
-        - 109
-        - 32
         - 113
         - 117
-        - 105
-        - 97
+        - 101
         - 32
-        - 111
-        - 109
         - 110
-        - 105
-        - 115
+        - 101
+        - 109
+        - 111
+        - 32
+        - 97
+        - 100
+        - 32
+        - 101
+        - 116
         - 46
       required:
       - file

@@ -112,6 +112,8 @@ type UploadImageResponseBody struct {
 	ImageID string `form:"image_id" json:"image_id" xml:"image_id"`
 	// Image expiration
 	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
+	// Estimated fee
+	EstimatedFee float64 `form:"estimated_fee" json:"estimated_fee" xml:"estimated_fee"`
 }
 
 // NftSearchResponseBody is the type of the "nft" service "nftSearch" endpoint
@@ -714,8 +716,9 @@ func NewTaskResponseTinyCollection(res nftviews.TaskCollectionView) TaskResponse
 // the "uploadImage" endpoint of the "nft" service.
 func NewUploadImageResponseBody(res *nftviews.ImageView) *UploadImageResponseBody {
 	body := &UploadImageResponseBody{
-		ImageID:   *res.ImageID,
-		ExpiresIn: *res.ExpiresIn,
+		ImageID:      *res.ImageID,
+		ExpiresIn:    *res.ExpiresIn,
+		EstimatedFee: *res.EstimatedFee,
 	}
 	return body
 }
@@ -1108,9 +1111,9 @@ func NewNftGetPayload(body *NftGetRequestBody, txid string) *nft.NftGetPayload {
 	return v
 }
 
-// NewDownloadNftDownloadPayload builds a nft service download endpoint payload.
-func NewDownloadNftDownloadPayload(txid string, pid string, key string) *nft.NftDownloadPayload {
-	v := &nft.NftDownloadPayload{}
+// NewDownloadPayload builds a nft service download endpoint payload.
+func NewDownloadPayload(txid string, pid string, key string) *nft.DownloadPayload {
+	v := &nft.DownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key
