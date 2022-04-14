@@ -570,28 +570,37 @@ func makeDDAndFpFile() []byte {
 	imageRarenessScore := &ImageRarenessScoreReply{}
 	json.Unmarshal(rawImageRarenessData, imageRarenessScore)
 	ddAndFp := &pastel.DDAndFingerprints{
-		Block:                      imageRarenessScore.Block,
-		Principal:                  imageRarenessScore.Principal,
+		BlockHash:   imageRarenessScore.BlockHash,
+		BlockHeight: imageRarenessScore.BlockHeight,
+
+		TimestampOfRequest: imageRarenessScore.TimestampOfRequest,
+		SubmitterPastelID:  imageRarenessScore.SubmitterPastelID,
+		SN1PastelID:        imageRarenessScore.SN1PastelID,
+		SN2PastelID:        imageRarenessScore.SN2PastelID,
+		SN3PastelID:        imageRarenessScore.SN3PastelID,
+
+		IsOpenAPIRequest:           imageRarenessScore.IsOpenAPIRequest,
+		OpenAPISubsetID:            imageRarenessScore.OpenAPISubsetID,
 		DupeDetectionSystemVersion: imageRarenessScore.DupeDetectionSystemVersion,
 
-		IsLikelyDupe:     imageRarenessScore.IsLikelyDupe,
-		IsRareOnInternet: imageRarenessScore.IsRareOnInternet,
+		IsLikelyDupe:         imageRarenessScore.IsLikelyDupe,
+		IsRareOnInternet:     imageRarenessScore.IsRareOnInternet,
+		OverallRarenessScore: imageRarenessScore.OverallRarenessScore,
 
-		RarenessScores:   (*pastel.RarenessScores)(imageRarenessScore.RarenessScores),
+		PctOfTop10MostSimilarWithDupeProbAbove25pct: imageRarenessScore.PctOfTop10MostSimilarWithDupeProbAbove25pct,
+		PctOfTop10MostSimilarWithDupeProbAbove33pct: imageRarenessScore.PctOfTop10MostSimilarWithDupeProbAbove33pct,
+		PctOfTop10MostSimilarWithDupeProbAbove50pct: imageRarenessScore.PctOfTop10MostSimilarWithDupeProbAbove50pct,
+
+		RarenessScoresTableJSONCompressedB64: imageRarenessScore.RarenessScoresTableJSONCompressedB64,
+
 		InternetRareness: (*pastel.InternetRareness)(imageRarenessScore.InternetRareness),
 
-		OpenNSFWScore:         imageRarenessScore.OpenNsfwScore,
-		AlternativeNSFWScores: (*pastel.AlternativeNSFWScores)(imageRarenessScore.AlternativeNsfwScores),
+		OpenNSFWScore:         imageRarenessScore.OpenNSFWScore,
+		AlternativeNSFWScores: (*pastel.AlternativeNSFWScores)(imageRarenessScore.AlternativeNSFWScores),
 
 		ImageFingerprintOfCandidateImageFile: imageRarenessScore.ImageFingerprintOfCandidateImageFile,
-		FingerprintsStat:                     (*pastel.FingerprintsStat)(imageRarenessScore.FingerprintsStat),
 
-		HashOfCandidateImageFile:   imageRarenessScore.HashOfCandidateImageFile,
-		PerceptualImageHashes:      (*pastel.PerceptualImageHashes)(imageRarenessScore.PerceptualImageHashes),
-		PerceptualHashOverlapCount: imageRarenessScore.PerceptualHashOverlapCount,
-
-		Maxes:      (*pastel.Maxes)(imageRarenessScore.Maxes),
-		Percentile: (*pastel.Percentile)(imageRarenessScore.Percentile),
+		HashOfCandidateImageFile: imageRarenessScore.HashOfCandidateImageFile,
 	}
 	dataJSON, err := json.Marshal(ddAndFp)
 	if err != nil {

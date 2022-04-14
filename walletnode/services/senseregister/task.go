@@ -3,6 +3,7 @@ package senseregister
 import (
 	"context"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -29,6 +30,7 @@ type SenseRegistrationTask struct {
 	// data to create ticket
 	creatorBlockHeight int
 	creatorBlockHash   string
+	creationTimestamp  string
 	dataHash           []byte
 	registrationFee    int64
 
@@ -64,6 +66,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
+	task.creationTimestamp = time.Now().Format("YYYY-MM-DD hh:mm:ss")
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
@@ -193,8 +196,11 @@ func (task *SenseRegistrationTask) sendActionMetadata(ctx context.Context) error
 
 	regMetadata := &types.ActionRegMetadata{
 		BlockHash:       task.creatorBlockHash,
+		BlockHeight:     strconv.Itoa(task.creatorBlockHeight),
+		Timestamp:       task.creationTimestamp,
 		CreatorPastelID: task.Request.AppPastelID,
 		BurnTxID:        task.Request.BurnTxID,
+		OpenAPISubsetID: task.Request.OpenAPISubsetID,
 	}
 
 	group, _ := errgroup.WithContext(ctx)

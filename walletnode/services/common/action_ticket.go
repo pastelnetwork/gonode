@@ -14,4 +14,6 @@ type ActionRegistrationRequest struct {
 	AppPastelID string `json:"app_pastel_id"`
 	// AppPastelIDPassphrase is field
 	AppPastelIDPassphrase string `json:"app_pastel_id_passphrase"`
+	// OpenAPISubsetID is field
+	OpenAPISubsetID string `json:"open_api_subset_id"`
 }

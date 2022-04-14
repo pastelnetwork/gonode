@@ -630,18 +630,22 @@ var NftDetail = Type("NftDetail", func() {
 		Description("is this nft likely a duplicate")
 		Example(false)
 	})
-	Attribute("matches_found_on_first_page", UInt32, func() {
-		Description("How many matches the scraper found on the first page of the google results")
-		Example(1)
+	Attribute("is_rare_on_internet", Boolean, func() {
+		Description("is this nft rare on the internet")
+		Example(false)
 	})
-	Attribute("number_of_pages_of_results", UInt32, func() {
-		Description("How many pages of search results the scraper found when searching for this image")
-		Example(1)
-	})
-	Attribute("URL_of_first_match_in_page", String, func() {
-		Description("URL of the first match on the first page of search results")
-		Example("https://pastel.network")
-	})
+	// Attribute("matches_found_on_first_page", UInt32, func() {
+	// 	Description("How many matches the scraper found on the first page of the google results")
+	// 	Example(1)
+	// })
+	// Attribute("number_of_pages_of_results", UInt32, func() {
+	// 	Description("How many pages of search results the scraper found when searching for this image")
+	// 	Example(1)
+	// })
+	// Attribute("URL_of_first_match_in_page", String, func() {
+	// 	Description("URL of the first match on the first page of search results")
+	// 	Example("https://pastel.network")
+	// })
 	Attribute("drawing_nsfw_score", Float32, func() {
 		Description("nsfw score")
 		Minimum(0)
@@ -677,7 +681,23 @@ var NftDetail = Type("NftDetail", func() {
 		Description("Preview Image")
 	})
 
-	Required("rareness_score", "nsfw_score")
+	Attribute("rare_on_internet_summary_table_json_b64", String, func() {
+		Description("Base64 Compressed JSON Table of Rare On Internet Summary")
+	})
+	Attribute("rare_on_internet_graph_json_b64", String, func() {
+		Description("Base64 Compressed JSON of Rare On Internet Graph")
+	})
+	Attribute("alt_rare_on_internet_dict_json_b64", String, func() {
+		Description("Base64 Compressed Json of Alternative Rare On Internet Dict")
+	})
+	Attribute("min_num_exact_matches_on_page", UInt32, func() {
+		Description("Minimum Number of Exact Matches on Page")
+	})
+	Attribute("earliest_date_of_results", String, func() {
+		Description("Earliest Available Date of Internet Results")
+	})
+
+	Required("rareness_score", "nsfw_score", "is_likely_dupe", "is_rare_on_internet")
 })
 
 // ThumbnailCoordinate is the cordinate of the cropped region selectd by user

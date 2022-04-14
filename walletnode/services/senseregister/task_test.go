@@ -156,13 +156,51 @@ func TestTaskRun(t *testing.T) {
 			nodeClient.RegisterSenseInterface.On("MeshNodes", mock.Anything, mock.Anything).Return(nil)
 
 			ddData := &pastel.DDAndFingerprints{
-				InternetRareness:      &pastel.InternetRareness{},
-				AlternativeNSFWScores: &pastel.AlternativeNSFWScores{},
-				FingerprintsStat:      &pastel.FingerprintsStat{},
-				PerceptualImageHashes: &pastel.PerceptualImageHashes{},
-				RarenessScores:        &pastel.RarenessScores{},
-				Maxes:                 &pastel.Maxes{},
-				Percentile:            &pastel.Percentile{},
+				BlockHash:   "BlockHash",
+				BlockHeight: "BlockHeight",
+
+				TimestampOfRequest: "Timestamp",
+				SubmitterPastelID:  "PastelID",
+				SN1PastelID:        "SN1PastelID",
+				SN2PastelID:        "SN2PastelID",
+				SN3PastelID:        "SN3PastelID",
+
+				IsOpenAPIRequest: false,
+				OpenAPISubsetID:  "",
+
+				DupeDetectionSystemVersion: "v1.0",
+
+				IsLikelyDupe:     true,
+				IsRareOnInternet: true,
+
+				OverallRarenessScore: 0.5,
+
+				PctOfTop10MostSimilarWithDupeProbAbove25pct: 12.0,
+				PctOfTop10MostSimilarWithDupeProbAbove33pct: 12.0,
+				PctOfTop10MostSimilarWithDupeProbAbove50pct: 12.0,
+
+				RarenessScoresTableJSONCompressedB64: "RarenessScoresTableJSONCompressedB64",
+
+				InternetRareness: &pastel.InternetRareness{
+					RareOnInternetSummaryTableAsJSONCompressedB64:    "RareOnInternetSummaryTableAsJSONCompressedB64",
+					RareOnInternetGraphJSONCompressedB64:             "RareOnInternetGraphJSONCompressedB64",
+					AlternativeRareOnInternetDictAsJSONCompressedB64: "AlternativeRareOnInternetDictAsJSONCompressedB64",
+					MinNumberOfExactMatchesInPage:                    4,
+					EarliestAvailableDateOfInternetResults:           "EarliestAvailableDateOfInternetResults",
+				},
+
+				OpenNSFWScore: 0.1,
+				AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
+					Drawings: 0.1,
+					Hentai:   0.2,
+					Neutral:  0.3,
+					Porn:     0.4,
+					Sexy:     0.5,
+				},
+
+				ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+
+				HashOfCandidateImageFile: "HashOfCandidateImageFile",
 			}
 			compressed, err := pastel.ToCompressSignedDDAndFingerprints(ddData, []byte("signature"))
 			assert.Nil(t, err)

@@ -8,23 +8,37 @@ import (
 
 func genfingerAndScoresFunc() *DDAndFingerprints {
 	return &DDAndFingerprints{
-		Block:                      "Block",
-		Principal:                  "Principal",
+		BlockHash:   "BlockHash",
+		BlockHeight: "BlockHeight",
+
+		TimestampOfRequest: "Timestamp",
+		SubmitterPastelID:  "PastelID",
+		SN1PastelID:        "SN1PastelID",
+		SN2PastelID:        "SN2PastelID",
+		SN3PastelID:        "SN3PastelID",
+
+		IsOpenAPIRequest: false,
+		OpenAPISubsetID:  "",
+
 		DupeDetectionSystemVersion: "v1.0",
 
 		IsLikelyDupe:     true,
 		IsRareOnInternet: true,
 
-		RarenessScores: &RarenessScores{
-			CombinedRarenessScore:         0,
-			XgboostPredictedRarenessScore: 0,
-			NnPredictedRarenessScore:      0,
-			OverallAverageRarenessScore:   0,
-		},
+		OverallRarenessScore: 0.5,
+
+		PctOfTop10MostSimilarWithDupeProbAbove25pct: 12.0,
+		PctOfTop10MostSimilarWithDupeProbAbove33pct: 12.0,
+		PctOfTop10MostSimilarWithDupeProbAbove50pct: 12.0,
+
+		RarenessScoresTableJSONCompressedB64: "RarenessScoresTableJSONCompressedB64",
+
 		InternetRareness: &InternetRareness{
-			MatchesFoundOnFirstPage: 0,
-			NumberOfPagesOfResults:  0,
-			URLOfFirstMatchInPage:   "",
+			RareOnInternetSummaryTableAsJSONCompressedB64:    "RareOnInternetSummaryTableAsJSONCompressedB64",
+			RareOnInternetGraphJSONCompressedB64:             "RareOnInternetGraphJSONCompressedB64",
+			AlternativeRareOnInternetDictAsJSONCompressedB64: "AlternativeRareOnInternetDictAsJSONCompressedB64",
+			MinNumberOfExactMatchesInPage:                    4,
+			EarliestAvailableDateOfInternetResults:           "EarliestAvailableDateOfInternetResults",
 		},
 
 		OpenNSFWScore: 0.1,
@@ -37,44 +51,8 @@ func genfingerAndScoresFunc() *DDAndFingerprints {
 		},
 
 		ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
-		FingerprintsStat: &FingerprintsStat{
-			NumberOfFingerprintsRequiringFurtherTesting1: 1,
-			NumberOfFingerprintsRequiringFurtherTesting2: 2,
-			NumberOfFingerprintsRequiringFurtherTesting3: 3,
-			NumberOfFingerprintsRequiringFurtherTesting4: 4,
-			NumberOfFingerprintsRequiringFurtherTesting5: 5,
-			NumberOfFingerprintsRequiringFurtherTesting6: 6,
-			NumberOfFingerprintsOfSuspectedDupes:         7,
-		},
 
 		HashOfCandidateImageFile: "HashOfCandidateImageFile",
-		PerceptualImageHashes: &PerceptualImageHashes{
-			PDQHash:        "PdqHash",
-			PerceptualHash: "PerceptualHash",
-			AverageHash:    "AverageHash",
-			DifferenceHash: "DifferenceHash",
-			NeuralHash:     "NeuralhashHash",
-		},
-		PerceptualHashOverlapCount: 1,
-
-		Maxes: &Maxes{
-			PearsonMax:           1.0,
-			SpearmanMax:          2.0,
-			KendallMax:           3.0,
-			HoeffdingMax:         4.0,
-			MutualInformationMax: 5.0,
-			HsicMax:              6.0,
-			XgbimportanceMax:     7.0,
-		},
-		Percentile: &Percentile{
-			PearsonTop1BpsPercentile:             1.0,
-			SpearmanTop1BpsPercentile:            2.0,
-			KendallTop1BpsPercentile:             3.0,
-			HoeffdingTop10BpsPercentile:          4.0,
-			MutualInformationTop100BpsPercentile: 5.0,
-			HsicTop100BpsPercentile:              6.0,
-			XgbimportanceTop100BpsPercentile:     7.0,
-		},
 	}
 }
 
@@ -86,7 +64,7 @@ func TestCompareFingerPrintAndScore(t *testing.T) {
 	assert.Nil(t, CompareFingerPrintAndScore(lhs, rhs1))
 
 	rhs2 := genfingerAndScoresFunc()
-	rhs2.Block = "newBlock"
+	rhs2.BlockHash = "newBlock"
 	assert.NotNil(t, CompareFingerPrintAndScore(lhs, rhs2))
 
 	rhs3 := genfingerAndScoresFunc()
@@ -110,7 +88,7 @@ func TestCombineFingerPrintAndScores(t *testing.T) {
 	b = genfingerAndScoresFunc()
 	c = genfingerAndScoresFunc()
 
-	b.Block = "newBlock"
+	b.BlockHeight = "newBlock"
 	_, err = CombineFingerPrintAndScores(a, b, c)
 	assert.NotNil(t, err)
 

@@ -23,7 +23,7 @@ const (
 // DDServerClient contains methods for request services from dd-server service.
 type DDServerClient interface {
 	// ImageRarenessScore returns rareness score of image
-	ImageRarenessScore(ctx context.Context, img []byte, format string, blockHash string, pastelID string) (*pastel.DDAndFingerprints, error)
+	ImageRarenessScore(ctx context.Context, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string, supernode1 string, supernode2 string, supernode3 string, openAPIRequest bool, openAPISubsetID string) (*pastel.DDAndFingerprints, error)
 }
 
 type ddServerClientImpl struct {
@@ -53,7 +53,7 @@ func createInputDDFile(base string, data []byte, format string) (string, error) 
 }
 
 // call ddserver's ImageRarenessScore service
-func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, client pb.DupeDetectionServerClient, img []byte, format string, blockHash string, pastelID string) (*pastel.DDAndFingerprints, error) {
+func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, client pb.DupeDetectionServerClient, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string, supernode1 string, supernode2 string, supernode3 string, openAPIRequest bool, openAPISubsetID string) (*pastel.DDAndFingerprints, error) {
 	if img == nil {
 		return nil, errors.Errorf("invalid data")
 	}
@@ -64,115 +64,62 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	}
 
 	req := pb.RarenessScoreRequest{
-		Path:      inputPath,
-		BlockHash: blockHash,
-		PastelId:  pastelID,
+		ImageFilepath:                         inputPath,
+		PastelBlockHashWhenRequestSubmitted:   blockHash,
+		PastelBlockHeightWhenRequestSubmitted: blockHeight,
+		UtcTimestampWhenRequestSubmitted:      timestamp,
+		PastelIdOfSubmitter:                   pastelID,
+		PastelIdOfRegisteringSupernode_1:      supernode1,
+		PastelIdOfRegisteringSupernode_2:      supernode2,
+		PastelIdOfRegisteringSupernode_3:      supernode3,
+		IsPastelOpenapiRequest:                openAPIRequest,
+		OpenApiSubsetIdString:                 openAPISubsetID,
 	}
 
 	// remove file after use
 	defer os.Remove(inputPath)
 
-	// 2/9/2022, we don't have this implemented yet, so this would fail
 	res, err := client.ImageRarenessScore(ctx, &req)
 	if err != nil {
-		return nil, errors.Errorf("send request: %w", err)
+		return nil, errors.Errorf("Error calling image rareness score: %w", err)
 	}
 
-	/*
-		{
-		  "block": string           // block_hash from NFT ticket
-		  "principal": string       // PastelID of the author from NFT ticket
-
-		  "dupe_detection_system_version": string,
-
-		  "is_likely_dupe": bool,
-		  "is_rare_on_internet": bool,
-
-		  "rareness_scores": {
-		      "combined_rareness_score": float,                      // 0 to 1
-		      "xgboost_predicted_rareness_score": float,            // 0 to 1
-		      "nn_predicted_rareness_score": float,                  // 0 to 1
-		      "overall_average_rareness_score": float,              // 0 to 1
-		  },
-
-		  "internet_rareness": {
-		      "matches_found_on_first_page": uint32,
-		      "number_of_pages_of_results": uint32,
-		      "url_of_first_match_in_page": string,
-		  },
-
-		  "open_nsfw_score": float,                                 // 0 to 1
-		  "alternative_nsfw_scores": {
-		      "drawings": float,                                    // 0 to 1
-		      "hentai": float,                                      // 0 to 1
-		      "neutral": float,                                      // 0 to 1
-		      "porn": float,                                        // 0 to 1
-		      "sexy": float,                                        // 0 to 1
-		  },
-
-		  "image_fingerprint_of_candidate_image_file": [float],           // array with fingerprints values
-		  "fingerprints_stat": {
-		      "number_of_fingerprints_requiring_further_testing_1": uint32,
-		      "number_of_fingerprints_requiring_further_testing_2": uint32,
-		      "number_of_fingerprints_requiring_further_testing_3": uint32,
-		      "number_of_fingerprints_requiring_further_testing_4": uint32,
-		      "number_of_fingerprints_requiring_further_testing_5": uint32,
-		      "number_of_fingerprints_requiring_further_testing_6":  uint32,
-		      "number_of_fingerprints_of_suspected_dupes": uint32,
-		  },
-
-		  "hash_of_candidate_image_file": string,
-		  "perceptual_image_hashes": {
-		      "pdq_hash": string,
-		      "perceptual_hash": string,
-		      "average_hash": string,
-		      "difference_hash": string,
-		      "neuralhash_hash": string,
-		  },
-		  "perceptual_hash_overlap_count": uint32,
-
-		  "maxes": {
-		      "pearson_max": float,                                  // 0 to 1
-		      "spearman_max": float,                                // 0 to 1
-		      "kendall_max": float,                                  // 0 to 1
-		      "hoeffding_max": float,                                // 0 to 1
-		      "mutual_information_max": float,                      // 0 to 1
-		      "hsic_max": float,                                    // 0 to 1
-		      "xgbimportance_max": float,                            // 0 to 1
-		  },
-
-		  "percentile": {
-		      "pearson_top_1_bps_percentile": float,                // 0 to 1
-		      "spearman_top_1_bps_percentile": float,                // 0 to 1
-		      "kendall_top_1_bps_percentile": float,                // 0 to 1
-		      "hoeffding_top_10_bps_percentile": float,              // 0 to 1
-		      "mutual_information_top_100_bps_percentile": float,    // 0 to 1
-		      "hsic_top_100_bps_percentile": float,                  // 0 to 1
-		      "xgbimportance_top_100_bps_percentile": float,        // 0 to 1
-		  },
-		}
-	*/
 	output := &pastel.DDAndFingerprints{
-		Block:                      res.Block,
-		Principal:                  res.Principal,
+		BlockHash:   res.PastelBlockHashWhenRequestSubmitted,
+		BlockHeight: res.PastelBlockHeightWhenRequestSubmitted,
+
+		TimestampOfRequest: res.UtcTimestampWhenRequestSubmitted,
+		SubmitterPastelID:  res.PastelIdOfSubmitter,
+		SN1PastelID:        res.PastelIdOfSubmitter,
+		SN2PastelID:        res.PastelIdOfRegisteringSupernode_2,
+		SN3PastelID:        res.PastelIdOfRegisteringSupernode_3,
+
+		IsOpenAPIRequest: res.IsPastelOpenapiRequest,
+
+		OpenAPISubsetID: res.OpenApiSubsetIdString,
+
 		DupeDetectionSystemVersion: res.DupeDetectionSystemVersion,
 
-		IsLikelyDupe:     res.IsLikelyDupe,
-		IsRareOnInternet: res.IsRareOnInternet,
+		IsLikelyDupe:         res.IsLikelyDupe,
+		IsRareOnInternet:     res.IsRareOnInternet,
+		OverallRarenessScore: res.OverallRarenessScore,
 
-		RarenessScores: &pastel.RarenessScores{
-			CombinedRarenessScore:         res.RarenessScores.CombinedRarenessScore,
-			XgboostPredictedRarenessScore: res.RarenessScores.XgboostPredictedRarenessScore,
-			NnPredictedRarenessScore:      res.RarenessScores.NnPredictedRarenessScore,
-			OverallAverageRarenessScore:   res.RarenessScores.OverallAverageRarenessScore,
-		},
+		PctOfTop10MostSimilarWithDupeProbAbove25pct: res.PctOfTop_10MostSimilarWithDupeProbAbove_25Pct,
+		PctOfTop10MostSimilarWithDupeProbAbove33pct: res.PctOfTop_10MostSimilarWithDupeProbAbove_33Pct,
+		PctOfTop10MostSimilarWithDupeProbAbove50pct: res.PctOfTop_10MostSimilarWithDupeProbAbove_50Pct,
+
+		RarenessScoresTableJSONCompressedB64: res.RarenessScoresTableJsonCompressedB64,
+
 		InternetRareness: &pastel.InternetRareness{
-			MatchesFoundOnFirstPage: res.InternetRareness.MatchesFoundOnFirstPage,
-			NumberOfPagesOfResults:  res.InternetRareness.NumberOfPagesOfResults,
-			URLOfFirstMatchInPage:   res.InternetRareness.UrlOfFirstMatchInPage,
+			RareOnInternetSummaryTableAsJSONCompressedB64:    res.InternetRareness.RareOnInternetSummaryTableAsJsonCompressedB64,
+			RareOnInternetGraphJSONCompressedB64:             res.InternetRareness.RareOnInternetGraphJsonCompressedB64,
+			AlternativeRareOnInternetDictAsJSONCompressedB64: res.InternetRareness.AlternativeRareOnInternetDictAsJsonCompressedB64,
+			MinNumberOfExactMatchesInPage:                    res.InternetRareness.MinNumberOfExactMatchesInPage,
+			EarliestAvailableDateOfInternetResults:           res.InternetRareness.EarliestAvailableDateOfInternetResults,
 		},
 
 		OpenNSFWScore: res.OpenNsfwScore,
+
 		AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
 			Drawings: res.AlternativeNsfwScores.Drawings,
 			Hentai:   res.AlternativeNsfwScores.Hentai,
@@ -182,51 +129,15 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		},
 
 		ImageFingerprintOfCandidateImageFile: res.ImageFingerprintOfCandidateImageFile,
-		FingerprintsStat: &pastel.FingerprintsStat{
-			NumberOfFingerprintsRequiringFurtherTesting1: res.FingerprintsStat.NumberOfFingerprintsRequiringFurtherTesting_1,
-			NumberOfFingerprintsRequiringFurtherTesting2: res.FingerprintsStat.NumberOfFingerprintsRequiringFurtherTesting_2,
-			NumberOfFingerprintsRequiringFurtherTesting3: res.FingerprintsStat.NumberOfFingerprintsRequiringFurtherTesting_3,
-			NumberOfFingerprintsRequiringFurtherTesting4: res.FingerprintsStat.NumberOfFingerprintsRequiringFurtherTesting_4,
-			NumberOfFingerprintsRequiringFurtherTesting5: res.FingerprintsStat.NumberOfFingerprintsRequiringFurtherTesting_5,
-			NumberOfFingerprintsRequiringFurtherTesting6: res.FingerprintsStat.NumberOfFingerprintsRequiringFurtherTesting_6,
-			NumberOfFingerprintsOfSuspectedDupes:         res.FingerprintsStat.NumberOfFingerprintsOfSuspectedDupes,
-		},
 
 		HashOfCandidateImageFile: res.HashOfCandidateImageFile,
-		PerceptualImageHashes: &pastel.PerceptualImageHashes{
-			PDQHash:        res.PerceptualImageHashes.PdqHash,
-			PerceptualHash: res.PerceptualImageHashes.PerceptualHash,
-			AverageHash:    res.PerceptualImageHashes.AverageHash,
-			DifferenceHash: res.PerceptualImageHashes.DifferenceHash,
-			NeuralHash:     res.PerceptualImageHashes.NeuralhashHash,
-		},
-		PerceptualHashOverlapCount: res.PerceptualHashOverlapCount,
-
-		Maxes: &pastel.Maxes{
-			PearsonMax:           res.Maxes.PearsonMax,
-			SpearmanMax:          res.Maxes.SpearmanMax,
-			KendallMax:           res.Maxes.KendallMax,
-			HoeffdingMax:         res.Maxes.HoeffdingMax,
-			MutualInformationMax: res.Maxes.MutualInformationMax,
-			HsicMax:              res.Maxes.HsicMax,
-			XgbimportanceMax:     res.Maxes.XgbimportanceMax,
-		},
-		Percentile: &pastel.Percentile{
-			PearsonTop1BpsPercentile:             res.Percentile.PearsonTop_1BpsPercentile,
-			SpearmanTop1BpsPercentile:            res.Percentile.SpearmanTop_1BpsPercentile,
-			KendallTop1BpsPercentile:             res.Percentile.KendallTop_1BpsPercentile,
-			HoeffdingTop10BpsPercentile:          res.Percentile.HoeffdingTop_10BpsPercentile,
-			MutualInformationTop100BpsPercentile: res.Percentile.MutualInformationTop_100BpsPercentile,
-			HsicTop100BpsPercentile:              res.Percentile.HsicTop_100BpsPercentile,
-			XgbimportanceTop100BpsPercentile:     res.Percentile.XgbimportanceTop_100BpsPercentile,
-		},
 	}
 
 	return output, nil
 }
 
 // ImageRarenessScore call ddserver to calculate scores
-func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img []byte, format string, blockHash string, pastelID string) (*pastel.DDAndFingerprints, error) {
+func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string, supernode1 string, supernode2 string, supernode3 string, openAPIRequest bool, openAPISubsetID string) (*pastel.DDAndFingerprints, error) {
 	ctx = ddClient.contextWithLogPrefix(ctx)
 
 	baseClient := NewClient()
@@ -239,7 +150,7 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 	defer conn.Close()
 	client := pb.NewDupeDetectionServerClient(conn)
 
-	return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, pastelID)
+	return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2, supernode3, openAPIRequest, openAPISubsetID)
 }
 
 func (ddClient *ddServerClientImpl) contextWithLogPrefix(ctx context.Context) context.Context {

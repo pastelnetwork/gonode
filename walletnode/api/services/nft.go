@@ -258,11 +258,15 @@ func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 	res.DrawingNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Drawings
 	res.NeutralNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Neutral
 
-	res.RarenessScore = ddAndFpStruct.RarenessScores.OverallAverageRarenessScore
-	res.IsLikelyDupe = &ddAndFpStruct.IsLikelyDupe
-	res.MatchesFoundOnFirstPage = &ddAndFpStruct.InternetRareness.MatchesFoundOnFirstPage
-	res.NumberOfPagesOfResults = &ddAndFpStruct.InternetRareness.NumberOfPagesOfResults
-	res.URLOfFirstMatchInPage = &ddAndFpStruct.InternetRareness.URLOfFirstMatchInPage
+	res.RarenessScore = ddAndFpStruct.OverallRarenessScore
+	res.IsLikelyDupe = ddAndFpStruct.IsLikelyDupe
+	res.IsRareOnInternet = ddAndFpStruct.IsRareOnInternet
+
+	res.RareOnInternetSummaryTableJSONB64 = &ddAndFpStruct.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64
+	res.RareOnInternetGraphJSONB64 = &ddAndFpStruct.InternetRareness.RareOnInternetGraphJSONCompressedB64
+	res.AltRareOnInternetDictJSONB64 = &ddAndFpStruct.InternetRareness.AlternativeRareOnInternetDictAsJSONCompressedB64
+	res.MinNumExactMatchesOnPage = &ddAndFpStruct.InternetRareness.MinNumberOfExactMatchesInPage
+	res.EarliestDateOfResults = &ddAndFpStruct.InternetRareness.EarliestAvailableDateOfInternetResults
 
 	return res, nil
 }
