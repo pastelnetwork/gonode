@@ -36,6 +36,7 @@ const (
 	runTaskInterval                  = 2 * time.Minute
 	masterNodeSuccessfulStatus       = "Masternode successfully started"
 	getLatestFingerprintStatement    = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
+	getFingerprintFromHashStatement  = `SELECT * FROM image_hash_to_image_fingerprint_table WHERE sha256_hash_of_art_image_file = ?`
 	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database, thumbnail_of_image, request_type, open_api_subset_id_string) VALUES(?,?,?,?,?,?,?)`
 	getNumberOfFingerprintsStatement = `SELECT COUNT(*) FROM image_hash_to_image_fingerprint_table`
 )
@@ -230,6 +231,33 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 	return ddFingerprint, nil
 }
 
+func (s *service) checkIfFingerprintExistsInDatabase(ctx context.Context, hash string) (bool, error) {
+	req := &command.Request{
+		Statements: []*command.Statement{
+			{
+				Sql: getFingerprintFromHashStatement,
+				Parameters: []*command.Parameter{
+					{
+						Value: &command.Parameter_S{
+							S: hash,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	row, err := s.db.Query(req, false)
+	if err != nil {
+		return false, errors.Errorf("querying fingerprint database for hash: %w", err)
+	}
+	if len(row) != 0 && len(row[0].Values) == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFingerprints) error {
 	encodeFloat2Npy := func(v []float64) ([]byte, error) {
 		// create numpy matrix Nx1
@@ -380,6 +408,31 @@ func (s *service) runTask(ctx context.Context) error {
 			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
 			continue
 		}
+		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
+			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT Reg ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
+			continue
+		}
+
+		existsInDatabase, err := s.checkIfFingerprintExistsInDatabase(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
+		if existsInDatabase {
+			// log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
+			continue
+		}
+		if err != nil {
+			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Error("Could not properly query the dd database for this hash")
+			continue
+		}
+
+		//make sure ImageFingerprintOfCnadidateImageFile exists.
+		// this could fail if the ticket is an older version of the DDAndFingerprints struct, so we will continue to next fingerprint
+		if ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile == nil {
+			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT Reg ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
+			continue
+		}
+		if len(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile) < 1 {
+			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT Reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
+			continue
+		}
 
 		// thumbnailHash := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash
 		// thumbnail, err := s.p2pClient.Retrieve(ctx, string(thumbnailHash))
@@ -439,6 +492,20 @@ func (s *service) runTask(ctx context.Context) error {
 			log.WithContext(ctx).WithField("senseTicket", senseTicket).Warnf("None of the dd and fp id files for thissense reg ticket could be properly unmarshalled")
 			continue
 		}
+		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
+			log.WithContext(ctx).WithField("senseTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT sense ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
+			continue
+		}
+
+		existsInDatabase, err := s.checkIfFingerprintExistsInDatabase(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
+		if existsInDatabase {
+			// log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
+			continue
+		}
+		if err != nil {
+			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Error("Could not properly query the dd database for this hash")
+			continue
+		}
 
 		// imgFileHash := senseTicket.DataHash
 		//Below code might be kept in case we want to add the ability to get thumbnails to sense
@@ -465,6 +532,17 @@ func (s *service) runTask(ctx context.Context) error {
 		// }
 
 		// readableThumbnailStr := utils.B64Encode(thumbByteArr.Bytes())
+
+		//make sure ImageFingerprintOfCnadidateImageFile exists.
+		// this could fail if the ticket is an older version of the DDAndFingerprints struct, so we will continue to next fingerprint
+		if ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile == nil {
+			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Warnf("This sense ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
+			continue
+		}
+		if len(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile) < 1 {
+			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Warnf("This senseg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
+			continue
+		}
 
 		if err := s.storeFingerprint(ctx, &dupeDetectionFingerprints{
 			Sha256HashOfArtImageFile:           ddAndFpFromTicket.HashOfCandidateImageFile,
