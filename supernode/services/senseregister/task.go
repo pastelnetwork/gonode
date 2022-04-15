@@ -2,6 +2,7 @@ package senseregister
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -322,7 +323,7 @@ func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, i
 func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
-	ticketID := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, task.dataHash)
+	ticketID := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, hex.EncodeToString(task.dataHash))
 
 	req := pastel.RegisterActionRequest{
 		Ticket: &pastel.ActionTicket{

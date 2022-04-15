@@ -2,6 +2,7 @@ package nftregister
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strconv"
@@ -435,7 +436,7 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 
-		ticketID := fmt.Sprintf("%s.%d.%s", task.Request.CreatorPastelID, task.creatorBlockHeight, task.dataHash)
+		ticketID := fmt.Sprintf("%s.%d.%s", task.Request.CreatorPastelID, task.creatorBlockHeight, hex.EncodeToString(task.dataHash))
 		key1 := ticketID
 		key2 := uuid.New().String()
 		group.Go(func() error {
@@ -467,7 +468,7 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 		return errors.Errorf("registration fees don't match")
 	}
 
-	// check if fee is over-expection
+	// check if fee is over-expectation
 	task.registrationFee = fees[0]
 
 	if task.registrationFee > int64(task.Request.MaximumFee) {
