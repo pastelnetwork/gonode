@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const createTableStatement = `CREATE TABLE image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text, open_api_subset_id_string text)`
+const createTableStatement = `CREATE TABLE image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text PRIMARY KEY, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text, open_api_subset_id_string text)`
 
 func prepareService(_ *testing.T) *service {
 	tmpfile, err := ioutil.TempFile("", "dupe_detection_image_fingerprint_database.sqlite")
@@ -99,9 +99,18 @@ func TestGetSetFingerprint(t *testing.T) {
 	getFp, err := s.getLatestFingerprint(ctx)
 
 	assert.True(t, err == nil)
+
+	findFp, err := s.checkIfFingerprintExistsInDatabase(ctx, setFp.Sha256HashOfArtImageFile)
+
+	assert.True(t, err == nil)
 	assert.True(t, getFp != nil)
 	assert.Equal(t, setFp.Sha256HashOfArtImageFile, getFp.Sha256HashOfArtImageFile)
 	assert.Equal(t, setFp.ImageFingerprintVector, getFp.ImageFingerprintVector)
+	assert.True(t, findFp)
+
+	findFp, err = s.checkIfFingerprintExistsInDatabase(ctx, "blahblah")
+	assert.True(t, err == nil)
+	assert.False(t, findFp)
 }
 
 func TestWaitSynchronizationSuccessful(t *testing.T) {
