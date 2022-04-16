@@ -133,6 +133,8 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		HashOfCandidateImageFile: res.HashOfCandidateImageFile,
 	}
 
+	log.WithContext(ctx).WithField("Rareness Score Response", output).Debug("Image rareness score response from dd-server")
+
 	return output, nil
 }
 
