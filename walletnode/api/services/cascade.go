@@ -167,6 +167,7 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	}
 }
 
+// GetTaskHistory - Gets a task's history
 func (service *CascadeAPIHandler) GetTaskHistory(ctx context.Context, p *cascade.GetTaskHistoryPayload) (res *cascade.TaskHistory, err error) {
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {

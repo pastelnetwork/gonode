@@ -29,6 +29,10 @@ type Client struct {
 	// registerTaskState endpoint.
 	RegisterTaskStateDoer goahttp.Doer
 
+	// GetTaskHistory Doer is the HTTP client used to make requests to the
+	// getTaskHistory endpoint.
+	GetTaskHistoryDoer goahttp.Doer
+
 	// RegisterTask Doer is the HTTP client used to make requests to the
 	// registerTask endpoint.
 	RegisterTaskDoer goahttp.Doer
@@ -88,6 +92,7 @@ func NewClient(
 	return &Client{
 		RegisterDoer:          doer,
 		RegisterTaskStateDoer: doer,
+		GetTaskHistoryDoer:    doer,
 		RegisterTaskDoer:      doer,
 		RegisterTasksDoer:     doer,
 		UploadImageDoer:       doer,
@@ -141,7 +146,8 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 			return nil, err
 		}
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithCancel(ctx)
+		_, cancel = context.WithCancel(ctx)
+		defer cancel()
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {
@@ -163,6 +169,25 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		}()
 		stream := &RegisterTaskStateClientStream{conn: conn}
 		return stream, nil
+	}
+}
+
+// GetTaskHistory returns an endpoint that makes HTTP requests to the nft
+// service getTaskHistory server.
+func (c *Client) GetTaskHistory() goa.Endpoint {
+	var (
+		decodeResponse = DecodeGetTaskHistoryResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildGetTaskHistoryRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetTaskHistoryDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("nft", "getTaskHistory", err)
+		}
+		return decodeResponse(resp)
 	}
 }
 
@@ -245,7 +270,8 @@ func (c *Client) NftSearch() goa.Endpoint {
 			return nil, err
 		}
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithCancel(ctx)
+		_, cancel = context.WithCancel(ctx)
+		defer cancel()
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {

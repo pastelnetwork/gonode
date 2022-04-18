@@ -23,7 +23,7 @@ type Client struct {
 }
 
 // NewClient initializes a "cascade" service client given the endpoints.
-func NewClient(uploadImage, actionDetails, startProcessing, registerTaskState, getTaskHistory, download goa.Endpoint) *Client {
+func NewClient(uploadImage, startProcessing, registerTaskState, getTaskHistory, download goa.Endpoint) *Client {
 	return &Client{
 		UploadImageEndpoint:       uploadImage,
 		StartProcessingEndpoint:   startProcessing,

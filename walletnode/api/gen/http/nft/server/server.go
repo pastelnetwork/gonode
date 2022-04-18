@@ -23,6 +23,7 @@ type Server struct {
 	Mounts            []*MountPoint
 	Register          http.Handler
 	RegisterTaskState http.Handler
+	GetTaskHistory    http.Handler
 	RegisterTask      http.Handler
 	RegisterTasks     http.Handler
 	UploadImage       http.Handler
@@ -77,6 +78,7 @@ func New(
 		Mounts: []*MountPoint{
 			{"Register", "POST", "/nfts/register"},
 			{"RegisterTaskState", "GET", "/nfts/register/{taskId}/state"},
+			{"GetTaskHistory", "GET", "/nfts/start/{taskId}/history"},
 			{"RegisterTask", "GET", "/nfts/register/{taskId}"},
 			{"RegisterTasks", "GET", "/nfts/register"},
 			{"UploadImage", "POST", "/nfts/register/upload"},
@@ -85,6 +87,7 @@ func New(
 			{"Download", "GET", "/nfts/download"},
 			{"CORS", "OPTIONS", "/nfts/register"},
 			{"CORS", "OPTIONS", "/nfts/register/{taskId}/state"},
+			{"CORS", "OPTIONS", "/nfts/start/{taskId}/history"},
 			{"CORS", "OPTIONS", "/nfts/register/{taskId}"},
 			{"CORS", "OPTIONS", "/nfts/register/upload"},
 			{"CORS", "OPTIONS", "/nfts/search"},
@@ -93,6 +96,7 @@ func New(
 		},
 		Register:          NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
 		RegisterTaskState: NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
+		GetTaskHistory:    NewGetTaskHistoryHandler(e.GetTaskHistory, mux, decoder, encoder, errhandler, formatter),
 		RegisterTask:      NewRegisterTaskHandler(e.RegisterTask, mux, decoder, encoder, errhandler, formatter),
 		RegisterTasks:     NewRegisterTasksHandler(e.RegisterTasks, mux, decoder, encoder, errhandler, formatter),
 		UploadImage:       NewUploadImageHandler(e.UploadImage, mux, NewNftUploadImageDecoder(mux, nftUploadImageDecoderFn), encoder, errhandler, formatter),
@@ -110,6 +114,7 @@ func (s *Server) Service() string { return "nft" }
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.Register = m(s.Register)
 	s.RegisterTaskState = m(s.RegisterTaskState)
+	s.GetTaskHistory = m(s.GetTaskHistory)
 	s.RegisterTask = m(s.RegisterTask)
 	s.RegisterTasks = m(s.RegisterTasks)
 	s.UploadImage = m(s.UploadImage)
@@ -123,6 +128,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountRegisterHandler(mux, h.Register)
 	MountRegisterTaskStateHandler(mux, h.RegisterTaskState)
+	MountGetTaskHistoryHandler(mux, h.GetTaskHistory)
 	MountRegisterTaskHandler(mux, h.RegisterTask)
 	MountRegisterTasksHandler(mux, h.RegisterTasks)
 	MountUploadImageHandler(mux, h.UploadImage)
@@ -250,6 +256,57 @@ func NewRegisterTaskStateHandler(
 				errhandler(ctx, w, err)
 			}
 			return
+		}
+	})
+}
+
+// MountGetTaskHistoryHandler configures the mux to serve the "nft" service
+// "getTaskHistory" endpoint.
+func MountGetTaskHistoryHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := HandleNftOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/nfts/start/{taskId}/history", f)
+}
+
+// NewGetTaskHistoryHandler creates a HTTP handler which loads the HTTP request
+// and calls the "nft" service "getTaskHistory" endpoint.
+func NewGetTaskHistoryHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetTaskHistoryRequest(mux, decoder)
+		encodeResponse = EncodeGetTaskHistoryResponse(encoder)
+		encodeError    = EncodeGetTaskHistoryError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "getTaskHistory")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "nft")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
 		}
 	})
 }
@@ -574,6 +631,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	h = HandleNftOrigin(h)
 	mux.Handle("OPTIONS", "/nfts/register", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/register/{taskId}/state", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/nfts/start/{taskId}/history", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/register/{taskId}", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/register/upload", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/search", h.ServeHTTP)

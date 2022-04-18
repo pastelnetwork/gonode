@@ -87,6 +87,13 @@ type RegisterTaskStateResponseBody struct {
 	Status string `form:"status" json:"status" xml:"status"`
 }
 
+// GetTaskHistoryResponseBody is the type of the "nft" service "getTaskHistory"
+// endpoint HTTP response body.
+type GetTaskHistoryResponseBody struct {
+	// List of past status strings
+	List string `form:"list" json:"list" xml:"list"`
+}
+
 // RegisterTaskResponseBody is the type of the "nft" service "registerTask"
 // endpoint HTTP response body.
 type RegisterTaskResponseBody struct {
@@ -260,6 +267,43 @@ type RegisterTaskStateNotFoundResponseBody struct {
 // service "registerTaskState" endpoint HTTP response body for the
 // "InternalServerError" error.
 type RegisterTaskStateInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// GetTaskHistoryNotFoundResponseBody is the type of the "nft" service
+// "getTaskHistory" endpoint HTTP response body for the "NotFound" error.
+type GetTaskHistoryNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// GetTaskHistoryInternalServerErrorResponseBody is the type of the "nft"
+// service "getTaskHistory" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetTaskHistoryInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -687,6 +731,15 @@ func NewRegisterTaskStateResponseBody(res *nft.TaskState) *RegisterTaskStateResp
 	return body
 }
 
+// NewGetTaskHistoryResponseBody builds the HTTP response body from the result
+// of the "getTaskHistory" endpoint of the "nft" service.
+func NewGetTaskHistoryResponseBody(res *nft.TaskHistory) *GetTaskHistoryResponseBody {
+	body := &GetTaskHistoryResponseBody{
+		List: res.List,
+	}
+	return body
+}
+
 // NewRegisterTaskResponseBody builds the HTTP response body from the result of
 // the "registerTask" endpoint of the "nft" service.
 func NewRegisterTaskResponseBody(res *nftviews.TaskView) *RegisterTaskResponseBody {
@@ -841,6 +894,34 @@ func NewRegisterTaskStateNotFoundResponseBody(res *goa.ServiceError) *RegisterTa
 // service.
 func NewRegisterTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterTaskStateInternalServerErrorResponseBody {
 	body := &RegisterTaskStateInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetTaskHistoryNotFoundResponseBody builds the HTTP response body from the
+// result of the "getTaskHistory" endpoint of the "nft" service.
+func NewGetTaskHistoryNotFoundResponseBody(res *goa.ServiceError) *GetTaskHistoryNotFoundResponseBody {
+	body := &GetTaskHistoryNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetTaskHistoryInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "getTaskHistory" endpoint of the "nft" service.
+func NewGetTaskHistoryInternalServerErrorResponseBody(res *goa.ServiceError) *GetTaskHistoryInternalServerErrorResponseBody {
+	body := &GetTaskHistoryInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -1059,6 +1140,15 @@ func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
 // payload.
 func NewRegisterTaskStatePayload(taskID string) *nft.RegisterTaskStatePayload {
 	v := &nft.RegisterTaskStatePayload{}
+	v.TaskID = taskID
+
+	return v
+}
+
+// NewGetTaskHistoryPayload builds a nft service getTaskHistory endpoint
+// payload.
+func NewGetTaskHistoryPayload(taskID string) *nft.GetTaskHistoryPayload {
+	v := &nft.GetTaskHistoryPayload{}
 	v.TaskID = taskID
 
 	return v

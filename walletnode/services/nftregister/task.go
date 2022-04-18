@@ -165,6 +165,12 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("pre-burnt ten percent of registration fee: %w", err)
 	}
 
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validating NFT Reg TXID: ",
+		StatusString:  task.regNFTTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 	task.UpdateStatus(common.StatusTicketAccepted)
 
 	// don't need SNs anymore
@@ -178,10 +184,23 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validated NFT Reg TXID: ",
+		StatusString:  task.regNFTTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Registering NFT Act Ticket TXID: ",
+		StatusString:  task.regNFTTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 	task.UpdateStatus(common.StatusTicketRegistered)
 
 	// activate reg-nft ticket at previous step
 	// Send Activation ticket and Registration Fee (cNode API)
+
 	actTxid, err := task.registerActTicket(newCtx)
 	if err != nil {
 		return errors.Errorf("register act ticket: %w", err)
@@ -194,6 +213,12 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	if err != nil {
 		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Registered NFT Act Ticket TXID: ",
+		StatusString:  task.regNFTTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 	task.UpdateStatus(common.StatusTicketActivated)
 	log.Debugf("reg-act-tixd is confirmed")
 

@@ -130,12 +130,17 @@ type EphemeralStatus struct {
 	IsFailureBool bool
 }
 
+// String returns the string representation of the status by concatenation
 func (status EphemeralStatus) String() string {
 	return status.StatusTitle + status.StatusString
 }
+
+// IsFinal tracks whether this should be a final status (almost always no)
 func (status EphemeralStatus) IsFinal() bool {
 	return status.IsFinalBool
 }
+
+// IsFailure tracks whether this should be a failure status (almost always no)
 func (status EphemeralStatus) IsFailure() bool {
 	return status.IsFailureBool
 }

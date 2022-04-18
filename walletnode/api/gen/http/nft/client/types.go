@@ -87,6 +87,13 @@ type RegisterTaskStateResponseBody struct {
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 }
 
+// GetTaskHistoryResponseBody is the type of the "nft" service "getTaskHistory"
+// endpoint HTTP response body.
+type GetTaskHistoryResponseBody struct {
+	// List of past status strings
+	List *string `form:"list,omitempty" json:"list,omitempty" xml:"list,omitempty"`
+}
+
 // RegisterTaskResponseBody is the type of the "nft" service "registerTask"
 // endpoint HTTP response body.
 type RegisterTaskResponseBody struct {
@@ -260,6 +267,43 @@ type RegisterTaskStateNotFoundResponseBody struct {
 // service "registerTaskState" endpoint HTTP response body for the
 // "InternalServerError" error.
 type RegisterTaskStateInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetTaskHistoryNotFoundResponseBody is the type of the "nft" service
+// "getTaskHistory" endpoint HTTP response body for the "NotFound" error.
+type GetTaskHistoryNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetTaskHistoryInternalServerErrorResponseBody is the type of the "nft"
+// service "getTaskHistory" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetTaskHistoryInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -817,6 +861,46 @@ func NewRegisterTaskStateInternalServerError(body *RegisterTaskStateInternalServ
 	return v
 }
 
+// NewGetTaskHistoryTaskHistoryOK builds a "nft" service "getTaskHistory"
+// endpoint result from a HTTP "OK" response.
+func NewGetTaskHistoryTaskHistoryOK(body *GetTaskHistoryResponseBody) *nft.TaskHistory {
+	v := &nft.TaskHistory{
+		List: *body.List,
+	}
+
+	return v
+}
+
+// NewGetTaskHistoryNotFound builds a nft service getTaskHistory endpoint
+// NotFound error.
+func NewGetTaskHistoryNotFound(body *GetTaskHistoryNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetTaskHistoryInternalServerError builds a nft service getTaskHistory
+// endpoint InternalServerError error.
+func NewGetTaskHistoryInternalServerError(body *GetTaskHistoryInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // NewRegisterTaskTaskOK builds a "nft" service "registerTask" endpoint result
 // from a HTTP "OK" response.
 func NewRegisterTaskTaskOK(body *RegisterTaskResponseBody) *nftviews.TaskView {
@@ -1118,6 +1202,15 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 	return
 }
 
+// ValidateGetTaskHistoryResponseBody runs the validations defined on
+// GetTaskHistoryResponseBody
+func ValidateGetTaskHistoryResponseBody(body *GetTaskHistoryResponseBody) (err error) {
+	if body.List == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("list", "body"))
+	}
+	return
+}
+
 // ValidateNftSearchResponseBody runs the validations defined on
 // NftSearchResponseBody
 func ValidateNftSearchResponseBody(body *NftSearchResponseBody) (err error) {
@@ -1402,6 +1495,54 @@ func ValidateRegisterTaskStateNotFoundResponseBody(body *RegisterTaskStateNotFou
 // ValidateRegisterTaskStateInternalServerErrorResponseBody runs the
 // validations defined on registerTaskState_InternalServerError_response_body
 func ValidateRegisterTaskStateInternalServerErrorResponseBody(body *RegisterTaskStateInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetTaskHistoryNotFoundResponseBody runs the validations defined on
+// getTaskHistory_NotFound_response_body
+func ValidateGetTaskHistoryNotFoundResponseBody(body *GetTaskHistoryNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetTaskHistoryInternalServerErrorResponseBody runs the validations
+// defined on getTaskHistory_InternalServerError_response_body
+func ValidateGetTaskHistoryInternalServerErrorResponseBody(body *GetTaskHistoryInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

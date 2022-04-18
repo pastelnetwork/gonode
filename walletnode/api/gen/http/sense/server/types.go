@@ -489,7 +489,6 @@ func NewGetTaskHistoryPayload(taskID string) *sense.GetTaskHistoryPayload {
 	return v
 }
 
-
 // NewDownloadPayload builds a sense service download endpoint payload.
 func NewDownloadPayload(txid string, pid string, key string) *sense.DownloadPayload {
 	v := &sense.DownloadPayload{}

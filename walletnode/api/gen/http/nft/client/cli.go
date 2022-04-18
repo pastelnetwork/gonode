@@ -156,6 +156,29 @@ func BuildRegisterTaskStatePayload(nftRegisterTaskStateTaskID string) (*nft.Regi
 	return v, nil
 }
 
+// BuildGetTaskHistoryPayload builds the payload for the nft getTaskHistory
+// endpoint from CLI flags.
+func BuildGetTaskHistoryPayload(nftGetTaskHistoryTaskID string) (*nft.GetTaskHistoryPayload, error) {
+	var err error
+	var taskID string
+	{
+		taskID = nftGetTaskHistoryTaskID
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &nft.GetTaskHistoryPayload{}
+	v.TaskID = taskID
+
+	return v, nil
+}
+
 // BuildRegisterTaskPayload builds the payload for the nft registerTask
 // endpoint from CLI flags.
 func BuildRegisterTaskPayload(nftRegisterTaskTaskID string) (*nft.RegisterTaskPayload, error) {
@@ -187,7 +210,7 @@ func BuildUploadImagePayload(nftUploadImageBody string) (*nft.UploadImagePayload
 	{
 		err = json.Unmarshal([]byte(nftUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"SXBzdW0gdG90YW0gZXN0IHVuZGUgcXVpYS4=\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"Vm9sdXB0YXRlbSByZXB1ZGlhbmRhZS4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))

@@ -5,11 +5,9 @@ import (
 
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
-
-	"time"
-
 	. "goa.design/goa/v3/dsl"
 	//revive:enable:dot-imports
+	"time"
 )
 
 // ImageUploadPayload represents a payload for uploading image.
