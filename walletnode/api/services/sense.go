@@ -122,7 +122,7 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 }
 
 // GetTaskHistory - Gets a task's history
-func (service *SenseAPIHandler) GetTaskHistory(ctx context.Context, p *sense.GetTaskHistoryPayload) (res *sense.TaskHistory, err error) {
+func (service *SenseAPIHandler) GetTaskHistory(_ context.Context, p *sense.GetTaskHistoryPayload) (res *sense.TaskHistory, err error) {
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
 		return nil, sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))

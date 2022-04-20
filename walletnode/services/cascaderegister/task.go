@@ -111,7 +111,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(common.StatusTicketAccepted)
 	task.UpdateStatus(&common.EphemeralStatus{
-		StatusTitle:   "Validating Cascade Cascade Reg TXID: ",
+		StatusTitle:   "Validating Cascade Reg TXID: ",
 		StatusString:  task.regCascadeTxid,
 		IsFailureBool: false,
 		IsFinalBool:   false,
@@ -126,7 +126,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
 	task.UpdateStatus(&common.EphemeralStatus{
-		StatusTitle:   "Validated Cascade Cascade Reg TXID: ",
+		StatusTitle:   "Validated Cascade Reg TXID: ",
 		StatusString:  task.regCascadeTxid,
 		IsFailureBool: false,
 		IsFinalBool:   false,

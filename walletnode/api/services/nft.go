@@ -102,7 +102,7 @@ func (service *NftAPIHandler) Register(_ context.Context, p *nft.RegisterPayload
 }
 
 // GetTaskHistory - Gets a task's history
-func (service *NftAPIHandler) GetTaskHistory(ctx context.Context, p *nft.GetTaskHistoryPayload) (res *nft.TaskHistory, err error) {
+func (service *NftAPIHandler) GetTaskHistory(_ context.Context, p *nft.GetTaskHistoryPayload) (res *nft.TaskHistory, err error) {
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
 		return nil, sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
