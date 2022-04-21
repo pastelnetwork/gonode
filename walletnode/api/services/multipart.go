@@ -33,7 +33,7 @@ func NftRegUploadImageDecoderFunc(ctx context.Context, service *NftAPIHandler) n
 	return func(reader *multipart.Reader, p **nftreg.UploadImagePayload) error {
 		var res nftreg.UploadImagePayload
 
-		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage)
+		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage, true)
 		if err != nil {
 			return &goa.ServiceError{
 				Name:    errType,
@@ -53,7 +53,7 @@ func SenseUploadImageDecoderFunc(ctx context.Context, service *SenseAPIHandler) 
 	return func(reader *multipart.Reader, p **sense.UploadImagePayload) error {
 		var res sense.UploadImagePayload
 
-		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage)
+		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage, true)
 		if err != nil {
 			return &goa.ServiceError{
 				Name:    errType,
@@ -68,12 +68,12 @@ func SenseUploadImageDecoderFunc(ctx context.Context, service *SenseAPIHandler) 
 	}
 }
 
-// CascadeUploadImageDecoderFunc decodes image uploaded from request
-func CascadeUploadImageDecoderFunc(ctx context.Context, service *CascadeAPIHandler) cassrv.CascadeUploadImageDecoderFunc {
-	return func(reader *multipart.Reader, p **cascade.UploadImagePayload) error {
-		var res cascade.UploadImagePayload
+// CascadeUploadAssetDecoderFunc decodes image uploaded from request
+func CascadeUploadAssetDecoderFunc(ctx context.Context, service *CascadeAPIHandler) cassrv.CascadeUploadAssetDecoderFunc {
+	return func(reader *multipart.Reader, p **cascade.UploadAssetPayload) error {
+		var res cascade.UploadAssetPayload
 
-		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage)
+		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage, false)
 		if err != nil {
 			return &goa.ServiceError{
 				Name:    errType,
@@ -89,7 +89,7 @@ func CascadeUploadImageDecoderFunc(ctx context.Context, service *CascadeAPIHandl
 }
 
 // handleUploadImage -- save image to service storage
-func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *files.Storage) (string, string, error) {
+func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *files.Storage, onlyImage bool) (string, string, error) {
 	var filename string
 
 	for {
@@ -110,16 +110,18 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 			return "", "BadRequest", errors.Errorf("could not parse Content-Type: %w", err)
 		}
 
-		if !strings.HasPrefix(contentType, contentTypePrefix) {
-			return "", "BadRequest", errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix)
-		}
-
 		filename = part.FileName()
 		log.WithContext(ctx).Debugf("Upload image %q", filename)
 
 		image := storage.NewFile()
-		if err := image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
-			return "", "BadRequest", errors.Errorf("could not set format from extension: %w", err)
+		if onlyImage {
+			if !strings.HasPrefix(contentType, contentTypePrefix) {
+				return "", "BadRequest", errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix)
+			}
+
+			if err := image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
+				return "", "BadRequest", errors.Errorf("could not set format from extension: %w", err)
+			}
 		}
 
 		//service.register.Storage.AddFile(image)
@@ -140,186 +142,3 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 
 	return filename, "", nil
 }
-
-// UserdatasCreateUserdataDecoderFunc implements the multipart decoder for service "userdatas" endpoint "/create".
-// The decoder must populate the argument p after encoding.
-// func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *UserdataAPIHandler) mdlserver.UserdatasCreateUserdataDecoderFunc {
-// 	return func(reader *multipart.Reader, p **userdatas.CreateUserdataPayload) error {
-
-// 		var response *userdatas.CreateUserdataPayload
-// 		var res userdatas.CreateUserdataPayload
-
-// 		for {
-// 			part, err := reader.NextPart()
-// 			if err != nil {
-// 				if err == io.EOF {
-// 					break
-// 				}
-// 				return userdatas.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
-// 			}
-
-// 			if part.FormName() != "avatar_image" && part.FormName() != "cover_photo" {
-// 				// Process for other field that's not a file
-
-// 				buffer, err := ioutil.ReadAll(part)
-// 				if err != nil {
-// 					return userdatas.MakeInternalServerError(errors.Errorf("could not process fields: %w", err))
-// 				}
-// 				log.WithContext(ctx).Debugf("Multipart process field: %q", part.FormName())
-
-// 				switch part.FormName() {
-// 				case "creator_pastelid":
-// 					res.UserPastelID = string(buffer)
-// 				case "creator_pastelid_passphrase":
-// 					res.UserPastelIDPassphrase = string(buffer)
-// 				case "biography":
-// 					value := string(buffer)
-// 					res.Biography = &value
-// 				case "categories":
-// 					value := string(buffer)
-// 					res.Categories = &value
-// 				case "facebook_link":
-// 					value := string(buffer)
-// 					res.FacebookLink = &value
-// 				case "location":
-// 					value := string(buffer)
-// 					res.Location = &value
-// 				case "primary_language":
-// 					value := string(buffer)
-// 					res.PrimaryLanguage = &value
-// 				case "native_currency":
-// 					value := string(buffer)
-// 					res.NativeCurrency = &value
-// 				case "realname":
-// 					value := string(buffer)
-// 					res.RealName = &value
-// 				case "twitter_link":
-// 					value := string(buffer)
-// 					res.TwitterLink = &value
-// 				default:
-// 					log.WithContext(ctx).Errorf("unknown form name: %s", part.FormName())
-// 				}
-// 			} else {
-// 				// Process for the field that have a files
-// 				filename := part.FileName()
-// 				filePart := new(bytes.Buffer)
-// 				if _, err := io.Copy(filePart, part); err != nil {
-// 					return userdatas.MakeInternalServerError(errors.Errorf("failed to write data to %q: %w", filename, err))
-// 				}
-
-// 				switch part.FormName() {
-// 				case "avatar_image":
-// 					res.AvatarImage = &userdatas.UserImageUploadPayload{
-// 						Content:  filePart.Bytes(),
-// 						Filename: &filename,
-// 					}
-// 				case "cover_photo":
-// 					res.CoverPhoto = &userdatas.UserImageUploadPayload{
-// 						Content:  filePart.Bytes(),
-// 						Filename: &filename,
-// 					}
-// 				default:
-// 					log.WithContext(ctx).Errorf("unknown form name: %s", part.FormName())
-// 				}
-// 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
-// 			}
-// 		}
-
-// 		response = &res
-
-// 		*p = response
-// 		return nil
-// 	}
-// }
-
-// // UserdatasUpdateUserdataDecoderFunc implements the multipart decoder for service "userdatas" endpoint "/update".
-// // The decoder must populate the argument p after encoding.
-// func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, _ *UserdataAPIHandler) mdlserver.UserdatasUpdateUserdataDecoderFunc {
-// 	return func(reader *multipart.Reader, p **userdatas.UpdateUserdataPayload) error {
-
-// 		var response *userdatas.UpdateUserdataPayload
-// 		var res userdatas.UpdateUserdataPayload
-
-// 		for {
-// 			part, err := reader.NextPart()
-// 			if err != nil {
-// 				if err == io.EOF {
-// 					break
-// 				}
-// 				return userdatas.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
-// 			}
-
-// 			if part.FormName() != "avatar_image" && part.FormName() != "cover_photo" {
-// 				// Process for other field that's not a file
-
-// 				buffer, err := ioutil.ReadAll(part)
-// 				if err != nil {
-// 					return userdatas.MakeInternalServerError(errors.Errorf("could not process fields: %w", err))
-// 				}
-// 				log.WithContext(ctx).Debugf("Multipart process field: %q", part.FormName())
-
-// 				switch part.FormName() {
-// 				case "creator_pastelid":
-// 					res.UserPastelID = string(buffer)
-// 				case "creator_pastelid_passphrase":
-// 					res.UserPastelIDPassphrase = string(buffer)
-// 				case "biography":
-// 					value := string(buffer)
-// 					res.Biography = &value
-// 				case "categories":
-// 					value := string(buffer)
-// 					res.Categories = &value
-// 				case "facebook_link":
-// 					value := string(buffer)
-// 					res.FacebookLink = &value
-// 				case "location":
-// 					value := string(buffer)
-// 					res.Location = &value
-// 				case "primary_language":
-// 					value := string(buffer)
-// 					res.PrimaryLanguage = &value
-// 				case "native_currency":
-// 					value := string(buffer)
-// 					res.NativeCurrency = &value
-// 				case "realname":
-// 					value := string(buffer)
-// 					res.RealName = &value
-// 				case "twitter_link":
-// 					value := string(buffer)
-// 					res.TwitterLink = &value
-// 				default:
-// 					log.WithContext(ctx).Errorf("unknown form name: %s", part.FormName())
-// 				}
-// 			} else {
-// 				// Process for the field that have a files
-
-// 				filename := part.FileName()
-// 				filePart := new(bytes.Buffer)
-// 				if _, err := io.Copy(filePart, part); err != nil {
-// 					return userdatas.MakeInternalServerError(errors.Errorf("failed to write data to %q: %w", filename, err))
-// 				}
-
-// 				switch part.FormName() {
-// 				case "avatar_image":
-// 					res.AvatarImage = &userdatas.UserImageUploadPayload{
-// 						Content:  filePart.Bytes(),
-// 						Filename: &filename,
-// 					}
-// 				case "cover_photo":
-// 					res.CoverPhoto = &userdatas.UserImageUploadPayload{
-// 						Content:  filePart.Bytes(),
-// 						Filename: &filename,
-// 					}
-// 				default:
-// 					log.WithContext(ctx).Errorf("unknown form name: %s", part.FormName())
-// 				}
-// 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
-// 			}
-// 		}
-
-// 		response = &res
-
-// 		*p = response
-// 		return nil
-// 	}
-// }

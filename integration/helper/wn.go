@@ -15,6 +15,11 @@ type UploadImageResp struct {
 	EstimatedFee float64 `json:"estimated_fee"`
 }
 
+type UploadAssetResp struct {
+	FileID       string  `json:"file_id"`
+	EstimatedFee float64 `json:"estimated_fee"`
+}
+
 type DownloadResp struct {
 	File string `json:"file"`
 }

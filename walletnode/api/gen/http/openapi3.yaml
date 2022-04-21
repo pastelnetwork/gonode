@@ -41,7 +41,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/NftDetail'
               example:
-                URL_of_first_match_in_page: https://pastel.network
+                alt_rare_on_internet_dict_json_b64: Magnam ut eum eligendi velit sequi.
                 copies: 1
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -50,117 +50,112 @@ paths:
                   and writer Leonardo da Vinci. Likely completed in 1506, the piece
                   features a portrait of a seated woman set against an imaginary landscape.
                 drawing_nsfw_score: 1
+                earliest_date_of_results: Et qui minima excepturi.
                 green_address: false
                 hentai_nsfw_score: 1
                 is_likely_dupe: false
+                is_rare_on_internet: false
                 keywords: Renaissance, sfumato, portrait
-                matches_found_on_first_page: 1
+                min_num_exact_matches_on_page: 2090575319
                 neutral_nsfw_score: 1
                 nsfw_score: 1
-                number_of_pages_of_results: 1
                 porn_nsfw_score: 1
                 preview_thumbnail:
-                - 83
+                - 81
                 - 117
-                - 110
-                - 116
-                - 32
-                - 104
+                - 105
+                - 98
+                - 117
+                - 115
+                - 100
                 - 97
-                - 114
-                - 117
                 - 109
+                - 32
+                - 118
+                - 105
+                - 116
+                - 97
+                - 101
                 - 32
                 - 113
                 - 117
                 - 97
-                - 115
-                - 32
-                - 115
+                - 101
+                - 114
                 - 97
-                - 112
-                - 105
-                - 101
-                - 110
                 - 116
-                - 101
-                - 32
-                - 101
-                - 116
-                - 32
-                - 117
-                - 110
-                - 100
-                - 101
                 - 46
+                rare_on_internet_graph_json_b64: Asperiores amet laboriosam libero
+                  tenetur vitae blanditiis.
+                rare_on_internet_summary_table_json_b64: Quia dolore fugit aliquam
+                  totam.
                 rareness_score: 1
-                royalty: 0.5804999615127538
+                royalty: 0.6809131381901978
                 series_name: Famous artist
                 sexy_nsfw_score: 1
                 storage_fee: 100
                 thumbnail_1:
-                - 80
-                - 108
-                - 97
-                - 99
+                - 65
+                - 115
+                - 115
+                - 117
+                - 109
                 - 101
+                - 110
+                - 100
                 - 97
-                - 116
                 - 32
                 - 110
+                - 111
+                - 115
+                - 116
+                - 114
                 - 117
-                - 109
-                - 113
-                - 117
-                - 97
                 - 109
                 - 32
-                - 97
-                - 117
-                - 116
-                - 101
                 - 109
+                - 105
+                - 110
+                - 117
+                - 115
                 - 46
                 thumbnail_2:
-                - 78
+                - 69
+                - 97
+                - 32
+                - 118
+                - 101
+                - 114
+                - 105
+                - 116
+                - 97
+                - 116
+                - 105
+                - 115
+                - 32
+                - 115
                 - 101
                 - 113
                 - 117
-                - 101
-                - 32
-                - 101
                 - 105
-                - 117
-                - 115
                 - 32
-                - 105
-                - 108
-                - 108
+                - 118
                 - 111
-                - 32
-                - 105
+                - 108
                 - 117
-                - 115
-                - 116
-                - 111
-                - 32
-                - 101
-                - 116
-                - 32
                 - 112
-                - 97
-                - 114
-                - 105
+                - 116
                 - 97
                 - 116
-                - 117
-                - 114
-                - 32
-                - 114
                 - 101
-                - 114
-                - 117
                 - 109
+                - 32
+                - 109
+                - 97
+                - 120
+                - 105
+                - 109
+                - 101
                 - 46
                 title: Mona Lisa
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -238,51 +233,34 @@ paths:
                 $ref: '#/components/schemas/DownloadResult'
               example:
                 file:
-                - 81
+                - 65
                 - 117
-                - 105
+                - 116
                 - 32
+                - 101
+                - 116
+                - 32
+                - 117
+                - 116
+                - 32
+                - 99
+                - 117
+                - 109
                 - 113
                 - 117
-                - 111
-                - 32
                 - 101
-                - 116
                 - 32
-                - 111
-                - 100
-                - 105
-                - 111
-                - 32
-                - 118
-                - 111
-                - 108
-                - 117
-                - 112
-                - 116
                 - 97
-                - 116
-                - 101
                 - 109
-                - 32
-                - 118
-                - 111
-                - 108
-                - 117
-                - 112
-                - 116
-                - 97
-                - 115
-                - 32
-                - 118
-                - 111
-                - 108
-                - 117
-                - 112
-                - 116
-                - 97
-                - 116
                 - 101
+                - 116
+                - 32
+                - 100
+                - 101
+                - 98
+                - 105
+                - 116
+                - 105
                 - 115
                 - 46
         "404":
@@ -587,34 +565,31 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadImageRequestBody'
+              $ref: '#/components/schemas/UploadAssetRequestBody'
             example:
               file:
-              - 73
-              - 112
-              - 115
-              - 117
-              - 109
-              - 32
-              - 116
+              - 86
               - 111
+              - 108
+              - 117
+              - 112
               - 116
               - 97
+              - 116
+              - 101
               - 109
               - 32
+              - 114
               - 101
-              - 115
-              - 116
-              - 32
+              - 112
               - 117
-              - 110
               - 100
-              - 101
-              - 32
-              - 113
-              - 117
               - 105
               - 97
+              - 110
+              - 100
+              - 97
+              - 101
               - 46
       responses:
         "201":
@@ -662,9 +637,9 @@ paths:
         schema:
           type: string
           description: Artist PastelID or special value; mine
-          example: w0u
+          example: a7a
           maxLength: 256
-        example: m0g
+        example: nm3
       - name: limit
         in: query
         description: Number of results to be return
@@ -685,8 +660,8 @@ paths:
         schema:
           type: string
           description: Query is search query entered by user
-          example: Autem quis et quidem iusto ipsam.
-        example: Quos architecto corporis voluptatum rerum.
+          example: Vel architecto quia et dolores.
+        example: Eveniet autem excepturi soluta omnis qui quia.
       - name: creator_name
         in: query
         description: Name of the nft creator
@@ -705,7 +680,7 @@ paths:
           type: boolean
           description: Title of NFT
           default: true
-          example: false
+          example: true
         example: true
       - name: series
         in: query
@@ -716,7 +691,7 @@ paths:
           description: NFT series name
           default: true
           example: true
-        example: true
+        example: false
       - name: descr
         in: query
         description: Artist written statement
@@ -725,8 +700,8 @@ paths:
           type: boolean
           description: Artist written statement
           default: true
-          example: true
-        example: false
+          example: false
+        example: true
       - name: keyword
         in: query
         description: Keyword that Artist assigns to NFT
@@ -767,9 +742,9 @@ paths:
           type: integer
           description: Minimum blocknum
           default: 1
-          example: 1991169579948483968
+          example: 2265102462382078456
           minimum: 1
-        example: 7706059752848430445
+        example: 4931515360842523962
       - name: max_block
         in: query
         description: Maximum blocknum
@@ -777,9 +752,9 @@ paths:
         schema:
           type: integer
           description: Maximum blocknum
-          example: 4352290973769942076
+          example: 8839913872479670319
           minimum: 1
-        example: 2682414861392972873
+        example: 5709971844827805145
       - name: is_likely_dupe
         in: query
         description: Is this image likely a duplicate of another known image
@@ -862,20 +837,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/NftSearchResult'
               example:
-                match_index: 6237538198262118895
+                match_index: 7456758987449087545
                 matches:
                 - field_type: series
                   matched_indexes:
-                  - 3865197007286316431
-                  - 2772256600432396467
-                  score: 3665340228007184473
-                  str: Nostrum expedita ducimus voluptatem repudiandae.
+                  - 7421833538461479805
+                  - 1471524570153364271
+                  score: 7380319872106704681
+                  str: Voluptas voluptates totam aut sed quo consequatur.
                 - field_type: series
                   matched_indexes:
-                  - 3865197007286316431
-                  - 2772256600432396467
-                  score: 3665340228007184473
-                  str: Nostrum expedita ducimus voluptatem repudiandae.
+                  - 7421833538461479805
+                  - 1471524570153364271
+                  score: 7380319872106704681
+                  str: Voluptas voluptates totam aut sed quo consequatur.
+                - field_type: series
+                  matched_indexes:
+                  - 7421833538461479805
+                  - 1471524570153364271
+                  score: 7380319872106704681
+                  str: Voluptas voluptates totam aut sed quo consequatur.
                 nft:
                   copies: 1
                   creator_name: Leonardo da Vinci
@@ -891,38 +872,73 @@ paths:
                   rareness_score: 1
                   series_name: Famous artist
                   thumbnail_1:
-                  - 78
+                  - 65
                   - 117
-                  - 108
-                  - 108
-                  - 97
-                  - 32
-                  - 97
-                  - 114
-                  - 99
-                  - 104
-                  - 105
                   - 116
                   - 101
-                  - 99
+                  - 109
+                  - 32
+                  - 116
+                  - 101
+                  - 109
+                  - 112
+                  - 111
+                  - 114
+                  - 97
+                  - 32
+                  - 110
+                  - 101
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 101
+                  - 105
+                  - 117
+                  - 115
+                  - 32
+                  - 105
+                  - 108
+                  - 108
+                  - 111
+                  - 32
+                  - 105
+                  - 117
+                  - 115
                   - 116
                   - 111
                   - 32
-                  - 115
-                  - 117
-                  - 110
+                  - 101
                   - 116
                   - 46
                   thumbnail_2:
-                  - 73
-                  - 115
-                  - 116
+                  - 82
                   - 101
-                  - 32
-                  - 115
+                  - 114
                   - 117
+                  - 109
+                  - 32
+                  - 111
+                  - 109
                   - 110
+                  - 105
+                  - 115
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 32
+                  - 113
+                  - 117
+                  - 111
+                  - 32
+                  - 101
                   - 116
+                  - 32
+                  - 111
+                  - 100
+                  - 105
+                  - 111
                   - 46
                   title: Mona Lisa
                   txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -990,10 +1006,19 @@ paths:
               example:
                 file:
                 - 65
-                - 117
+                - 114
+                - 99
+                - 104
+                - 105
                 - 116
+                - 101
+                - 99
+                - 116
+                - 111
                 - 32
+                - 115
                 - 117
+                - 110
                 - 116
                 - 32
                 - 118
@@ -1003,15 +1028,17 @@ paths:
                 - 112
                 - 116
                 - 97
-                - 116
-                - 101
                 - 115
                 - 32
-                - 114
+                - 105
+                - 115
+                - 116
                 - 101
-                - 114
+                - 32
+                - 115
                 - 117
-                - 109
+                - 110
+                - 116
                 - 46
         "404":
           description: Not Found response.
@@ -1035,7 +1062,7 @@ paths:
                 name: bad_request
       security:
       - api_key_header_Authorization: []
-  /openapi/cascade/start/{image_id}:
+  /openapi/cascade/start/{file_id}:
     post:
       tags:
       - cascade
@@ -1043,13 +1070,13 @@ paths:
       description: Start processing the image
       operationId: cascade#startProcessing
       parameters:
-      - name: image_id
+      - name: file_id
         in: path
-        description: Uploaded image ID
+        description: Uploaded asset file ID
         required: true
         schema:
           type: string
-          description: Uploaded image ID
+          description: Uploaded asset file ID
           example: VK7mpAqZ
           minLength: 8
           maxLength: 8
@@ -1156,35 +1183,56 @@ paths:
       tags:
       - cascade
       summary: Uploads Action Data
-      description: Upload the image
-      operationId: cascade#uploadImage
+      description: Upload the asset file
+      operationId: cascade#uploadAsset
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadImageRequestBody'
+              $ref: '#/components/schemas/UploadAssetRequestBody'
             example:
               file:
-              - 69
+              - 84
+              - 101
+              - 109
+              - 112
               - 111
-              - 115
-              - 32
-              - 98
-              - 108
+              - 114
               - 97
+              - 32
               - 110
-              - 100
-              - 105
+              - 111
+              - 110
+              - 32
+              - 99
+              - 117
+              - 108
+              - 112
+              - 97
+              - 32
+              - 118
+              - 111
+              - 108
+              - 117
+              - 112
+              - 116
+              - 97
               - 116
               - 105
-              - 105
-              - 115
-              - 32
-              - 101
-              - 105
+              - 98
               - 117
               - 115
+              - 32
+              - 114
+              - 101
+              - 114
+              - 117
+              - 109
+              - 32
+              - 101
+              - 115
+              - 116
               - 46
       responses:
         "201":
@@ -1192,11 +1240,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Image'
+                $ref: '#/components/schemas/Asset'
               example:
                 estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
-                image_id: VK7mpAqZ
+                file_id: VK7mpAqZ
         "400":
           description: Bad Request response.
           content:
@@ -1259,37 +1307,30 @@ paths:
                 $ref: '#/components/schemas/DownloadResult'
               example:
                 file:
-                - 80
+                - 86
+                - 105
+                - 116
+                - 97
+                - 101
+                - 32
+                - 101
+                - 117
+                - 109
+                - 32
+                - 97
+                - 117
+                - 116
+                - 32
+                - 110
                 - 111
                 - 115
-                - 115
-                - 105
-                - 109
+                - 116
+                - 114
                 - 117
-                - 115
-                - 32
                 - 109
-                - 97
-                - 103
+                - 32
+                - 105
                 - 110
-                - 105
-                - 32
-                - 101
-                - 115
-                - 116
-                - 32
-                - 113
-                - 117
-                - 105
-                - 100
-                - 101
-                - 109
-                - 32
-                - 97
-                - 100
-                - 32
-                - 101
-                - 116
                 - 46
         "404":
           description: Not Found response.
@@ -1441,45 +1482,25 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadImageRequestBody'
+              $ref: '#/components/schemas/UploadAssetRequestBody'
             example:
               file:
               - 65
-              - 117
-              - 116
-              - 32
-              - 115
+              - 112
               - 101
-              - 100
-              - 32
-              - 113
-              - 117
-              - 111
-              - 32
-              - 99
-              - 111
-              - 110
-              - 115
-              - 101
-              - 113
-              - 117
+              - 114
+              - 105
               - 97
-              - 116
+              - 109
+              - 32
+              - 115
               - 117
-              - 114
-              - 32
-              - 108
+              - 115
+              - 99
               - 105
-              - 98
-              - 101
-              - 114
-              - 111
-              - 32
-              - 110
+              - 112
               - 105
-              - 104
-              - 105
-              - 108
+              - 116
               - 32
               - 114
               - 101
@@ -1734,6 +1755,34 @@ paths:
                 name: bad_request
 components:
   schemas:
+    Asset:
+      type: object
+      properties:
+        estimated_fee:
+          type: number
+          description: Estimated fee
+          default: 1
+          example: 100
+          minimum: 1e-05
+        expires_in:
+          type: string
+          description: File expiration
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+        file_id:
+          type: string
+          description: Uploaded file ID
+          example: VK7mpAqZ
+          minLength: 8
+          maxLength: 8
+      example:
+        estimated_fee: 100
+        expires_in: 2006-01-02T15:04:05Z07:00
+        file_id: VK7mpAqZ
+      required:
+      - file_id
+      - expires_in
+      - estimated_fee
     CreateUserdataRequestBody:
       type: object
       properties:
@@ -1819,468 +1868,42 @@ components:
           type: string
           description: File downloaded
           example:
-          - 73
-          - 110
-          - 32
-          - 102
-          - 117
-          - 103
-          - 97
-          - 32
-          - 97
-          - 117
-          - 116
-          - 32
-          - 115
-          - 97
-          - 101
-          - 112
-          - 101
-          - 46
-          format: binary
-      example:
-        file:
-        - 84
-        - 101
-        - 109
-        - 112
-        - 111
-        - 114
-        - 101
-        - 32
-        - 115
-        - 105
-        - 116
-        - 32
-        - 109
-        - 97
-        - 120
-        - 105
-        - 109
-        - 101
-        - 32
-        - 97
-        - 117
-        - 116
-        - 32
-        - 115
-        - 117
-        - 110
-        - 116
-        - 46
-      required:
-      - file
-    Error:
-      type: object
-      properties:
-        fault:
-          type: boolean
-          description: Is the error a server-side fault?
-          example: true
-        id:
-          type: string
-          description: ID is a unique identifier for this particular occurrence of
-            the problem.
-          example: 123abc
-        message:
-          type: string
-          description: Message is a human-readable explanation specific to this occurrence
-            of the problem.
-          example: parameter 'p' must be an integer
-        name:
-          type: string
-          description: Name is the name of this class of errors.
-          example: bad_request
-        temporary:
-          type: boolean
-          description: Is the error temporary?
-          example: true
-        timeout:
-          type: boolean
-          description: Is the error a timeout?
-          example: true
-      example:
-        id: 3F1FKVRR
-        message: Value of ID must be an integer
-        name: bad_request
-      required:
-      - name
-      - id
-      - message
-      - temporary
-      - timeout
-      - fault
-    FuzzyMatch:
-      type: object
-      properties:
-        field_type:
-          type: string
-          description: Field that is matched
-          example: art_title
-          enum:
-          - creator_name
-          - art_title
-          - series
-          - descr
-          - keyword
-        matched_indexes:
-          type: array
-          items:
-            type: integer
-            example: 6859355644575382252
-            format: int64
-          description: The indexes of matched characters. Useful for highlighting
-            matches
-          example:
-          - 2098760847494614058
-          - 393781650632371893
-          - 4923593646240523578
-          - 3989556234548773899
-        score:
-          type: integer
-          description: Score used to rank matches
-          example: 8669887911145106255
-          format: int64
-        str:
-          type: string
-          description: String that is matched
-          example: Praesentium quibusdam est id dolores tempore.
-      example:
-        field_type: series
-        matched_indexes:
-        - 8667790520664327278
-        - 7701035760807916577
-        - 382637033162113434
-        score: 6800949856273661722
-        str: Voluptatum quia omnis aspernatur fugit maiores nihil.
-    Image:
-      type: object
-      properties:
-        estimated_fee:
-          type: number
-          description: Estimated fee
-          default: 1
-          example: 100
-          minimum: 1e-05
-        expires_in:
-          type: string
-          description: Image expiration
-          example: 2006-01-02T15:04:05Z07:00
-          format: date-time
-        image_id:
-          type: string
-          description: Uploaded image ID
-          example: VK7mpAqZ
-          minLength: 8
-          maxLength: 8
-      example:
-        estimated_fee: 100
-        expires_in: 2006-01-02T15:04:05Z07:00
-        image_id: VK7mpAqZ
-      required:
-      - image_id
-      - expires_in
-      - estimated_fee
-    NftDetail:
-      type: object
-      properties:
-        URL_of_first_match_in_page:
-          type: string
-          description: URL of the first match on the first page of search results
-          example: https://pastel.network
-        copies:
-          type: integer
-          description: Number of copies
-          default: 1
-          example: 1
-          minimum: 1
-          maximum: 1000
-        creator_name:
-          type: string
-          description: Name of the artist
-          example: Leonardo da Vinci
-          maxLength: 256
-        creator_pastelid:
-          type: string
-          description: Artist's PastelID
-          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-          pattern: ^[a-zA-Z0-9]+$
-          minLength: 86
-          maxLength: 86
-        creator_website_url:
-          type: string
-          description: Artist website URL
-          example: https://www.leonardodavinci.net
-          maxLength: 256
-        description:
-          type: string
-          description: Description of the NFT
-          example: The Mona Lisa is an oil painting by Italian artist, inventor, and
-            writer Leonardo da Vinci. Likely completed in 1506, the piece features
-            a portrait of a seated woman set against an imaginary landscape.
-          maxLength: 1024
-        drawing_nsfw_score:
-          type: number
-          description: nsfw score
-          example: 1
-          minimum: 0
-          maximum: 1
-        green_address:
-          type: boolean
-          description: Green address
-          example: false
-        hentai_nsfw_score:
-          type: number
-          description: nsfw score
-          example: 1
-          minimum: 0
-          maximum: 1
-        is_likely_dupe:
-          type: boolean
-          description: Is this image likely a duplicate of another known image
-          example: false
-        keywords:
-          type: string
-          description: Keywords
-          example: Renaissance, sfumato, portrait
-          maxLength: 256
-        matches_found_on_first_page:
-          type: integer
-          description: How many matches the scraper found on the first page of the
-            google results
-          example: 1
-        neutral_nsfw_score:
-          type: number
-          description: nsfw score
-          example: 1
-          minimum: 0
-          maximum: 1
-        nsfw_score:
-          type: number
-          description: NSFW Average score
-          example: 1
-          minimum: 0
-          maximum: 1
-        number_of_pages_of_results:
-          type: integer
-          description: How many pages of search results the scraper found when searching
-            for this image
-          example: 1
-        porn_nsfw_score:
-          type: number
-          description: nsfw score
-          example: 1
-          minimum: 0
-          maximum: 1
-        preview_thumbnail:
-          type: string
-          description: Preview Image
-          example:
-          - 65
-          - 100
-          - 105
-          - 112
-          - 105
-          - 115
-          - 99
-          - 105
-          - 32
-          - 111
-          - 100
-          - 105
-          - 111
-          - 32
-          - 109
-          - 105
-          - 110
-          - 117
-          - 115
-          - 32
-          - 105
-          - 117
-          - 115
-          - 116
-          - 111
-          - 46
-          format: binary
-        rareness_score:
-          type: number
-          description: Average pastel rareness score
-          example: 1
-          minimum: 0
-          maximum: 1
-        royalty:
-          type: number
-          description: how much artist should get on all future resales
-          example: 0.6972208922660669
-          format: double
-        series_name:
-          type: string
-          description: Series name
-          example: Famous artist
-          maxLength: 256
-        sexy_nsfw_score:
-          type: number
-          description: nsfw score
-          example: 1
-          minimum: 0
-          maximum: 1
-        storage_fee:
-          type: integer
-          description: Storage fee %
-          example: 100
-          format: int64
-        thumbnail_1:
-          type: string
-          description: Thumbnail_1 image
-          example:
-          - 81
-          - 117
-          - 111
-          - 115
-          - 32
-          - 97
-          - 108
-          - 105
-          - 113
-          - 117
-          - 97
-          - 109
-          - 32
-          - 98
-          - 108
-          - 97
-          - 110
-          - 100
-          - 105
-          - 116
-          - 105
-          - 105
-          - 115
-          - 46
-          format: binary
-        thumbnail_2:
-          type: string
-          description: Thumbnail_2 image
-          example:
-          - 73
-          - 109
-          - 112
-          - 101
-          - 100
-          - 105
-          - 116
-          - 32
-          - 118
-          - 111
-          - 108
-          - 117
-          - 112
-          - 116
-          - 97
-          - 116
-          - 117
-          - 109
-          - 32
-          - 113
-          - 117
-          - 105
-          - 100
-          - 101
-          - 109
-          - 32
-          - 116
+          - 84
           - 101
           - 110
           - 101
           - 116
           - 117
           - 114
+          - 32
+          - 113
+          - 117
+          - 105
+          - 100
+          - 101
+          - 109
+          - 32
+          - 105
+          - 115
+          - 116
+          - 101
+          - 32
+          - 113
+          - 117
+          - 105
+          - 97
+          - 32
+          - 116
+          - 101
+          - 109
+          - 112
+          - 111
+          - 114
+          - 97
           - 46
           format: binary
-        title:
-          type: string
-          description: Name of the NFT
-          example: Mona Lisa
-          maxLength: 256
-        txid:
-          type: string
-          description: txid
-          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-          minLength: 64
-          maxLength: 64
-        version:
-          type: integer
-          description: version
-          example: 1
-          format: int64
-        youtube_url:
-          type: string
-          description: NFT creation video youtube URL
-          example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-          maxLength: 128
       example:
-        URL_of_first_match_in_page: https://pastel.network
-        copies: 1
-        creator_name: Leonardo da Vinci
-        creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-        creator_website_url: https://www.leonardodavinci.net
-        description: The Mona Lisa is an oil painting by Italian artist, inventor,
-          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
-          a portrait of a seated woman set against an imaginary landscape.
-        drawing_nsfw_score: 1
-        green_address: false
-        hentai_nsfw_score: 1
-        is_likely_dupe: false
-        keywords: Renaissance, sfumato, portrait
-        matches_found_on_first_page: 1
-        neutral_nsfw_score: 1
-        nsfw_score: 1
-        number_of_pages_of_results: 1
-        porn_nsfw_score: 1
-        preview_thumbnail:
-        - 67
-        - 117
-        - 109
-        - 113
-        - 117
-        - 101
-        - 32
-        - 116
-        - 101
-        - 110
-        - 101
-        - 116
-        - 117
-        - 114
-        - 32
-        - 113
-        - 117
-        - 105
-        - 100
-        - 101
-        - 109
-        - 46
-        rareness_score: 1
-        royalty: 0.4558969290721013
-        series_name: Famous artist
-        sexy_nsfw_score: 1
-        storage_fee: 100
-        thumbnail_1:
-        - 81
-        - 117
-        - 105
-        - 97
-        - 32
-        - 116
-        - 101
-        - 109
-        - 112
-        - 111
-        - 114
-        - 97
-        - 46
-        thumbnail_2:
+        file:
         - 69
         - 120
         - 101
@@ -2326,6 +1949,496 @@ components:
         - 117
         - 109
         - 46
+      required:
+      - file
+    Error:
+      type: object
+      properties:
+        fault:
+          type: boolean
+          description: Is the error a server-side fault?
+          example: true
+        id:
+          type: string
+          description: ID is a unique identifier for this particular occurrence of
+            the problem.
+          example: 123abc
+        message:
+          type: string
+          description: Message is a human-readable explanation specific to this occurrence
+            of the problem.
+          example: parameter 'p' must be an integer
+        name:
+          type: string
+          description: Name is the name of this class of errors.
+          example: bad_request
+        temporary:
+          type: boolean
+          description: Is the error temporary?
+          example: false
+        timeout:
+          type: boolean
+          description: Is the error a timeout?
+          example: false
+      example:
+        id: 3F1FKVRR
+        message: Value of ID must be an integer
+        name: bad_request
+      required:
+      - name
+      - id
+      - message
+      - temporary
+      - timeout
+      - fault
+    FuzzyMatch:
+      type: object
+      properties:
+        field_type:
+          type: string
+          description: Field that is matched
+          example: series
+          enum:
+          - creator_name
+          - art_title
+          - series
+          - descr
+          - keyword
+        matched_indexes:
+          type: array
+          items:
+            type: integer
+            example: 8716447699675433240
+            format: int64
+          description: The indexes of matched characters. Useful for highlighting
+            matches
+          example:
+          - 6355323517214496317
+          - 1729955534436088709
+        score:
+          type: integer
+          description: Score used to rank matches
+          example: 184915262666635231
+          format: int64
+        str:
+          type: string
+          description: String that is matched
+          example: Omnis dolorem veritatis et aut dolores.
+      example:
+        field_type: series
+        matched_indexes:
+        - 3153167167458949987
+        - 8917456165641054531
+        score: 5965477566314631257
+        str: Rem ex.
+    Image:
+      type: object
+      properties:
+        estimated_fee:
+          type: number
+          description: Estimated fee
+          default: 1
+          example: 100
+          minimum: 1e-05
+        expires_in:
+          type: string
+          description: Image expiration
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+        image_id:
+          type: string
+          description: Uploaded image ID
+          example: VK7mpAqZ
+          minLength: 8
+          maxLength: 8
+      example:
+        estimated_fee: 100
+        expires_in: 2006-01-02T15:04:05Z07:00
+        image_id: VK7mpAqZ
+      required:
+      - image_id
+      - expires_in
+      - estimated_fee
+    NftDetail:
+      type: object
+      properties:
+        alt_rare_on_internet_dict_json_b64:
+          type: string
+          description: Base64 Compressed Json of Alternative Rare On Internet Dict
+          example: Voluptas porro ipsam.
+        copies:
+          type: integer
+          description: Number of copies
+          default: 1
+          example: 1
+          minimum: 1
+          maximum: 1000
+        creator_name:
+          type: string
+          description: Name of the artist
+          example: Leonardo da Vinci
+          maxLength: 256
+        creator_pastelid:
+          type: string
+          description: Artist's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        creator_website_url:
+          type: string
+          description: Artist website URL
+          example: https://www.leonardodavinci.net
+          maxLength: 256
+        description:
+          type: string
+          description: Description of the NFT
+          example: The Mona Lisa is an oil painting by Italian artist, inventor, and
+            writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
+          maxLength: 1024
+        drawing_nsfw_score:
+          type: number
+          description: nsfw score
+          example: 1
+          minimum: 0
+          maximum: 1
+        earliest_date_of_results:
+          type: string
+          description: Earliest Available Date of Internet Results
+          example: Nisi ut in qui at.
+        green_address:
+          type: boolean
+          description: Green address
+          example: false
+        hentai_nsfw_score:
+          type: number
+          description: nsfw score
+          example: 1
+          minimum: 0
+          maximum: 1
+        is_likely_dupe:
+          type: boolean
+          description: Is this image likely a duplicate of another known image
+          example: false
+        is_rare_on_internet:
+          type: boolean
+          description: is this nft rare on the internet
+          example: false
+        keywords:
+          type: string
+          description: Keywords
+          example: Renaissance, sfumato, portrait
+          maxLength: 256
+        min_num_exact_matches_on_page:
+          type: integer
+          description: Minimum Number of Exact Matches on Page
+          example: 3792844847
+        neutral_nsfw_score:
+          type: number
+          description: nsfw score
+          example: 1
+          minimum: 0
+          maximum: 1
+        nsfw_score:
+          type: number
+          description: NSFW Average score
+          example: 1
+          minimum: 0
+          maximum: 1
+        porn_nsfw_score:
+          type: number
+          description: nsfw score
+          example: 1
+          minimum: 0
+          maximum: 1
+        preview_thumbnail:
+          type: string
+          description: Preview Image
+          example:
+          - 83
+          - 97
+          - 112
+          - 105
+          - 101
+          - 110
+          - 116
+          - 101
+          - 32
+          - 97
+          - 117
+          - 116
+          - 46
+          format: binary
+        rare_on_internet_graph_json_b64:
+          type: string
+          description: Base64 Compressed JSON of Rare On Internet Graph
+          example: Accusamus cupiditate.
+        rare_on_internet_summary_table_json_b64:
+          type: string
+          description: Base64 Compressed JSON Table of Rare On Internet Summary
+          example: Aut deleniti.
+        rareness_score:
+          type: number
+          description: Average pastel rareness score
+          example: 1
+          minimum: 0
+          maximum: 1
+        royalty:
+          type: number
+          description: how much artist should get on all future resales
+          example: 0.8940954240055835
+          format: double
+        series_name:
+          type: string
+          description: Series name
+          example: Famous artist
+          maxLength: 256
+        sexy_nsfw_score:
+          type: number
+          description: nsfw score
+          example: 1
+          minimum: 0
+          maximum: 1
+        storage_fee:
+          type: integer
+          description: Storage fee %
+          example: 100
+          format: int64
+        thumbnail_1:
+          type: string
+          description: Thumbnail_1 image
+          example:
+          - 82
+          - 101
+          - 109
+          - 32
+          - 114
+          - 101
+          - 99
+          - 117
+          - 115
+          - 97
+          - 110
+          - 100
+          - 97
+          - 101
+          - 32
+          - 114
+          - 101
+          - 105
+          - 99
+          - 105
+          - 101
+          - 110
+          - 100
+          - 105
+          - 115
+          - 32
+          - 105
+          - 110
+          - 118
+          - 101
+          - 110
+          - 116
+          - 111
+          - 114
+          - 101
+          - 46
+          format: binary
+        thumbnail_2:
+          type: string
+          description: Thumbnail_2 image
+          example:
+          - 83
+          - 101
+          - 100
+          - 32
+          - 99
+          - 117
+          - 109
+          - 113
+          - 117
+          - 101
+          - 32
+          - 116
+          - 101
+          - 109
+          - 112
+          - 111
+          - 114
+          - 105
+          - 98
+          - 117
+          - 115
+          - 46
+          format: binary
+        title:
+          type: string
+          description: Name of the NFT
+          example: Mona Lisa
+          maxLength: 256
+        txid:
+          type: string
+          description: txid
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
+        version:
+          type: integer
+          description: version
+          example: 1
+          format: int64
+        youtube_url:
+          type: string
+          description: NFT creation video youtube URL
+          example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+          maxLength: 128
+      example:
+        alt_rare_on_internet_dict_json_b64: Neque et.
+        copies: 1
+        creator_name: Leonardo da Vinci
+        creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        creator_website_url: https://www.leonardodavinci.net
+        description: The Mona Lisa is an oil painting by Italian artist, inventor,
+          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+          a portrait of a seated woman set against an imaginary landscape.
+        drawing_nsfw_score: 1
+        earliest_date_of_results: Eaque et consectetur mollitia et.
+        green_address: false
+        hentai_nsfw_score: 1
+        is_likely_dupe: false
+        is_rare_on_internet: false
+        keywords: Renaissance, sfumato, portrait
+        min_num_exact_matches_on_page: 2363694088
+        neutral_nsfw_score: 1
+        nsfw_score: 1
+        porn_nsfw_score: 1
+        preview_thumbnail:
+        - 83
+        - 117
+        - 115
+        - 99
+        - 105
+        - 112
+        - 105
+        - 116
+        - 32
+        - 110
+        - 101
+        - 115
+        - 99
+        - 105
+        - 117
+        - 110
+        - 116
+        - 32
+        - 110
+        - 105
+        - 104
+        - 105
+        - 108
+        - 32
+        - 101
+        - 116
+        - 32
+        - 108
+        - 105
+        - 98
+        - 101
+        - 114
+        - 111
+        - 46
+        rare_on_internet_graph_json_b64: Similique quam.
+        rare_on_internet_summary_table_json_b64: Ut explicabo nam doloremque aut amet
+          ea.
+        rareness_score: 1
+        royalty: 0.8273237890003482
+        series_name: Famous artist
+        sexy_nsfw_score: 1
+        storage_fee: 100
+        thumbnail_1:
+        - 67
+        - 111
+        - 114
+        - 114
+        - 117
+        - 112
+        - 116
+        - 105
+        - 32
+        - 99
+        - 111
+        - 109
+        - 109
+        - 111
+        - 100
+        - 105
+        - 32
+        - 105
+        - 115
+        - 116
+        - 101
+        - 32
+        - 114
+        - 101
+        - 114
+        - 117
+        - 109
+        - 32
+        - 115
+        - 105
+        - 116
+        - 32
+        - 110
+        - 117
+        - 108
+        - 108
+        - 97
+        - 32
+        - 118
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
+        - 97
+        - 116
+        - 101
+        - 109
+        - 46
+        thumbnail_2:
+        - 86
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
+        - 97
+        - 116
+        - 101
+        - 109
+        - 32
+        - 113
+        - 117
+        - 111
+        - 115
+        - 32
+        - 100
+        - 105
+        - 103
+        - 110
+        - 105
+        - 115
+        - 115
+        - 105
+        - 109
+        - 111
+        - 115
+        - 32
+        - 117
+        - 116
+        - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         version: 1
@@ -2333,6 +2446,8 @@ components:
       required:
       - rareness_score
       - nsfw_score
+      - is_likely_dupe
+      - is_rare_on_internet
       - title
       - description
       - creator_name
@@ -2484,7 +2599,7 @@ components:
           type: integer
           description: Sort index of the match based on score.This must be used to
             sort results on UI.
-          example: 8321207843875254208
+          example: 8370572137451584482
           format: int64
         matches:
           type: array
@@ -2494,45 +2609,39 @@ components:
           example:
           - field_type: series
             matched_indexes:
-            - 3865197007286316431
-            - 2772256600432396467
-            score: 3665340228007184473
-            str: Nostrum expedita ducimus voluptatem repudiandae.
+            - 7421833538461479805
+            - 1471524570153364271
+            score: 7380319872106704681
+            str: Voluptas voluptates totam aut sed quo consequatur.
           - field_type: series
             matched_indexes:
-            - 3865197007286316431
-            - 2772256600432396467
-            score: 3665340228007184473
-            str: Nostrum expedita ducimus voluptatem repudiandae.
+            - 7421833538461479805
+            - 1471524570153364271
+            score: 7380319872106704681
+            str: Voluptas voluptates totam aut sed quo consequatur.
         nft:
           $ref: '#/components/schemas/NftSummary'
       example:
-        match_index: 7255549832734117914
+        match_index: 352479771690185564
         matches:
         - field_type: series
           matched_indexes:
-          - 3865197007286316431
-          - 2772256600432396467
-          score: 3665340228007184473
-          str: Nostrum expedita ducimus voluptatem repudiandae.
+          - 7421833538461479805
+          - 1471524570153364271
+          score: 7380319872106704681
+          str: Voluptas voluptates totam aut sed quo consequatur.
         - field_type: series
           matched_indexes:
-          - 3865197007286316431
-          - 2772256600432396467
-          score: 3665340228007184473
-          str: Nostrum expedita ducimus voluptatem repudiandae.
+          - 7421833538461479805
+          - 1471524570153364271
+          score: 7380319872106704681
+          str: Voluptas voluptates totam aut sed quo consequatur.
         - field_type: series
           matched_indexes:
-          - 3865197007286316431
-          - 2772256600432396467
-          score: 3665340228007184473
-          str: Nostrum expedita ducimus voluptatem repudiandae.
-        - field_type: series
-          matched_indexes:
-          - 3865197007286316431
-          - 2772256600432396467
-          score: 3665340228007184473
-          str: Nostrum expedita ducimus voluptatem repudiandae.
+          - 7421833538461479805
+          - 1471524570153364271
+          score: 7380319872106704681
+          str: Voluptas voluptates totam aut sed quo consequatur.
         nft:
           copies: 1
           creator_name: Leonardo da Vinci
@@ -2547,38 +2656,73 @@ components:
           rareness_score: 1
           series_name: Famous artist
           thumbnail_1:
-          - 78
+          - 65
           - 117
-          - 108
-          - 108
-          - 97
-          - 32
-          - 97
-          - 114
-          - 99
-          - 104
-          - 105
           - 116
           - 101
-          - 99
+          - 109
+          - 32
+          - 116
+          - 101
+          - 109
+          - 112
+          - 111
+          - 114
+          - 97
+          - 32
+          - 110
+          - 101
+          - 113
+          - 117
+          - 101
+          - 32
+          - 101
+          - 105
+          - 117
+          - 115
+          - 32
+          - 105
+          - 108
+          - 108
+          - 111
+          - 32
+          - 105
+          - 117
+          - 115
           - 116
           - 111
           - 32
-          - 115
-          - 117
-          - 110
+          - 101
           - 116
           - 46
           thumbnail_2:
-          - 73
-          - 115
-          - 116
+          - 82
           - 101
-          - 32
-          - 115
+          - 114
           - 117
+          - 109
+          - 32
+          - 111
+          - 109
           - 110
+          - 105
+          - 115
+          - 32
+          - 113
+          - 117
+          - 105
+          - 32
+          - 113
+          - 117
+          - 111
+          - 32
+          - 101
           - 116
+          - 32
+          - 111
+          - 100
+          - 105
+          - 111
           - 46
           title: Mona Lisa
           txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -2651,33 +2795,29 @@ components:
           type: string
           description: Thumbnail_1 image
           example:
-          - 69
-          - 115
-          - 116
-          - 32
-          - 108
-          - 97
-          - 98
-          - 111
-          - 114
-          - 117
+          - 78
+          - 101
           - 109
-          - 32
-          - 101
-          - 97
-          - 113
-          - 117
-          - 101
+          - 111
           - 32
           - 110
-          - 101
-          - 109
           - 111
+          - 110
           - 32
+          - 113
+          - 117
+          - 105
           - 97
-          - 100
           - 32
+          - 100
+          - 111
+          - 108
+          - 111
+          - 114
           - 101
+          - 115
+          - 32
+          - 117
           - 116
           - 32
           - 97
@@ -2691,31 +2831,26 @@ components:
           type: string
           description: Thumbnail_2 image
           example:
-          - 78
-          - 105
-          - 104
-          - 105
-          - 108
+          - 69
+          - 116
           - 32
+          - 113
+          - 117
+          - 105
+          - 100
+          - 101
           - 109
-          - 111
-          - 108
-          - 108
-          - 105
-          - 116
-          - 105
-          - 97
           - 32
-          - 112
-          - 114
-          - 97
-          - 101
-          - 115
-          - 101
-          - 110
-          - 116
           - 105
           - 117
+          - 115
+          - 116
+          - 111
+          - 32
+          - 105
+          - 112
+          - 115
+          - 97
           - 109
           - 46
           format: binary
@@ -2750,39 +2885,67 @@ components:
         rareness_score: 1
         series_name: Famous artist
         thumbnail_1:
-        - 77
+        - 81
+        - 117
+        - 111
+        - 115
+        - 32
         - 97
+        - 114
+        - 99
+        - 104
         - 105
+        - 116
+        - 101
+        - 99
+        - 116
+        - 111
+        - 32
+        - 99
         - 111
         - 114
-        - 101
-        - 115
-        - 32
-        - 102
-        - 97
-        - 99
-        - 101
+        - 112
+        - 111
         - 114
-        - 101
-        - 32
-        - 117
-        - 116
-        - 32
-        - 113
-        - 117
         - 105
         - 115
-        - 113
+        - 32
+        - 118
+        - 111
+        - 108
         - 117
+        - 112
+        - 116
         - 97
+        - 116
+        - 117
+        - 109
+        - 32
+        - 114
+        - 101
+        - 114
+        - 117
         - 109
         - 46
         thumbnail_2:
-        - 70
+        - 86
+        - 111
+        - 108
         - 117
-        - 103
-        - 105
+        - 112
         - 116
+        - 97
+        - 116
+        - 101
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 32
+        - 110
+        - 111
+        - 110
         - 32
         - 113
         - 117
@@ -2956,6 +3119,10 @@ components:
             status: Task Started
           - date: 2006-01-02T15:04:05Z07:00
             status: Task Started
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
         status:
           type: string
           description: Status of the registration process
@@ -2997,6 +3164,10 @@ components:
       example:
         id: n6Qn6TFM
         states:
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
@@ -3316,31 +3487,36 @@ components:
       - top_left_y
       - bottom_right_x
       - bottom_right_y
-    UploadImageRequestBody:
+    UploadAssetRequestBody:
       type: object
       properties:
         file:
           type: string
           description: File to upload
           example:
-          - 83
-          - 97
-          - 101
-          - 112
-          - 101
-          - 32
-          - 118
-          - 101
-          - 114
-          - 105
-          - 116
-          - 97
-          - 116
-          - 105
+          - 81
+          - 117
+          - 111
           - 115
           - 32
-          - 101
           - 97
+          - 108
+          - 105
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 98
+          - 108
+          - 97
+          - 110
+          - 100
+          - 105
+          - 116
+          - 105
+          - 105
+          - 115
           - 46
           format: binary
         filename:
@@ -3348,62 +3524,39 @@ components:
           description: For internal use
       example:
         file:
-        - 68
-        - 111
-        - 108
-        - 111
-        - 114
-        - 101
-        - 115
-        - 32
-        - 97
-        - 108
-        - 105
-        - 113
-        - 117
-        - 105
-        - 100
-        - 32
-        - 97
-        - 108
-        - 105
-        - 113
-        - 117
-        - 105
-        - 100
-        - 32
+        - 73
+        - 109
         - 112
-        - 108
-        - 97
-        - 99
         - 101
-        - 97
-        - 116
-        - 32
-        - 105
-        - 110
-        - 99
-        - 105
         - 100
-        - 117
-        - 110
+        - 105
         - 116
         - 32
+        - 118
+        - 111
         - 108
+        - 117
+        - 112
+        - 116
         - 97
-        - 98
-        - 111
-        - 114
-        - 105
-        - 111
-        - 115
-        - 97
+        - 116
+        - 117
         - 109
         - 32
+        - 113
+        - 117
         - 105
-        - 115
+        - 100
+        - 101
+        - 109
+        - 32
         - 116
         - 101
+        - 110
+        - 101
+        - 116
+        - 117
+        - 114
         - 46
       required:
       - file

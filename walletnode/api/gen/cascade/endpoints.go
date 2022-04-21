@@ -3,7 +3,7 @@
 // cascade endpoints
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package cascade
 
@@ -16,7 +16,7 @@ import (
 
 // Endpoints wraps the "cascade" service endpoints.
 type Endpoints struct {
-	UploadImage       goa.Endpoint
+	UploadAsset       goa.Endpoint
 	StartProcessing   goa.Endpoint
 	RegisterTaskState goa.Endpoint
 	Download          goa.Endpoint
@@ -37,7 +37,7 @@ func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		UploadImage:       NewUploadImageEndpoint(s),
+		UploadAsset:       NewUploadAssetEndpoint(s),
 		StartProcessing:   NewStartProcessingEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
 		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
@@ -46,22 +46,22 @@ func NewEndpoints(s Service) *Endpoints {
 
 // Use applies the given middleware to all the "cascade" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
-	e.UploadImage = m(e.UploadImage)
+	e.UploadAsset = m(e.UploadAsset)
 	e.StartProcessing = m(e.StartProcessing)
 	e.RegisterTaskState = m(e.RegisterTaskState)
 	e.Download = m(e.Download)
 }
 
-// NewUploadImageEndpoint returns an endpoint function that calls the method
-// "uploadImage" of service "cascade".
-func NewUploadImageEndpoint(s Service) goa.Endpoint {
+// NewUploadAssetEndpoint returns an endpoint function that calls the method
+// "uploadAsset" of service "cascade".
+func NewUploadAssetEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*UploadImagePayload)
-		res, err := s.UploadImage(ctx, p)
+		p := req.(*UploadAssetPayload)
+		res, err := s.UploadAsset(ctx, p)
 		if err != nil {
 			return nil, err
 		}
-		vres := NewViewedImage(res, "default")
+		vres := NewViewedAsset(res, "default")
 		return vres, nil
 	}
 }

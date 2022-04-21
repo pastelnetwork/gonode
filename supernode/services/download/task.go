@@ -375,12 +375,12 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 	return file, err
 }
 
-func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqIDs []string, rqOti []byte, dataHash []byte) ([]byte, error) {
+func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, rqOti []byte, dataHash []byte) ([]byte, error) {
 	var file []byte
 	var lastErr error
 	var err error
 
-	if len(rqIDs) == 0 {
+	if len(rqID) == 0 {
 		task.UpdateStatus(common.StatusNftRegTicketInvalid)
 		return file, errors.Errorf("ticket has empty symbol identifier files")
 	}
@@ -397,12 +397,19 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqIDs []string,
 	}
 	rqService := rqConnection.RaptorQ(rqNodeConfig)
 
-	for _, id := range rqIDs {
+	for _, id := range rqID {
 		var rqIDsData []byte
 		rqIDsData, err = task.P2PClient.Retrieve(ctx, id)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Retrieve compressed symbol IDs file from P2P failed")
 			lastErr = errors.Errorf("retrieve compressed symbol IDs file: %w", err)
+			task.UpdateStatus(common.StatusSymbolFileNotFound)
+			continue
+		}
+
+		if len(rqIDsData) == 0 {
+			log.WithContext(ctx).WithField("SymbolIDsFileId", id).Warn("Retrieve compressed symbol IDs file from P2P is empty")
+			lastErr = errors.New("retrieve compressed symbol IDs file empty")
 			task.UpdateStatus(common.StatusSymbolFileNotFound)
 			continue
 		}
@@ -425,7 +432,13 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqIDs []string,
 			var symbol []byte
 			symbol, err = task.P2PClient.Retrieve(ctx, id)
 			if err != nil {
-				log.WithContext(ctx).WithField("SymbolID", id).Warn("Could not retrieve symbol")
+				log.WithContext(ctx).WithError(err).WithField("SymbolID", id).Error("Could not retrieve symbol")
+				task.UpdateStatus(common.StatusSymbolNotFound)
+				break
+			}
+
+			if len(symbol) == 0 {
+				log.WithContext(ctx).WithField("symbolID", id).Error("symbol received from symbolid is empty")
 				task.UpdateStatus(common.StatusSymbolNotFound)
 				break
 			}
@@ -441,6 +454,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqIDs []string,
 			}
 			symbols[id] = symbol
 		}
+
 		if len(symbols) != len(rqIDs) {
 			log.WithContext(ctx).WithField("SymbolIDsFileId", id).Warn("Could not retrieve all symbols")
 			lastErr = errors.New("could not retrieve all symbols from Kademlia")
@@ -521,7 +535,10 @@ func (task *NftDownloadingTask) getRQSymbolIDs(ctx context.Context, id string, r
 
 	file := rqnode.RawSymbolIDFile{}
 	if err := json.Unmarshal(rqDataJSON, &file); err != nil {
-		return rqIDs, errors.Errorf("parsing file: %s - err: %w", string(rqIDsData), err)
+		log.WithContext(ctx).WithError(err).WithField("Content", string(fileContent)).
+			WithField("file", string(rqIDsData)).Error("rq: parsing symbolID file failure")
+
+		return rqIDs, errors.Errorf("parsing file: %s - file content: %s - err: %w", string(rqIDsData), string(fileContent), err)
 	}
 
 	return file.SymbolIdentifiers, nil

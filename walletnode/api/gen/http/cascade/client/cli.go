@@ -3,7 +3,7 @@
 // cascade HTTP client CLI support package
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 
@@ -16,15 +16,15 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// BuildUploadImagePayload builds the payload for the cascade uploadImage
+// BuildUploadAssetPayload builds the payload for the cascade uploadAsset
 // endpoint from CLI flags.
-func BuildUploadImagePayload(cascadeUploadImageBody string) (*cascade.UploadImagePayload, error) {
+func BuildUploadAssetPayload(cascadeUploadAssetBody string) (*cascade.UploadAssetPayload, error) {
 	var err error
-	var body UploadImageRequestBody
+	var body UploadAssetRequestBody
 	{
-		err = json.Unmarshal([]byte(cascadeUploadImageBody), &body)
+		err = json.Unmarshal([]byte(cascadeUploadAssetBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"RW9zIGJsYW5kaXRpaXMgZWl1cy4=\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VGVtcG9yYSBub24gY3VscGEgdm9sdXB0YXRpYnVzIHJlcnVtIGVzdC4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -33,7 +33,7 @@ func BuildUploadImagePayload(cascadeUploadImageBody string) (*cascade.UploadImag
 			return nil, err
 		}
 	}
-	v := &cascade.UploadImagePayload{
+	v := &cascade.UploadAssetPayload{
 		Bytes:    body.Bytes,
 		Filename: body.Filename,
 	}
@@ -43,7 +43,7 @@ func BuildUploadImagePayload(cascadeUploadImageBody string) (*cascade.UploadImag
 
 // BuildStartProcessingPayload builds the payload for the cascade
 // startProcessing endpoint from CLI flags.
-func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStartProcessingImageID string, cascadeStartProcessingAppPastelidPassphrase string) (*cascade.StartProcessingPayload, error) {
+func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStartProcessingFileID string, cascadeStartProcessingAppPastelidPassphrase string) (*cascade.StartProcessingPayload, error) {
 	var err error
 	var body StartProcessingRequestBody
 	{
@@ -68,14 +68,14 @@ func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStart
 			return nil, err
 		}
 	}
-	var imageID string
+	var fileID string
 	{
-		imageID = cascadeStartProcessingImageID
-		if utf8.RuneCountInString(imageID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, true))
+		fileID = cascadeStartProcessingFileID
+		if utf8.RuneCountInString(fileID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("fileID", fileID, utf8.RuneCountInString(fileID), 8, true))
 		}
-		if utf8.RuneCountInString(imageID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, false))
+		if utf8.RuneCountInString(fileID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("fileID", fileID, utf8.RuneCountInString(fileID), 8, false))
 		}
 		if err != nil {
 			return nil, err
@@ -89,7 +89,7 @@ func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStart
 		BurnTxid:    body.BurnTxid,
 		AppPastelID: body.AppPastelID,
 	}
-	v.ImageID = imageID
+	v.FileID = fileID
 	v.AppPastelidPassphrase = appPastelidPassphrase
 
 	return v, nil

@@ -75,7 +75,7 @@ func (service *CascadeRegistrationService) AddTask(p *cascade.StartProcessingPay
 	request := FromStartProcessingPayload(p)
 
 	// get image filename from storage based on image_id
-	filename, err := service.ImageHandler.FileDb.Get(p.ImageID)
+	filename, err := service.ImageHandler.FileDb.Get(p.FileID)
 	if err != nil {
 		return "", errors.Errorf("get image filename from storage: %w", err)
 	}
