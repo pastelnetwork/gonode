@@ -329,6 +329,7 @@ func (task *CascadeRegistrationTask) ValidateActionActAndStore(ctx context.Conte
 		return errors.Errorf("wait for confirmation of reg-art ticket %w", err)
 	}
 
+	log.WithContext(ctx).WithField("txid", actionRegTxID).Info("storing rq symbols")
 	if err = task.storeRaptorQSymbols(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("store raptor symbols")
 		err = errors.Errorf("store raptor symbols: %w", err)
@@ -336,11 +337,14 @@ func (task *CascadeRegistrationTask) ValidateActionActAndStore(ctx context.Conte
 	}
 
 	// Store dd_and_fingerprints into Kademlia
+	log.WithContext(ctx).WithField("txid", actionRegTxID).Info("storing id files")
 	if err = task.storeIDFiles(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("store id files")
 		err = errors.Errorf("store id files: %w", err)
 		return nil
 	}
+
+	log.WithContext(ctx).WithField("txid", actionRegTxID).Info("ID files & symbols stored")
 
 	return nil
 }

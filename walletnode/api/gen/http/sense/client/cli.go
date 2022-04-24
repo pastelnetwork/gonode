@@ -3,7 +3,7 @@
 // sense HTTP client CLI support package
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 
@@ -24,7 +24,7 @@ func BuildUploadImagePayload(senseUploadImageBody string) (*sense.UploadImagePay
 	{
 		err = json.Unmarshal([]byte(senseUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"QXV0IHNlZCBxdW8gY29uc2VxdWF0dXIgbGliZXJvIG5paGlsIHJlcnVtLg==\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"QXBlcmlhbSBzdXNjaXBpdCByZXJ1bS4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))

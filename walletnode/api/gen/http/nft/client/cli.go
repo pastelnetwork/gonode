@@ -3,7 +3,7 @@
 // nft HTTP client CLI support package
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 
@@ -187,7 +187,7 @@ func BuildUploadImagePayload(nftUploadImageBody string) (*nft.UploadImagePayload
 	{
 		err = json.Unmarshal([]byte(nftUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"SXBzdW0gdG90YW0gZXN0IHVuZGUgcXVpYS4=\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"Vm9sdXB0YXRlbSByZXB1ZGlhbmRhZS4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))

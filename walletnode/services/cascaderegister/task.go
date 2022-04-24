@@ -127,7 +127,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("active action ticket: %w", err)
 	}
-	log.Debugf("Active action ticket txid: %s", activateTxID)
+	log.Infof("Active action ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
 	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.CascadeActTxMinConfirmations),
@@ -137,7 +137,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("wait activate txid valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketActivated)
-	log.Debugf("Active txid is confirmed")
+	log.Info("Active txid is confirmed")
 
 	// Send ActionAct request to primary node
 	if err := task.uploadActionAct(newCtx, task.regCascadeTxid); err != nil {
@@ -312,8 +312,9 @@ func (task *CascadeRegistrationTask) activateActionTicket(ctx context.Context) (
 
 // uploadActionAct uploads action act to primary node
 func (task *CascadeRegistrationTask) uploadActionAct(ctx context.Context, activateTxID string) error {
-	group, _ := errgroup.WithContext(ctx)
+	log.WithContext(ctx).Debug("upload action ticket started")
 
+	group, _ := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		cascadeRegNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
 		if !ok {
@@ -327,8 +328,16 @@ func (task *CascadeRegistrationTask) uploadActionAct(ctx context.Context, activa
 				return cascadeRegNode.SendActionAct(ctx, activateTxID)
 			})
 		}
+
 	}
-	return group.Wait()
+	if err := group.Wait(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("upload action ticket failed")
+		return err
+	}
+
+	log.WithContext(ctx).Debug("upload action ticket successful")
+
+	return nil
 }
 
 func (task *CascadeRegistrationTask) removeArtifacts() {

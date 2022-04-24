@@ -3,7 +3,7 @@
 // cascade HTTP server types
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package server
 
@@ -15,9 +15,9 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// UploadImageRequestBody is the type of the "cascade" service "uploadImage"
+// UploadAssetRequestBody is the type of the "cascade" service "uploadAsset"
 // endpoint HTTP request body.
-type UploadImageRequestBody struct {
+type UploadAssetRequestBody struct {
 	// File to upload
 	Bytes []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
 	// For internal use
@@ -33,12 +33,12 @@ type StartProcessingRequestBody struct {
 	AppPastelID *string `form:"app_pastelid,omitempty" json:"app_pastelid,omitempty" xml:"app_pastelid,omitempty"`
 }
 
-// UploadImageResponseBody is the type of the "cascade" service "uploadImage"
+// UploadAssetResponseBody is the type of the "cascade" service "uploadAsset"
 // endpoint HTTP response body.
-type UploadImageResponseBody struct {
-	// Uploaded image ID
-	ImageID string `form:"image_id" json:"image_id" xml:"image_id"`
-	// Image expiration
+type UploadAssetResponseBody struct {
+	// Uploaded file ID
+	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
+	// File expiration
 	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
 	// Estimated fee
 	EstimatedFee float64 `form:"estimated_fee" json:"estimated_fee" xml:"estimated_fee"`
@@ -67,9 +67,9 @@ type DownloadResponseBody struct {
 	File []byte `form:"file" json:"file" xml:"file"`
 }
 
-// UploadImageBadRequestResponseBody is the type of the "cascade" service
-// "uploadImage" endpoint HTTP response body for the "BadRequest" error.
-type UploadImageBadRequestResponseBody struct {
+// UploadAssetBadRequestResponseBody is the type of the "cascade" service
+// "uploadAsset" endpoint HTTP response body for the "BadRequest" error.
+type UploadAssetBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -85,10 +85,10 @@ type UploadImageBadRequestResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// UploadImageInternalServerErrorResponseBody is the type of the "cascade"
-// service "uploadImage" endpoint HTTP response body for the
+// UploadAssetInternalServerErrorResponseBody is the type of the "cascade"
+// service "uploadAsset" endpoint HTTP response body for the
 // "InternalServerError" error.
-type UploadImageInternalServerErrorResponseBody struct {
+type UploadAssetInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -214,11 +214,11 @@ type DownloadInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// NewUploadImageResponseBody builds the HTTP response body from the result of
-// the "uploadImage" endpoint of the "cascade" service.
-func NewUploadImageResponseBody(res *cascadeviews.ImageView) *UploadImageResponseBody {
-	body := &UploadImageResponseBody{
-		ImageID:      *res.ImageID,
+// NewUploadAssetResponseBody builds the HTTP response body from the result of
+// the "uploadAsset" endpoint of the "cascade" service.
+func NewUploadAssetResponseBody(res *cascadeviews.AssetView) *UploadAssetResponseBody {
+	body := &UploadAssetResponseBody{
+		FileID:       *res.FileID,
 		ExpiresIn:    *res.ExpiresIn,
 		EstimatedFee: *res.EstimatedFee,
 	}
@@ -253,10 +253,10 @@ func NewDownloadResponseBody(res *cascade.DownloadResult) *DownloadResponseBody 
 	return body
 }
 
-// NewUploadImageBadRequestResponseBody builds the HTTP response body from the
-// result of the "uploadImage" endpoint of the "cascade" service.
-func NewUploadImageBadRequestResponseBody(res *goa.ServiceError) *UploadImageBadRequestResponseBody {
-	body := &UploadImageBadRequestResponseBody{
+// NewUploadAssetBadRequestResponseBody builds the HTTP response body from the
+// result of the "uploadAsset" endpoint of the "cascade" service.
+func NewUploadAssetBadRequestResponseBody(res *goa.ServiceError) *UploadAssetBadRequestResponseBody {
+	body := &UploadAssetBadRequestResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -267,10 +267,10 @@ func NewUploadImageBadRequestResponseBody(res *goa.ServiceError) *UploadImageBad
 	return body
 }
 
-// NewUploadImageInternalServerErrorResponseBody builds the HTTP response body
-// from the result of the "uploadImage" endpoint of the "cascade" service.
-func NewUploadImageInternalServerErrorResponseBody(res *goa.ServiceError) *UploadImageInternalServerErrorResponseBody {
-	body := &UploadImageInternalServerErrorResponseBody{
+// NewUploadAssetInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "uploadAsset" endpoint of the "cascade" service.
+func NewUploadAssetInternalServerErrorResponseBody(res *goa.ServiceError) *UploadAssetInternalServerErrorResponseBody {
+	body := &UploadAssetInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -367,9 +367,9 @@ func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *Download
 	return body
 }
 
-// NewUploadImagePayload builds a cascade service uploadImage endpoint payload.
-func NewUploadImagePayload(body *UploadImageRequestBody) *cascade.UploadImagePayload {
-	v := &cascade.UploadImagePayload{
+// NewUploadAssetPayload builds a cascade service uploadAsset endpoint payload.
+func NewUploadAssetPayload(body *UploadAssetRequestBody) *cascade.UploadAssetPayload {
+	v := &cascade.UploadAssetPayload{
 		Bytes:    body.Bytes,
 		Filename: body.Filename,
 	}
@@ -379,12 +379,12 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *cascade.UploadImagePay
 
 // NewStartProcessingPayload builds a cascade service startProcessing endpoint
 // payload.
-func NewStartProcessingPayload(body *StartProcessingRequestBody, imageID string, appPastelidPassphrase string) *cascade.StartProcessingPayload {
+func NewStartProcessingPayload(body *StartProcessingRequestBody, fileID string, appPastelidPassphrase string) *cascade.StartProcessingPayload {
 	v := &cascade.StartProcessingPayload{
 		BurnTxid:    *body.BurnTxid,
 		AppPastelID: *body.AppPastelID,
 	}
-	v.ImageID = imageID
+	v.FileID = fileID
 	v.AppPastelidPassphrase = appPastelidPassphrase
 
 	return v
@@ -409,9 +409,9 @@ func NewDownloadPayload(txid string, pid string, key string) *cascade.DownloadPa
 	return v
 }
 
-// ValidateUploadImageRequestBody runs the validations defined on
-// UploadImageRequestBody
-func ValidateUploadImageRequestBody(body *UploadImageRequestBody) (err error) {
+// ValidateUploadAssetRequestBody runs the validations defined on
+// UploadAssetRequestBody
+func ValidateUploadAssetRequestBody(body *UploadAssetRequestBody) (err error) {
 	if body.Bytes == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
 	}
