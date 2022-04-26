@@ -3,7 +3,7 @@
 // sense client HTTP transport
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package client
 
@@ -32,6 +32,10 @@ type Client struct {
 	// RegisterTaskState Doer is the HTTP client used to make requests to the
 	// registerTaskState endpoint.
 	RegisterTaskStateDoer goahttp.Doer
+
+	// GetTaskHistory Doer is the HTTP client used to make requests to the
+	// getTaskHistory endpoint.
+	GetTaskHistoryDoer goahttp.Doer
 
 	// Download Doer is the HTTP client used to make requests to the download
 	// endpoint.
@@ -74,6 +78,7 @@ func NewClient(
 		UploadImageDoer:       doer,
 		StartProcessingDoer:   doer,
 		RegisterTaskStateDoer: doer,
+		GetTaskHistoryDoer:    doer,
 		DownloadDoer:          doer,
 		CORSDoer:              doer,
 		RestoreResponseBody:   restoreBody,
@@ -148,7 +153,6 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		var cancel context.CancelFunc
 		_, cancel = context.WithCancel(ctx)
 		defer cancel()
-
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {
@@ -170,6 +174,25 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		}()
 		stream := &RegisterTaskStateClientStream{conn: conn}
 		return stream, nil
+	}
+}
+
+// GetTaskHistory returns an endpoint that makes HTTP requests to the sense
+// service getTaskHistory server.
+func (c *Client) GetTaskHistory() goa.Endpoint {
+	var (
+		decodeResponse = DecodeGetTaskHistoryResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildGetTaskHistoryRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetTaskHistoryDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("sense", "getTaskHistory", err)
+		}
+		return decodeResponse(resp)
 	}
 }
 

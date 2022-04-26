@@ -3,7 +3,7 @@
 // cascade HTTP client CLI support package
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package client
 
@@ -113,6 +113,29 @@ func BuildRegisterTaskStatePayload(cascadeRegisterTaskStateTaskID string) (*casc
 		}
 	}
 	v := &cascade.RegisterTaskStatePayload{}
+	v.TaskID = taskID
+
+	return v, nil
+}
+
+// BuildGetTaskHistoryPayload builds the payload for the cascade getTaskHistory
+// endpoint from CLI flags.
+func BuildGetTaskHistoryPayload(cascadeGetTaskHistoryTaskID string) (*cascade.GetTaskHistoryPayload, error) {
+	var err error
+	var taskID string
+	{
+		taskID = cascadeGetTaskHistoryTaskID
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &cascade.GetTaskHistoryPayload{}
 	v.TaskID = taskID
 
 	return v, nil

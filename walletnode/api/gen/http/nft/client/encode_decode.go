@@ -3,7 +3,7 @@
 // nft HTTP client encoders and decoders
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package client
 
@@ -226,6 +226,103 @@ func DecodeRegisterTaskStateResponse(decoder func(*http.Response) goahttp.Decode
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("nft", "registerTaskState", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetTaskHistoryRequest instantiates a HTTP request object with method
+// and path set to call the "nft" service "getTaskHistory" endpoint
+func (c *Client) BuildGetTaskHistoryRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	var (
+		taskID string
+	)
+	{
+		p, ok := v.(*nft.GetTaskHistoryPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("nft", "getTaskHistory", "*nft.GetTaskHistoryPayload", v)
+		}
+		taskID = p.TaskID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetTaskHistoryNftPath(taskID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("nft", "getTaskHistory", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// DecodeGetTaskHistoryResponse returns a decoder for responses returned by the
+// nft getTaskHistory endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeGetTaskHistoryResponse may return the following errors:
+//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeGetTaskHistoryResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetTaskHistoryResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("nft", "getTaskHistory", err)
+			}
+			err = ValidateGetTaskHistoryResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("nft", "getTaskHistory", err)
+			}
+			res := NewGetTaskHistoryTaskHistoryOK(&body)
+			return res, nil
+		case http.StatusNotFound:
+			var (
+				body GetTaskHistoryNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("nft", "getTaskHistory", err)
+			}
+			err = ValidateGetTaskHistoryNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("nft", "getTaskHistory", err)
+			}
+			return nil, NewGetTaskHistoryNotFound(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetTaskHistoryInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("nft", "getTaskHistory", err)
+			}
+			err = ValidateGetTaskHistoryInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("nft", "getTaskHistory", err)
+			}
+			return nil, NewGetTaskHistoryInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("nft", "getTaskHistory", resp.StatusCode, string(body))
 		}
 	}
 }

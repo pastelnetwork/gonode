@@ -83,6 +83,23 @@ var _ = Service("sense", func() {
 		})
 	})
 
+	Method("getTaskHistory", func() {
+		Description("Gets the history of the task's states.")
+		Meta("swagger:summary", "Get history of states as a json string with a list of state objects.")
+
+		Payload(func() {
+			Extend(RegisterTaskPayload)
+		})
+		Result(TaskHistory)
+
+		HTTP(func() {
+			GET("/start/{taskId}/history")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
 	Method("download", func() {
 		Description("Download sense result; duplication detection results file.")
 		Meta("swagger:summary", "Download sense result; duplication detection results file.")

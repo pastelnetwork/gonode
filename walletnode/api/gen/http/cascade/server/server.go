@@ -3,7 +3,7 @@
 // cascade HTTP server
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package server
 
@@ -24,6 +24,7 @@ type Server struct {
 	UploadAsset       http.Handler
 	StartProcessing   http.Handler
 	RegisterTaskState http.Handler
+	GetTaskHistory    http.Handler
 	Download          http.Handler
 	CORS              http.Handler
 }
@@ -74,15 +75,18 @@ func New(
 			{"UploadAsset", "POST", "/openapi/cascade/upload"},
 			{"StartProcessing", "POST", "/openapi/cascade/start/{file_id}"},
 			{"RegisterTaskState", "GET", "/openapi/cascade/start/{taskId}/state"},
+			{"GetTaskHistory", "GET", "/openapi/cascade/start/{taskId}/history"},
 			{"Download", "GET", "/openapi/cascade/download"},
 			{"CORS", "OPTIONS", "/openapi/cascade/upload"},
 			{"CORS", "OPTIONS", "/openapi/cascade/start/{file_id}"},
 			{"CORS", "OPTIONS", "/openapi/cascade/start/{taskId}/state"},
+			{"CORS", "OPTIONS", "/openapi/cascade/start/{taskId}/history"},
 			{"CORS", "OPTIONS", "/openapi/cascade/download"},
 		},
 		UploadAsset:       NewUploadAssetHandler(e.UploadAsset, mux, NewCascadeUploadAssetDecoder(mux, cascadeUploadAssetDecoderFn), encoder, errhandler, formatter),
 		StartProcessing:   NewStartProcessingHandler(e.StartProcessing, mux, decoder, encoder, errhandler, formatter),
 		RegisterTaskState: NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
+		GetTaskHistory:    NewGetTaskHistoryHandler(e.GetTaskHistory, mux, decoder, encoder, errhandler, formatter),
 		Download:          NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter),
 		CORS:              NewCORSHandler(),
 	}
@@ -96,6 +100,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.UploadAsset = m(s.UploadAsset)
 	s.StartProcessing = m(s.StartProcessing)
 	s.RegisterTaskState = m(s.RegisterTaskState)
+	s.GetTaskHistory = m(s.GetTaskHistory)
 	s.Download = m(s.Download)
 	s.CORS = m(s.CORS)
 }
@@ -105,6 +110,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountUploadAssetHandler(mux, h.UploadAsset)
 	MountStartProcessingHandler(mux, h.StartProcessing)
 	MountRegisterTaskStateHandler(mux, h.RegisterTaskState)
+	MountGetTaskHistoryHandler(mux, h.GetTaskHistory)
 	MountDownloadHandler(mux, h.Download)
 	MountCORSHandler(mux, h.CORS)
 }
@@ -282,6 +288,57 @@ func NewRegisterTaskStateHandler(
 	})
 }
 
+// MountGetTaskHistoryHandler configures the mux to serve the "cascade" service
+// "getTaskHistory" endpoint.
+func MountGetTaskHistoryHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := HandleCascadeOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/openapi/cascade/start/{taskId}/history", f)
+}
+
+// NewGetTaskHistoryHandler creates a HTTP handler which loads the HTTP request
+// and calls the "cascade" service "getTaskHistory" endpoint.
+func NewGetTaskHistoryHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetTaskHistoryRequest(mux, decoder)
+		encodeResponse = EncodeGetTaskHistoryResponse(encoder)
+		encodeError    = EncodeGetTaskHistoryError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "getTaskHistory")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "cascade")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
 // MountDownloadHandler configures the mux to serve the "cascade" service
 // "download" endpoint.
 func MountDownloadHandler(mux goahttp.Muxer, h http.Handler) {
@@ -340,6 +397,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("OPTIONS", "/openapi/cascade/upload", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/start/{file_id}", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/start/{taskId}/state", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/openapi/cascade/start/{taskId}/history", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/download", h.ServeHTTP)
 }
 

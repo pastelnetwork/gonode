@@ -3,7 +3,7 @@
 // nft HTTP client CLI support package
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package client
 
@@ -151,6 +151,29 @@ func BuildRegisterTaskStatePayload(nftRegisterTaskStateTaskID string) (*nft.Regi
 		}
 	}
 	v := &nft.RegisterTaskStatePayload{}
+	v.TaskID = taskID
+
+	return v, nil
+}
+
+// BuildGetTaskHistoryPayload builds the payload for the nft getTaskHistory
+// endpoint from CLI flags.
+func BuildGetTaskHistoryPayload(nftGetTaskHistoryTaskID string) (*nft.GetTaskHistoryPayload, error) {
+	var err error
+	var taskID string
+	{
+		taskID = nftGetTaskHistoryTaskID
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &nft.GetTaskHistoryPayload{}
 	v.TaskID = taskID
 
 	return v, nil

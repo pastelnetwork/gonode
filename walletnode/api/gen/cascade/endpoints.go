@@ -3,7 +3,7 @@
 // cascade endpoints
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package cascade
 
@@ -19,6 +19,7 @@ type Endpoints struct {
 	UploadAsset       goa.Endpoint
 	StartProcessing   goa.Endpoint
 	RegisterTaskState goa.Endpoint
+	GetTaskHistory    goa.Endpoint
 	Download          goa.Endpoint
 }
 
@@ -40,6 +41,7 @@ func NewEndpoints(s Service) *Endpoints {
 		UploadAsset:       NewUploadAssetEndpoint(s),
 		StartProcessing:   NewStartProcessingEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
+		GetTaskHistory:    NewGetTaskHistoryEndpoint(s),
 		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
 	}
 }
@@ -49,6 +51,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UploadAsset = m(e.UploadAsset)
 	e.StartProcessing = m(e.StartProcessing)
 	e.RegisterTaskState = m(e.RegisterTaskState)
+	e.GetTaskHistory = m(e.GetTaskHistory)
 	e.Download = m(e.Download)
 }
 
@@ -86,6 +89,15 @@ func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		ep := req.(*RegisterTaskStateEndpointInput)
 		return nil, s.RegisterTaskState(ctx, ep.Payload, ep.Stream)
+	}
+}
+
+// NewGetTaskHistoryEndpoint returns an endpoint function that calls the method
+// "getTaskHistory" of service "cascade".
+func NewGetTaskHistoryEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*GetTaskHistoryPayload)
+		return s.GetTaskHistory(ctx, p)
 	}
 }
 

@@ -410,6 +410,38 @@ paths:
             $ref: '#/definitions/NftNftSearchInternalServerErrorResponseBody'
       schemes:
       - ws
+  /nfts/start/{taskId}/history:
+    get:
+      tags:
+      - nft
+      summary: Get history of states as a json string with a list of state objects.
+      description: Gets the history of the task's states.
+      operationId: nft#getTaskHistory
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the registration process
+        required: true
+        type: string
+        maxLength: 8
+        minLength: 8
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/NftGetTaskHistoryResponseBody'
+            required:
+            - list
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/NftGetTaskHistoryNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/NftGetTaskHistoryInternalServerErrorResponseBody'
+      schemes:
+      - http
   /openapi/cascade/download:
     get:
       tags:
@@ -498,6 +530,38 @@ paths:
           description: Internal Server Error response.
           schema:
             $ref: '#/definitions/CascadeStartProcessingInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /openapi/cascade/start/{taskId}/history:
+    get:
+      tags:
+      - cascade
+      summary: Get history of states as a json string with a list of state objects.
+      description: Gets the history of the task's states.
+      operationId: cascade#getTaskHistory
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the registration process
+        required: true
+        type: string
+        maxLength: 8
+        minLength: 8
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/CascadeGetTaskHistoryResponseBody'
+            required:
+            - list
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/CascadeGetTaskHistoryNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/CascadeGetTaskHistoryInternalServerErrorResponseBody'
       schemes:
       - http
   /openapi/cascade/start/{taskId}/state:
@@ -653,6 +717,38 @@ paths:
           description: Internal Server Error response.
           schema:
             $ref: '#/definitions/SenseStartProcessingInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /openapi/sense/start/{taskId}/history:
+    get:
+      tags:
+      - sense
+      summary: Get history of states as a json string with a list of state objects.
+      description: Gets the history of the task's states.
+      operationId: sense#getTaskHistory
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the registration process
+        required: true
+        type: string
+        maxLength: 8
+        minLength: 8
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/SenseGetTaskHistoryResponseBody'
+            required:
+            - list
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/SenseGetTaskHistoryNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/SenseGetTaskHistoryInternalServerErrorResponseBody'
       schemes:
       - http
   /openapi/sense/start/{taskId}/state:
@@ -856,11 +952,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: download_InternalServerError_response_body result type (default view)
     example:
       fault: true
@@ -877,6 +973,138 @@ definitions:
     - timeout
     - fault
   CascadeDownloadNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: download_NotFound_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  CascadeDownloadResponseBody:
+    title: CascadeDownloadResponseBody
+    type: object
+    properties:
+      file:
+        type: string
+        description: File downloaded
+        example:
+        - 69
+        - 118
+        - 101
+        - 110
+        - 105
+        - 101
+        - 116
+        - 32
+        - 117
+        - 116
+        - 32
+        - 101
+        - 120
+        - 112
+        - 101
+        - 100
+        - 105
+        - 116
+        - 97
+        - 32
+        - 99
+        - 117
+        - 109
+        - 113
+        - 117
+        - 101
+        - 32
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 101
+        - 115
+        - 116
+        - 46
+        format: byte
+    example:
+      file:
+      - 69
+      - 115
+      - 116
+      - 32
+      - 105
+      - 112
+      - 115
+      - 97
+      - 109
+      - 32
+      - 109
+      - 97
+      - 120
+      - 105
+      - 109
+      - 101
+      - 32
+      - 101
+      - 118
+      - 101
+      - 110
+      - 105
+      - 101
+      - 116
+      - 32
+      - 99
+      - 117
+      - 108
+      - 112
+      - 97
+      - 32
+      - 110
+      - 111
+      - 110
+      - 32
+      - 101
+      - 97
+      - 46
+    required:
+    - file
+  CascadeGetTaskHistoryInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -906,7 +1134,8 @@ definitions:
         type: boolean
         description: Is the error a timeout?
         example: true
-    description: download_NotFound_response_body result type (default view)
+    description: getTaskHistory_InternalServerError_response_body result type (default
+      view)
     example:
       fault: false
       id: 123abc
@@ -921,38 +1150,63 @@ definitions:
     - temporary
     - timeout
     - fault
-  CascadeDownloadResponseBody:
-    title: CascadeDownloadResponseBody
+  CascadeGetTaskHistoryNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
-      file:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
         type: string
-        description: File downloaded
-        example:
-        - 73
-        - 112
-        - 115
-        - 97
-        - 32
-        - 116
-        - 111
-        - 116
-        - 97
-        - 109
-        - 46
-        format: byte
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: getTaskHistory_NotFound_response_body result type (default view)
     example:
-      file:
-      - 73
-      - 100
-      - 32
-      - 113
-      - 117
-      - 105
-      - 97
-      - 46
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
     required:
-    - file
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  CascadeGetTaskHistoryResponseBody:
+    title: CascadeGetTaskHistoryResponseBody
+    type: object
+    properties:
+      list:
+        type: string
+        description: List of past status strings
+        example: '[ Started, Image Probed, Downloaded... ]'
+    example:
+      list: '[ Started, Image Probed, Downloaded... ]'
+    required:
+    - list
   CascadeRegisterTaskStateInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -1399,7 +1653,7 @@ definitions:
       field_type:
         type: string
         description: Field that is matched
-        example: creator_name
+        example: descr
         enum:
         - creator_name
         - art_title
@@ -1410,30 +1664,30 @@ definitions:
         type: array
         items:
           type: integer
-          example: 4903874538906915790
+          example: 3557600072324757415
           format: int64
         description: The indexes of matched characters. Useful for highlighting matches
         example:
-        - 2389346081964013198
-        - 7696725125093462268
-        - 7080598742486221416
-        - 4453244333956176107
+        - 956332017285011125
+        - 8741894780656247267
+        - 1442270446758951116
+        - 3050675005181383050
       score:
         type: integer
         description: Score used to rank matches
-        example: 3931363181989829489
+        example: 5807698684085970306
         format: int64
       str:
         type: string
         description: String that is matched
-        example: Cum rerum aliquam occaecati.
+        example: Nemo eum aliquid.
     example:
       field_type: descr
       matched_indexes:
-      - 8613166192612406691
-      - 2985991940805079387
-      score: 5414968530641951024
-      str: Hic modi est velit.
+      - 3848234667434913569
+      - 8675528034041244420
+      score: 891081685150826248
+      str: Ea sunt.
   NftDownloadInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -1466,12 +1720,12 @@ definitions:
         example: true
     description: download_InternalServerError_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -1480,6 +1734,147 @@ definitions:
     - timeout
     - fault
   NftDownloadNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: download_NotFound_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  NftDownloadResponseBody:
+    title: NftDownloadResponseBody
+    type: object
+    properties:
+      file:
+        type: string
+        description: File downloaded
+        example:
+        - 69
+        - 115
+        - 116
+        - 32
+        - 101
+        - 108
+        - 105
+        - 103
+        - 101
+        - 110
+        - 100
+        - 105
+        - 32
+        - 115
+        - 97
+        - 101
+        - 112
+        - 101
+        - 32
+        - 118
+        - 101
+        - 114
+        - 105
+        - 116
+        - 97
+        - 116
+        - 105
+        - 115
+        - 32
+        - 101
+        - 97
+        - 32
+        - 105
+        - 116
+        - 97
+        - 113
+        - 117
+        - 101
+        - 46
+        format: byte
+    example:
+      file:
+      - 65
+      - 108
+      - 105
+      - 113
+      - 117
+      - 105
+      - 100
+      - 32
+      - 97
+      - 108
+      - 105
+      - 113
+      - 117
+      - 105
+      - 100
+      - 32
+      - 112
+      - 108
+      - 97
+      - 99
+      - 101
+      - 97
+      - 116
+      - 32
+      - 105
+      - 110
+      - 99
+      - 105
+      - 100
+      - 117
+      - 110
+      - 116
+      - 32
+      - 108
+      - 97
+      - 98
+      - 111
+      - 114
+      - 105
+      - 111
+      - 115
+      - 97
+      - 109
+      - 46
+    required:
+    - file
+  NftGetTaskHistoryInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -1508,15 +1903,16 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
-    description: download_NotFound_response_body result type (default view)
+        example: true
+    description: getTaskHistory_InternalServerError_response_body result type (default
+      view)
     example:
       fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -1524,90 +1920,63 @@ definitions:
     - temporary
     - timeout
     - fault
-  NftDownloadResponseBody:
-    title: NftDownloadResponseBody
+  NftGetTaskHistoryNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
-      file:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
         type: string
-        description: File downloaded
-        example:
-        - 86
-        - 101
-        - 114
-        - 105
-        - 116
-        - 97
-        - 116
-        - 105
-        - 115
-        - 32
-        - 97
-        - 114
-        - 99
-        - 104
-        - 105
-        - 116
-        - 101
-        - 99
-        - 116
-        - 111
-        - 32
-        - 115
-        - 105
-        - 116
-        - 32
-        - 113
-        - 117
-        - 105
-        - 32
-        - 97
-        - 108
-        - 105
-        - 113
-        - 117
-        - 97
-        - 109
-        - 32
-        - 109
-        - 111
-        - 108
-        - 101
-        - 115
-        - 116
-        - 105
-        - 97
-        - 101
-        - 46
-        format: byte
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: getTaskHistory_NotFound_response_body result type (default view)
     example:
-      file:
-      - 65
-      - 109
-      - 101
-      - 116
-      - 32
-      - 110
-      - 117
-      - 109
-      - 113
-      - 117
-      - 97
-      - 109
-      - 32
-      - 97
-      - 115
-      - 112
-      - 101
-      - 114
-      - 110
-      - 97
-      - 116
-      - 117
-      - 114
-      - 46
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: true
     required:
-    - file
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  NftGetTaskHistoryResponseBody:
+    title: NftGetTaskHistoryResponseBody
+    type: object
+    properties:
+      list:
+        type: string
+        description: List of past status strings
+        example: '[ Started, Image Probed, Downloaded... ]'
+    example:
+      list: '[ Started, Image Probed, Downloaded... ]'
+    required:
+    - list
   NftNftGetBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -1640,12 +2009,12 @@ definitions:
         example: true
     description: nftGet_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
-      timeout: true
+      temporary: false
+      timeout: false
     required:
     - name
     - id
@@ -1685,7 +2054,7 @@ definitions:
         example: false
     description: nftGet_InternalServerError_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -1705,7 +2074,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1723,11 +2092,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: nftGet_NotFound_response_body result type (default view)
     example:
       fault: true
@@ -1735,7 +2104,7 @@ definitions:
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -1771,7 +2140,7 @@ definitions:
       alt_rare_on_internet_dict_json_b64:
         type: string
         description: Base64 Compressed Json of Alternative Rare On Internet Dict
-        example: Unde quod vel voluptatem error.
+        example: Rerum impedit et et sit maxime voluptatum.
       copies:
         type: integer
         description: Number of copies
@@ -1812,11 +2181,11 @@ definitions:
       earliest_date_of_results:
         type: string
         description: Earliest Available Date of Internet Results
-        example: Suscipit sint ut in.
+        example: Nostrum quidem facere enim.
       green_address:
         type: boolean
         description: Green address
-        example: true
+        example: false
       hentai_nsfw_score:
         type: number
         description: nsfw score
@@ -1839,7 +2208,7 @@ definitions:
       min_num_exact_matches_on_page:
         type: integer
         description: Minimum Number of Exact Matches on Page
-        example: 2008272138
+        example: 3707059683
         format: int32
       neutral_nsfw_score:
         type: number
@@ -1863,44 +2232,27 @@ definitions:
         type: string
         description: Preview Image
         example:
-        - 86
-        - 101
-        - 108
-        - 32
+        - 65
+        - 110
         - 105
-        - 110
-        - 32
-        - 110
-        - 111
-        - 115
-        - 116
-        - 114
-        - 117
         - 109
-        - 32
-        - 111
-        - 99
-        - 99
-        - 97
-        - 101
-        - 99
-        - 97
-        - 116
         - 105
         - 32
-        - 113
-        - 117
+        - 116
         - 111
+        - 116
+        - 97
+        - 109
         - 46
         format: byte
       rare_on_internet_graph_json_b64:
         type: string
         description: Base64 Compressed JSON of Rare On Internet Graph
-        example: Corrupti ex sit omnis ea magni.
+        example: Et consectetur aliquid.
       rare_on_internet_summary_table_json_b64:
         type: string
         description: Base64 Compressed JSON Table of Rare On Internet Summary
-        example: Autem qui aut ea.
+        example: Cum voluptas ut mollitia incidunt aperiam.
       rareness_score:
         type: number
         description: Average pastel rareness score
@@ -1910,7 +2262,7 @@ definitions:
       royalty:
         type: number
         description: how much artist should get on all future resales
-        example: 0.4235032165399167
+        example: 0.6944126012382972
         format: double
       series_name:
         type: string
@@ -1933,28 +2285,65 @@ definitions:
         description: Thumbnail_1 image
         example:
         - 69
-        - 115
+        - 110
+        - 105
+        - 109
+        - 32
+        - 117
         - 116
         - 32
-        - 101
+        - 118
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
         - 97
+        - 115
+        - 32
+        - 111
+        - 109
+        - 110
+        - 105
+        - 115
         - 46
         format: byte
       thumbnail_2:
         type: string
         description: Thumbnail_2 image
         example:
-        - 83
+        - 81
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
         - 97
-        - 101
+        - 109
+        - 32
+        - 118
+        - 111
+        - 108
+        - 117
         - 112
+        - 116
+        - 97
+        - 116
+        - 101
+        - 109
+        - 32
+        - 101
+        - 117
+        - 109
+        - 32
+        - 101
+        - 97
+        - 113
+        - 117
         - 101
         - 32
-        - 97
-        - 110
-        - 105
-        - 109
-        - 105
+        - 117
+        - 116
         - 46
         format: byte
       title:
@@ -1979,7 +2368,7 @@ definitions:
         example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
         maxLength: 128
     example:
-      alt_rare_on_internet_dict_json_b64: Voluptate nostrum quidem.
+      alt_rare_on_internet_dict_json_b64: Architecto sit.
       copies: 1
       creator_name: Leonardo da Vinci
       creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -1988,100 +2377,110 @@ definitions:
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
       drawing_nsfw_score: 1
-      earliest_date_of_results: Eum enim ut voluptas.
+      earliest_date_of_results: Molestiae eos amet numquam aspernatur.
       green_address: true
       hentai_nsfw_score: 1
       is_likely_dupe: false
       is_rare_on_internet: false
       keywords: Renaissance, sfumato, portrait
-      min_num_exact_matches_on_page: 509951378
+      min_num_exact_matches_on_page: 3586203985
       neutral_nsfw_score: 1
       nsfw_score: 1
       porn_nsfw_score: 1
       preview_thumbnail:
-      - 86
-      - 111
-      - 108
+      - 81
       - 117
+      - 105
+      - 32
       - 112
-      - 116
+      - 114
       - 97
+      - 101
       - 115
-      - 32
-      - 117
+      - 101
+      - 110
       - 116
-      - 32
+      - 105
+      - 117
       - 109
-      - 111
-      - 108
-      - 108
-      - 105
-      - 116
-      - 105
-      - 97
       - 32
-      - 105
-      - 110
-      - 99
-      - 105
-      - 100
-      - 117
-      - 110
-      - 116
-      - 32
-      - 97
-      - 112
+      - 101
+      - 120
       - 101
       - 114
+      - 99
       - 105
+      - 116
       - 97
+      - 116
+      - 105
+      - 111
+      - 110
+      - 101
       - 109
       - 46
-      rare_on_internet_graph_json_b64: Rerum impedit et et sit maxime voluptatum.
-      rare_on_internet_summary_table_json_b64: Et consectetur aliquid.
+      rare_on_internet_graph_json_b64: Soluta est aut qui dolorem est illo.
+      rare_on_internet_summary_table_json_b64: Eaque voluptates numquam officiis rerum.
       rareness_score: 1
-      royalty: 0.010158025125632639
+      royalty: 0.3508790628365781
       series_name: Famous artist
       sexy_nsfw_score: 1
       storage_fee: 100
       thumbnail_1:
-      - 82
-      - 101
-      - 105
+      - 83
+      - 117
+      - 115
       - 99
       - 105
-      - 101
-      - 110
-      - 100
+      - 112
       - 105
-      - 115
-      - 32
-      - 113
-      - 117
-      - 105
-      - 115
-      - 113
-      - 117
-      - 97
-      - 109
-      - 46
-      thumbnail_2:
-      - 69
-      - 117
-      - 109
-      - 32
-      - 101
-      - 97
-      - 113
-      - 117
-      - 101
-      - 32
-      - 117
       - 116
       - 32
       - 113
       - 117
       - 105
+      - 100
+      - 101
+      - 109
+      - 32
+      - 100
+      - 111
+      - 108
+      - 111
+      - 114
+      - 32
+      - 114
+      - 101
+      - 114
+      - 117
+      - 109
+      - 46
+      thumbnail_2:
+      - 69
+      - 116
+      - 32
+      - 115
+      - 101
+      - 100
+      - 32
+      - 112
+      - 114
+      - 97
+      - 101
+      - 115
+      - 101
+      - 110
+      - 116
+      - 105
+      - 117
+      - 109
+      - 32
+      - 101
+      - 116
+      - 32
+      - 101
+      - 111
+      - 115
       - 46
       title: Mona Lisa
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -2105,7 +2504,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2123,19 +2522,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: nftSearch_BadRequest_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -2168,11 +2567,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: nftSearch_InternalServerError_response_body result type (default
       view)
     example:
@@ -2180,7 +2579,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -2197,7 +2596,7 @@ definitions:
         type: integer
         description: Sort index of the match based on score.This must be used to sort
           results on UI.
-        example: 4220410847214103227
+        example: 3694745269056858042
         format: int64
       matches:
         type: array
@@ -2217,16 +2616,10 @@ definitions:
           - 1471524570153364271
           score: 7380319872106704681
           str: Voluptas voluptates totam aut sed quo consequatur.
-        - field_type: series
-          matched_indexes:
-          - 7421833538461479805
-          - 1471524570153364271
-          score: 7380319872106704681
-          str: Voluptas voluptates totam aut sed quo consequatur.
       nft:
         $ref: '#/definitions/NftSummaryResponseBody'
     example:
-      match_index: 5883171067592714741
+      match_index: 1057818091506256026
       matches:
       - field_type: series
         matched_indexes:
@@ -2336,7 +2729,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2354,11 +2747,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: register_BadRequest_response_body result type (default view)
     example:
       fault: true
@@ -2399,11 +2792,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: register_InternalServerError_response_body result type (default view)
     example:
       fault: false
@@ -2411,7 +2804,7 @@ definitions:
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -2823,11 +3216,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTask_InternalServerError_response_body result type (default
       view)
     example:
@@ -2836,7 +3229,7 @@ definitions:
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -2851,7 +3244,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2869,14 +3262,14 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: registerTask_NotFound_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -2905,10 +3298,6 @@ definitions:
           $ref: '#/definitions/TaskStateResponseBody'
         description: List of states from the very beginning of the process
         example:
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
@@ -3011,11 +3400,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: registerTaskState_InternalServerError_response_body result type (default
       view)
     example:
@@ -3039,7 +3428,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3057,7 +3446,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -3068,7 +3457,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -3127,7 +3516,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3145,11 +3534,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTasks_InternalServerError_response_body result type (default
       view)
     example:
@@ -3157,8 +3546,8 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -3231,37 +3620,59 @@ definitions:
         type: string
         description: Thumbnail_1 image
         example:
-        - 69
+        - 79
+        - 100
+        - 105
         - 116
         - 32
-        - 110
-        - 101
-        - 115
-        - 99
+        - 104
         - 105
-        - 117
-        - 110
-        - 116
+        - 99
         - 46
         format: byte
       thumbnail_2:
         type: string
         description: Thumbnail_2 image
         example:
-        - 86
-        - 111
-        - 108
-        - 117
-        - 112
+        - 69
+        - 115
         - 116
-        - 97
-        - 116
-        - 117
-        - 109
         - 32
-        - 97
-        - 117
+        - 118
+        - 101
+        - 108
+        - 105
         - 116
+        - 32
+        - 109
+        - 105
+        - 110
+        - 117
+        - 115
+        - 32
+        - 113
+        - 117
+        - 105
+        - 32
+        - 111
+        - 99
+        - 99
+        - 97
+        - 101
+        - 99
+        - 97
+        - 116
+        - 105
+        - 32
+        - 118
+        - 101
+        - 114
+        - 105
+        - 116
+        - 97
+        - 116
+        - 105
+        - 115
         - 46
         format: byte
       title:
@@ -3295,91 +3706,66 @@ definitions:
       rareness_score: 1
       series_name: Famous artist
       thumbnail_1:
-      - 68
-      - 111
-      - 108
+      - 69
+      - 116
+      - 32
+      - 101
+      - 114
+      - 114
       - 111
       - 114
       - 32
-      - 113
-      - 117
+      - 101
       - 105
+      - 117
+      - 115
       - 32
+      - 101
+      - 120
+      - 99
+      - 101
       - 112
-      - 111
-      - 115
-      - 115
-      - 105
-      - 109
+      - 116
       - 117
-      - 115
+      - 114
+      - 105
       - 32
+      - 101
+      - 116
+      - 32
+      - 115
+      - 101
       - 100
-      - 111
-      - 108
-      - 111
-      - 114
-      - 101
-      - 109
-      - 32
-      - 117
-      - 116
-      - 32
-      - 118
-      - 101
-      - 114
-      - 105
-      - 116
-      - 97
-      - 116
-      - 105
-      - 115
       - 46
       thumbnail_2:
-      - 69
-      - 117
-      - 109
-      - 32
-      - 109
+      - 77
       - 97
       - 103
       - 110
       - 105
       - 32
-      - 97
-      - 108
-      - 105
+      - 101
+      - 120
+      - 32
       - 113
       - 117
-      - 97
-      - 109
-      - 32
-      - 109
-      - 111
-      - 108
-      - 108
-      - 105
-      - 116
       - 105
       - 97
       - 32
-      - 102
+      - 110
+      - 105
+      - 104
+      - 105
+      - 108
+      - 32
+      - 97
       - 117
-      - 103
-      - 105
-      - 97
       - 116
-      - 32
-      - 105
-      - 100
-      - 32
-      - 100
       - 101
-      - 98
-      - 105
+      - 109
+      - 32
+      - 101
       - 116
-      - 105
-      - 115
       - 46
       title: Mona Lisa
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -3485,7 +3871,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -3496,7 +3882,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -3512,7 +3898,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3530,7 +3916,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -3538,11 +3924,11 @@ definitions:
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -3559,35 +3945,54 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 86
+        - 65
+        - 108
         - 105
-        - 116
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 111
+        - 99
+        - 99
         - 97
         - 101
-        - 32
-        - 100
-        - 117
         - 99
+        - 97
+        - 116
         - 105
-        - 109
-        - 117
-        - 115
         - 32
+        - 97
         - 117
         - 116
         - 32
         - 114
         - 101
-        - 109
-        - 32
-        - 115
+        - 112
+        - 101
+        - 108
+        - 108
+        - 101
+        - 110
+        - 100
         - 117
         - 115
+        - 32
+        - 100
+        - 111
+        - 108
+        - 111
+        - 114
+        - 101
+        - 109
+        - 32
         - 99
-        - 105
-        - 112
-        - 105
-        - 116
+        - 117
+        - 109
+        - 113
+        - 117
+        - 101
         - 46
         format: byte
       filename:
@@ -3595,20 +4000,20 @@ definitions:
         description: For internal use
     example:
       file:
-      - 68
-      - 111
-      - 108
-      - 111
-      - 114
-      - 117
-      - 109
-      - 32
-      - 113
-      - 117
-      - 97
+      - 76
+      - 105
+      - 98
       - 101
       - 114
-      - 97
+      - 111
+      - 32
+      - 105
+      - 110
+      - 99
+      - 105
+      - 100
+      - 117
+      - 110
       - 116
       - 46
     required:
@@ -3650,7 +4055,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3668,7 +4073,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -3680,7 +4085,7 @@ definitions:
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -3695,7 +4100,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3717,15 +4122,15 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: download_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: false
+      temporary: true
+      timeout: true
     required:
     - name
     - id
@@ -3741,39 +4146,80 @@ definitions:
         type: string
         description: File downloaded
         example:
-        - 76
-        - 97
-        - 98
-        - 111
-        - 114
-        - 101
-        - 32
-        - 101
-        - 115
+        - 83
+        - 105
         - 116
         - 32
-        - 108
+        - 105
+        - 110
+        - 32
         - 97
-        - 98
-        - 111
-        - 114
         - 117
-        - 109
+        - 116
         - 46
         format: byte
     example:
       file:
-      - 78
-      - 101
-      - 109
+      - 79
+      - 100
+      - 105
       - 111
       - 32
-      - 97
-      - 100
+      - 109
+      - 105
+      - 110
+      - 117
+      - 115
       - 46
     required:
     - file
-  SenseRegisterTaskStateInternalServerErrorResponseBody:
+  SenseGetTaskHistoryInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: getTaskHistory_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseGetTaskHistoryNotFoundResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -3798,7 +4244,64 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
         example: true
+    description: getTaskHistory_NotFound_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseGetTaskHistoryResponseBody:
+    title: SenseGetTaskHistoryResponseBody
+    type: object
+    properties:
+      list:
+        type: string
+        description: List of past status strings
+        example: '[ Started, Image Probed, Downloaded... ]'
+    example:
+      list: '[ Started, Image Probed, Downloaded... ]'
+    required:
+    - list
+  SenseRegisterTaskStateInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -3806,12 +4309,12 @@ definitions:
     description: registerTaskState_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -3844,19 +4347,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTaskState_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -3936,15 +4439,15 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: startProcessing_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -3959,7 +4462,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3977,20 +4480,20 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: startProcessing_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -4043,7 +4546,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -4061,11 +4564,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: uploadImage_BadRequest_response_body result type (default view)
     example:
       fault: true
@@ -4088,7 +4591,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -4106,7 +4609,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -4118,7 +4621,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -4135,33 +4638,13 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 82
-        - 101
-        - 112
-        - 101
-        - 108
-        - 108
-        - 101
-        - 110
-        - 100
+        - 65
         - 117
-        - 115
-        - 32
-        - 113
-        - 117
-        - 105
-        - 98
-        - 117
-        - 115
-        - 100
-        - 97
+        - 116
+        - 101
         - 109
         - 32
-        - 109
         - 97
-        - 103
-        - 110
-        - 105
         - 46
         format: byte
       filename:
@@ -4169,41 +4652,50 @@ definitions:
         description: For internal use
     example:
       file:
-      - 86
-      - 101
+      - 77
+      - 111
       - 108
-      - 32
-      - 101
-      - 115
-      - 116
-      - 32
-      - 101
       - 108
       - 105
-      - 103
+      - 116
+      - 105
+      - 97
+      - 32
+      - 112
+      - 114
+      - 97
+      - 101
+      - 115
       - 101
       - 110
-      - 100
+      - 116
+      - 105
+      - 117
+      - 109
+      - 32
+      - 113
+      - 117
+      - 97
+      - 115
       - 105
       - 32
-      - 115
+      - 109
       - 97
+      - 105
+      - 111
+      - 114
       - 101
-      - 112
-      - 101
+      - 115
       - 32
-      - 118
+      - 102
+      - 97
+      - 99
       - 101
       - 114
-      - 105
-      - 116
-      - 97
-      - 116
-      - 105
-      - 115
-      - 32
       - 101
-      - 97
+      - 32
+      - 117
+      - 116
       - 46
     required:
     - file
@@ -4522,7 +5014,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -4540,11 +5032,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: createUserdata_BadRequest_response_body result type (default view)
     example:
       fault: false
@@ -4593,12 +5085,12 @@ definitions:
     description: createUserdata_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
-      timeout: true
+      temporary: false
+      timeout: false
     required:
     - name
     - id
@@ -4790,18 +5282,18 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: getUserdata_BadRequest_response_body result type (default view)
     example:
       fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -4835,7 +5327,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -4843,7 +5335,7 @@ definitions:
     description: getUserdata_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -4863,7 +5355,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -4881,11 +5373,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: getUserdata_NotFound_response_body result type (default view)
     example:
       fault: false
@@ -4987,7 +5479,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -5005,19 +5497,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: updateUserdata_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -5050,7 +5542,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -5062,7 +5554,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: false
     required:
     - name

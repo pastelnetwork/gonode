@@ -3,7 +3,7 @@
 // nft service
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package nft
 
@@ -21,6 +21,8 @@ type Service interface {
 	Register(context.Context, *RegisterPayload) (res *RegisterResult, err error)
 	// Streams the state of the registration process.
 	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
+	// Gets the history of the task's states.
+	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res *TaskHistory, err error)
 	// Returns a single task.
 	RegisterTask(context.Context, *RegisterTaskPayload) (res *Task, err error)
 	// List of all tasks.
@@ -49,7 +51,7 @@ const ServiceName = "nft"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [8]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "nftSearch", "nftGet", "download"}
+var MethodNames = [9]string{"register", "registerTaskState", "getTaskHistory", "registerTask", "registerTasks", "uploadImage", "nftSearch", "nftGet", "download"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -108,6 +110,13 @@ type FuzzyMatch struct {
 	MatchedIndexes []int
 	// Score used to rank matches
 	Score *int
+}
+
+// GetTaskHistoryPayload is the payload type of the nft service getTaskHistory
+// method.
+type GetTaskHistoryPayload struct {
+	// Task ID of the registration process
+	TaskID string
 }
 
 // Image is the result type of the nft service uploadImage method.
@@ -390,6 +399,12 @@ type Task struct {
 
 // TaskCollection is the result type of the nft service registerTasks method.
 type TaskCollection []*Task
+
+// TaskHistory is the result type of the nft service getTaskHistory method.
+type TaskHistory struct {
+	// List of past status strings
+	List string
+}
 
 // TaskState is the result type of the nft service registerTaskState method.
 type TaskState struct {

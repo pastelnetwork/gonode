@@ -65,6 +65,23 @@ var _ = Service("nft", func() {
 		})
 	})
 
+	Method("getTaskHistory", func() {
+		Description("Gets the history of the task's states.")
+		Meta("swagger:summary", "Get history of states as a json string with a list of state objects.")
+
+		Payload(func() {
+			Extend(RegisterTaskPayload)
+		})
+		Result(TaskHistory)
+
+		HTTP(func() {
+			GET("/start/{taskId}/history")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
 	Method("registerTask", func() {
 		Description("Returns a single task.")
 		Meta("swagger:summary", "Find task by ID")

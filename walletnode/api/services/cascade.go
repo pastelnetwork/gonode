@@ -167,6 +167,26 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	}
 }
 
+// GetTaskHistory - Gets a task's history
+func (service *CascadeAPIHandler) GetTaskHistory(_ context.Context, p *cascade.GetTaskHistoryPayload) (res *cascade.TaskHistory, err error) {
+	task := service.register.GetTask(p.TaskID)
+	if task == nil {
+		return nil, cascade.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+	}
+
+	var statuses []string
+
+	statusHistory := task.StatusHistory()
+	for _, status := range statusHistory {
+		statuses = append(statuses, status.String())
+	}
+
+	return &cascade.TaskHistory{
+		List: strings.Join(statuses[:], ","),
+	}, nil
+	// return &sense.TaskHistory(), nil
+}
+
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.
 func NewCascadeAPIHandler(register *cascaderegister.CascadeRegistrationService, download *download.NftDownloadingService) *CascadeAPIHandler {
 	return &CascadeAPIHandler{

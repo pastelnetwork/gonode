@@ -75,6 +75,29 @@ var RegisterTaskState = Type("TaskState", func() {
 	Required("date", "status")
 })
 
+// TaskHistory is a list of strings containing all past task histories.
+var TaskHistory = Type("TaskHistory", func() {
+	Attribute("list", String, func() {
+		Description("List of past status strings")
+		Example("[ Started, Image Probed, Downloaded... ]")
+	})
+	Required("list")
+})
+
+// ActionDetailsResult - result of posting action details
+var ActionDetailsResult = ResultType("application/sense.start-action", func() {
+	TypeName("actionDetailResult")
+	Attributes(func() {
+		Attribute("estimated_fee", Float64, func() {
+			Description("Estimated fee")
+			Minimum(0.00001)
+			Default(1)
+			Example(100)
+		})
+	})
+	Required("estimated_fee")
+})
+
 // StartProcessingPayload - Payload for starting processing
 var StartProcessingPayload = Type("StartProcessingPayload", func() {
 	Description("Start Processing Payload")

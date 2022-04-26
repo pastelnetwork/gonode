@@ -3,7 +3,7 @@
 // HTTP request path constructors for the nft service.
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package server
 
@@ -19,6 +19,11 @@ func RegisterNftPath() string {
 // RegisterTaskStateNftPath returns the URL path to the nft service registerTaskState HTTP endpoint.
 func RegisterTaskStateNftPath(taskID string) string {
 	return fmt.Sprintf("/nfts/register/%v/state", taskID)
+}
+
+// GetTaskHistoryNftPath returns the URL path to the nft service getTaskHistory HTTP endpoint.
+func GetTaskHistoryNftPath(taskID string) string {
+	return fmt.Sprintf("/nfts/start/%v/history", taskID)
 }
 
 // RegisterTaskNftPath returns the URL path to the nft service registerTask HTTP endpoint.

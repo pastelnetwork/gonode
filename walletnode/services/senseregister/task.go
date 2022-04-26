@@ -122,6 +122,13 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
+
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validating Sense Reg TXID: ",
+		StatusString:  task.regSenseTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
@@ -130,6 +137,12 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
 	log.Infof("RegSense txid is confirmed: %s\n", task.regSenseTxid)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validated Sense Reg TXID: ",
+		StatusString:  task.regSenseTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 
 	// activate sense ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
@@ -138,6 +151,12 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("active action ticket: %w", err)
 	}
 	log.Debugf("Active action ticket txid: %s", activateTxID)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Activating Action Ticket TXID: ",
+		StatusString:  activateTxID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 
 	// Wait until activateTxID is valid
 	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.SenseActTxMinConfirmations),
@@ -148,6 +167,12 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(common.StatusTicketActivated)
 	log.Infof("Active txid is confirmed: %s\n", activateTxID)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Activated Action Ticket TXID: ",
+		StatusString:  activateTxID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 
 	// Send ActionAct request to primary node
 	if err := task.uploadActionAct(newCtx, task.regSenseTxid); err != nil {

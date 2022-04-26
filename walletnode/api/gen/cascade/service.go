@@ -3,7 +3,7 @@
 // cascade service
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package cascade
 
@@ -23,6 +23,8 @@ type Service interface {
 	StartProcessing(context.Context, *StartProcessingPayload) (res *StartProcessingResult, err error)
 	// Streams the state of the registration process.
 	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
+	// Gets the history of the task's states.
+	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res *TaskHistory, err error)
 	// Download cascade Artifact.
 	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
 }
@@ -41,7 +43,7 @@ const ServiceName = "cascade"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [4]string{"uploadAsset", "startProcessing", "registerTaskState", "download"}
+var MethodNames = [5]string{"uploadAsset", "startProcessing", "registerTaskState", "getTaskHistory", "download"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -85,6 +87,13 @@ type DownloadResult struct {
 	File []byte
 }
 
+// GetTaskHistoryPayload is the payload type of the cascade service
+// getTaskHistory method.
+type GetTaskHistoryPayload struct {
+	// Task ID of the registration process
+	TaskID string
+}
+
 // RegisterTaskStatePayload is the payload type of the cascade service
 // registerTaskState method.
 type RegisterTaskStatePayload struct {
@@ -110,6 +119,12 @@ type StartProcessingPayload struct {
 type StartProcessingResult struct {
 	// Task ID of processing task
 	TaskID string
+}
+
+// TaskHistory is the result type of the cascade service getTaskHistory method.
+type TaskHistory struct {
+	// List of past status strings
+	List string
 }
 
 // TaskState is the result type of the cascade service registerTaskState method.

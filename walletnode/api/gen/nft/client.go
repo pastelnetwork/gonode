@@ -3,7 +3,7 @@
 // nft client
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package nft
 
@@ -17,6 +17,7 @@ import (
 type Client struct {
 	RegisterEndpoint          goa.Endpoint
 	RegisterTaskStateEndpoint goa.Endpoint
+	GetTaskHistoryEndpoint    goa.Endpoint
 	RegisterTaskEndpoint      goa.Endpoint
 	RegisterTasksEndpoint     goa.Endpoint
 	UploadImageEndpoint       goa.Endpoint
@@ -26,10 +27,11 @@ type Client struct {
 }
 
 // NewClient initializes a "nft" service client given the endpoints.
-func NewClient(register, registerTaskState, registerTask, registerTasks, uploadImage, nftSearch, nftGet, download goa.Endpoint) *Client {
+func NewClient(register, registerTaskState, getTaskHistory, registerTask, registerTasks, uploadImage, nftSearch, nftGet, download goa.Endpoint) *Client {
 	return &Client{
 		RegisterEndpoint:          register,
 		RegisterTaskStateEndpoint: registerTaskState,
+		GetTaskHistoryEndpoint:    getTaskHistory,
 		RegisterTaskEndpoint:      registerTask,
 		RegisterTasksEndpoint:     registerTasks,
 		UploadImageEndpoint:       uploadImage,
@@ -58,6 +60,16 @@ func (c *Client) RegisterTaskState(ctx context.Context, p *RegisterTaskStatePayl
 		return
 	}
 	return ires.(RegisterTaskStateClientStream), nil
+}
+
+// GetTaskHistory calls the "getTaskHistory" endpoint of the "nft" service.
+func (c *Client) GetTaskHistory(ctx context.Context, p *GetTaskHistoryPayload) (res *TaskHistory, err error) {
+	var ires interface{}
+	ires, err = c.GetTaskHistoryEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*TaskHistory), nil
 }
 
 // RegisterTask calls the "registerTask" endpoint of the "nft" service.

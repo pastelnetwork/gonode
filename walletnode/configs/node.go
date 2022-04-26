@@ -16,7 +16,7 @@ type Node struct {
 
 	NftRegister     nftregister.Config     `mapstructure:",squash" json:"nft_register,omitempty"`
 	NftSearch       nftsearch.Config       `mapstructure:",squash" json:"nft_search,omitempty"`
-	NftDownload     download.Config     `mapstructure:",squash" json:"nft_download,omitempty"`
+	NftDownload     download.Config        `mapstructure:",squash" json:"nft_download,omitempty"`
 	SenseRegister   senseregister.Config   `mapstructure:"sense_register" json:"sense_register,omitempty"`
 	CascadeRegister cascaderegister.Config `mapstructure:"cascade_register" json:"cascade_register,omitempty"`
 

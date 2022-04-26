@@ -101,6 +101,26 @@ func (service *NftAPIHandler) Register(_ context.Context, p *nft.RegisterPayload
 	return res, nil
 }
 
+// GetTaskHistory - Gets a task's history
+func (service *NftAPIHandler) GetTaskHistory(_ context.Context, p *nft.GetTaskHistoryPayload) (res *nft.TaskHistory, err error) {
+	task := service.register.GetTask(p.TaskID)
+	if task == nil {
+		return nil, sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+	}
+
+	var statuses []string
+
+	statusHistory := task.StatusHistory()
+	for _, status := range statusHistory {
+		statuses = append(statuses, status.String())
+	}
+
+	return &nft.TaskHistory{
+		List: strings.Join(statuses[:], ","),
+	}, nil
+	// return &sense.TaskHistory(), nil
+}
+
 // RegisterTaskState streams the state of the registration process.
 func (service *NftAPIHandler) RegisterTaskState(ctx context.Context, p *nft.RegisterTaskStatePayload, stream nft.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()

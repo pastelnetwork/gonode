@@ -3,7 +3,7 @@
 // nft endpoints
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design -o api/
 
 package nft
 
@@ -18,6 +18,7 @@ import (
 type Endpoints struct {
 	Register          goa.Endpoint
 	RegisterTaskState goa.Endpoint
+	GetTaskHistory    goa.Endpoint
 	RegisterTask      goa.Endpoint
 	RegisterTasks     goa.Endpoint
 	UploadImage       goa.Endpoint
@@ -52,6 +53,7 @@ func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
 		Register:          NewRegisterEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
+		GetTaskHistory:    NewGetTaskHistoryEndpoint(s),
 		RegisterTask:      NewRegisterTaskEndpoint(s),
 		RegisterTasks:     NewRegisterTasksEndpoint(s),
 		UploadImage:       NewUploadImageEndpoint(s),
@@ -65,6 +67,7 @@ func NewEndpoints(s Service) *Endpoints {
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.Register = m(e.Register)
 	e.RegisterTaskState = m(e.RegisterTaskState)
+	e.GetTaskHistory = m(e.GetTaskHistory)
 	e.RegisterTask = m(e.RegisterTask)
 	e.RegisterTasks = m(e.RegisterTasks)
 	e.UploadImage = m(e.UploadImage)
@@ -93,6 +96,15 @@ func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		ep := req.(*RegisterTaskStateEndpointInput)
 		return nil, s.RegisterTaskState(ctx, ep.Payload, ep.Stream)
+	}
+}
+
+// NewGetTaskHistoryEndpoint returns an endpoint function that calls the method
+// "getTaskHistory" of service "nft".
+func NewGetTaskHistoryEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*GetTaskHistoryPayload)
+		return s.GetTaskHistory(ctx, p)
 	}
 }
 

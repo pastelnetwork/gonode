@@ -110,7 +110,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("send signed cascade ticket: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketAccepted)
-
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validating Cascade Reg TXID: ",
+		StatusString:  task.regCascadeTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 	// new context because the old context already cancelled
 	newCtx := context.Background()
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
@@ -120,6 +125,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validated Cascade Reg TXID: ",
+		StatusString:  task.regCascadeTxid,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 
 	// activate cascade ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
@@ -127,6 +138,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("active action ticket: %w", err)
 	}
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Activating Cascade Action Ticket TXID: ",
+		StatusString:  activateTxID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 	log.Infof("Active action ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
@@ -137,6 +154,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("wait activate txid valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketActivated)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Activated Cascade Action Ticket TXID: ",
+		StatusString:  activateTxID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 	log.Info("Active txid is confirmed")
 
 	// Send ActionAct request to primary node
