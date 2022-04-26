@@ -18,8 +18,8 @@ var _ = Describe("Cascade", func() {
 	var (
 		itHelper = helper.NewItHelper()
 
-		uploadImageReq   *helper.UploadImageReq
-		uploadImageReply *helper.UploadImageResp
+		uploadAssetReq   *helper.UploadImageReq
+		uploadAssetReply *helper.UploadAssetResp
 
 		startTaskReq *helper.SenseCascadeStartTaskReq
 		regReply     *helper.RegistrationResp
@@ -30,11 +30,11 @@ var _ = Describe("Cascade", func() {
 	BeforeEach(func() {
 		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, it.SNServers, itHelper)
 
-		uploadImageReq = &helper.UploadImageReq{
+		uploadAssetReq = &helper.UploadImageReq{
 			Filename: filepath.Join(filepath.Dir("."), "testdata", "test.jpg"),
 		}
 
-		uploadImageReply = &helper.UploadImageResp{}
+		uploadAssetReply = &helper.UploadAssetResp{}
 		startTaskReq = &helper.SenseCascadeStartTaskReq{
 			AppPastelID: testconst.ArtistPastelID,
 			BurnTXID:    "896950d860eaf408e76a1a153deff80a7cda9e76291e5085060634e30b145c6a",
@@ -47,15 +47,15 @@ var _ = Describe("Cascade", func() {
 			// Register Mocks
 			Expect(mocker.MockAllRegExpections()).To(Succeed())
 
-			// Upload Image
-			resp, err := itHelper.HTTPCurlUploadFile(helper.HttpPost, helper.GetCascadeUploadImageURI(it.WNBaseURI), uploadImageReq.Filename, "test-img")
+			// Upload asset
+			resp, err := itHelper.HTTPCurlUploadFile(helper.HttpPost, helper.GetCascadeUploadImageURI(it.WNBaseURI), uploadAssetReq.Filename, "test-img")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(json.Unmarshal(resp, uploadImageReply)).To(Succeed())
-			Expect(uploadImageReply.ImageID).NotTo(BeEmpty())
-			Expect(uploadImageReply.EstimatedFee).NotTo(BeZero())
+			Expect(json.Unmarshal(resp, uploadAssetReply)).To(Succeed())
+			Expect(uploadAssetReply.FileID).NotTo(BeEmpty())
+			Expect(uploadAssetReply.EstimatedFee).NotTo(BeZero())
 
 			// Start Task
-			startResp, status, err := itHelper.Request(helper.HttpPost, startTaskReq, helper.GetCascadeStartTaskURI(it.WNBaseURI, uploadImageReply.ImageID), nil)
+			startResp, status, err := itHelper.Request(helper.HttpPost, startTaskReq, helper.GetCascadeStartTaskURI(it.WNBaseURI, uploadAssetReply.FileID), nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal(http.StatusCreated))
 			Expect(json.Unmarshal(startResp, regReply)).To(Succeed())

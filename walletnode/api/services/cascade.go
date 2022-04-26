@@ -43,7 +43,7 @@ func (service *CascadeAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) 
 		nil,
 		&websocket.Upgrader{},
 		nil,
-		CascadeUploadImageDecoderFunc(ctx, service),
+		CascadeUploadAssetDecoderFunc(ctx, service),
 	)
 	server.Mount(mux, srv)
 
@@ -53,8 +53,8 @@ func (service *CascadeAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) 
 	return srv
 }
 
-// UploadImage - Uploads an image and return unique image id
-func (service *CascadeAPIHandler) UploadImage(ctx context.Context, p *cascade.UploadImagePayload) (res *cascade.Image, err error) {
+// UploadAsset - Uploads an asset file and return unique file id
+func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.UploadAssetPayload) (res *cascade.Asset, err error) {
 	if p.Filename == nil {
 		return nil, cascade.MakeBadRequest(errors.New("file not specified"))
 	}
@@ -69,8 +69,8 @@ func (service *CascadeAPIHandler) UploadImage(ctx context.Context, p *cascade.Up
 		return nil, cascade.MakeInternalServerError(err)
 	}
 
-	res = &cascade.Image{
-		ImageID:      id,
+	res = &cascade.Asset{
+		FileID:       id,
 		ExpiresIn:    expiry,
 		EstimatedFee: fee,
 	}

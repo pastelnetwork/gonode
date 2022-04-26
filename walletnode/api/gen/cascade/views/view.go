@@ -13,10 +13,10 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// Image is the viewed result type that is projected based on a view.
-type Image struct {
+// Asset is the viewed result type that is projected based on a view.
+type Asset struct {
 	// Type to project
-	Projected *ImageView
+	Projected *AssetView
 	// View to render
 	View string
 }
@@ -30,11 +30,11 @@ type StartProcessingResult struct {
 	View string
 }
 
-// ImageView is a type that runs validations on a projected type.
-type ImageView struct {
-	// Uploaded image ID
-	ImageID *string
-	// Image expiration
+// AssetView is a type that runs validations on a projected type.
+type AssetView struct {
+	// Uploaded file ID
+	FileID *string
+	// File expiration
 	ExpiresIn *string
 	// Estimated fee
 	EstimatedFee *float64
@@ -48,10 +48,10 @@ type StartProcessingResultView struct {
 }
 
 var (
-	// ImageMap is a map indexing the attribute names of Image by view name.
-	ImageMap = map[string][]string{
+	// AssetMap is a map indexing the attribute names of Asset by view name.
+	AssetMap = map[string][]string{
 		"default": {
-			"image_id",
+			"file_id",
 			"expires_in",
 			"estimated_fee",
 		},
@@ -65,11 +65,11 @@ var (
 	}
 )
 
-// ValidateImage runs the validations defined on the viewed result type Image.
-func ValidateImage(result *Image) (err error) {
+// ValidateAsset runs the validations defined on the viewed result type Asset.
+func ValidateAsset(result *Asset) (err error) {
 	switch result.View {
 	case "default", "":
-		err = ValidateImageView(result.Projected)
+		err = ValidateAssetView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
 	}
@@ -88,11 +88,11 @@ func ValidateStartProcessingResult(result *StartProcessingResult) (err error) {
 	return
 }
 
-// ValidateImageView runs the validations defined on ImageView using the
+// ValidateAssetView runs the validations defined on AssetView using the
 // "default" view.
-func ValidateImageView(result *ImageView) (err error) {
-	if result.ImageID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "result"))
+func ValidateAssetView(result *AssetView) (err error) {
+	if result.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "result"))
 	}
 	if result.ExpiresIn == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("expires_in", "result"))
@@ -100,14 +100,14 @@ func ValidateImageView(result *ImageView) (err error) {
 	if result.EstimatedFee == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("estimated_fee", "result"))
 	}
-	if result.ImageID != nil {
-		if utf8.RuneCountInString(*result.ImageID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, true))
+	if result.FileID != nil {
+		if utf8.RuneCountInString(*result.FileID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.file_id", *result.FileID, utf8.RuneCountInString(*result.FileID), 8, true))
 		}
 	}
-	if result.ImageID != nil {
-		if utf8.RuneCountInString(*result.ImageID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, false))
+	if result.FileID != nil {
+		if utf8.RuneCountInString(*result.FileID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.file_id", *result.FileID, utf8.RuneCountInString(*result.FileID), 8, false))
 		}
 	}
 	if result.ExpiresIn != nil {

@@ -565,7 +565,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadImageRequestBody'
+              $ref: '#/components/schemas/UploadAssetRequestBody'
             example:
               file:
               - 86
@@ -1110,7 +1110,7 @@ paths:
                 name: bad_request
       security:
       - api_key_header_Authorization: []
-  /openapi/cascade/start/{image_id}:
+  /openapi/cascade/start/{file_id}:
     post:
       tags:
       - cascade
@@ -1118,13 +1118,13 @@ paths:
       description: Start processing the image
       operationId: cascade#startProcessing
       parameters:
-      - name: image_id
+      - name: file_id
         in: path
-        description: Uploaded image ID
+        description: Uploaded asset file ID
         required: true
         schema:
           type: string
-          description: Uploaded image ID
+          description: Uploaded asset file ID
           example: VK7mpAqZ
           minLength: 8
           maxLength: 8
@@ -1279,14 +1279,14 @@ paths:
       tags:
       - cascade
       summary: Uploads Action Data
-      description: Upload the image
-      operationId: cascade#uploadImage
+      description: Upload the asset file
+      operationId: cascade#uploadAsset
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadImageRequestBody'
+              $ref: '#/components/schemas/UploadAssetRequestBody'
             example:
               file:
               - 84
@@ -1336,11 +1336,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Image'
+                $ref: '#/components/schemas/Asset'
               example:
                 estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
-                image_id: VK7mpAqZ
+                file_id: VK7mpAqZ
         "400":
           description: Bad Request response.
           content:
@@ -1626,7 +1626,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UploadImageRequestBody'
+              $ref: '#/components/schemas/UploadAssetRequestBody'
             example:
               file:
               - 65
@@ -1899,6 +1899,34 @@ paths:
                 name: bad_request
 components:
   schemas:
+    Asset:
+      type: object
+      properties:
+        estimated_fee:
+          type: number
+          description: Estimated fee
+          default: 1
+          example: 100
+          minimum: 1e-05
+        expires_in:
+          type: string
+          description: File expiration
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+        file_id:
+          type: string
+          description: Uploaded file ID
+          example: VK7mpAqZ
+          minLength: 8
+          maxLength: 8
+      example:
+        estimated_fee: 100
+        expires_in: 2006-01-02T15:04:05Z07:00
+        file_id: VK7mpAqZ
+      required:
+      - file_id
+      - expires_in
+      - estimated_fee
     CreateUserdataRequestBody:
       type: object
       properties:
@@ -3605,7 +3633,7 @@ components:
       - top_left_y
       - bottom_right_x
       - bottom_right_y
-    UploadImageRequestBody:
+    UploadAssetRequestBody:
       type: object
       properties:
         file:

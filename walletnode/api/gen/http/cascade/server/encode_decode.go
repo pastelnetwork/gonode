@@ -21,23 +21,23 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// EncodeUploadImageResponse returns an encoder for responses returned by the
-// cascade uploadImage endpoint.
-func EncodeUploadImageResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+// EncodeUploadAssetResponse returns an encoder for responses returned by the
+// cascade uploadAsset endpoint.
+func EncodeUploadAssetResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(*cascadeviews.Image)
+		res := v.(*cascadeviews.Asset)
 		enc := encoder(ctx, w)
-		body := NewUploadImageResponseBody(res.Projected)
+		body := NewUploadAssetResponseBody(res.Projected)
 		w.WriteHeader(http.StatusCreated)
 		return enc.Encode(body)
 	}
 }
 
-// DecodeUploadImageRequest returns a decoder for requests sent to the cascade
-// uploadImage endpoint.
-func DecodeUploadImageRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+// DecodeUploadAssetRequest returns a decoder for requests sent to the cascade
+// uploadAsset endpoint.
+func DecodeUploadAssetRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
-		var payload *cascade.UploadImagePayload
+		var payload *cascade.UploadAssetPayload
 		if err := decoder(r).Decode(&payload); err != nil {
 			return nil, goa.DecodePayloadError(err.Error())
 		}
@@ -46,17 +46,17 @@ func DecodeUploadImageRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 	}
 }
 
-// NewCascadeUploadImageDecoder returns a decoder to decode the multipart
-// request for the "cascade" service "uploadImage" endpoint.
-func NewCascadeUploadImageDecoder(mux goahttp.Muxer, cascadeUploadImageDecoderFn CascadeUploadImageDecoderFunc) func(r *http.Request) goahttp.Decoder {
+// NewCascadeUploadAssetDecoder returns a decoder to decode the multipart
+// request for the "cascade" service "uploadAsset" endpoint.
+func NewCascadeUploadAssetDecoder(mux goahttp.Muxer, cascadeUploadAssetDecoderFn CascadeUploadAssetDecoderFunc) func(r *http.Request) goahttp.Decoder {
 	return func(r *http.Request) goahttp.Decoder {
 		return goahttp.EncodingFunc(func(v interface{}) error {
 			mr, merr := r.MultipartReader()
 			if merr != nil {
 				return merr
 			}
-			p := v.(**cascade.UploadImagePayload)
-			if err := cascadeUploadImageDecoderFn(mr, p); err != nil {
+			p := v.(**cascade.UploadAssetPayload)
+			if err := cascadeUploadAssetDecoderFn(mr, p); err != nil {
 				return err
 			}
 			return nil
@@ -64,9 +64,9 @@ func NewCascadeUploadImageDecoder(mux goahttp.Muxer, cascadeUploadImageDecoderFn
 	}
 }
 
-// EncodeUploadImageError returns an encoder for errors returned by the
-// uploadImage cascade endpoint.
-func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeUploadAssetError returns an encoder for errors returned by the
+// uploadAsset cascade endpoint.
+func EncodeUploadAssetError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		var en ErrorNamer
@@ -82,7 +82,7 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewUploadImageBadRequestResponseBody(res)
+				body = NewUploadAssetBadRequestResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.ErrorName())
 			w.WriteHeader(http.StatusBadRequest)
@@ -95,7 +95,7 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewUploadImageInternalServerErrorResponseBody(res)
+				body = NewUploadAssetInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.ErrorName())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -139,17 +139,17 @@ func DecodeStartProcessingRequest(mux goahttp.Muxer, decoder func(*http.Request)
 		}
 
 		var (
-			imageID               string
+			fileID                string
 			appPastelidPassphrase string
 
 			params = mux.Vars(r)
 		)
-		imageID = params["image_id"]
-		if utf8.RuneCountInString(imageID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, true))
+		fileID = params["file_id"]
+		if utf8.RuneCountInString(fileID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("fileID", fileID, utf8.RuneCountInString(fileID), 8, true))
 		}
-		if utf8.RuneCountInString(imageID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, false))
+		if utf8.RuneCountInString(fileID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("fileID", fileID, utf8.RuneCountInString(fileID), 8, false))
 		}
 		appPastelidPassphrase = r.Header.Get("app_pastelid_passphrase")
 		if appPastelidPassphrase == "" {
@@ -158,7 +158,7 @@ func DecodeStartProcessingRequest(mux goahttp.Muxer, decoder func(*http.Request)
 		if err != nil {
 			return nil, err
 		}
-		payload := NewStartProcessingPayload(&body, imageID, appPastelidPassphrase)
+		payload := NewStartProcessingPayload(&body, fileID, appPastelidPassphrase)
 
 		return payload, nil
 	}

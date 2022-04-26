@@ -489,7 +489,7 @@ paths:
       - http
       security:
       - api_key_header_Authorization: []
-  /openapi/cascade/start/{image_id}:
+  /openapi/cascade/start/{file_id}:
     post:
       tags:
       - cascade
@@ -497,9 +497,9 @@ paths:
       description: Start processing the image
       operationId: cascade#startProcessing
       parameters:
-      - name: image_id
+      - name: file_id
         in: path
-        description: Uploaded image ID
+        description: Uploaded asset file ID
         required: true
         type: string
         maxLength: 8
@@ -602,31 +602,31 @@ paths:
       tags:
       - cascade
       summary: Uploads Action Data
-      description: Upload the image
-      operationId: cascade#uploadImage
+      description: Upload the asset file
+      operationId: cascade#uploadAsset
       consumes:
       - multipart/form-data
       parameters:
-      - name: UploadImageRequestBody
+      - name: UploadAssetRequestBody
         in: formData
         required: true
         schema:
-          $ref: '#/definitions/CascadeUploadImageRequestBody'
+          $ref: '#/definitions/CascadeUploadAssetRequestBody'
           required:
           - file
       responses:
         "201":
           description: Created response.
           schema:
-            $ref: '#/definitions/CascadeUploadImageResponseBody'
+            $ref: '#/definitions/CascadeUploadAssetResponseBody'
         "400":
           description: Bad Request response.
           schema:
-            $ref: '#/definitions/CascadeUploadImageBadRequestResponseBody'
+            $ref: '#/definitions/CascadeUploadAssetBadRequestResponseBody'
         "500":
           description: Internal Server Error response.
           schema:
-            $ref: '#/definitions/CascadeUploadImageInternalServerErrorResponseBody'
+            $ref: '#/definitions/CascadeUploadAssetInternalServerErrorResponseBody'
       schemes:
       - http
   /openapi/sense/download:
@@ -1470,7 +1470,7 @@ definitions:
       task_id: VK7mpAqZ
     required:
     - task_id
-  CascadeUploadImageBadRequestResponseBody:
+  CascadeUploadAssetBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -1500,7 +1500,7 @@ definitions:
         type: boolean
         description: Is the error a timeout?
         example: true
-    description: uploadImage_BadRequest_response_body result type (default view)
+    description: uploadAsset_BadRequest_response_body result type (default view)
     example:
       fault: true
       id: 123abc
@@ -1515,7 +1515,7 @@ definitions:
     - temporary
     - timeout
     - fault
-  CascadeUploadImageInternalServerErrorResponseBody:
+  CascadeUploadAssetInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -1545,7 +1545,7 @@ definitions:
         type: boolean
         description: Is the error a timeout?
         example: true
-    description: uploadImage_InternalServerError_response_body result type (default
+    description: uploadAsset_InternalServerError_response_body result type (default
       view)
     example:
       fault: true
@@ -1561,8 +1561,8 @@ definitions:
     - temporary
     - timeout
     - fault
-  CascadeUploadImageRequestBody:
-    title: CascadeUploadImageRequestBody
+  CascadeUploadAssetRequestBody:
+    title: CascadeUploadAssetRequestBody
     type: object
     properties:
       file:
@@ -1616,8 +1616,8 @@ definitions:
       - 46
     required:
     - file
-  CascadeUploadImageResponseBody:
-    title: 'Mediatype identifier: application/vnd.nft.upload-image; view=default'
+  CascadeUploadAssetResponseBody:
+    title: 'Mediatype identifier: application/vnd.cascade.upload-file; view=default'
     type: object
     properties:
       estimated_fee:
@@ -1628,22 +1628,22 @@ definitions:
         minimum: 1e-05
       expires_in:
         type: string
-        description: Image expiration
+        description: File expiration
         example: 2006-01-02T15:04:05Z07:00
         format: date-time
-      image_id:
+      file_id:
         type: string
-        description: Uploaded image ID
+        description: Uploaded file ID
         example: VK7mpAqZ
         minLength: 8
         maxLength: 8
-    description: UploadImageResponseBody result type (default view)
+    description: UploadAssetResponseBody result type (default view)
     example:
       estimated_fee: 100
       expires_in: 2006-01-02T15:04:05Z07:00
-      image_id: VK7mpAqZ
+      file_id: VK7mpAqZ
     required:
-    - image_id
+    - file_id
     - expires_in
     - estimated_fee
   FuzzyMatchResponseBody:

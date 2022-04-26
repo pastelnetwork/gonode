@@ -21,9 +21,9 @@ import (
 
 // Client lists the cascade service endpoint HTTP clients.
 type Client struct {
-	// UploadImage Doer is the HTTP client used to make requests to the uploadImage
+	// UploadAsset Doer is the HTTP client used to make requests to the uploadAsset
 	// endpoint.
-	UploadImageDoer goahttp.Doer
+	UploadAssetDoer goahttp.Doer
 
 	// StartProcessing Doer is the HTTP client used to make requests to the
 	// startProcessing endpoint.
@@ -56,9 +56,9 @@ type Client struct {
 	configurer *ConnConfigurer
 }
 
-// CascadeUploadImageEncoderFunc is the type to encode multipart request for
-// the "cascade" service "uploadImage" endpoint.
-type CascadeUploadImageEncoderFunc func(*multipart.Writer, *cascade.UploadImagePayload) error
+// CascadeUploadAssetEncoderFunc is the type to encode multipart request for
+// the "cascade" service "uploadAsset" endpoint.
+type CascadeUploadAssetEncoderFunc func(*multipart.Writer, *cascade.UploadAssetPayload) error
 
 // NewClient instantiates HTTP clients for all the cascade service servers.
 func NewClient(
@@ -75,7 +75,7 @@ func NewClient(
 		cfn = &ConnConfigurer{}
 	}
 	return &Client{
-		UploadImageDoer:       doer,
+		UploadAssetDoer:       doer,
 		StartProcessingDoer:   doer,
 		RegisterTaskStateDoer: doer,
 		GetTaskHistoryDoer:    doer,
@@ -91,15 +91,15 @@ func NewClient(
 	}
 }
 
-// UploadImage returns an endpoint that makes HTTP requests to the cascade
-// service uploadImage server.
-func (c *Client) UploadImage(cascadeUploadImageEncoderFn CascadeUploadImageEncoderFunc) goa.Endpoint {
+// UploadAsset returns an endpoint that makes HTTP requests to the cascade
+// service uploadAsset server.
+func (c *Client) UploadAsset(cascadeUploadAssetEncoderFn CascadeUploadAssetEncoderFunc) goa.Endpoint {
 	var (
-		encodeRequest  = EncodeUploadImageRequest(NewCascadeUploadImageEncoder(cascadeUploadImageEncoderFn))
-		decodeResponse = DecodeUploadImageResponse(c.decoder, c.RestoreResponseBody)
+		encodeRequest  = EncodeUploadAssetRequest(NewCascadeUploadAssetEncoder(cascadeUploadAssetEncoderFn))
+		decodeResponse = DecodeUploadAssetResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildUploadImageRequest(ctx, v)
+		req, err := c.BuildUploadAssetRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -107,9 +107,9 @@ func (c *Client) UploadImage(cascadeUploadImageEncoderFn CascadeUploadImageEncod
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.UploadImageDoer.Do(req)
+		resp, err := c.UploadAssetDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("cascade", "uploadImage", err)
+			return nil, goahttp.ErrRequestError("cascade", "uploadAsset", err)
 		}
 		return decodeResponse(resp)
 	}

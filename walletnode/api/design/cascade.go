@@ -1,10 +1,10 @@
 package design
 
 import (
+	"time"
 
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
-
 	. "goa.design/goa/v3/dsl"
 	//revive:enable:dot-imports
 
@@ -23,14 +23,14 @@ var _ = Service("cascade", func() {
 	Error("NotFound", ErrorResult)
 	Error("InternalServerError", ErrorResult)
 
-	Method("uploadImage", func() {
-		Description("Upload the image")
+	Method("uploadAsset", func() {
+		Description("Upload the asset file")
 		Meta("swagger:summary", "Uploads Action Data")
 
 		Payload(func() {
-			Extend(ImageUploadPayload)
+			Extend(AssetUploadPayload)
 		})
-		Result(ImageUploadResult)
+		Result(AssetUploadResult)
 
 		HTTP(func() {
 			POST("/upload")
@@ -48,14 +48,14 @@ var _ = Service("cascade", func() {
 		Meta("swagger:summary", "Starts processing the image")
 
 		Payload(func() {
-			Extend(StartProcessingPayload)
+			Extend(StartCascadeProcessingPayload)
 		})
 		Result(StartProcessingResult)
 
 		HTTP(func() {
-			POST("/start/{image_id}")
+			POST("/start/{file_id}")
 			Params(func() {
-				Param("image_id", String)
+				Param("file_id", String)
 			})
 			Header("app_pastelid_passphrase")
 
@@ -119,4 +119,76 @@ var _ = Service("cascade", func() {
 			Response(StatusOK)
 		})
 	})
+})
+
+// AssetUploadPayload represents a payload for uploading asset
+var AssetUploadPayload = Type("AssetUploadPayload", func() {
+	Description("Asset upload payload")
+	Attribute("file", Bytes, func() {
+		Meta("struct:field:name", "Bytes")
+		Description("File to upload")
+	})
+	Attribute("filename", String, func() {
+		Meta("swagger:example", "false")
+		Description("For internal use")
+	})
+	Required("file")
+})
+
+// AssetUploadResult is asset file upload result.
+var AssetUploadResult = ResultType("application/vnd.cascade.upload-file", func() {
+	TypeName("Asset")
+	Attributes(func() {
+		Attribute("file_id", String, func() {
+			Description("Uploaded file ID")
+			MinLength(8)
+			MaxLength(8)
+			Example("VK7mpAqZ")
+		})
+		Attribute("expires_in", String, func() {
+			Description("File expiration")
+			Format(FormatDateTime)
+			Example(time.RFC3339)
+		})
+
+		Attribute("estimated_fee", Float64, func() {
+			Description("Estimated fee")
+			Minimum(0.00001)
+			Default(1)
+			Example(100)
+		})
+	})
+	Required("file_id", "expires_in", "estimated_fee")
+})
+
+// StartCascadeProcessingPayload - Payload for starting processing
+var StartCascadeProcessingPayload = Type("StartCascadeProcessingPayload", func() {
+	Description("Start Processing Payload")
+	Attribute("file_id", String, func() {
+		Description("Uploaded asset file ID")
+		MinLength(8)
+		MaxLength(8)
+		Example("VK7mpAqZ")
+	})
+	Attribute("burn_txid", String, func() {
+		Description("Burn transaction ID")
+		MinLength(64)
+		MaxLength(64)
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
+	Attribute("app_pastelid", String, func() {
+		Meta("struct:field:name", "AppPastelID")
+		Description("App PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+	Attribute("app_pastelid_passphrase", String, func() {
+		Meta("struct:field:name", "AppPastelidPassphrase")
+		Description("Passphrase of the App PastelID")
+		Example("qwerasdf1234")
+	})
+
+	Required("file_id", "burn_txid", "app_pastelid", "app_pastelid_passphrase")
 })

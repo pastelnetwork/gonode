@@ -17,8 +17,8 @@ import (
 
 // OpenAPI Cascade service
 type Service interface {
-	// Upload the image
-	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
+	// Upload the asset file
+	UploadAsset(context.Context, *UploadAssetPayload) (res *Asset, err error)
 	// Start processing the image
 	StartProcessing(context.Context, *StartProcessingPayload) (res *StartProcessingResult, err error)
 	// Streams the state of the registration process.
@@ -43,7 +43,7 @@ const ServiceName = "cascade"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [5]string{"uploadImage", "startProcessing", "registerTaskState", "getTaskHistory", "download"}
+var MethodNames = [5]string{"uploadAsset", "startProcessing", "registerTaskState", "getTaskHistory", "download"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -59,6 +59,16 @@ type RegisterTaskStateServerStream interface {
 type RegisterTaskStateClientStream interface {
 	// Recv reads instances of "TaskState" from the stream.
 	Recv() (*TaskState, error)
+}
+
+// Asset is the result type of the cascade service uploadAsset method.
+type Asset struct {
+	// Uploaded file ID
+	FileID string
+	// File expiration
+	ExpiresIn string
+	// Estimated fee
+	EstimatedFee float64
 }
 
 // DownloadPayload is the payload type of the cascade service download method.
@@ -84,16 +94,6 @@ type GetTaskHistoryPayload struct {
 	TaskID string
 }
 
-// Image is the result type of the cascade service uploadImage method.
-type Image struct {
-	// Uploaded image ID
-	ImageID string
-	// Image expiration
-	ExpiresIn string
-	// Estimated fee
-	EstimatedFee float64
-}
-
 // RegisterTaskStatePayload is the payload type of the cascade service
 // registerTaskState method.
 type RegisterTaskStatePayload struct {
@@ -104,8 +104,8 @@ type RegisterTaskStatePayload struct {
 // StartProcessingPayload is the payload type of the cascade service
 // startProcessing method.
 type StartProcessingPayload struct {
-	// Uploaded image ID
-	ImageID string
+	// Uploaded asset file ID
+	FileID string
 	// Burn transaction ID
 	BurnTxid string
 	// App PastelID
@@ -135,9 +135,9 @@ type TaskState struct {
 	Status string
 }
 
-// UploadImagePayload is the payload type of the cascade service uploadImage
+// UploadAssetPayload is the payload type of the cascade service uploadAsset
 // method.
-type UploadImagePayload struct {
+type UploadAssetPayload struct {
 	// File to upload
 	Bytes []byte
 	// For internal use
@@ -171,16 +171,16 @@ func MakeInternalServerError(err error) *goa.ServiceError {
 	}
 }
 
-// NewImage initializes result type Image from viewed result type Image.
-func NewImage(vres *cascadeviews.Image) *Image {
-	return newImage(vres.Projected)
+// NewAsset initializes result type Asset from viewed result type Asset.
+func NewAsset(vres *cascadeviews.Asset) *Asset {
+	return newAsset(vres.Projected)
 }
 
-// NewViewedImage initializes viewed result type Image from result type Image
+// NewViewedAsset initializes viewed result type Asset from result type Asset
 // using the given view.
-func NewViewedImage(res *Image, view string) *cascadeviews.Image {
-	p := newImageView(res)
-	return &cascadeviews.Image{Projected: p, View: "default"}
+func NewViewedAsset(res *Asset, view string) *cascadeviews.Asset {
+	p := newAssetView(res)
+	return &cascadeviews.Asset{Projected: p, View: "default"}
 }
 
 // NewStartProcessingResult initializes result type StartProcessingResult from
@@ -197,11 +197,11 @@ func NewViewedStartProcessingResult(res *StartProcessingResult, view string) *ca
 	return &cascadeviews.StartProcessingResult{Projected: p, View: "default"}
 }
 
-// newImage converts projected type Image to service type Image.
-func newImage(vres *cascadeviews.ImageView) *Image {
-	res := &Image{}
-	if vres.ImageID != nil {
-		res.ImageID = *vres.ImageID
+// newAsset converts projected type Asset to service type Asset.
+func newAsset(vres *cascadeviews.AssetView) *Asset {
+	res := &Asset{}
+	if vres.FileID != nil {
+		res.FileID = *vres.FileID
 	}
 	if vres.ExpiresIn != nil {
 		res.ExpiresIn = *vres.ExpiresIn
@@ -215,11 +215,11 @@ func newImage(vres *cascadeviews.ImageView) *Image {
 	return res
 }
 
-// newImageView projects result type Image to projected type ImageView using
+// newAssetView projects result type Asset to projected type AssetView using
 // the "default" view.
-func newImageView(res *Image) *cascadeviews.ImageView {
-	vres := &cascadeviews.ImageView{
-		ImageID:      &res.ImageID,
+func newAssetView(res *Asset) *cascadeviews.AssetView {
+	vres := &cascadeviews.AssetView{
+		FileID:       &res.FileID,
 		ExpiresIn:    &res.ExpiresIn,
 		EstimatedFee: &res.EstimatedFee,
 	}

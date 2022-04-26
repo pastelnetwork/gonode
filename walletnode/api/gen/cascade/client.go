@@ -15,7 +15,7 @@ import (
 
 // Client is the "cascade" service client.
 type Client struct {
-	UploadImageEndpoint       goa.Endpoint
+	UploadAssetEndpoint       goa.Endpoint
 	StartProcessingEndpoint   goa.Endpoint
 	RegisterTaskStateEndpoint goa.Endpoint
 	GetTaskHistoryEndpoint    goa.Endpoint
@@ -23,9 +23,9 @@ type Client struct {
 }
 
 // NewClient initializes a "cascade" service client given the endpoints.
-func NewClient(uploadImage, startProcessing, registerTaskState, getTaskHistory, download goa.Endpoint) *Client {
+func NewClient(uploadAsset, startProcessing, registerTaskState, getTaskHistory, download goa.Endpoint) *Client {
 	return &Client{
-		UploadImageEndpoint:       uploadImage,
+		UploadAssetEndpoint:       uploadAsset,
 		StartProcessingEndpoint:   startProcessing,
 		RegisterTaskStateEndpoint: registerTaskState,
 		GetTaskHistoryEndpoint:    getTaskHistory,
@@ -33,14 +33,14 @@ func NewClient(uploadImage, startProcessing, registerTaskState, getTaskHistory, 
 	}
 }
 
-// UploadImage calls the "uploadImage" endpoint of the "cascade" service.
-func (c *Client) UploadImage(ctx context.Context, p *UploadImagePayload) (res *Image, err error) {
+// UploadAsset calls the "uploadAsset" endpoint of the "cascade" service.
+func (c *Client) UploadAsset(ctx context.Context, p *UploadAssetPayload) (res *Asset, err error) {
 	var ires interface{}
-	ires, err = c.UploadImageEndpoint(ctx, p)
+	ires, err = c.UploadAssetEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*Image), nil
+	return ires.(*Asset), nil
 }
 
 // StartProcessing calls the "startProcessing" endpoint of the "cascade"
