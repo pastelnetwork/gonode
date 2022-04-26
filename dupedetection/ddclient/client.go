@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultConnectTimeout = 30 * time.Second
+	defaultConnectTimeout = 300 * time.Second
 )
 
 type client struct{}
