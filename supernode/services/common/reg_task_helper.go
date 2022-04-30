@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -150,10 +151,11 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 }
 
 // WaitConfirmation wait for specific number of confirmations of some blockchain transaction by txid
-func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minConfirmation int64, interval time.Duration) <-chan error {
+func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minConfirmation int64,
+	interval time.Duration, verifyBurnAmt bool) <-chan error {
 	ch := make(chan error)
-
-	go func(ctx context.Context, txid string) {
+	log.WithContext(ctx).Info("waiting for txn confirmation")
+	go func(ctx context.Context, txid string, ch chan error) {
 		defer close(ch)
 		blockTracker := blocktracker.New(h.PastelHandler.PastelClient)
 		baseBlkCnt, err := blockTracker.GetBlockCount()
@@ -176,6 +178,14 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 					log.WithContext(ctx).WithError(err).Warn("GetRawTransactionVerbose1 err")
 				} else {
 					if txResult.Confirmations >= minConfirmation {
+						if verifyBurnAmt {
+							if err := h.verifyTxn(ctx, txResult); err != nil {
+								log.WithContext(ctx).WithError(err).Error("txn verification failed")
+								ch <- err
+								return
+							}
+						}
+
 						log.WithContext(ctx).Debug("transaction confirmed")
 						ch <- nil
 						return
@@ -195,24 +205,67 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 			}
 
 		}
-	}(ctx, txid)
+	}(ctx, txid, ch)
+
 	return ch
+}
+
+func (h *RegTaskHelper) verifyTxn(ctx context.Context, txn *pastel.GetRawTransactionVerbose1Result) error {
+	inRange := func(val float64, reqVal float64, slackPercent float64) bool {
+		lower := reqVal - (reqVal * slackPercent / 100)
+		upper := reqVal + (reqVal * slackPercent / 100)
+
+		return val >= lower && val <= upper
+	}
+
+	log.WithContext(ctx).Debug("Verifying Burn Txn")
+	isTxnAmountOk := false
+	isTxnAddressOk := false
+
+	reqBurnAmount := (float64(h.ActionTicketRegMetadata.EstimatedFee) * 20) / 100
+	for _, vout := range txn.Vout {
+		if inRange(vout.Value, reqBurnAmount, 2.0) {
+			isTxnAmountOk = true
+			for _, addr := range vout.ScriptPubKey.Addresses {
+				if addr == h.PastelHandler.GetBurnAddress() {
+					isTxnAddressOk = true
+				}
+			}
+		}
+	}
+
+	if !isTxnAmountOk {
+		return fmt.Errorf("invalid txn amount, required amount: %f", reqBurnAmount)
+	}
+
+	if !isTxnAddressOk {
+		return fmt.Errorf("invalid txn address %s", h.PastelHandler.GetBurnAddress())
+	}
+
+	return nil
 }
 
 // ValidateBurnTxID - validates the pre-burnt fee transaction created by the caller
 func (h *RegTaskHelper) ValidateBurnTxID(_ context.Context) error {
 	var err error
 	<-h.NewAction(func(ctx context.Context) error {
-		confirmationChn := h.WaitConfirmation(ctx, h.ActionTicketRegMetadata.BurnTxID, int64(h.preburntTxMinConfirmations), 15*time.Second)
+		confirmationChn := h.WaitConfirmation(ctx, h.ActionTicketRegMetadata.BurnTxID,
+			int64(h.preburntTxMinConfirmations), 15*time.Second, true)
 		log.WithContext(ctx).Debug("waiting for confimation")
-		if err = <-confirmationChn; err != nil {
-			h.UpdateStatus(StatusErrorInvalidBurnTxID)
-			log.WithContext(ctx).WithError(err).Errorf("validate preburn transaction validation")
-			err = errors.Errorf("validate preburn transaction validation :%w", err)
-			return err
+		select {
+		case retErr := <-confirmationChn:
+			if retErr != nil {
+				h.UpdateStatus(StatusErrorInvalidBurnTxID)
+				log.WithContext(ctx).WithError(retErr).Errorf("validate preburn transaction validation")
+				err = errors.Errorf("validate preburn transaction validation :%w", retErr)
+				return err
+			}
+		case <-ctx.Done():
+			err = errors.New("context done")
+			return errors.New("context done")
 		}
 
-		log.WithContext(ctx).Debug("confirmation done")
+		log.WithContext(ctx).Debug("Burn Txn confirmed & validated")
 
 		return nil
 	})

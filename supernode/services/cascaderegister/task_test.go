@@ -11,6 +11,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
+	"github.com/pastelnetwork/gonode/common/types"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
@@ -41,6 +42,9 @@ func makeEmptyCascadeRegTask(config *Config, fileStorage storage.FileStorageInte
 	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, rqClient)
 	task := NewCascadeRegistrationTask(service)
 	task.Ticket = &pastel.ActionTicket{}
+	task.ActionTicketRegMetadata = &types.ActionRegMetadata{
+		EstimatedFee: 100,
+	}
 
 	return task
 }
@@ -293,6 +297,9 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			},
 			retRes: &pastel.GetRawTransactionVerbose1Result{
 				Confirmations: 1,
+				Vout: []pastel.VoutTxnResult{pastel.VoutTxnResult{Value: 20,
+					ScriptPubKey: pastel.ScriptPubKey{
+						Addresses: []string{"tPpasteLBurnAddressXXXXXXXXXXX3wy7u"}}}},
 			},
 			retErr:  nil,
 			wantErr: errors.New("timeout"),
@@ -305,6 +312,9 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			},
 			retRes: &pastel.GetRawTransactionVerbose1Result{
 				Confirmations: 1,
+				Vout: []pastel.VoutTxnResult{pastel.VoutTxnResult{Value: 20,
+					ScriptPubKey: pastel.ScriptPubKey{
+						Addresses: []string{"tPpasteLBurnAddressXXXXXXXXXXX3wy7u"}}}},
 			},
 			wantErr: nil,
 		},
@@ -316,6 +326,9 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			},
 			retRes: &pastel.GetRawTransactionVerbose1Result{
 				Confirmations: 1,
+				Vout: []pastel.VoutTxnResult{pastel.VoutTxnResult{Value: 20,
+					ScriptPubKey: pastel.ScriptPubKey{
+						Addresses: []string{"tPpasteLBurnAddressXXXXXXXXXXX3wy7u"}}}},
 			},
 			wantErr: errors.New("context"),
 		},
@@ -334,7 +347,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 
 			err := <-task.WaitConfirmation(ctx, tc.args.txid,
-				tc.args.minConfirmations, tc.args.interval)
+				tc.args.minConfirmations, tc.args.interval, false)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

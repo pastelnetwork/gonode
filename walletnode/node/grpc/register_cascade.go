@@ -265,6 +265,8 @@ func (service *registerCascade) SendSignedTicket(ctx context.Context, ticket []b
 
 	rsp, err := service.client.SendSignedActionTicket(ctx, &req)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("send signed ticket failed")
+
 		return "", err
 	}
 

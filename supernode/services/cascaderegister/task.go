@@ -87,6 +87,8 @@ func (task *CascadeRegistrationTask) UploadAsset(_ context.Context, file *files.
 			return nil
 		}
 		task.registrationFee = int64(fee)
+		task.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
+		task.RegTaskHelper.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
 
 		return nil
 	})

@@ -66,32 +66,39 @@ func (task *SenseRegistrationTask) SendRegMetadata(_ context.Context, regMetadat
 	return nil
 }
 
-// ProbeImage sends the original image to dd-server and return a compression of pastel.DDAndFingerprints
-func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.File) ([]byte, error) {
+// CalculateFee calculates and assigns fee
+func (task *SenseRegistrationTask) CalculateFee(ctx context.Context, file *files.File) error {
 	if task.ActionTicketRegMetadata == nil || task.ActionTicketRegMetadata.BlockHash == "" || task.ActionTicketRegMetadata.CreatorPastelID == "" {
-		return nil, errors.Errorf("invalid senseRegMetadata")
+		return errors.Errorf("invalid senseRegMetadata")
 	}
+
 	task.Asset = file
 
 	var fileBytes []byte
 	fileBytes, err := file.Bytes()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("read image file")
-		return nil, errors.Errorf("read image file: %w", err)
+		return errors.Errorf("read image file: %w", err)
 	}
 
 	fileDataInMb := float64(len(fileBytes)) / (1024 * 1024)
 	fee, err := task.PastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
 	if err != nil {
-		return nil, errors.Errorf("getting estimated fee %w", err)
+		return errors.Errorf("getting estimated fee %w", err)
 	}
 
 	task.registrationFee = int64(fee)
+	task.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
+	task.RegTaskHelper.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
+
+	return nil
+}
+
+// ProbeImage sends the original image to dd-server and return a compression of pastel.DDAndFingerprints
+func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.File) ([]byte, error) {
 
 	return task.DupeDetectionHandler.ProbeImage(ctx, file,
 		task.ActionTicketRegMetadata.BlockHash, task.ActionTicketRegMetadata.BlockHeight, task.ActionTicketRegMetadata.Timestamp, task.ActionTicketRegMetadata.CreatorPastelID, &tasker{})
-	//return task.DupeDetectionHandler.ProbeImage(ctx, file,
-	//	task.nftRegMetadata.BlockHash, task.nftRegMetadata.BlockHeight, task.nftRegMetadata.Timestamp, task.nftRegMetadata.CreatorPastelID, &tasker{})
 }
 
 func (task *SenseRegistrationTask) validateDdFpIds(ctx context.Context, dd []byte) error {

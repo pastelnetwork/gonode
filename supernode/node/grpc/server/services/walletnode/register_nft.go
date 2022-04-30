@@ -234,6 +234,7 @@ func (service *RegisterNft) ProbeImage(stream pb.RegisterNft_ProbeImageServer) (
 	// Call dd-service to generate near duplicate fingerprints and dupe-detection info from re-sampled image (img1-r)
 	compressedDDFingerAndScores, err := task.ProbeImage(ctx, image)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("probe image call failed")
 		return err
 	}
 

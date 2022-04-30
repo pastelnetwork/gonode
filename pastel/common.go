@@ -111,8 +111,21 @@ type GetOperationStatusResult struct {
 type GetRawTransactionVerbose1Result struct {
 	// Other information are omitted here because we don't care
 	// They can be added later if there are business requirements
-	Txid          string `json:"txid"`
-	Confirmations int64  `json:"confirmations"`
+	Txid          string          `json:"txid"`
+	Confirmations int64           `json:"confirmations"`
+	Vout          []VoutTxnResult `json:"vout"`
+}
+
+// VoutTxnResult is detail of txn
+type VoutTxnResult struct {
+	Value        float64      `json:"value"`
+	ValuePat     int64        `json:"valuePat"`
+	ScriptPubKey ScriptPubKey `json:"scriptPubKey"`
+}
+
+// ScriptPubKey lists addresses of txn
+type ScriptPubKey struct {
+	Addresses []string `json:"addresses"`
 }
 
 // GetActionFeesResult describes the result of "getactionfee getactionfees"

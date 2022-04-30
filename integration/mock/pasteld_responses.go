@@ -210,14 +210,44 @@ var storageFeeResp = `{
   }
   `
 var actionFeeResp = `{
-	"sensefee":30,
-	"cascadefee":40
+	"sensefee":100,
+	"cascadefee":200
 }
 `
 
 var getRawTxResp = `{
 	"confirmations":12,
-	"txid":""
+	"txid":"896950d860eaf408e76a1a153deff80a7cda9e76291e5085060634e30b145c6a",
+	"vout": [
+		{
+		  "value": 20.00000,
+		  "valuePat": 2000000,
+		  "n": 0,
+		  "scriptPubKey": {
+			"asm": "OP_DUP OP_HASH160 fda2967ed9e6aeaad6ae6eb98307ddb89c31bb95 OP_EQUALVERIFY OP_CHECKSIG",
+			"hex": "76a914fda2967ed9e6aeaad6ae6eb98307ddb89c31bb9588ac",
+			"reqSigs": 1,
+			"type": "pubkeyhash",
+			"addresses": [
+			  "tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
+			]
+		  }
+		},
+		{
+			"value": 40.00000,
+			"valuePat": 4000000,
+			"n": 0,
+			"scriptPubKey": {
+			  "asm": "OP_DUP OP_HASH160 fda2967ed9e6aeaad6ae6eb98307ddb89c31bb95 OP_EQUALVERIFY OP_CHECKSIG",
+			  "hex": "76a914fda2967ed9e6aeaad6ae6eb98307ddb89c31bb9588ac",
+			  "reqSigs": 1,
+			  "type": "pubkeyhash",
+			  "addresses": [
+				"tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
+			  ]
+			}
+		  }
+	]	
 }
 `
 
