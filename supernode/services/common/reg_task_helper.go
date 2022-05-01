@@ -152,7 +152,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 
 // WaitConfirmation wait for specific number of confirmations of some blockchain transaction by txid
 func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minConfirmation int64,
-	interval time.Duration, verifyBurnAmt bool) <-chan error {
+	interval time.Duration, verifyBurnAmt bool, totalAmt float64, percent float64) <-chan error {
 	ch := make(chan error)
 	log.WithContext(ctx).Info("waiting for txn confirmation")
 	go func(ctx context.Context, txid string, ch chan error) {
@@ -179,7 +179,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 				} else {
 					if txResult.Confirmations >= minConfirmation {
 						if verifyBurnAmt {
-							if err := h.verifyTxn(ctx, txResult); err != nil {
+							if err := h.verifyTxn(ctx, txResult, totalAmt, percent); err != nil {
 								log.WithContext(ctx).WithError(err).Error("txn verification failed")
 								ch <- err
 								return
@@ -210,7 +210,8 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 	return ch
 }
 
-func (h *RegTaskHelper) verifyTxn(ctx context.Context, txn *pastel.GetRawTransactionVerbose1Result) error {
+func (h *RegTaskHelper) verifyTxn(ctx context.Context,
+	txn *pastel.GetRawTransactionVerbose1Result, totalAmt float64, percent float64) error {
 	inRange := func(val float64, reqVal float64, slackPercent float64) bool {
 		lower := reqVal - (reqVal * slackPercent / 100)
 		upper := reqVal + (reqVal * slackPercent / 100)
@@ -222,7 +223,7 @@ func (h *RegTaskHelper) verifyTxn(ctx context.Context, txn *pastel.GetRawTransac
 	isTxnAmountOk := false
 	isTxnAddressOk := false
 
-	reqBurnAmount := (float64(h.ActionTicketRegMetadata.EstimatedFee) * 20) / 100
+	reqBurnAmount := totalAmt * percent / 100
 	for _, vout := range txn.Vout {
 		if inRange(vout.Value, reqBurnAmount, 2.0) {
 			isTxnAmountOk = true
@@ -250,7 +251,7 @@ func (h *RegTaskHelper) ValidateBurnTxID(_ context.Context) error {
 	var err error
 	<-h.NewAction(func(ctx context.Context) error {
 		confirmationChn := h.WaitConfirmation(ctx, h.ActionTicketRegMetadata.BurnTxID,
-			int64(h.preburntTxMinConfirmations), 15*time.Second, true)
+			int64(h.preburntTxMinConfirmations), 15*time.Second, true, float64(h.ActionTicketRegMetadata.EstimatedFee), 20)
 		log.WithContext(ctx).Debug("waiting for confimation")
 		select {
 		case retErr := <-confirmationChn:

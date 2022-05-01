@@ -704,7 +704,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			},
 			retRes: &pastel.GetRawTransactionVerbose1Result{
 				Confirmations: 1,
-				Vout: []pastel.VoutTxnResult{pastel.VoutTxnResult{Value: 20,
+				Vout: []pastel.VoutTxnResult{pastel.VoutTxnResult{Value: 10,
 					ScriptPubKey: pastel.ScriptPubKey{
 						Addresses: []string{"tPpasteLBurnAddressXXXXXXXXXXX3wy7u"}}}},
 			},
@@ -737,9 +737,10 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.retRes, tc.retErr)
 
 			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task.registrationFee = 100
 
 			err := <-task.WaitConfirmation(ctx, tc.args.txid,
-				tc.args.minConfirmations, tc.args.interval, false)
+				tc.args.minConfirmations, tc.args.interval, true, float64(task.registrationFee), 10)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

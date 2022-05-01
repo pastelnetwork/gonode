@@ -206,7 +206,8 @@ func (task *NftRegistrationTask) ValidatePreBurnTransaction(ctx context.Context,
 
 	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.WaitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), 15*time.Second, false)
+		confirmationChn := task.WaitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations),
+			15*time.Second, true, float64(task.registrationFee), 10)
 
 		// compare rqsymbols
 		if err = task.compareRQSymbolID(ctx); err != nil {

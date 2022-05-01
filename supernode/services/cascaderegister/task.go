@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -310,7 +309,7 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
 		Key1:        ticketID,
-		Key2:        "key2-" + uuid.New().String(),
+		Key2:        task.ActionTicketRegMetadata.BurnTxID,
 	}
 
 	nftRegTxid, err := task.PastelClient.RegisterActionTicket(ctx, req)
