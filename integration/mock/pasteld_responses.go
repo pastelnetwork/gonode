@@ -206,7 +206,7 @@ var opStatusResp = `[
   ]`
 
 var storageFeeResp = `{
-	  "totalstoragefee":20
+	  "totalstoragefee":100
   }
   `
 var actionFeeResp = `{
@@ -236,6 +236,20 @@ var getRawTxResp = `{
 		{
 			"value": 40.00000,
 			"valuePat": 4000000,
+			"n": 0,
+			"scriptPubKey": {
+			  "asm": "OP_DUP OP_HASH160 fda2967ed9e6aeaad6ae6eb98307ddb89c31bb95 OP_EQUALVERIFY OP_CHECKSIG",
+			  "hex": "76a914fda2967ed9e6aeaad6ae6eb98307ddb89c31bb9588ac",
+			  "reqSigs": 1,
+			  "type": "pubkeyhash",
+			  "addresses": [
+				"tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
+			  ]
+			}
+		  },
+		  {
+			"value": 10.00000,
+			"valuePat": 1000000,
 			"n": 0,
 			"scriptPubKey": {
 			  "asm": "OP_DUP OP_HASH160 fda2967ed9e6aeaad6ae6eb98307ddb89c31bb95 OP_EQUALVERIFY OP_CHECKSIG",

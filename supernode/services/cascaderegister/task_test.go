@@ -347,7 +347,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 
 			err := <-task.WaitConfirmation(ctx, tc.args.txid,
-				tc.args.minConfirmations, tc.args.interval, false)
+				tc.args.minConfirmations, tc.args.interval, false, 0, 0)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
