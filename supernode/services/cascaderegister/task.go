@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -87,6 +86,8 @@ func (task *CascadeRegistrationTask) UploadAsset(_ context.Context, file *files.
 			return nil
 		}
 		task.registrationFee = int64(fee)
+		task.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
+		task.RegTaskHelper.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
 
 		return nil
 	})
@@ -308,7 +309,7 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
 		Key1:        ticketID,
-		Key2:        "key2-" + uuid.New().String(),
+		Key2:        task.ActionTicketRegMetadata.BurnTxID,
 	}
 
 	nftRegTxid, err := task.PastelClient.RegisterActionTicket(ctx, req)

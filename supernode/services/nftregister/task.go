@@ -40,7 +40,7 @@ type NftRegistrationTask struct {
 
 	creatorSignature []byte
 	key1             string
-	key2             string
+	burnTXID         string
 	registrationFee  int64
 
 	rawRqFile   []byte
@@ -129,7 +129,7 @@ func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 	task.Oti = oti
 	task.creatorSignature = creatorSignature
 	task.key1 = key1
-	task.key2 = key2
+	//task.key2 = key2
 
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(common.StatusRegistrationFeeCalculated)
@@ -206,7 +206,10 @@ func (task *NftRegistrationTask) ValidatePreBurnTransaction(ctx context.Context,
 
 	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.WaitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), 15*time.Second)
+		task.burnTXID = txid
+
+		confirmationChn := task.WaitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations),
+			15*time.Second, true, float64(task.registrationFee), 10)
 
 		// compare rqsymbols
 		if err = task.compareRQSymbolID(ctx); err != nil {
@@ -377,7 +380,7 @@ func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error
 		Passphrase:  task.config.PassPhrase,
 		// TODO: fix this when how to get key1 and key2 are finalized
 		Key1: task.key1,
-		Key2: task.key2,
+		Key2: task.burnTXID,
 		Fee:  task.registrationFee,
 	}
 

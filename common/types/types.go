@@ -22,4 +22,5 @@ type ActionRegMetadata struct {
 	BlockHeight     string
 	Timestamp       string
 	OpenAPISubsetID string
+	EstimatedFee    int64
 }

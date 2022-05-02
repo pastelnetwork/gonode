@@ -230,6 +230,11 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 		return errors.Errorf("add image format: %w", err)
 	}
 
+	if err := task.CalculateFee(ctx, image); err != nil {
+		log.WithContext(ctx).WithError(err).Error("calculate fee failed")
+		return errors.Errorf("calculate fee: %w", err)
+	}
+
 	// Validate burn_txid
 	isValidBurnTxID := false
 	var compressedDDFingerAndScores []byte
@@ -240,8 +245,11 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 
 		compressedDDFingerAndScores, err = task.ProbeImage(ctx, image)
 		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("probe image failed")
 			return fmt.Errorf("task.ProbeImage: %w", err)
 		}
+	} else {
+		log.WithContext(ctx).WithError(err).Error("validate burn txid failed")
 	}
 
 	resp := &pb.ProbeImageReply{

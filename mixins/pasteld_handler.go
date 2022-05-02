@@ -179,3 +179,7 @@ func (pt *PastelHandler) RegTicket(ctx context.Context, RegTXID string) (*pastel
 
 	return &regTicket, nil
 }
+
+func (pt *PastelHandler) GetBurnAddress() string {
+	return pt.PastelClient.BurnAddress()
+}
