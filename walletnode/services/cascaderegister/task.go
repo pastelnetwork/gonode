@@ -52,6 +52,8 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	log.WithContext(ctx).Debug("Setting up mesh with Top Supernodes")
+
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
 	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
 	if err != nil {
@@ -64,6 +66,8 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	// cancel any ongoing context if the connections are broken
 	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 
+	log.WithContext(ctx).Debug("Uploading data to Supernodes")
+
 	// send registration metadata
 	if err := task.sendActionMetadata(ctx); err != nil {
 		return errors.Errorf("send registration metadata: %w", err)
@@ -72,6 +76,8 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	if err := task.uploadImage(ctx); err != nil {
 		return errors.Errorf("upload image: %w", err)
 	}
+
+	log.WithContext(ctx).Debug("Generate RQ IDs")
 
 	// connect to rq serivce to get rq symbols identifier
 	if err := task.RqHandler.GenRQIdentifiersFiles(ctx, task.Request.Image,
@@ -96,6 +102,8 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 	task.registrationFee = int64(fee)
 
+	log.WithContext(ctx).Debug("Create and sign Cascade Reg Ticket")
+
 	if err := task.createCascadeTicket(ctx); err != nil {
 		return errors.Errorf("create ticket: %w", err)
 	}
@@ -104,6 +112,8 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	if err := task.signTicket(ctx); err != nil {
 		return errors.Errorf("sign cascade ticket: %w", err)
 	}
+
+	log.WithContext(ctx).Debug("Upload signed Cascade Reg Ticket to SNs")
 
 	// UPLOAD signed ticket to supernodes to validate and register action with the network
 	if err := task.uploadSignedTicket(ctx); err != nil {
@@ -116,12 +126,19 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
+
+	log.WithContext(ctx).Infof("Cascade Reg Ticket registered. Cascade Registration Ticket txid: %s", task.regCascadeTxid)
+	log.WithContext(ctx).Debug("Closing SNs connections")
+
+	// don't need SNs anymore
+	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+
+	log.WithContext(ctx).Debugf("Waiting Confirmations for Cascade Reg Ticket - Ticket txid: %s", task.regCascadeTxid)
+
 	// new context because the old context already cancelled
 	newCtx := context.Background()
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
-		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
@@ -132,25 +149,27 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		IsFinalBool:   false,
 	})
 
+	log.WithContext(ctx).Debug("Cascade Reg Ticket confirmed")
+	log.WithContext(ctx).Debug("Activating Cascade Reg Ticket")
+
 	// activate cascade ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
 	if err != nil {
-		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("active action ticket: %w", err)
 	}
 	task.UpdateStatus(&common.EphemeralStatus{
-		StatusTitle:   "Activating Cascade Action Ticket TXID: ",
+		StatusTitle:   "Cascade Action Activated - Ticket TXID: ",
 		StatusString:  activateTxID,
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
-	log.Infof("Active action ticket txid: %s", activateTxID)
+	log.WithContext(ctx).Infof("Cascade ticket activated. Activation ticket txid: %s", activateTxID)
+	log.WithContext(ctx).Debugf("Waiting Confirmations for Cascade Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
 	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.CascadeActTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
-		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait activate txid valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketActivated)
@@ -160,16 +179,16 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
-	log.Info("Active txid is confirmed")
+	log.WithContext(ctx).Infof("Cascade Activation ticket is confirmed. Activation ticket txid: %s", activateTxID)
 
-	// Send ActionAct request to primary node
-	if err := task.uploadActionAct(newCtx, task.regCascadeTxid); err != nil {
+	/*	// Send ActionAct request to primary node
+		if err := task.uploadActionAct(newCtx, task.regCascadeTxid); err != nil {
+			_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+			return errors.Errorf("upload action act: %w", err)
+		}
+
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-		return errors.Errorf("upload action act: %w", err)
-	}
-
-	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-	return nil
+	*/return nil
 }
 
 // sendActionMetadata sends Action Ticket metadata to supernodes
@@ -334,7 +353,7 @@ func (task *CascadeRegistrationTask) activateActionTicket(ctx context.Context) (
 }
 
 // uploadActionAct uploads action act to primary node
-func (task *CascadeRegistrationTask) uploadActionAct(ctx context.Context, activateTxID string) error {
+/*func (task *CascadeRegistrationTask) uploadActionAct(ctx context.Context, activateTxID string) error {
 	log.WithContext(ctx).Debug("upload action ticket started")
 
 	group, _ := errgroup.WithContext(ctx)
@@ -361,7 +380,7 @@ func (task *CascadeRegistrationTask) uploadActionAct(ctx context.Context, activa
 	log.WithContext(ctx).Debug("upload action ticket successful")
 
 	return nil
-}
+}*/
 
 func (task *CascadeRegistrationTask) removeArtifacts() {
 	if task.Request != nil {

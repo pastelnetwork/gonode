@@ -51,7 +51,7 @@ func newRekeyAEAD(key []byte) (*rekeyAEAD, error) {
 // and calls Seal for aes128gcm.
 func (s *rekeyAEAD) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	if err := s.rekeyIfRequired(nonce); err != nil {
-		log.WithError(err).Errorf("Rekeying failed: %w", err)
+		log.WithError(err).Errorf("Rekeying failed")
 		return nil
 	}
 	maskNonce(s.nonceBuf, nonce, s.nonceMask)

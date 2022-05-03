@@ -248,55 +248,6 @@ func (task *SenseRegistrationTask) ValidateActionActAndConfirm( /*ctx*/ _ contex
 	return nil
 }
 
-/*func (task *SenseRegistrationTask) waitActionActivation(ctx context.Context, txid string, timeoutInBlock int64, interval time.Duration) <-chan error {
-	ch := make(chan error)
-
-	go func(ctx context.Context, txid string) {
-		defer close(ch)
-		blockTracker := blocktracker.New(task.PastelClient)
-		baseBlkCnt, err := blockTracker.GetBlockCount()
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Warn("failed to get block count")
-			ch <- err
-			return
-		}
-
-		for {
-			select {
-			case <-ctx.Done():
-				// context cancelled or abort by caller so no need to return anything
-				log.WithContext(ctx).Debugf("context done: %s", ctx.Err())
-				ch <- ctx.Err()
-				return
-			case <-time.After(interval):
-				txResult, err := task.PastelClient.FindActionActByActionRegTxid(ctx, txid)
-				if err != nil {
-					log.WithContext(ctx).WithError(err).Warn("FindActionActByActionRegTxid err")
-				} else {
-					if txResult != nil {
-						log.WithContext(ctx).Debug("action reg is activated")
-						ch <- nil
-						return
-					}
-				}
-
-				currentBlkCnt, err := blockTracker.GetBlockCount()
-				if err != nil {
-					log.WithContext(ctx).WithError(err).Warn("failed to get block count")
-					continue
-				}
-
-				if currentBlkCnt-baseBlkCnt >= int32(timeoutInBlock)+2 {
-					ch <- errors.Errorf("timeout when waiting for confirmation of transaction %s", txid)
-					return
-				}
-			}
-
-		}
-	}(ctx, txid)
-	return ch
-}*/
-
 // sign and send NFT ticket if not primary
 func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, isPrimary bool) error {
 	ticket, err := pastel.EncodeActionTicket(task.Ticket)

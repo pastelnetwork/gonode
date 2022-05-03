@@ -70,12 +70,16 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	log.WithContext(ctx).Debug("Checking storage fee")
+
 	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
 		return err
 	} else if !ok {
 		task.UpdateStatus(common.StatusErrorInsufficientFee)
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Request.MaximumFee)
 	}
+
+	log.WithContext(ctx).Debug("Setting up mesh with Top Supernodes")
 
 	// Setup mesh with supernodes with the highest ranks.
 	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
@@ -91,6 +95,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// cancel any ongoing context if the connections are broken
 	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 
+	log.WithContext(ctx).Debug("Uploading data to Supernodes")
+
 	// send registration metadata
 	if err := task.sendRegMetadata(ctx); err != nil {
 		return errors.Errorf("send registration metadata: %w", err)
@@ -100,6 +106,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	if err := task.probeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
 		return errors.Errorf("probe image: %w", err)
 	}
+
+	log.WithContext(ctx).Debug("Get DD and Fingerprints from Supernodes")
 
 	// Calculate IDs for redundant number of dd_and_fingerprints files
 	// Step 5.4
@@ -120,12 +128,16 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("get image hash: %w", err)
 	}
 
+	log.WithContext(ctx).Debug("Upload signed image")
+
 	// upload image (from task.NftImageHandler) and thumbnail coordinates to supernode(s)
 	// SN will return back: hashes, previews, thumbnails,
 	// Step 6 - 8 for Walletnode
 	if err := task.uploadImage(ctx); err != nil {
 		return errors.Errorf("upload image: %w", err)
 	}
+
+	log.WithContext(ctx).Debug("Generate RQ IDs")
 
 	// connect to rq serivce to get rq symbols identifier
 	// All of step 9
@@ -134,6 +146,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
+
+	log.WithContext(ctx).Debug("Create and sign NFT Reg Ticket")
 
 	if err := task.createNftTicket(ctx); err != nil {
 		return errors.Errorf("create ticket: %w", err)
@@ -159,6 +173,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("check current balance: %w", err)
 	}
 
+	log.WithContext(ctx).Debug("Pre-burn 10% of fee and Upload signed ticket to SNs")
+
 	// send preburn-txid to master node(s)
 	// master node will create reg-nft ticket and returns transaction id
 	task.UpdateStatus(common.StatusPreburntRegistrationFee)
@@ -174,12 +190,17 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	})
 	task.UpdateStatus(common.StatusTicketAccepted)
 
+	log.WithContext(ctx).Infof("NFT Reg Ticket registered. NFT Registration Ticket txid: %s", task.regNFTTxid)
+	log.WithContext(ctx).Debug("Closing SNs connections")
+
 	// don't need SNs anymore
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
 	//Start Step 20
+
+	log.WithContext(ctx).Debug("Waiting Confirmations for NFT Reg Ticket")
 
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regNFTTxid, int64(task.service.config.NFTRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
@@ -191,37 +212,41 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
-	task.UpdateStatus(&common.EphemeralStatus{
-		StatusTitle:   "Registering NFT Act Ticket TXID: ",
-		StatusString:  task.regNFTTxid,
-		IsFailureBool: false,
-		IsFinalBool:   false,
-	})
 	task.UpdateStatus(common.StatusTicketRegistered)
+
+	log.WithContext(ctx).Debug("NFT Reg Ticket confirmed")
+	log.WithContext(ctx).Debug("Activating NFT Reg Ticket")
 
 	// activate reg-nft ticket at previous step
 	// Send Activation ticket and Registration Fee (cNode API)
 
-	actTxid, err := task.registerActTicket(newCtx)
+	activateTxID, err := task.registerActTicket(newCtx)
 	if err != nil {
 		return errors.Errorf("register act ticket: %w", err)
 	}
-	log.Debugf("reg-act-txid: %s", actTxid)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "NFT Activated - Ticket TXID: ",
+		StatusString:  activateTxID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
+	log.WithContext(ctx).Infof("NFT ticket activated. Activation ticket txid: %s", activateTxID)
+	log.WithContext(ctx).Debugf("Waiting Confirmations for NFT Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until actTxid is valid
-	err = task.service.pastelHandler.WaitTxidValid(newCtx, actTxid,
+	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID,
 		int64(task.service.config.NFTActTxMinConfirmations), time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
 		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
+	task.UpdateStatus(common.StatusTicketActivated)
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Registered NFT Act Ticket TXID: ",
 		StatusString:  task.regNFTTxid,
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
-	task.UpdateStatus(common.StatusTicketActivated)
-	log.Debugf("reg-act-tixd is confirmed")
+	log.WithContext(ctx).Infof("NFT Activation ticket is confirmed. Activation ticket txid: %s", activateTxID)
 
 	return nil
 }
