@@ -194,14 +194,6 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	})
 	log.WithContext(ctx).Infof("Sense Activation ticket is confirmed. Activation ticket txid: %s", activateTxID)
 
-	//
-	//// Send ActionAct request to primary node
-	//if err := task.uploadActionAct(newCtx, task.regSenseTxid); err != nil {
-	//	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-	//	return errors.Errorf("upload action act: %w", err)
-	//}
-	//
-	//_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 	return nil
 }
 
@@ -384,25 +376,6 @@ func (task *SenseRegistrationTask) activateActionTicket(ctx context.Context) (st
 
 	return task.service.pastelHandler.PastelClient.ActivateActionTicket(ctx, request)
 }
-
-// uploadActionAct uploads action act to primary node
-/*func (task *SenseRegistrationTask) uploadActionAct(ctx context.Context, activateTxID string) error {
-	group, _ := errgroup.WithContext(ctx)
-
-	for _, someNode := range task.MeshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
-		if !ok {
-			//TODO: use assert here
-			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
-		}
-		if someNode.IsPrimary() {
-			group.Go(func() error {
-				return senseRegNode.SendActionAct(ctx, activateTxID)
-			})
-		}
-	}
-	return group.Wait()
-}*/
 
 func (task *SenseRegistrationTask) removeArtifacts() {
 	if task.Request != nil {

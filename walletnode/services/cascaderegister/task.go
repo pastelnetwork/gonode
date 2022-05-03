@@ -181,14 +181,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	})
 	log.WithContext(ctx).Infof("Cascade Activation ticket is confirmed. Activation ticket txid: %s", activateTxID)
 
-	/*	// Send ActionAct request to primary node
-		if err := task.uploadActionAct(newCtx, task.regCascadeTxid); err != nil {
-			_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-			return errors.Errorf("upload action act: %w", err)
-		}
-
-		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-	*/return nil
+	return nil
 }
 
 // sendActionMetadata sends Action Ticket metadata to supernodes
@@ -351,36 +344,6 @@ func (task *CascadeRegistrationTask) activateActionTicket(ctx context.Context) (
 
 	return task.service.pastelHandler.PastelClient.ActivateActionTicket(ctx, request)
 }
-
-// uploadActionAct uploads action act to primary node
-/*func (task *CascadeRegistrationTask) uploadActionAct(ctx context.Context, activateTxID string) error {
-	log.WithContext(ctx).Debug("upload action ticket started")
-
-	group, _ := errgroup.WithContext(ctx)
-	for _, someNode := range task.MeshHandler.Nodes {
-		cascadeRegNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
-		if !ok {
-			//TODO: use assert here
-			return errors.Errorf("node %s is not CascadeRegistrationNode", someNode.String())
-		}
-
-		someNode := someNode
-		if someNode.IsPrimary() {
-			group.Go(func() error {
-				return cascadeRegNode.SendActionAct(ctx, activateTxID)
-			})
-		}
-
-	}
-	if err := group.Wait(); err != nil {
-		log.WithContext(ctx).WithError(err).Error("upload action ticket failed")
-		return err
-	}
-
-	log.WithContext(ctx).Debug("upload action ticket successful")
-
-	return nil
-}*/
 
 func (task *CascadeRegistrationTask) removeArtifacts() {
 	if task.Request != nil {
