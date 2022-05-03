@@ -98,20 +98,16 @@ func (service *SCService) NewSCTask() *SCTask {
 
 // NewService : Create a new storage challenge service
 //  Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
-func NewService(cfg *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client, rqClient rqnode.ClientInterface, challengeStatusObserver SaveChallengeState) *SCService {
-	if cfg == nil {
-		panic("domain service configuration not found")
-	}
-
+func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client, rqClient rqnode.ClientInterface, challengeStatusObserver SaveChallengeState) *SCService {
 	return &SCService{
-		config:                        cfg,
+		config:                        config,
 		SuperNodeService:              common.NewSuperNodeService(fileStorage, pastelClient, p2p, rqClient),
 		nodeClient:                    nodeClient,
-		storageChallengeExpiredBlocks: cfg.StorageChallengeExpiredBlocks,
+		storageChallengeExpiredBlocks: config.StorageChallengeExpiredBlocks,
 		// repository:                    newRepository(p2p, pastelClient, challengeStatusObserver),
-		nodeID:                    cfg.PastelID,
-		numberOfChallengeReplicas: cfg.NumberOfChallengeReplicas,
-		numberOfVerifyingNodes:    cfg.NumberOfVerifyingNodes,
+		nodeID:                    config.PastelID,
+		numberOfChallengeReplicas: config.NumberOfChallengeReplicas,
+		numberOfVerifyingNodes:    config.NumberOfVerifyingNodes,
 		challengeStatusObserver:   challengeStatusObserver,
 	}
 }

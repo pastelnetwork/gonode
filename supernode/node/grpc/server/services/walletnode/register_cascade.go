@@ -332,7 +332,7 @@ func (service *RegisterCascade) SendActionAct(ctx context.Context, req *pb.SendA
 		return &pb.SendActionActReply{}, err
 	}
 
-	err = task.ValidateActionActAndStore(ctx, req.ActionRegTxid)
+	err = task.ValidateActionActAndConfirm(ctx, req.ActionRegTxid)
 
 	return &pb.SendActionActReply{}, err
 }

@@ -7,7 +7,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/binary"
-	"fmt"
+	"github.com/pastelnetwork/gonode/common/log"
 	"strconv"
 )
 
@@ -51,7 +51,8 @@ func newRekeyAEAD(key []byte) (*rekeyAEAD, error) {
 // and calls Seal for aes128gcm.
 func (s *rekeyAEAD) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	if err := s.rekeyIfRequired(nonce); err != nil {
-		panic(fmt.Sprintf("Rekeying failed with: %s", err.Error()))
+		log.WithError(err).Errorf("Rekeying failed: %w", err)
+		return nil
 	}
 	maskNonce(s.nonceBuf, nonce, s.nonceMask)
 	return s.gcmAEAD.Seal(dst, s.nonceBuf, plaintext, additionalData)

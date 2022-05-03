@@ -300,7 +300,7 @@ func (service *RegisterSense) SendActionAct(ctx context.Context, req *pb.SendAct
 		return &pb.SendActionActReply{}, err
 	}
 
-	err = task.ValidateActionActAndStore(ctx, req.ActionRegTxid)
+	err = task.ValidateActionActAndConfirm(ctx, req.ActionRegTxid)
 
 	return &pb.SendActionActReply{}, err
 }

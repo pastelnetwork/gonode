@@ -2,6 +2,7 @@ package conn
 
 import (
 	"crypto/cipher"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pkg/errors"
@@ -73,7 +74,9 @@ func (s *xchacha20poly1305ietfReKey) Encrypt(dst, plaintext []byte) ([]byte, err
 	// returns the updated slice. However, SliceForAppend above ensures that
 	// dst has enough capacity to avoid a reallocation and copy due to the
 	// append.
-	dst = s.outAEAD.Seal(dst[:dlen], nonceBuf[:], data, nil)
+	if dst = s.outAEAD.Seal(dst[:dlen], nonceBuf[:], data, nil); dst == nil {
+		return nil, fmt.Errorf("seal returned empty data")
+	}
 	s.outCounter.Inc()
 	return dst, nil
 }

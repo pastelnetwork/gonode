@@ -4,9 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"time"
-
-	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -220,6 +217,14 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 						return nil
 					}
 
+					// Store dd_and_fingerprints into Kademlia
+					log.WithContext(ctx).WithField("txid", nftRegTxid).Info("storing dd_and_fingerprints symbols")
+					if err = task.storeIDFiles(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("store id files")
+						err = errors.Errorf("store id files: %w", err)
+						return nil
+					}
+
 					return nil
 				}
 			}
@@ -229,28 +234,21 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 	return nftRegTxid, err
 }
 
-// ValidateActionActAndStore informs actionRegTxID to trigger store ID files in case of actionRegTxID was
-func (task *SenseRegistrationTask) ValidateActionActAndStore(ctx context.Context, actionRegTxID string) error {
-	var err error
+// ValidateActionActAndConfirm checks Action activation ticket and reStore if possible
+func (task *SenseRegistrationTask) ValidateActionActAndConfirm( /*ctx*/ _ context.Context /*actionRegTxID*/, _ string) error {
+	//var err error
 
-	// Wait for action ticket to be activated by walletnode
-	confirmations := task.waitActionActivation(ctx, actionRegTxID, 3, 30*time.Second)
-	err = <-confirmations
-	if err != nil {
-		return errors.Errorf("wait for confirmation of sense ticket %w", err)
-	}
-
-	// Store dd_and_fingerprints into Kademlia
-	if err = task.storeIDFiles(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("store id files")
-		err = errors.Errorf("store id files: %w", err)
-		return nil
-	}
+	//// Wait for action ticket to be activated by walletnode
+	//confirmations := task.waitActionActivation(ctx, actionRegTxID, 3, 30*time.Second)
+	//err = <-confirmations
+	//if err != nil {
+	//	return errors.Errorf("wait for confirmation of sense ticket %w", err)
+	//}
 
 	return nil
 }
 
-func (task *SenseRegistrationTask) waitActionActivation(ctx context.Context, txid string, timeoutInBlock int64, interval time.Duration) <-chan error {
+/*func (task *SenseRegistrationTask) waitActionActivation(ctx context.Context, txid string, timeoutInBlock int64, interval time.Duration) <-chan error {
 	ch := make(chan error)
 
 	go func(ctx context.Context, txid string) {
@@ -297,7 +295,7 @@ func (task *SenseRegistrationTask) waitActionActivation(ctx context.Context, txi
 		}
 	}(ctx, txid)
 	return ch
-}
+}*/
 
 // sign and send NFT ticket if not primary
 func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, isPrimary bool) error {
