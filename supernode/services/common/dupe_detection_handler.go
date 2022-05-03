@@ -223,7 +223,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 			}
 
 			return nil
-		case <-time.After(60 * time.Second):
+		case <-time.After(600 * time.Second):
 			log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers timeout")
 			err = errors.New("waiting for DDAndFingerprints timeout")
 			return nil
