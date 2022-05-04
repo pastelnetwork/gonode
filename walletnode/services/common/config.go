@@ -6,7 +6,7 @@ const (
 	defaultNumberSuperNodes = 3
 
 	defaultConnectToNextNodeDelay = 400 * time.Millisecond
-	defaultAcceptNodesTimeout     = 180 * time.Second // = 3 * (2* ConnectToNodeTimeout)
+	defaultAcceptNodesTimeout     = 600 * time.Second // = 3 * (2* ConnectToNodeTimeout)
 	defaultConnectToNodeTimeout   = time.Second * 20
 )
 
