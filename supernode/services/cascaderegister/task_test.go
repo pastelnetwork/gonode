@@ -116,50 +116,50 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 	}
 }
 
-func TestTaskRegisterAction(t *testing.T) {
-	type args struct {
-		regErr   error
-		regRetID string
-	}
-
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"success": {
-			args:    args{},
-			wantErr: nil,
-		},
-		"err": {
-			args: args{
-				regErr: errors.New("test"),
-			},
-			wantErr: errors.New("test"),
-		},
-	}
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnRegisterActionTicket(tc.args.regRetID, tc.args.regErr)
-
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
-			task = add2NodesAnd2TicketSignatures(task)
-
-			id, err := task.registerAction(context.Background())
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-			} else {
-				assert.Nil(t, err)
-				assert.Equal(t, tc.args.regRetID, id)
-			}
-		})
-	}
-}
+//func TestTaskRegisterAction(t *testing.T) {
+//	type args struct {
+//		regErr   error
+//		regRetID string
+//	}
+//
+//	testCases := map[string]struct {
+//		args    args
+//		wantErr error
+//	}{
+//		"success": {
+//			args:    args{},
+//			wantErr: nil,
+//		},
+//		"err": {
+//			args: args{
+//				regErr: errors.New("test"),
+//			},
+//			wantErr: errors.New("test"),
+//		},
+//	}
+//	for name, tc := range testCases {
+//		tc := tc
+//
+//		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+//			t.Parallel()
+//
+//			pastelClientMock := pastelMock.NewMockClient(t)
+//			pastelClientMock.ListenOnRegisterActionTicket(tc.args.regRetID, tc.args.regErr)
+//
+//			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
+//			task = add2NodesAnd2TicketSignatures(task)
+//
+//			id, err := task.registerAction(context.Background())
+//			if tc.wantErr != nil {
+//				assert.NotNil(t, err)
+//				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+//			} else {
+//				assert.Nil(t, err)
+//				assert.Equal(t, tc.args.regRetID, id)
+//			}
+//		})
+//	}
+//}
 
 func TestTaskPastelNodesByExtKey(t *testing.T) {
 	type args struct {

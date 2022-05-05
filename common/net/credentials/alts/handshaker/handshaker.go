@@ -64,7 +64,8 @@ var (
 func init() {
 	for protocol, f := range altsRecordFuncs {
 		if err := conn.RegisterProtocol(protocol, f); err != nil {
-			panic(err)
+			log.WithError(err).Error("failed register protocol")
+			panic(err) // this method is called when package is being loaded, it is ok to panic here
 		}
 	}
 }
@@ -88,7 +89,7 @@ func release() {
 	concurrentHandshakes -= n
 	if concurrentHandshakes < 0 {
 		mu.Unlock()
-		panic("bad release")
+		log.Error("bad release of handshaker")
 	}
 	mu.Unlock()
 }

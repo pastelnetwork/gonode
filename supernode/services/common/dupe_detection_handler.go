@@ -72,7 +72,6 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		defer errors.Recover(func(recErr error) {
 			log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).WithError(recErr).Error("PanicWhenProbeImage")
 		})
-		h.UpdateStatus(StatusImageProbed)
 
 		// Begin send signed DDAndFingerprints to other SNs
 		// Send base64’ed (and compressed) dd_and_fingerprints and its signature to the 2 OTHER SNs
@@ -115,12 +114,14 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		// 	openAPISubsetIDString
 		//
 		// NB currently isPastelOpenapiRequest and openAPISubsetIDString are both fixed values here.
+		log.WithContext(ctx).Debug("asking dd server to process image")
 		compressed, err = h.GenFingerprintsData(ctx, file, blockHash, blockHeight, timestamp, creatorPastelID, registeringSupernode1, registeringSupernode2, registeringSupernode3, false, "")
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
 			err = errors.Errorf("generate fingerprints data: %w", err)
 			return nil
 		}
+		h.UpdateStatus(StatusImageProbed)
 
 		for _, nodeInfo := range h.NetworkHandler.meshedNodes {
 			// Don't send to itself
@@ -149,6 +150,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 
 				return nil
 			}
+			log.WithContext(ctx).Debugf("sending dd_fp to other SN: %s", node.ID)
 
 			//supernode/services/nftregister/task.go
 			if err = tasker.SendDDFBack(ctx, node.SuperNodePeerAPIInterface, &nodeInfo, h.ServerPastelID, compressed); err != nil {
@@ -222,6 +224,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 				return nil
 			}
 
+			log.WithContext(ctx).Debug("DDAndFingerprints combined and compressed")
 			return nil
 		case <-time.After(600 * time.Second):
 			log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers timeout")

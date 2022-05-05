@@ -59,6 +59,8 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	log.WithContext(ctx).Debug("Setting up mesh with Top Supernodes")
+
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
 	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
 	if err != nil {
@@ -74,6 +76,8 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	/* Step 5: Send image, burn txid to SNs */
 
+	log.WithContext(ctx).Debug("Uploading data to Supernodes")
+
 	// send registration metadata
 	if err := task.sendActionMetadata(ctx); err != nil {
 		return errors.Errorf("send registration metadata: %w", err)
@@ -83,6 +87,8 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	if err := task.ProbeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
 		return errors.Errorf("probe image: %w", err)
 	}
+
+	log.WithContext(ctx).Debug("Get DD and Fingerprints from Supernodes")
 
 	// generateDDAndFingerprintsIDs generates dd & fp IDs
 	if err := task.FingerprintsHandler.GenerateDDAndFingerprintsIDs(ctx, task.service.config.DDAndFingerprintsMax); err != nil {
@@ -105,6 +111,8 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 	task.registrationFee = int64(fee)
 
+	log.WithContext(ctx).Debug("Create and sign Sense Reg Ticket")
+
 	if err := task.createSenseTicket(ctx); err != nil {
 		return errors.Errorf("create ticket: %w", err)
 	}
@@ -114,21 +122,30 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("sign sense ticket: %w", err)
 	}
 
+	log.WithContext(ctx).Debug("Upload signed Sense Reg Ticket to SNs")
+
 	// UPLOAD signed ticket to supernodes to validate and register action with the network
 	if err := task.uploadSignedTicket(ctx); err != nil {
 		return errors.Errorf("send signed sense ticket: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketAccepted)
-
-	// new context because the old context already cancelled
-	newCtx := context.Background()
-
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Validating Sense Reg TXID: ",
 		StatusString:  task.regSenseTxid,
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
+
+	log.WithContext(ctx).Infof("Sense Reg Ticket registered. Sense Registration Ticket txid: %s", task.regSenseTxid)
+	log.WithContext(ctx).Debug("Closing SNs connections")
+
+	// don't need SNs anymore
+	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+
+	log.WithContext(ctx).Debugf("Waiting Confirmations for Sense Reg Ticket - Ticket txid: %s", task.regSenseTxid)
+
+	// new context because the old context already cancelled
+	newCtx := context.Background()
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
@@ -136,7 +153,6 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
-	log.Infof("RegSense txid is confirmed: %s\n", task.regSenseTxid)
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Validated Sense Reg TXID: ",
 		StatusString:  task.regSenseTxid,
@@ -144,19 +160,23 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		IsFinalBool:   false,
 	})
 
+	log.WithContext(ctx).Debug("Sense Reg Ticket confirmed")
+	log.WithContext(ctx).Debug("Activating Sense Reg Ticket")
+
 	// activate sense ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
 	if err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("active action ticket: %w", err)
 	}
-	log.Debugf("Active action ticket txid: %s", activateTxID)
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Activating Action Ticket TXID: ",
 		StatusString:  activateTxID,
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
+	log.WithContext(ctx).Infof("Sense ticket activated. Activation ticket txid: %s", activateTxID)
+	log.WithContext(ctx).Debugf("Waiting Confirmations for Sense Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
 	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.SenseActTxMinConfirmations),
@@ -166,21 +186,14 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("wait activate txid valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketActivated)
-	log.Infof("Active txid is confirmed: %s\n", activateTxID)
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Activated Action Ticket TXID: ",
 		StatusString:  activateTxID,
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
+	log.WithContext(ctx).Infof("Sense Activation ticket is confirmed. Activation ticket txid: %s", activateTxID)
 
-	// Send ActionAct request to primary node
-	if err := task.uploadActionAct(newCtx, task.regSenseTxid); err != nil {
-		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-		return errors.Errorf("upload action act: %w", err)
-	}
-
-	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 	return nil
 }
 
@@ -362,25 +375,6 @@ func (task *SenseRegistrationTask) activateActionTicket(ctx context.Context) (st
 	}
 
 	return task.service.pastelHandler.PastelClient.ActivateActionTicket(ctx, request)
-}
-
-// uploadActionAct uploads action act to primary node
-func (task *SenseRegistrationTask) uploadActionAct(ctx context.Context, activateTxID string) error {
-	group, _ := errgroup.WithContext(ctx)
-
-	for _, someNode := range task.MeshHandler.Nodes {
-		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
-		if !ok {
-			//TODO: use assert here
-			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
-		}
-		if someNode.IsPrimary() {
-			group.Go(func() error {
-				return senseRegNode.SendActionAct(ctx, activateTxID)
-			})
-		}
-	}
-	return group.Wait()
 }
 
 func (task *SenseRegistrationTask) removeArtifacts() {
