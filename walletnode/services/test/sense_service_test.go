@@ -80,6 +80,8 @@ func TestNodesSendImage(t *testing.T) {
 
 	testCompressedFingerAndScores, genErr := pastel.ToCompressSignedDDAndFingerprints(fingerAndScores, []byte("testSignature"))
 	assert.Nil(t, genErr)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	testCases := []struct {
 		nodes                     []nodeAttribute
@@ -95,7 +97,7 @@ func TestNodesSendImage(t *testing.T) {
 				{"127.0.0.1:4445", nil},
 				{"127.0.0.1:4446", nil},
 			},
-			args:                      args{context.Background(), &files.File{}},
+			args:                      args{ctx, &files.File{}},
 			err:                       nil,
 			validBurnTxID:             true,
 			compressedFingersAndScore: testCompressedFingerAndScores,
@@ -106,7 +108,7 @@ func TestNodesSendImage(t *testing.T) {
 				{"127.0.0.1:4444", nil},
 				{"127.0.0.1:4445", fmt.Errorf("failed to open stream")},
 			},
-			args:                      args{context.Background(), &files.File{}},
+			args:                      args{ctx, &files.File{}},
 			err:                       fmt.Errorf("failed to open stream"),
 			validBurnTxID:             false,
 			compressedFingersAndScore: testCompressedFingerAndScores,
@@ -121,8 +123,6 @@ func TestNodesSendImage(t *testing.T) {
 			t.Parallel()
 
 			nodes := common.SuperNodeList{}
-			clients := []*test.Client{}
-
 			meshHandler := common.NewMeshHandlerSimple(nil, service.RegisterSenseNodeMaker{}, nil)
 
 			for _, a := range testCase.nodes {
@@ -130,7 +130,6 @@ func TestNodesSendImage(t *testing.T) {
 				client := test.NewMockClient(t)
 				//listen on uploadImage call
 				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.validBurnTxID, testCase.err)
-				clients = append(clients, client)
 
 				someNode := common.NewSuperNode(client, a.address, "", service.RegisterSenseNodeMaker{})
 				someNode.SuperNodeAPIInterface = &service.SenseRegistrationNode{RegisterSenseInterface: client.RegisterSenseInterface}
@@ -160,12 +159,6 @@ func TestNodesSendImage(t *testing.T) {
 				assert.True(t, strings.Contains(err.Error(), testCase.err.Error()))
 			} else {
 				assert.Nil(t, err)
-			}
-
-			//mock assertion each client
-			for _, client := range clients {
-				client.RegisterSenseInterface.AssertExpectations(t)
-				client.AssertProbeImageCall(testCase.numberProbeImageCall, testCase.args.ctx, testCase.args.file)
 			}
 		})
 	}

@@ -102,7 +102,7 @@ func (task *NftDownloadingTask) run(ctx context.Context) error {
 
 // Download downloads image from supernodes.
 func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string) ([]error, error) {
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
 
 	for _, someNode := range task.MeshHandler.Nodes {
@@ -114,12 +114,12 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 
 		someNode := someNode
 		group.Go(func() error {
-			file, subErr := nftDownNode.Download(ctx, txid, timestamp, signature, ttxid, ttype)
+			file, subErr := nftDownNode.Download(gctx, txid, timestamp, signature, ttxid, ttype)
 			if subErr != nil {
-				log.WithContext(ctx).WithField("address", someNode.String()).WithError(subErr).Error("Could not download from supernode")
+				log.WithContext(gctx).WithField("address", someNode.String()).WithError(subErr).Error("Could not download from supernode")
 				errChan <- subErr
 			} else {
-				log.WithContext(ctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
+				log.WithContext(gctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
 			}
 
 			func() {

@@ -200,7 +200,7 @@ func (task *CascadeRegistrationTask) sendActionMetadata(ctx context.Context) err
 		BurnTxID:        task.Request.BurnTxID,
 	}
 
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		cascadeRegNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
 		if !ok {
@@ -210,9 +210,9 @@ func (task *CascadeRegistrationTask) sendActionMetadata(ctx context.Context) err
 
 		someNode := someNode
 		group.Go(func() (err error) {
-			err = cascadeRegNode.SendRegMetadata(ctx, regMetadata)
+			err = cascadeRegNode.SendRegMetadata(gctx, regMetadata)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", cascadeRegNode).Error("send registration metadata failed")
+				log.WithContext(gctx).WithError(err).WithField("node", cascadeRegNode).Error("send registration metadata failed")
 				return errors.Errorf("node %s: %w", someNode.String(), err)
 			}
 
@@ -223,7 +223,7 @@ func (task *CascadeRegistrationTask) sendActionMetadata(ctx context.Context) err
 }
 
 func (task *CascadeRegistrationTask) uploadImage(ctx context.Context) error {
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 
 	for _, someNode := range task.MeshHandler.Nodes {
 		cascadeNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
@@ -234,9 +234,9 @@ func (task *CascadeRegistrationTask) uploadImage(ctx context.Context) error {
 
 		someNode := someNode
 		group.Go(func() error {
-			err := cascadeNode.UploadAsset(ctx, task.Request.Image)
+			err := cascadeNode.UploadAsset(gctx, task.Request.Image)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", someNode).Error("upload image with thumbnail failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode).Error("upload image with thumbnail failed")
 				return err
 			}
 			return nil
@@ -303,7 +303,7 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 	rqidsFile := task.RqHandler.RQIDsFile
 	encoderParams := task.RqHandler.RQEncodeParams
 
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		cascadeRegNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
 		if !ok {
@@ -313,9 +313,9 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 
 		someNode := someNode
 		group.Go(func() error {
-			ticketTxid, err := cascadeRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, rqidsFile, encoderParams)
+			ticketTxid, err := cascadeRegNode.SendSignedTicket(gctx, task.serializedTicket, task.creatorSignature, rqidsFile, encoderParams)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", cascadeRegNode).Error("send signed ticket failed")
+				log.WithContext(gctx).WithError(err).WithField("node", cascadeRegNode).Error("send signed ticket failed")
 				return err
 			}
 			if !someNode.IsPrimary() && ticketTxid != "" && !task.skipPrimaryNodeTxidCheck() {
