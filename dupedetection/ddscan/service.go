@@ -114,7 +114,7 @@ func (s *service) run(ctx context.Context) error {
 			if !s.isMasterNodeSynced {
 				if err := s.checkSynchronized(ctx); err != nil {
 					log.DD().WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
-					continue
+					// continue
 				}
 
 				log.DD().WithContext(ctx).Debug("Done for waiting synchronization status")
@@ -388,11 +388,12 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
-		_, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
+		decTicket, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
 		if err != nil {
 			log.DD().WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
+		nftRegTickets[i].RegTicketData.NFTTicketData = *decTicket
 
 		ddFPIDs := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
 
@@ -467,14 +468,22 @@ func (s *service) runTask(ctx context.Context) error {
 		return nil
 	}
 	for i := 0; i < len(senseRegTickets); i++ {
-		if senseRegTickets[i].ActionTicketData.BlockNum <= s.latestBlockHeight {
-			continue
-		}
-		if senseRegTickets[i].Type != "sense-reg" {
+		if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum <= s.latestBlockHeight {
 			continue
 		}
 
-		senseTicket, err := senseRegTickets[i].ActionTicketData.APISenseTicket()
+		decTicket, err := pastel.DecodeActionTicket(senseRegTickets[i].ActionTicketData.ActionTicket)
+		if err != nil {
+			log.DD().WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+			continue
+		}
+		senseRegTickets[i].ActionTicketData.ActionTicketData = *decTicket
+
+		if senseRegTickets[i].ActionTicketData.Type != "sense" {
+			continue
+		}
+
+		senseTicket, err := senseRegTickets[i].ActionTicketData.ActionTicketData.APISenseTicket()
 		if err != nil {
 			log.WithContext(ctx).WithField("senseRegTickets.ActionTicketData", senseRegTickets[i].ActionTicketData).Warnf("Could not get sense ticket for action ticket data")
 			continue
@@ -540,7 +549,7 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 		if len(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile) < 1 {
-			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Warnf("This senseg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
+			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Warnf("This sense reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
 			continue
 		}
 
@@ -550,13 +559,13 @@ func (s *service) runTask(ctx context.Context) error {
 			DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
 			PathToArtImageFile:                 "",
 			ImageThumbnailAsBase64:             "",
-			RequestType:                        senseRegTickets[i].Type,
+			RequestType:                        senseRegTickets[i].ActionTicketData.Type,
 			IDString:                           "",
 		}); err != nil {
 			log.DD().WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
-		if senseRegTickets[i].ActionTicketData.BlockNum > latestBlockHeight {
-			latestBlockHeight = senseRegTickets[i].ActionTicketData.BlockNum
+		if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum > latestBlockHeight {
+			latestBlockHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
 		}
 	}
 

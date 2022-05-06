@@ -76,6 +76,10 @@ type Client interface {
 	// Command `tickets list art`.
 	RegTickets(ctx context.Context) (RegTickets, error)
 
+	// RegTicketsFromBlockHeight returns all NFT registration tickets higher than height <blockheight> or higher.
+	// Command `tickets list nft <height>`.
+	RegTicketsFromBlockHeight(ctx context.Context, blockheight int32) (RegTickets, error)
+
 	// GetBlockVerbose1 Return block info with verbose is 1
 	// Command `getblock height 1`
 	GetBlockVerbose1(ctx context.Context, blkHeight int32) (*GetBlockVerbose1Result, error)
@@ -149,6 +153,10 @@ type Client interface {
 	// ActionTickets returns action tickets similar to RegTickets, but for action tickets
 	// Command `tickets list action`
 	ActionTickets(ctx context.Context) (ActionTicketDatas, error)
+
+	// ActionTicketsFromBlockHeight returns action tickets similar to RegTickets, but for action tickets
+	// Command `tickets list action`
+	ActionTicketsFromBlockHeight(ctx context.Context, blockheight int32) (ActionTicketDatas, error)
 
 	// FindActionActByActionRegTxid returns the action activation ticket by ActionReg ticket txid
 	// Command `tickets find action-act <action-reg-ticket-txid>`

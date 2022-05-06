@@ -268,6 +268,17 @@ func (client *client) RegTickets(ctx context.Context) (RegTickets, error) {
 	return tickets, nil
 }
 
+// RegTickets implements pastel.Client.RegTicketsFromBlockHeight
+func (client *client) RegTicketsFromBlockHeight(ctx context.Context, blockheight int32) (RegTickets, error) {
+	tickets := RegTickets{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "nft", "all", blockheight); err != nil {
+		return nil, errors.Errorf("failed to get registration tickets with block height: %w", err)
+	}
+
+	return tickets, nil
+}
+
 func (client *client) GetBlockVerbose1(ctx context.Context, blkHeight int32) (*GetBlockVerbose1Result, error) {
 	result := &GetBlockVerbose1Result{}
 
@@ -539,6 +550,17 @@ func (client *client) ActionTickets(ctx context.Context) (ActionTicketDatas, err
 	tickets := ActionTicketDatas{}
 
 	if err := client.callFor(ctx, &tickets, "tickets", "list", "action"); err != nil {
+		return nil, errors.Errorf("failed to get action tickets: %w", err)
+	}
+
+	return tickets, nil
+}
+
+// ActionTicketsFromBlockHeight implements pastel.Client.ActionTicketsFromBlockHeight
+func (client *client) ActionTicketsFromBlockHeight(ctx context.Context, blockheight int32) (ActionTicketDatas, error) {
+	tickets := ActionTicketDatas{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "action", "all", blockheight); err != nil {
 		return nil, errors.Errorf("failed to get action tickets: %w", err)
 	}
 
