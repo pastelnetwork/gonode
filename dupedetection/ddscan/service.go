@@ -402,8 +402,10 @@ func (s *service) runTask(ctx context.Context) error {
 		for _, id := range ddFPIDs {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
 			if err != nil {
-				break
+				log.WithContext(ctx).WithField("error", err).Debug("Could not get the fingerprint for this file hash")
+				continue
 			}
+			break
 		}
 		if ddAndFpFromTicket == nil {
 			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
@@ -468,7 +470,7 @@ func (s *service) runTask(ctx context.Context) error {
 		return nil
 	}
 	for i := 0; i < len(senseRegTickets); i++ {
-		if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum <= s.latestBlockHeight {
+		if senseRegTickets[i].ActionTicketData.CalledAt <= s.latestBlockHeight {
 			continue
 		}
 
@@ -479,7 +481,7 @@ func (s *service) runTask(ctx context.Context) error {
 		}
 		senseRegTickets[i].ActionTicketData.ActionTicketData = *decTicket
 
-		if senseRegTickets[i].ActionTicketData.Type != "sense" {
+		if senseRegTickets[i].ActionTicketData.ActionTicketData.ActionType != "sense" {
 			continue
 		}
 
@@ -494,11 +496,13 @@ func (s *service) runTask(ctx context.Context) error {
 		for _, id := range senseTicket.DDAndFingerprintsIDs {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
 			if err != nil {
-				break
+				log.WithContext(ctx).WithField("error", err).Debug("Could not get the fingerprint for this file hash")
+				continue
 			}
+			break
 		}
 		if ddAndFpFromTicket == nil {
-			log.WithContext(ctx).WithField("senseTicket", senseTicket).Warnf("None of the dd and fp id files for thissense reg ticket could be properly unmarshalled")
+			log.WithContext(ctx).WithField("senseTicket", senseTicket).Warnf("None of the dd and fp id files for this sense reg ticket could be properly unmarshalled")
 			continue
 		}
 		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
