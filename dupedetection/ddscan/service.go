@@ -334,13 +334,13 @@ func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash stri
 	if err != nil {
 		return nil, errors.Errorf("Error finding dd and fp file: %w", err)
 	}
+	//log.WithContext(ctx).WithField("rawFile:", rawFile).Debug("Got file from p2p")
+	// dec, err := utils.B64Decode(rawFile)
+	// if err != nil {
+	// 	return nil, errors.Errorf("decode data: %w", err)
+	// }
 
-	dec, err := utils.B64Decode(rawFile)
-	if err != nil {
-		return nil, errors.Errorf("decode data: %w", err)
-	}
-
-	decData, err := zstd.Decompress(nil, dec)
+	decData, err := zstd.Decompress(nil, rawFile)
 	if err != nil {
 		return nil, errors.Errorf("decompress: %w", err)
 	}
