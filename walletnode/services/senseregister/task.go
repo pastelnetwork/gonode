@@ -216,7 +216,7 @@ func (task *SenseRegistrationTask) sendActionMetadata(ctx context.Context) error
 		OpenAPISubsetID: task.Request.OpenAPISubsetID,
 	}
 
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {
@@ -224,9 +224,9 @@ func (task *SenseRegistrationTask) sendActionMetadata(ctx context.Context) error
 			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
 		}
 		group.Go(func() (err error) {
-			err = senseRegNode.SendRegMetadata(ctx, regMetadata)
+			err = senseRegNode.SendRegMetadata(gctx, regMetadata)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", senseRegNode).Error("send registration metadata failed")
+				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("send registration metadata failed")
 				return errors.Errorf("node %s: %w", someNode.String(), err)
 			}
 
@@ -243,7 +243,7 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 
 	task.FingerprintsHandler.Clear()
 
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {
@@ -253,21 +253,21 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 
 		someNode := someNode
 		group.Go(func() (err error) {
-			compress, stateOk, err := senseRegNode.ProbeImage(ctx, file)
+			compress, stateOk, err := senseRegNode.ProbeImage(gctx, file)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", senseRegNode).Error("probe image failed")
+				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("probe image failed")
 				return errors.Errorf("node %s: probe failed :%w", someNode.String(), err)
 			}
 
 			someNode.SetRemoteState(stateOk)
 			if !stateOk {
-				log.WithContext(ctx).WithError(err).WithField("node", senseRegNode).Error("probe image failed")
+				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("probe image failed")
 				return errors.Errorf("remote node %s: indicated processing error", someNode.String())
 			}
 
 			fingerprintAndScores, fingerprintAndScoresBytes, signature, err := pastel.ExtractCompressSignedDDAndFingerprints(compress)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", someNode).Error("extract compressed signed DDAandFingerprints failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode).Error("extract compressed signed DDAandFingerprints failed")
 				return errors.Errorf("node %s: extract failed: %w", someNode.String(), err)
 			}
 			task.FingerprintsHandler.AddNew(fingerprintAndScores, fingerprintAndScoresBytes, signature, someNode.PastelID())
@@ -335,7 +335,7 @@ func (task *SenseRegistrationTask) uploadSignedTicket(ctx context.Context) error
 	}
 	ddFpFile := task.FingerprintsHandler.DDAndFpFile
 
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {
@@ -345,9 +345,9 @@ func (task *SenseRegistrationTask) uploadSignedTicket(ctx context.Context) error
 
 		someNode := someNode
 		group.Go(func() error {
-			ticketTxid, err := senseRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, ddFpFile)
+			ticketTxid, err := senseRegNode.SendSignedTicket(gctx, task.serializedTicket, task.creatorSignature, ddFpFile)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", senseRegNode).Error("send signed ticket failed")
+				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("send signed ticket failed")
 				return err
 			}
 			if !someNode.IsPrimary() && ticketTxid != "" && !task.skipPrimaryNodeTxidCheck() {
