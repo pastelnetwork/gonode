@@ -274,7 +274,7 @@ func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
 		Timestamp:       task.creationTimestamp,
 	}
 
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
@@ -282,9 +282,9 @@ func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
 			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 		group.Go(func() (err error) {
-			err = nftRegNode.SendRegMetadata(ctx, regMetadata)
+			err = nftRegNode.SendRegMetadata(gctx, regMetadata)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("send registration metadata failed")
+				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Error("send registration metadata failed")
 				return errors.Errorf("node %s: %w", someNode.String(), err)
 			}
 
@@ -302,7 +302,7 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 	task.FingerprintsHandler.Clear()
 
 	// Send image to supernodes for probing.
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
@@ -313,9 +313,9 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 		someNode := someNode
 		group.Go(func() (err error) {
 			// result is 4.B.5
-			compress, stateOk, err := nftRegNode.ProbeImage(ctx, file)
+			compress, stateOk, err := nftRegNode.ProbeImage(gctx, file)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("probe image failed")
+				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Error("probe image failed")
 				return errors.Errorf("node %s: probe failed :%w", someNode.String(), err)
 			}
 
@@ -367,7 +367,7 @@ func (task *NftRegistrationTask) uploadImage(ctx context.Context) error {
 
 // uploadImageWithThumbnail uploads the image with pqsignatured appended and thumbnail's coordinate to super nodes
 func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, file *files.File, thumbnail files.ThumbnailCoordinate) error {
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 
 	task.ImageHandler.ClearHashes()
 
@@ -380,9 +380,9 @@ func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, f
 
 		someNode := someNode
 		group.Go(func() error {
-			hash1, hash2, hash3, err := nftRegNode.UploadImageWithThumbnail(ctx, file, thumbnail)
+			hash1, hash2, hash3, err := nftRegNode.UploadImageWithThumbnail(gctx, file, thumbnail)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", someNode).Error("upload image with thumbnail failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode).Error("upload image with thumbnail failed")
 				return err
 			}
 			task.ImageHandler.AddNewHashes(hash1, hash2, hash3, someNode.PastelID())
@@ -478,7 +478,7 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 	var fees []int64
 	var feesMtx sync.Mutex
 
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
@@ -490,9 +490,9 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 		key1 := ticketID
 		key2 := uuid.New().String()
 		group.Go(func() error {
-			fee, err := nftRegNode.SendSignedTicket(ctx, task.serializedTicket, task.creatorSignature, key1, key2, rqidsFile, ddFpFile, encoderParams)
+			fee, err := nftRegNode.SendSignedTicket(gctx, task.serializedTicket, task.creatorSignature, key1, key2, rqidsFile, ddFpFile, encoderParams)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("send signed ticket failed")
+				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Error("send signed ticket failed")
 				return err
 			}
 
@@ -547,7 +547,7 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 		return fmt.Errorf("burn some coins: %w", err)
 	}
 
-	group, _ := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
@@ -556,9 +556,9 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 
 		someNode := someNode
 		group.Go(func() error {
-			ticketTxid, err := nftRegNode.SendPreBurntFeeTxid(ctx, burnTxid)
+			ticketTxid, err := nftRegNode.SendPreBurntFeeTxid(gctx, burnTxid)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("send pre-burnt fee txid failed")
+				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Error("send pre-burnt fee txid failed")
 				return err
 			}
 			if !someNode.IsPrimary() && ticketTxid != "" && !task.skipPrimaryNodeTxidCheck() {

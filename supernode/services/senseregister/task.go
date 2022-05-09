@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -170,6 +171,7 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if err = task.validateSignedTicketFromWN(ctx, ticket, creatorSignature, ddFpFile); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("validate signed ticket failure")
 			return nil
 		}
 
