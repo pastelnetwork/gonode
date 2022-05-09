@@ -10,7 +10,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/files"
-	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -61,10 +60,6 @@ func (service *SuperNodeService) RunHelper(ctx context.Context, pastelID string,
 			return nil
 		case <-time.After(5 * time.Second):
 			if err := service.run(ctx, pastelID, prefix); err != nil {
-				if utils.IsContextErr(err) {
-					return err
-				}
-
 				service.Worker = task.NewWorker()
 				log.WithContext(ctx).WithError(err).Error("Service run failed, retrying")
 			} else {
