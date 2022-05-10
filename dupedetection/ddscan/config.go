@@ -8,9 +8,9 @@ const (
 	// DefaultOutputDir that dd-service uses to put new fingerprints
 	DefaultOutputDir = "output_files"
 	// DefaultDataFile that dd-service uses to store fingerprints
-	DefaultDataFile = "dupe_detection_image_fingerprint_database.sqlite"
+	DefaultDataFile = "registered_image_fingerprints_db.sqlite"
 	// DefaultSupportDir that dd-service uses for support files
-	// Should be ~/pastel_dupe_detection_service/support_files/dupe_detection_image_fingerprint_database.sqlite
+	// Should be ~/pastel_dupe_detection_service/support_files/registered_image_fingerprints_db.sqlite
 	DefaultSupportDir = "support_files"
 )
 
