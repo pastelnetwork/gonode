@@ -422,7 +422,9 @@ func (s *service) runTask(ctx context.Context) error {
 		if existsInDatabase {
 			// log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
 			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
-			lastKnownGoodHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
+			if nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum > lastKnownGoodHeight {
+				lastKnownGoodHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
+			}
 			continue
 		}
 		if err != nil {
@@ -519,7 +521,9 @@ func (s *service) runTask(ctx context.Context) error {
 		if existsInDatabase {
 			// log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
 			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
-			lastKnownGoodHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
+			if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum > lastKnownGoodHeight {
+				lastKnownGoodHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
+			}
 			continue
 		}
 		if err != nil {
