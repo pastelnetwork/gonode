@@ -381,6 +381,7 @@ func (s *service) runTask(ctx context.Context) error {
 
 	//track latest block height, but don't set it until we check all the nft reg tickets and the sense tickets.
 	latestBlockHeight := s.latestBlockHeight
+	lastKnownGoodHeight := s.latestBlockHeight
 
 	//loop through nft tickets and store newly found nft reg tickets
 	for i := 0; i < len(nftRegTickets); i++ {
@@ -420,7 +421,8 @@ func (s *service) runTask(ctx context.Context) error {
 		existsInDatabase, err := s.checkIfFingerprintExistsInDatabase(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
 			// log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
-			latestBlockHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
+			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
+			lastKnownGoodHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
 			continue
 		}
 		if err != nil {
@@ -516,7 +518,8 @@ func (s *service) runTask(ctx context.Context) error {
 		existsInDatabase, err := s.checkIfFingerprintExistsInDatabase(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
 			// log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
-			latestBlockHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
+			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
+			lastKnownGoodHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
 			continue
 		}
 		if err != nil {
@@ -576,9 +579,13 @@ func (s *service) runTask(ctx context.Context) error {
 			latestBlockHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
 		}
 	}
+	if lastKnownGoodHeight > latestBlockHeight {
+		s.latestBlockHeight = lastKnownGoodHeight
+	} else {
+		s.latestBlockHeight = latestBlockHeight
+	}
 
-	s.latestBlockHeight = latestBlockHeight
-	log.DD().WithContext(ctx).WithField("latest blockheight", latestBlockHeight).Debugf("dd-scan successfully scanned to latest block height")
+	log.DD().WithContext(ctx).WithField("latest blockheight", s.latestBlockHeight).Debugf("dd-scan successfully scanned to latest block height")
 
 	return nil
 }
