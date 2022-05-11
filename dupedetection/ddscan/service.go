@@ -420,6 +420,7 @@ func (s *service) runTask(ctx context.Context) error {
 		existsInDatabase, err := s.checkIfFingerprintExistsInDatabase(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
 			// log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
+			latestBlockHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
 			continue
 		}
 		if err != nil {
@@ -515,6 +516,7 @@ func (s *service) runTask(ctx context.Context) error {
 		existsInDatabase, err := s.checkIfFingerprintExistsInDatabase(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
 			// log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
+			latestBlockHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
 			continue
 		}
 		if err != nil {
@@ -576,6 +578,7 @@ func (s *service) runTask(ctx context.Context) error {
 	}
 
 	s.latestBlockHeight = latestBlockHeight
+	log.DD().WithContext(ctx).WithField("latest blockheight", latestBlockHeight).Debugf("dd-scan successfully scanned to latest block height")
 
 	return nil
 }
