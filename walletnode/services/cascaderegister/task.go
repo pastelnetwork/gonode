@@ -265,6 +265,7 @@ func (task *CascadeRegistrationTask) createCascadeTicket(_ context.Context) erro
 		BlockHash:  task.creatorBlockHash,
 		ActionType: pastel.ActionTypeCascade,
 		APITicketData: &pastel.APICascadeTicket{
+			FileName: task.Request.FileName,
 			DataHash: task.dataHash,
 			RQIc:     task.RqHandler.RQIDsIc,
 			RQMax:    task.service.config.RQIDsMax,
