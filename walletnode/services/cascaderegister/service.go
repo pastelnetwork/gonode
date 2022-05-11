@@ -86,6 +86,7 @@ func (service *CascadeRegistrationService) AddTask(p *cascade.StartProcessingPay
 		return "", errors.Errorf("get image data: %v", err)
 	}
 	request.Image = file
+	request.FileName = string(filename)
 
 	task := NewCascadeRegisterTask(service, request)
 	service.Worker.AddTask(task)

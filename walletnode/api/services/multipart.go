@@ -124,9 +124,9 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 			}
 		}
 
-		//service.register.Storage.AddFile(image)
-		filename = image.Name()
-		log.WithContext(ctx).Debugf("Upload image new name %q", filename)
+		if err := storage.Update(image.Name(), filename, image); err != nil {
+			return "", "BadRequest", errors.Errorf("could not update file name: %w", err)
+		}
 
 		fl, err := image.Create()
 		if err != nil {
