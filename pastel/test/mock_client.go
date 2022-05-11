@@ -203,7 +203,7 @@ func (client *Client) ListenOnRegTickets(ticket pastel.RegTickets, err error) *C
 	return client
 }
 
-// ListenOnRegTickets listening RegTickets and returns ticket and error from args
+// ListenOnRegTicketsFromBlockHeight listening RegTickets and returns ticket and error from args
 func (client *Client) ListenOnRegTicketsFromBlockHeight(ticket pastel.RegTickets, blockheight int, err error) *Client {
 	client.On(RegTicketsMethod, mock.Anything).Return(ticket, err)
 	return client
