@@ -296,15 +296,14 @@ func (service *registerNft) contextWithLogPrefix(ctx context.Context) context.Co
 }
 
 // SendSignedTicket
-func (service *registerNft) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids []byte, ddFp []byte, encoderParams rqnode.EncoderParameters) (int64, error) {
+func (service *registerNft) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, label string, rqids []byte, ddFp []byte, encoderParams rqnode.EncoderParameters) (int64, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := pb.SendSignedNFTTicketRequest{
 		NftTicket:        ticket,
 		CreatorSignature: signature,
-		Key1:             key1,
-		Key2:             key2,
+		Label:            label,
 		EncodeParameters: &pb.EncoderParameters{
 			Oti: encoderParams.Oti,
 		},

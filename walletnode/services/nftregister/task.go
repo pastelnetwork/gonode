@@ -2,7 +2,6 @@ package nftregister
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"strconv"
@@ -486,11 +485,10 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 			return errors.Errorf("node %s is not NftRegistrationNode", someNode.String())
 		}
 
-		ticketID := fmt.Sprintf("%s.%d.%s", task.Request.CreatorPastelID, task.creatorBlockHeight, hex.EncodeToString(task.dataHash))
-		key1 := ticketID
-		key2 := uuid.New().String()
+		//ticketID := fmt.Sprintf("%s.%d.%s", task.Request.CreatorPastelID, task.creatorBlockHeight, hex.EncodeToString(task.dataHash))
+		label := uuid.New().String()
 		group.Go(func() error {
-			fee, err := nftRegNode.SendSignedTicket(gctx, task.serializedTicket, task.creatorSignature, key1, key2, rqidsFile, ddFpFile, encoderParams)
+			fee, err := nftRegNode.SendSignedTicket(gctx, task.serializedTicket, task.creatorSignature, label, rqidsFile, ddFpFile, encoderParams)
 			if err != nil {
 				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Error("send signed ticket failed")
 				return err

@@ -42,11 +42,10 @@ service RegisterNft {
 message SendSignedNFTTicketRequest {
     bytes nft_ticket = 1;
     bytes creator_signature = 2;
-    string key1 = 3;
-    string key2 = 4;
+    string label = 3;
     EncoderParameters encode_parameters = 5;
-    bytes dd_fp_files = 7;
-    bytes rq_files = 8;
+    bytes dd_fp_files = 6;
+    bytes rq_files = 7;
 }
 
 message SendSignedNFTTicketReply {

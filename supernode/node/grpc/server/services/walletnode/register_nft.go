@@ -397,7 +397,7 @@ func (service *RegisterNft) SendSignedNFTTicket(ctx context.Context, req *pb.Sen
 		return nil, errors.Errorf("get task from metada %w", err)
 	}
 
-	registrationFee, err := task.GetNftRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.RqFiles, req.DdFpFiles, req.EncodeParameters.Oti)
+	registrationFee, err := task.GetNftRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Label, req.RqFiles, req.DdFpFiles, req.EncodeParameters.Oti)
 	if err != nil {
 		return nil, errors.Errorf("get total storage fee %w", err)
 	}

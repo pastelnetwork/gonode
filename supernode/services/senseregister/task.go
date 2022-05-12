@@ -2,8 +2,6 @@ package senseregister
 
 import (
 	"context"
-	"encoding/hex"
-	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -280,7 +278,7 @@ func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, i
 func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
-	ticketID := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, hex.EncodeToString(task.dataHash))
+	//ticketID := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, hex.EncodeToString(task.dataHash))
 
 	req := pastel.RegisterActionRequest{
 		Ticket: &pastel.ActionTicket{
@@ -308,8 +306,7 @@ func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, 
 		Mn1PastelID: task.config.PastelID,
 		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
-		Key1:        ticketID,
-		Key2:        task.ActionTicketRegMetadata.BurnTxID,
+		Label:       task.ActionTicketRegMetadata.BurnTxID,
 	}
 
 	nftRegTxid, err := task.PastelClient.RegisterActionTicket(ctx, req)
