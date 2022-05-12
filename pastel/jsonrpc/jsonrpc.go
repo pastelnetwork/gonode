@@ -351,7 +351,7 @@ func (client *rpcClient) CallRaw(request *RPCRequest) (*RPCResponse, error) {
 func (client *rpcClient) CallForWithContext(ctx context.Context, out interface{}, method string, params ...interface{}) error {
 	rpcResponse, err := client.CallWithContext(ctx, method, params...)
 
-	//log.WithContext(ctx).Debugf("%v", rpcResponse)
+	// log.WithContext(ctx).Debugf("-----GOT RPC RESPONSE FOR CALL: %+v\n", rpcResponse)
 	if err != nil {
 		return err
 	}
@@ -360,7 +360,9 @@ func (client *rpcClient) CallForWithContext(ctx context.Context, out interface{}
 		return fmt.Errorf("code: %d, message: %s", rpcResponse.Error.Code, rpcResponse.Error.Message)
 	}
 
-	return rpcResponse.GetObject(out)
+	err = rpcResponse.GetObject(out)
+	// log.WithContext(ctx).Debugf("-----CONVERTED RESPONSE FOR CALL: %+v\n", out)
+	return err
 }
 
 func (client *rpcClient) CallFor(out interface{}, method string, params ...interface{}) error {

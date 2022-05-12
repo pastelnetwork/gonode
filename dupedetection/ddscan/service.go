@@ -114,7 +114,7 @@ func (s *service) run(ctx context.Context) error {
 			if !s.isMasterNodeSynced {
 				if err := s.checkSynchronized(ctx); err != nil {
 					log.DD().WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
-					continue
+					// continue
 				}
 
 				log.DD().WithContext(ctx).Debug("Done for waiting synchronization status")
@@ -320,7 +320,7 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 	}
 
 	executeResult, err := s.db.Execute(req, false)
-	log.WithContext(ctx).WithField("execute result", executeResult).Debug("Execute result of adding new fp")
+	log.DD().WithContext(ctx).WithField("execute result", executeResult).Debug("Execute result of adding new fp")
 	if err != nil || executeResult[0].Error != "" {
 		log.DD().WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
 		return err
@@ -334,13 +334,13 @@ func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash stri
 	if err != nil {
 		return nil, errors.Errorf("Error finding dd and fp file: %w", err)
 	}
+	//log.DD().WithContext(ctx).WithField("rawFile:", rawFile).Debug("Got file from p2p")
+	// dec, err := utils.B64Decode(rawFile)
+	// if err != nil {
+	// 	return nil, errors.Errorf("decode data: %w", err)
+	// }
 
-	dec, err := utils.B64Decode(rawFile)
-	if err != nil {
-		return nil, errors.Errorf("decode data: %w", err)
-	}
-
-	decData, err := zstd.Decompress(nil, dec)
+	decData, err := zstd.Decompress(nil, rawFile)
 	if err != nil {
 		return nil, errors.Errorf("decompress: %w", err)
 	}
@@ -381,6 +381,7 @@ func (s *service) runTask(ctx context.Context) error {
 
 	//track latest block height, but don't set it until we check all the nft reg tickets and the sense tickets.
 	latestBlockHeight := s.latestBlockHeight
+	lastKnownGoodHeight := s.latestBlockHeight
 
 	//loop through nft tickets and store newly found nft reg tickets
 	for i := 0; i < len(nftRegTickets); i++ {
@@ -388,11 +389,12 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
-		_, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
+		decTicket, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
 		if err != nil {
 			log.DD().WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
+		nftRegTickets[i].RegTicketData.NFTTicketData = *decTicket
 
 		ddFPIDs := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
 
@@ -401,43 +403,50 @@ func (s *service) runTask(ctx context.Context) error {
 		for _, id := range ddFPIDs {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
 			if err != nil {
-				break
+				//probably too verbose even for debug.
+				//log.DD().WithContext(ctx).WithField("error", err).WithField("id", id).Debug("Could not get the fingerprint for this file hash")
+				continue
 			}
+			break
 		}
 		if ddAndFpFromTicket == nil {
-			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
+			log.DD().WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
 			continue
 		}
 		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
-			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT Reg ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
+			log.DD().WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT Reg ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
 
 		existsInDatabase, err := s.checkIfFingerprintExistsInDatabase(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
-			// log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
+			// log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
+			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
+			if nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum > lastKnownGoodHeight {
+				lastKnownGoodHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
+			}
 			continue
 		}
 		if err != nil {
-			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Error("Could not properly query the dd database for this hash")
+			log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Error("Could not properly query the dd database for this hash")
 			continue
 		}
 
 		//make sure ImageFingerprintOfCnadidateImageFile exists.
 		// this could fail if the ticket is an older version of the DDAndFingerprints struct, so we will continue to next fingerprint
 		if ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile == nil {
-			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT Reg ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
+			log.DD().WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT Reg ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
 		if len(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile) < 1 {
-			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT Reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
+			log.DD().WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT Reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
 			continue
 		}
 
 		// thumbnailHash := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash
 		// thumbnail, err := s.p2pClient.Retrieve(ctx, string(thumbnailHash))
 		// if err != nil {
-		// 	log.WithContext(ctx).WithField("thumbnailHash", nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash).Warnf("Could not get the thumbnail with this hash for nftticketdata")
+		// 	log.DD().WithContext(ctx).WithField("thumbnailHash", nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash).Warnf("Could not get the thumbnail with this hash for nftticketdata")
 		// 	continue
 		// }
 
@@ -467,16 +476,24 @@ func (s *service) runTask(ctx context.Context) error {
 		return nil
 	}
 	for i := 0; i < len(senseRegTickets); i++ {
-		if senseRegTickets[i].ActionTicketData.BlockNum <= s.latestBlockHeight {
-			continue
-		}
-		if senseRegTickets[i].Type != "sense-reg" {
+		if senseRegTickets[i].ActionTicketData.CalledAt <= s.latestBlockHeight {
 			continue
 		}
 
-		senseTicket, err := senseRegTickets[i].ActionTicketData.APISenseTicket()
+		decTicket, err := pastel.DecodeActionTicket(senseRegTickets[i].ActionTicketData.ActionTicket)
 		if err != nil {
-			log.WithContext(ctx).WithField("senseRegTickets.ActionTicketData", senseRegTickets[i].ActionTicketData).Warnf("Could not get sense ticket for action ticket data")
+			log.DD().WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+			continue
+		}
+		senseRegTickets[i].ActionTicketData.ActionTicketData = *decTicket
+
+		if senseRegTickets[i].ActionTicketData.ActionTicketData.ActionType != "sense" {
+			continue
+		}
+
+		senseTicket, err := senseRegTickets[i].ActionTicketData.ActionTicketData.APISenseTicket()
+		if err != nil {
+			log.DD().WithContext(ctx).WithField("senseRegTickets.ActionTicketData", senseRegTickets[i].ActionTicketData).Warnf("Could not get sense ticket for action ticket data")
 			continue
 		}
 
@@ -485,25 +502,32 @@ func (s *service) runTask(ctx context.Context) error {
 		for _, id := range senseTicket.DDAndFingerprintsIDs {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
 			if err != nil {
-				break
+				//probably too verbose even for debug.
+				//log.DD().WithContext(ctx).WithField("error", err).Debug("Could not get the fingerprint for this file hash")
+				continue
 			}
+			break
 		}
 		if ddAndFpFromTicket == nil {
-			log.WithContext(ctx).WithField("senseTicket", senseTicket).Warnf("None of the dd and fp id files for thissense reg ticket could be properly unmarshalled")
+			log.DD().WithContext(ctx).WithField("senseTicket", senseTicket).Warnf("None of the dd and fp id files for this sense reg ticket could be properly unmarshalled")
 			continue
 		}
 		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
-			log.WithContext(ctx).WithField("senseTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT sense ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
+			log.DD().WithContext(ctx).WithField("senseTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("This NFT sense ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
 
 		existsInDatabase, err := s.checkIfFingerprintExistsInDatabase(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
-			// log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
+			// log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
+			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
+			if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum > lastKnownGoodHeight {
+				lastKnownGoodHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
+			}
 			continue
 		}
 		if err != nil {
-			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Error("Could not properly query the dd database for this hash")
+			log.DD().WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Error("Could not properly query the dd database for this hash")
 			continue
 		}
 
@@ -511,14 +535,14 @@ func (s *service) runTask(ctx context.Context) error {
 		//Below code might be kept in case we want to add the ability to get thumbnails to sense
 		// imgFile, err := s.p2pClient.Retrieve(ctx, string(imgFileHash))
 		// if err != nil {
-		// 	log.WithContext(ctx).WithField("imgFileHash", imgFileHash).Warnf("Could not get the image with this hash for senseTicket")
+		// 	log.DD().WithContext(ctx).WithField("imgFileHash", imgFileHash).Warnf("Could not get the image with this hash for senseTicket")
 		// 	continue
 		// }
 
 		// imgBuffer := bytes.NewBuffer(imgFile)
 		// src, err := imaging.Decode(imgBuffer)
 		// if err != nil {
-		// 	log.WithContext(ctx).WithField("imgFileHash", imgFileHash).Warnf("Could not open bytes as image")
+		// 	log.DD().WithContext(ctx).WithField("imgFileHash", imgFileHash).Warnf("Could not open bytes as image")
 		// 	continue
 		// }
 
@@ -527,7 +551,7 @@ func (s *service) runTask(ctx context.Context) error {
 		// var thumbByteArr bytes.Buffer
 
 		// if err := webp.Encode(&thumbByteArr, dstImage, &webp.Options{Quality: 25}); err != nil {
-		// 	log.WithContext(ctx).WithField("imgFileHash", imgFileHash).Warnf("Failed to encode thumbnail image")
+		// 	log.DD().WithContext(ctx).WithField("imgFileHash", imgFileHash).Warnf("Failed to encode thumbnail image")
 		// 	continue
 		// }
 
@@ -536,11 +560,11 @@ func (s *service) runTask(ctx context.Context) error {
 		//make sure ImageFingerprintOfCnadidateImageFile exists.
 		// this could fail if the ticket is an older version of the DDAndFingerprints struct, so we will continue to next fingerprint
 		if ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile == nil {
-			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Warnf("This sense ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
+			log.DD().WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Warnf("This sense ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
 		if len(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile) < 1 {
-			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Warnf("This senseg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
+			log.DD().WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Warnf("This sense reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
 			continue
 		}
 
@@ -550,17 +574,22 @@ func (s *service) runTask(ctx context.Context) error {
 			DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
 			PathToArtImageFile:                 "",
 			ImageThumbnailAsBase64:             "",
-			RequestType:                        senseRegTickets[i].Type,
+			RequestType:                        senseRegTickets[i].ActionTicketData.Type,
 			IDString:                           "",
 		}); err != nil {
 			log.DD().WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
-		if senseRegTickets[i].ActionTicketData.BlockNum > latestBlockHeight {
-			latestBlockHeight = senseRegTickets[i].ActionTicketData.BlockNum
+		if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum > latestBlockHeight {
+			latestBlockHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
 		}
 	}
+	if lastKnownGoodHeight > latestBlockHeight {
+		s.latestBlockHeight = lastKnownGoodHeight
+	} else {
+		s.latestBlockHeight = latestBlockHeight
+	}
 
-	s.latestBlockHeight = latestBlockHeight
+	log.DD().WithContext(ctx).WithField("latest blockheight", s.latestBlockHeight).Debugf("dd-scan successfully scanned to latest block height")
 
 	return nil
 }
@@ -615,7 +644,7 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client) (Service, error) {
 	file := config.DataFile
 	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
-		tmpfile, err := ioutil.TempFile("", "dupe_detection_image_fingerprint_database.sqlite")
+		tmpfile, err := ioutil.TempFile("", "registered_image_fingerprints_db.sqlite")
 		if err != nil {
 			panic(err.Error())
 		}

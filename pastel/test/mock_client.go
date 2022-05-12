@@ -33,6 +33,9 @@ const (
 	// RegTicketsMethod represent RegTickets name method
 	RegTicketsMethod = "RegTickets"
 
+	// RegTicketsFromBlockHeightMethod represent RegTicketsFromBlockHeight name method
+	RegTicketsFromBlockHeightMethod = "RegTicketsFromBlockHeight"
+
 	// GetBlockVerbose1Method represent GetBlockVerbose1 method
 	GetBlockVerbose1Method = "GetBlockVerbose1"
 
@@ -197,6 +200,12 @@ func (client *Client) ListenOnRegTicket(id string, ticket pastel.RegTicket, err 
 // ListenOnRegTickets listening RegTickets and returns ticket and error from args
 func (client *Client) ListenOnRegTickets(ticket pastel.RegTickets, err error) *Client {
 	client.On(RegTicketsMethod, mock.Anything).Return(ticket, err)
+	return client
+}
+
+// ListenOnRegTicketsFromBlockHeight listening RegTickets and returns ticket and error from args
+func (client *Client) ListenOnRegTicketsFromBlockHeight(ticket pastel.RegTickets, blockheight int, err error) *Client {
+	client.On(RegTicketsMethod, blockheight, mock.Anything).Return(ticket, err)
 	return client
 }
 
