@@ -297,8 +297,7 @@ func getRegTickets() map[string][]byte {
 		ActionTicketData: pastel.ActionTicketData{
 			Type:       "action-reg",
 			ActionType: "cascade",
-			Key1:       "key1",
-			Key2:       "key2",
+			Label:      "label",
 			StorageFee: 5,
 			ActionTicketData: pastel.ActionTicket{
 				Caller:     "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
@@ -332,8 +331,7 @@ func getRegTickets() map[string][]byte {
 		ActionTicketData: pastel.ActionTicketData{
 			Type:       "action-reg",
 			ActionType: "sense",
-			Key1:       "key1",
-			Key2:       "key2",
+			Label:      "label",
 			StorageFee: 5,
 			ActionTicketData: pastel.ActionTicket{
 				Caller:     "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",

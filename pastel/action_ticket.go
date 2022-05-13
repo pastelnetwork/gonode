@@ -35,8 +35,7 @@ type ActionTicketData struct {
 	Version    int                    `json:"version"`
 	ActionType string                 `json:"action_type"`
 	Signatures ActionTicketSignatures `json:"signatures"`
-	Key1       string                 `json:"key1"`
-	Key2       string                 `json:"key2"`
+	Label      string                 `json:"label"`
 	// is used to check if the SNs that created this ticket was indeed top SN
 	// when that action call was made
 	CalledAt int `json:"called_at"` // block at which action was requested,
@@ -189,14 +188,13 @@ func EncodeActionSignatures(signatures ActionTicketSignatures) ([]byte, error) {
 }
 
 // RegisterActionRequest represents request to register an action ticket
-// tickets register action "action_ticket" "{signatures}" "pastelid of MN 1" "passphrase" "key1" "key2" fee
+// tickets register action "action_ticket" "{signatures}" "pastelid of MN 1" "passphrase" "label" fee
 type RegisterActionRequest struct {
 	Ticket      *ActionTicket
 	Signatures  *ActionTicketSignatures
 	Mn1PastelID string
 	Passphrase  string
-	Key1        string
-	Key2        string
+	Label       string
 	Fee         int64
 }
 

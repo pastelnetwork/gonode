@@ -986,7 +986,7 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 			assert.Nil(t, err)
 
 			_, err = task.GetNftRegistrationFee(context.Background(), artTicketBytes,
-				[]byte{}, "", "", []byte{}, []byte{}, []byte{})
+				[]byte{}, "", []byte{}, []byte{}, []byte{})
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

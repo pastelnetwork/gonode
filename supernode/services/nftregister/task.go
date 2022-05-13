@@ -39,7 +39,6 @@ type NftRegistrationTask struct {
 	ownSignature []byte
 
 	creatorSignature []byte
-	key1             string
 	burnTXID         string
 	registrationFee  int64
 
@@ -118,7 +117,7 @@ func (task *NftRegistrationTask) validateRqIDsAndDdFpIds(ctx context.Context, rq
 // Step 12. ALL SuperNode - Calculate final Registration Fee
 //  Step 11.B.3 Validate dd_and_fingerprints file signature using PastelID’s of all 3 MNs -- Does this exist?
 func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
-	ticket []byte, creatorSignature []byte, key1 string, key2 string,
+	ticket []byte, creatorSignature []byte, label string,
 	rqidFile []byte, ddFpFile []byte, oti []byte,
 ) (int64, error) {
 	var err error
@@ -128,7 +127,6 @@ func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 
 	task.Oti = oti
 	task.creatorSignature = creatorSignature
-	task.key1 = key1
 	//task.key2 = key2
 
 	<-task.NewAction(func(ctx context.Context) error {
@@ -178,8 +176,7 @@ func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 			},
 			Mn1PastelID: task.NftRegistrationService.config.PastelID, // all ID has same length, so can use any id here
 			Passphrase:  task.config.PassPhrase,
-			Key1:        key1,
-			Key2:        key2,
+			Label:       label,
 			Fee:         0, // fake data
 			ImgSizeInMb: int64(task.imageSizeBytes) / (1024 * 1024),
 		}
@@ -379,9 +376,8 @@ func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error
 		Mn1PastelID: task.config.PastelID,
 		Passphrase:  task.config.PassPhrase,
 		// TODO: fix this when how to get key1 and key2 are finalized
-		Key1: task.key1,
-		Key2: task.burnTXID,
-		Fee:  task.registrationFee,
+		Label: task.burnTXID,
+		Fee:   task.registrationFee,
 	}
 
 	nftRegTxid, err := task.PastelClient.RegisterNFTTicket(ctx, req)

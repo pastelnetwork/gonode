@@ -34,8 +34,7 @@ type RegTicketData struct {
 	Type           string              `json:"type"`
 	Version        int                 `json:"version"`
 	Signatures     RegTicketSignatures `json:"signatures"`
-	Key1           string              `json:"key1"`
-	Key2           string              `json:"key2"`
+	Label          string              `json:"label"`
 	CreatorHeight  int                 `json:"creator_height"`
 	TotalCopies    int                 `json:"total_copies"`
 	Royalty        float64             `json:"royalty"`
@@ -95,8 +94,7 @@ type GetRegisterNFTFeeRequest struct {
 	Signatures  *RegTicketSignatures
 	Mn1PastelID string
 	Passphrase  string
-	Key1        string
-	Key2        string
+	Label       string
 	Fee         int64
 	ImgSizeInMb int64
 }
@@ -185,14 +183,13 @@ type RegTicketSignatures struct {
 }
 
 // RegisterNFTRequest represents request to register an art
-// "ticket" "{signatures}" "jXYqZNPj21RVnwxnEJ654wEdzi7GZTZ5LAdiotBmPrF7pDMkpX1JegDMQZX55WZLkvy9fxNpZcbBJuE8QYUqBF" "passphrase", "key1", "key2", 100)")
+// "ticket" "{signatures}" "jXYqZNPj21RVnwxnEJ654wEdzi7GZTZ5LAdiotBmPrF7pDMkpX1JegDMQZX55WZLkvy9fxNpZcbBJuE8QYUqBF" "passphrase", "label", 100)")
 type RegisterNFTRequest struct {
 	Ticket      *NFTTicket
 	Signatures  *RegTicketSignatures
 	Mn1PastelID string
 	Passphrase  string
-	Key1        string
-	Key2        string
+	Label       string
 	Fee         int64
 }
 
