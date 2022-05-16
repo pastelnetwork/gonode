@@ -19,7 +19,14 @@ const (
 	SignAlgorithmED448 = "ed448"
 	// SignAlgorithmLegRoast is Efficient post-quantum signatures algorithm
 	SignAlgorithmLegRoast = "legroast"
+	// TicketTypeInactive is inactive filter for tickets
+	TicketTypeInactive RegTicketsFilter = "inactive"
+	// TicketTypeAll is all filter for tickets
+	TicketTypeAll RegTicketsFilter = "all"
 )
+
+// RegTicketsFilter is filter for retrieving action & nft registration tickets
+type RegTicketsFilter string
 
 type client struct {
 	jsonrpc.RPCClient
@@ -268,11 +275,11 @@ func (client *client) RegTickets(ctx context.Context) (RegTickets, error) {
 	return tickets, nil
 }
 
-// RegTickets implements pastel.Client.RegTicketsFromBlockHeight
-func (client *client) RegTicketsFromBlockHeight(ctx context.Context, blockheight int32) (RegTickets, error) {
+// RegTicketsFromBlockHeight implements pastel.Client.RegTicketsFromBlockHeight
+func (client *client) RegTicketsFromBlockHeight(ctx context.Context, filter RegTicketsFilter, blockheight uint64) (RegTickets, error) {
 	tickets := RegTickets{}
 
-	if err := client.callFor(ctx, &tickets, "tickets", "list", "nft", "all", blockheight); err != nil {
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "nft", string(filter), blockheight); err != nil {
 		return nil, errors.Errorf("failed to get registration tickets with block height: %w", err)
 	}
 
@@ -554,10 +561,10 @@ func (client *client) ActionTickets(ctx context.Context) (ActionTicketDatas, err
 }
 
 // ActionTicketsFromBlockHeight implements pastel.Client.ActionTicketsFromBlockHeight
-func (client *client) ActionTicketsFromBlockHeight(ctx context.Context, blockheight int32) (ActionTicketDatas, error) {
+func (client *client) ActionTicketsFromBlockHeight(ctx context.Context, filter RegTicketsFilter, blockheight uint64) (ActionTicketDatas, error) {
 	tickets := ActionTicketDatas{}
 
-	if err := client.callFor(ctx, &tickets, "tickets", "list", "action", "all", blockheight); err != nil {
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "action", string(filter), blockheight); err != nil {
 		return nil, errors.Errorf("failed to get action tickets: %w", err)
 	}
 
