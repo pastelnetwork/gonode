@@ -10,6 +10,7 @@ require (
 	github.com/kolesa-team/go-webp v1.0.1
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/dupedetection v0.0.0
+	github.com/pastelnetwork/gonode/hermes v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/metadb v0.0.0
 	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/p2p v0.0.0
@@ -22,7 +23,7 @@ require (
 	google.golang.org/grpc v1.43.0
 )
 
-require github.com/chai2010/webp v1.1.1 // indirect
+require github.com/rogpeppe/go-internal v1.8.1 // indirect
 
 require (
 	github.com/anacrolix/missinggo v1.2.1 // indirect
@@ -42,7 +43,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gofuzz v1.2.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/go-msgpack v0.5.5 // indirect
@@ -101,6 +102,7 @@ replace (
 	github.com/kolesa-team/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/dupedetection => ../dupedetection
+	github.com/pastelnetwork/gonode/hermes => ../hermes
 	github.com/pastelnetwork/gonode/metadb => ../metadb
 	github.com/pastelnetwork/gonode/mixins => ../mixins
 	github.com/pastelnetwork/gonode/p2p => ../p2p

@@ -21,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/dupedetection/ddscan"
+	"github.com/pastelnetwork/gonode/hermes"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
@@ -247,6 +248,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		return fmt.Errorf("start ddscan: %w", err)
 	}
 
+	hermes := hermes.NewService(config.Hermes, pastelClient, p2p)
 	// // ----Userdata Services----
 	// userdataNodeClient := client.New(pastelClient, secInfo)
 	// userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
@@ -279,5 +281,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 	// return runServices(ctx, metadb, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, database, userdataProcess, statsMngr, debugSerivce)
-	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, ddScan, statsMngr, debugSerivce, storageChallenger)
+	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, ddScan, statsMngr, debugSerivce, storageChallenger, hermes)
 }

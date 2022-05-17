@@ -83,6 +83,9 @@ const (
 
 	// ActivateActionTicketMethod represents GetActionFee method
 	ActivateActionTicketMethod = "ActivateActionTicket"
+
+	// ActionTicketsFromBlockHeightMethod represents ActionTicketsFromBlockHeightMethod
+	ActionTicketsFromBlockHeightMethod = "ActionTicketsFromBlockHeight"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -204,8 +207,14 @@ func (client *Client) ListenOnRegTickets(ticket pastel.RegTickets, err error) *C
 }
 
 // ListenOnRegTicketsFromBlockHeight listening RegTickets and returns ticket and error from args
-func (client *Client) ListenOnRegTicketsFromBlockHeight(ticket pastel.RegTickets, blockheight int, err error) *Client {
-	client.On(RegTicketsMethod, blockheight, mock.Anything).Return(ticket, err)
+func (client *Client) ListenOnRegTicketsFromBlockHeight(ticket pastel.RegTickets, blockheight uint64, err error) *Client {
+	client.On(RegTicketsFromBlockHeightMethod, mock.Anything, mock.Anything, blockheight).Return(ticket, err)
+	return client
+}
+
+// ListenOnActionTicketsFromBlockHeight listening Action Tickets and returns ticket and error from args
+func (client *Client) ListenOnActionTicketsFromBlockHeight(ticket pastel.ActionTicketDatas, blockheight uint64, err error) *Client {
+	client.On(ActionTicketsFromBlockHeightMethod, mock.Anything, mock.Anything, blockheight).Return(ticket, err)
 	return client
 }
 

@@ -2,6 +2,7 @@ package hermes
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -17,10 +18,11 @@ const (
 
 // Service represents hermes service
 type Service struct {
-	pastelClient pastel.Client
-	p2pClient    p2p.Client
-	config       *Config
-	currentBlock uint64
+	pastelClient       pastel.Client
+	p2pClient          p2p.Client
+	config             *Config
+	currentNFTBlock    int
+	currentActionBlock int
 }
 
 // Run starts Hermes service
@@ -49,41 +51,60 @@ func (service *Service) run(ctx context.Context) error {
 	}
 }
 
-func (service *Service) cleanupInactiveTickets(ctx context.Context) (err error) {
-	err = service.cleanupRegTickets(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("cleanupRegTickets failure")
+func (service *Service) cleanupInactiveTickets(ctx context.Context) error {
+	errReg := service.cleanupRegTickets(ctx)
+	if errReg != nil {
+		log.WithContext(ctx).WithError(errReg).Error("cleanupRegTickets failure")
 	}
 
-	err = service.cleanupActionTickets(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("cleanupActionTickets failure")
+	actionErr := service.cleanupActionTickets(ctx)
+	if actionErr != nil {
+		log.WithContext(ctx).WithError(actionErr).Error("cleanupActionTickets failure")
 	}
 
-	return err
+	if errReg != nil {
+		return errReg
+	} else if actionErr != nil {
+		return actionErr
+	}
+
+	return nil
 }
 
 func (service *Service) cleanupActionTickets(ctx context.Context) error {
-	actionRegTickets, err := service.pastelClient.ActionTicketsFromBlockHeight(ctx, pastel.TicketTypeInactive, service.currentBlock)
+	actionRegTickets, err := service.pastelClient.ActionTicketsFromBlockHeight(ctx, pastel.TicketTypeInactive, uint64(service.currentActionBlock))
 	if err != nil {
 		return errors.Errorf("get ActionTickets: %w", err)
 	}
 
+	log.WithContext(ctx).WithField("action_tickets_count", len(actionRegTickets)).
+		WithField("block-height", service.currentNFTBlock).Info("Received action tickets for cleanup")
+
+	sort.Slice(actionRegTickets, func(i, j int) bool {
+		return actionRegTickets[i].ActionTicketData.CalledAt < actionRegTickets[j].ActionTicketData.CalledAt
+	})
+
 	//loop through nft tickets and store newly found nft reg tickets
 	for i := 0; i < len(actionRegTickets); i++ {
-		if uint64(actionRegTickets[i].ActionTicketData.CalledAt) <= service.currentBlock {
+		if actionRegTickets[i].ActionTicketData.CalledAt <= service.currentActionBlock {
 			continue
 		}
 
 		decTicket, err := pastel.DecodeActionTicket(actionRegTickets[i].ActionTicketData.ActionTicket)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+			log.WithContext(ctx).WithField("action_txid", actionRegTickets[i].TXID).
+				WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
 		actionRegTickets[i].ActionTicketData.ActionTicketData = *decTicket
 
 		actionTicket := actionRegTickets[i].ActionTicketData.ActionTicketData
 		service.cleanupActionTicketData(ctx, actionTicket)
+
+		service.currentActionBlock = actionRegTickets[i].ActionTicketData.CalledAt
+
+		log.WithContext(ctx).WithField("action_txid", actionRegTickets[i].TXID).
+			Info("cleaned up action ticket")
 	}
 
 	return nil
@@ -120,14 +141,21 @@ func (service *Service) removeRegTicketData(ctx context.Context, ticketData past
 }
 
 func (service *Service) cleanupRegTickets(ctx context.Context) error {
-	nftRegTickets, err := service.pastelClient.RegTicketsFromBlockHeight(ctx, pastel.TicketTypeInactive, service.currentBlock)
+	nftRegTickets, err := service.pastelClient.RegTicketsFromBlockHeight(ctx, pastel.TicketTypeInactive, uint64(service.currentNFTBlock))
 	if err != nil {
 		return errors.Errorf("get RegTickets: %w", err)
 	}
 
+	log.WithContext(ctx).WithField("reg_tickets_count", len(nftRegTickets)).
+		WithField("block-height", service.currentNFTBlock).Info("Received reg tickets for cleanup")
+
+	sort.Slice(nftRegTickets, func(i, j int) bool {
+		return nftRegTickets[i].Height < nftRegTickets[j].Height
+	})
+
 	//loop through nft tickets and store newly found nft reg tickets
 	for i := 0; i < len(nftRegTickets); i++ {
-		if uint64(nftRegTickets[i].Height) <= service.currentBlock {
+		if nftRegTickets[i].Height <= service.currentNFTBlock {
 			continue
 		}
 
@@ -140,6 +168,10 @@ func (service *Service) cleanupRegTickets(ctx context.Context) error {
 		ticketData := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData
 
 		service.removeRegTicketData(ctx, ticketData)
+		service.currentNFTBlock = nftRegTickets[i].Height
+
+		log.WithContext(ctx).WithField("reg_txid", nftRegTickets[i].TXID).
+			Info("cleaned up reg ticket")
 	}
 
 	return nil
@@ -189,9 +221,10 @@ func (service *Service) cleanupActionTicketData(ctx context.Context, actionTicke
 // NewService returns a new Hermes Service instance.
 func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client) *Service {
 	return &Service{
-		config:       config,
-		pastelClient: pastelClient,
-		p2pClient:    p2pClient,
-		currentBlock: 1,
+		config:             config,
+		pastelClient:       pastelClient,
+		p2pClient:          p2pClient,
+		currentNFTBlock:    1,
+		currentActionBlock: 1,
 	}
 }

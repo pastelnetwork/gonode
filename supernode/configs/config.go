@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
+	"github.com/pastelnetwork/gonode/hermes"
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -41,6 +42,7 @@ type Config struct {
 	RaptorQ      *raptorq.Config         `mapstructure:"raptorq" json:"raptorq,omitempty"`
 	HealthCheck  *healthcheck_lib.Config `mapstructure:"health-check" json:"health-check,omitempty"`
 	DebugService *debug.Config           `mapstructure:"debug-service" json:"debug-service,omitempty"`
+	Hermes       *hermes.Config          `mapstructure:"hermes" json:"hermes,omitempty"`
 }
 
 // LogConfig contains log configs
@@ -92,5 +94,6 @@ func New() *Config {
 		DDServer:     ddclient.NewConfig(),
 		HealthCheck:  healthcheck_lib.NewConfig(),
 		DebugService: debug.NewConfig(),
+		Hermes:       hermes.NewConfig(),
 	}
 }
