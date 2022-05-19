@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/log"
 	"os"
 	"path"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/log"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/rqlite/go-sqlite3" //go-sqlite3
@@ -153,15 +154,25 @@ func (s *Store) GetKeysForReplication(ctx context.Context) [][]byte {
 		log.P2P().WithContext(ctx).Errorf("failed to get records for replication older then %s: %v", after, err)
 		return nil
 	}
-
+	log.P2P().WithContext(ctx).WithField("keyslength", len(keys)).Debugf("Replication keys found: %+v", keys)
 	if len(keys) > 0 {
 		_, err := s.db.Exec(`UPDATE data SET replicatedAt = ? WHERE updatedAt < ? and (replicatedAt is NULL OR replicatedAt < ?)`, now, after, after)
 		if err != nil {
 			log.P2P().WithContext(ctx).Errorf("failed to update replicated records: %v", err)
 		}
 	}
-
-	return keys
+	var unhexedKeys [][]byte
+	for _, key := range keys {
+		dst := make([]byte, hex.DecodedLen(len(key)))
+		wrote, err := hex.Decode(dst, key)
+		if err != nil {
+			log.P2P().WithContext(ctx).WithField("hkey", key).Errorf("failed to properly unhex hkey: %v", err)
+			continue
+		}
+		log.WithContext(ctx).WithField("wrote", wrote).Debugf("Unhexed key: %+v", dst)
+		unhexedKeys = append(unhexedKeys, dst)
+	}
+	return unhexedKeys
 }
 
 // Close the store
