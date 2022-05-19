@@ -166,6 +166,14 @@ type Client interface {
 	// Command `z_getbalance address`
 	GetBalance(ctx context.Context, address string) (float64, error)
 
+	// FindNFTRegTicketsByLabel returns all NFT registration tickets with matching labels.
+	// Command `tickets findbylabel nft <label>`.
+	FindNFTRegTicketsByLabel(ctx context.Context, label string) (RegTickets, error)
+
+	// FindActionRegTicketsByLabel returns all Action registration tickets with matching labels.
+	// Command `tickets findbylabel action <label>`.
+	FindActionRegTicketsByLabel(ctx context.Context, label string) (ActionTicketDatas, error)
+
 	// BurnAddress ...
 	BurnAddress() string
 }

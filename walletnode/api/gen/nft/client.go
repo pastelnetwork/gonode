@@ -93,13 +93,13 @@ func (c *Client) RegisterTasks(ctx context.Context) (res TaskCollection, err err
 }
 
 // UploadImage calls the "uploadImage" endpoint of the "nft" service.
-func (c *Client) UploadImage(ctx context.Context, p *UploadImagePayload) (res *Image, err error) {
+func (c *Client) UploadImage(ctx context.Context, p *UploadImagePayload) (res *ImageRes, err error) {
 	var ires interface{}
 	ires, err = c.UploadImageEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*Image), nil
+	return ires.(*ImageRes), nil
 }
 
 // NftSearch calls the "nftSearch" endpoint of the "nft" service.

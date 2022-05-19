@@ -564,6 +564,30 @@ func (client *client) ActionTicketsFromBlockHeight(ctx context.Context, blockhei
 	return tickets, nil
 }
 
+// FindNFTRegTicketsByLabel returns all NFT registration tickets with matching labels.
+// Command `tickets findbylabel nft <label>`.
+func (client *client) FindNFTRegTicketsByLabel(ctx context.Context, label string) (RegTickets, error) {
+	tickets := RegTickets{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "findbylabel", "nft", label); err != nil {
+		return nil, errors.Errorf("failed to get registration tickets with block height: %w", err)
+	}
+
+	return tickets, nil
+}
+
+// FindActionRegTicketsByLabel returns all Action registration tickets with matching labels.
+// Command `tickets findbylabel action <label>`.
+func (client *client) FindActionRegTicketsByLabel(ctx context.Context, label string) (ActionTicketDatas, error) {
+	tickets := ActionTicketDatas{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "findbylabel", "action", label); err != nil {
+		return nil, errors.Errorf("failed to find action tickets by label: %w", err)
+	}
+
+	return tickets, nil
+}
+
 func (client *client) GetBalance(ctx context.Context, address string) (float64, error) {
 	var balance float64
 	if err := client.callFor(ctx, &balance, "z_getbalance", address); err != nil {

@@ -71,7 +71,7 @@ func (service *NftAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) goah
 // --- Register NFT ---
 
 // UploadImage uploads an image and return unique image id.
-func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImagePayload) (res *nft.Image, err error) {
+func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImagePayload) (res *nft.ImageRes, err error) {
 	if p.Filename == nil {
 		return nil, nft.MakeBadRequest(errors.New("file not specified"))
 	}
@@ -81,7 +81,7 @@ func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 		return nil, nft.MakeInternalServerError(err)
 	}
 
-	res = &nft.Image{
+	res = &nft.ImageRes{
 		ImageID:   id,
 		ExpiresIn: expiry,
 	}
