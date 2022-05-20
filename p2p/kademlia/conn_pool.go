@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anacrolix/utp"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"google.golang.org/grpc/credentials"
 )
@@ -103,8 +102,9 @@ type connWrapper struct {
 
 // NewSecureClientConn do client handshake and return a secure connection
 func NewSecureClientConn(ctx context.Context, secureHelper credentials.TransportCredentials, remoteAddr string) (net.Conn, error) {
-	// dial the remote address with udp network
-	rawConn, err := utp.DialContext(ctx, remoteAddr)
+	// dial the remote address with tcp
+	var d net.Dialer
+	rawConn, err := d.DialContext(ctx, "tcp", remoteAddr)
 	if err != nil {
 		return nil, errors.Errorf("dial %q: %w", remoteAddr, err)
 	}
