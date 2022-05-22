@@ -144,7 +144,7 @@ func NewUploadImageEndpoint(s Service) goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		vres := NewViewedImage(res, "default")
+		vres := NewViewedImageRes(res, "default")
 		return vres, nil
 	}
 }

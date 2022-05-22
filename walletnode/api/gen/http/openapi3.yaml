@@ -597,9 +597,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Image'
+                $ref: '#/components/schemas/ImageRes'
               example:
-                estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
         "400":
@@ -2192,6 +2191,26 @@ components:
       - image_id
       - expires_in
       - estimated_fee
+    ImageRes:
+      type: object
+      properties:
+        expires_in:
+          type: string
+          description: Image expiration
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+        image_id:
+          type: string
+          description: Uploaded image ID
+          example: VK7mpAqZ
+          minLength: 8
+          maxLength: 8
+      example:
+        expires_in: 2006-01-02T15:04:05Z07:00
+        image_id: VK7mpAqZ
+      required:
+      - image_id
+      - expires_in
     NftDetail:
       type: object
       properties:

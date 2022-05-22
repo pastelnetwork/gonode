@@ -374,7 +374,7 @@ func EncodeRegisterTasksError(encoder func(context.Context, http.ResponseWriter)
 // nft uploadImage endpoint.
 func EncodeUploadImageResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(*nftviews.Image)
+		res := v.(*nftviews.ImageRes)
 		enc := encoder(ctx, w)
 		body := NewUploadImageResponseBody(res.Projected)
 		w.WriteHeader(http.StatusCreated)

@@ -1,6 +1,8 @@
 package design
 
 import (
+	"time"
+
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 
@@ -123,7 +125,7 @@ var _ = Service("nft", func() {
 		Payload(func() {
 			Extend(ImageUploadPayload)
 		})
-		Result(ImageUploadResult)
+		Result(NFTImageUploadResult)
 
 		HTTP(func() {
 			POST("/register/upload")
@@ -603,6 +605,25 @@ var NftSummary = Type("NftSummary", func() {
 		Example(false)
 	})
 	Required("title", "description", "creator_name", "copies", "creator_pastelid", "txid")
+})
+
+// NFTImageUploadResult is image upload result.
+var NFTImageUploadResult = ResultType("application/vnd.nft.upload-image-result", func() {
+	TypeName("ImageRes")
+	Attributes(func() {
+		Attribute("image_id", String, func() {
+			Description("Uploaded image ID")
+			MinLength(8)
+			MaxLength(8)
+			Example("VK7mpAqZ")
+		})
+		Attribute("expires_in", String, func() {
+			Description("Image expiration")
+			Format(FormatDateTime)
+			Example(time.RFC3339)
+		})
+	})
+	Required("image_id", "expires_in")
 })
 
 // NftDetail is NFT get response.

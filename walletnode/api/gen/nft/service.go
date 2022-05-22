@@ -28,7 +28,7 @@ type Service interface {
 	// List of all tasks.
 	RegisterTasks(context.Context) (res TaskCollection, err error)
 	// Upload the image that is used when registering a new NFT.
-	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
+	UploadImage(context.Context, *UploadImagePayload) (res *ImageRes, err error)
 	// Streams the search result for NFT
 	NftSearch(context.Context, *NftSearchPayload, NftSearchServerStream) (err error)
 	// Gets the NFT detail
@@ -119,14 +119,12 @@ type GetTaskHistoryPayload struct {
 	TaskID string
 }
 
-// Image is the result type of the nft service uploadImage method.
-type Image struct {
+// ImageRes is the result type of the nft service uploadImage method.
+type ImageRes struct {
 	// Uploaded image ID
 	ImageID string
 	// Image expiration
 	ExpiresIn string
-	// Estimated fee
-	EstimatedFee float64
 }
 
 // NftDetail is the result type of the nft service nftGet method.
@@ -529,16 +527,17 @@ func NewViewedTaskCollection(res TaskCollection, view string) nftviews.TaskColle
 	return vres
 }
 
-// NewImage initializes result type Image from viewed result type Image.
-func NewImage(vres *nftviews.Image) *Image {
-	return newImage(vres.Projected)
+// NewImageRes initializes result type ImageRes from viewed result type
+// ImageRes.
+func NewImageRes(vres *nftviews.ImageRes) *ImageRes {
+	return newImageRes(vres.Projected)
 }
 
-// NewViewedImage initializes viewed result type Image from result type Image
-// using the given view.
-func NewViewedImage(res *Image, view string) *nftviews.Image {
-	p := newImageView(res)
-	return &nftviews.Image{Projected: p, View: "default"}
+// NewViewedImageRes initializes viewed result type ImageRes from result type
+// ImageRes using the given view.
+func NewViewedImageRes(res *ImageRes, view string) *nftviews.ImageRes {
+	p := newImageResView(res)
+	return &nftviews.ImageRes{Projected: p, View: "default"}
 }
 
 // newRegisterResult converts projected type RegisterResult to service type
@@ -717,31 +716,24 @@ func newTaskCollectionView(res TaskCollection) nftviews.TaskCollectionView {
 	return vres
 }
 
-// newImage converts projected type Image to service type Image.
-func newImage(vres *nftviews.ImageView) *Image {
-	res := &Image{}
+// newImageRes converts projected type ImageRes to service type ImageRes.
+func newImageRes(vres *nftviews.ImageResView) *ImageRes {
+	res := &ImageRes{}
 	if vres.ImageID != nil {
 		res.ImageID = *vres.ImageID
 	}
 	if vres.ExpiresIn != nil {
 		res.ExpiresIn = *vres.ExpiresIn
 	}
-	if vres.EstimatedFee != nil {
-		res.EstimatedFee = *vres.EstimatedFee
-	}
-	if vres.EstimatedFee == nil {
-		res.EstimatedFee = 1
-	}
 	return res
 }
 
-// newImageView projects result type Image to projected type ImageView using
-// the "default" view.
-func newImageView(res *Image) *nftviews.ImageView {
-	vres := &nftviews.ImageView{
-		ImageID:      &res.ImageID,
-		ExpiresIn:    &res.ExpiresIn,
-		EstimatedFee: &res.EstimatedFee,
+// newImageResView projects result type ImageRes to projected type ImageResView
+// using the "default" view.
+func newImageResView(res *ImageRes) *nftviews.ImageResView {
+	vres := &nftviews.ImageResView{
+		ImageID:   &res.ImageID,
+		ExpiresIn: &res.ExpiresIn,
 	}
 	return vres
 }
