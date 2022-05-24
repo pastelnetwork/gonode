@@ -133,6 +133,16 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
+	if err := m.mockServer([]byte(`[]`), addr, "tickets",
+		[]string{"findbylabel", "nft"}, 3); err != nil {
+		return fmt.Errorf("failed to mock findbylabel err: %w", err)
+	}
+
+	if err := m.mockServer([]byte(`[]`), addr, "tickets",
+		[]string{"findbylabel", "action"}, 3); err != nil {
+		return fmt.Errorf("failed to mock findbylabel err: %w", err)
+	}
+
 	if err := m.mockServer([]byte(blockVerboseResponse), addr, "getblock", []string{"160647"}, 10); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}

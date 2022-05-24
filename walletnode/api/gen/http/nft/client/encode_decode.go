@@ -579,13 +579,13 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("nft", "uploadImage", err)
 			}
-			p := NewUploadImageImageCreated(&body)
+			p := NewUploadImageImageResCreated(&body)
 			view := "default"
-			vres := &nftviews.Image{Projected: p, View: view}
-			if err = nftviews.ValidateImage(vres); err != nil {
+			vres := &nftviews.ImageRes{Projected: p, View: view}
+			if err = nftviews.ValidateImageRes(vres); err != nil {
 				return nil, goahttp.ErrValidationError("nft", "uploadImage", err)
 			}
-			res := nft.NewImage(vres)
+			res := nft.NewImageRes(vres)
 			return res, nil
 		case http.StatusBadRequest:
 			var (

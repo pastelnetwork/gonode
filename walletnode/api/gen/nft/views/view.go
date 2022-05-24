@@ -37,10 +37,10 @@ type TaskCollection struct {
 	View string
 }
 
-// Image is the viewed result type that is projected based on a view.
-type Image struct {
+// ImageRes is the viewed result type that is projected based on a view.
+type ImageRes struct {
 	// Type to project
-	Projected *ImageView
+	Projected *ImageResView
 	// View to render
 	View string
 }
@@ -122,14 +122,12 @@ type ThumbnailcoordinateView struct {
 // TaskCollectionView is a type that runs validations on a projected type.
 type TaskCollectionView []*TaskView
 
-// ImageView is a type that runs validations on a projected type.
-type ImageView struct {
+// ImageResView is a type that runs validations on a projected type.
+type ImageResView struct {
 	// Uploaded image ID
 	ImageID *string
 	// Image expiration
 	ExpiresIn *string
-	// Estimated fee
-	EstimatedFee *float64
 }
 
 var (
@@ -173,12 +171,11 @@ var (
 			"ticket",
 		},
 	}
-	// ImageMap is a map indexing the attribute names of Image by view name.
-	ImageMap = map[string][]string{
+	// ImageResMap is a map indexing the attribute names of ImageRes by view name.
+	ImageResMap = map[string][]string{
 		"default": {
 			"image_id",
 			"expires_in",
-			"estimated_fee",
 		},
 	}
 	// ThumbnailcoordinateMap is a map indexing the attribute names of
@@ -232,11 +229,12 @@ func ValidateTaskCollection(result TaskCollection) (err error) {
 	return
 }
 
-// ValidateImage runs the validations defined on the viewed result type Image.
-func ValidateImage(result *Image) (err error) {
+// ValidateImageRes runs the validations defined on the viewed result type
+// ImageRes.
+func ValidateImageRes(result *ImageRes) (err error) {
 	switch result.View {
 	case "default", "":
-		err = ValidateImageView(result.Projected)
+		err = ValidateImageResView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
 	}
@@ -533,17 +531,14 @@ func ValidateTaskCollectionView(result TaskCollectionView) (err error) {
 	return
 }
 
-// ValidateImageView runs the validations defined on ImageView using the
+// ValidateImageResView runs the validations defined on ImageResView using the
 // "default" view.
-func ValidateImageView(result *ImageView) (err error) {
+func ValidateImageResView(result *ImageResView) (err error) {
 	if result.ImageID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "result"))
 	}
 	if result.ExpiresIn == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("expires_in", "result"))
-	}
-	if result.EstimatedFee == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("estimated_fee", "result"))
 	}
 	if result.ImageID != nil {
 		if utf8.RuneCountInString(*result.ImageID) < 8 {
@@ -557,11 +552,6 @@ func ValidateImageView(result *ImageView) (err error) {
 	}
 	if result.ExpiresIn != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.expires_in", *result.ExpiresIn, goa.FormatDateTime))
-	}
-	if result.EstimatedFee != nil {
-		if *result.EstimatedFee < 1e-05 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.estimated_fee", *result.EstimatedFee, 1e-05, true))
-		}
 	}
 	return
 }

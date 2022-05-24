@@ -4019,15 +4019,9 @@ definitions:
     required:
     - file
   NftUploadImageResponseBody:
-    title: 'Mediatype identifier: application/vnd.nft.upload-image; view=default'
+    title: 'Mediatype identifier: application/vnd.nft.upload-image-result; view=default'
     type: object
     properties:
-      estimated_fee:
-        type: number
-        description: Estimated fee
-        default: 1
-        example: 100
-        minimum: 1e-05
       expires_in:
         type: string
         description: Image expiration
@@ -4041,13 +4035,11 @@ definitions:
         maxLength: 8
     description: UploadImageResponseBody result type (default view)
     example:
-      estimated_fee: 100
       expires_in: 2006-01-02T15:04:05Z07:00
       image_id: VK7mpAqZ
     required:
     - image_id
     - expires_in
-    - estimated_fee
   SenseDownloadInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object

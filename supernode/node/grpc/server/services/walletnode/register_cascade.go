@@ -310,7 +310,7 @@ func (service *RegisterCascade) SendSignedActionTicket(ctx context.Context, req 
 
 	actionRegTxid, err := task.ValidateAndRegister(ctx, req.ActionTicket, req.CreatorSignature, req.RqFiles, req.EncodeParameters.Oti)
 	if err != nil {
-		return nil, errors.Errorf("get total storage fee %w", err)
+		return nil, errors.Errorf("get total storage fee: %w", err)
 	}
 
 	rsp := pb.SendSignedActionTicketReply{

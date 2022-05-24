@@ -119,8 +119,6 @@ type UploadImageResponseBody struct {
 	ImageID *string `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Image expiration
 	ExpiresIn *string `form:"expires_in,omitempty" json:"expires_in,omitempty" xml:"expires_in,omitempty"`
-	// Estimated fee
-	EstimatedFee *float64 `form:"estimated_fee,omitempty" json:"estimated_fee,omitempty" xml:"estimated_fee,omitempty"`
 }
 
 // NftSearchResponseBody is the type of the "nft" service "nftSearch" endpoint
@@ -976,13 +974,12 @@ func NewRegisterTasksInternalServerError(body *RegisterTasksInternalServerErrorR
 	return v
 }
 
-// NewUploadImageImageCreated builds a "nft" service "uploadImage" endpoint
+// NewUploadImageImageResCreated builds a "nft" service "uploadImage" endpoint
 // result from a HTTP "Created" response.
-func NewUploadImageImageCreated(body *UploadImageResponseBody) *nftviews.ImageView {
-	v := &nftviews.ImageView{
-		ImageID:      body.ImageID,
-		ExpiresIn:    body.ExpiresIn,
-		EstimatedFee: body.EstimatedFee,
+func NewUploadImageImageResCreated(body *UploadImageResponseBody) *nftviews.ImageResView {
+	v := &nftviews.ImageResView{
+		ImageID:   body.ImageID,
+		ExpiresIn: body.ExpiresIn,
 	}
 
 	return v
