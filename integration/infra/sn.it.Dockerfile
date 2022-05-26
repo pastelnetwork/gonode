@@ -3,6 +3,7 @@ RUN apk --update add ca-certificates git make g++
 ENV GO111MODULE=on
 
 COPY supernode/ /supernode/
+COPY hermes/ /hermes/
 COPY common/  /common/
 COPY dupedetection/ /dupedetection/
 COPY go-webp/ /go-webp/

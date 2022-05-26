@@ -12,6 +12,8 @@ const (
 	RetrieveMethod = "Retrieve"
 	// StoreMethod represent Store name method
 	StoreMethod = "Store"
+	// DeleteMethod represent Store name method
+	DeleteMethod = "Delete"
 	//NClosestMethod mocks getting the n closest nodes to a given string
 	NClosestMethod = "NClosestNodes"
 )
@@ -33,6 +35,12 @@ func NewMockClient(t *testing.T) *Client {
 // ListenOnRetrieve listening Retrieve and returns data, and error from args
 func (client *Client) ListenOnRetrieve(data []byte, err error) *Client {
 	client.On(RetrieveMethod, mock.Anything, mock.Anything, mock.Anything).Return(data, err)
+	return client
+}
+
+// ListenOnDelete listening Delete and returns error from args
+func (client *Client) ListenOnDelete(err error) *Client {
+	client.On(DeleteMethod, mock.Anything, mock.Anything).Return(err)
 	return client
 }
 
