@@ -71,3 +71,11 @@ release:
 
 	cd ./walletnode && go build -ldflags=$(LDFLAGS) -o $(BINARY_WN)
 	strip -v walletnode/$(BINARY_WN) -o dist/$(BINARY_WN)-$(os)-$(arch)$(ext)
+release-docker:
+	docker build -f ./scripts/wn.release.Dockerfile --build-arg LD_FLAGS=$(LDFLAGS) -t wn_build .
+	docker create -ti --name wn_builder wn_build bash
+	docker cp wn_builder:/walletnode/walletnode-win32.exe ./dist/
+	docker cp wn_builder:/walletnode/walletnode-win-amd64.exe ./dist/
+	docker cp wn_builder:/walletnode/walletnode-linux-amd64 ./dist/
+	docker rm -f wn_builder
+
