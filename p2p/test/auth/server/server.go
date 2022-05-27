@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/anacrolix/utp"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/auth"
@@ -31,7 +30,7 @@ func main() {
 	addr := fmt.Sprintf("%s:%s", ip, *port)
 
 	// new the network socket
-	socket, err := utp.NewSocket("udp", addr)
+	socket, err := net.Listen("tcp", addr)
 	if err != nil {
 		panic(fmt.Sprintf("new socket: %v", err))
 	}

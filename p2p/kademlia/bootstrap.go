@@ -192,22 +192,27 @@ func (s *DHT) Bootstrap(ctx context.Context, bootstrapIPs string) error {
 				defer cancel()
 
 				// invoke the request and handle the response
-				response, err := s.network.Call(ctx, request)
-				if err != nil {
-					// This happening in bootstrap - so potentially other nodes not yet started
-					// So if bootstrap failed, should try to connect to node again for next bootstrap retry
-					// s.cache.SetWithExpiry(addr, []byte("true"), badAddrExpiryHours*time.Hour)
+				for i := 0; i < 5; i++ {
+					response, err := s.network.Call(ctx, request)
+					if err != nil {
+						// This happening in bootstrap - so potentially other nodes not yet started
+						// So if bootstrap failed, should try to connect to node again for next bootstrap retry
+						// s.cache.SetWithExpiry(addr, []byte("true"), badAddrExpiryHours*time.Hour)
 
-					log.P2P().WithContext(ctx).WithError(err).Error("network call failed")
-					return
+						log.P2P().WithContext(ctx).WithError(err).Error("network call failed, sleeping 3 seconds")
+						time.Sleep(3 * time.Second)
+						continue
+					}
+					log.P2P().WithContext(ctx).Debugf("ping response: %v", response.String())
+
+					// add the node to the route table
+					log.P2P().WithContext(ctx).WithField("sender-id", response.Sender.ID).
+						WithField("sender-ip", response.Sender.IP).
+						WithField("sender-port", response.Sender.Port).Info("add-node params")
+					s.addNode(ctx, response.Sender)
+					break
 				}
-				log.P2P().WithContext(ctx).Debugf("ping response: %v", response.String())
 
-				// add the node to the route table
-				log.P2P().WithContext(ctx).WithField("sender-id", response.Sender.ID).
-					WithField("sender-ip", response.Sender.IP).
-					WithField("sender-port", response.Sender.Port).Info("add-node params")
-				s.addNode(ctx, response.Sender)
 			}()
 		}
 	}

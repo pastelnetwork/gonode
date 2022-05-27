@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anacrolix/utp"
 	"go.uber.org/ratelimit"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -26,11 +25,11 @@ const (
 
 // Network for distributed hash table
 type Network struct {
-	dht     *DHT              // the distributed hash table
-	socket  *utp.Socket       // the server socket for the network
-	self    *Node             // local node itself
-	limiter ratelimit.Limiter // the rate limit for accept socket
-	done    chan struct{}     // network is stopped
+	dht      *DHT              // the distributed hash table
+	listener net.Listener      // the server socket for the network
+	self     *Node             // local node itself
+	limiter  ratelimit.Limiter // the rate limit for accept socket
+	done     chan struct{}     // network is stopped
 
 	// For secure connection
 	secureHelper credentials.TransportCredentials
@@ -55,12 +54,14 @@ func NewNetwork(dht *DHT, self *Node, secureHelper credentials.TransportCredenti
 	s.limiter = ratelimit.New(defaultConnRate)
 
 	addr := fmt.Sprintf("%s:%d", self.IP, self.Port)
-	// new the network socket
-	socket, err := utp.NewSocket("udp", addr)
+	// new tcp listener
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
+		log.P2P().Debugf("Error trying to get tcp socket: %s", err)
 		return nil, err
 	}
-	s.socket = socket
+	s.listener = listener
+	log.P2P().Debugf("Listening on: %s", addr)
 
 	return s, nil
 }
@@ -79,8 +80,8 @@ func (s *Network) Stop(ctx context.Context) {
 		s.connPool.Release()
 	}
 	// close the socket
-	if s.socket != nil {
-		if err := s.socket.Close(); err != nil {
+	if s.listener != nil {
+		if err := s.listener.Close(); err != nil {
 			log.P2P().WithContext(ctx).WithError(err).Errorf("close socket failed")
 		}
 	}
@@ -338,7 +339,7 @@ func (s *Network) serve(ctx context.Context) {
 		s.limiter.Take()
 
 		// accept the incomming connections
-		conn, err := s.socket.Accept()
+		conn, err := s.listener.Accept()
 		if err != nil {
 			select {
 			case <-ctx.Done():
@@ -394,8 +395,9 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 		}
 		s.connPoolMtx.Unlock()
 	} else {
-		// dial the remote address with udp network
-		rawConn, err = utp.DialContext(ctx, remoteAddr)
+		// dial the remote address with tcp network
+		var d net.Dialer
+		rawConn, err = d.DialContext(ctx, "tcp", remoteAddr)
 		if err != nil {
 			return nil, errors.Errorf("dial %q: %w", remoteAddr, err)
 		}

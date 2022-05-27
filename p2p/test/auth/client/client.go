@@ -7,7 +7,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/anacrolix/utp"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/auth"
@@ -35,7 +34,8 @@ func main() {
 	ctx := context.Background()
 
 	// dial the remote address with udp network
-	rawConn, err := utp.DialContext(ctx, remoteAddr)
+	var d net.Dialer
+	rawConn, err := d.DialContext(ctx, "tcp", remoteAddr)
 	if err != nil {
 		panic(fmt.Sprintf("dial %q: %v", remoteAddr, err))
 	}
