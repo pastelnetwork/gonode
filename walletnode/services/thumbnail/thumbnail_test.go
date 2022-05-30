@@ -1,4 +1,4 @@
-package nftsearch
+package thumbnail
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func TestConnect(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		thumbnail   ThumbnailHandler
+		thumbnail   thumbnailHandler
 		connections int
 		nodeErr     error
 		nodesRet    pastel.MasterNodes
@@ -59,14 +59,14 @@ func TestConnect(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(tc.nodesRet, nil).ListenOnFindTicketByID(&pastel.IDTicket{TXID: "txid"}, nil)
 
 			meshHandlerOpts := common.MeshHandlerOpts{
-				Task:          common.NewWalletNodeTask(logPrefix),
-				NodeMaker:     &NftSearchingNodeMaker{},
+				Task:          common.NewWalletNodeTask("logPrefix"),
+				NodeMaker:     &common.NftSearchingNodeMaker{},
 				PastelHandler: mixins.NewPastelHandler(pastelClientMock),
 				NodeClient:    nodeClientMock,
 				Configs:       &common.MeshHandlerConfig{},
 			}
 
-			thumbnail := NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts))
+			thumbnail := newThumbnailHandler(common.NewMeshHandler(meshHandlerOpts))
 
 			_, cancel := context.WithCancel(context.Background())
 			err := thumbnail.Connect(context.Background(), tc.connections, cancel)

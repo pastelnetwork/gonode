@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
 const (
@@ -55,7 +56,7 @@ func (service *NftSearchingService) GetTask(id string) *NftSearchingTask {
 // AddTask runs a new task of the NFT search and returns its taskID.
 func (service *NftSearchingService) AddTask(p *nft.NftSearchPayload) string {
 
-	request := FromNftSearchRequest(p)
+	request := common.FromNftSearchRequest(p)
 	task := NewNftSearchTask(service, request)
 	service.Worker.AddTask(task)
 
@@ -69,9 +70,7 @@ func (service *NftSearchingService) GetThumbnail(ctx context.Context, regTicket 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel); err != nil {
-		return nil, errors.Errorf("connect and setup fetchers: %w", err)
-	}
+	go nftGetSearchTask.thumbnail.Run(ctx)
 	data, err = nftGetSearchTask.thumbnail.FetchOne(ctx, regTicket.TXID)
 	if err != nil {
 		return nil, errors.Errorf("nftsearch get thumbnail fetchone error, there may be multiple thumbnails: %w", err)

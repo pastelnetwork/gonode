@@ -56,7 +56,7 @@ func TestRunTask(t *testing.T) {
 	type args struct {
 		actTickets    pastel.ActTickets
 		regTickets    pastel.RegTickets
-		req           *NftSearchingRequest
+		req           *common.NftSearchingRequest
 		actTicketsErr error
 		regTicketErr  error
 		ddAndFp       pastel.DDAndFingerprints
@@ -64,14 +64,14 @@ func TestRunTask(t *testing.T) {
 
 	testCases := map[string]struct {
 		args args
-		want []RegTicketSearch
+		want []common.RegTicketSearch
 		fail bool
 	}{
 		"weird-ddfpvals": {
 			args: args{
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
 				regTickets: pastel.RegTickets{regTicketA},
-				req: &NftSearchingRequest{
+				req: &common.NftSearchingRequest{
 					Query:        "alan",
 					ArtistName:   true,
 					Limit:        10,
@@ -83,14 +83,14 @@ func TestRunTask(t *testing.T) {
 					OverallRarenessScore: 0.5,
 				},
 			},
-			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketA}},
+			want: []common.RegTicketSearch{common.RegTicketSearch{RegTicket: &regTicketA}},
 			fail: false,
 		},
 		"match": {
 			args: args{
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
 				regTickets: pastel.RegTickets{regTicketA},
-				req: &NftSearchingRequest{
+				req: &common.NftSearchingRequest{
 					Query:        "alan",
 					ArtistName:   true,
 					Limit:        10,
@@ -102,7 +102,7 @@ func TestRunTask(t *testing.T) {
 					OverallRarenessScore: 0.5,
 				},
 			},
-			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketA}},
+			want: []common.RegTicketSearch{common.RegTicketSearch{RegTicket: &regTicketA}},
 			fail: false,
 		},
 
@@ -111,7 +111,7 @@ func TestRunTask(t *testing.T) {
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}},
 					pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDB}}},
 				regTickets: pastel.RegTickets{regTicketA, regTicketB},
-				req: &NftSearchingRequest{
+				req: &common.NftSearchingRequest{
 					Query:      "Alan",
 					ArtistName: true,
 					ArtTitle:   true,
@@ -123,8 +123,8 @@ func TestRunTask(t *testing.T) {
 					OverallRarenessScore: 0.5,
 				},
 			},
-			want: []RegTicketSearch{RegTicketSearch{RegTicket: &regTicketB, MatchIndex: 0},
-				RegTicketSearch{RegTicket: &regTicketA, MatchIndex: 1},
+			want: []common.RegTicketSearch{common.RegTicketSearch{RegTicket: &regTicketB, MatchIndex: 0},
+				common.RegTicketSearch{RegTicket: &regTicketA, MatchIndex: 1},
 			},
 			fail: false,
 		},
@@ -133,7 +133,7 @@ func TestRunTask(t *testing.T) {
 			args: args{
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
 				regTickets: pastel.RegTickets{regTicketA},
-				req: &NftSearchingRequest{
+				req: &common.NftSearchingRequest{
 					Query:      "nowhere-to-be-found",
 					ArtTitle:   true,
 					ArtistName: true,
@@ -145,7 +145,7 @@ func TestRunTask(t *testing.T) {
 					OverallRarenessScore: 0.5,
 				},
 			},
-			want: []RegTicketSearch{},
+			want: []common.RegTicketSearch{},
 			fail: false,
 		},
 
@@ -154,7 +154,7 @@ func TestRunTask(t *testing.T) {
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}},
 					pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDB}}},
 				regTickets: pastel.RegTickets{regTicketA, regTicketB},
-				req: &NftSearchingRequest{
+				req: &common.NftSearchingRequest{
 					Query:        "Alan",
 					ArtistName:   true,
 					ArtTitle:     true,
@@ -167,14 +167,14 @@ func TestRunTask(t *testing.T) {
 					OverallRarenessScore: 0.5,
 				},
 			},
-			want: []RegTicketSearch{},
+			want: []common.RegTicketSearch{},
 			fail: false,
 		},
 		"no-match-is-opennsfw-range": {
 			args: args{
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
 				regTickets: pastel.RegTickets{regTicketA},
-				req: &NftSearchingRequest{
+				req: &common.NftSearchingRequest{
 					Query:        "alan",
 					ArtistName:   true,
 					Limit:        10,
@@ -187,7 +187,7 @@ func TestRunTask(t *testing.T) {
 					OverallRarenessScore: 0.5,
 				},
 			},
-			want: []RegTicketSearch{},
+			want: []common.RegTicketSearch{},
 			fail: false,
 		},
 
@@ -195,7 +195,7 @@ func TestRunTask(t *testing.T) {
 			args: args{
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
 				regTickets: pastel.RegTickets{regTicketA},
-				req: &NftSearchingRequest{
+				req: &common.NftSearchingRequest{
 					Query:      "alan",
 					ArtTitle:   true,
 					ArtistName: true,
@@ -208,7 +208,7 @@ func TestRunTask(t *testing.T) {
 				},
 			},
 
-			want: []RegTicketSearch{},
+			want: []common.RegTicketSearch{},
 			fail: true,
 		},
 
@@ -216,7 +216,7 @@ func TestRunTask(t *testing.T) {
 			args: args{
 				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDB}}},
 				regTickets: pastel.RegTickets{regTicketB},
-				req: &NftSearchingRequest{
+				req: &common.NftSearchingRequest{
 					Query:      "alan",
 					ArtTitle:   true,
 					ArtistName: true,
@@ -229,7 +229,7 @@ func TestRunTask(t *testing.T) {
 				},
 			},
 
-			want: []RegTicketSearch{},
+			want: []common.RegTicketSearch{},
 			fail: true,
 		},
 	}
@@ -281,7 +281,7 @@ func TestRunTask(t *testing.T) {
 
 			go task.Run(ctx)
 
-			results := []*RegTicketSearch{}
+			results := []*common.RegTicketSearch{}
 		loop:
 			for {
 				select {
@@ -320,14 +320,14 @@ func TestNewNftGetSearchTask(t *testing.T) {
 
 	type args struct {
 		service *NftSearchingService
-		req     *NftSearchingRequest
+		req     *common.NftSearchingRequest
 	}
 
 	service := &NftSearchingService{
 		config: NewConfig(),
 	}
 
-	req := &NftSearchingRequest{}
+	req := &common.NftSearchingRequest{}
 
 	testCases := map[string]struct {
 		args args
@@ -340,7 +340,7 @@ func TestNewNftGetSearchTask(t *testing.T) {
 			},
 			want: &NftSearchingTask{
 				WalletNodeTask: common.NewWalletNodeTask(logPrefix),
-				thumbnail:      NewThumbnailHandler(common.NewMeshHandlerSimple(nil, nil, nil)),
+				//thumbnail:      NewThumbnailHandler(common.NewMeshHandlerSimple(nil, nil, nil)),
 			},
 		},
 	}

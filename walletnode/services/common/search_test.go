@@ -1,4 +1,4 @@
-package nftsearch
+package common
 
 import (
 	"testing"

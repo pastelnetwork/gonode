@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
@@ -384,7 +383,7 @@ var FuzzyMatch = Type("FuzzyMatch", func() {
 	})
 	Attribute("field_type", String, func() {
 		Description("Field that is matched")
-		Enum(InterfaceSlice(nftsearch.NftSearchQueryFields)...) //TODO: Rename after renaming package
+		Enum(InterfaceSlice(common.NftSearchQueryFields)...) //TODO: Rename after renaming package
 	})
 	Attribute("matched_indexes", ArrayOf(Int), func() {
 		Description("The indexes of matched characters. Useful for highlighting matches")

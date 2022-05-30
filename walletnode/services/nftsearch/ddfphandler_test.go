@@ -60,7 +60,7 @@ func TestDDFPConnect(t *testing.T) {
 
 			meshHandlerOpts := common.MeshHandlerOpts{
 				Task:          common.NewWalletNodeTask(logPrefix),
-				NodeMaker:     &NftSearchingNodeMaker{},
+				NodeMaker:     &common.NftSearchingNodeMaker{},
 				PastelHandler: mixins.NewPastelHandler(pastelClientMock),
 				NodeClient:    nodeClientMock,
 				Configs:       &common.MeshHandlerConfig{},

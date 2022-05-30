@@ -27,6 +27,21 @@ type SuperNodeClient struct {
 	isRemoteState bool
 }
 
+// NftSearchingNodeMaker makes class DownloadNft for SuperNodeAPIInterface
+type NftSearchingNodeMaker struct {
+	node.RealNodeMaker
+}
+
+// MakeNode makes class DownloadNft for SuperNodeAPIInterface
+func (maker NftSearchingNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
+	return &NftSearchingNode{DownloadNftInterface: conn.DownloadNft()}
+}
+
+// NftSearchingNode represent supernode connection.
+type NftSearchingNode struct {
+	node.DownloadNftInterface
+}
+
 // String returns node as string (address)
 func (node *SuperNodeClient) String() string {
 	return node.address

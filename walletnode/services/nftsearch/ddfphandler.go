@@ -79,7 +79,7 @@ func (h *DDFPHandler) setFetchers(ctx context.Context) error {
 }
 
 func (h *DDFPHandler) fetcher(ctx context.Context, someNode *common.SuperNodeClient, nodeID string) error {
-	nftSearchNode, ok := someNode.SuperNodeAPIInterface.(*NftSearchingNode)
+	nftSearchNode, ok := someNode.SuperNodeAPIInterface.(*common.NftSearchingNode)
 	if !ok {
 		return errors.Errorf("node %s is not NftSearchingNode", someNode.String())
 	}

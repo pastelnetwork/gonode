@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/pastelnetwork/gonode/walletnode/services/thumbnail"
 
 	"sort"
 
@@ -19,17 +21,16 @@ import (
 // NftSearchingTask is the task of searching for nft.
 type NftSearchingTask struct {
 	*common.WalletNodeTask
-
-	thumbnail *ThumbnailHandler
-	ddAndFP   *DDFPHandler
+	ddAndFP *DDFPHandler
 
 	service *NftSearchingService
 	// request is search request from API call
-	request *NftSearchingRequest
+	request *common.NftSearchingRequest
 
-	searchResult   []*RegTicketSearch
-	resultChan     chan *RegTicketSearch
+	searchResult   []*common.RegTicketSearch
+	resultChan     chan *common.RegTicketSearch
 	searchResMutex sync.Mutex
+	thumbnail      *thumbnail.ThumbnailService
 }
 
 // Run starts the task
@@ -47,6 +48,8 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 	newCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	go task.thumbnail.Run(newCtx)
+
 	if err := task.ddAndFP.Connect(newCtx, pastelConnections, cancel); err != nil {
 		return errors.Errorf("connect and setup fetchers: %w", err)
 	}
@@ -54,14 +57,15 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 		return errors.Errorf("search tickets: %w", err)
 	}
 
-	if err := task.thumbnail.Connect(newCtx, pastelConnections, cancel); err != nil {
-		return errors.Errorf("connect and setup fetchers: %w", err)
-	}
 	if err := task.thumbnail.FetchMultiple(newCtx, task.searchResult, &task.resultChan); err != nil {
 		return errors.Errorf("fetch multiple thumbnails: %w", err)
 	}
 
-	return task.thumbnail.CloseAll(newCtx)
+	if err := task.thumbnail.CloseAll(newCtx); err != nil {
+		return errors.Errorf("close thumbnail service: %w", err)
+	}
+
+	return nil
 }
 
 func (task *NftSearchingTask) search(ctx context.Context) error {
@@ -124,7 +128,7 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 }
 
 // filterRegTicket filters ticket against request params & checks if its a match
-func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
+func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pastel.RegTicket) (srch *common.RegTicketSearch, matched bool) {
 	// Get DD and FP data so we can filter on it.
 	ddAndFpData, err := task.ddAndFP.Fetch(ctx, regTicket.TXID)
 	if err != nil {
@@ -160,7 +164,7 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 		return srch, false
 	}
 
-	regSearch := &RegTicketSearch{
+	regSearch := &common.RegTicketSearch{
 		RegTicket:     regTicket,
 		RarenessScore: ddAndFpStruct.OverallRarenessScore,
 		OpenNSFWScore: ddAndFpStruct.OpenNSFWScore,
@@ -172,7 +176,7 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 }
 
 // addMatchedResult adds to search result
-func (task *NftSearchingTask) addMatchedResult(res *RegTicketSearch) {
+func (task *NftSearchingTask) addMatchedResult(res *common.RegTicketSearch) {
 	task.searchResMutex.Lock()
 	defer task.searchResMutex.Unlock()
 
@@ -180,7 +184,7 @@ func (task *NftSearchingTask) addMatchedResult(res *RegTicketSearch) {
 }
 
 // SubscribeSearchResult returns a new search result of the state.
-func (task *NftSearchingTask) SubscribeSearchResult() <-chan *RegTicketSearch {
+func (task *NftSearchingTask) SubscribeSearchResult() <-chan *common.RegTicketSearch {
 	return task.resultChan
 }
 
@@ -193,11 +197,11 @@ func (task *NftSearchingTask) removeArtifacts() {
 }
 
 // NewNftSearchTask returns a new NftSearchingTask instance.
-func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest) *NftSearchingTask {
+func NewNftSearchTask(service *NftSearchingService, request *common.NftSearchingRequest) *NftSearchingTask {
 	task := common.NewWalletNodeTask(logPrefix)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
-		NodeMaker:     &NftSearchingNodeMaker{},
+		NodeMaker:     &common.NftSearchingNodeMaker{},
 		PastelHandler: service.pastelHandler,
 		NodeClient:    service.nodeClient,
 		Configs: &common.MeshHandlerConfig{
@@ -214,8 +218,8 @@ func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest
 		WalletNodeTask: task,
 		service:        service,
 		request:        request,
-		resultChan:     make(chan *RegTicketSearch),
-		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
+		resultChan:     make(chan *common.RegTicketSearch),
+		thumbnail:      thumbnail.NewService(common.NewMeshHandler(meshHandlerOpts), 5, 1*time.Minute),
 		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
 	}
 }
@@ -223,7 +227,7 @@ func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest
 // NftGetSearchTask helper
 type NftGetSearchTask struct {
 	*common.WalletNodeTask
-	thumbnail *ThumbnailHandler
+	thumbnail *thumbnail.ThumbnailService
 	ddAndFP   *DDFPHandler
 }
 
@@ -232,7 +236,7 @@ func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphra
 	task := common.NewWalletNodeTask(logPrefix)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
-		NodeMaker:     &NftSearchingNodeMaker{},
+		NodeMaker:     &common.NftSearchingNodeMaker{},
 		PastelHandler: service.pastelHandler,
 		NodeClient:    service.nodeClient,
 		Configs: &common.MeshHandlerConfig{
@@ -247,7 +251,7 @@ func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphra
 
 	return &NftGetSearchTask{
 		WalletNodeTask: task,
-		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
+		thumbnail:      thumbnail.NewService(common.NewMeshHandler(meshHandlerOpts), 5, 1*time.Minute),
 		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
 	}
 }

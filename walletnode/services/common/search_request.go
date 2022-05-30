@@ -1,4 +1,4 @@
-package nftsearch
+package common
 
 import "github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 
