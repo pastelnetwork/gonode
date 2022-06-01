@@ -90,7 +90,7 @@ func TestRegTicket(t *testing.T) {
 
 			pastelClientMock.ListenOnRegTicket(testCase.args.regTicketID, testCase.want, testCase.args.regTicketErr)
 
-			service := NewNftSearchService(NewConfig(), pastelClientMock, nodeClientMock)
+			service := NewNftSearchService(NewConfig(), pastelClientMock, nodeClientMock, nil)
 
 			result, err := service.RegTicket(ctx, testCase.args.regTicketID)
 			assert.Equal(t, testCase.err, err)

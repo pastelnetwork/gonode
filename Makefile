@@ -57,6 +57,8 @@ gen-proto:
 	cd ./proto/walletnode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative register_cascade_wn.proto
 	cd ./proto/walletnode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative register_nft_wn.proto
 	cd ./proto/walletnode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative common_wn.proto
+	cd ./proto/bridge/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative common_bridge.proto
+	cd ./proto/bridge/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative download_data.proto
 integration-tests:
 	cd ./integration && INTEGRATION_TEST_ENV=true go test -v --timeout=10m ./...
 build:

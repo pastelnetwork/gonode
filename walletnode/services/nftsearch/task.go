@@ -47,21 +47,31 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 	newCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if err := task.ddAndFP.Connect(newCtx, pastelConnections, cancel); err != nil {
-		return errors.Errorf("connect and setup fetchers: %w", err)
+	if task.service.bridgeClient == nil {
+		if err := task.ddAndFP.Connect(newCtx, pastelConnections, cancel); err != nil {
+			return errors.Errorf("connect and setup fetchers: %w", err)
+		}
+
+		if err := task.thumbnail.Connect(newCtx, pastelConnections, cancel); err != nil {
+			return errors.Errorf("connect and setup fetchers: %w", err)
+		}
 	}
+
 	if err := task.search(ctx); err != nil {
 		return errors.Errorf("search tickets: %w", err)
 	}
 
-	if err := task.thumbnail.Connect(newCtx, pastelConnections, cancel); err != nil {
-		return errors.Errorf("connect and setup fetchers: %w", err)
-	}
-	if err := task.thumbnail.FetchMultiple(newCtx, task.searchResult, &task.resultChan); err != nil {
-		return errors.Errorf("fetch multiple thumbnails: %w", err)
+	if task.service.bridgeClient != nil {
+		return task.fetchThumbnails(newCtx, task.searchResult, &task.resultChan)
+
+	} else {
+		if err := task.thumbnail.FetchMultiple(newCtx, task.searchResult, &task.resultChan); err != nil {
+			return errors.Errorf("fetch multiple thumbnails: %w", err)
+		}
+		task.thumbnail.CloseAll(newCtx)
 	}
 
-	return task.thumbnail.CloseAll(newCtx)
+	return nil
 }
 
 func (task *NftSearchingTask) search(ctx context.Context) error {
@@ -125,12 +135,24 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 
 // filterRegTicket filters ticket against request params & checks if its a match
 func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
+	var ddAndFpData []byte
+	var err error
+
 	// Get DD and FP data so we can filter on it.
-	ddAndFpData, err := task.ddAndFP.Fetch(ctx, regTicket.TXID)
-	if err != nil {
-		log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
-		return srch, false
+	if task.service.bridgeClient != nil {
+		ddAndFpData, err = task.service.bridgeClient.DownloadDDAndFingerprints(ctx, regTicket.TXID)
+		if err != nil {
+			log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
+			return srch, false
+		}
+	} else {
+		ddAndFpData, err = task.ddAndFP.Fetch(ctx, regTicket.TXID)
+		if err != nil {
+			log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
+			return srch, false
+		}
 	}
+
 	ddAndFpStruct := &pastel.DDAndFingerprints{}
 	json.Unmarshal(ddAndFpData, ddAndFpStruct)
 	log.WithContext(ctx).WithField("ddandfpstruct", ddAndFpStruct).Println("Successfully unmarshalled dd and fp struct")
@@ -250,4 +272,39 @@ func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphra
 		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
 		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
 	}
+}
+
+func (task *NftSearchingTask) fetchThumbnails(ctx context.Context, searchResult []*RegTicketSearch, resultChan *chan *RegTicketSearch) error {
+	group, _ := errgroup.WithContext(ctx)
+
+	for i, res := range searchResult {
+		res := res
+		res.MatchIndex = i
+
+		group.Go(func() error {
+			tgroup, tgctx := errgroup.WithContext(ctx)
+			var thumbData map[int][]byte
+			tgroup.Go(func() (err error) {
+				thumbData, err = task.service.bridgeClient.DownloadThumbnail(tgctx, res.RegTicket.TXID, 2)
+
+				return err
+			})
+
+			if err := tgroup.Wait(); err != nil {
+				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("fetch Thumbnail")
+				return fmt.Errorf("fetch thumbnail: txid: %s - err: %s", res.TXID, err)
+			}
+
+			res.Thumbnail = thumbData[0]
+			res.ThumbnailSecondry = thumbData[1]
+			// Post on result channel
+			*resultChan <- res
+
+			log.WithContext(ctx).WithField("search_result", res).Debug("Posted search result")
+
+			return nil
+		})
+	}
+
+	return group.Wait()
 }

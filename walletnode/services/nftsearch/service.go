@@ -3,8 +3,10 @@ package nftsearch
 import (
 	"context"
 
+	bridgeNode "github.com/pastelnetwork/gonode/bridge/node"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -23,6 +25,7 @@ type NftSearchingService struct {
 	config        *Config
 	nodeClient    node.ClientInterface
 	pastelHandler *mixins.PastelHandler
+	bridgeClient  bridgeNode.DownloadDataInterface
 }
 
 // Run starts worker.
@@ -69,6 +72,15 @@ func (service *NftSearchingService) GetThumbnail(ctx context.Context, regTicket 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	if service.bridgeClient != nil {
+		dataMap, err := service.bridgeClient.DownloadThumbnail(ctx, regTicket.TXID, 1)
+		if err != nil {
+			return nil, errors.Errorf("download thumbnail through bridge: %w", err)
+		}
+
+		return dataMap[0], nil
+	}
+
 	if err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel); err != nil {
 		return nil, errors.Errorf("connect and setup fetchers: %w", err)
 	}
@@ -78,6 +90,7 @@ func (service *NftSearchingService) GetThumbnail(ctx context.Context, regTicket 
 	}
 
 	return data, nftGetSearchTask.thumbnail.CloseAll(ctx)
+
 }
 
 // GetDDAndFP gets dupe detection and fingerprint file
@@ -86,6 +99,17 @@ func (service *NftSearchingService) GetDDAndFP(ctx context.Context, regTicket *p
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	// Get DD and FP data so we can filter on it.
+	if service.bridgeClient != nil {
+		data, err = service.bridgeClient.DownloadDDAndFingerprints(ctx, regTicket.TXID)
+		if err != nil {
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
+			return data, err
+		}
+
+		return data, nil
+	}
 
 	if err := nftGetSearchTask.ddAndFP.Connect(ctx, 1, cancel); err != nil {
 		return nil, errors.Errorf("connect and setup fetchers: %w", err)
@@ -119,12 +143,13 @@ func (service *NftSearchingService) RegTicket(ctx context.Context, RegTXID strin
 // 	NB: Because NewNftApiHandler calls AddTask, an NftSearchTask will actually
 //		be instantiated instead of a generic Task.
 func NewNftSearchService(config *Config, pastelClient pastel.Client,
-	nodeClient node.ClientInterface) *NftSearchingService {
+	nodeClient node.ClientInterface, bridgeClient bridgeNode.DownloadDataInterface) *NftSearchingService {
 
 	return &NftSearchingService{
 		Worker:        task.NewWorker(),
 		config:        config,
 		nodeClient:    nodeClient,
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
+		bridgeClient:  bridgeClient,
 	}
 }

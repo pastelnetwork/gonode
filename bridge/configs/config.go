@@ -3,8 +3,11 @@ package configs
 import (
 	"encoding/json"
 
+	"github.com/pastelnetwork/gonode/bridge/services/server"
+
+	"github.com/pastelnetwork/gonode/bridge/services/download"
+
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/raptorq"
 )
 
 const (
@@ -17,23 +20,14 @@ const (
 
 // Config contains configuration of all components of the WalletNode.
 type Config struct {
-	LogConfig  *LogConfig `mapstructure:"log-config" json:"log-config,omitempty"`
-	Quiet      bool       `mapstructure:"quiet" json:"quiet"`
-	TempDir    string     `mapstructure:"temp-dir" json:"temp-dir"`
-	WorkDir    string     `mapstructure:"work-dir" json:"work-dir"`
-	RqFilesDir string     `mapstructure:"rq-files-dir" json:"rq-files-dir"`
+	LogConfig *LogConfig `mapstructure:"log-config" json:"log-config,omitempty"`
+	Quiet     bool       `mapstructure:"quiet" json:"quiet"`
+	TempDir   string     `mapstructure:"temp-dir" json:"temp-dir"`
+	WorkDir   string     `mapstructure:"work-dir" json:"work-dir"`
 
-	Node    `mapstructure:"node" json:"node,omitempty"`
-	Pastel  *pastel.Config  `mapstructure:"-" json:"-"`
-	RaptorQ *raptorq.Config `mapstructure:"raptorq" json:"raptorq,omitempty"`
-	Bridge  *BridgeConfig   `mapstructure:"bridge" json:"bridge,omitempty"`
-}
-
-// BridgeConfig contains settings of the supernode server.
-type BridgeConfig struct {
-	Address string `mapstructure:"address" json:"address,omitempty"`
-	Port    int    `mapstructure:"port" json:"port,omitempty"`
-	Switch  bool   `mapstructure:"switch" json:"switch,omitempty"`
+	Pastel   *pastel.Config   `mapstructure:"-" json:"-"`
+	Download *download.Config `mapstructure:"download" json:"download,omitempty"`
+	Server   *server.Config   `mapstructure:"server" json:"server,omitempty"`
 }
 
 // LogConfig contains log configs
@@ -64,9 +58,8 @@ func New() *Config {
 			MaxSizeInMB:  defaultLogMaxSizeInMB,
 		},
 
-		Node:    NewNode(),
-		Pastel:  pastel.NewConfig(),
-		RaptorQ: raptorq.NewConfig(),
-		Bridge:  &BridgeConfig{},
+		Pastel:   pastel.NewConfig(),
+		Download: download.NewConfig(),
+		Server:   server.NewConfig(),
 	}
 }

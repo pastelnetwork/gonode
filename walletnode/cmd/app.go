@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	bridgeNode "github.com/pastelnetwork/gonode/bridge/node"
+	bridgeGrpc "github.com/pastelnetwork/gonode/bridge/node/grpc"
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -163,6 +165,21 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.CascadeRegister.RqFilesDir = config.RqFilesDir
 
 	rqClient := rqgrpc.NewClient()
+	bridgeClient := bridgeGrpc.NewClient()
+
+	var bridge bridgeNode.DownloadDataInterface
+	if config.Bridge.Switch {
+		log.WithContext(ctx).Info("Connecting with bridge..")
+
+		conn, err := bridgeClient.Connect(ctx, fmt.Sprintf("%s:%d", config.Bridge.Address, config.Bridge.Port))
+		if err != nil {
+			return errors.New("bridge service switch on but unable to connect")
+		}
+
+		bridge = conn.DownloadData()
+
+		log.WithContext(ctx).Info("Bridge service connected ")
+	}
 
 	// NB: As part of current dev push for Sense and Cascade, we are disabling userdata handling thru rqlite.
 
@@ -191,7 +208,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	//  the required functionality.  These services aren't started with these declarations, they will be run
 	//	later through the API Server.
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
-	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient)
+	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient, bridge)
 	nftDownload := download.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
 	//userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)

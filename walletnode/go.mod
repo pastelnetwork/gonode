@@ -47,6 +47,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3 // indirect
+	github.com/pastelnetwork/gonode/bridge v0.0.0-00010101000000-000000000000 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -80,6 +81,7 @@ require (
 )
 
 replace (
+	github.com/pastelnetwork/gonode/bridge => ../bridge
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/metadb => ../metadb
 	github.com/pastelnetwork/gonode/mixins => ../mixins
