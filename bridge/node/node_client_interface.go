@@ -1,10 +1,6 @@
 //go:generate mockery --name=ClientInterface
 //go:generate mockery --name=ConnectionInterface
-//go:generate mockery --name=RegisterSenseInterface
-//go:generate mockery --name=RegisterCascadeInterface
-//go:generate mockery --name=RegisterNftInterface
-//go:generate mockery --name=DownloadNftInterface
-//go:generate mockery --name=ProcessUserdataInterface
+//go:generate mockery --name=DownloadDataInterface
 
 package node
 
