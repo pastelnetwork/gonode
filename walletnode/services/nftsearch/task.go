@@ -63,15 +63,13 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 
 	if task.service.bridgeClient != nil {
 		return task.fetchThumbnails(newCtx, task.searchResult, &task.resultChan)
-
-	} else {
-		if err := task.thumbnail.FetchMultiple(newCtx, task.searchResult, &task.resultChan); err != nil {
-			return errors.Errorf("fetch multiple thumbnails: %w", err)
-		}
-		task.thumbnail.CloseAll(newCtx)
 	}
 
-	return nil
+	if err := task.thumbnail.FetchMultiple(newCtx, task.searchResult, &task.resultChan); err != nil {
+		return errors.Errorf("fetch multiple thumbnails: %w", err)
+	}
+
+	return task.thumbnail.CloseAll(newCtx)
 }
 
 func (task *NftSearchingTask) search(ctx context.Context) error {
