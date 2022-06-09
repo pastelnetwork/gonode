@@ -57,6 +57,7 @@
 package main
 
 import (
+	"C"
 	"os"
 
 	"github.com/pastelnetwork/gonode/common/errors"

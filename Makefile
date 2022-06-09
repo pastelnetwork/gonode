@@ -65,9 +65,16 @@ build:
 clean-proto:
 	rm -f ./proto/supernode/*.go
 	rm -f ./proto/walletnode/*.go
-release:
-	cd ./supernode && go build -ldflags=$(LDFLAGS) -o $(BINARY_SN)
-	strip -v supernode/$(BINARY_SN) -o dist/$(BINARY_SN)-linux-$(arch)
 
+release:
 	cd ./walletnode && go build -ldflags=$(LDFLAGS) -o $(BINARY_WN)
 	strip -v walletnode/$(BINARY_WN) -o dist/$(BINARY_WN)-$(os)-$(arch)$(ext)
+
+	docker build -f ./scripts/release.Dockerfile --build-arg LD_FLAGS=$(LDFLAGS) -t gonode_release .
+	docker create -ti --name gn_builder gonode_release bash
+	docker cp gn_builder:/walletnode/walletnode-win32.exe ./dist/$(BINARY_WN)-win32.exe
+	docker cp gn_builder:/walletnode/walletnode-win64.exe ./dist/$(BINARY_WN)-win64.exe
+	docker cp gn_builder:/walletnode/walletnode-linux-amd64 ./dist/$(BINARY_WN)-linux-amd64
+	docker cp gn_builder:/supernode/supernode-linux-amd64 ./dist/$(BINARY_SN)-linux-amd64
+	docker rm -f gn_builder
+
