@@ -17,7 +17,7 @@ type thumbnailHandler struct {
 
 	fetchersChan chan request
 	nodesDone    chan struct{}
-	connMtx      sync.RWMutex
+	connMtx      *sync.RWMutex
 }
 
 // newThumbnailHandler returns a new instance of ThumbnailHandler as Helper
@@ -25,6 +25,7 @@ func newThumbnailHandler(meshHandler *common.MeshHandler) *thumbnailHandler {
 	return &thumbnailHandler{
 		meshHandler:  meshHandler,
 		fetchersChan: make(chan request),
+		connMtx:      &sync.RWMutex{},
 	}
 }
 
@@ -87,7 +88,7 @@ func (h *thumbnailHandler) setFetchers(ctx context.Context) error {
 }
 
 func (h *thumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNodeClient, nodeID string) error {
-	nftSearchNode, ok := someNode.SuperNodeAPIInterface.(*DownloadNode)
+	downladNode, ok := someNode.SuperNodeAPIInterface.(*DownloadNode)
 	if !ok {
 		return errors.Errorf("node %s is not DownloadNode", someNode.String())
 	}
@@ -103,7 +104,7 @@ func (h *thumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNo
 				}
 
 				log.WithContext(ctx).Debugf("thumb-txid: %v-%v", req.txid, nodeID)
-				data, err := nftSearchNode.DownloadThumbnail(ctx, req.txid, req.numnails)
+				data, err := downladNode.DownloadThumbnail(ctx, req.txid, req.numnails)
 				req.respCh <- &response{err: err, data: data}
 			}
 		}

@@ -17,7 +17,7 @@ type ddFpHandler struct {
 
 	fetchersChan chan ddfpRequest
 	nodesDone    chan struct{}
-	connMtx      sync.RWMutex
+	connMtx      *sync.RWMutex
 }
 
 // newDDFPHandler returns a new instance of DDFPHandler as Helper
@@ -25,6 +25,7 @@ func newDDFPHandler(meshHandler *common.MeshHandler) *ddFpHandler {
 	return &ddFpHandler{
 		meshHandler:  meshHandler,
 		fetchersChan: make(chan ddfpRequest),
+		connMtx:      &sync.RWMutex{},
 	}
 }
 

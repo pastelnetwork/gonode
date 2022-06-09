@@ -1,4 +1,5 @@
 //go:generate mockery --name=ClientInterface
+//go:generate mockery --name=SNClientInterface
 //go:generate mockery --name=ConnectionInterface
 //go:generate mockery --name=DownloadDataInterface
 
