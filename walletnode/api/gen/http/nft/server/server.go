@@ -78,7 +78,7 @@ func New(
 		Mounts: []*MountPoint{
 			{"Register", "POST", "/nfts/register"},
 			{"RegisterTaskState", "GET", "/nfts/register/{taskId}/state"},
-			{"GetTaskHistory", "GET", "/nfts/start/{taskId}/history"},
+			{"GetTaskHistory", "GET", "/nfts/{taskId}/history"},
 			{"RegisterTask", "GET", "/nfts/register/{taskId}"},
 			{"RegisterTasks", "GET", "/nfts/register"},
 			{"UploadImage", "POST", "/nfts/register/upload"},
@@ -87,7 +87,7 @@ func New(
 			{"Download", "GET", "/nfts/download"},
 			{"CORS", "OPTIONS", "/nfts/register"},
 			{"CORS", "OPTIONS", "/nfts/register/{taskId}/state"},
-			{"CORS", "OPTIONS", "/nfts/start/{taskId}/history"},
+			{"CORS", "OPTIONS", "/nfts/{taskId}/history"},
 			{"CORS", "OPTIONS", "/nfts/register/{taskId}"},
 			{"CORS", "OPTIONS", "/nfts/register/upload"},
 			{"CORS", "OPTIONS", "/nfts/search"},
@@ -269,7 +269,7 @@ func MountGetTaskHistoryHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/nfts/start/{taskId}/history", f)
+	mux.Handle("GET", "/nfts/{taskId}/history", f)
 }
 
 // NewGetTaskHistoryHandler creates a HTTP handler which loads the HTTP request
@@ -631,7 +631,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	h = HandleNftOrigin(h)
 	mux.Handle("OPTIONS", "/nfts/register", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/register/{taskId}/state", h.ServeHTTP)
-	mux.Handle("OPTIONS", "/nfts/start/{taskId}/history", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/nfts/{taskId}/history", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/register/{taskId}", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/register/upload", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/search", h.ServeHTTP)

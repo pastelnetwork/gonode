@@ -5,6 +5,54 @@ info:
 servers:
 - url: http://localhost:8080
 paths:
+  /nfts/{taskId}/history:
+    get:
+      tags:
+      - nft
+      summary: Get history of states as a json string with a list of state objects.
+      description: Gets the history of the task's states.
+      operationId: nft#getTaskHistory
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the registration process
+        required: true
+        schema:
+          type: string
+          description: Task ID of the registration process
+          example: n6Qn6TFM
+          minLength: 8
+          maxLength: 8
+        example: n6Qn6TFM
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskHistory'
+              example:
+                list: '[ Started, Image Probed, Downloaded... ]'
+        "404":
+          description: Not Found response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
   /nfts/{txid}:
     get:
       tags:
@@ -944,54 +992,6 @@ paths:
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
         "400":
           description: Bad Request response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-        "500":
-          description: Internal Server Error response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-  /nfts/start/{taskId}/history:
-    get:
-      tags:
-      - nft
-      summary: Get history of states as a json string with a list of state objects.
-      description: Gets the history of the task's states.
-      operationId: nft#getTaskHistory
-      parameters:
-      - name: taskId
-        in: path
-        description: Task ID of the registration process
-        required: true
-        schema:
-          type: string
-          description: Task ID of the registration process
-          example: n6Qn6TFM
-          minLength: 8
-          maxLength: 8
-        example: n6Qn6TFM
-      responses:
-        "200":
-          description: OK response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TaskHistory'
-              example:
-                list: '[ Started, Image Probed, Downloaded... ]'
-        "404":
-          description: Not Found response.
           content:
             application/vnd.goa.error:
               schema:

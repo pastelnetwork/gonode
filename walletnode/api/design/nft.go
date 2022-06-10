@@ -77,7 +77,7 @@ var _ = Service("nft", func() {
 		Result(TaskHistory)
 
 		HTTP(func() {
-			GET("/start/{taskId}/history")
+			GET("/{taskId}/history")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
