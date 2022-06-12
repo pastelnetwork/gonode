@@ -12,6 +12,38 @@ produces:
 - application/xml
 - application/gob
 paths:
+  /nfts/{taskId}/history:
+    get:
+      tags:
+      - nft
+      summary: Get history of states as a json string with a list of state objects.
+      description: Gets the history of the task's states.
+      operationId: nft#getTaskHistory
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the registration process
+        required: true
+        type: string
+        maxLength: 8
+        minLength: 8
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/NftGetTaskHistoryResponseBody'
+            required:
+            - list
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/NftGetTaskHistoryNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/NftGetTaskHistoryInternalServerErrorResponseBody'
+      schemes:
+      - http
   /nfts/{txid}:
     get:
       tags:
@@ -410,38 +442,6 @@ paths:
             $ref: '#/definitions/NftNftSearchInternalServerErrorResponseBody'
       schemes:
       - ws
-  /nfts/start/{taskId}/history:
-    get:
-      tags:
-      - nft
-      summary: Get history of states as a json string with a list of state objects.
-      description: Gets the history of the task's states.
-      operationId: nft#getTaskHistory
-      parameters:
-      - name: taskId
-        in: path
-        description: Task ID of the registration process
-        required: true
-        type: string
-        maxLength: 8
-        minLength: 8
-      responses:
-        "200":
-          description: OK response.
-          schema:
-            $ref: '#/definitions/NftGetTaskHistoryResponseBody'
-            required:
-            - list
-        "404":
-          description: Not Found response.
-          schema:
-            $ref: '#/definitions/NftGetTaskHistoryNotFoundResponseBody'
-        "500":
-          description: Internal Server Error response.
-          schema:
-            $ref: '#/definitions/NftGetTaskHistoryInternalServerErrorResponseBody'
-      schemes:
-      - http
   /openapi/cascade/download:
     get:
       tags:

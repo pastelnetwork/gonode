@@ -22,7 +22,10 @@ require (
 	google.golang.org/grpc v1.45.0
 )
 
-require github.com/DataDog/zstd v1.5.0
+require (
+	github.com/DataDog/zstd v1.5.0
+	github.com/pastelnetwork/gonode/bridge v0.0.0-00010101000000-000000000000
+)
 
 require (
 	github.com/btcsuite/btcutil v1.0.2 // indirect
@@ -80,6 +83,7 @@ require (
 )
 
 replace (
+	github.com/pastelnetwork/gonode/bridge => ../bridge
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/metadb => ../metadb
 	github.com/pastelnetwork/gonode/mixins => ../mixins

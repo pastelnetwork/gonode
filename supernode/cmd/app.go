@@ -30,6 +30,7 @@ import (
 	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/bridge"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
@@ -275,6 +276,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterCascade(cascadeRegister),
 		supernode.NewRegisterCascade(cascadeRegister),
 		walletnode.NewDownloadNft(nftDownload),
+		bridge.NewDownloadData(nftDownload),
 		supernode.NewStorageChallengeGRPC(storageChallenger),
 		healthcheck.NewHealthCheck(statsMngr),
 	)

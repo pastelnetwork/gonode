@@ -22,13 +22,20 @@ COPY mixins/ /mixins/
 COPY supernode/ /supernode/
 COPY hermes/ /hermes/
 COPY mixins/ /mixins/
+COPY bridge/ /bridge/
 
 WORKDIR /walletnode
 RUN go mod download
-RUN CGO_ENABLED=1 GOOS=windows GOARCH=amd64  CC=x86_64-w64-mingw32-gcc go build -ldflags=${LD_FLAGS} -o  walletnode-win64.exe
+RUN CGO_ENABLED=1 GOOS=windows GOARCH=amd64  CC=x86_64-w64-mingw32-gcc go build -ldflags=${LD_FLAGS} -o walletnode-win64.exe
 RUN CGO_ENABLED=1 GOOS=windows GOARCH=386 CC=i686-w64-mingw32-gcc  go build -ldflags=${LD_FLAGS} -o walletnode-win32.exe
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags=${LD_FLAGS} -o walletnode-linux-amd64
 
 WORKDIR /supernode
 RUN go mod download
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags=${LD_FLAGS} -o supernode-linux-amd64
+
+WORKDIR /bridge
+RUN go mod download
+RUN CGO_ENABLED=1 GOOS=windows GOARCH=amd64  CC=x86_64-w64-mingw32-gcc go build -ldflags=${LD_FLAGS} -o bridge-win64.exe
+RUN CGO_ENABLED=1 GOOS=windows GOARCH=386 CC=i686-w64-mingw32-gcc  go build -ldflags=${LD_FLAGS} -o bridge-win32.exe
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags=${LD_FLAGS} -o bridge-linux-amd64

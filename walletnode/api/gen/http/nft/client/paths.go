@@ -23,7 +23,7 @@ func RegisterTaskStateNftPath(taskID string) string {
 
 // GetTaskHistoryNftPath returns the URL path to the nft service getTaskHistory HTTP endpoint.
 func GetTaskHistoryNftPath(taskID string) string {
-	return fmt.Sprintf("/nfts/start/%v/history", taskID)
+	return fmt.Sprintf("/nfts/%v/history", taskID)
 }
 
 // RegisterTaskNftPath returns the URL path to the nft service registerTask HTTP endpoint.

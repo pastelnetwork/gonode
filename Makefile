@@ -17,6 +17,7 @@ endif
 LDFLAGS="-s -w -X github.com/pastelnetwork/gonode/common/version.version=$(VERSION)"
 BINARY_SN ?= supernode
 BINARY_WN ?= walletnode
+BINARY_BRIDGE ?= bridge
 
 wn-unit-tests:
 	cd ./walletnode && go test -race ./...
@@ -36,12 +37,13 @@ gen-mock:
 	rm -r -f ./p2p/mocks
 	rm -r -f ./pastel/mocks
 	rm -r -f ./raptorq/node/mocks
+	rm -r -f ./bridge/node/mocks
 	rm -r -f ./supernode/node/mocks
 	rm -r -f ./walletnode/node/mocks
 	cd ./dupedetection/ddclient && go generate ./...
 	cd ./p2p && go generate ./...
 	cd ./common && go generate ./...
-	#cd ./metadb && go generate ./...
+	cd ./bridge && go generate ./...
 	cd ./pastel && go generate ./...
 	cd ./raptorq/node && go generate ./...
 	cd ./supernode/node && go generate ./...
@@ -57,6 +59,8 @@ gen-proto:
 	cd ./proto/walletnode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative register_cascade_wn.proto
 	cd ./proto/walletnode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative register_nft_wn.proto
 	cd ./proto/walletnode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative common_wn.proto
+	cd ./proto/bridge/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative common_bridge.proto
+	cd ./proto/bridge/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative download_data.proto
 integration-tests:
 	cd ./integration && INTEGRATION_TEST_ENV=true go test -v --timeout=10m ./...
 build:
@@ -76,5 +80,8 @@ release:
 	docker cp gn_builder:/walletnode/walletnode-win64.exe ./dist/$(BINARY_WN)-win64.exe
 	docker cp gn_builder:/walletnode/walletnode-linux-amd64 ./dist/$(BINARY_WN)-linux-amd64
 	docker cp gn_builder:/supernode/supernode-linux-amd64 ./dist/$(BINARY_SN)-linux-amd64
+	docker cp gn_builder:/bridge/bridge-win32.exe ./dist/$(BINARY_BRIDGE)-win32.exe
+	docker cp gn_builder:/bridge/bridge-win64.exe ./dist/$(BINARY_BRIDGE)-win64.exe
+	docker cp gn_builder:/bridge/bridge-linux-amd64 ./dist/$(BINARY_BRIDGE)-linux-amd64
 	docker rm -f gn_builder
 

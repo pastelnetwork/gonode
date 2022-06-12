@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/bridge";
+
+package bridge;
+
+message SessionRequest {
+    bool is_primary = 1;
+}
+
+message SessionReply {
+    string sessID = 1;
+}
+
+message AcceptedNodesRequest {}
+
+message AcceptedNodesReply {
+    message Peer {
+        string nodeID = 1;
+    }
+    repeated Peer peers = 1;
+}
+
+message ConnectToRequest {
+    string sessID = 1;
+    string nodeID = 2;
+}
+
+message ConnectToReply {}
+
+message MeshNodesRequest {
+    message Node  {
+     string sessID = 1;
+     string nodeID = 2;
+    }
+
+    repeated Node nodes = 1;
+}
+
+message MeshNodesReply {}

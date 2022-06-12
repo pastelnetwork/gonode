@@ -8,6 +8,7 @@ COPY common/  /common/
 COPY dupedetection/ /dupedetection/
 COPY go-webp/ /go-webp/
 COPY mixins/ /mixins/
+COPY bridge/ /bridge/
 COPY metadb/ /metadb/
 COPY pastel/ /pastel/
 COPY p2p/ /p2p/
