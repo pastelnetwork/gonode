@@ -1,5 +1,7 @@
 # GoNode
 
+[![PastelNetwork](https://circleci.com/gh/pastelnetwork/gonode.svg?style=shield)](https://app.circleci.com/pipelines/github/pastelnetwork/gonode)
+
 `gonode` contains two main applications, `walletnode` and `supernode`. These are designed to register NFTs on the [Pastel](http://pastel.wiki/en/home) blockchain. Neither `walletnode` nor `supernode`  interact directly with the blockchain; instead, they use Pastel's RPC API to communicate with Pastel's [cNode](https://github.com/pastelnetwork/pastel) which handles the blockchain itself.
 
 ### Walletnode
