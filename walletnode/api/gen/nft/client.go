@@ -63,13 +63,13 @@ func (c *Client) RegisterTaskState(ctx context.Context, p *RegisterTaskStatePayl
 }
 
 // GetTaskHistory calls the "getTaskHistory" endpoint of the "nft" service.
-func (c *Client) GetTaskHistory(ctx context.Context, p *GetTaskHistoryPayload) (res *TaskHistory, err error) {
+func (c *Client) GetTaskHistory(ctx context.Context, p *GetTaskHistoryPayload) (res []*TaskHistory, err error) {
 	var ires interface{}
 	ires, err = c.GetTaskHistoryEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*TaskHistory), nil
+	return ires.([]*TaskHistory), nil
 }
 
 // RegisterTask calls the "registerTask" endpoint of the "nft" service.

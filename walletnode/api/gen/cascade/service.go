@@ -24,7 +24,7 @@ type Service interface {
 	// Streams the state of the registration process.
 	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
 	// Gets the history of the task's states.
-	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res *TaskHistory, err error)
+	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res []*TaskHistory, err error)
 	// Download cascade Artifact.
 	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
 }
@@ -121,10 +121,11 @@ type StartProcessingResult struct {
 	TaskID string
 }
 
-// TaskHistory is the result type of the cascade service getTaskHistory method.
 type TaskHistory struct {
-	// List of past status strings
-	List string
+	// Timestamp of the status creation
+	Timestamp *string
+	// past status string
+	Status string
 }
 
 // TaskState is the result type of the cascade service registerTaskState method.

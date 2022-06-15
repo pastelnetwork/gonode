@@ -22,7 +22,7 @@ type Service interface {
 	// Streams the state of the registration process.
 	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
 	// Gets the history of the task's states.
-	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res *TaskHistory, err error)
+	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res []*TaskHistory, err error)
 	// Returns a single task.
 	RegisterTask(context.Context, *RegisterTaskPayload) (res *Task, err error)
 	// List of all tasks.
@@ -398,10 +398,11 @@ type Task struct {
 // TaskCollection is the result type of the nft service registerTasks method.
 type TaskCollection []*Task
 
-// TaskHistory is the result type of the nft service getTaskHistory method.
 type TaskHistory struct {
-	// List of past status strings
-	List string
+	// Timestamp of the status creation
+	Timestamp *string
+	// past status string
+	Status string
 }
 
 // TaskState is the result type of the nft service registerTaskState method.

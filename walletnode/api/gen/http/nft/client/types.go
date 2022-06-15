@@ -89,10 +89,7 @@ type RegisterTaskStateResponseBody struct {
 
 // GetTaskHistoryResponseBody is the type of the "nft" service "getTaskHistory"
 // endpoint HTTP response body.
-type GetTaskHistoryResponseBody struct {
-	// List of past status strings
-	List *string `form:"list,omitempty" json:"list,omitempty" xml:"list,omitempty"`
-}
+type GetTaskHistoryResponseBody []*TaskHistoryResponse
 
 // RegisterTaskResponseBody is the type of the "nft" service "registerTask"
 // endpoint HTTP response body.
@@ -549,6 +546,14 @@ type ThumbnailcoordinateRequestBody struct {
 	BottomRightY int64 `form:"bottom_right_y" json:"bottom_right_y" xml:"bottom_right_y"`
 }
 
+// TaskHistoryResponse is used to define fields on response body types.
+type TaskHistoryResponse struct {
+	// Timestamp of the status creation
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	// past status string
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+}
+
 // TaskStateResponseBody is used to define fields on response body types.
 type TaskStateResponseBody struct {
 	// Date of the status creation
@@ -861,9 +866,10 @@ func NewRegisterTaskStateInternalServerError(body *RegisterTaskStateInternalServ
 
 // NewGetTaskHistoryTaskHistoryOK builds a "nft" service "getTaskHistory"
 // endpoint result from a HTTP "OK" response.
-func NewGetTaskHistoryTaskHistoryOK(body *GetTaskHistoryResponseBody) *nft.TaskHistory {
-	v := &nft.TaskHistory{
-		List: *body.List,
+func NewGetTaskHistoryTaskHistoryOK(body []*TaskHistoryResponse) []*nft.TaskHistory {
+	v := make([]*nft.TaskHistory, len(body))
+	for i, val := range body {
+		v[i] = unmarshalTaskHistoryResponseToNftTaskHistory(val)
 	}
 
 	return v
@@ -1195,15 +1201,6 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Preburn Registration Fee" || *body.Status == "Downloaded" || *body.Status == "Request Accepted" || *body.Status == "Request Registered" || *body.Status == "Request Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Signatures Dont Match" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Error File Don't Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Find Responding SNs" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Error Invalid Burn TxID" || *body.Status == "Task Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Preburn Registration Fee", "Downloaded", "Request Accepted", "Request Registered", "Request Activated", "Error Insufficient Fee", "Error Signatures Dont Match", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Error File Don't Match", "Error Not Enough SuperNode", "Error Find Responding SNs", "Error Not Enough Downloaded Filed", "Error Download Failed", "Error Invalid Burn TxID", "Task Failed", "Task Rejected", "Task Completed"}))
 		}
-	}
-	return
-}
-
-// ValidateGetTaskHistoryResponseBody runs the validations defined on
-// GetTaskHistoryResponseBody
-func ValidateGetTaskHistoryResponseBody(body *GetTaskHistoryResponseBody) (err error) {
-	if body.List == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("list", "body"))
 	}
 	return
 }
@@ -1845,6 +1842,15 @@ func ValidateDownloadInternalServerErrorResponseBody(body *DownloadInternalServe
 	}
 	if body.Fault == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateTaskHistoryResponse runs the validations defined on
+// TaskHistoryResponse
+func ValidateTaskHistoryResponse(body *TaskHistoryResponse) (err error) {
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	return
 }

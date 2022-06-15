@@ -278,7 +278,7 @@ func EncodeRegisterTaskStateError(encoder func(context.Context, http.ResponseWri
 // the sense getTaskHistory endpoint.
 func EncodeGetTaskHistoryResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res, _ := v.(*sense.TaskHistory)
+		res, _ := v.([]*sense.TaskHistory)
 		enc := encoder(ctx, w)
 		body := NewGetTaskHistoryResponseBody(res)
 		w.WriteHeader(http.StatusOK)
@@ -455,4 +455,15 @@ func EncodeDownloadError(encoder func(context.Context, http.ResponseWriter) goah
 			return encodeError(ctx, w, v)
 		}
 	}
+}
+
+// marshalSenseTaskHistoryToTaskHistoryResponse builds a value of type
+// *TaskHistoryResponse from a value of type *sense.TaskHistory.
+func marshalSenseTaskHistoryToTaskHistoryResponse(v *sense.TaskHistory) *TaskHistoryResponse {
+	res := &TaskHistoryResponse{
+		Timestamp: v.Timestamp,
+		Status:    v.Status,
+	}
+
+	return res
 }

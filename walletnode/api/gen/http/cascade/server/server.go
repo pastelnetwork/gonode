@@ -75,12 +75,12 @@ func New(
 			{"UploadAsset", "POST", "/openapi/cascade/upload"},
 			{"StartProcessing", "POST", "/openapi/cascade/start/{file_id}"},
 			{"RegisterTaskState", "GET", "/openapi/cascade/start/{taskId}/state"},
-			{"GetTaskHistory", "GET", "/openapi/cascade/start/{taskId}/history"},
+			{"GetTaskHistory", "GET", "/openapi/cascade/{taskId}/history"},
 			{"Download", "GET", "/openapi/cascade/download"},
 			{"CORS", "OPTIONS", "/openapi/cascade/upload"},
 			{"CORS", "OPTIONS", "/openapi/cascade/start/{file_id}"},
 			{"CORS", "OPTIONS", "/openapi/cascade/start/{taskId}/state"},
-			{"CORS", "OPTIONS", "/openapi/cascade/start/{taskId}/history"},
+			{"CORS", "OPTIONS", "/openapi/cascade/{taskId}/history"},
 			{"CORS", "OPTIONS", "/openapi/cascade/download"},
 		},
 		UploadAsset:       NewUploadAssetHandler(e.UploadAsset, mux, NewCascadeUploadAssetDecoder(mux, cascadeUploadAssetDecoderFn), encoder, errhandler, formatter),
@@ -297,7 +297,7 @@ func MountGetTaskHistoryHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/openapi/cascade/start/{taskId}/history", f)
+	mux.Handle("GET", "/openapi/cascade/{taskId}/history", f)
 }
 
 // NewGetTaskHistoryHandler creates a HTTP handler which loads the HTTP request
@@ -397,7 +397,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("OPTIONS", "/openapi/cascade/upload", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/start/{file_id}", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/start/{taskId}/state", h.ServeHTTP)
-	mux.Handle("OPTIONS", "/openapi/cascade/start/{taskId}/history", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/openapi/cascade/{taskId}/history", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/download", h.ServeHTTP)
 }
 
