@@ -24,31 +24,21 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
-
 require (
-	github.com/anacrolix/log v0.9.0 // indirect
-	github.com/anacrolix/missinggo v1.2.1 // indirect
-	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
-	github.com/anacrolix/sync v0.2.0 // indirect
-	github.com/anacrolix/utp v0.1.0 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/campoy/embedmd v1.0.0 // indirect
-	github.com/chai2010/webp v1.1.1
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/disintegration/imaging v1.6.2
 	github.com/go-errors/errors v1.4.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/huandu/xstrings v1.3.0 // indirect
-	github.com/jmoiron/sqlx v1.3.4 // indirect
+	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rqlite/go-sqlite3 v1.22.0 // indirect
+	github.com/rqlite/go-sqlite3 v1.25.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect

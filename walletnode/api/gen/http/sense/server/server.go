@@ -74,12 +74,12 @@ func New(
 		Mounts: []*MountPoint{
 			{"UploadImage", "POST", "/openapi/sense/upload"},
 			{"StartProcessing", "POST", "/openapi/sense/start/{image_id}"},
-			{"RegisterTaskState", "GET", "/openapi/sense/{taskId}/state"},
+			{"RegisterTaskState", "GET", "/openapi/sense/start/{taskId}/state"},
 			{"GetTaskHistory", "GET", "/openapi/sense/{taskId}/history"},
 			{"Download", "GET", "/openapi/sense/download"},
 			{"CORS", "OPTIONS", "/openapi/sense/upload"},
 			{"CORS", "OPTIONS", "/openapi/sense/start/{image_id}"},
-			{"CORS", "OPTIONS", "/openapi/sense/{taskId}/state"},
+			{"CORS", "OPTIONS", "/openapi/sense/start/{taskId}/state"},
 			{"CORS", "OPTIONS", "/openapi/sense/{taskId}/history"},
 			{"CORS", "OPTIONS", "/openapi/sense/download"},
 		},
@@ -231,7 +231,7 @@ func MountRegisterTaskStateHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/openapi/sense/{taskId}/state", f)
+	mux.Handle("GET", "/openapi/sense/start/{taskId}/state", f)
 }
 
 // NewRegisterTaskStateHandler creates a HTTP handler which loads the HTTP
@@ -396,7 +396,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	h = HandleSenseOrigin(h)
 	mux.Handle("OPTIONS", "/openapi/sense/upload", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/sense/start/{image_id}", h.ServeHTTP)
-	mux.Handle("OPTIONS", "/openapi/sense/{taskId}/state", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/openapi/sense/start/{taskId}/state", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/sense/{taskId}/history", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/sense/download", h.ServeHTTP)
 }
