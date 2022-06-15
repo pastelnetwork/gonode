@@ -1,5 +1,9 @@
 package types
 
+import (
+	"time"
+)
+
 // MeshedSuperNode represents meshed sn
 type MeshedSuperNode struct {
 	SessID string
@@ -23,4 +27,12 @@ type ActionRegMetadata struct {
 	Timestamp       string
 	OpenAPISubsetID string
 	EstimatedFee    int64
+}
+
+// TaskHistory represents task history
+type TaskHistory struct {
+	ID        int
+	TaskID    string
+	CreatedAt time.Time
+	Status    string
 }

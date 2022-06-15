@@ -76,7 +76,7 @@ var _ = Service("sense", func() {
 		StreamingResult(RegisterTaskState)
 
 		HTTP(func() {
-			GET("/start/{taskId}/state")
+			GET("/{taskId}/state")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
@@ -90,10 +90,10 @@ var _ = Service("sense", func() {
 		Payload(func() {
 			Extend(RegisterTaskPayload)
 		})
-		Result(TaskHistory)
+		Result(ArrayOf(TaskHistory))
 
 		HTTP(func() {
-			GET("/start/{taskId}/history")
+			GET("/{taskId}/history")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)

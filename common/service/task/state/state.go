@@ -4,8 +4,14 @@ package state
 
 import (
 	"sync"
+	"time"
+
+	"github.com/pastelnetwork/gonode/common/storage/local"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/types"
 )
 
 // State represents a state of the task.
@@ -36,6 +42,8 @@ type state struct {
 	notifyFn func(status *Status)
 	sync.RWMutex
 	subsCh []chan *Status
+	taskID string
+	store  storage.LocalStoreInterface
 }
 
 // Status implements State.Status()
@@ -73,6 +81,13 @@ func (state *state) UpdateStatus(subStatus SubStatus) {
 	state.history = append(state.history, state.status)
 	state.status = status
 
+	if state.store != nil {
+		if _, err := state.store.InsertTaskHistory(types.TaskHistory{CreatedAt: time.Now(), TaskID: state.taskID,
+			Status: status.String()}); err != nil {
+			log.WithError(err).Error("unable to store task status")
+		}
+	}
+
 	if state.notifyFn != nil {
 		state.notifyFn(status)
 	}
@@ -107,8 +122,22 @@ func (state *state) SubscribeStatus() func() <-chan *Status {
 }
 
 // New returns a new state instance.
-func New(subStatus SubStatus) State {
+func New(subStatus SubStatus, taskID string) State {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithError(err).Error("error opening history db")
+	}
+
+	if store != nil {
+		if _, err := store.InsertTaskHistory(types.TaskHistory{CreatedAt: time.Now(), TaskID: taskID,
+			Status: subStatus.String()}); err != nil {
+			log.WithError(err).Error("unable to store task status")
+		}
+	}
+
 	return &state{
 		status: NewStatus(subStatus),
+		taskID: taskID,
+		store:  store,
 	}
 }

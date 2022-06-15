@@ -18,6 +18,7 @@ import (
 	sense "github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	senseviews "github.com/pastelnetwork/gonode/walletnode/api/gen/sense/views"
 	goahttp "goa.design/goa/v3/http"
+	goa "goa.design/goa/v3/pkg"
 )
 
 // BuildUploadImageRequest instantiates a HTTP request object with method and
@@ -421,11 +422,17 @@ func DecodeGetTaskHistoryResponse(decoder func(*http.Response) goahttp.Decoder, 
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("sense", "getTaskHistory", err)
 			}
-			err = ValidateGetTaskHistoryResponseBody(&body)
+			for _, e := range body {
+				if e != nil {
+					if err2 := ValidateTaskHistoryResponse(e); err2 != nil {
+						err = goa.MergeErrors(err, err2)
+					}
+				}
+			}
 			if err != nil {
 				return nil, goahttp.ErrValidationError("sense", "getTaskHistory", err)
 			}
-			res := NewGetTaskHistoryTaskHistoryOK(&body)
+			res := NewGetTaskHistoryTaskHistoryOK(body)
 			return res, nil
 		case http.StatusNotFound:
 			var (
@@ -567,4 +574,15 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 			return nil, goahttp.ErrInvalidResponse("sense", "download", resp.StatusCode, string(body))
 		}
 	}
+}
+
+// unmarshalTaskHistoryResponseToSenseTaskHistory builds a value of type
+// *sense.TaskHistory from a value of type *TaskHistoryResponse.
+func unmarshalTaskHistoryResponseToSenseTaskHistory(v *TaskHistoryResponse) *sense.TaskHistory {
+	res := &sense.TaskHistory{
+		Timestamp: v.Timestamp,
+		Status:    *v.Status,
+	}
+
+	return res
 }

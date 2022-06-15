@@ -15,6 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/walletnode/api"
@@ -102,23 +103,24 @@ func (service *NftAPIHandler) Register(_ context.Context, p *nft.RegisterPayload
 }
 
 // GetTaskHistory - Gets a task's history
-func (service *NftAPIHandler) GetTaskHistory(_ context.Context, p *nft.GetTaskHistoryPayload) (res *nft.TaskHistory, err error) {
-	task := service.register.GetTask(p.TaskID)
-	if task == nil {
-		return nil, sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+func (service *NftAPIHandler) GetTaskHistory(_ context.Context, p *nft.GetTaskHistoryPayload) (res []*nft.TaskHistory, err error) {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		return nil, nft.MakeInternalServerError(errors.New("error retrieving status"))
 	}
 
-	var statuses []string
-
-	statusHistory := task.StatusHistory()
-	for _, status := range statusHistory {
-		statuses = append(statuses, status.String())
+	statuses, err := store.QueryTaskHistory(p.TaskID)
+	if err != nil {
+		return nil, nft.MakeNotFound(errors.New("task not found"))
 	}
 
-	return &nft.TaskHistory{
-		List: strings.Join(statuses[:], ","),
-	}, nil
-	// return &sense.TaskHistory(), nil
+	history := []*nft.TaskHistory{}
+	for _, entry := range statuses {
+		timestamp := entry.CreatedAt.String()
+		history = append(history, &nft.TaskHistory{Timestamp: &timestamp, Status: entry.Status})
+	}
+
+	return history, nil
 }
 
 // RegisterTaskState streams the state of the registration process.

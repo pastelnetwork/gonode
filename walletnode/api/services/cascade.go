@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/cascade/server"
@@ -168,23 +169,24 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 }
 
 // GetTaskHistory - Gets a task's history
-func (service *CascadeAPIHandler) GetTaskHistory(_ context.Context, p *cascade.GetTaskHistoryPayload) (res *cascade.TaskHistory, err error) {
-	task := service.register.GetTask(p.TaskID)
-	if task == nil {
-		return nil, cascade.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+func (service *CascadeAPIHandler) GetTaskHistory(_ context.Context, p *cascade.GetTaskHistoryPayload) (res []*cascade.TaskHistory, err error) {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		return nil, cascade.MakeInternalServerError(errors.New("error retrieving status"))
 	}
 
-	var statuses []string
-
-	statusHistory := task.StatusHistory()
-	for _, status := range statusHistory {
-		statuses = append(statuses, status.String())
+	statuses, err := store.QueryTaskHistory(p.TaskID)
+	if err != nil {
+		return nil, cascade.MakeNotFound(errors.New("task not found"))
 	}
 
-	return &cascade.TaskHistory{
-		List: strings.Join(statuses[:], ","),
-	}, nil
-	// return &sense.TaskHistory(), nil
+	history := []*cascade.TaskHistory{}
+	for _, entry := range statuses {
+		timestamp := entry.CreatedAt.String()
+		history = append(history, &cascade.TaskHistory{Timestamp: &timestamp, Status: entry.Status})
+	}
+
+	return history, nil
 }
 
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.

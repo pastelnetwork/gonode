@@ -18,6 +18,7 @@ import (
 	cascade "github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	cascadeviews "github.com/pastelnetwork/gonode/walletnode/api/gen/cascade/views"
 	goahttp "goa.design/goa/v3/http"
+	goa "goa.design/goa/v3/pkg"
 )
 
 // BuildUploadAssetRequest instantiates a HTTP request object with method and
@@ -421,11 +422,17 @@ func DecodeGetTaskHistoryResponse(decoder func(*http.Response) goahttp.Decoder, 
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("cascade", "getTaskHistory", err)
 			}
-			err = ValidateGetTaskHistoryResponseBody(&body)
+			for _, e := range body {
+				if e != nil {
+					if err2 := ValidateTaskHistoryResponse(e); err2 != nil {
+						err = goa.MergeErrors(err, err2)
+					}
+				}
+			}
 			if err != nil {
 				return nil, goahttp.ErrValidationError("cascade", "getTaskHistory", err)
 			}
-			res := NewGetTaskHistoryTaskHistoryOK(&body)
+			res := NewGetTaskHistoryTaskHistoryOK(body)
 			return res, nil
 		case http.StatusNotFound:
 			var (
@@ -567,4 +574,15 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 			return nil, goahttp.ErrInvalidResponse("cascade", "download", resp.StatusCode, string(body))
 		}
 	}
+}
+
+// unmarshalTaskHistoryResponseToCascadeTaskHistory builds a value of type
+// *cascade.TaskHistory from a value of type *TaskHistoryResponse.
+func unmarshalTaskHistoryResponseToCascadeTaskHistory(v *TaskHistoryResponse) *cascade.TaskHistory {
+	res := &cascade.TaskHistory{
+		Timestamp: v.Timestamp,
+		Status:    *v.Status,
+	}
+
+	return res
 }

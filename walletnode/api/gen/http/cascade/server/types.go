@@ -62,10 +62,7 @@ type RegisterTaskStateResponseBody struct {
 
 // GetTaskHistoryResponseBody is the type of the "cascade" service
 // "getTaskHistory" endpoint HTTP response body.
-type GetTaskHistoryResponseBody struct {
-	// List of past status strings
-	List string `form:"list" json:"list" xml:"list"`
-}
+type GetTaskHistoryResponseBody []*TaskHistoryResponse
 
 // DownloadResponseBody is the type of the "cascade" service "download"
 // endpoint HTTP response body.
@@ -258,6 +255,14 @@ type DownloadInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// TaskHistoryResponse is used to define fields on response body types.
+type TaskHistoryResponse struct {
+	// Timestamp of the status creation
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	// past status string
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
 // NewUploadAssetResponseBody builds the HTTP response body from the result of
 // the "uploadAsset" endpoint of the "cascade" service.
 func NewUploadAssetResponseBody(res *cascadeviews.AssetView) *UploadAssetResponseBody {
@@ -290,9 +295,10 @@ func NewRegisterTaskStateResponseBody(res *cascade.TaskState) *RegisterTaskState
 
 // NewGetTaskHistoryResponseBody builds the HTTP response body from the result
 // of the "getTaskHistory" endpoint of the "cascade" service.
-func NewGetTaskHistoryResponseBody(res *cascade.TaskHistory) *GetTaskHistoryResponseBody {
-	body := &GetTaskHistoryResponseBody{
-		List: res.List,
+func NewGetTaskHistoryResponseBody(res []*cascade.TaskHistory) GetTaskHistoryResponseBody {
+	body := make([]*TaskHistoryResponse, len(res))
+	for i, val := range res {
+		body[i] = marshalCascadeTaskHistoryToTaskHistoryResponse(val)
 	}
 	return body
 }
