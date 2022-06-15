@@ -76,7 +76,7 @@ var _ = Service("sense", func() {
 		StreamingResult(RegisterTaskState)
 
 		HTTP(func() {
-			GET("/{taskId}/state")
+			GET("/start/{taskId}/state")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)

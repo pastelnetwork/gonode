@@ -685,39 +685,6 @@ paths:
             $ref: '#/definitions/SenseGetTaskHistoryInternalServerErrorResponseBody'
       schemes:
       - http
-  /openapi/sense/{taskId}/state:
-    get:
-      tags:
-      - sense
-      summary: Streams state by task ID
-      description: Streams the state of the registration process.
-      operationId: sense#registerTaskState
-      parameters:
-      - name: taskId
-        in: path
-        description: Task ID of the registration process
-        required: true
-        type: string
-        maxLength: 8
-        minLength: 8
-      responses:
-        "101":
-          description: Switching Protocols response.
-          schema:
-            $ref: '#/definitions/SenseRegisterTaskStateResponseBody'
-            required:
-            - date
-            - status
-        "404":
-          description: Not Found response.
-          schema:
-            $ref: '#/definitions/SenseRegisterTaskStateNotFoundResponseBody'
-        "500":
-          description: Internal Server Error response.
-          schema:
-            $ref: '#/definitions/SenseRegisterTaskStateInternalServerErrorResponseBody'
-      schemes:
-      - ws
   /openapi/sense/download:
     get:
       tags:
@@ -808,6 +775,39 @@ paths:
             $ref: '#/definitions/SenseStartProcessingInternalServerErrorResponseBody'
       schemes:
       - http
+  /openapi/sense/start/{taskId}/state:
+    get:
+      tags:
+      - sense
+      summary: Streams state by task ID
+      description: Streams the state of the registration process.
+      operationId: sense#registerTaskState
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the registration process
+        required: true
+        type: string
+        maxLength: 8
+        minLength: 8
+      responses:
+        "101":
+          description: Switching Protocols response.
+          schema:
+            $ref: '#/definitions/SenseRegisterTaskStateResponseBody'
+            required:
+            - date
+            - status
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/SenseRegisterTaskStateNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/SenseRegisterTaskStateInternalServerErrorResponseBody'
+      schemes:
+      - ws
   /openapi/sense/upload:
     post:
       tags:
