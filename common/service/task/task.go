@@ -118,7 +118,7 @@ func New(status state.SubStatus) Task {
 	taskID, _ := random.String(8, random.Base62Chars)
 
 	return &task{
-		State:    state.New(status),
+		State:    state.New(status, taskID),
 		id:       taskID,
 		doneCh:   make(chan struct{}),
 		actionCh: make(chan *Action),

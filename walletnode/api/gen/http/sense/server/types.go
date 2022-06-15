@@ -62,10 +62,7 @@ type RegisterTaskStateResponseBody struct {
 
 // GetTaskHistoryResponseBody is the type of the "sense" service
 // "getTaskHistory" endpoint HTTP response body.
-type GetTaskHistoryResponseBody struct {
-	// List of past status strings
-	List string `form:"list" json:"list" xml:"list"`
-}
+type GetTaskHistoryResponseBody []*TaskHistoryResponse
 
 // DownloadResponseBody is the type of the "sense" service "download" endpoint
 // HTTP response body.
@@ -258,6 +255,14 @@ type DownloadInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// TaskHistoryResponse is used to define fields on response body types.
+type TaskHistoryResponse struct {
+	// Timestamp of the status creation
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	// past status string
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
 // NewUploadImageResponseBody builds the HTTP response body from the result of
 // the "uploadImage" endpoint of the "sense" service.
 func NewUploadImageResponseBody(res *senseviews.ImageView) *UploadImageResponseBody {
@@ -290,9 +295,10 @@ func NewRegisterTaskStateResponseBody(res *sense.TaskState) *RegisterTaskStateRe
 
 // NewGetTaskHistoryResponseBody builds the HTTP response body from the result
 // of the "getTaskHistory" endpoint of the "sense" service.
-func NewGetTaskHistoryResponseBody(res *sense.TaskHistory) *GetTaskHistoryResponseBody {
-	body := &GetTaskHistoryResponseBody{
-		List: res.List,
+func NewGetTaskHistoryResponseBody(res []*sense.TaskHistory) GetTaskHistoryResponseBody {
+	body := make([]*TaskHistoryResponse, len(res))
+	for i, val := range res {
+		body[i] = marshalSenseTaskHistoryToTaskHistoryResponse(val)
 	}
 	return body
 }

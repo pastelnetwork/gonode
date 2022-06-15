@@ -173,7 +173,7 @@ func EncodeRegisterTaskStateError(encoder func(context.Context, http.ResponseWri
 // the nft getTaskHistory endpoint.
 func EncodeGetTaskHistoryResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res, _ := v.(*nft.TaskHistory)
+		res, _ := v.([]*nft.TaskHistory)
 		enc := encoder(ctx, w)
 		body := NewGetTaskHistoryResponseBody(res)
 		w.WriteHeader(http.StatusOK)
@@ -1030,6 +1030,17 @@ func unmarshalThumbnailcoordinateRequestBodyToNftThumbnailcoordinate(v *Thumbnai
 		TopLeftY:     *v.TopLeftY,
 		BottomRightX: *v.BottomRightX,
 		BottomRightY: *v.BottomRightY,
+	}
+
+	return res
+}
+
+// marshalNftTaskHistoryToTaskHistoryResponse builds a value of type
+// *TaskHistoryResponse from a value of type *nft.TaskHistory.
+func marshalNftTaskHistoryToTaskHistoryResponse(v *nft.TaskHistory) *TaskHistoryResponse {
+	res := &TaskHistoryResponse{
+		Timestamp: v.Timestamp,
+		Status:    v.Status,
 	}
 
 	return res

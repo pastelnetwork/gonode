@@ -74,7 +74,7 @@ var _ = Service("nft", func() {
 		Payload(func() {
 			Extend(RegisterTaskPayload)
 		})
-		Result(TaskHistory)
+		Result(ArrayOf(TaskHistory))
 
 		HTTP(func() {
 			GET("/{taskId}/history")

@@ -77,11 +77,17 @@ var RegisterTaskState = Type("TaskState", func() {
 
 // TaskHistory is a list of strings containing all past task histories.
 var TaskHistory = Type("TaskHistory", func() {
-	Attribute("list", String, func() {
-		Description("List of past status strings")
-		Example("[ Started, Image Probed, Downloaded... ]")
+	Attribute("timestamp", String, func() {
+		Description("Timestamp of the status creation")
+		Example(time.RFC3339)
 	})
-	Required("list")
+
+	Attribute("status", String, func() {
+		Description("past status string")
+		Example("Started, Image Probed, Downloaded...")
+	})
+
+	Required("status")
 })
 
 // ActionDetailsResult - result of posting action details

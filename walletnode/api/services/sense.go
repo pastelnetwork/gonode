@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api"
@@ -122,23 +123,24 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 }
 
 // GetTaskHistory - Gets a task's history
-func (service *SenseAPIHandler) GetTaskHistory(_ context.Context, p *sense.GetTaskHistoryPayload) (res *sense.TaskHistory, err error) {
-	task := service.register.GetTask(p.TaskID)
-	if task == nil {
-		return nil, sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+func (service *SenseAPIHandler) GetTaskHistory(_ context.Context, p *sense.GetTaskHistoryPayload) (res []*sense.TaskHistory, err error) {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		return nil, sense.MakeInternalServerError(errors.New("error retrieving status"))
 	}
 
-	var statuses []string
-
-	statusHistory := task.StatusHistory()
-	for _, status := range statusHistory {
-		statuses = append(statuses, status.String())
+	statuses, err := store.QueryTaskHistory(p.TaskID)
+	if err != nil {
+		return nil, sense.MakeNotFound(errors.New("task not found"))
 	}
 
-	return &sense.TaskHistory{
-		List: strings.Join(statuses[:], ","),
-	}, nil
-	// return &sense.TaskHistory(), nil
+	history := []*sense.TaskHistory{}
+	for _, entry := range statuses {
+		timestamp := entry.CreatedAt.String()
+		history = append(history, &sense.TaskHistory{Timestamp: &timestamp, Status: entry.Status})
+	}
+
+	return history, nil
 }
 
 // APIKeyAuth implements the authorization logic for the APIKey security scheme.

@@ -24,7 +24,7 @@ func BuildUploadImagePayload(senseUploadImageBody string) (*sense.UploadImagePay
 	{
 		err = json.Unmarshal([]byte(senseUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"QXBlcmlhbSBzdXNjaXBpdCByZXJ1bS4=\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"RG9sb3JpYnVzIHF1b2Qgdm9sdXB0YXRlbSBkZXNlcnVudC4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))

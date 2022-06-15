@@ -89,10 +89,7 @@ type RegisterTaskStateResponseBody struct {
 
 // GetTaskHistoryResponseBody is the type of the "nft" service "getTaskHistory"
 // endpoint HTTP response body.
-type GetTaskHistoryResponseBody struct {
-	// List of past status strings
-	List string `form:"list" json:"list" xml:"list"`
-}
+type GetTaskHistoryResponseBody []*TaskHistoryResponse
 
 // RegisterTaskResponseBody is the type of the "nft" service "registerTask"
 // endpoint HTTP response body.
@@ -536,6 +533,14 @@ type DownloadInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// TaskHistoryResponse is used to define fields on response body types.
+type TaskHistoryResponse struct {
+	// Timestamp of the status creation
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	// past status string
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
 // TaskStateResponseBody is used to define fields on response body types.
 type TaskStateResponseBody struct {
 	// Date of the status creation
@@ -731,9 +736,10 @@ func NewRegisterTaskStateResponseBody(res *nft.TaskState) *RegisterTaskStateResp
 
 // NewGetTaskHistoryResponseBody builds the HTTP response body from the result
 // of the "getTaskHistory" endpoint of the "nft" service.
-func NewGetTaskHistoryResponseBody(res *nft.TaskHistory) *GetTaskHistoryResponseBody {
-	body := &GetTaskHistoryResponseBody{
-		List: res.List,
+func NewGetTaskHistoryResponseBody(res []*nft.TaskHistory) GetTaskHistoryResponseBody {
+	body := make([]*TaskHistoryResponse, len(res))
+	for i, val := range res {
+		body[i] = marshalNftTaskHistoryToTaskHistoryResponse(val)
 	}
 	return body
 }

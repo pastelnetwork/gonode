@@ -28,7 +28,7 @@ func RegisterTaskStateSensePath(taskID string) string {
 
 // GetTaskHistorySensePath returns the URL path to the sense service getTaskHistory HTTP endpoint.
 func GetTaskHistorySensePath(taskID string) string {
-	return fmt.Sprintf("/openapi/sense/start/%v/history", taskID)
+	return fmt.Sprintf("/openapi/sense/%v/history", taskID)
 }
 
 // DownloadSensePath returns the URL path to the sense service download HTTP endpoint.

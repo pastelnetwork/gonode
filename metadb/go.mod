@@ -15,7 +15,7 @@ require (
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/pastel v0.0.0-20210921141840-854e94914b9b
 	github.com/pastelnetwork/gonode/proto v0.0.0
-	github.com/rqlite/go-sqlite3 v1.22.0
+	github.com/rqlite/go-sqlite3 v1.25.0
 	github.com/stretchr/testify v1.7.0
 	github.com/tj/assert v0.0.3
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
@@ -32,10 +32,8 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-errors/errors v1.4.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/go-msgpack v0.5.5 // indirect
-	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
