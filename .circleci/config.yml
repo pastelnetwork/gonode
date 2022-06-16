@@ -274,7 +274,7 @@ jobs:
           name: "Go generate"
           working_directory: ~/project/
           command: |
-            make gen-mock
+            GO111MODULE=on make gen-mock
       - persist_to_workspace:
           root: .
           paths:
@@ -321,14 +321,6 @@ jobs:
       - test:
           package: "p2p"
 
-#  test_metadb:
-#    <<: *defaults
-#    steps:
-#      - attach_workspace:
-#          at: .
-#      - test:
-#          package: "metadb"
-
   test_pastel-api:
     <<: *defaults
     steps:
@@ -344,7 +336,14 @@ jobs:
           at: .
       - test:
           package: "proto"
-
+  test_bridge:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - install_tensorflow
+      - test:
+          package: "bridge"
   test_walletnode:
     <<: *defaults
     steps:
@@ -362,6 +361,14 @@ jobs:
       - install_tensorflow
       - test:
           package: "supernode"
+  test_hermes:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - install_tensorflow
+      - test:
+          package: "hermes"
 
   build:
     <<: *defaults
@@ -381,11 +388,23 @@ jobs:
           targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
           binaryName: "walletnode"
       - build:
+          buildContainerName: "bridge"
+          moduleSubDir: "bridge"
+          package: ""
+          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
+          binaryName: "bridge"
+      - build:
           buildContainerName: "supernode"
           moduleSubDir: "supernode"
           package: ""
           targets: "linux/amd64,"
           binaryName: "supernode"
+      - build:
+          buildContainerName: "hermes"
+          moduleSubDir: "hermes"
+          package: ""
+          targets: "linux/amd64,"
+          binaryName: "hermes"
       - store_artifacts:
           path: "build"
 
@@ -420,11 +439,23 @@ jobs:
           targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
           binaryName: "walletnode"
       - release:
+          buildContainerName: "bridge"
+          moduleSubDir: "bridge"
+          package: ""
+          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
+          binaryName: "bridge"
+      - release:
           buildContainerName: "supernode"
           moduleSubDir: "supernode"
           package: ""
           targets: "linux/amd64,"
           binaryName: "supernode"
+      - release:
+          buildContainerName: "hermes"
+          moduleSubDir: "hermes"
+          package: ""
+          targets: "linux/amd64,"
+          binaryName: "hermes"
 
 workflows:
   build-and-test:
@@ -466,6 +497,18 @@ workflows:
           filters:
             tags:
               only: /^v.*/
+      - test_hermes:
+          requires:
+            - prepare_workspace
+          filters:
+            tags:
+              only: /^v.*/
+      - test_bridge:
+          requires:
+            - prepare_workspace
+          filters:
+            tags:
+              only: /^v.*/
       - build:
           requires:
             - prepare_workspace
@@ -474,6 +517,8 @@ workflows:
           requires:
             - test_walletnode
             - test_supernode
+            - test_hermes
+            - test_bridge
           filters:
             branches:
               ignore: /.*/

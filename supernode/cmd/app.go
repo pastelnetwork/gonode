@@ -20,7 +20,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
-	"github.com/pastelnetwork/gonode/dupedetection/ddscan"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
@@ -240,14 +239,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
 	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, rqClient, nil)
 
-	ddScanConfig := ddscan.NewConfig()
-	ddScanConfig.SetWorkDir(config.DdWorkDir)
-
-	ddScan, err := ddscan.NewService(ddScanConfig, pastelClient, p2p)
-	if err != nil {
-		return fmt.Errorf("start ddscan: %w", err)
-	}
-
 	// // ----Userdata Services----
 	// userdataNodeClient := client.New(pastelClient, secInfo)
 	// userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
@@ -257,7 +248,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	statsMngr.Add("p2p", p2p)
 	// statsMngr.Add("mdl", metadb)
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
-	statsMngr.Add("ddscan", ddScan)
 
 	// Debug service
 	debugSerivce := debug.NewService(config.DebugService, p2p)
@@ -280,6 +270,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
-	// return runServices(ctx, metadb, grpc, p2p, nftRegister, nftDownload, senseRegister, ddScan, database, userdataProcess, statsMngr, debugSerivce)
-	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, ddScan, statsMngr, debugSerivce, storageChallenger)
+
+	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger)
 }

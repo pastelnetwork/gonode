@@ -33,6 +33,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	conn, err := grpc.DialContext(ctx, *serverAddr,
+		//lint:ignore SA1019 we want to ignore this for now
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)

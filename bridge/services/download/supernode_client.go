@@ -9,10 +9,10 @@ type DownloadingNodeMaker struct {
 
 // MakeNode makes class DownloadNft for SuperNodeAPIInterface
 func (maker DownloadingNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
-	return &DownloadNode{DownloadDataInterface: conn.DownloadData()}
+	return &DownloadingNode{DownloadDataInterface: conn.DownloadData()}
 }
 
-// DownloadNode represent supernode connection.
-type DownloadNode struct {
+// DownloadingNode represent supernode connection.
+type DownloadingNode struct {
 	node.DownloadDataInterface
 }

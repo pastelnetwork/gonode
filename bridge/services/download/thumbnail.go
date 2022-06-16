@@ -88,7 +88,7 @@ func (h *thumbnailHandler) setFetchers(ctx context.Context) error {
 }
 
 func (h *thumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNodeClient, nodeID string) error {
-	downladNode, ok := someNode.SuperNodeAPIInterface.(*DownloadNode)
+	downladNode, ok := someNode.SuperNodeAPIInterface.(*DownloadingNode)
 	if !ok {
 		return errors.Errorf("node %s is not DownloadNode", someNode.String())
 	}

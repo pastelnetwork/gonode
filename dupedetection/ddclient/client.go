@@ -26,6 +26,7 @@ func (cl *client) Connect(ctx context.Context, address string) (*clientConn, err
 	id, _ := random.String(8, random.Base62Chars)
 
 	grpcConn, err := grpc.DialContext(dialCtx, address,
+		//lint:ignore SA1019 we want to ignore this for now
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)

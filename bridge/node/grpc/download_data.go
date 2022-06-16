@@ -17,6 +17,7 @@ type downloadData struct {
 	client pb.DownloadDataClient
 }
 
+// DownloadThumbnail downloads thumbnail
 func (service *downloadData) DownloadThumbnail(ctx context.Context, txid string, numNails int) (files map[int][]byte, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	in := &pb.DownloadThumbnailRequest{
@@ -43,6 +44,7 @@ func (service *downloadData) DownloadThumbnail(ctx context.Context, txid string,
 	return rMap, nil
 }
 
+// DownloadDDAndFingerprints downloads dd & fingerprints
 func (service *downloadData) DownloadDDAndFingerprints(ctx context.Context, txid string) (file []byte, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	in := &pb.DownloadDDAndFingerprintsRequest{
@@ -66,19 +68,27 @@ func (service *downloadData) contextWithLogPrefix(ctx context.Context) context.C
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-//NON IMPLEMETED--->
+// MeshNodes NON IMPLEMETED--->
 func (service *downloadData) MeshNodes(_ context.Context, _ []types.MeshedSuperNode) error {
 	return nil
 }
+
+// SessID ...
 func (service *downloadData) SessID() string {
 	return ""
 }
+
+// Session ...
 func (service *downloadData) Session(_ context.Context, _ bool) error {
 	return nil
 }
+
+// AcceptedNodes ...
 func (service *downloadData) AcceptedNodes(_ context.Context) (pastelIDs []string, err error) {
 	return nil, nil
 }
+
+//  ConnectTo ...
 func (service *downloadData) ConnectTo(_ context.Context, _ types.MeshedSuperNode) error {
 	return nil
 }

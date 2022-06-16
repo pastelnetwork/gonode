@@ -9,7 +9,7 @@ import (
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-	"github.com/tj/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCleanupInactiveTickets(t *testing.T) {
@@ -68,9 +68,10 @@ func TestCleanupInactiveTickets(t *testing.T) {
 			p2pClient := p2pMock.NewMockClient(t)
 			p2pClient.ListenOnDelete(nil)
 
-			service := NewService(NewConfig(), pastelClientMock, p2pClient)
+			svc := service{p2pClient: p2pClient, pastelClient: pastelClientMock,
+				config: NewConfig(), currentActionBlock: 1, currentNFTBlock: 1}
 
-			err := service.cleanupInactiveTickets(context.Background())
+			err := svc.CleanupInactiveTickets(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 			} else {

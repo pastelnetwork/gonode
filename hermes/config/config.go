@@ -1,16 +1,10 @@
-package configs
+package config
 
 import (
 	"encoding/json"
 
-	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
-	"github.com/pastelnetwork/gonode/metadb"
-	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/raptorq"
-	"github.com/pastelnetwork/gonode/supernode/debug"
-	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
 )
 
 const (
@@ -20,30 +14,25 @@ const (
 	defaultLogMaxBackups     = 10
 	defaultCommonLogLevel    = "info"
 	defaultSubSystemLogLevel = "error" // disable almost logs
+
 )
 
-// Config contains configuration of all components of the SuperNode.
+// Config contains settings of the hermes server
 type Config struct {
-	DefaultDir string     `json:"-"`
 	LogConfig  *LogConfig `mapstructure:"log-config" json:"log-config,omitempty"`
 	Quiet      bool       `mapstructure:"quiet" json:"quiet"`
-	TempDir    string     `mapstructure:"temp-dir" json:"temp-dir"`
-	WorkDir    string     `mapstructure:"work-dir" json:"work-dir"`
-	RqFilesDir string     `mapstructure:"rq-files-dir" json:"rq-files-dir"`
 	DdWorkDir  string     `mapstructure:"dd-service-dir" json:"dd-service-dir"`
+	PastelID   string     `mapstructure:"pastel_id" json:"pastel_id,omitempty"`
+	PassPhrase string     `mapstructure:"pass_phrase" json:"pass_phrase,omitempty"`
 
-	Node         `mapstructure:"node" json:"node,omitempty"`
-	Pastel       *pastel.Config          `mapstructure:"-" json:"-"`
-	P2P          *p2p.Config             `mapstructure:"p2p" json:"p2p,omitempty"`
-	MetaDB       *metadb.Config          `mapstructure:"metadb" json:"metadb,omitempty"`
-	UserDB       *database.Config        `mapstructure:"userdb" json:"userdb,omitempty"`
-	DDServer     *ddclient.Config        `mapstructure:"dd-server" json:"dd-server,omitempty"`
-	RaptorQ      *raptorq.Config         `mapstructure:"raptorq" json:"raptorq,omitempty"`
-	HealthCheck  *healthcheck_lib.Config `mapstructure:"health-check" json:"health-check,omitempty"`
-	DebugService *debug.Config           `mapstructure:"debug-service" json:"debug-service,omitempty"`
+	// ActivationDeadline is number of blocks allowed to pass for a ticket to be activated
+	ActivationDeadline uint32         `mapstructure:"activation_deadline" json:"activation_deadline,omitempty"`
+	WorkDir            string         `mapstructure:"work-dir" json:"work-dir"`
+	Pastel             *pastel.Config `mapstructure:"-" json:"-"`
+	P2P                *p2p.Config    `mapstructure:"p2p" json:"p2p,omitempty"`
 }
 
-// LogConfig contains log configs
+// LogConfig represents log config
 type LogConfig struct {
 	File         string          `mapstructure:"log-file" json:"log-file,omitempty"`
 	Compress     bool            `mapstructure:"log-compress" json:"log-compress,omitempty"`
@@ -61,6 +50,7 @@ type LogLevelConfig struct {
 	DupeDetectionLogLevel string `mapstructure:"dd" json:"dd,omitempty"`
 }
 
+// String converts to string
 func (config *Config) String() string {
 	// The main purpose of using a custom converting is to avoid unveiling credentials.
 	// All credentials fields must be tagged `json:"-"`.
@@ -68,8 +58,8 @@ func (config *Config) String() string {
 	return string(data)
 }
 
-// New returns a new Config instance
-func New() *Config {
+// NewConfig returns a new Config instance.
+func NewConfig() *Config {
 	return &Config{
 		LogConfig: &LogConfig{
 			Compress:     defaultLogCompress,
@@ -83,14 +73,7 @@ func New() *Config {
 				DupeDetectionLogLevel: defaultSubSystemLogLevel,
 			},
 		},
-		Node:         NewNode(),
-		Pastel:       pastel.NewConfig(),
-		P2P:          p2p.NewConfig(),
-		MetaDB:       metadb.NewConfig(),
-		UserDB:       database.NewConfig(),
-		RaptorQ:      raptorq.NewConfig(),
-		DDServer:     ddclient.NewConfig(),
-		HealthCheck:  healthcheck_lib.NewConfig(),
-		DebugService: debug.NewConfig(),
+		Pastel: pastel.NewConfig(),
+		P2P:    p2p.NewConfig(),
 	}
 }

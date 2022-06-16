@@ -29,7 +29,7 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
 
 	grpcConn, err := grpc.DialContext(dialCtx, address,
-		//TODO: Update to use new, non-deprecated function
+		//lint:ignore SA1019 we want to ignore this for now
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)

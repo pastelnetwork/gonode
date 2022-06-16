@@ -14,6 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
+// Service is download service
 type Service struct {
 	connRefreshInterval int
 	connections         int
@@ -22,6 +23,7 @@ type Service struct {
 	blockTracker        *blocktracker.BlockCntTracker
 }
 
+// NewService creates new service
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.SNClientInterface) Service {
 	meshHandlerOpts := common.MeshHandlerOpts{
 		NodeMaker:     &DownloadingNodeMaker{},
@@ -45,15 +47,16 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.SNCl
 	}
 }
 
-func (b Service) Run(ctx context.Context) error {
+// Run runs the service
+func (s Service) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		return b.runThumbnailHelper(ctx)
+		return s.runThumbnailHelper(ctx)
 	})
 
 	group.Go(func() error {
-		return b.runDDFpHandler(ctx)
+		return s.runDDFpHandler(ctx)
 	})
 
 	return group.Wait()
@@ -158,7 +161,7 @@ func (s *Service) FetchThumbnail(ctx context.Context, txid string, numnails int)
 	return s.th.Fetch(ctx, txid, numnails)
 }
 
-// FetchDDAndFpData gets the actual dd data from the network as bytes to be wrapped by the calling function
+// FetchDupeDetectionData gets the actual dd data from the network as bytes to be wrapped by the calling function
 func (s *Service) FetchDupeDetectionData(ctx context.Context, txid string) (data []byte, err error) {
 	return s.dd.Fetch(ctx, txid)
 }
