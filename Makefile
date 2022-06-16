@@ -80,8 +80,5 @@ release:
 	docker cp gn_builder:/walletnode/walletnode-win64.exe ./dist/$(BINARY_WN)-win64.exe
 	docker cp gn_builder:/walletnode/walletnode-linux-amd64 ./dist/$(BINARY_WN)-linux-amd64
 	docker cp gn_builder:/supernode/supernode-linux-amd64 ./dist/$(BINARY_SN)-linux-amd64
-	docker cp gn_builder:/bridge/bridge-win32.exe ./dist/$(BINARY_BRIDGE)-win32.exe
-	docker cp gn_builder:/bridge/bridge-win64.exe ./dist/$(BINARY_BRIDGE)-win64.exe
-	docker cp gn_builder:/bridge/bridge-linux-amd64 ./dist/$(BINARY_BRIDGE)-linux-amd64
 	docker rm -f gn_builder
 

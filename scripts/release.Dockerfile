@@ -34,8 +34,8 @@ WORKDIR /supernode
 RUN go mod download -x
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags=${LD_FLAGS} -o supernode-linux-amd64
 
-WORKDIR /bridge
-RUN go mod download -x
-RUN CGO_ENABLED=1 GOOS=windows GOARCH=amd64  CC=x86_64-w64-mingw32-gcc go build -ldflags=${LD_FLAGS} -o bridge-win64.exe
-RUN CGO_ENABLED=1 GOOS=windows GOARCH=386 CC=i686-w64-mingw32-gcc  go build -ldflags=${LD_FLAGS} -o bridge-win32.exe
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags=${LD_FLAGS} -o bridge-linux-amd64
+#WORKDIR /bridge
+#RUN go mod download -x
+#RUN CGO_ENABLED=1 GOOS=windows GOARCH=amd64  CC=x86_64-w64-mingw32-gcc go build -ldflags=${LD_FLAGS} -o bridge-win64.exe
+#RUN CGO_ENABLED=1 GOOS=windows GOARCH=386 CC=i686-w64-mingw32-gcc  go build -ldflags=${LD_FLAGS} -o bridge-win32.exe
+#RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags=${LD_FLAGS} -o bridge-linux-amd64
