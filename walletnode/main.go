@@ -2,7 +2,7 @@
 // download nft's, access the Sense API interface, and interact with chain user data.
 //
 // Procedural information for blockchain interaction, as well as other developer documentation is located
-// at https://pastel.wiki/
+// at https://pastel.wiki
 //
 //                                    ┌──────────────┐
 //                                    │              │
