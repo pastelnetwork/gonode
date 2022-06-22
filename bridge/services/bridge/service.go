@@ -23,6 +23,7 @@ func NewService(download download.Service) *Service {
 	}
 }
 
+// DownloadThumbnail downloads thumbnail
 func (s *Service) DownloadThumbnail(ctx context.Context, req *pb.DownloadThumbnailRequest) (r *pb.DownloadThumbnailReply, err error) {
 	resp, err := s.download.FetchThumbnail(ctx, req.Txid, int(req.Numnails))
 	if err != nil {
@@ -32,6 +33,7 @@ func (s *Service) DownloadThumbnail(ctx context.Context, req *pb.DownloadThumbna
 	return &pb.DownloadThumbnailReply{Thumbnailone: resp[0], Thumbnailtwo: resp[1]}, nil
 }
 
+// DownloadDDAndFingerprints downloads dd & fp
 func (s *Service) DownloadDDAndFingerprints(ctx context.Context, req *pb.DownloadDDAndFingerprintsRequest) (r *pb.DownloadDDAndFingerprintsReply, err error) {
 	resp, err := s.download.FetchDupeDetectionData(ctx, req.Txid)
 	if err != nil {
@@ -42,6 +44,6 @@ func (s *Service) DownloadDDAndFingerprints(ctx context.Context, req *pb.Downloa
 }
 
 // Desc returns a description of the service.
-func (service *Service) Desc() *grpc.ServiceDesc {
+func (s *Service) Desc() *grpc.ServiceDesc {
 	return &pb.DownloadData_ServiceDesc
 }

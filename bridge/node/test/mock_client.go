@@ -98,7 +98,7 @@ func (client *Client) AssertRegisterNftCall(expectedCalls int, arguments ...inte
 	return client
 }
 
-// ListenOnDownloadNft listening DownloadNftInterface call
+// ListenOnDownloadData listening DownloadNftInterface call
 func (client *Client) ListenOnDownloadData() *Client {
 	client.ConnectionInterface.On(DownloadDataMethod).Return(client.DownloadDataInterface)
 	client.SNClientInterface.On(DownloadDataMethod).Return(client.DownloadDataInterface)

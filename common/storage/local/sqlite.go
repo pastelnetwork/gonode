@@ -72,7 +72,7 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot open sqlite database: %w", err)
 	}
-
+	
 	if _, err := db.Exec(createTaskHistory); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}

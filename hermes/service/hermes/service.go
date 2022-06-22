@@ -1,4 +1,4 @@
-package ddscan
+package hermes
 
 import (
 	"bytes"
@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/utils"
-
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
+	svc "github.com/pastelnetwork/gonode/hermes/service"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -20,15 +20,6 @@ import (
 	"github.com/sbinet/npyio"
 	"gonum.org/v1/gonum/mat"
 )
-
-// Service ...
-type Service interface {
-	// Run starts task
-	Run(ctx context.Context) error
-
-	// Stats returns current status of service
-	Stats(ctx context.Context) (map[string]interface{}, error)
-}
 
 const (
 	synchronizationIntervalSec       = 5
@@ -58,6 +49,9 @@ type service struct {
 	db                 *db.DB
 	isMasterNodeSynced bool
 	latestBlockHeight  int
+
+	currentNFTBlock    int
+	currentActionBlock int
 }
 
 func toFloat64Array(data []float32) []float64 {
@@ -105,6 +99,10 @@ func (s *service) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Errorf("First runTask() failed")
 	}
 
+	if err := s.CleanupInactiveTickets(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("cleanupInactiveTickets failure, retrying...")
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -121,9 +119,17 @@ func (s *service) run(ctx context.Context) error {
 				s.isMasterNodeSynced = true
 			}
 
-			if err := s.runTask(ctx); err != nil {
-				log.WithContext(ctx).WithError(err).Errorf("runTask() failed")
-			}
+			go func() {
+				if err := s.runTask(ctx); err != nil {
+					log.WithContext(ctx).WithError(err).Errorf("runTask() failed")
+				}
+			}()
+
+			go func() {
+				if err := s.CleanupInactiveTickets(ctx); err != nil {
+					log.WithContext(ctx).WithError(err).Error("cleanupInactiveTickets failure, retrying...")
+				}
+			}()
 		}
 	}
 }
@@ -231,7 +237,7 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 	return ddFingerprint, nil
 }
 
-func (s *service) checkIfFingerprintExistsInDatabase(ctx context.Context, hash string) (bool, error) {
+func (s *service) checkIfFingerprintExistsInDatabase(_ context.Context, hash string) (bool, error) {
 	req := &command.Request{
 		Statements: []*command.Statement{
 			{
@@ -347,7 +353,7 @@ func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash stri
 
 	splits := bytes.Split(decData, []byte{pastel.SeparatorByte})
 	if (len(splits)) < 2 {
-		return nil, errors.Errorf("Error separating file by separator bytes, separator not found.")
+		return nil, errors.Errorf("error separating file by separator bytes, separator not found")
 	}
 	file, err := utils.B64Decode(splits[0])
 	if err != nil {
@@ -594,7 +600,7 @@ func (s *service) runTask(ctx context.Context) error {
 	return nil
 }
 
-func (s *service) getRecordCount(ctx context.Context) (int64, error) {
+func (s *service) getRecordCount(_ context.Context) (int64, error) {
 	statement := getNumberOfFingerprintsStatement
 	rows, err := s.db.QueryStringStmt(statement)
 	if err != nil {
@@ -641,7 +647,7 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 }
 
 // NewService returns a new ddscan service
-func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client) (Service, error) {
+func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client) (svc.SvcInterface, error) {
 	file := config.DataFile
 	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
 		tmpfile, err := ioutil.TempFile("", "registered_image_fingerprints_db.sqlite")
@@ -661,9 +667,11 @@ func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client
 	}
 
 	return &service{
-		config:       config,
-		pastelClient: pastelClient,
-		p2pClient:    p2pClient,
-		db:           db,
+		config:             config,
+		pastelClient:       pastelClient,
+		p2pClient:          p2pClient,
+		db:                 db,
+		currentNFTBlock:    1,
+		currentActionBlock: 1,
 	}, nil
 }

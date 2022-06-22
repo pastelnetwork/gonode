@@ -1,4 +1,4 @@
-package ddscan
+package hermes
 
 import "path/filepath"
 
@@ -11,7 +11,8 @@ const (
 	DefaultDataFile = "registered_image_fingerprints_db.sqlite"
 	// DefaultSupportDir that dd-service uses for support files
 	// Should be ~/pastel_dupe_detection_service/support_files/registered_image_fingerprints_db.sqlite
-	DefaultSupportDir = "support_files"
+	DefaultSupportDir         = "support_files"
+	defaultActivationDeadline = 300
 )
 
 // Config contains settings of the dupe detection service
@@ -27,6 +28,9 @@ type Config struct {
 
 	// DataName is sqlite database name used by dd-service
 	DataFile string `mapstructure:"data_file" json:"data_file"`
+
+	// ActivationDeadline is number of blocks allowed to pass for a ticket to be activated
+	ActivationDeadline uint32 `mapstructure:"activation_deadline" json:"activation_deadline,omitempty"`
 }
 
 // SetWorkDir applies `workDir` to OutputDir and InputDir if they were
@@ -48,9 +52,10 @@ func (config *Config) SetWorkDir(workDir string) {
 // NewConfig returns a new Config instance
 func NewConfig() *Config {
 	return &Config{
-		InputDir:   DefaultInputDir,
-		OutputDir:  DefaultOutputDir,
-		SupportDir: DefaultSupportDir,
-		DataFile:   DefaultDataFile,
+		InputDir:           DefaultInputDir,
+		OutputDir:          DefaultOutputDir,
+		SupportDir:         DefaultSupportDir,
+		DataFile:           DefaultDataFile,
+		ActivationDeadline: defaultActivationDeadline,
 	}
 }

@@ -53,7 +53,7 @@ func (client *snclient) Connect(ctx context.Context, address string, secInfo *al
 	return conn, nil
 }
 
-// NewClient will wrap the input client in the SecClient interface, providing Signing and Verification
+// NewSNClient will wrap the input client in the SecClient interface, providing Signing and Verification
 //	functionality.  By wrapping the return in ClientInterface, the resulting client will be able to call
 //  nft registration, userdata, and sense stream functions.
 func NewSNClient(secClient alts.SecClient) node.SNClientInterface {
