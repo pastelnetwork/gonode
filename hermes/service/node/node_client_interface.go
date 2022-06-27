@@ -53,7 +53,7 @@ type RealNodeMaker interface {
 	MakeNode(conn ConnectionInterface) SuperNodeAPIInterface
 }
 
-// DownloadDataInterface contains methods for downloading data.
+// HermesP2PInterface contains methods for downloading data.
 type HermesP2PInterface interface {
 	SuperNodeAPIInterface
 
