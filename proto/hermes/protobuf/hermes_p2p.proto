@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/hermes";
+
+package hermes;
+
+service HermesP2P {
+    rpc Retrieve(RetrieveRequest) returns (RetrieveReply);
+    rpc Delete(DeleteRequest) returns (DeleteReply);
+}
+
+message RetrieveRequest {
+    string key = 1;
+}
+
+message RetrieveReply {
+    bytes data = 1;
+}
+
+message DeleteRequest {
+    string key = 1;
+}
+
+message DeleteReply {}

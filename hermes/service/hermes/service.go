@@ -4,18 +4,20 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/DataDog/zstd"
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
 	svc "github.com/pastelnetwork/gonode/hermes/service"
+	"github.com/pastelnetwork/gonode/hermes/service/node"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/db"
-	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/sbinet/npyio"
 	"gonum.org/v1/gonum/mat"
@@ -45,7 +47,8 @@ type dupeDetectionFingerprints struct {
 type service struct {
 	config             *Config
 	pastelClient       pastel.Client
-	p2pClient          p2p.Client
+	p2p                node.HermesP2PInterface
+	sn                 node.SNClientInterface
 	db                 *db.DB
 	isMasterNodeSynced bool
 	latestBlockHeight  int
@@ -95,12 +98,23 @@ func (s *service) run(ctx context.Context) error {
 		s.isMasterNodeSynced = true
 	}
 
-	if err := s.runTask(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("First runTask() failed")
+	conn, err := s.sn.Connect(ctx, fmt.Sprintf("%s:%d", s.config.SNHost, s.config.SNPort))
+	if err != nil {
+		return errors.Errorf("unable to connect with SN service: %w", err)
 	}
+	s.p2p = conn.HermesP2P()
 
-	if err := s.CleanupInactiveTickets(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("cleanupInactiveTickets failure, retrying...")
+	group, ctx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		return s.runTask(ctx)
+	})
+
+	group.Go(func() error {
+		return s.CleanupInactiveTickets(ctx)
+	})
+
+	if err := group.Wait(); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("First runTask() failed")
 	}
 
 	for {
@@ -112,24 +126,25 @@ func (s *service) run(ctx context.Context) error {
 			if !s.isMasterNodeSynced {
 				if err := s.checkSynchronized(ctx); err != nil {
 					log.WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
-					// continue
+					continue
 				}
 
 				log.WithContext(ctx).Debug("Done for waiting synchronization status")
 				s.isMasterNodeSynced = true
 			}
 
-			go func() {
-				if err := s.runTask(ctx); err != nil {
-					log.WithContext(ctx).WithError(err).Errorf("runTask() failed")
-				}
-			}()
+			group, ctx := errgroup.WithContext(ctx)
+			group.Go(func() error {
+				return s.runTask(ctx)
+			})
 
-			go func() {
-				if err := s.CleanupInactiveTickets(ctx); err != nil {
-					log.WithContext(ctx).WithError(err).Error("cleanupInactiveTickets failure, retrying...")
-				}
-			}()
+			group.Go(func() error {
+				return s.CleanupInactiveTickets(ctx)
+			})
+
+			if err := group.Wait(); err != nil {
+				log.WithContext(ctx).WithError(err).Errorf("run service failed")
+			}
 		}
 	}
 }
@@ -336,7 +351,7 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 
 //Utility function to get dd and fp file from an id hash, where the file should be stored
 func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash string) (*pastel.DDAndFingerprints, error) {
-	rawFile, err := s.p2pClient.Retrieve(ctx, hash)
+	rawFile, err := s.p2p.Retrieve(ctx, hash)
 	if err != nil {
 		return nil, errors.Errorf("Error finding dd and fp file: %w", err)
 	}
@@ -647,7 +662,7 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 }
 
 // NewService returns a new ddscan service
-func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client) (svc.SvcInterface, error) {
+func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInterface) (svc.SvcInterface, error) {
 	file := config.DataFile
 	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
 		tmpfile, err := ioutil.TempFile("", "registered_image_fingerprints_db.sqlite")
@@ -669,7 +684,7 @@ func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client
 	return &service{
 		config:             config,
 		pastelClient:       pastelClient,
-		p2pClient:          p2pClient,
+		sn:                 sn,
 		db:                 db,
 		currentNFTBlock:    1,
 		currentActionBlock: 1,

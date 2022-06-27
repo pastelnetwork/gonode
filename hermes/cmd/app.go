@@ -17,7 +17,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/hermes/config"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes"
-	"github.com/pastelnetwork/gonode/p2p"
+	"github.com/pastelnetwork/gonode/hermes/service/node/grpc"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -56,8 +56,6 @@ func NewApp() *cli.App {
 		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
 		cli.NewFlag("dd-service-dir", &config.DdWorkDir).SetUsage("Set `path` to the directory of dupe detection service - contains database file").SetValue(defaultDdWorkDir),
 		cli.NewFlag("log-level", &config.LogConfig.Levels.CommonLogLevel).SetUsage("Set the log `level` of application services.").SetValue(config.LogConfig.Levels.CommonLogLevel),
-		cli.NewFlag("p2p-log-level", &config.LogConfig.Levels.P2PLogLevel).SetUsage("Set the log `level` for p2p.").SetValue(config.LogConfig.Levels.P2PLogLevel),
-		cli.NewFlag("dd-log-level", &config.LogConfig.Levels.P2PLogLevel).SetUsage("Set the log `level` for dupedetection.").SetValue(config.LogConfig.Levels.DupeDetectionLogLevel),
 		cli.NewFlag("log-file", &config.LogConfig.File).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
 	)
@@ -92,16 +90,8 @@ func NewApp() *cli.App {
 		}
 		log.AddHook(hooks.NewDurationHook())
 
-		if err := config.P2P.Validate(); err != nil {
-			return err
-		}
-
 		if err := log.SetLevelName(config.LogConfig.Levels.CommonLogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogConfig.Levels.CommonLogLevel, err)
-		}
-
-		if err := log.SetP2PLogLevelName(config.LogConfig.Levels.P2PLogLevel); err != nil {
-			return errors.Errorf("--p2p-log-level %q, %w", config.LogConfig.Levels.P2PLogLevel, err)
 		}
 
 		if err := os.MkdirAll(config.WorkDir, os.ModePerm); err != nil {
@@ -139,19 +129,19 @@ func runApp(ctx context.Context, conf *config.Config) error {
 		Algorithm:  "ed448",
 	}
 
-	conf.P2P.SetWorkDir(conf.WorkDir)
-	conf.P2P.ID = conf.PastelID
-	p2p := p2p.New(conf.P2P, pastelClient, secInfo)
+	nodeClient := grpc.NewSNClient(pastelClient, secInfo)
 
 	hermesConfig := hermes.NewConfig()
+	hermesConfig.SNHost = conf.SNHost
+	hermesConfig.SNPort = conf.SNPort
 	hermesConfig.SetWorkDir(conf.DdWorkDir)
 
-	service, err := hermes.NewService(hermesConfig, pastelClient, p2p)
+	service, err := hermes.NewService(hermesConfig, pastelClient, nodeClient)
 	if err != nil {
 		return fmt.Errorf("start hermes: %w", err)
 	}
 
 	log.WithContext(ctx).Infof("Config: %s", conf)
 
-	return runServices(ctx, p2p, service)
+	return runServices(ctx, service)
 }

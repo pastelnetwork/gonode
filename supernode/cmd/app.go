@@ -30,6 +30,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/bridge"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/hermes"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/download"
@@ -267,6 +268,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		bridge.NewDownloadData(nftDownload),
 		supernode.NewStorageChallengeGRPC(storageChallenger),
 		healthcheck.NewHealthCheck(statsMngr),
+		hermes.NewHermes(p2p),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
