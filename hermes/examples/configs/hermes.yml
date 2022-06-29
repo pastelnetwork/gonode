@@ -12,9 +12,8 @@ log-config:
 work-dir: 
 rq-files-dir: 
 dd-service-dir:
-sn_host: "localhost"
 quiet: false
-pastel_id: "jXZX9sH6Fp5EUhqKQJteiivbNyGhsjPQKYXqVUVHRDTpH9UzGeEuG92c2S5tMTzUz1CLARVohpzjsWLUyZXSGN"
+pastel_id: "<<pastel-id>>"
 pass_phrase: "passphrase" 
 sn_host: "localhost"
 sn_port: 14444

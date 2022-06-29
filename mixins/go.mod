@@ -12,7 +12,7 @@ replace (
 require (
 	github.com/DataDog/zstd v1.5.2
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/pastelnetwork/gonode/common v0.0.0-00010101000000-000000000000
+	github.com/pastelnetwork/gonode/common v0.0.0-20220615180506-00d063d0abf2
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-00010101000000-000000000000
 )

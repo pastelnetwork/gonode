@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -78,14 +79,15 @@ func (s *service) removeRegTicketData(ctx context.Context, ticketData pastel.App
 	}
 
 	// Remove Thumbnails
-	if err := s.p2p.Delete(ctx, string(ticketData.Thumbnail1Hash)); err != nil {
+	if err := s.p2p.Delete(ctx, base58.Encode(ticketData.Thumbnail1Hash)); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error deleting thumbnail1 hash")
 	}
-	if err := s.p2p.Delete(ctx, string(ticketData.Thumbnail2Hash)); err != nil {
+
+	if err := s.p2p.Delete(ctx, base58.Encode(ticketData.Thumbnail2Hash)); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error deleting thumbnail2 hash")
 	}
 
-	if err := s.p2p.Delete(ctx, string(ticketData.PreviewHash)); err != nil {
+	if err := s.p2p.Delete(ctx, base58.Encode(ticketData.PreviewHash)); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error deleting preview thumbnail hash")
 	}
 
@@ -152,7 +154,7 @@ func (s *service) cleanupActionTicketData(ctx context.Context, actionTicket past
 			}
 		}
 
-		if err := s.p2p.Delete(ctx, string(cascadeTicket.DataHash)); err != nil {
+		if err := s.p2p.Delete(ctx, base58.Encode(cascadeTicket.DataHash)); err != nil {
 			log.WithContext(ctx).WithError(err).Error("error deleting thumbnail hash")
 		}
 
@@ -169,7 +171,7 @@ func (s *service) cleanupActionTicketData(ctx context.Context, actionTicket past
 			}
 		}
 
-		if err := s.p2p.Delete(ctx, string(senseTicket.DataHash)); err != nil {
+		if err := s.p2p.Delete(ctx, base58.Encode(senseTicket.DataHash)); err != nil {
 			log.WithContext(ctx).WithError(err).Error("error deleting thumbnail hash")
 		}
 	}

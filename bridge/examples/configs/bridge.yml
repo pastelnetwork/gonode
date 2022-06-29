@@ -10,7 +10,7 @@ temp-dir: /home/mrrobot/.pastel/tmp
 work-dir: /home/mrrobot/.pastel
 
 download:
-  pastelid: jXXbtngohP4dqsvL64zdnpDjmDRRrDEaDJbjmwSVptHfaXZ3wEZWbvWSNUsNZC25GYd4n4nagqEFsvdP6odNDZ
+  pastelid: "<<pastel-id>>"
   passphrase: passphrase
   connection_refresh_timeout: 300
   connections: 10

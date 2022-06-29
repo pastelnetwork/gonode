@@ -9,8 +9,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errgroup"
+
+	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -75,10 +76,11 @@ func (s *service) Run(ctx context.Context) error {
 		case <-time.After(5 * time.Second):
 			if err := s.run(ctx); err != nil {
 				if utils.IsContextErr(err) {
+					log.WithContext(ctx).WithError(err).Error("closing hermes due to context err")
 					return err
 				}
 
-				//log.WithContext(ctx).WithError(err).Error("failed to run ddscan, retrying.")
+				log.WithContext(ctx).WithError(err).Error("failed to run hermes, retrying.")
 			} else {
 				return nil
 			}
@@ -87,7 +89,7 @@ func (s *service) Run(ctx context.Context) error {
 }
 
 func (s *service) run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, "dd-scan")
+	ctx = log.ContextWithPrefix(ctx, "hermes")
 	if _, err := os.Stat(s.config.DataFile); os.IsNotExist(err) {
 		return errors.Errorf("dataFile dd service not found: %w", err)
 	}
@@ -98,23 +100,27 @@ func (s *service) run(ctx context.Context) error {
 		s.isMasterNodeSynced = true
 	}
 
-	conn, err := s.sn.Connect(ctx, fmt.Sprintf("%s:%d", s.config.SNHost, s.config.SNPort))
+	snAddr := fmt.Sprintf("%s:%d", s.config.SNHost, s.config.SNPort)
+	log.WithContext(ctx).WithField("sn-addr", snAddr).Info("connecting with SN-Service")
+
+	conn, err := s.sn.Connect(ctx, snAddr)
 	if err != nil {
 		return errors.Errorf("unable to connect with SN service: %w", err)
 	}
 	s.p2p = conn.HermesP2P()
+	log.WithContext(ctx).Info("connection established with SN-Service")
 
-	group, ctx := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		return s.runTask(ctx)
+		return s.runTask(gctx)
 	})
 
 	group.Go(func() error {
-		return s.CleanupInactiveTickets(ctx)
+		return s.CleanupInactiveTickets(gctx)
 	})
 
 	if err := group.Wait(); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("First runTask() failed")
+		log.WithContext(gctx).WithError(err).Errorf("First runTask() failed")
 	}
 
 	for {
@@ -133,17 +139,17 @@ func (s *service) run(ctx context.Context) error {
 				s.isMasterNodeSynced = true
 			}
 
-			group, ctx := errgroup.WithContext(ctx)
+			group, gctx := errgroup.WithContext(ctx)
 			group.Go(func() error {
-				return s.runTask(ctx)
+				return s.runTask(gctx)
 			})
 
 			group.Go(func() error {
-				return s.CleanupInactiveTickets(ctx)
+				return s.CleanupInactiveTickets(gctx)
 			})
 
 			if err := group.Wait(); err != nil {
-				log.WithContext(ctx).WithError(err).Errorf("run service failed")
+				log.WithContext(gctx).WithError(err).Errorf("run task failed")
 			}
 		}
 	}
@@ -353,36 +359,40 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash string) (*pastel.DDAndFingerprints, error) {
 	rawFile, err := s.p2p.Retrieve(ctx, hash)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("retrieve err")
 		return nil, errors.Errorf("Error finding dd and fp file: %w", err)
 	}
-	//log.WithContext(ctx).WithField("rawFile:", rawFile).Debug("Got file from p2p")
-	// dec, err := utils.B64Decode(rawFile)
-	// if err != nil {
-	// 	return nil, errors.Errorf("decode data: %w", err)
-	// }
 
 	decData, err := zstd.Decompress(nil, rawFile)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("decompress err")
 		return nil, errors.Errorf("decompress: %w", err)
 	}
 
 	splits := bytes.Split(decData, []byte{pastel.SeparatorByte})
 	if (len(splits)) < 2 {
+		log.WithContext(ctx).WithError(err).Error("incorrecrt split err")
 		return nil, errors.Errorf("error separating file by separator bytes, separator not found")
 	}
 	file, err := utils.B64Decode(splits[0])
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("b64 decode err")
 		return nil, errors.Errorf("decode file: %w", err)
 	}
 
 	ddFingerprint := &pastel.DDAndFingerprints{}
 	if err := json.Unmarshal(file, ddFingerprint); err != nil {
+		log.WithContext(ctx).WithError(err).Error("unmarshal err")
 		return nil, errors.Errorf("unmarshal json: %w", err)
+	} else {
+		fmt.Printf("unmarsalled ddfp success %s\n", ddFingerprint.BlockHeight)
 	}
+
 	return ddFingerprint, nil
 }
 
 func (s *service) runTask(ctx context.Context) error {
+	log.WithContext(ctx).Info("getting Reg tickets")
 	/* // For debugging
 	if cnt, err := s.getRecordCount(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to get count")
@@ -399,6 +409,7 @@ func (s *service) runTask(ctx context.Context) error {
 	if len(nftRegTickets) == 0 {
 		return nil
 	}
+	log.WithContext(ctx).WithField("count", len(nftRegTickets)).Info("Reg tickets retrieved")
 
 	//track latest block height, but don't set it until we check all the nft reg tickets and the sense tickets.
 	latestBlockHeight := s.latestBlockHeight
@@ -431,7 +442,8 @@ func (s *service) runTask(ctx context.Context) error {
 			break
 		}
 		if ddAndFpFromTicket == nil {
-			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
+			log.WithContext(ctx).WithField("txid", nftRegTickets[i].TXID).
+				WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Warnf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
 			continue
 		}
 		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
@@ -610,7 +622,7 @@ func (s *service) runTask(ctx context.Context) error {
 		s.latestBlockHeight = latestBlockHeight
 	}
 
-	log.WithContext(ctx).WithField("latest blockheight", s.latestBlockHeight).Debugf("dd-scan successfully scanned to latest block height")
+	log.WithContext(ctx).WithField("latest blockheight", s.latestBlockHeight).Debugf("hermes successfully scanned to latest block height")
 
 	return nil
 }
