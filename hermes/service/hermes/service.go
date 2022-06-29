@@ -384,8 +384,6 @@ func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash stri
 	if err := json.Unmarshal(file, ddFingerprint); err != nil {
 		log.WithContext(ctx).WithError(err).Error("unmarshal err")
 		return nil, errors.Errorf("unmarshal json: %w", err)
-	} else {
-		fmt.Printf("unmarsalled ddfp success %s\n", ddFingerprint.BlockHeight)
 	}
 
 	return ddFingerprint, nil
