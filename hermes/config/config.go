@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 
-	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -14,7 +13,8 @@ const (
 	defaultLogMaxBackups     = 10
 	defaultCommonLogLevel    = "info"
 	defaultSubSystemLogLevel = "error" // disable almost logs
-
+	defaultSNHost            = ""
+	deafultSNPort            = 1
 )
 
 // Config contains settings of the hermes server
@@ -29,7 +29,8 @@ type Config struct {
 	ActivationDeadline uint32         `mapstructure:"activation_deadline" json:"activation_deadline,omitempty"`
 	WorkDir            string         `mapstructure:"work-dir" json:"work-dir"`
 	Pastel             *pastel.Config `mapstructure:"-" json:"-"`
-	P2P                *p2p.Config    `mapstructure:"p2p" json:"p2p,omitempty"`
+	SNHost             string         `mapstructure:"sn_host" json:"sn_host"`
+	SNPort             int            `mapstructure:"sn_port" json:"sn_port"`
 }
 
 // LogConfig represents log config
@@ -74,6 +75,7 @@ func NewConfig() *Config {
 			},
 		},
 		Pastel: pastel.NewConfig(),
-		P2P:    p2p.NewConfig(),
+		SNHost: defaultSNHost,
+		SNPort: deafultSNPort,
 	}
 }

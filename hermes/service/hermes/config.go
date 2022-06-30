@@ -31,6 +31,8 @@ type Config struct {
 
 	// ActivationDeadline is number of blocks allowed to pass for a ticket to be activated
 	ActivationDeadline uint32 `mapstructure:"activation_deadline" json:"activation_deadline,omitempty"`
+	SNHost             string `mapstructure:"sn_host" json:"sn_host"`
+	SNPort             int    `mapstructure:"sn_port" json:"sn_port"`
 }
 
 // SetWorkDir applies `workDir` to OutputDir and InputDir if they were

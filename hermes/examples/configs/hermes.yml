@@ -1,0 +1,19 @@
+log-config:
+  log-file:             # e.g: logs.json - by default, logs are only written to stdout
+  log-compress: true    # compress log or not
+  log-max-size-mb: 100   # maximum log file size before rotate to new file
+  log-max-age-days: 3   # maximum duration to retain old log files based on the timestamp encoded in their filename
+  log-max-backups: 10   # set the maximum number of old log files to retain
+  log-levels:           # log level of individual files 
+    common: debug
+    p2p: debug
+    metadb: info
+    dd: info
+work-dir: 
+rq-files-dir: 
+dd-service-dir:
+quiet: false
+pastel_id: "<<pastel-id>>"
+pass_phrase: "passphrase" 
+sn_host: "localhost"
+sn_port: 14444
