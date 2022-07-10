@@ -7,18 +7,29 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
+<<<<<<< HEAD:hermes/service/hermes/service.go
 	"github.com/pastelnetwork/gonode/common/errgroup"
 
+=======
+>>>>>>> 5196f8a0 (Removing dependency from rqlite/db wrapper):dupedetection/ddscan/service.go
 	"github.com/DataDog/zstd"
+	"github.com/jmoiron/sqlx"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
+<<<<<<< HEAD:hermes/service/hermes/service.go
 	svc "github.com/pastelnetwork/gonode/hermes/service"
 	"github.com/pastelnetwork/gonode/hermes/service/node"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/db"
+=======
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
+	"github.com/pastelnetwork/gonode/p2p"
+>>>>>>> 5196f8a0 (Removing dependency from rqlite/db wrapper):dupedetection/ddscan/service.go
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/sbinet/npyio"
 	"gonum.org/v1/gonum/mat"
@@ -48,9 +59,14 @@ type dupeDetectionFingerprints struct {
 type service struct {
 	config             *Config
 	pastelClient       pastel.Client
+<<<<<<< HEAD:hermes/service/hermes/service.go
 	p2p                node.HermesP2PInterface
 	sn                 node.SNClientInterface
 	db                 *db.DB
+=======
+	p2pClient          p2p.Client
+	db                 *sqlx.DB
+>>>>>>> 5196f8a0 (Removing dependency from rqlite/db wrapper):dupedetection/ddscan/service.go
 	isMasterNodeSynced bool
 	latestBlockHeight  int
 
@@ -200,23 +216,23 @@ func (s *service) waitSynchronization(ctx context.Context) error {
 }
 
 func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFingerprints, error) {
-	row, err := s.db.QueryStringStmt(getLatestFingerprintStatement)
+	row, err := s.queryFromStatement(ctx, getLatestFingerprintStatement)
 	if err != nil {
 		return nil, errors.Errorf("query: %w", err)
 	}
 
-	if len(row) != 0 && len(row[0].Values) == 0 {
+	if row == nil {
 		return nil, errors.New("dd database is empty")
 	}
 
-	values := row[0].Values[0]
+	values := row.Values[0]
 	resultStr := make(map[string]interface{})
-	for i := 0; i < len(row[0].Columns); i++ {
-		switch w := row[0].Values[0].GetParameters()[i].GetValue().(type) {
+	for i := 0; i < len(row.Columns); i++ {
+		switch w := row.Values[0].GetParameters()[i].GetValue().(type) {
 		case *command.Parameter_Y:
 			val := values.GetParameters()[i].GetY()
 			if val == nil {
-				log.WithContext(ctx).Errorf("nil value at column: %s", row[0].Columns[i])
+				log.WithContext(ctx).Errorf("nil value at column: %s", row.Columns[i])
 				continue
 			}
 
@@ -229,17 +245,17 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 				continue
 			}
 
-			resultStr[row[0].Columns[i]] = fp
+			resultStr[row.Columns[i]] = fp
 		case *command.Parameter_I:
-			resultStr[row[0].Columns[i]] = w.I
+			resultStr[row.Columns[i]] = w.I
 		case *command.Parameter_D:
-			resultStr[row[0].Columns[i]] = w.D
+			resultStr[row.Columns[i]] = w.D
 		case *command.Parameter_B:
-			resultStr[row[0].Columns[i]] = w.B
+			resultStr[row.Columns[i]] = w.B
 		case *command.Parameter_S:
-			resultStr[row[0].Columns[i]] = w.S
+			resultStr[row.Columns[i]] = w.S
 		case nil:
-			resultStr[row[0].Columns[i]] = nil
+			resultStr[row.Columns[i]] = nil
 		default:
 			return nil, errors.Errorf("getLatestFingerprint unsupported type: %w", w)
 		}
@@ -258,27 +274,41 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 	return ddFingerprint, nil
 }
 
+<<<<<<< HEAD:hermes/service/hermes/service.go
 func (s *service) checkIfFingerprintExistsInDatabase(_ context.Context, hash string) (bool, error) {
 	req := &command.Request{
 		Statements: []*command.Statement{
+=======
+func (s *service) checkIfFingerprintExistsInDatabase(ctx context.Context, hash string) (bool, error) {
+	stmt := &command.Statement{
+		Sql: getFingerprintFromHashStatement,
+		Parameters: []*command.Parameter{
+>>>>>>> 5196f8a0 (Removing dependency from rqlite/db wrapper):dupedetection/ddscan/service.go
 			{
-				Sql: getFingerprintFromHashStatement,
-				Parameters: []*command.Parameter{
-					{
-						Value: &command.Parameter_S{
-							S: hash,
-						},
-					},
+				Value: &command.Parameter_S{
+					S: hash,
 				},
 			},
 		},
 	}
 
-	row, err := s.db.Query(req, false)
+	conn, err := s.db.Conn(context.Background())
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to connect to database")
+		return false, nil
+	}
+	defer conn.Close()
+
+	parameters, err := parametersToValues(stmt.Parameters)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
+	}
+
+	queryResult, err := conn.QueryContext(context.Background(), stmt.Sql, parameters...)
 	if err != nil {
 		return false, errors.Errorf("querying fingerprint database for hash: %w", err)
 	}
-	if len(row) != 0 && len(row[0].Values) == 0 {
+	if queryResult == nil {
 		return false, nil
 	}
 
@@ -301,54 +331,62 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 		return err
 	}
 
-	req := &command.Request{
-		Statements: []*command.Statement{
+	stmt := command.Statement{
+		Sql: insertFingerprintStatement,
+		Parameters: []*command.Parameter{
 			{
-				Sql: insertFingerprintStatement,
-				Parameters: []*command.Parameter{
-					{
-						Value: &command.Parameter_S{
-							S: input.Sha256HashOfArtImageFile,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.PathToArtImageFile,
-						},
-					},
-					{
-						Value: &command.Parameter_Y{
-							Y: fp,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.DatetimeFingerprintAddedToDatabase,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.ImageThumbnailAsBase64,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.RequestType,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.IDString,
-						},
-					},
+				Value: &command.Parameter_S{
+					S: input.Sha256HashOfArtImageFile,
+				},
+			},
+			{
+				Value: &command.Parameter_S{
+					S: input.PathToArtImageFile,
+				},
+			},
+			{
+				Value: &command.Parameter_Y{
+					Y: fp,
+				},
+			},
+			{
+				Value: &command.Parameter_S{
+					S: input.DatetimeFingerprintAddedToDatabase,
+				},
+			},
+			{
+				Value: &command.Parameter_S{
+					S: input.ImageThumbnailAsBase64,
+				},
+			},
+			{
+				Value: &command.Parameter_S{
+					S: input.RequestType,
+				},
+			},
+			{
+				Value: &command.Parameter_S{
+					S: input.IDString,
 				},
 			},
 		},
 	}
 
-	executeResult, err := s.db.Execute(req, false)
+	conn, err := s.db.Conn(context.Background())
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to connect to database")
+		return nil
+	}
+	defer conn.Close()
+
+	parameters, err := parametersToValues(stmt.Parameters)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
+	}
+
+	executeResult, err := conn.ExecContext(context.Background(), stmt.Sql, parameters...)
 	log.WithContext(ctx).WithField("execute result", executeResult).Debug("Execute result of adding new fp")
-	if err != nil || executeResult[0].Error != "" {
+	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
 		return err
 	}
@@ -627,11 +665,10 @@ func (s *service) runTask(ctx context.Context) error {
 
 func (s *service) getRecordCount(_ context.Context) (int64, error) {
 	statement := getNumberOfFingerprintsStatement
-	rows, err := s.db.QueryStringStmt(statement)
+	row, err := s.queryFromStatement(ctx, statement)
 	if err != nil {
 		return 0, errors.Errorf("query: %w", err)
 	}
-	row := rows[0]
 
 	if len(row.GetValues()) != 1 {
 		return 0, errors.Errorf("invalid Values length: %d", len(row.Columns))
@@ -647,7 +684,6 @@ func (s *service) getRecordCount(_ context.Context) (int64, error) {
 	default:
 		return 0, errors.Errorf("invalid returned type : %v", w)
 	}
-
 }
 
 // Stats return status of dupe detection
@@ -671,6 +707,151 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	return stats, nil
 }
 
+func (s *service) queryFromStatement(ctx context.Context, queryString string) (*command.QueryRows, error) {
+	conn, err := s.db.Conn(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	rows := &command.QueryRows{}
+
+	rs, err := conn.QueryContext(context.Background(), queryString)
+	if err != nil {
+		log.WithError(err).Error("dd-scan failed to query database")
+	}
+	defer rs.Close()
+
+	columns, err := rs.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	types, err := rs.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	xTypes := make([]string, len(types))
+	for i := range types {
+		xTypes[i] = strings.ToLower(types[i].DatabaseTypeName())
+	}
+
+	for rs.Next() {
+		dest := make([]interface{}, len(columns))
+		ptrs := make([]interface{}, len(dest))
+		for i := range ptrs {
+			ptrs[i] = &dest[i]
+		}
+		if err := rs.Scan(ptrs...); err != nil {
+			return nil, err
+		}
+		rows.Values = append(rows.Values, &command.Values{
+			Parameters: normalizeRowValues(dest, xTypes),
+		})
+	}
+
+	// Check for errors from iterating over rows.
+	if err := rs.Err(); err != nil {
+		log.WithError(err).Error("dd-scan error after iterating over query")
+		return nil, err
+	}
+
+	rows.Columns = columns
+	rows.Types = xTypes
+
+	return rows, nil
+}
+
+// parametersToValues maps values in the proto params to SQL driver values.
+func parametersToValues(parameters []*command.Parameter) ([]interface{}, error) {
+	if parameters == nil {
+		return nil, nil
+	}
+
+	values := make([]interface{}, len(parameters))
+	for i := range parameters {
+		switch w := parameters[i].GetValue().(type) {
+		case *command.Parameter_I:
+			values[i] = w.I
+		case *command.Parameter_D:
+			values[i] = w.D
+		case *command.Parameter_B:
+			values[i] = w.B
+		case *command.Parameter_Y:
+			values[i] = w.Y
+		case *command.Parameter_S:
+			values[i] = w.S
+		default:
+			return nil, fmt.Errorf("unsupported type: %T", w)
+		}
+	}
+	return values, nil
+}
+
+// normalizeRowValues performs some normalization of values in the returned rows.
+// Text values come over (from sqlite-go) as []byte instead of strings
+// for some reason, so we have explicitly convert (but only when type
+// is "text" so we don't affect BLOB types)
+func normalizeRowValues(row []interface{}, types []string) []*command.Parameter {
+	values := make([]*command.Parameter, len(types))
+	for i, v := range row {
+		switch val := v.(type) {
+		case int:
+		case int64:
+			values[i] = &command.Parameter{
+				Value: &command.Parameter_I{
+					I: val,
+				},
+			}
+		case float64:
+			values[i] = &command.Parameter{
+				Value: &command.Parameter_D{
+					D: val,
+				},
+			}
+		case bool:
+			values[i] = &command.Parameter{
+				Value: &command.Parameter_B{
+					B: val,
+				},
+			}
+		case string:
+			values[i] = &command.Parameter{
+				Value: &command.Parameter_S{
+					S: val,
+				},
+			}
+		case []byte:
+			if isTextType(types[i]) {
+				values[i].Value = &command.Parameter_S{
+					S: string(val),
+				}
+			} else {
+				values[i] = &command.Parameter{
+					Value: &command.Parameter_Y{
+						Y: val,
+					},
+				}
+			}
+		}
+	}
+	return values
+}
+
+// isTextType returns whether the given type has a SQLite text affinity.
+// http://www.sqlite.org/datatype3.html
+func isTextType(t string) bool {
+	return t == "text" ||
+		t == "json" ||
+		t == "" ||
+		strings.HasPrefix(t, "varchar") ||
+		strings.HasPrefix(t, "varying character") ||
+		strings.HasPrefix(t, "nchar") ||
+		strings.HasPrefix(t, "native character") ||
+		strings.HasPrefix(t, "nvarchar") ||
+		strings.HasPrefix(t, "clob")
+}
+
 // NewService returns a new ddscan service
 func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInterface) (svc.SvcInterface, error) {
 	file := config.DataFile
@@ -686,7 +867,7 @@ func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInte
 		return nil, errors.Errorf("database dd service not found: %w", err)
 	}
 
-	db, err := db.Open(file, true)
+	db, err := sqlx.Open("sqlite3", fmt.Sprintf("file:%s?_fk=%s", file, strconv.FormatBool(true)))
 	if err != nil {
 		return nil, errors.Errorf("open dd-service database: %w", err)
 	}
