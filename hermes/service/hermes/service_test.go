@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx/"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +25,7 @@ func prepareService(_ *testing.T) *service {
 	if err != nil {
 		panic(err.Error())
 	}
-	db, err := db.Open(tmpfile.Name(), true)
+	db, err := sqlx.DB.Open(tmpfile.Name(), true)
 	if err != nil {
 		panic("failed to open database")
 	}
