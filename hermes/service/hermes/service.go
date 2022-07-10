@@ -11,25 +11,14 @@ import (
 	"strings"
 	"time"
 
-<<<<<<< HEAD:hermes/service/hermes/service.go
-	"github.com/pastelnetwork/gonode/common/errgroup"
-
-=======
->>>>>>> 5196f8a0 (Removing dependency from rqlite/db wrapper):dupedetection/ddscan/service.go
 	"github.com/DataDog/zstd"
 	"github.com/jmoiron/sqlx"
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
-<<<<<<< HEAD:hermes/service/hermes/service.go
-	svc "github.com/pastelnetwork/gonode/hermes/service"
-	"github.com/pastelnetwork/gonode/hermes/service/node"
-	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
-	"github.com/pastelnetwork/gonode/metadb/rqlite/db"
-=======
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	"github.com/pastelnetwork/gonode/p2p"
->>>>>>> 5196f8a0 (Removing dependency from rqlite/db wrapper):dupedetection/ddscan/service.go
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/sbinet/npyio"
 	"gonum.org/v1/gonum/mat"
@@ -59,14 +48,8 @@ type dupeDetectionFingerprints struct {
 type service struct {
 	config             *Config
 	pastelClient       pastel.Client
-<<<<<<< HEAD:hermes/service/hermes/service.go
-	p2p                node.HermesP2PInterface
-	sn                 node.SNClientInterface
-	db                 *db.DB
-=======
 	p2pClient          p2p.Client
 	db                 *sqlx.DB
->>>>>>> 5196f8a0 (Removing dependency from rqlite/db wrapper):dupedetection/ddscan/service.go
 	isMasterNodeSynced bool
 	latestBlockHeight  int
 
@@ -274,16 +257,9 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 	return ddFingerprint, nil
 }
 
-<<<<<<< HEAD:hermes/service/hermes/service.go
 func (s *service) checkIfFingerprintExistsInDatabase(_ context.Context, hash string) (bool, error) {
 	req := &command.Request{
 		Statements: []*command.Statement{
-=======
-func (s *service) checkIfFingerprintExistsInDatabase(ctx context.Context, hash string) (bool, error) {
-	stmt := &command.Statement{
-		Sql: getFingerprintFromHashStatement,
-		Parameters: []*command.Parameter{
->>>>>>> 5196f8a0 (Removing dependency from rqlite/db wrapper):dupedetection/ddscan/service.go
 			{
 				Value: &command.Parameter_S{
 					S: hash,
