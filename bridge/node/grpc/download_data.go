@@ -26,7 +26,6 @@ func (service *downloadData) DownloadThumbnail(ctx context.Context, txid string,
 	}
 	log.WithContext(ctx).Println("Sending sn download thumbnail request")
 	res, err := service.client.DownloadThumbnail(ctx, in)
-
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +40,7 @@ func (service *downloadData) DownloadThumbnail(ctx context.Context, txid string,
 	rMap := make(map[int][]byte)
 	rMap[0] = res.Thumbnailone
 	rMap[1] = res.Thumbnailtwo
+
 	return rMap, nil
 }
 

@@ -88,18 +88,20 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 		if task.request.Artist != nil && *task.request.Artist != ticket.ActTicketData.PastelID {
 			continue
 		}
-		//iterate through filtered activation tickets
-		group.Go(func() error {
-			//request art registration tickets
-			regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(gctx, ticket.ActTicketData.RegTXID)
-			if err != nil {
-				log.WithContext(gctx).WithField("txid", ticket.ActTicketData.RegTXID).WithError(err).Error("Reg request")
-				return err
-			}
 
+		//iterate through filtered activation tickets
+
+		//request art registration tickets
+		regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(ctx, ticket.ActTicketData.RegTXID)
+		if err != nil {
+			log.WithContext(ctx).WithField("txid", ticket.ActTicketData.RegTXID).WithError(err).Error("Reg request")
+			return nil
+		}
+
+		group.Go(func() error {
 			nftData, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+				log.WithContext(gctx).WithError(err).Error("Failed to decode reg ticket")
 				return nil
 			}
 			regTicket.RegTicketData.NFTTicketData = *nftData
@@ -152,13 +154,16 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 	}
 
 	ddAndFpStruct := &pastel.DDAndFingerprints{}
-	json.Unmarshal(ddAndFpData, ddAndFpStruct)
-	log.WithContext(ctx).WithField("ddandfpstruct", ddAndFpStruct).Println("Successfully unmarshalled dd and fp struct")
+	if err := json.Unmarshal(ddAndFpData, ddAndFpStruct); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to  unmarshalled dd and fp struct")
+	}
 
 	//rareness score
 	if !(task.request.MinRarenessScore == float64(0) && task.request.MinRarenessScore == task.request.MaxRarenessScore) && !common.InFloatRange(float64(ddAndFpStruct.OverallRarenessScore),
 		&task.request.MinRarenessScore, &task.request.MaxRarenessScore) {
-		log.WithContext(ctx).WithField("task.request.minrarenessscore", task.request.MinRarenessScore).WithField("task.request.maxrarenessscore", task.request.MaxRarenessScore).WithField("overallaveragerarnessscore", ddAndFpStruct.OverallRarenessScore).Println("rareness score outside of range")
+		log.WithContext(ctx).WithField("task.request.minrarenessscore", task.request.MinRarenessScore).
+			WithField("task.request.maxrarenessscore", task.request.MaxRarenessScore).
+			WithField("overallaveragerarnessscore", ddAndFpStruct.OverallRarenessScore).Debug("rareness score outside of range")
 		return srch, false
 	}
 
@@ -187,7 +192,7 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 		IsLikelyDupe:  ddAndFpStruct.IsLikelyDupe,
 	}
 	//performs fuzzy matching on string portions of search
-	log.WithContext(ctx).WithField("RegSearch", regSearch).Println("filter reg ticket match, sending to fuzzy match")
+	log.WithContext(ctx).WithField("RegSearch", regSearch).Debug("filter reg ticket match, sending to fuzzy match")
 	return regSearch.Search(task.request)
 }
 
