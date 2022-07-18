@@ -41,11 +41,13 @@ mkdir -p /home/$USER/pastel_dupe_detection_service/support_files/mobilenet_v2_14
 
 Then, in the "support_files" directory, put the following files:
 
-* dupe_detection_image_fingerprint_database.sqlite (download and extract from: https://download.pastel.network/machine-learning/dupe_detection_image_fingerprint_database.zip )
+* dupe_detection_image_fingerprint_database.sqlite (download and extract from: https://download.pastel.network/machine-learning/registered_image_fingerprints_db.sqlite )
 
-* xgboost_dupe_classifier.model (download and extract from: https://download.pastel.network/machine-learning/xgboost_dupe_classifier.zip )
+* DupeDetector_gray.pth.tar (download from: https://download.pastel.network/machine-learning/DupeDetector_gray.pth.tar)
 
-* keras_dupe_classifier.model (this is actually a folder; download and extract from: https://download.pastel.network/machine-learning/keras_dupe_classifier.model.zip )
+* pca_bw.vt (download from: https://download.pastel.network/machine-learning/pca_bw.vt)
+
+* train_0_bw.hdf5 (download from: https://download.pastel.network/machine-learning/train_0_bw.hdf5)
 
 * config.ini
 ```ini
@@ -74,12 +76,12 @@ Clone dd-service source: https://github.com/pastelnetwork/dd-service
 #### Run dd-service:
 ```bash
 cd <path to dd-service>/dd-service
-python3 pastel_dupe_detection_daemon_v4.py
+python3 dupe_detection_server.py
 ```
 
 #### Run test API:
 ```bash
 cd cmd
-go run test.go -workDir /home/$USER/pastel_dupe_detection_service/
+go run test.go
 ```
 it takes about 2 minutes for the test end.
