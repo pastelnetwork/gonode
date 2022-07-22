@@ -115,9 +115,9 @@ func (s *service) run(ctx context.Context) error {
 		return s.runTask(gctx)
 	})
 
-	group.Go(func() error {
+	/*group.Go(func() error {
 		return s.CleanupInactiveTickets(gctx)
-	})
+	})*/
 
 	if err := group.Wait(); err != nil {
 		log.WithContext(gctx).WithError(err).Errorf("First runTask() failed")
@@ -144,9 +144,9 @@ func (s *service) run(ctx context.Context) error {
 				return s.runTask(gctx)
 			})
 
-			group.Go(func() error {
+			/*group.Go(func() error {
 				return s.CleanupInactiveTickets(gctx)
-			})
+			})*/
 
 			if err := group.Wait(); err != nil {
 				log.WithContext(gctx).WithError(err).Errorf("run task failed")

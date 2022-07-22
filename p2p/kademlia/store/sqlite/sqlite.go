@@ -50,7 +50,7 @@ func NewStore(ctx context.Context, dataDir string, replicate time.Duration, repu
 	}
 
 	dbFile := path.Join(dataDir, dbName)
-	db, err := sqlx.Connect("sqlite3", dbFile)
+	db, err := sqlx.Connect("sqlite3", fmt.Sprintf("%s?%s", dbFile, "_journal_mode=WAL"))
 	if err != nil {
 		return nil, fmt.Errorf("cannot open sqlite database: %w", err)
 	}

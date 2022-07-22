@@ -7,12 +7,12 @@ const (
 	defaultAcceptNodesTimeout        = 600 * time.Second // = 3 * (2* ConnectToNodeTimeout)
 	defaultConnectToNodeTimeout      = time.Second * 20
 	defaultConnectionRefreshInterval = 2
-	defaultNumberOfConnections       = 10
+	defaultNumberOfConnections       = 7
 )
 
 // Config contains settings of the registering nft.
 type Config struct {
-	PastelID                  string `mapstructure:"pastelid" json:"pastelid"`
+	PastelID                  string `mapstructure:"pastel_id" json:"pastel_id"`
 	Passphrase                string `mapstructure:"passphrase" json:"passphrase"`
 	ConnectionRefreshInterval int    `mapstructure:"connection_refresh_interval" json:"connection_refresh_interval"`
 	Connections               int    `mapstructure:"connections" json:"connections"`

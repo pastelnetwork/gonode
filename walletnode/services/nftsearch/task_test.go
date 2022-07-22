@@ -211,27 +211,6 @@ func TestRunTask(t *testing.T) {
 			want: []RegTicketSearch{},
 			fail: true,
 		},
-
-		"reg-ticket-err": {
-			args: args{
-				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDB}}},
-				regTickets: pastel.RegTickets{regTicketB},
-				req: &NftSearchingRequest{
-					Query:      "alan",
-					ArtTitle:   true,
-					ArtistName: true,
-				},
-				regTicketErr: errors.New("test-err"),
-				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore:        float32(0.5),
-					IsLikelyDupe:         false,
-					OverallRarenessScore: 0.5,
-				},
-			},
-
-			want: []RegTicketSearch{},
-			fail: true,
-		},
 	}
 
 	ctx := context.Background()
