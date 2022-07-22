@@ -95,7 +95,7 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 		regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(ctx, ticket.ActTicketData.RegTXID)
 		if err != nil {
 			log.WithContext(ctx).WithField("txid", ticket.ActTicketData.RegTXID).WithError(err).Error("Reg request")
-			return nil
+			continue
 		}
 
 		group.Go(func() error {
