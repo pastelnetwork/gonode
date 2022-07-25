@@ -48,7 +48,7 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 		go task.connectThumbnailAndDDHelper(newCtx, cancel)
 	} else {
 		// Ignore error because we'd still want to return results
-		if err := task.EnforceBridgeConnection(ctx); err != nil {
+		if err := task.enforceBridgeConnection(ctx); err != nil {
 			log.WithContext(ctx).WithError(err).Error("enforcing bridge connection failed.. connecting with SNs...")
 			task.bridgeOn = false
 
@@ -280,7 +280,7 @@ func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphra
 	}
 }
 
-func (task *NftSearchingTask) EnforceBridgeConnection(ctx context.Context) error {
+func (task *NftSearchingTask) enforceBridgeConnection(ctx context.Context) error {
 	if err := task.service.bridgeClient.Health(ctx); err != nil {
 		bridgeClient := bridgeGrpc.NewClient()
 		log.WithContext(ctx).Info("Connection lost with bridge..reconnecting..")
