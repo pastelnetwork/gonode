@@ -64,6 +64,15 @@ func (service *downloadData) DownloadDDAndFingerprints(ctx context.Context, txid
 	return res.File, nil
 }
 
+// Health checks bridge health
+func (service *downloadData) Health(ctx context.Context) (err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	in := &pb.PingRequest{}
+
+	_, err = service.client.Ping(ctx, in)
+	return err
+}
+
 func (service *downloadData) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }

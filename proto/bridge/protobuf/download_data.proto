@@ -5,6 +5,8 @@ option go_package = "github.com/pastelnetwork/gonode/proto/bridge";
 package bridge;
 
 service DownloadData {
+     // ConnectTo requests to connect to the primary supernode.
+    rpc Ping(PingRequest) returns (PingReply);
     rpc DownloadThumbnail(DownloadThumbnailRequest) returns (DownloadThumbnailReply);
     rpc DownloadDDAndFingerprints(DownloadDDAndFingerprintsRequest) returns (DownloadDDAndFingerprintsReply);
 }
@@ -25,4 +27,11 @@ message DownloadDDAndFingerprintsRequest {
 
 message DownloadDDAndFingerprintsReply {
     bytes file = 1;
+}
+
+message PingRequest {
+    string msg = 1;
+}
+message PingReply {
+    string reply = 1;
 }

@@ -43,6 +43,11 @@ func (s *Service) DownloadDDAndFingerprints(ctx context.Context, req *pb.Downloa
 	return &pb.DownloadDDAndFingerprintsReply{File: resp}, nil
 }
 
+// Ping returns a description of the service.
+func (s *Service) Ping(ctx context.Context, req *pb.PingRequest) (r *pb.PingReply, err error) {
+	return &pb.PingReply{}, nil
+}
+
 // Desc returns a description of the service.
 func (s *Service) Desc() *grpc.ServiceDesc {
 	return &pb.DownloadData_ServiceDesc

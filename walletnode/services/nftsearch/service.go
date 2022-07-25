@@ -72,13 +72,13 @@ func (service *NftSearchingService) GetThumbnail(ctx context.Context, regTicket 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if service.bridgeClient != nil {
+	if service.config.BridgeOn {
 		dataMap, err := service.bridgeClient.DownloadThumbnail(ctx, regTicket.TXID, 1)
-		if err != nil {
-			return nil, errors.Errorf("download thumbnail through bridge: %w", err)
+		if err == nil {
+			return dataMap[0], nil
 		}
 
-		return dataMap[0], nil
+		log.WithContext(ctx).WithError(err).Error("download thumbnail through bridge failed")
 	}
 
 	if err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel); err != nil {
@@ -101,14 +101,13 @@ func (service *NftSearchingService) GetDDAndFP(ctx context.Context, regTicket *p
 	defer cancel()
 
 	// Get DD and FP data so we can filter on it.
-	if service.bridgeClient != nil {
+	if service.config.BridgeOn {
 		data, err = service.bridgeClient.DownloadDDAndFingerprints(ctx, regTicket.TXID)
-		if err != nil {
-			log.WithContext(ctx).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
-			return data, err
+		if err == nil {
+			return data, nil
 		}
 
-		return data, nil
+		log.WithContext(ctx).WithError(err).Error("download dd&fp through bridge failed")
 	}
 
 	if err := nftGetSearchTask.ddAndFP.Connect(ctx, 1, cancel); err != nil {
