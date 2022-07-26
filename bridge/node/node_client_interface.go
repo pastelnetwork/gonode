@@ -58,6 +58,7 @@ type RealNodeMaker interface {
 type DownloadDataInterface interface {
 	SuperNodeAPIInterface
 
+	Health(ctx context.Context) error
 	DownloadThumbnail(ctx context.Context, txid string, numNails int) (files map[int][]byte, err error)
 	DownloadDDAndFingerprints(ctx context.Context, txid string) (file []byte, err error)
 }

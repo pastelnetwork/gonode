@@ -26,7 +26,6 @@ func (service *downloadData) DownloadThumbnail(ctx context.Context, txid string,
 	}
 	log.WithContext(ctx).Println("Sending sn download thumbnail request")
 	res, err := service.client.DownloadThumbnail(ctx, in)
-
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +40,7 @@ func (service *downloadData) DownloadThumbnail(ctx context.Context, txid string,
 	rMap := make(map[int][]byte)
 	rMap[0] = res.Thumbnailone
 	rMap[1] = res.Thumbnailtwo
+
 	return rMap, nil
 }
 
@@ -62,6 +62,15 @@ func (service *downloadData) DownloadDDAndFingerprints(ctx context.Context, txid
 	}
 
 	return res.File, nil
+}
+
+// Health checks bridge health
+func (service *downloadData) Health(ctx context.Context) (err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	in := &pb.PingRequest{}
+
+	_, err = service.client.Ping(ctx, in)
+	return err
 }
 
 func (service *downloadData) contextWithLogPrefix(ctx context.Context) context.Context {

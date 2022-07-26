@@ -3,6 +3,7 @@ package nftsearch
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -16,6 +17,7 @@ type DDFPHandler struct {
 
 	fetchersChan chan ddfpRequest
 	nodesDone    chan struct{}
+	connMtx      *sync.RWMutex
 }
 
 // NewDDFPHandler returns a new instance of DDFPHandler as Helper
@@ -23,6 +25,7 @@ func NewDDFPHandler(meshHandler *common.MeshHandler) *DDFPHandler {
 	return &DDFPHandler{
 		meshHandler:  meshHandler,
 		fetchersChan: make(chan ddfpRequest),
+		connMtx:      &sync.RWMutex{},
 	}
 }
 
@@ -38,6 +41,8 @@ type ddfpRequest struct {
 
 // Connect creates `connections` no. of connections with supernode & starts dd and fp ddfpRequest listeners
 func (h *DDFPHandler) Connect(ctx context.Context, num int, cancel context.CancelFunc) error {
+	h.connMtx.Lock()
+	defer h.connMtx.Unlock()
 
 	if err := h.meshHandler.ConnectToNSuperNodes(ctx, num); err != nil {
 		return errors.Errorf("connect to top rank nodes: %w", err)
@@ -56,6 +61,9 @@ func (h *DDFPHandler) Connect(ctx context.Context, num int, cancel context.Cance
 
 // CloseAll disconnects from all SNs
 func (h *DDFPHandler) CloseAll(ctx context.Context) error {
+	h.connMtx.Lock()
+	defer h.connMtx.Unlock()
+
 	return h.meshHandler.CloseSNsConnections(ctx, h.nodesDone)
 }
 
@@ -106,6 +114,9 @@ func (h *DDFPHandler) fetcher(ctx context.Context, someNode *common.SuperNodeCli
 
 // Fetch gets the actual thumbnail data from the network as bytes to be wrapped by the calling function
 func (h *DDFPHandler) Fetch(ctx context.Context, txid string) (data []byte, err error) {
+	h.connMtx.RLock()
+	defer h.connMtx.RUnlock()
+
 	respCh := make(chan *ddfpResponse)
 	req := ddfpRequest{txid: txid, respCh: respCh}
 

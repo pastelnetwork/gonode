@@ -163,6 +163,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.NftRegister.RqFilesDir = config.RqFilesDir
 	config.CascadeRegister.RaptorQServiceAddress = rqAddr
 	config.CascadeRegister.RqFilesDir = config.RqFilesDir
+	config.NftSearch.BridgeOn = config.Bridge.Switch
+	config.NftSearch.BridgeAddress = config.Bridge.Address
+	config.NftSearch.BridgePort = config.Bridge.Port
 
 	rqClient := rqgrpc.NewClient()
 	bridgeClient := bridgeGrpc.NewClient()

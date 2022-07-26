@@ -3,6 +3,7 @@ package nftsearch
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -16,6 +17,7 @@ type ThumbnailHandler struct {
 
 	fetchersChan chan request
 	nodesDone    chan struct{}
+	connMtx      *sync.RWMutex
 }
 
 // NewThumbnailHandler returns a new instance of ThumbnailHandler as Helper
@@ -23,6 +25,7 @@ func NewThumbnailHandler(meshHandler *common.MeshHandler) *ThumbnailHandler {
 	return &ThumbnailHandler{
 		meshHandler:  meshHandler,
 		fetchersChan: make(chan request),
+		connMtx:      &sync.RWMutex{},
 	}
 }
 
@@ -39,6 +42,8 @@ type request struct {
 
 // Connect creates `connections` no. of connections with supernode & starts thumbnail request listeners
 func (h *ThumbnailHandler) Connect(ctx context.Context, num int, cancel context.CancelFunc) error {
+	h.connMtx.Lock()
+	defer h.connMtx.Unlock()
 
 	if err := h.meshHandler.ConnectToNSuperNodes(ctx, num); err != nil {
 		return errors.Errorf("connect to top rank nodes: %w", err)
@@ -78,6 +83,9 @@ func (h *ThumbnailHandler) FetchOne(ctx context.Context, txid string) ([]byte, e
 
 // CloseAll disconnects from all SNs
 func (h *ThumbnailHandler) CloseAll(ctx context.Context) error {
+	h.connMtx.Lock()
+	defer h.connMtx.Unlock()
+
 	return h.meshHandler.CloseSNsConnections(ctx, h.nodesDone)
 }
 
@@ -162,6 +170,9 @@ func (h *ThumbnailHandler) fetchAll(ctx context.Context, searchResult []*RegTick
 
 // fetch gets the actual thumbnail data from the network as bytes to be wrapped by the calling function
 func (h *ThumbnailHandler) fetch(ctx context.Context, txid string, numnails int) (data map[int][]byte, err error) {
+	h.connMtx.RLock()
+	defer h.connMtx.RUnlock()
+
 	respCh := make(chan *response)
 	req := request{txid: txid, respCh: respCh, numnails: numnails}
 

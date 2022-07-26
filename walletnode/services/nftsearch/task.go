@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
-
 	"sort"
+
+	bridgeGrpc "github.com/pastelnetwork/gonode/bridge/node/grpc"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -30,6 +31,7 @@ type NftSearchingTask struct {
 	searchResult   []*RegTicketSearch
 	resultChan     chan *RegTicketSearch
 	searchResMutex sync.Mutex
+	bridgeOn       bool
 }
 
 // Run starts the task
@@ -39,21 +41,18 @@ func (task *NftSearchingTask) Run(ctx context.Context) error {
 }
 
 func (task *NftSearchingTask) run(ctx context.Context) error {
-	pastelConnections := task.service.config.NumberSuperNodes
-	if len(task.searchResult) < pastelConnections {
-		pastelConnections = len(task.searchResult)
-	}
-
 	newCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if task.service.bridgeClient == nil {
-		if err := task.ddAndFP.Connect(newCtx, pastelConnections, cancel); err != nil {
-			return errors.Errorf("connect and setup fetchers: %w", err)
-		}
+	if !task.bridgeOn {
+		go task.connectThumbnailAndDDHelper(newCtx, cancel)
+	} else {
+		// Ignore error because we'd still want to return results
+		if err := task.enforceBridgeConnection(ctx); err != nil {
+			log.WithContext(ctx).WithError(err).Error("enforcing bridge connection failed.. connecting with SNs...")
+			task.bridgeOn = false
 
-		if err := task.thumbnail.Connect(newCtx, pastelConnections, cancel); err != nil {
-			return errors.Errorf("connect and setup fetchers: %w", err)
+			go task.connectThumbnailAndDDHelper(newCtx, cancel)
 		}
 	}
 
@@ -61,7 +60,7 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 		return errors.Errorf("search tickets: %w", err)
 	}
 
-	if task.service.bridgeClient != nil {
+	if task.bridgeOn {
 		return task.fetchThumbnails(newCtx, task.searchResult, &task.resultChan)
 	}
 
@@ -77,6 +76,7 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("act ticket: %s", err)
 	}
+
 	group, gctx := errgroup.WithContext(ctx)
 	for _, ticket := range actTickets {
 		ticket := ticket
@@ -88,18 +88,20 @@ func (task *NftSearchingTask) search(ctx context.Context) error {
 		if task.request.Artist != nil && *task.request.Artist != ticket.ActTicketData.PastelID {
 			continue
 		}
-		//iterate through filtered activation tickets
-		group.Go(func() error {
-			//request art registration tickets
-			regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(gctx, ticket.ActTicketData.RegTXID)
-			if err != nil {
-				log.WithContext(gctx).WithField("txid", ticket.ActTicketData.RegTXID).WithError(err).Error("Reg request")
-				return err
-			}
 
+		//iterate through filtered activation tickets
+
+		//request art registration tickets
+		regTicket, err := task.service.pastelHandler.PastelClient.RegTicket(ctx, ticket.ActTicketData.RegTXID)
+		if err != nil {
+			log.WithContext(ctx).WithField("txid", ticket.ActTicketData.RegTXID).WithError(err).Error("Reg request")
+			continue
+		}
+
+		group.Go(func() error {
 			nftData, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+				log.WithContext(gctx).WithError(err).Error("Failed to decode reg ticket")
 				return nil
 			}
 			regTicket.RegTicketData.NFTTicketData = *nftData
@@ -137,7 +139,7 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 	var err error
 
 	// Get DD and FP data so we can filter on it.
-	if task.service.bridgeClient != nil {
+	if task.bridgeOn {
 		ddAndFpData, err = task.service.bridgeClient.DownloadDDAndFingerprints(ctx, regTicket.TXID)
 		if err != nil {
 			log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
@@ -152,13 +154,16 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 	}
 
 	ddAndFpStruct := &pastel.DDAndFingerprints{}
-	json.Unmarshal(ddAndFpData, ddAndFpStruct)
-	log.WithContext(ctx).WithField("ddandfpstruct", ddAndFpStruct).Println("Successfully unmarshalled dd and fp struct")
+	if err := json.Unmarshal(ddAndFpData, ddAndFpStruct); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to  unmarshalled dd and fp struct")
+	}
 
 	//rareness score
 	if !(task.request.MinRarenessScore == float64(0) && task.request.MinRarenessScore == task.request.MaxRarenessScore) && !common.InFloatRange(float64(ddAndFpStruct.OverallRarenessScore),
 		&task.request.MinRarenessScore, &task.request.MaxRarenessScore) {
-		log.WithContext(ctx).WithField("task.request.minrarenessscore", task.request.MinRarenessScore).WithField("task.request.maxrarenessscore", task.request.MaxRarenessScore).WithField("overallaveragerarnessscore", ddAndFpStruct.OverallRarenessScore).Println("rareness score outside of range")
+		log.WithContext(ctx).WithField("task.request.minrarenessscore", task.request.MinRarenessScore).
+			WithField("task.request.maxrarenessscore", task.request.MaxRarenessScore).
+			WithField("overallaveragerarnessscore", ddAndFpStruct.OverallRarenessScore).Debug("rareness score outside of range")
 		return srch, false
 	}
 
@@ -187,7 +192,7 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 		IsLikelyDupe:  ddAndFpStruct.IsLikelyDupe,
 	}
 	//performs fuzzy matching on string portions of search
-	log.WithContext(ctx).WithField("RegSearch", regSearch).Println("filter reg ticket match, sending to fuzzy match")
+	log.WithContext(ctx).WithField("RegSearch", regSearch).Debug("filter reg ticket match, sending to fuzzy match")
 	return regSearch.Search(task.request)
 }
 
@@ -237,6 +242,7 @@ func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest
 		resultChan:     make(chan *RegTicketSearch),
 		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
 		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
+		bridgeOn:       service.config.BridgeOn,
 	}
 }
 
@@ -245,6 +251,7 @@ type NftGetSearchTask struct {
 	*common.WalletNodeTask
 	thumbnail *ThumbnailHandler
 	ddAndFP   *DDFPHandler
+	bridgeOn  bool
 }
 
 // NewNftGetSearchTask returns a new NftSearchingTask instance.
@@ -269,12 +276,31 @@ func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphra
 		WalletNodeTask: task,
 		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
 		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
+		bridgeOn:       service.config.BridgeOn,
 	}
+}
+
+func (task *NftSearchingTask) enforceBridgeConnection(ctx context.Context) error {
+	if err := task.service.bridgeClient.Health(ctx); err != nil {
+		bridgeClient := bridgeGrpc.NewClient()
+		log.WithContext(ctx).Info("Connection lost with bridge..reconnecting..")
+
+		conn, err := bridgeClient.Connect(ctx, fmt.Sprintf("%s:%d", task.service.config.BridgeAddress,
+			task.service.config.BridgePort))
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("reconnecting with bridge failed")
+			return err
+		}
+
+		task.service.bridgeClient = conn.DownloadData()
+		log.WithContext(ctx).Info("Bridge service reconnected ")
+	}
+
+	return nil
 }
 
 func (task *NftSearchingTask) fetchThumbnails(ctx context.Context, searchResult []*RegTicketSearch, resultChan *chan *RegTicketSearch) error {
 	group, _ := errgroup.WithContext(ctx)
-
 	for i, res := range searchResult {
 		res := res
 		res.MatchIndex = i
@@ -290,7 +316,7 @@ func (task *NftSearchingTask) fetchThumbnails(ctx context.Context, searchResult 
 
 			if err := tgroup.Wait(); err != nil {
 				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("fetch Thumbnail")
-				return fmt.Errorf("fetch thumbnail: txid: %s - err: %s", res.TXID, err)
+				return nil
 			}
 
 			res.Thumbnail = thumbData[0]
@@ -305,4 +331,16 @@ func (task *NftSearchingTask) fetchThumbnails(ctx context.Context, searchResult 
 	}
 
 	return group.Wait()
+}
+
+func (task *NftSearchingTask) connectThumbnailAndDDHelper(ctx context.Context, cancel context.CancelFunc) {
+	pastelConnections := task.service.config.NumberSuperNodes
+
+	if err := task.ddAndFP.Connect(ctx, pastelConnections, cancel); err != nil {
+		log.WithContext(ctx).WithError(err).Error("connect and setup fetchers")
+	}
+
+	if err := task.thumbnail.Connect(ctx, pastelConnections, cancel); err != nil {
+		log.WithContext(ctx).WithError(err).Error("connect and setup fetchers")
+	}
 }
