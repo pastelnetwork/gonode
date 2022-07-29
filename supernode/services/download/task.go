@@ -414,8 +414,6 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, 
 			continue
 		}
 
-		log.WithContext(ctx).WithField("rqIDsData", string(rqIDsData)).Debugf("rqIDs Data")
-
 		var rqIDs []string
 		rqIDs, err = task.getRQSymbolIDs(ctx, id, rqIDsData)
 		if err != nil {

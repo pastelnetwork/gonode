@@ -69,7 +69,7 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 // OpenHistoryDB opens history DB
 func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	dbFile := filepath.Join(configurer.DefaultPath(), historyDBName)
-	db, err := sqlx.Connect("sqlite3", fmt.Sprintf("%s?%s", dbFile, "_journal_mode=WAL"))
+	db, err := sqlx.Connect("sqlite3", dbFile)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open sqlite database: %w", err)
 	}
