@@ -164,12 +164,12 @@ func (s *Store) GetKeysForReplication(ctx context.Context) [][]byte {
 	var unhexedKeys [][]byte
 	for _, key := range keys {
 		dst := make([]byte, hex.DecodedLen(len(key)))
-		wrote, err := hex.Decode(dst, key)
+		_, err := hex.Decode(dst, key)
 		if err != nil {
 			log.P2P().WithContext(ctx).WithField("hkey", key).Errorf("failed to properly unhex hkey: %v", err)
 			continue
 		}
-		log.WithContext(ctx).WithField("wrote", wrote).Debugf("Unhexed key: %+v", dst)
+
 		unhexedKeys = append(unhexedKeys, dst)
 	}
 	return unhexedKeys
