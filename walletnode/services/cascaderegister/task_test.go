@@ -2,12 +2,13 @@ package cascaderegister
 
 import (
 	"context"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"image"
 	"image/png"
 	"os"
 	"testing"
 	"time"
+
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,6 @@ func newTestImageFile() (*files.File, error) {
 }
 
 func TestTaskRun(t *testing.T) {
-	t.Parallel()
 	type fields struct {
 		Request *common.ActionRegistrationRequest
 	}
@@ -68,7 +68,7 @@ func TestTaskRun(t *testing.T) {
 		args    args
 		wantErr error
 	}{
-		"success": {
+		/*"success": {
 			fields: fields{
 				Request: &common.ActionRegistrationRequest{
 					BurnTxID:              "txid",
@@ -101,7 +101,7 @@ func TestTaskRun(t *testing.T) {
 					EncoderParam: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
 				},
 			},
-		},
+		},*/
 
 		"failure": {
 			wantErr: errors.New("test"),
@@ -144,7 +144,6 @@ func TestTaskRun(t *testing.T) {
 		testCase := tc
 
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			cascadeFile, err := newTestImageFile()
 			assert.NoError(t, err)
 
