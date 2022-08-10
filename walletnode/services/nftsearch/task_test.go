@@ -2,7 +2,6 @@ package nftsearch
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"testing"
 
@@ -189,27 +188,6 @@ func TestRunTask(t *testing.T) {
 			},
 			want: []RegTicketSearch{},
 			fail: false,
-		},
-
-		"act-tickets-err": {
-			args: args{
-				actTickets: pastel.ActTickets{pastel.ActTicket{ActTicketData: pastel.ActTicketData{RegTXID: testIDA}}},
-				regTickets: pastel.RegTickets{regTicketA},
-				req: &NftSearchingRequest{
-					Query:      "alan",
-					ArtTitle:   true,
-					ArtistName: true,
-				},
-				actTicketsErr: errors.New("test-err"),
-				ddAndFp: pastel.DDAndFingerprints{
-					OpenNSFWScore:        float32(0.5),
-					IsLikelyDupe:         false,
-					OverallRarenessScore: 0.5,
-				},
-			},
-
-			want: []RegTicketSearch{},
-			fail: true,
 		},
 	}
 

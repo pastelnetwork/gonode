@@ -428,12 +428,6 @@ jobs:
       - create-sources-container:
           containerName: "sourcesContainer"
       - release:
-          buildContainerName: "pqsignatures"
-          moduleSubDir: "pqsignatures"
-          package: "cmd/pqsignatures"
-          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
-          binaryName: "pqsignatures"
-      - release:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
           package: ""
