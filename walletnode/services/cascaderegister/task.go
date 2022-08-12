@@ -233,8 +233,9 @@ func (task *CascadeRegistrationTask) uploadImage(ctx context.Context) error {
 		}
 
 		someNode := someNode
+		image := task.Request.Image
 		group.Go(func() error {
-			err := cascadeNode.UploadAsset(gctx, task.Request.Image)
+			err := cascadeNode.UploadAsset(gctx, image)
 			if err != nil {
 				log.WithContext(gctx).WithError(err).WithField("node", someNode).Error("upload image with thumbnail failed")
 				return err
