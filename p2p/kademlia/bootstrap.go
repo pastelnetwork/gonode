@@ -174,47 +174,57 @@ func (s *DHT) Bootstrap(ctx context.Context, bootstrapIPs string) error {
 	var wg sync.WaitGroup
 	for _, node := range s.options.BootstrapNodes {
 		// sync the node id when it's empty
-		if len(node.ID) == 0 {
-			addr := fmt.Sprintf("%s:%v", node.IP, node.Port)
-			if _, err := s.cache.Get(addr); err == nil {
-				log.P2P().WithContext(ctx).WithField("addr", addr).Info("skip bad p2p boostrap addr")
-				continue
-			}
+		if len(node.ID) != 0 {
+			continue
+		}
 
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+		addr := fmt.Sprintf("%s:%v", node.IP, node.Port)
+		if _, err := s.cache.Get(addr); err == nil {
+			log.P2P().WithContext(ctx).WithField("addr", addr).Info("skip bad p2p boostrap addr")
+			continue
+		}
 
-				// new a ping request message
-				request := s.newMessage(Ping, node, nil)
-				// new a context with timeout
-				ctx, cancel := context.WithTimeout(ctx, defaultPingTime)
-				defer cancel()
+		node := node
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 
-				// invoke the request and handle the response
-				for i := 0; i < 5; i++ {
-					response, err := s.network.Call(ctx, request)
-					if err != nil {
-						// This happening in bootstrap - so potentially other nodes not yet started
-						// So if bootstrap failed, should try to connect to node again for next bootstrap retry
-						// s.cache.SetWithExpiry(addr, []byte("true"), badAddrExpiryHours*time.Hour)
+			// new a ping request message
+			request := s.newMessage(Ping, node, nil)
+			// new a context with timeout
+			ctx, cancel := context.WithTimeout(ctx, defaultPingTime)
+			defer cancel()
 
-						log.P2P().WithContext(ctx).WithError(err).Error("network call failed, sleeping 3 seconds")
-						time.Sleep(3 * time.Second)
-						continue
-					}
-					log.P2P().WithContext(ctx).Debugf("ping response: %v", response.String())
+			// invoke the request and handle the response
+			for i := 0; i < 5; i++ {
+				response, err := s.network.Call(ctx, request)
+				if err != nil {
+					// This happening in bootstrap - so potentially other nodes not yet started
+					// So if bootstrap failed, should try to connect to node again for next bootstrap retry
+					// s.cache.SetWithExpiry(addr, []byte("true"), badAddrExpiryHours*time.Hour)
 
-					// add the node to the route table
+					log.P2P().WithContext(ctx).WithError(err).Error("network call failed, sleeping 3 seconds")
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				log.P2P().WithContext(ctx).Debugf("ping response: %v", response.String())
+
+				// add the node to the route table
+				log.P2P().WithContext(ctx).WithField("sender-id", response.Sender.ID).
+					WithField("sender-ip", response.Sender.IP).
+					WithField("sender-port", response.Sender.Port).Info("add-node params")
+
+				if len(response.Sender.ID) != len(s.ht.self.ID) {
 					log.P2P().WithContext(ctx).WithField("sender-id", response.Sender.ID).
-						WithField("sender-ip", response.Sender.IP).
-						WithField("sender-port", response.Sender.Port).Info("add-node params")
-					s.addNode(ctx, response.Sender)
-					break
+						WithField("self-id", s.ht.self.ID).Warn("self ID && sender ID len don't match")
+
+					continue
 				}
 
-			}()
-		}
+				s.addNode(ctx, response.Sender)
+				break
+			}
+		}()
 	}
 
 	// wait until all are done

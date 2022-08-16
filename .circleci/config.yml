@@ -90,42 +90,6 @@ commands:
               echo "Check existence of windows/amd64 build"
               test -f $WINDOWS_ARTIFACT || (echo "$WINDOWS_ARTIFACT is not found" && exit 1)
             fi
-  release:
-    parameters:
-      buildContainerName:
-        type: string
-      moduleSubDir:
-        type: string
-      package:
-        type: string
-      targets:
-        type: string
-      binaryName:
-        type: string
-    steps:
-      - xgo-build:
-          sourcesContainerName: "sourcesContainer"
-          buildContainerName: << parameters.buildContainerName >>
-          moduleSubDir: << parameters.moduleSubDir >>
-          package: << parameters.package >>
-          targets: << parameters.targets >>
-          outputDirectory: "build"
-      - github-upload-all-os:
-          working_directory: "~/project/build/github.com/pastelnetwork/gonode"
-          binaryName: << parameters.binaryName >>
-          repo: "gonode"
-          targets: << parameters.targets >>
-
-  create-sources-container:
-    parameters:
-      containerName:
-        type: string
-    steps:
-      - run:
-          name: "Create named docker container << parameters.containerName >> with project's sources"
-          command: |
-            docker create -v /source --name << parameters.containerName >> ubuntu:18.04 /bin/true
-            docker cp ./. << parameters.containerName >>:/source
   xgo-build:
     parameters:
       sourcesContainerName:
@@ -170,7 +134,42 @@ commands:
               sha256sum "$WINDOWS_ARTIFACT" > "$WINDOWS_ARTIFACT.sha256"
             fi
             ls -R ./*
+  release:
+    parameters:
+      buildContainerName:
+        type: string
+      moduleSubDir:
+        type: string
+      package:
+        type: string
+      targets:
+        type: string
+      binaryName:
+        type: string
+    steps:
+      - xgo-build:
+          sourcesContainerName: "sourcesContainer"
+          buildContainerName: << parameters.buildContainerName >>
+          moduleSubDir: << parameters.moduleSubDir >>
+          package: << parameters.package >>
+          targets: << parameters.targets >>
+          outputDirectory: "build"
+      - github-upload-all-os:
+          working_directory: "~/project/build/github.com/pastelnetwork/gonode"
+          binaryName: << parameters.binaryName >>
+          repo: "gonode"
+          targets: << parameters.targets >>
 
+  create-sources-container:
+    parameters:
+      containerName:
+        type: string
+    steps:
+      - run:
+          name: "Create named docker container << parameters.containerName >> with project's sources"
+          command: |
+            docker create -v /source --name << parameters.containerName >> ubuntu:18.04 /bin/true
+            docker cp ./. << parameters.containerName >>:/source
   github-upload-all-os:
     parameters:
       working_directory:
@@ -192,8 +191,8 @@ commands:
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
               echo "Check existence of linux/amd64 build and upload to GitHub"
               test -f $LINUX_ARTIFACT
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-ubuntu20.04-amd64 --file << parameters.binaryName >>-linux-amd64
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-ubuntu20.04-amd64.sha256 --file << parameters.binaryName >>-linux-amd64.sha256
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-ubuntu-linux-amd64 --file << parameters.binaryName >>-linux-amd64
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-ubuntu-linux-amd64.sha256 --file << parameters.binaryName >>-linux-amd64.sha256
             fi
             if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
               echo "Check existence of darwin-10.14/amd64 build and upload to GitHub"
@@ -370,7 +369,48 @@ jobs:
       - install_tensorflow
       - test:
           package: "hermes"
-
+# Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
+  release:
+    <<: *defaults
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.2
+          docker_layer_caching: true
+      - run:
+          name: Install github-release
+          command: |
+            GO111MODULE=off go get github.com/github-release/github-release
+      - run:
+          name: Install xgo
+          command: |
+            go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
+      - create-sources-container:
+          containerName: "sourcesContainer"
+      - release:
+          buildContainerName: "walletnode"
+          moduleSubDir: "walletnode"
+          package: ""
+          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
+          binaryName: "walletnode"
+      - release:
+          buildContainerName: "bridge"
+          moduleSubDir: "bridge"
+          package: ""
+          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
+          binaryName: "bridge"
+      - release:
+          buildContainerName: "supernode"
+          moduleSubDir: "supernode"
+          package: ""
+          targets: "linux/amd64,"
+          binaryName: "supernode"
+      - release:
+          buildContainerName: "hermes"
+          moduleSubDir: "hermes"
+          package: ""
+          targets: "linux/amd64,"
+          binaryName: "hermes"
   build:
     <<: *defaults
     steps:
@@ -409,55 +449,6 @@ jobs:
       - store_artifacts:
           path: "build"
 
-  # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
-  release:
-    <<: *defaults
-    steps:
-      - checkout
-      - setup_remote_docker:
-          version: 20.10.2
-          docker_layer_caching: true
-      - run:
-          name: Install github-release
-          command: |
-            GO111MODULE=off go get github.com/github-release/github-release
-      - run:
-          name: Install xgo
-          command: |
-            go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
-      - create-sources-container:
-          containerName: "sourcesContainer"
-      - release:
-          buildContainerName: "pqsignatures"
-          moduleSubDir: "pqsignatures"
-          package: "cmd/pqsignatures"
-          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
-          binaryName: "pqsignatures"
-      - release:
-          buildContainerName: "walletnode"
-          moduleSubDir: "walletnode"
-          package: ""
-          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
-          binaryName: "walletnode"
-      - release:
-          buildContainerName: "bridge"
-          moduleSubDir: "bridge"
-          package: ""
-          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
-          binaryName: "bridge"
-      - release:
-          buildContainerName: "supernode"
-          moduleSubDir: "supernode"
-          package: ""
-          targets: "linux/amd64,"
-          binaryName: "supernode"
-      - release:
-          buildContainerName: "hermes"
-          moduleSubDir: "hermes"
-          package: ""
-          targets: "linux/amd64,"
-          binaryName: "hermes"
-
 workflows:
   build-and-test:
     jobs:
@@ -477,9 +468,6 @@ workflows:
       - integration_tests:
           requires:
             - prepare_workspace
-#      - test_metadb:
-#          requires:
-#            - prepare_workspace
       - test_pastel-api:
           requires:
             - prepare_workspace

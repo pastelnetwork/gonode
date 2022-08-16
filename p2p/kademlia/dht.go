@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/cenkalti/backoff"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
@@ -196,6 +197,16 @@ func (s *DHT) hashKey(data []byte) []byte {
 	return sha[:]
 }
 
+func (s *DHT) retryStore(ctx context.Context, key []byte, data []byte) error {
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 1 * time.Minute
+	b.InitialInterval = 200 * time.Millisecond
+
+	return backoff.Retry(backoff.Operation(func() error {
+		return s.store.Store(ctx, key, data)
+	}), b)
+}
+
 // Store the data into the network
 func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	key := s.hashKey(data)
@@ -206,9 +217,9 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	}
 
 	// store the key to local storage
-	if err := s.store.Store(ctx, key, data); err != nil {
-		log.WithContext(ctx).WithError(err).Error("local data store failure")
-		return "", fmt.Errorf("store data to local storage: %v", err)
+	if err := s.retryStore(ctx, key, data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("local data store failure after retries")
+		return "", fmt.Errorf("retry store data to local storage: %v", err)
 	}
 
 	// iterative store the data
