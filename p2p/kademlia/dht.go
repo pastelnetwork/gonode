@@ -502,7 +502,7 @@ func (s *DHT) sendStoreData(_ context.Context, n *Node, request *StoreDataReques
 func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	// ensure this is not itself address
 	if bytes.Equal(node.ID, s.ht.self.ID) {
-		log.P2P().WithContext(ctx).Error("trying to add itself")
+		log.P2P().WithContext(ctx).Debug("trying to add itself")
 		return nil
 	}
 

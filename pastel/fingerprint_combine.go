@@ -186,12 +186,17 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 	}
 
 	// RarenessScoresTableJSONCompressedB64
-	if !strings.EqualFold(first.RarenessScoresTableJSONCompressedB64, second.RarenessScoresTableJSONCompressedB64) {
-		return nil, errors.Errorf("RarenessScoresTableJSONCompressedB64 not matched: first(%s) != second(%s)", first.RarenessScoresTableJSONCompressedB64, second.RarenessScoresTableJSONCompressedB64)
+	if first.RarenessScoresTableJSONCompressedB64 == "" {
+		return nil, errors.New("rarenessScoresTableJSONCompressedB64 empty")
 	}
 
-	if !strings.EqualFold(first.RarenessScoresTableJSONCompressedB64, third.RarenessScoresTableJSONCompressedB64) {
-		return nil, errors.Errorf("RarenessScoresTableJSONCompressedB64 not matched: first(%s) != third(%s)", first.RarenessScoresTableJSONCompressedB64, third.RarenessScoresTableJSONCompressedB64)
+	// RarenessScoresTableJSONCompressedB64
+	if second.RarenessScoresTableJSONCompressedB64 == "" {
+		return nil, errors.New("second rarenessScoresTableJSONCompressedB64 empty")
+	}
+
+	if third.RarenessScoresTableJSONCompressedB64 == "" {
+		return nil, errors.Errorf("third rarenessScoresTableJSONCompressedB64 empty")
 	}
 	// //RarenessScores
 	// if err := CompareRarenessScores(first.RarenessScores, second.RarenessScores); err != nil {
