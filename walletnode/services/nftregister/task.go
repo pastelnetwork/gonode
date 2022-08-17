@@ -407,15 +407,14 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 
 	nftType := pastel.NFTTypeImage
 
-	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.NFTTicket{
 		Version:   1,
 		Author:    task.Request.CreatorPastelID,
 		BlockNum:  task.creatorBlockHeight,
 		BlockHash: task.creatorBlockHash,
 		Copies:    task.Request.IssuedCopies,
-		Royalty:   0,     // Not supported yet by cNode
-		Green:     false, // Not supported yet by cNode
+		Royalty:   task.Request.Royalty,
+		Green:     task.Request.Green,
 		AppTicketData: pastel.AppTicket{
 			CreatorName:                task.Request.CreatorName,
 			CreatorWebsite:             utils.SafeString(task.Request.CreatorWebsiteURL),
