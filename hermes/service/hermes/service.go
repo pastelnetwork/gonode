@@ -3,12 +3,15 @@ package hermes
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 	"github.com/pastelnetwork/gonode/common/errgroup"
 
 	"github.com/DataDog/zstd"
@@ -17,8 +20,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/utils"
 	svc "github.com/pastelnetwork/gonode/hermes/service"
 	"github.com/pastelnetwork/gonode/hermes/service/node"
-	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
-	"github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/sbinet/npyio"
 	"gonum.org/v1/gonum/mat"
@@ -32,8 +33,18 @@ const (
 	getLatestFingerprintStatement    = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
 	getFingerprintFromHashStatement  = `SELECT * FROM image_hash_to_image_fingerprint_table WHERE sha256_hash_of_art_image_file = ?`
 	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database, thumbnail_of_image, request_type, open_api_subset_id_string) VALUES(?,?,?,?,?,?,?)`
-	getNumberOfFingerprintsStatement = `SELECT COUNT(*) FROM image_hash_to_image_fingerprint_table`
+	getNumberOfFingerprintsStatement = `SELECT COUNT(*) as count FROM image_hash_to_image_fingerprint_table`
 )
+
+type dbFingerprints struct {
+	Sha256HashOfArtImageFile           string `db:"sha256_hash_of_art_image_file,omitempty"`
+	PathToArtImageFile                 string `db:"path_to_art_image_file,omitempty"`
+	ImageFingerprintVector             []byte `db:"new_model_image_fingerprint_vector,omitempty"`
+	DatetimeFingerprintAddedToDatabase string `db:"datetime_fingerprint_added_to_database,omitempty"`
+	ImageThumbnailAsBase64             string `db:"thumbnail_of_image,omitempty"`
+	RequestType                        string `db:"request_type,omitempty"`
+	IDString                           string `db:"open_api_subset_id_string,omitempty"`
+}
 
 type dupeDetectionFingerprints struct {
 	Sha256HashOfArtImageFile           string    `json:"sha256_hash_of_art_image_file,omitempty"`
@@ -50,7 +61,7 @@ type service struct {
 	pastelClient       pastel.Client
 	p2p                node.HermesP2PInterface
 	sn                 node.SNClientInterface
-	db                 *db.DB
+	db                 *sqlx.DB
 	isMasterNodeSynced bool
 	latestBlockHeight  int
 
@@ -199,86 +210,56 @@ func (s *service) waitSynchronization(ctx context.Context) error {
 	}
 }
 
+func (r *dbFingerprints) toDomain() (*dupeDetectionFingerprints, error) {
+	f := bytes.NewBuffer(r.ImageFingerprintVector)
+
+	var fp []float64
+	if err := npyio.Read(f, &fp); err != nil {
+		return nil, errors.New("Failed to convert npy to float64")
+	}
+
+	return &dupeDetectionFingerprints{
+		Sha256HashOfArtImageFile:           r.Sha256HashOfArtImageFile,
+		PathToArtImageFile:                 r.PathToArtImageFile,
+		ImageFingerprintVector:             fp,
+		DatetimeFingerprintAddedToDatabase: r.DatetimeFingerprintAddedToDatabase,
+		ImageThumbnailAsBase64:             r.ImageThumbnailAsBase64,
+		RequestType:                        r.RequestType,
+		IDString:                           r.IDString,
+	}, nil
+}
+
 func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFingerprints, error) {
-	row, err := s.db.QueryStringStmt(getLatestFingerprintStatement)
+	r := dbFingerprints{}
+	err := s.db.Get(&r, getLatestFingerprintStatement)
 	if err != nil {
-		return nil, errors.Errorf("query: %w", err)
-	}
-
-	if len(row) != 0 && len(row[0].Values) == 0 {
-		return nil, errors.New("dd database is empty")
-	}
-
-	values := row[0].Values[0]
-	resultStr := make(map[string]interface{})
-	for i := 0; i < len(row[0].Columns); i++ {
-		switch w := row[0].Values[0].GetParameters()[i].GetValue().(type) {
-		case *command.Parameter_Y:
-			val := values.GetParameters()[i].GetY()
-			if val == nil {
-				log.WithContext(ctx).Errorf("nil value at column: %s", row[0].Columns[i])
-				continue
-			}
-
-			// even the shape if these should be Nx1, but for reading, we convert it into 1xN array
-			f := bytes.NewBuffer(val)
-
-			var fp []float64
-			if err := npyio.Read(f, &fp); err != nil {
-				log.WithContext(ctx).WithError(err).Error("Failed to convert npy to float64")
-				continue
-			}
-
-			resultStr[row[0].Columns[i]] = fp
-		case *command.Parameter_I:
-			resultStr[row[0].Columns[i]] = w.I
-		case *command.Parameter_D:
-			resultStr[row[0].Columns[i]] = w.D
-		case *command.Parameter_B:
-			resultStr[row[0].Columns[i]] = w.B
-		case *command.Parameter_S:
-			resultStr[row[0].Columns[i]] = w.S
-		case nil:
-			resultStr[row[0].Columns[i]] = nil
-		default:
-			return nil, errors.Errorf("getLatestFingerprint unsupported type: %w", w)
+		if err == sql.ErrNoRows {
+			return nil, errors.New("dd database is empty")
 		}
+
+		return nil, fmt.Errorf("failed to get record by key %w", err)
 	}
 
-	b, err := json.Marshal(resultStr)
+	dd, err := r.toDomain()
 	if err != nil {
-		return nil, errors.Errorf("marshal output: %w", err)
+		log.WithContext(ctx).WithError(err).Error("converting db data to dd-fingerprints struct failure")
 	}
 
-	ddFingerprint := &dupeDetectionFingerprints{}
-	if err := json.Unmarshal(b, ddFingerprint); err != nil {
-		return nil, errors.Errorf("unmarshal json: %w", err)
-	}
-
-	return ddFingerprint, nil
+	return dd, nil
 }
 
 func (s *service) checkIfFingerprintExistsInDatabase(_ context.Context, hash string) (bool, error) {
-	req := &command.Request{
-		Statements: []*command.Statement{
-			{
-				Sql: getFingerprintFromHashStatement,
-				Parameters: []*command.Parameter{
-					{
-						Value: &command.Parameter_S{
-							S: hash,
-						},
-					},
-				},
-			},
-		},
+	r := dbFingerprints{}
+	err := s.db.Get(&r, getFingerprintFromHashStatement, hash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get record by key %w : key: %s", err, hash)
 	}
 
-	row, err := s.db.Query(req, false)
-	if err != nil {
-		return false, errors.Errorf("querying fingerprint database for hash: %w", err)
-	}
-	if len(row) != 0 && len(row[0].Values) == 0 {
+	if r.Sha256HashOfArtImageFile == "" {
 		return false, nil
 	}
 
@@ -301,57 +282,15 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 		return err
 	}
 
-	req := &command.Request{
-		Statements: []*command.Statement{
-			{
-				Sql: insertFingerprintStatement,
-				Parameters: []*command.Parameter{
-					{
-						Value: &command.Parameter_S{
-							S: input.Sha256HashOfArtImageFile,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.PathToArtImageFile,
-						},
-					},
-					{
-						Value: &command.Parameter_Y{
-							Y: fp,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.DatetimeFingerprintAddedToDatabase,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.ImageThumbnailAsBase64,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.RequestType,
-						},
-					},
-					{
-						Value: &command.Parameter_S{
-							S: input.IDString,
-						},
-					},
-				},
-			},
-		},
-	}
-
-	executeResult, err := s.db.Execute(req, false)
-	log.WithContext(ctx).WithField("execute result", executeResult).Debug("Execute result of adding new fp")
-	if err != nil || executeResult[0].Error != "" {
+	_, err = s.db.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
+		 path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database,
+		  thumbnail_of_image, request_type, open_api_subset_id_string) VALUES(?,?,?,?,?,?,?)`, input.Sha256HashOfArtImageFile,
+		input.PathToArtImageFile, fp, input.DatetimeFingerprintAddedToDatabase, input.ImageThumbnailAsBase64, input.RequestType, input.IDString)
+	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
 		return err
 	}
+
 	return nil
 }
 
@@ -391,13 +330,6 @@ func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash stri
 
 func (s *service) runTask(ctx context.Context) error {
 	log.WithContext(ctx).Info("getting Reg tickets")
-	/* // For debugging
-	if cnt, err := s.getRecordCount(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("Failed to get count")
-	} else {
-		log.WithContext(ctx).WithField("cnt", cnt).Info("GetCount")
-	}
-	*/
 
 	nftRegTickets, err := s.pastelClient.RegTickets(ctx)
 	if err != nil {
@@ -626,28 +558,17 @@ func (s *service) runTask(ctx context.Context) error {
 }
 
 func (s *service) getRecordCount(_ context.Context) (int64, error) {
+	var Data struct {
+		Count int64 `db:"count"`
+	}
+
 	statement := getNumberOfFingerprintsStatement
-	rows, err := s.db.QueryStringStmt(statement)
+	err := s.db.Get(&Data, statement)
 	if err != nil {
 		return 0, errors.Errorf("query: %w", err)
 	}
-	row := rows[0]
 
-	if len(row.GetValues()) != 1 {
-		return 0, errors.Errorf("invalid Values length: %d", len(row.Columns))
-	}
-
-	if len(row.GetValues()[0].GetParameters()) != 1 {
-		return 0, errors.Errorf("invalid Values[0] length: %d", len(row.Columns))
-	}
-
-	switch w := row.GetValues()[0].GetParameters()[0].GetValue().(type) {
-	case *command.Parameter_I:
-		return row.GetValues()[0].GetParameters()[0].GetI(), nil
-	default:
-		return 0, errors.Errorf("invalid returned type : %v", w)
-	}
-
+	return Data.Count, nil
 }
 
 // Stats return status of dupe detection
@@ -686,9 +607,9 @@ func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInte
 		return nil, errors.Errorf("database dd service not found: %w", err)
 	}
 
-	db, err := db.Open(file, true)
+	db, err := sqlx.Connect("sqlite3", file)
 	if err != nil {
-		return nil, errors.Errorf("open dd-service database: %w", err)
+		return nil, fmt.Errorf("cannot open dd-service database: %w", err)
 	}
 
 	return &service{

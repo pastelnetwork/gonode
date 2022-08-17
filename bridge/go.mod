@@ -4,7 +4,6 @@ go 1.17
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
-	github.com/pastelnetwork/gonode/metadb => ../metadb
 	github.com/pastelnetwork/gonode/mixins => ../mixins
 	github.com/pastelnetwork/gonode/p2p => ../p2p
 	github.com/pastelnetwork/gonode/pastel => ../pastel

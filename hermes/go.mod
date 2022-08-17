@@ -4,7 +4,6 @@ go 1.17
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
-	github.com/pastelnetwork/gonode/metadb => ../metadb
 	github.com/pastelnetwork/gonode/p2p => ../p2p
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/proto => ../proto
@@ -13,8 +12,9 @@ replace (
 require (
 	github.com/DataDog/zstd v1.5.2
 	github.com/btcsuite/btcutil v1.0.2
+	github.com/jmoiron/sqlx v1.3.5
+	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/pastelnetwork/gonode/common v0.0.0-00010101000000-000000000000
-	github.com/pastelnetwork/gonode/metadb v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/proto v0.0.0-00010101000000-000000000000
 	github.com/sbinet/npyio v0.6.0
@@ -42,7 +42,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rqlite/go-sqlite3 v1.25.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
