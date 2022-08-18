@@ -14,6 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -106,9 +107,7 @@ func (service *CascadeRegistrationService) CalculateFee(ctx context.Context, fil
 		return 0.0, err
 	}
 
-	fileDataInMb := float64(len(fileData)) / (1024 * 1024)
-
-	return service.pastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
+	return service.pastelHandler.GetEstimatedCascadeFee(ctx, utils.GetFileSizeInMB(fileData))
 }
 
 // NewService returns a new Service instance

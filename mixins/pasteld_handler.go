@@ -2,7 +2,6 @@ package mixins
 
 import (
 	"context"
-	"math"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/blocktracker"
@@ -46,7 +45,7 @@ func (pt *PastelHandler) GetEstimatedSenseFee(ctx context.Context, ImgSizeInMb f
 
 // GetEstimatedSenseFee returns the estimated Action fee for the given image
 func (pt *PastelHandler) GetEstimatedCascadeFee(ctx context.Context, ImgSizeInMb float64) (float64, error) {
-	actionFees, err := pt.PastelClient.GetActionFee(ctx, int64(math.Ceil(ImgSizeInMb)))
+	actionFees, err := pt.PastelClient.GetActionFee(ctx, int64(ImgSizeInMb))
 	if err != nil {
 		return 0, err
 	}

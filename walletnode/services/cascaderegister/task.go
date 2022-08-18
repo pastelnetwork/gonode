@@ -95,7 +95,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("hash encoded image: %w", err)
 	}
 
-	fileDataInMb := float64(len(imgBytes)) / (1024 * 1024)
+	fileDataInMb := utils.GetFileSizeInMB(imgBytes)
 	fee, err := task.service.pastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
 	if err != nil {
 		return errors.Errorf("getting estimated fee %w", err)

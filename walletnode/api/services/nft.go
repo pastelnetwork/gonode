@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 
@@ -82,10 +83,17 @@ func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 		return nil, nft.MakeInternalServerError(err)
 	}
 
-	res = &nft.ImageRes{
-		ImageID:   id,
-		ExpiresIn: expiry,
+	fee, err := service.register.CalculateFee(ctx, id)
+	if err != nil {
+		return nil, cascade.MakeInternalServerError(err)
 	}
+
+	res = &nft.ImageRes{
+		ImageID:      id,
+		ExpiresIn:    expiry,
+		EstimatedFee: fee + (fee * 0.1),
+	}
+
 	return res, nil
 }
 

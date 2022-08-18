@@ -2,12 +2,14 @@ package nftregister
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -90,6 +92,22 @@ func (service *NftRegistrationService) AddTask(p *nft.RegisterPayload) (string, 
 // StoreFile stores file into walletnode file storage. //TODO: make common with the same from SenseRegisterService
 func (service *NftRegistrationService) StoreFile(ctx context.Context, fileName *string) (string, string, error) {
 	return service.ImageHandler.StoreFileNameIntoStorage(ctx, fileName)
+}
+
+// CalculateFee stores file into walletnode file storage
+func (service *NftRegistrationService) CalculateFee(ctx context.Context, fileID string) (float64, error) {
+	fileData, err := service.ImageHandler.GetImgData(fileID)
+	if err != nil {
+		return 0.0, err
+	}
+
+	fileDataInMb := utils.GetFileSizeInMB(fileData)
+	unitFee, err := service.pastelHandler.PastelClient.GetNetworkFeePerMB(ctx)
+	if err != nil {
+		return 0.0, fmt.Errorf("get network fee failure: %w", err)
+	}
+
+	return float64(unitFee) * fileDataInMb, nil
 }
 
 // NewService returns a new Service instance.
