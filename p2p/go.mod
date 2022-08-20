@@ -12,10 +12,10 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/jmoiron/sqlx v1.3.5
+	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3
 	github.com/pastelnetwork/gonode/common v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
-	github.com/rqlite/go-sqlite3 v1.25.0
 	github.com/stretchr/testify v1.7.2
 	github.com/tj/assert v0.0.3
 	go.uber.org/ratelimit v0.2.0

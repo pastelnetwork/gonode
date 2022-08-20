@@ -11,7 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/rqlite/go-sqlite3" //go-sqlite3
+	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 )
 
 const (

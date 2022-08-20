@@ -17,10 +17,10 @@ require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629
 	github.com/makiuchi-d/gozxing v0.1.1
+	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/rqlite/go-sqlite3 v1.25.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.7.2
