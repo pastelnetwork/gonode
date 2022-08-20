@@ -3,6 +3,7 @@ package nftregister
 import (
 	"context"
 	"encoding/hex"
+	"math"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -178,7 +179,7 @@ func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 			Passphrase:  task.config.PassPhrase,
 			Label:       label,
 			Fee:         0, // fake data
-			ImgSizeInMb: int64(task.imageSizeBytes) / (1024 * 1024),
+			ImgSizeInMb: int64(math.Ceil((float64(task.imageSizeBytes)) / (1024 * 1024))),
 		}
 
 		task.registrationFee, err = task.PastelClient.GetRegisterNFTFee(ctx, getFeeRequest)
@@ -375,9 +376,8 @@ func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error
 		},
 		Mn1PastelID: task.config.PastelID,
 		Passphrase:  task.config.PassPhrase,
-		// TODO: fix this when how to get key1 and key2 are finalized
-		Label: task.burnTXID,
-		Fee:   task.registrationFee,
+		Label:       task.burnTXID,
+		Fee:         task.registrationFee,
 	}
 
 	nftRegTxid, err := task.PastelClient.RegisterNFTTicket(ctx, req)
