@@ -1,5 +1,7 @@
 orbs:
   go: circleci/go@1.5.0
+  aws-cli: circleci/aws-cli@2.0.3
+  aws-s3: circleci/aws-s3@3.0.0
 version: 2.1
 
 defaults: &defaults
@@ -170,6 +172,22 @@ commands:
           command: |
             docker create -v /source --name << parameters.containerName >> ubuntu:18.04 /bin/true
             docker cp ./. << parameters.containerName >>:/source
+  upload-s3:
+    parameters:
+      working_directory:
+        type: string
+    steps:
+      - aws-cli/setup:
+          aws-access-key-id: AWS_ACCESS_KEY_ID
+          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+      - aws-s3/sync:
+          from: << parameters.working_directory >>
+          to: s3://$ROOT_BUCKET_NAME/gonode
+          arguments: |
+            --acl public-read \
+            --cache-control "max-age=86400"
+      - run: aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths /beta/gonode/\* 
+     
   github-upload-all-os:
     parameters:
       working_directory:
@@ -411,6 +429,9 @@ jobs:
           package: ""
           targets: "linux/amd64,"
           binaryName: "hermes"
+      - upload-s3:
+          working_directory: "~/project/build/github.com/pastelnetwork/gonode"
+
   build:
     <<: *defaults
     steps:
@@ -515,3 +536,4 @@ workflows:
               only: /^v.*/
           context:
             - Release
+            - weekly-beta-builds
