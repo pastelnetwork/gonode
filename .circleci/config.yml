@@ -177,6 +177,22 @@ commands:
       working_directory:
         type: string
     steps:
+      - run:
+          name: Cleanup working dir
+          working_directory: << parameters.working_directory >>
+          command: |
+            rm bridge-darwin-10.14-amd64.sha256
+            rm bridge-linux-amd64.sha256
+            rm bridge-windows-4.0-amd64.exe.sha256
+            rm hermes-linux-amd64.sha256
+            rm supernode-linux-amd64.sha256
+            rm walletnode-darwin-10.14-amd64.sha256
+            rm walletnode-linux-amd64.sha256
+            rm walletnode-windows-4.0-amd64.exe.sha256
+            mv walletnode-windows-4.0-amd64.exe walletnode-win-amd64.exe
+            mv walletnode-darwin-10.14-amd64 walletnode-darwin-amd64
+            mv bridge-windows-4.0-amd64.exe bridge-win-amd64.exe
+            mv bridge-darwin-10.14-amd64 bridge-darwin-amd64
       - aws-cli/setup:
           aws-access-key-id: AWS_ACCESS_KEY_ID
           aws-secret-access-key: AWS_SECRET_ACCESS_KEY
