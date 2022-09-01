@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"math/big"
 	"net/http"
 	"sort"
@@ -180,4 +181,9 @@ func GetNClosestXORDistanceStringToAGivenComparisonString(n int, comparisonStrin
 		}
 	}
 	return sliceOfTopNClosestString
+}
+
+// GetFileSizeInMB returns size of the file in MB
+func GetFileSizeInMB(data []byte) float64 {
+	return math.Ceil(float64(len(data)) / (1024 * 1024))
 }

@@ -104,8 +104,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("hash encoded image: %w", err)
 	}
 
-	fileDataInMb := float64(len(imgBytes)) / (1024 * 1024)
-	fee, err := task.service.pastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
+	fee, err := task.service.pastelHandler.GetEstimatedSenseFee(ctx, utils.GetFileSizeInMB(imgBytes))
 	if err != nil {
 		return errors.Errorf("getting estimated fee %w", err)
 	}

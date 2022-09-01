@@ -7,6 +7,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
@@ -76,7 +77,7 @@ func (task *SenseRegistrationTask) CalculateFee(ctx context.Context, file *files
 		return errors.Errorf("read image file: %w", err)
 	}
 
-	fileDataInMb := float64(len(fileBytes)) / (1024 * 1024)
+	fileDataInMb := utils.GetFileSizeInMB(fileBytes)
 	fee, err := task.PastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
 	if err != nil {
 		return errors.Errorf("getting estimated fee %w", err)

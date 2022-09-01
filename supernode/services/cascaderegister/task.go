@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
@@ -76,7 +77,7 @@ func (task *CascadeRegistrationTask) UploadAsset(_ context.Context, file *files.
 		}
 		task.assetSizeBytes = len(fileBytes)
 
-		fileDataInMb := float64(len(fileBytes)) / (1024 * 1024)
+		fileDataInMb := utils.GetFileSizeInMB(fileBytes)
 		fee, err := task.PastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
 		if err != nil {
 			err = errors.Errorf("getting estimated fee %w", err)

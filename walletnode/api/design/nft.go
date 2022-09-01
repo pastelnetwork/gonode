@@ -622,8 +622,14 @@ var NFTImageUploadResult = ResultType("application/vnd.nft.upload-image-result",
 			Format(FormatDateTime)
 			Example(time.RFC3339)
 		})
+		Attribute("estimated_fee", Float64, func() {
+			Description("Estimated fee")
+			Minimum(0.00001)
+			Default(1)
+			Example(100)
+		})
 	})
-	Required("image_id", "expires_in")
+	Required("image_id", "expires_in", "estimated_fee")
 })
 
 // NftDetail is NFT get response.

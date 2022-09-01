@@ -394,6 +394,11 @@ func (client *client) GetRegisterNFTFee(ctx context.Context, request GetRegister
 		return 0, errors.Errorf("failed to encode signatures: %w", err)
 	}
 
+	unitFee, err := client.GetNetworkFeePerMB(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("get network fee failure: %w", err)
+	}
+
 	params := []interface{}{}
 	params = append(params, "tools")
 	params = append(params, "gettotalstoragefee")
@@ -402,7 +407,7 @@ func (client *client) GetRegisterNFTFee(ctx context.Context, request GetRegister
 	params = append(params, request.Mn1PastelID)
 	params = append(params, request.Passphrase)
 	params = append(params, request.Label)
-	params = append(params, request.Fee)
+	params = append(params, unitFee*request.ImgSizeInMb)
 	params = append(params, request.ImgSizeInMb)
 
 	if err := client.callFor(ctx, &totalStorageFee, "tickets", params...); err != nil {

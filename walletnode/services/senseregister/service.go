@@ -16,6 +16,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -103,9 +104,7 @@ func (service *SenseRegistrationService) CalculateFee(ctx context.Context, fileI
 		return 0.0, err
 	}
 
-	fileDataInMb := float64(len(fileData)) / (1024 * 1024)
-
-	return service.pastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
+	return service.pastelHandler.GetEstimatedSenseFee(ctx, utils.GetFileSizeInMB(fileData))
 }
 
 // NewService returns a new Service instance
