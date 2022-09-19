@@ -47,6 +47,17 @@ func TestGenRQIdentifiersFiles(t *testing.T) {
 			args: args{
 				connectErr: errors.New("test"),
 			},
+			encodeInfoReturns: &rqnode.EncodeInfo{
+				SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+					"test-file": {
+						ID:                uuid.New().String(),
+						SymbolIdentifiers: []string{"test-s1, test-s2"},
+						BlockHash:         "test-block-hash",
+						PastelID:          "test-pastel-id",
+					},
+				},
+				EncoderParam: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+			},
 			wantErr: errors.New("test"),
 		},
 	}

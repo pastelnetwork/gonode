@@ -2,10 +2,13 @@ package mixins
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/pastel"
 
@@ -303,6 +306,53 @@ func TestCheckBalanceToPayRegistrationFee(t *testing.T) {
 	}
 }
 
+func TestWaitTxIDValid(t *testing.T) {
+	type args struct {
+		txid string
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				txid: "test-txid",
+			},
+			wantErr: nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.
+				ListenOnSign([]byte("signature"), nil).
+				ListenOnGetBlockCount(100, nil).
+				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{Hash: "abc123", Height: 100}, nil).
+				ListenOnFindTicketByID(&pastel.IDTicket{IDTicketProp: pastel.IDTicketProp{PqKey: ""}}, nil).
+				ListenOnSendFromAddress("pre-burnt-txid", nil).
+				ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 12}, nil).
+				ListenOnVerify(true, nil).ListenOnGetBalance(10, nil).
+				ListenOnActivateActionTicket("txid", nil).
+				ListenOnGetActionFee(&pastel.GetActionFeesResult{CascadeFee: 10, SenseFee: 10}, nil)
+
+			h := NewPastelHandler(pastelClientMock)
+			err := h.WaitTxidValid(context.Background(), "txid", 10, time.Microsecond)
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
 func TestBurnSomeCoins(t *testing.T) {
 	type args struct {
 		amount  int64
@@ -356,4 +406,111 @@ func TestBurnSomeCoins(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRegTicket(t *testing.T) {
+	type args struct {
+		txid         string
+		regTicket    pastel.RegTicket
+		regTicketErr error
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				txid:      "test-txid",
+				regTicket: fakeRegiterTicket(),
+			},
+			wantErr: nil,
+		},
+		"error": {
+			args: args{
+				txid:         "test-txid",
+				regTicket:    fakeRegiterTicket(),
+				regTicketErr: errors.New("test"),
+			},
+			wantErr: errors.New("test"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnRegTicket(tc.args.txid, tc.args.regTicket, tc.args.regTicketErr)
+
+			h := NewPastelHandler(pastelClientMock)
+			_ = h.GetBurnAddress()
+			ticket, err := h.RegTicket(context.Background(), "test-txid")
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.args.regTicket.TXID, ticket.TXID)
+			}
+		})
+	}
+}
+
+func fakeRegiterTicket() pastel.RegTicket {
+	appTicketData := pastel.AppTicket{
+		CreatorName:                "creator_name",
+		CreatorWebsite:             "artist_website",
+		CreatorWrittenStatement:    "artist_written_statement",
+		NFTTitle:                   "nft_title",
+		NFTSeriesName:              "nft_series_name",
+		NFTCreationVideoYoutubeURL: "nft_creation_video_youtube_url",
+		NFTKeywordSet:              "nft_keyword_set",
+		TotalCopies:                10,
+		PreviewHash:                []byte("preview_hash"),
+		Thumbnail1Hash:             []byte("thumbnail1_hash"),
+		Thumbnail2Hash:             []byte("thumbnail2_hash"),
+		DataHash:                   []byte("data_hash"),
+		RQIDs:                      []string{"raptorq ID1", "raptorq ID2"},
+		RQOti:                      []byte("rq_oti"),
+	}
+
+	appTicketBytes, _ := json.Marshal(&appTicketData)
+
+	appTicket := b85.Encode(appTicketBytes)
+
+	nftTicketData := pastel.NFTTicket{
+		Version:       1,
+		Author:        "pastelID",
+		BlockNum:      10,
+		BlockHash:     "block_hash",
+		Copies:        10,
+		Royalty:       99,
+		Green:         false,
+		AppTicket:     appTicket,
+		AppTicketData: appTicketData,
+	}
+	artTicket, _ := json.Marshal(&nftTicketData)
+	ticketSignature := pastel.RegTicketSignatures{}
+	regTicketData := pastel.RegTicketData{
+		Type:          "type",
+		CreatorHeight: 235,
+		Signatures:    ticketSignature,
+		Label:         "label",
+		Green:         false,
+		StorageFee:    1,
+		TotalCopies:   10,
+		Royalty:       99,
+		Version:       1,
+		NFTTicket:     artTicket,
+		NFTTicketData: nftTicketData,
+	}
+	regTicket := pastel.RegTicket{
+		Height:        235,
+		TXID:          "test-txid",
+		RegTicketData: regTicketData,
+	}
+	return regTicket
 }
