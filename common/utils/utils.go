@@ -20,9 +20,9 @@ import (
 
 // DiskStatus cotains info of disk storage
 type DiskStatus struct {
-	All  uint64 `json:"all"`
-	Used uint64 `json:"used"`
-	Free uint64 `json:"free"`
+	All  float64 `json:"all"`
+	Used float64 `json:"used"`
+	Free float64 `json:"free"`
 }
 
 // SafeErrStr returns err string
@@ -186,4 +186,9 @@ func GetNClosestXORDistanceStringToAGivenComparisonString(n int, comparisonStrin
 // GetFileSizeInMB returns size of the file in MB
 func GetFileSizeInMB(data []byte) float64 {
 	return math.Ceil(float64(len(data)) / (1024 * 1024))
+}
+
+// BytesToMB ...
+func BytesToMB(bytes uint64) float64 {
+	return float64(bytes) / 1048576.0
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/p2p"
 
 	"net/http"
@@ -93,6 +94,7 @@ func (service *Service) p2pStats(writer http.ResponseWriter, request *http.Reque
 		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
+	stats["version"] = version.Version()
 
 	responseWithJSON(writer, http.StatusOK, stats)
 }
@@ -121,7 +123,7 @@ func (service *Service) p2pHealth(writer http.ResponseWriter, request *http.Requ
 	ctx := service.contextWithLogPrefix(request.Context())
 	log.WithContext(ctx).Info("p2pHealth")
 
-	responseWithJSON(writer, http.StatusOK, "p2p")
+	responseWithJSON(writer, http.StatusOK, fmt.Sprintf("%s - %s", "p2p", version.Version()))
 }
 
 func (service *Service) p2pStore(writer http.ResponseWriter, request *http.Request) {

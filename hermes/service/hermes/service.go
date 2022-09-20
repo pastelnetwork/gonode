@@ -64,6 +64,7 @@ type service struct {
 	db                 *sqlx.DB
 	isMasterNodeSynced bool
 	latestBlockHeight  int
+	dbfile             string
 
 	currentNFTBlock    int
 	currentActionBlock int
@@ -589,6 +590,13 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	}
 	stats["record_count"] = recordCount
 
+	fi, err := os.Stat(s.dbfile)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to get dd db size")
+	} else {
+		stats["db_size"] = utils.BytesToMB(uint64(fi.Size()))
+	}
+
 	return stats, nil
 }
 
@@ -619,5 +627,6 @@ func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInte
 		db:                 db,
 		currentNFTBlock:    1,
 		currentActionBlock: 1,
+		dbfile:             file,
 	}, nil
 }

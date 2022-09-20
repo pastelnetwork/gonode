@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 
+	"github.com/pastelnetwork/gonode/hermes/debug"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -31,6 +32,7 @@ type Config struct {
 	Pastel             *pastel.Config `mapstructure:"-" json:"-"`
 	SNHost             string         `mapstructure:"sn_host" json:"sn_host"`
 	SNPort             int            `mapstructure:"sn_port" json:"sn_port"`
+	DebugService       *debug.Config  `mapstructure:"debug-service" json:"debug-service,omitempty"`
 }
 
 // LogConfig represents log config
@@ -74,8 +76,9 @@ func NewConfig() *Config {
 				DupeDetectionLogLevel: defaultSubSystemLogLevel,
 			},
 		},
-		Pastel: pastel.NewConfig(),
-		SNHost: defaultSNHost,
-		SNPort: deafultSNPort,
+		Pastel:       pastel.NewConfig(),
+		SNHost:       defaultSNHost,
+		SNPort:       deafultSNPort,
+		DebugService: debug.NewConfig(),
 	}
 }

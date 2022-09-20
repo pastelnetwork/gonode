@@ -16,6 +16,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/hermes/config"
+	"github.com/pastelnetwork/gonode/hermes/debug"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes"
 	"github.com/pastelnetwork/gonode/hermes/service/node/grpc"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -141,7 +142,10 @@ func runApp(ctx context.Context, conf *config.Config) error {
 		return fmt.Errorf("start hermes: %w", err)
 	}
 
+	// Debug service
+	debugSerivce := debug.NewService(conf.DebugService, service)
+
 	log.WithContext(ctx).Infof("Config: %s", conf)
 
-	return runServices(ctx, service)
+	return runServices(ctx, service, debugSerivce)
 }
