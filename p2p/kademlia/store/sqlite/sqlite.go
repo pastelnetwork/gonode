@@ -8,6 +8,8 @@ import (
 	"path"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/pastelnetwork/gonode/common/log"
 
 	"github.com/jmoiron/sqlx"
@@ -195,7 +197,7 @@ func (s *Store) Stats(ctx context.Context) (map[string]interface{}, error) {
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get p2p db size")
 	} else {
-		stats["p2p_db_size"] = fi.Size()
+		stats["p2p_db_size"] = utils.BytesToMB(uint64(fi.Size()))
 	}
 
 	if count, err := s.Count(ctx); err == nil {
