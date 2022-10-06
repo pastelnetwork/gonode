@@ -582,6 +582,7 @@ func unmarshalTaskHistoryResponseToCascadeTaskHistory(v *TaskHistoryResponse) *c
 	res := &cascade.TaskHistory{
 		Timestamp: v.Timestamp,
 		Status:    *v.Status,
+		Message:   v.Message,
 	}
 
 	return res

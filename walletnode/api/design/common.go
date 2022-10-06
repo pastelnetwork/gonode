@@ -87,6 +87,11 @@ var TaskHistory = Type("TaskHistory", func() {
 		Example("Started, Image Probed, Downloaded...")
 	})
 
+	Attribute("message", String, func() {
+		Description("message string (if any)")
+		Example("Balance less than maximum fee provied in the request, could not gather enough confirmations...")
+	})
+
 	Required("status")
 })
 

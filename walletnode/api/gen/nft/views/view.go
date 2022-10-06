@@ -482,8 +482,8 @@ func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) 
 		}
 	}
 	if result.Royalty != nil {
-		if *result.Royalty > 100 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.royalty", *result.Royalty, 100, false))
+		if *result.Royalty > 20 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.royalty", *result.Royalty, 20, false))
 		}
 	}
 	if result.ThumbnailCoordinate != nil {

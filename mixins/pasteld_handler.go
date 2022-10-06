@@ -74,6 +74,20 @@ func (pt *PastelHandler) GetBlock(ctx context.Context) (int, string, error) {
 	return int(blockNum), blockInfo.Hash, nil
 }
 
+// IsBalanceMoreThanMaxFee checks balance of provided address to be more than max fee
+func (pt *PastelHandler) IsBalanceMoreThanMaxFee(ctx context.Context, address string, maxFee float64) error {
+	balance, err := pt.PastelClient.GetBalance(ctx, address)
+	if err != nil {
+		return errors.Errorf("get balance of address(%s): %w", address, err)
+	}
+
+	if balance < maxFee {
+		return errors.Errorf("current balance is less than provided max Fee - balance(%f) < max-fee(%f)", balance, maxFee)
+	}
+
+	return nil
+}
+
 // CheckBalanceToPayRegistrationFee checks balance
 func (pt *PastelHandler) CheckBalanceToPayRegistrationFee(ctx context.Context, address string, fee float64, maxFee float64) error {
 	if fee == 0 {

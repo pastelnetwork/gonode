@@ -541,6 +541,8 @@ type TaskHistoryResponse struct {
 	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
 	// past status string
 	Status string `form:"status" json:"status" xml:"status"`
+	// message string (if any)
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
 // TaskStateResponseBody is used to define fields on response body types.
@@ -1344,8 +1346,8 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 		}
 	}
 	if body.Royalty != nil {
-		if *body.Royalty > 100 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 100, false))
+		if *body.Royalty > 20 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 20, false))
 		}
 	}
 	if body.ThumbnailCoordinate != nil {

@@ -312,7 +312,7 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 		Default(0.0)
 		Example(12.0)
 		Minimum(0.0)
-		Maximum(100.0)
+		Maximum(20.0)
 	})
 
 	Attribute("green", Boolean, func() {
