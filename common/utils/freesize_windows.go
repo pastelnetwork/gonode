@@ -30,8 +30,9 @@ func DiskUsage(dir string) (DiskStatus, error) {
 		return disk, err
 	}
 
-	disk.All = uint64(totalBytes)
-	disk.Free = uint64(freeBytes)
-	disk.Used = uint64(totalBytes - freeBytes)
+	disk.All = BytesToMB(uint64(totalBytes))
+	disk.Free = BytesToMB(uint64(freeBytes))
+	disk.Used = BytesToMB(uint64(totalBytes - freeBytes))
+
 	return disk, nil
 }

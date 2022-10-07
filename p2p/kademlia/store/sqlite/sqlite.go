@@ -8,6 +8,8 @@ import (
 	"path"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/pastelnetwork/gonode/common/log"
 
 	"github.com/jmoiron/sqlx"
@@ -23,6 +25,9 @@ type Store struct {
 	db                *sqlx.DB
 	replicateInterval time.Duration
 	republishInterval time.Duration
+
+	// for stats
+	dbFilePath string
 }
 
 // Record is a data record
@@ -58,6 +63,7 @@ func NewStore(ctx context.Context, dataDir string, replicate time.Duration, repu
 	s.db = db
 	s.replicateInterval = replicate
 	s.republishInterval = republish
+	s.dbFilePath = dbFile
 
 	if !s.checkStore() {
 		if err = s.migrate(); err != nil {
@@ -185,8 +191,21 @@ func (s *Store) Close(ctx context.Context) {
 }
 
 // Stats returns stats of store
-func (s *Store) Stats(_ context.Context) (map[string]interface{}, error) {
+func (s *Store) Stats(ctx context.Context) (map[string]interface{}, error) {
 	stats := map[string]interface{}{}
+	fi, err := os.Stat(s.dbFilePath)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to get p2p db size")
+	} else {
+		stats["p2p_db_size"] = utils.BytesToMB(uint64(fi.Size()))
+	}
+
+	if count, err := s.Count(ctx); err == nil {
+		stats["p2p_db_records_count"] = count
+	} else {
+		log.WithContext(ctx).WithError(err).Error("failed to get p2p records count")
+	}
+
 	return stats, nil
 }
 
@@ -197,6 +216,7 @@ func (s *Store) Count(_ context.Context /*, type RecordType*/) (int, error) {
 	if err != nil {
 		return -1, fmt.Errorf("failed to get count of records: %w", err)
 	}
+
 	return count, nil
 }
 
