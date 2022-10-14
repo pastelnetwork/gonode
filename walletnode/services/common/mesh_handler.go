@@ -34,7 +34,8 @@ type MeshHandler struct {
 	callersPastelID string
 	passphrase      string
 
-	Nodes SuperNodeList
+	Nodes       SuperNodeList
+	UseMaxNodes bool
 }
 
 // MeshHandlerOpts set of options to pass to NewMeshHandler
@@ -54,6 +55,7 @@ type MeshHandlerConfig struct {
 	ConnectToNodeTimeout   time.Duration
 	AcceptNodesTimeout     time.Duration
 	ConnectToNextNodeDelay time.Duration
+	UseMaxNodes            bool
 }
 
 // NewMeshHandler returns new NewMeshHandler
@@ -69,6 +71,7 @@ func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 		connectToNodeTimeout:   opts.Configs.ConnectToNodeTimeout,
 		acceptNodesTimeout:     opts.Configs.AcceptNodesTimeout,
 		connectToNextNodeDelay: opts.Configs.ConnectToNextNodeDelay,
+		UseMaxNodes:            opts.Configs.UseMaxNodes,
 	}
 }
 
@@ -246,7 +249,7 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 
 		count++
 		nodes = append(nodes, someNode)
-		if count == n {
+		if count == n && !m.UseMaxNodes {
 			break
 		}
 	}

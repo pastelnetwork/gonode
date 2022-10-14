@@ -84,14 +84,14 @@ var masterNodesTopResp = `{
 	  },
 		{
 		"rank": "4",
-		"IP:port": "sn-server-4:19933",
+		"IP:port": "snserver-4:19933",
 		"protocol": 170008,
 		"outpoint": "b2734441a24ecfe8a699e62f3711311100c53cb534f40e6c885948515e410525-1",
 		"payee": "tPo1skbEb46hq9WWjKyamLhoc1pSmDoa6xo",
 		"lastseen": 0,
 		"activeseconds": -1640641036,
-		"extAddress": "sn-server-4:14444",
-		"extP2P": "sn-server-4:14445",
+		"extAddress": "snserver-4:14444",
+		"extP2P": "snserver-4:14445",
 		"extKey": "jXYegY26dJ1auzTj5xy1LSUHy3vEn91pMjQrMwAb97nVzH1859xBzbdiU1RsAhJiQ6Z8VbJwQeH5pwGbFAAaHc",
 		"extCfg": ""
 	  }
