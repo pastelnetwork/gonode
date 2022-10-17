@@ -465,6 +465,30 @@ func marshalCascadeTaskHistoryToTaskHistoryResponse(v *cascade.TaskHistory) *Tas
 		Status:    v.Status,
 		Message:   v.Message,
 	}
+	if v.Details != nil {
+		res.Details = marshalCascadeDetailsToDetailsResponse(v.Details)
+	}
+
+	return res
+}
+
+// marshalCascadeDetailsToDetailsResponse builds a value of type
+// *DetailsResponse from a value of type *cascade.Details.
+func marshalCascadeDetailsToDetailsResponse(v *cascade.Details) *DetailsResponse {
+	if v == nil {
+		return nil
+	}
+	res := &DetailsResponse{
+		Message: v.Message,
+	}
+	if v.Fields != nil {
+		res.Fields = make(map[string]interface{}, len(v.Fields))
+		for key, val := range v.Fields {
+			tk := key
+			tv := val
+			res.Fields[tk] = tv
+		}
+	}
 
 	return res
 }

@@ -169,7 +169,7 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 }
 
 // GetTaskHistory - Gets a task's history
-func (service *CascadeAPIHandler) GetTaskHistory(_ context.Context, p *cascade.GetTaskHistoryPayload) (res []*cascade.TaskHistory, err error) {
+func (service *CascadeAPIHandler) GetTaskHistory(_ context.Context, p *cascade.GetTaskHistoryPayload) (history []*cascade.TaskHistory, err error) {
 	store, err := local.OpenHistoryDB()
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(errors.New("error retrieving status"))
@@ -180,10 +180,21 @@ func (service *CascadeAPIHandler) GetTaskHistory(_ context.Context, p *cascade.G
 		return nil, cascade.MakeNotFound(errors.New("task not found"))
 	}
 
-	history := []*cascade.TaskHistory{}
 	for _, entry := range statuses {
 		timestamp := entry.CreatedAt.String()
-		history = append(history, &cascade.TaskHistory{Timestamp: &timestamp, Status: entry.Status})
+		historyItem := &cascade.TaskHistory{
+			Timestamp: &timestamp,
+			Status:    entry.Status,
+		}
+
+		if entry.Details != nil {
+			historyItem.Details = &cascade.Details{
+				Message: &entry.Details.Message,
+				Fields:  entry.Details.Fields,
+			}
+		}
+
+		history = append(history, historyItem)
 	}
 
 	return history, nil

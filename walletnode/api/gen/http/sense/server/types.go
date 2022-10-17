@@ -263,6 +263,16 @@ type TaskHistoryResponse struct {
 	Status string `form:"status" json:"status" xml:"status"`
 	// message string (if any)
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// details of the status
+	Details *DetailsResponse `form:"details,omitempty" json:"details,omitempty" xml:"details,omitempty"`
+}
+
+// DetailsResponse is used to define fields on response body types.
+type DetailsResponse struct {
+	// details regarding the status
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// important fields regarding status history
+	Fields map[string]interface{} `form:"fields,omitempty" json:"fields,omitempty" xml:"fields,omitempty"`
 }
 
 // NewUploadImageResponseBody builds the HTTP response body from the result of

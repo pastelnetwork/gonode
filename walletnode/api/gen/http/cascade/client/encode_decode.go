@@ -584,6 +584,30 @@ func unmarshalTaskHistoryResponseToCascadeTaskHistory(v *TaskHistoryResponse) *c
 		Status:    *v.Status,
 		Message:   v.Message,
 	}
+	if v.Details != nil {
+		res.Details = unmarshalDetailsResponseToCascadeDetails(v.Details)
+	}
+
+	return res
+}
+
+// unmarshalDetailsResponseToCascadeDetails builds a value of type
+// *cascade.Details from a value of type *DetailsResponse.
+func unmarshalDetailsResponseToCascadeDetails(v *DetailsResponse) *cascade.Details {
+	if v == nil {
+		return nil
+	}
+	res := &cascade.Details{
+		Message: v.Message,
+	}
+	if v.Fields != nil {
+		res.Fields = make(map[string]interface{}, len(v.Fields))
+		for key, val := range v.Fields {
+			tk := key
+			tv := val
+			res.Fields[tk] = tv
+		}
+	}
 
 	return res
 }

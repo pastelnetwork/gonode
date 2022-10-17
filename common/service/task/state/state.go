@@ -33,6 +33,9 @@ type State interface {
 
 	// SubscribeStatus returns a new subscription of the state.
 	SubscribeStatus() func() <-chan *Status
+
+	//SetStateLog set the wallet node task status log to the state status log
+	SetStateLog(statusLog types.Fields)
 }
 
 type state struct {
@@ -41,9 +44,10 @@ type state struct {
 
 	notifyFn func(status *Status)
 	sync.RWMutex
-	subsCh []chan *Status
-	taskID string
-	store  storage.LocalStoreInterface
+	subsCh    []chan *Status
+	taskID    string
+	store     storage.LocalStoreInterface
+	statusLog types.Fields
 }
 
 // Status implements State.Status()
@@ -81,9 +85,13 @@ func (state *state) UpdateStatus(subStatus SubStatus) {
 	state.history = append(state.history, state.status)
 	state.status = status
 
+	history := types.TaskHistory{CreatedAt: time.Now(), TaskID: state.taskID, Status: status.String()}
+	if state.statusLog.IsValid() {
+		history.Details = types.NewDetails(status.String(), state.statusLog)
+	}
+
 	if state.store != nil {
-		if _, err := state.store.InsertTaskHistory(types.TaskHistory{CreatedAt: time.Now(), TaskID: state.taskID,
-			Status: status.String()}); err != nil {
+		if _, err := state.store.InsertTaskHistory(history); err != nil {
 			log.WithError(err).Error("unable to store task status")
 		}
 	}
@@ -119,6 +127,10 @@ func (state *state) SubscribeStatus() func() <-chan *Status {
 		return subCh
 	}
 	return sub
+}
+
+func (state *state) SetStateLog(statusLog types.Fields) {
+	state.statusLog = statusLog
 }
 
 // New returns a new state instance.

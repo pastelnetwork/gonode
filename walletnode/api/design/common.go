@@ -75,6 +75,17 @@ var RegisterTaskState = Type("TaskState", func() {
 	Required("date", "status")
 })
 
+//Details represents status log details with additional fields
+var Details = Type("Details", func() {
+	Attribute("message", String, func() {
+		Description("details regarding the status")
+		Example("Image has been downloaded...")
+	})
+	Attribute("fields", MapOf(String, Any), func() {
+		Description("important fields regarding status history")
+	})
+})
+
 // TaskHistory is a list of strings containing all past task histories.
 var TaskHistory = Type("TaskHistory", func() {
 	Attribute("timestamp", String, func() {
@@ -90,6 +101,10 @@ var TaskHistory = Type("TaskHistory", func() {
 	Attribute("message", String, func() {
 		Description("message string (if any)")
 		Example("Balance less than maximum fee provied in the request, could not gather enough confirmations...")
+	})
+
+	Attribute("details", Details, func() {
+		Description("details of the status")
 	})
 
 	Required("status")

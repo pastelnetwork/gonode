@@ -24,7 +24,7 @@ func BuildUploadAssetPayload(cascadeUploadAssetBody string) (*cascade.UploadAsse
 	{
 		err = json.Unmarshal([]byte(cascadeUploadAssetBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"QXV0IG5vc3RydW0gZXhwZWRpdGEu\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"RXhwbGljYWJvIHF1byB0ZW1wb3JpYnVzIGhhcnVtIHZvbHVwdGF0ZXMgc3VudC4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))

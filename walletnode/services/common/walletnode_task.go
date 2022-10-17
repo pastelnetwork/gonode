@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/common/types"
 )
 
 // TaskCleanerFunc pointer to cleaner function
@@ -21,6 +22,7 @@ type WalletNodeTask struct {
 	task.Task
 
 	LogPrefix string
+	StatusLog types.Fields
 	err       error
 }
 
@@ -64,8 +66,12 @@ func (task *WalletNodeTask) Error() error {
 
 // NewWalletNodeTask returns a new WalletNodeTask instance.
 func NewWalletNodeTask(logPrefix string) *WalletNodeTask {
-	return &WalletNodeTask{
+	wnt := &WalletNodeTask{
 		Task:      task.New(StatusTaskStarted),
 		LogPrefix: logPrefix,
+		StatusLog: make(map[string]interface{}),
 	}
+	wnt.SetStateLog(wnt.StatusLog)
+
+	return wnt
 }
