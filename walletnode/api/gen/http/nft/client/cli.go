@@ -90,8 +90,8 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 		if body.Royalty < 0 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", body.Royalty, 0, true))
 		}
-		if body.Royalty > 100 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", body.Royalty, 100, false))
+		if body.Royalty > 20 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", body.Royalty, 20, false))
 		}
 		if err != nil {
 			return nil, err

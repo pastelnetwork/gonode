@@ -78,6 +78,10 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Request.MaximumFee)
 	}
 
+	if err := task.service.pastelHandler.IsBalanceMoreThanMaxFee(ctx, task.Request.SpendableAddress, task.Request.MaximumFee); err != nil {
+		return errors.Errorf("current balance is less than max fee provided in the ticket: %v", task.Request.MaximumFee)
+	}
+
 	log.WithContext(ctx).Debug("Setting up mesh with Top Supernodes")
 
 	// Setup mesh with supernodes with the highest ranks.
@@ -413,7 +417,7 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 		BlockNum:  task.creatorBlockHeight,
 		BlockHash: task.creatorBlockHash,
 		Copies:    task.Request.IssuedCopies,
-		Royalty:   task.Request.Royalty,
+		Royalty:   (task.Request.Royalty) / 100,
 		Green:     task.Request.Green,
 		AppTicketData: pastel.AppTicket{
 			CreatorName:                task.Request.CreatorName,

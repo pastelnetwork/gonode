@@ -2771,7 +2771,7 @@ definitions:
                 default: 0
                 example: 12
                 minimum: 0
-                maximum: 100
+                maximum: 20
             series_name:
                 type: string
                 description: Series name
@@ -2884,7 +2884,7 @@ definitions:
                 default: 0
                 example: 12
                 minimum: 0
-                maximum: 100
+                maximum: 20
             series_name:
                 type: string
                 description: Series name
@@ -3003,7 +3003,7 @@ definitions:
                 default: 0
                 example: 12
                 minimum: 0
-                maximum: 100
+                maximum: 20
             series_name:
                 type: string
                 description: Series name
@@ -4603,6 +4603,10 @@ definitions:
         title: TaskHistoryResponse
         type: object
         properties:
+            message:
+                type: string
+                description: message string (if any)
+                example: Balance less than maximum fee provied in the request, could not gather enough confirmations...
             status:
                 type: string
                 description: past status string
@@ -4612,6 +4616,7 @@ definitions:
                 description: Timestamp of the status creation
                 example: 2006-01-02T15:04:05Z07:00
         example:
+            message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
             status: Started, Image Probed, Downloaded...
             timestamp: 2006-01-02T15:04:05Z07:00
         required:

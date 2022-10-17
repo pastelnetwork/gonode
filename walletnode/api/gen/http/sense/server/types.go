@@ -261,6 +261,8 @@ type TaskHistoryResponse struct {
 	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
 	// past status string
 	Status string `form:"status" json:"status" xml:"status"`
+	// message string (if any)
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
 // NewUploadImageResponseBody builds the HTTP response body from the result of

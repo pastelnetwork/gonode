@@ -582,6 +582,7 @@ func unmarshalTaskHistoryResponseToSenseTaskHistory(v *TaskHistoryResponse) *sen
 	res := &sense.TaskHistory{
 		Timestamp: v.Timestamp,
 		Status:    *v.Status,
+		Message:   v.Message,
 	}
 
 	return res

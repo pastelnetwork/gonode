@@ -243,7 +243,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnSendFromAddress("pre-burnt-txid", nil).
 				ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 12}, nil).
 				ListenOnRegisterNFTTicket("nft-act-txid", nil).
-				ListenOnVerify(true, nil).ListenOnGetBalance(10, nil).
+				ListenOnVerify(true, nil).ListenOnGetBalance(100, nil).
 				ListenOnRegisterActTicket("txid-act", nil)
 
 			rqClientMock := rqMock.NewMockClient(t)
@@ -258,7 +258,7 @@ func TestTaskRun(t *testing.T) {
 
 			Request := testCase.fields.Request
 			Request.Image = nftFile
-			Request.MaximumFee = 100
+			Request.MaximumFee = 50
 			task := NewNFTRegistrationTask(service, Request)
 			task.skipPrimaryNodeTxidVerify = true
 

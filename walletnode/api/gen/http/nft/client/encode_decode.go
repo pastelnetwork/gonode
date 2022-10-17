@@ -1055,6 +1055,7 @@ func unmarshalTaskHistoryResponseToNftTaskHistory(v *TaskHistoryResponse) *nft.T
 	res := &nft.TaskHistory{
 		Timestamp: v.Timestamp,
 		Status:    *v.Status,
+		Message:   v.Message,
 	}
 
 	return res

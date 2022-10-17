@@ -554,6 +554,8 @@ type TaskHistoryResponse struct {
 	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
 	// past status string
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// message string (if any)
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
 // TaskStateResponseBody is used to define fields on response body types.
@@ -1981,8 +1983,8 @@ func ValidateNftRegisterPayloadResponseBody(body *NftRegisterPayloadResponseBody
 		}
 	}
 	if body.Royalty != nil {
-		if *body.Royalty > 100 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 100, false))
+		if *body.Royalty > 20 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 20, false))
 		}
 	}
 	if body.ThumbnailCoordinate != nil {
@@ -2184,8 +2186,8 @@ func ValidateNftRegisterPayloadResponse(body *NftRegisterPayloadResponse) (err e
 		}
 	}
 	if body.Royalty != nil {
-		if *body.Royalty > 100 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 100, false))
+		if *body.Royalty > 20 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 20, false))
 		}
 	}
 	if body.ThumbnailCoordinate != nil {

@@ -1041,6 +1041,7 @@ func marshalNftTaskHistoryToTaskHistoryResponse(v *nft.TaskHistory) *TaskHistory
 	res := &TaskHistoryResponse{
 		Timestamp: v.Timestamp,
 		Status:    v.Status,
+		Message:   v.Message,
 	}
 
 	return res

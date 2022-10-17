@@ -405,6 +405,8 @@ type TaskHistory struct {
 	Timestamp *string
 	// past status string
 	Status string
+	// message string (if any)
+	Message *string
 }
 
 // TaskState is the result type of the nft service registerTaskState method.

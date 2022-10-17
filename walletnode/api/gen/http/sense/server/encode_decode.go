@@ -463,6 +463,7 @@ func marshalSenseTaskHistoryToTaskHistoryResponse(v *sense.TaskHistory) *TaskHis
 	res := &TaskHistoryResponse{
 		Timestamp: v.Timestamp,
 		Status:    v.Status,
+		Message:   v.Message,
 	}
 
 	return res
