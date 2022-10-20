@@ -29,6 +29,15 @@ func TestStatusNames(t *testing.T) {
 				StatusTicketRegistered,
 				StatusTicketActivated,
 				//Errors
+				StatusErrorMeshSetupFailed, // task for status logs
+				StatusErrorSendingRegMetadata,
+				StatusErrorUploadImageFailed,
+				StatusErrorConvertingImageBytes,
+				StatusErrorEncodingImage,
+				StatusErrorCreatingTicket,
+				StatusErrorSigningTicket,
+				StatusErrorUploadingTicket,
+				StatusErrorActivatingTicket,
 				StatusErrorInsufficientFee,
 				StatusErrorSignaturesNotMatch,
 				StatusErrorFingerprintsNotMatch,

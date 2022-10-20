@@ -22,6 +22,16 @@ const (
 	StatusTicketActivated
 
 	// Errors
+	StatusErrorMeshSetupFailed // task for status logs
+	StatusErrorSendingRegMetadata
+	StatusErrorUploadImageFailed
+	StatusErrorConvertingImageBytes
+	StatusErrorEncodingImage
+	StatusErrorCreatingTicket
+	StatusErrorSigningTicket
+	StatusErrorUploadingTicket
+	StatusErrorActivatingTicket
+
 	StatusErrorInsufficientFee
 	StatusErrorSignaturesNotMatch
 	StatusErrorFingerprintsNotMatch
@@ -60,6 +70,16 @@ var statusNames = map[Status]string{
 	StatusTicketActivated:  "Request Activated",
 
 	// Errors
+	StatusErrorMeshSetupFailed:      "Error Setting up mesh of supernodes",
+	StatusErrorSendingRegMetadata:   "Error Sending Reg Metadata",
+	StatusErrorUploadImageFailed:    "Error Uploading Image",
+	StatusErrorConvertingImageBytes: "Error Converting Image to Bytes",
+	StatusErrorEncodingImage:        "Error Encoding Image",
+	StatusErrorCreatingTicket:       "Error Creating Ticket",
+	StatusErrorSigningTicket:        "Error Signing Ticket",
+	StatusErrorUploadingTicket:      "Error Uploading Ticket",
+	StatusErrorActivatingTicket:     "Error Activating Ticket",
+
 	StatusErrorInsufficientFee:         "Error Insufficient Fee",
 	StatusErrorSignaturesNotMatch:      "Error Signatures Dont Match",
 	StatusErrorFingerprintsNotMatch:    "Error Fingerprints Dont Match",
