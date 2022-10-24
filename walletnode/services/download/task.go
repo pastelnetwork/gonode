@@ -68,6 +68,7 @@ func (task *NftDownloadingTask) run(ctx context.Context) error {
 	// cancel any ongoing context if the connections are broken
 	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 	//send download requests to ALL Supernodes, number defined by mesh handler's "minNumberSuperNodes" (really just set in a config file as NumberSuperNodes)
+	//or max nodes that it was able to connect with defined by mesh handler config.UseMaxNodes
 	downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.Request.Type)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not download files")
@@ -87,14 +88,14 @@ func (task *NftDownloadingTask) run(ctx context.Context) error {
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	// Check files are the same
-	err = task.MatchFiles()
+	n, err := task.MatchFiles()
 	if err != nil {
 		task.UpdateStatus(common.StatusErrorFilesNotMatch)
 		return errors.Errorf("files are different between supernodes: %w", err)
 	}
 
 	// Store file to send to the caller
-	task.File = task.files[0].file
+	task.File = task.files[n].file
 
 	// Wait for all connections to disconnect.
 	return nil
@@ -143,14 +144,28 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 	return downloadErrors, err
 }
 
-// MatchFiles matches files.
-func (task *NftDownloadingTask) MatchFiles() error {
-	for _, someFile := range task.files[1:] {
-		if !bytes.Equal(task.files[0].file, someFile.file) {
-			return errors.Errorf("file of nodes %q and %q didn't match", task.files[0].pastelID, someFile.pastelID)
+// MatchFiles matches files. It loops through the files to find a file that matches any other two in the list
+func (task *NftDownloadingTask) MatchFiles() (int, error) {
+	for a, fileA := range task.files {
+		matches := 0
+		log.Debugf("file of node %s - content: %q", fileA.pastelID, fileA.file)
+
+		for b, fileB := range task.files {
+			if a == b {
+				continue
+			}
+
+			if bytes.Equal(fileA.file, fileB.file) {
+				matches++
+			}
+		}
+
+		if matches >= 2 {
+			return a, nil
 		}
 	}
-	return nil
+
+	return 0, errors.Errorf("unable to find three matching files, no. of files - %d", len(task.files))
 }
 
 // Error returns task err
@@ -176,6 +191,7 @@ func NewNftDownloadTask(service *NftDownloadingService, request *NftDownloadingR
 			MinSNs:                 service.config.NumberSuperNodes,
 			PastelID:               request.PastelID,
 			Passphrase:             request.PastelIDPassphrase,
+			UseMaxNodes:            true,
 		},
 	}
 
