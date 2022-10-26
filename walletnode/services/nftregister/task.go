@@ -70,15 +70,21 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	defer cancel()
 
 	log.WithContext(ctx).Debug("Checking storage fee")
-
+	task.StatusLog[common.FieldTaskType] = "NFT Registration"
+	task.StatusLog[common.FieldNFTRegisterTaskMaxFee] = task.Request.MaximumFee
 	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorCheckingStorageFee)
 		return err
 	} else if !ok {
 		task.UpdateStatus(common.StatusErrorInsufficientFee)
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Request.MaximumFee)
 	}
 
+	task.StatusLog[common.FieldSpendableAddress] = task.Request.SpendableAddress
 	if err := task.service.pastelHandler.IsBalanceMoreThanMaxFee(ctx, task.Request.SpendableAddress, task.Request.MaximumFee); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorInsufficientBalance)
 		return errors.Errorf("current balance is less than max fee provided in the ticket: %v", task.Request.MaximumFee)
 	}
 
@@ -87,12 +93,15 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// Setup mesh with supernodes with the highest ranks.
 	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
 	if err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorMeshSetupFailed)
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
 	//set timestamp for nft reg metadata
 	task.creationTimestamp = time.Now().Format("YYYY-MM-DD hh:mm:ss")
+	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
@@ -102,11 +111,15 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// send registration metadata
 	if err := task.sendRegMetadata(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
 		return errors.Errorf("send registration metadata: %w", err)
 	}
 
 	// probe ORIGINAL image for average rareness, nsfw and seen score
 	if err := task.probeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorProbeImage)
 		return errors.Errorf("probe image: %w", err)
 	}
 
@@ -115,6 +128,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// Calculate IDs for redundant number of dd_and_fingerprints files
 	// Step 5.4
 	if err := task.FingerprintsHandler.GenerateDDAndFingerprintsIDs(ctx, task.service.config.DDAndFingerprintsMax); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorGenerateDDAndFPIds)
 		return errors.Errorf("DD and/or Fingerprint ID error: %w", err)
 	}
 
@@ -124,10 +139,14 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	if err := task.ImageHandler.CreateCopyWithEncodedFingerprint(ctx,
 		task.Request.CreatorPastelID, task.Request.CreatorPastelIDPassphrase,
 		task.FingerprintsHandler.FinalFingerprints, task.Request.Image); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorEncodingImage)
 		return errors.Errorf("encode image with fingerprint: %w", err)
 	}
 
 	if task.dataHash, err = task.ImageHandler.GetHash(); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorGetImageHash)
 		return errors.Errorf("get image hash: %w", err)
 	}
 
@@ -137,6 +156,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// SN will return back: hashes, previews, thumbnails,
 	// Step 6 - 8 for Walletnode
 	if err := task.uploadImage(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorUploadImageFailed)
 		return errors.Errorf("upload image: %w", err)
 	}
 
@@ -146,6 +167,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// All of step 9
 	if err := task.RqHandler.GenRQIdentifiersFiles(ctx, task.ImageHandler.ImageEncodedWithFingerprints,
 		task.creatorBlockHash, task.Request.CreatorPastelID, task.Request.CreatorPastelIDPassphrase); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
@@ -153,18 +175,24 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Debug("Create and sign NFT Reg Ticket")
 
 	if err := task.createNftTicket(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorCreatingTicket)
 		return errors.Errorf("create ticket: %w", err)
 	}
 
 	// sign ticket with artist signature
 	// Step 10
 	if err := task.signTicket(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorSigningTicket)
 		return errors.Errorf("sign NFT ticket: %w", err)
 	}
 
 	// send signed ticket to supernodes to calculate registration fee
 	// Step 11.A WalletNode - Upload Signed Ticket; RaptorQ IDs file and dd_and_fingerprints file to the SuperNode’s 1, 2 and 3
 	if err := task.sendSignedTicket(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorSendSignTicketFailed)
 		return errors.Errorf("send signed NFT ticket: %w", err)
 	}
 
@@ -173,6 +201,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		task.Request.SpendableAddress,
 		float64(task.registrationFee),
 		task.Request.MaximumFee); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorCheckBalance)
 		return errors.Errorf("check current balance: %w", err)
 	}
 
@@ -182,9 +212,11 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// master node will create reg-nft ticket and returns transaction id
 	task.UpdateStatus(common.StatusPreburntRegistrationFee)
 	if err := task.preburnRegistrationFeeGetTicketTxid(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorPreburnRegFeeGetTicketID)
 		return errors.Errorf("pre-burnt ten percent of registration fee: %w", err)
 	}
-
+	task.StatusLog[common.FieldRegTicketTxnID] = task.regNFTTxid
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Validating NFT Reg TXID: ",
 		StatusString:  task.regNFTTxid,
@@ -207,6 +239,9 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regNFTTxid, int64(task.service.config.NFTRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorValidateRegTxnIDFailed)
+
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 	task.UpdateStatus(&common.EphemeralStatus{
@@ -225,8 +260,11 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	activateTxID, err := task.registerActTicket(newCtx)
 	if err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorActivatingTicket)
 		return errors.Errorf("register act ticket: %w", err)
 	}
+	task.StatusLog[common.FieldActivateTicketTxnID] = activateTxID
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "NFT Activated - Ticket TXID: ",
 		StatusString:  activateTxID,
@@ -240,6 +278,8 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID,
 		int64(task.service.config.NFTActTxMinConfirmations), time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorValidateActivateTxnIDFailed)
 		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketActivated)
@@ -259,6 +299,7 @@ func (task *NftRegistrationTask) isSuitableStorageFee(ctx context.Context) (bool
 	if err != nil {
 		return false, err
 	}
+	task.StatusLog[common.FieldFee] = fee
 	return fee <= task.Request.MaximumFee, nil
 }
 
@@ -548,6 +589,7 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 		return fmt.Errorf("burn some coins: %w", err)
 	}
 
+	task.StatusLog[common.FieldBurnTxnID] = burnTxid
 	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
