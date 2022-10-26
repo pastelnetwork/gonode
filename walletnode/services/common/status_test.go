@@ -38,6 +38,8 @@ func TestStatusNames(t *testing.T) {
 				StatusErrorSigningTicket,
 				StatusErrorUploadingTicket,
 				StatusErrorActivatingTicket,
+				StatusErrorProbeImage,
+				StatusErrorGenerateDDAndFPIds,
 				StatusErrorInsufficientFee,
 				StatusErrorSignaturesNotMatch,
 				StatusErrorFingerprintsNotMatch,
