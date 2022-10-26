@@ -8,6 +8,7 @@ package node
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
 )
 
@@ -29,6 +30,11 @@ type ConnectionInterface interface {
 	Close() error
 	// Done returns a channel that's closed when connection is shutdown.
 	Done() <-chan struct{}
+
+	// RegisterNft returns a new RegisterNft stream.
+	RegisterNft() RegisterNftInterface
+	// DownloadNft returns a new DownloadNft stream.
+	DownloadNft() DownloadNftInterface
 
 	// HermesP2 returns a new HermesP2 stream.
 	HermesP2P() HermesP2PInterface
@@ -59,4 +65,26 @@ type HermesP2PInterface interface {
 
 	Retrieve(ctx context.Context, key string) (data []byte, err error)
 	Delete(ctx context.Context, key string) (err error)
+}
+
+// RegisterNftInterface contains methods for registering nft.
+type RegisterNftInterface interface {
+	SuperNodeAPIInterface
+
+	// SendRegMetadata send metadata of registration to SNs for next steps
+	SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error
+	// ProbeImage uploads image to supernode.
+	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error)
+	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
+	UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) ([]byte, []byte, []byte, error)
+}
+
+// DownloadNftInterface contains methods for downloading nft.
+type DownloadNftInterface interface {
+	SuperNodeAPIInterface
+
+	// Download sends image downloading request to supernode.
+	Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string) ([]byte, error)
+	DownloadThumbnail(ctx context.Context, txid string, numNails int) (files map[int][]byte, err error)
+	DownloadDDAndFingerprints(ctx context.Context, txid string) (file []byte, err error)
 }

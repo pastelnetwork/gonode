@@ -1,6 +1,7 @@
 package local
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -31,6 +32,13 @@ const (
 // SQLiteStore handles sqlite ops
 type SQLiteStore struct {
 	db *sqlx.DB
+}
+
+// CloseHistoryDB closes history database
+func (s *SQLiteStore) CloseHistoryDB(ctx context.Context) {
+	if err := s.db.Close(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error closing history db")
+	}
 }
 
 // InsertTaskHistory inserts task history
@@ -100,9 +108,7 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
-	if _, err := db.Exec(alterTaskHistory); err != nil {
-		log.WithError(err).Error("error details column to task history:")
-	}
+	_, _ = db.Exec(alterTaskHistory)
 
 	return &SQLiteStore{
 		db: db,

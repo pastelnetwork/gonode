@@ -7,6 +7,7 @@ const (
 	PayloadPostQuantumPubKey
 	PayloadEd448Signature
 	PayloadEd448PubKey
+	PayloadBlockHash
 )
 
 var payloadNames = map[PayloadName]string{
@@ -15,6 +16,7 @@ var payloadNames = map[PayloadName]string{
 	PayloadPostQuantumPubKey:    "PQ Pub Key",
 	PayloadEd448Signature:       "Ed448 Signature",
 	PayloadEd448PubKey:          "Ed448 Pub Key",
+	PayloadBlockHash:            "Block Hash",
 }
 
 func payloadName(subText string) PayloadName {
@@ -61,9 +63,19 @@ func Ed448PubKey(raw []byte) *Payload {
 	return NewPayload(raw, PayloadEd448PubKey)
 }
 
+// BlockHash returns a new instance of Payload with preset BlockHash datatype.
+func BlockHash(raw []byte) *Payload {
+	return NewPayload(raw, PayloadBlockHash)
+}
+
 // Fingerprint returns Fingerprint data.
 func (payloads *Payloads) Fingerprint() []byte {
 	return payloads.Raw(PayloadFingerprint)
+}
+
+// BlockHash returns BlockHash data.
+func (payloads *Payloads) BlockHash() []byte {
+	return payloads.Raw(PayloadBlockHash)
 }
 
 // PostQuantumSignature returns PostQuantumSignature data.

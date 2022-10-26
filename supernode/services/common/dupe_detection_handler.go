@@ -3,7 +3,6 @@ package common
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -121,6 +120,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 			err = errors.Errorf("generate fingerprints data: %w", err)
 			return nil
 		}
+
 		h.UpdateStatus(StatusImageProbed)
 
 		for _, nodeInfo := range h.NetworkHandler.meshedNodes {
@@ -271,7 +271,6 @@ func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *fi
 	)
 
 	if err != nil {
-		fmt.Println("returning err: ", err.Error())
 		return nil, errors.Errorf("call ImageRarenessScore(): %w", err)
 	}
 

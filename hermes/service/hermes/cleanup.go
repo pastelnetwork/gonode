@@ -14,18 +14,12 @@ import (
 func (s *service) CleanupInactiveTickets(ctx context.Context) error {
 	errReg := s.cleanupRegTickets(ctx)
 	if errReg != nil {
-		log.WithContext(ctx).WithError(errReg).Error("cleanupRegTickets failure")
+		log.WithContext(ctx).WithError(errReg).Error("Cleanup Inactive Tickets: cleanupRegTickets failure")
 	}
 
 	actionErr := s.cleanupActionTickets(ctx)
 	if actionErr != nil {
-		log.WithContext(ctx).WithError(actionErr).Error("cleanupActionTickets failure")
-	}
-
-	if errReg != nil {
-		return errReg
-	} else if actionErr != nil {
-		return actionErr
+		log.WithContext(ctx).WithError(actionErr).Error("Cleanup Inactive Tickets: cleanupActionTickets failure")
 	}
 
 	return nil
@@ -132,7 +126,7 @@ func (s *service) cleanupRegTickets(ctx context.Context) error {
 		s.currentNFTBlock = nftRegTickets[i].Height
 
 		log.WithContext(ctx).WithField("reg_txid", nftRegTickets[i].TXID).
-			Info("cleaned up reg ticket")
+			Info("cleaned up reg ticket successfully")
 	}
 
 	return nil

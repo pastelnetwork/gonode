@@ -105,6 +105,7 @@ func NewSecureClientConn(ctx context.Context, secureHelper credentials.Transport
 	// dial the remote address with tcp
 	var d net.Dialer
 	rawConn, err := d.DialContext(ctx, "tcp", remoteAddr)
+
 	if err != nil {
 		return nil, errors.Errorf("dial %q: %w", remoteAddr, err)
 	}

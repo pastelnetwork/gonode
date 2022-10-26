@@ -174,6 +174,9 @@ type Client interface {
 	// Command `tickets findbylabel action <label>`.
 	FindActionRegTicketsByLabel(ctx context.Context, label string) (ActionTicketDatas, error)
 
+	// IncrementPoseBanScore increments pose-ban score
+	IncrementPoseBanScore(ctx context.Context, txid string, index int) error
+
 	// BurnAddress ...
 	BurnAddress() string
 }

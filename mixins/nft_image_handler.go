@@ -37,6 +37,11 @@ type NftImageHandler struct {
 	thMtx   sync.Mutex
 }
 
+//  GetHashes returns hashes
+func (h *NftImageHandler) GetHashes() []*hashes {
+	return h.received
+}
+
 // AddHashes adds fingerprints info to 'received' array
 func (h *NftImageHandler) AddHashes(hashes *hashes) {
 	h.hashMtx.Lock()
@@ -126,6 +131,42 @@ func (h *NftImageHandler) CreateCopyWithEncodedFingerprint(ctx context.Context,
 	h.ImageEncodedWithFingerprints = img
 
 	return nil
+}
+
+// GetUnmatchingHashPastelI matches thumbnail's hashes recevied from super nodes
+func (h *NftImageHandler) GetUnmatchingHashPastelID() (ret []string) {
+	hashes := h.received
+	for i := 0; i < len(hashes); i++ {
+		matches := 0
+		for j := 0; j < len(hashes); j++ {
+			if i == j {
+				continue
+			}
+
+			if !bytes.Equal(hashes[i].previewHash, hashes[j].previewHash) {
+				log.Errorf("hash of preview thumbnail of nodes %q and %q didn't match", hashes[i].pastelID, hashes[j].pastelID)
+				continue
+			}
+
+			if !bytes.Equal(hashes[i].mediumThumbnailHash, hashes[j].mediumThumbnailHash) {
+				log.Errorf("hash of medium thumbnail of nodes %q and %q didn't match", hashes[i].pastelID, hashes[j].pastelID)
+				continue
+			}
+
+			if !bytes.Equal(hashes[i].smallThumbnailHash, hashes[j].smallThumbnailHash) {
+				log.Errorf("hash of small thumbnail of nodes %q and %q didn't match", hashes[i].pastelID, hashes[j].pastelID)
+				continue
+			}
+
+			matches++
+		}
+
+		if matches < 2 {
+			ret = append(ret, hashes[i].pastelID)
+		}
+	}
+
+	return ret
 }
 
 // MatchThumbnailHashes matches thumbnail's hashes recevied from super nodes

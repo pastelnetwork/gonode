@@ -169,11 +169,12 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 }
 
 // GetTaskHistory - Gets a task's history
-func (service *CascadeAPIHandler) GetTaskHistory(_ context.Context, p *cascade.GetTaskHistoryPayload) (history []*cascade.TaskHistory, err error) {
+func (service *CascadeAPIHandler) GetTaskHistory(ctx context.Context, p *cascade.GetTaskHistoryPayload) (history []*cascade.TaskHistory, err error) {
 	store, err := local.OpenHistoryDB()
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(errors.New("error retrieving status"))
 	}
+	defer store.CloseHistoryDB(ctx)
 
 	statuses, err := store.QueryTaskHistory(p.TaskID)
 	if err != nil {

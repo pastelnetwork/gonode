@@ -111,11 +111,12 @@ func (service *NftAPIHandler) Register(_ context.Context, p *nft.RegisterPayload
 }
 
 // GetTaskHistory - Gets a task's history
-func (service *NftAPIHandler) GetTaskHistory(_ context.Context, p *nft.GetTaskHistoryPayload) (res []*nft.TaskHistory, err error) {
+func (service *NftAPIHandler) GetTaskHistory(ctx context.Context, p *nft.GetTaskHistoryPayload) (res []*nft.TaskHistory, err error) {
 	store, err := local.OpenHistoryDB()
 	if err != nil {
 		return nil, nft.MakeInternalServerError(errors.New("error retrieving status"))
 	}
+	defer store.CloseHistoryDB(ctx)
 
 	statuses, err := store.QueryTaskHistory(p.TaskID)
 	if err != nil {
