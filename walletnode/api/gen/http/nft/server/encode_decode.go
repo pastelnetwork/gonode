@@ -1043,6 +1043,30 @@ func marshalNftTaskHistoryToTaskHistoryResponse(v *nft.TaskHistory) *TaskHistory
 		Status:    v.Status,
 		Message:   v.Message,
 	}
+	if v.Details != nil {
+		res.Details = marshalNftDetailsToDetailsResponse(v.Details)
+	}
+
+	return res
+}
+
+// marshalNftDetailsToDetailsResponse builds a value of type *DetailsResponse
+// from a value of type *nft.Details.
+func marshalNftDetailsToDetailsResponse(v *nft.Details) *DetailsResponse {
+	if v == nil {
+		return nil
+	}
+	res := &DetailsResponse{
+		Message: v.Message,
+	}
+	if v.Fields != nil {
+		res.Fields = make(map[string]interface{}, len(v.Fields))
+		for key, val := range v.Fields {
+			tk := key
+			tv := val
+			res.Fields[tk] = tv
+		}
+	}
 
 	return res
 }

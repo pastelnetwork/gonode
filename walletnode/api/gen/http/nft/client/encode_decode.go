@@ -1057,6 +1057,30 @@ func unmarshalTaskHistoryResponseToNftTaskHistory(v *TaskHistoryResponse) *nft.T
 		Status:    *v.Status,
 		Message:   v.Message,
 	}
+	if v.Details != nil {
+		res.Details = unmarshalDetailsResponseToNftDetails(v.Details)
+	}
+
+	return res
+}
+
+// unmarshalDetailsResponseToNftDetails builds a value of type *nft.Details
+// from a value of type *DetailsResponse.
+func unmarshalDetailsResponseToNftDetails(v *DetailsResponse) *nft.Details {
+	if v == nil {
+		return nil
+	}
+	res := &nft.Details{
+		Message: v.Message,
+	}
+	if v.Fields != nil {
+		res.Fields = make(map[string]interface{}, len(v.Fields))
+		for key, val := range v.Fields {
+			tk := key
+			tv := val
+			res.Fields[tk] = tv
+		}
+	}
 
 	return res
 }

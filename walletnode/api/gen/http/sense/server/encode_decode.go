@@ -465,6 +465,30 @@ func marshalSenseTaskHistoryToTaskHistoryResponse(v *sense.TaskHistory) *TaskHis
 		Status:    v.Status,
 		Message:   v.Message,
 	}
+	if v.Details != nil {
+		res.Details = marshalSenseDetailsToDetailsResponse(v.Details)
+	}
+
+	return res
+}
+
+// marshalSenseDetailsToDetailsResponse builds a value of type *DetailsResponse
+// from a value of type *sense.Details.
+func marshalSenseDetailsToDetailsResponse(v *sense.Details) *DetailsResponse {
+	if v == nil {
+		return nil
+	}
+	res := &DetailsResponse{
+		Message: v.Message,
+	}
+	if v.Fields != nil {
+		res.Fields = make(map[string]interface{}, len(v.Fields))
+		for key, val := range v.Fields {
+			tk := key
+			tv := val
+			res.Fields[tk] = tv
+		}
+	}
 
 	return res
 }

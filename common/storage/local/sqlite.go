@@ -1,16 +1,16 @@
 package local
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 
-	"github.com/pastelnetwork/gonode/common/configurer"
-	"github.com/pastelnetwork/gonode/common/types"
-
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
-
+	"github.com/pastelnetwork/gonode/common/configurer"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/types"
 )
 
 const createTaskHistory string = `
@@ -21,7 +21,12 @@ const createTaskHistory string = `
   status TEXT NOT NULL
   );`
 
-const historyDBName = "history.db"
+const alterTaskHistory string = `ALTER TABLE task_history ADD COLUMN details TEXT;`
+
+const (
+	historyDBName = "history.db"
+	emptyString   = ""
+)
 
 // SQLiteStore handles sqlite ops
 type SQLiteStore struct {
@@ -29,9 +34,14 @@ type SQLiteStore struct {
 }
 
 // InsertTaskHistory inserts task history
-func (s *SQLiteStore) InsertTaskHistory(history types.TaskHistory) (int, error) {
-	res, err := s.db.Exec("INSERT INTO task_history VALUES(NULL,?,?,?);", history.CreatedAt,
-		history.TaskID, history.Status)
+func (s *SQLiteStore) InsertTaskHistory(history types.TaskHistory) (hID int, err error) {
+	var stringifyDetails string
+	if history.Details != nil {
+		stringifyDetails = history.Details.Stringify()
+	}
+
+	const insertQuery = "INSERT INTO task_history(id, time, task_id, status, details) VALUES(NULL,?,?,?,?);"
+	res, err := s.db.Exec(insertQuery, history.CreatedAt, history.TaskID, history.Status, stringifyDetails)
 
 	if err != nil {
 		return 0, err
@@ -47,23 +57,35 @@ func (s *SQLiteStore) InsertTaskHistory(history types.TaskHistory) (int, error) 
 
 // QueryTaskHistory gets task history by taskID
 func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHistory, err error) {
-	rows, err := s.db.Query("SELECT * FROM task_history WHERE task_id = ? LIMIT 100", taskID)
+	const selectQuery = "SELECT * FROM task_history WHERE task_id = ? LIMIT 100"
+	rows, err := s.db.Query(selectQuery, taskID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	data := []types.TaskHistory{}
+	var data []types.TaskHistory
 	for rows.Next() {
 		i := types.TaskHistory{}
-		err = rows.Scan(&i.ID, &i.CreatedAt, &i.TaskID, &i.Status)
+		var details string
+		err = rows.Scan(&i.ID, &i.CreatedAt, &i.TaskID, &i.Status, &details)
 		if err != nil {
 			return nil, err
 		}
+
+		if details != emptyString {
+			err = json.Unmarshal([]byte(details), &i.Details)
+			if err != nil {
+				log.Info(details)
+				log.WithError(err).Error(fmt.Sprintf("cannot unmarshal task history details: %s", details))
+				i.Details = nil
+			}
+		}
+
 		data = append(data, i)
 	}
-	return data, nil
 
+	return data, nil
 }
 
 // OpenHistoryDB opens history DB
@@ -76,6 +98,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 
 	if _, err := db.Exec(createTaskHistory); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(alterTaskHistory); err != nil {
+		log.WithError(err).Error("error details column to task history:")
 	}
 
 	return &SQLiteStore{

@@ -584,6 +584,30 @@ func unmarshalTaskHistoryResponseToSenseTaskHistory(v *TaskHistoryResponse) *sen
 		Status:    *v.Status,
 		Message:   v.Message,
 	}
+	if v.Details != nil {
+		res.Details = unmarshalDetailsResponseToSenseDetails(v.Details)
+	}
+
+	return res
+}
+
+// unmarshalDetailsResponseToSenseDetails builds a value of type *sense.Details
+// from a value of type *DetailsResponse.
+func unmarshalDetailsResponseToSenseDetails(v *DetailsResponse) *sense.Details {
+	if v == nil {
+		return nil
+	}
+	res := &sense.Details{
+		Message: v.Message,
+	}
+	if v.Fields != nil {
+		res.Fields = make(map[string]interface{}, len(v.Fields))
+		for key, val := range v.Fields {
+			tk := key
+			tv := val
+			res.Fields[tk] = tv
+		}
+	}
 
 	return res
 }

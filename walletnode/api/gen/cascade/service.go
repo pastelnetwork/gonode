@@ -71,6 +71,13 @@ type Asset struct {
 	EstimatedFee float64
 }
 
+type Details struct {
+	// details regarding the status
+	Message *string
+	// important fields regarding status history
+	Fields map[string]interface{}
+}
+
 // DownloadPayload is the payload type of the cascade service download method.
 type DownloadPayload struct {
 	// Nft Registration Request transaction ID
@@ -128,6 +135,8 @@ type TaskHistory struct {
 	Status string
 	// message string (if any)
 	Message *string
+	// details of the status
+	Details *Details
 }
 
 // TaskState is the result type of the cascade service registerTaskState method.
