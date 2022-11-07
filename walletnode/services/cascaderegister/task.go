@@ -53,14 +53,18 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	defer cancel()
 
 	log.WithContext(ctx).Debug("Setting up mesh with Top Supernodes")
+	task.StatusLog[common.FieldTaskType] = "Cascade Registration"
 
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
 	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
 	if err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorMeshSetupFailed)
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
+	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
@@ -70,10 +74,14 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 
 	// send registration metadata
 	if err := task.sendActionMetadata(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
 		return errors.Errorf("send registration metadata: %w", err)
 	}
 
 	if err := task.uploadImage(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorUploadImageFailed)
 		return errors.Errorf("upload image: %w", err)
 	}
 
@@ -82,6 +90,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	// connect to rq serivce to get rq symbols identifier
 	if err := task.RqHandler.GenRQIdentifiersFiles(ctx, task.Request.Image,
 		task.creatorBlockHash, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
@@ -89,9 +98,13 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	// calculate hash of data
 	imgBytes, err := task.Request.Image.Bytes()
 	if err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
 	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorEncodingImage)
 		return errors.Errorf("hash encoded image: %w", err)
 	}
 
@@ -102,14 +115,20 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 	task.registrationFee = int64(fee)
 
-	log.WithContext(ctx).Debug("Create and sign Cascade Reg Ticket")
+	task.StatusLog[common.FieldFileSize] = fileDataInMb
+	task.StatusLog[common.FieldFee] = fee
 
+	log.WithContext(ctx).Debug("Create and sign Cascade Reg Ticket")
 	if err := task.createCascadeTicket(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorCreatingTicket)
 		return errors.Errorf("create ticket: %w", err)
 	}
 
 	// sign ticket with creator signature
 	if err := task.signTicket(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorSigningTicket)
 		return errors.Errorf("sign cascade ticket: %w", err)
 	}
 
@@ -117,8 +136,11 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 
 	// UPLOAD signed ticket to supernodes to validate and register action with the network
 	if err := task.uploadSignedTicket(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorUploadingTicket)
 		return errors.Errorf("send signed cascade ticket: %w", err)
 	}
+	task.StatusLog[common.FieldRegTicketTxnID] = task.regCascadeTxid
 	task.UpdateStatus(common.StatusTicketAccepted)
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Validating Cascade Reg TXID: ",
@@ -155,8 +177,11 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	// activate cascade ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
 	if err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorActivatingTicket)
 		return errors.Errorf("active action ticket: %w", err)
 	}
+	task.StatusLog[common.FieldActivateTicketTxnID] = activateTxID
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Cascade Action Activated - Ticket TXID: ",
 		StatusString:  activateTxID,
@@ -199,6 +224,7 @@ func (task *CascadeRegistrationTask) sendActionMetadata(ctx context.Context) err
 		CreatorPastelID: task.Request.AppPastelID,
 		BurnTxID:        task.Request.BurnTxID,
 	}
+	task.StatusLog[common.FieldBurnTxnID] = task.Request.BurnTxID
 
 	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
@@ -212,6 +238,7 @@ func (task *CascadeRegistrationTask) sendActionMetadata(ctx context.Context) err
 		group.Go(func() (err error) {
 			err = cascadeRegNode.SendRegMetadata(gctx, regMetadata)
 			if err != nil {
+				task.StatusLog[common.FieldErrorDetail] = err.Error()
 				log.WithContext(gctx).WithError(err).WithField("node", cascadeRegNode).Error("send registration metadata failed")
 				return errors.Errorf("node %s: %w", someNode.String(), err)
 			}
