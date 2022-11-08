@@ -137,7 +137,19 @@ func (service *SenseAPIHandler) GetTaskHistory(_ context.Context, p *sense.GetTa
 	history := []*sense.TaskHistory{}
 	for _, entry := range statuses {
 		timestamp := entry.CreatedAt.String()
-		history = append(history, &sense.TaskHistory{Timestamp: &timestamp, Status: entry.Status})
+		historyItem := &sense.TaskHistory{
+			Timestamp: &timestamp,
+			Status:    entry.Status,
+		}
+
+		if entry.Details != nil {
+			historyItem.Details = &sense.Details{
+				Message: &entry.Details.Message,
+				Fields:  entry.Details.Fields,
+			}
+		}
+
+		history = append(history, historyItem)
 	}
 
 	return history, nil

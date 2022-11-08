@@ -31,6 +31,8 @@ const (
 	StatusErrorSigningTicket
 	StatusErrorUploadingTicket
 	StatusErrorActivatingTicket
+	StatusErrorProbeImage
+	StatusErrorGenerateDDAndFPIds
 
 	StatusErrorInsufficientFee
 	StatusErrorSignaturesNotMatch
@@ -79,6 +81,8 @@ var statusNames = map[Status]string{
 	StatusErrorSigningTicket:        "Error Signing Ticket",
 	StatusErrorUploadingTicket:      "Error Uploading Ticket",
 	StatusErrorActivatingTicket:     "Error Activating Ticket",
+	StatusErrorProbeImage:           "Error Probing Image",
+	StatusErrorGenerateDDAndFPIds:   "Error Generating DD and Fingerprint IDs",
 
 	StatusErrorInsufficientFee:         "Error Insufficient Fee",
 	StatusErrorSignaturesNotMatch:      "Error Signatures Dont Match",
