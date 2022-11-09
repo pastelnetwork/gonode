@@ -21,4 +21,8 @@ const (
 	FieldErrorDetail = "error_detail"
 	//FieldBurnTxnID represents burnt txn id
 	FieldBurnTxnID = "burn_txn_id"
+	//FieldNFTRegisterTaskMaxFee represents the nft register task request fee
+	FieldNFTRegisterTaskMaxFee = "nft_register_task_max_fee"
+	//FieldSpendableAddress represents the spendable address of the user registering NFT
+	FieldSpendableAddress = "nft_register_task_max_fee"
 )

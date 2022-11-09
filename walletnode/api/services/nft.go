@@ -125,7 +125,19 @@ func (service *NftAPIHandler) GetTaskHistory(_ context.Context, p *nft.GetTaskHi
 	history := []*nft.TaskHistory{}
 	for _, entry := range statuses {
 		timestamp := entry.CreatedAt.String()
-		history = append(history, &nft.TaskHistory{Timestamp: &timestamp, Status: entry.Status})
+		historyItem := &nft.TaskHistory{
+			Timestamp: &timestamp,
+			Status:    entry.Status,
+		}
+
+		if entry.Details != nil {
+			historyItem.Details = &nft.Details{
+				Message: &entry.Details.Message,
+				Fields:  entry.Details.Fields,
+			}
+		}
+
+		history = append(history, historyItem)
 	}
 
 	return history, nil

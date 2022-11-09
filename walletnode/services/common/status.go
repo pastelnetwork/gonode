@@ -33,6 +33,14 @@ const (
 	StatusErrorActivatingTicket
 	StatusErrorProbeImage
 	StatusErrorGenerateDDAndFPIds
+	StatusErrorCheckingStorageFee
+	StatusErrorInsufficientBalance
+	StatusErrorGetImageHash
+	StatusErrorSendSignTicketFailed
+	StatusErrorCheckBalance
+	StatusErrorPreburnRegFeeGetTicketID
+	StatusErrorValidateRegTxnIDFailed
+	StatusErrorValidateActivateTxnIDFailed
 
 	StatusErrorInsufficientFee
 	StatusErrorSignaturesNotMatch
@@ -72,17 +80,25 @@ var statusNames = map[Status]string{
 	StatusTicketActivated:  "Request Activated",
 
 	// Errors
-	StatusErrorMeshSetupFailed:      "Error Setting up mesh of supernodes",
-	StatusErrorSendingRegMetadata:   "Error Sending Reg Metadata",
-	StatusErrorUploadImageFailed:    "Error Uploading Image",
-	StatusErrorConvertingImageBytes: "Error Converting Image to Bytes",
-	StatusErrorEncodingImage:        "Error Encoding Image",
-	StatusErrorCreatingTicket:       "Error Creating Ticket",
-	StatusErrorSigningTicket:        "Error Signing Ticket",
-	StatusErrorUploadingTicket:      "Error Uploading Ticket",
-	StatusErrorActivatingTicket:     "Error Activating Ticket",
-	StatusErrorProbeImage:           "Error Probing Image",
-	StatusErrorGenerateDDAndFPIds:   "Error Generating DD and Fingerprint IDs",
+	StatusErrorMeshSetupFailed:             "Error Setting up mesh of supernodes",
+	StatusErrorSendingRegMetadata:          "Error Sending Reg Metadata",
+	StatusErrorUploadImageFailed:           "Error Uploading Image",
+	StatusErrorConvertingImageBytes:        "Error Converting Image to Bytes",
+	StatusErrorEncodingImage:               "Error Encoding Image",
+	StatusErrorCreatingTicket:              "Error Creating Ticket",
+	StatusErrorSigningTicket:               "Error Signing Ticket",
+	StatusErrorUploadingTicket:             "Error Uploading Ticket",
+	StatusErrorActivatingTicket:            "Error Activating Ticket",
+	StatusErrorProbeImage:                  "Error Probing Image",
+	StatusErrorGenerateDDAndFPIds:          "Error Generating DD and Fingerprint IDs",
+	StatusErrorCheckingStorageFee:          "Error comparing suitable storage fee with task request maximum fee",
+	StatusErrorInsufficientBalance:         "Error balance not sufficient",
+	StatusErrorGetImageHash:                "Error getting hash of the image",
+	StatusErrorSendSignTicketFailed:        "Error sending signed ticket to SNs",
+	StatusErrorCheckBalance:                "Error checking balance",
+	StatusErrorPreburnRegFeeGetTicketID:    "Error burning reg fee to get reg ticket id",
+	StatusErrorValidateActivateTxnIDFailed: "Error validating activate ticket txn id",
+	StatusErrorValidateRegTxnIDFailed:      "Error validating reg ticket txn id",
 
 	StatusErrorInsufficientFee:         "Error Insufficient Fee",
 	StatusErrorSignaturesNotMatch:      "Error Signatures Dont Match",
