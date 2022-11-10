@@ -35,16 +35,20 @@ import (
 //GenerateStorageChallenges is called from service run, generate storage challenges will determine if we should issue a storage challenge,
 // and if so calculate and issue it.
 func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
-	log.WithContext(ctx).Println("Generating Storage Challenges called.")
+	log.WithContext(ctx).Println("Generate Storage Challenges invoked.")
 	// List all NFT tickets, get their raptorq ids
 	// list all RQ symbol keys from nft ticket
+
+	log.WithContext(ctx).Info("list symbol file keys from registered nft tickets")
 	sliceOfFileHashes, err := task.ListSymbolFileKeysFromNFTTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
 		return err
 	}
+	log.WithContext(ctx).Info("symbol file keys from registered nft tickets have been retrieved")
 
 	// Identify which raptorq files are currently hosted on this node
+	log.WithContext(ctx).Info("identifying which raptorq files are currently hosted on this node")
 	sliceToCheckIfFileContainedByLocalSupernode := make([]bool, 0)
 	for _, currentFileHash := range sliceOfFileHashes {
 		_, err = task.GetSymbolFileByKey(ctx, currentFileHash, true)
@@ -54,14 +58,18 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 			sliceToCheckIfFileContainedByLocalSupernode = append(sliceToCheckIfFileContainedByLocalSupernode, false)
 		}
 	}
+	log.WithContext(ctx).Info("raptorq files hosted on this node have been identified")
 
+	log.WithContext(ctx).Info("creating the slice of hashes for all the files stored by local SN")
 	sliceOfFileHashesStoredByLocalSupernode := make([]string, 0)
 	for idx, currentFileContainedByLocalMN := range sliceToCheckIfFileContainedByLocalSupernode {
 		if currentFileContainedByLocalMN {
 			sliceOfFileHashesStoredByLocalSupernode = append(sliceOfFileHashesStoredByLocalSupernode, sliceOfFileHashes[idx])
 		}
 	}
+	log.WithContext(ctx).Info("slice of hashes have been created")
 
+	log.WithContext(ctx).Info("retrieving block no and verbose")
 	// Identify current block number
 	// collect current block number get merkle root from block verbose
 	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
@@ -76,7 +84,9 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	}
 	//current block hash
 	merkleroot := blkVerbose1.MerkleRoot
+	log.WithContext(ctx).Info("block no and verbose retrieved")
 
+	log.WithContext(ctx).Info("retrieving list of all super nodes to challenge")
 	// Get a list of supernodes
 	// get all Supernode by pastel client, choose challenging Supernode id from this list
 	listOfSupernodes, err := task.GetListOfSupernode(ctx)
@@ -84,15 +94,18 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("could not get list of Supernode using pastel client")
 		return err
 	}
+	log.WithContext(ctx).Info("list of supernodes have been retrieved")
 
+	log.WithContext(ctx).Info("identifying challengers to issue challenges for this block")
 	numberOfSupernodesDividedByThree := int(math.Ceil(float64(len(listOfSupernodes)) / 3))
 	// Calculate the number of supernodes to issue challenge per block
-	numberOfSupernodesToIssueChallengePerBlock := numberOfSupernodesDividedByThree
+	numberOfChallengersPerBlock := numberOfSupernodesDividedByThree
 	// Calculate the challenges per challenger
 	challengesPerSupernodePerBlock := numberOfSupernodesDividedByThree
 
-	// Identify which supernodes should issue challenges for this block
-	sliceOfChallengingSupernodeIDsForBlock := task.GetNClosestSupernodeIDsToComparisonString(ctx, numberOfSupernodesToIssueChallengePerBlock, merkleroot, listOfSupernodes)
+	// Identify challengers for this block
+	sliceOfChallengingSupernodeIDsForBlock := task.GetNClosestSupernodeIDsToComparisonString(ctx, numberOfChallengersPerBlock, merkleroot, listOfSupernodes)
+	log.WithContext(ctx).Info("challengers have been selected")
 
 	//If we are in the sliceOfChallengingSupernodeIDsForBlock, we need to generate a storage challenge.  Otherwise we don't.
 	isMyNodeAChallenger := false
@@ -106,13 +119,15 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	}
 	challengingSupernodeID := task.nodeID
 
+	log.WithContext(ctx).Info("identifying the files to challenge")
 	// Identify which files should be challenged
 	comparisonStringForFileHashSelection := merkleroot + challengingSupernodeID
 	sliceOfFileHashesToChallenge := task.GetNClosestFileHashesToAGivenComparisonString(ctx, challengesPerSupernodePerBlock, comparisonStringForFileHashSelection, sliceOfFileHashesStoredByLocalSupernode)
-	sliceOfSupernodesToChallenge := make([]string, len(sliceOfFileHashesToChallenge))
+	log.WithContext(ctx).Info("files to challenge have been selected")
 
-	//log.WithContext(ctx).Infof("Challenging Supernode %s is now selecting file hashes to challenge this block, and then for each one, selecting which Supernode to challenge...", challengingSupernodeID)
-	// Identify which supernodes have our file
+	log.WithContext(ctx).Info("identifying supernodes to challenge the files")
+	// Identify which supernodes to challenge
+	sliceOfSupernodesToChallenge := make([]string, len(sliceOfFileHashesToChallenge))
 	for idx1, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
 		sliceOfSupernodesStoringFileHashExcludingChallenger := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, task.numberOfChallengeReplicas, currentFileHashToChallenge, task.nodeID)
 
@@ -123,6 +138,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		sliceOfSupernodesToChallenge[idx1] = respondingSupernodeIDs[0]
 	}
 	// challenge those supernodes (they become responder) for the hash selected
+	log.WithContext(ctx).Info("supernodes that will be challenged against the files have been selected")
 
 	for idx2, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
 		b, err := task.GetSymbolFileByKey(ctx, currentFileHashToChallenge, false)
@@ -173,6 +189,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		task.SaveChallengeMessageState(ctx, "sent", challengeID, challengingSupernodeID, currentBlockCount)
 	}
 
+	log.WithContext(ctx).Info("files have been challenged")
 	return nil
 }
 
@@ -220,15 +237,20 @@ func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashStri
 	if totalDataLengthInBytes < 200 {
 		return 0, int(totalDataLengthInBytes) - 1
 	}
+
+	//deciding the value of K (step)
+	//K = First Digit(last number in the previous block hash) Second Digit(first number in the previous block hash)
 	blockHashStringAsInt, _ := strconv.ParseInt(blockHashString, 16, 64)
 	blockHashStringAsIntStr := fmt.Sprint(blockHashStringAsInt)
 	stepSizeForIndicesStr := blockHashStringAsIntStr[len(blockHashStringAsIntStr)-1:] + blockHashStringAsIntStr[0:1]
 	stepSizeForIndices, _ := strconv.ParseUint(stepSizeForIndicesStr, 10, 32)
 	stepSizeForIndicesAsInt := int(stepSizeForIndices)
+
 	comparisonString := blockHashString + fileHashString + challengingSupernodeID
 	sliceOfXorDistancesOfIndicesToBlockHash := make([]uint64, 0)
 	sliceOfIndicesWithStepSize := make([]int, 0)
 	totalDataLengthInBytesAsInt := int(totalDataLengthInBytes)
+
 	for j := 0; j <= totalDataLengthInBytesAsInt; j += stepSizeForIndicesAsInt {
 		jAsString := fmt.Sprintf("%d", j)
 		currentXorDistance := utils.ComputeXorDistanceBetweenTwoStrings(jAsString, comparisonString)
@@ -248,15 +270,9 @@ func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashStri
 }
 
 func minMax(array []int) (int, int) {
-	var max = array[0]
-	var min = array[0]
-	for _, value := range array {
-		if max < value {
-			max = value
-		}
-		if min > value {
-			min = value
-		}
+	if array[0] > array[1] {
+		return array[1], array[0]
 	}
-	return min, max
+
+	return array[0], array[1]
 }
