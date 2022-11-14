@@ -23,17 +23,25 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 
 	// incoming challenge message validation
 	if err := task.validateProcessingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error validating storage challenge incoming data: ")
 		return nil, err
 	}
 
+	log.WithContext(ctx).Info("retrieving the file from hash")
 	// Get the file to hash
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingChallengeMessage.ChallengeFile.FileHashToChallenge, true)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not read file data in to memory")
 		return nil, err
 	}
+	log.WithContext(ctx).Info("challenge file has been retrieved")
+
 	// Get the hash of the chunk of the file we're supposed to hash
+	log.WithContext(ctx).Info("generating hash for the data against given indices")
 	challengeResponseHash := task.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex, incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex)
+	log.WithContext(ctx).Info("hash for data generated against the indices")
+
+	log.WithContext(ctx).Info("sending message to other SNs for verification")
 	challengeStatus := pb.StorageChallengeData_Status_RESPONDED
 	messageType := pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeId + incomingChallengeMessage.RespondingMasternodeId + incomingChallengeMessage.ChallengeFile.FileHashToChallenge + challengeStatus.String() + messageType.String() + incomingChallengeMessage.MerklerootWhenChallengeSent
@@ -57,8 +65,8 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		RespondingMasternodeId:       task.nodeID,
 		ChallengeFile: &pb.StorageChallengeDataChallengeFile{
 			FileHashToChallenge:      incomingChallengeMessage.ChallengeFile.FileHashToChallenge,
-			ChallengeSliceStartIndex: int64(incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex),
-			ChallengeSliceEndIndex:   int64(incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex),
+			ChallengeSliceStartIndex: incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex,
+			ChallengeSliceEndIndex:   incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex,
 		},
 		ChallengeSliceCorrectHash: "",
 		ChallengeResponseHash:     challengeResponseHash,
@@ -75,6 +83,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not send processed challenge message to verifying node")
 		return nil, err
 	}
+	log.WithContext(ctx).Info("message sent to other SNs for verification")
 
 	task.SaveChallengeMessageState(
 		ctx,

@@ -23,15 +23,20 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingChalleng
 		return nil, err
 	}
 
+	log.WithContext(ctx).Info("getting the file from hash to verify challenge")
 	//Get the file assuming we host it locally (if not, return)
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingChallengeMessage.ChallengeFile.FileHashToChallenge, true)
 	if err != nil {
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not read local file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
 		return nil, err
 	}
+	log.WithContext(ctx).Info("file has been retrieved for verification")
 
 	//Compute the hash of the data at the indicated byte range
+	log.WithContext(ctx).Info("generating hash for the data against given indices")
 	challengeCorrectHash := task.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex, incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex)
+	log.WithContext(ctx).Info("hash of the data has been generated against the given indices")
+
 	messageType := pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE
 	//Identify current block count to see if validation was performed within the mandated length of time (default one block)
 	blockNumChallengeVerified, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
@@ -45,6 +50,7 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingChalleng
 	var challengeStatus pb.StorageChallengeDataStatus
 	var saveStatus string
 
+	log.WithContext(ctx).Info("determining the challenge outcome based on calculated and received hash")
 	// determine success or failure
 	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (blocksVerifyStorageChallengeInBlocks <= task.storageChallengeExpiredBlocks) {
 		challengeStatus = pb.StorageChallengeData_Status_SUCCEEDED
