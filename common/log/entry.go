@@ -45,7 +45,9 @@ func (entry *Entry) WithError(err error) *Entry {
 
 // WithContext adds a context to the Entry.
 func (entry *Entry) WithContext(ctx context.Context) *Entry {
-	return &Entry{Entry: entry.Entry.WithContext(ctx), level: entry.level}
+	ent := &Entry{Entry: entry.Entry.WithContext(ctx), level: entry.level}
+	server := ctx.Value("server")
+	return ent.WithField("server_ip", server)
 }
 
 // WithDuration adds an field `duration` with value of the time elapsed since t.

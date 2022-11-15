@@ -49,7 +49,7 @@ type SCService struct {
 func (service *SCService) CheckNextBlockAvailable(ctx context.Context) bool {
 	blockCount, err := service.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
-		log.WithField("method", "checkNextBlockAvailable.GetBlockCount").Warn("could not get block count")
+		log.WithContext(ctx).WithField("method", "checkNextBlockAvailable.GetBlockCount").Warn("could not get block count")
 		return false
 	}
 	if blockCount > int32(service.currentBlockCount) {

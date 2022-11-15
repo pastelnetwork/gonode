@@ -349,8 +349,8 @@ func (service *RegisterNft) UploadImage(stream pb.RegisterNft_UploadImageServer)
 		}
 		hashFromPayload := hasher.Sum(nil)
 		if !bytes.Equal(hashFromPayload, hash) {
-			log.WithField("Filename", imageFile.Name()).Debugf("caculated from payload %s", base64.URLEncoding.EncodeToString(hashFromPayload))
-			log.WithField("Filename", imageFile.Name()).Debugf("sent by client %s", base64.URLEncoding.EncodeToString(hash))
+			log.WithContext(ctx).WithField("Filename", imageFile.Name()).Debugf("caculated from payload %s", base64.URLEncoding.EncodeToString(hashFromPayload))
+			log.WithContext(ctx).WithField("Filename", imageFile.Name()).Debugf("sent by client %s", base64.URLEncoding.EncodeToString(hash))
 			return errors.Errorf("wrong hash")
 		}
 
