@@ -199,7 +199,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 				}
 
 				if currentBlkCnt-baseBlkCnt >= int32(minConfirmation)+2 {
-					ch <- errors.Errorf("timeout when wating for confirmation of transaction %s", txid)
+					ch <- errors.Errorf("timeout when waiting for confirmation of transaction %s", txid)
 					return
 				}
 			}

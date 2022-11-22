@@ -170,7 +170,7 @@ func (pt *PastelHandler) WaitTxidValid(ctx context.Context, txID string, expecte
 			}
 
 			if currentBlkCnt-baseBlkCnt >= int32(expectedConfirms)+2 {
-				return errors.Errorf("timeout when wating for confirmation of transaction %s", txID)
+				return errors.Errorf("timeout when waiting for confirmation of transaction %s", txID)
 			}
 		}
 	}
