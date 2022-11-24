@@ -26,7 +26,6 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 		SCService     *SCService
 	}
 	type args struct {
-		ctx        context.Context
 		MerkleRoot string
 		PastelID   string
 	}
@@ -111,7 +110,7 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 				stateStorage:  defaultChallengeStateLogging{},
 			}
 
-			if err := task.GenerateStorageChallenges(tt.args.ctx); (err != nil) != tt.wantErr {
+			if err := task.GenerateStorageChallenges(context.Background()); (err != nil) != tt.wantErr {
 				t.Errorf("SCTask.GenerateStorageChallenges() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -126,7 +125,6 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 		SCService     *SCService
 	}
 	type args struct {
-		ctx                      context.Context
 		incomingChallengeMessage *pb.StorageChallengeData
 		PastelID                 string
 		MerkleRoot               string
@@ -227,7 +225,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 				stateStorage:  defaultChallengeStateLogging{},
 			}
 
-			if resp, err := task.ProcessStorageChallenge(tt.args.ctx, tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
+			if resp, err := task.ProcessStorageChallenge(context.Background(), tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
 				t.Errorf("SCTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
 				fmt.Println(resp)
 			}
@@ -243,7 +241,6 @@ func TestVerifyStorageChallenge(t *testing.T) {
 		SCService     *SCService
 	}
 	type args struct {
-		ctx                      context.Context
 		incomingChallengeMessage *pb.StorageChallengeData
 		PastelID                 string
 		MerkleRoot               string
@@ -404,7 +401,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 				stateStorage:  defaultChallengeStateLogging{},
 			}
 
-			if resp, err := task.VerifyStorageChallenge(tt.args.ctx, tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
+			if resp, err := task.VerifyStorageChallenge(context.Background(), tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
 				t.Errorf("SCTask.ProcessStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
 				fmt.Println(resp)
 			}

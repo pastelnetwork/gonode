@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 
@@ -89,7 +91,12 @@ func NewApp() *cli.App {
 
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
 		ctx = log.ContextWithPrefix(ctx, "app")
+		ip, err := utils.GetExternalIPAddress()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to fetch server ip")
+		}
 
+		ctx = log.ContextWithServer(ctx, ip)
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
 				return fmt.Errorf("error parsing supernode config file: %v", err)

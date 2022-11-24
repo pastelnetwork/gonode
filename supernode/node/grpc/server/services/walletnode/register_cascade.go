@@ -261,8 +261,8 @@ func (service *RegisterCascade) UploadAsset(stream pb.RegisterCascade_UploadAsse
 		}
 		hashFromPayload := hasher.Sum(nil)
 		if !bytes.Equal(hashFromPayload, hash) {
-			log.WithField("Filename", assetFile.Name()).Debugf("calculated from payload %s", base64.URLEncoding.EncodeToString(hashFromPayload))
-			log.WithField("Filename", assetFile.Name()).Debugf("sent by client %s", base64.URLEncoding.EncodeToString(hash))
+			log.WithContext(ctx).WithField("Filename", assetFile.Name()).Debugf("calculated from payload %s", base64.URLEncoding.EncodeToString(hashFromPayload))
+			log.WithContext(ctx).WithField("Filename", assetFile.Name()).Debugf("sent by client %s", base64.URLEncoding.EncodeToString(hash))
 			return errors.Errorf("wrong hash")
 		}
 
