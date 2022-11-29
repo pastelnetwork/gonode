@@ -188,6 +188,23 @@ func (service *SCService) GetListOfSupernode(ctx context.Context) ([]string, err
 	return ret, nil
 }
 
+//FilterOutSupernodes : FilterOutSupernodes gets the full list of supernodes and removes the nodesToBeIgnored
+func (service *SCService) FilterOutSupernodes(listOfSupernodes []string, nodesToBeIgnored []string) []string {
+	mapOfNodesToBeIgnored := make(map[string]bool)
+	for _, node := range nodesToBeIgnored {
+		mapOfNodesToBeIgnored[node] = true
+	}
+
+	var sliceOfNodesWithoutIgnoredNodes []string
+	for _, node := range listOfSupernodes {
+		if !mapOfNodesToBeIgnored[node] {
+			sliceOfNodesWithoutIgnoredNodes = append(sliceOfNodesWithoutIgnoredNodes, node)
+		}
+	}
+
+	return sliceOfNodesWithoutIgnoredNodes
+}
+
 // GetNClosestSupernodeIDsToComparisonString : Wrapper for a utility function that does xor string comparison to a list of strings and returns the smallest distance.
 func (service *SCService) GetNClosestSupernodeIDsToComparisonString(_ context.Context, n int, comparisonString string, listSupernodes []string, ignores ...string) []string {
 	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, listSupernodes, ignores...)

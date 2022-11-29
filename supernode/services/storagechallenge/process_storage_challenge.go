@@ -7,9 +7,9 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
-	"golang.org/x/crypto/sha3"
-
+	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
+	"golang.org/x/crypto/sha3"
 )
 
 //ProcessStorageChallenge consists of:
@@ -26,6 +26,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		log.WithContext(ctx).WithError(err).Error("Error validating storage challenge incoming data: ")
 		return nil, err
 	}
+	log.WithContext(ctx).WithField("incoming_challenge", incomingChallengeMessage).Info("Incoming challenge validated")
 
 	log.WithContext(ctx).Info("retrieving the file from hash")
 	// Get the file to hash
@@ -39,7 +40,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	// Get the hash of the chunk of the file we're supposed to hash
 	log.WithContext(ctx).Info("generating hash for the data against given indices")
 	challengeResponseHash := task.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex, incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex)
-	log.WithContext(ctx).Info("hash for data generated against the indices")
+	log.WithContext(ctx).Info(fmt.Sprintf("hash for data generated against the indices:%s", challengeResponseHash))
 
 	log.WithContext(ctx).Info("sending message to other SNs for verification")
 	challengeStatus := pb.StorageChallengeData_Status_RESPONDED
@@ -51,7 +52,9 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not get current block count")
 		return nil, err
 	}
+	log.WithContext(ctx).Info(fmt.Sprintf("block num challenge responded to:%d", blockNumChallengeRespondedTo))
 
+	log.WithContext(ctx).Info(fmt.Sprintf("NodeID:%s", task.nodeID))
 	//Create the message to be validated
 	outgoingChallengeMessage := &pb.StorageChallengeData{
 		MessageId:                    messageID,
@@ -79,8 +82,9 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(fmt.Sprintf("Supernode %s responded to storage challenge for file hash %s in %v blocks!", outgoingChallengeMessage.RespondingMasternodeId, outgoingChallengeMessage.ChallengeFile.FileHashToChallenge, blocksToRespondToStorageChallenge))
 
 	// send to Supernodes to validate challenge response hash
+	log.WithContext(ctx).WithField("challenge_id", outgoingChallengeMessage.ChallengeId).Info("sending challenge for verification")
 	if err = task.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage); err != nil {
-		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not send processed challenge message to verifying node")
+		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeId).Error("could not send processed challenge message to node for verification")
 		return nil, err
 	}
 	log.WithContext(ctx).Info("message sent to other SNs for verification")
@@ -115,38 +119,56 @@ func (task *SCTask) computeHashOfFileSlice(fileData []byte, challengeSliceStartI
 
 // Send our verification message to (default 10) other supernodes that might host this file.
 func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
-	//Get the <default 10> closest super node id's to the file hash.
-	sliceOfSupernodesStoringFileHashExcludingChallenger := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, task.numberOfVerifyingNodes, challengeMessage.ChallengeFile.FileHashToChallenge, task.nodeID)
-	//turn this into a map so we don't have to do 10n iterations through supernodes in case there are lots of supernodes
-	mapOfSupernodesStoringFHEC := make(map[string]bool)
-	// using bool instead of empty struct to make evaluation below easier to understand
-	for _, s := range sliceOfSupernodesStoringFileHashExcludingChallenger {
-		mapOfSupernodesStoringFHEC[s] = true
-	}
-
-	Supernodes, err := task.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
+	//Get the full list of supernodes
+	listOfSupernodes, err := task.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
 	if err != nil {
+		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendProcessStorageChallenge").WithError(err).Warn("could not get Supernode extra: ", err.Error())
 		return err
 	}
+	log.WithContext(ctx).Info(fmt.Sprintf("list of supernodes have been retrieved for process storage challenge:%s", listOfSupernodes))
 
-	SupernodeAddressesIgnoringThisNode := []string{}
-	for _, mn := range Supernodes {
-		//only find supernodes that aren't this one and that are within the ten closest to the file hash
-		if mn.ExtKey != task.nodeID && mapOfSupernodesStoringFHEC[mn.ExtKey] {
-			SupernodeAddressesIgnoringThisNode = append(SupernodeAddressesIgnoringThisNode, mn.ExtAddress)
+	//Filtering out the current node from the full list of supernodes
+	//turn this into a map, so we don't have to do n iterations through supernodes in case there are lots of supernodes
+	mapSupernodesWithoutCurrentNode := make(map[string]pastel.MasterNode)
+	//list of supernode ext keys without current node to find the 10 closest nodes
+	var sliceOfSupernodeKeysExceptCurrentNode []string
+	for _, mn := range listOfSupernodes {
+		if mn.ExtKey != task.nodeID && mn.ExtKey != challengeMessage.ChallengingMasternodeId {
+			mapSupernodesWithoutCurrentNode[mn.ExtKey] = mn
+			sliceOfSupernodeKeysExceptCurrentNode = append(sliceOfSupernodeKeysExceptCurrentNode, mn.ExtKey)
 		}
 	}
+	log.WithContext(ctx).Info(fmt.Sprintf("current node has been filtered out from the supernodes list:%s", sliceOfSupernodeKeysExceptCurrentNode))
+
+	//Finding 10 closest nodes to file hash
+	sliceOfSupernodesClosestToFileHashExcludingCurrentNode := task.GetNClosestSupernodeIDsToComparisonString(ctx, 10, challengeMessage.ChallengeFile.FileHashToChallenge, sliceOfSupernodeKeysExceptCurrentNode)
+	log.WithContext(ctx).Info(fmt.Sprintf("sliceOfSupernodesClosestToFileHashExcludingCurrentNode:%s", sliceOfSupernodesClosestToFileHashExcludingCurrentNode))
 
 	err = nil
 	// iterate through supernodes, connecting and sending the message
-	for _, nodeToConnectTo := range SupernodeAddressesIgnoringThisNode {
-		nodeClientConn, err := task.nodeClient.Connect(ctx, nodeToConnectTo)
+	for _, nodeToConnectTo := range sliceOfSupernodesClosestToFileHashExcludingCurrentNode {
+		log.WithContext(ctx).WithField("outgoing_message", challengeMessage).Info("outgoing message from ProcessStorageChallenge")
+
+		var mn pastel.MasterNode
+		var ok bool
+		if mn, ok = mapSupernodesWithoutCurrentNode[nodeToConnectTo]; !ok {
+			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendVerifyStorageChallenge").Warn(fmt.Sprintf("cannot get Supernode info of Supernode id %s", mapSupernodesWithoutCurrentNode))
+			continue
+		}
+		//We use the ExtAddress of the supernode to connect
+		processingSupernodeAddr := mn.ExtAddress
+		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending storage challenge for verification to processing supernode address: " + processingSupernodeAddr)
+
+		log.WithContext(ctx).Info(fmt.Sprintf("establishing connection with node: %s", processingSupernodeAddr))
+		nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
 		if err != nil {
-			err = fmt.Errorf("Could not use nodeclient to connect to: " + nodeToConnectTo)
-			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendprocessStorageChallenge").Warn(err.Error())
-			return err
+			log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Connection failed to establish with node: %s", processingSupernodeAddr))
+			continue
 		}
 		storageChallengeIF := nodeClientConn.StorageChallenge()
+		log.WithContext(ctx).Info(fmt.Sprintf("connection established with node:%s", nodeToConnectTo))
+
+		log.WithContext(ctx).Info(fmt.Sprintf("sending challenge message for verification to node:%s", nodeToConnectTo))
 		//Sends the verify storage challenge message to the connected verifying supernode
 		err = storageChallengeIF.VerifyStorageChallenge(ctx, challengeMessage)
 		if err != nil {
@@ -156,6 +178,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	if err == nil {
 		log.WithContext(ctx).Println("After calling storage process on " + challengeMessage.ChallengeId + " no nodes returned an error code in verification")
 	}
+
 	return err
 	//return s.actor.Send(ctx, s.domainActorID, newSendVerifyStorageChallengeMsg(ctx, verifierSupernodesAddr, challengeMessage))
 }

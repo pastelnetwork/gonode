@@ -91,31 +91,28 @@ func (service *StorageChallengeGRPC) Desc() *grpc.ServiceDesc {
 
 //ProcessStorageChallenge is the server side of storage challenge processing GRPC comms
 func (service *StorageChallengeGRPC) ProcessStorageChallenge(ctx context.Context, scRequest *pb.ProcessStorageChallengeRequest) (*pb.ProcessStorageChallengeReply, error) {
-	log.WithContext(ctx).WithField("req", scRequest).Info("Process Storage Challenge Request from gRpc client")
+	log.WithContext(ctx).WithField("req", scRequest).Info("Process Storage Challenge Request received from gRpc client")
 
 	task := service.NewSCTask()
-	data, err := task.ProcessStorageChallenge(ctx, scRequest.Data)
+	_, err := task.ProcessStorageChallenge(ctx, scRequest.Data)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Processing Storage Challenge from Server Side")
-		return nil, err
 	}
 
-	return &pb.ProcessStorageChallengeReply{Data: data}, nil
+	return &pb.ProcessStorageChallengeReply{}, nil
 }
 
-// Verify is the server side of storage challenge verification GRPC comms
-func (service *StorageChallengeGRPC) Verify(ctx context.Context, scRequest *pb.VerifyStorageChallengeRequest) (*pb.VerifyStorageChallengeReply, error) {
-	log.WithContext(ctx).WithField("req", scRequest).Debugf("Verify Storage Challenge Request")
-	task, err := service.TaskFromMD(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if task == nil {
-		return nil, errors.Errorf("Verify Storage Challenge couldn't find task")
-	}
-	data, err := task.VerifyStorageChallenge(ctx, scRequest.Data)
+// VerifyStorageChallenge is the server side of storage challenge verification GRPC comms
+func (service *StorageChallengeGRPC) VerifyStorageChallenge(ctx context.Context, scRequest *pb.VerifyStorageChallengeRequest) (*pb.VerifyStorageChallengeReply, error) {
+	log.WithContext(ctx).WithField("req", scRequest).Debugf("Verify Storage Challenge Request received from gRpc client")
+	task := service.NewSCTask()
 
-	return &pb.VerifyStorageChallengeReply{Data: data}, err
+	_, err := task.VerifyStorageChallenge(ctx, scRequest.Data)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error verifying storage challenge")
+	}
+
+	return &pb.VerifyStorageChallengeReply{}, nil
 }
 
 // NewStorageChallengeGRPC returns a new StorageChallenge instance.

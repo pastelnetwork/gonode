@@ -134,7 +134,8 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		comparisonStringForSupernodeSelection := merkleroot + currentFileHashToChallenge + challengingSupernodeID + utils.GetHashFromString(fmt.Sprint(idx1))
 		log.WithContext(ctx).Info(fmt.Sprintf("comparisonStringForSupernodeSelection:%s", comparisonStringForSupernodeSelection))
 
-		sliceOfSupernodesExceptChallengers := getNonChallengingSupernodes(listOfSupernodes, sliceOfChallengingSupernodeIDsForBlock)
+		//Filtering out the challenging nodes from the full list of supernodes
+		sliceOfSupernodesExceptChallengers := task.FilterOutSupernodes(listOfSupernodes, sliceOfChallengingSupernodeIDsForBlock)
 
 		respondingSupernodeIDs := task.GetNClosestSupernodeIDsToComparisonString(ctx, 1, comparisonStringForSupernodeSelection, sliceOfSupernodesExceptChallengers)
 		sliceOfSupernodesToChallenge[idx1] = respondingSupernodeIDs[0]
@@ -280,20 +281,4 @@ func minMax(array []int) (int, int) {
 	}
 
 	return array[0], array[1]
-}
-
-func getNonChallengingSupernodes(listOfSupernodes []string, listOfChallengers []string) []string {
-	mapOfChallengers := make(map[string]bool)
-	for _, challengerNode := range listOfChallengers {
-		mapOfChallengers[challengerNode] = true
-	}
-
-	var sliceOfNonChallengingSupernodes []string
-	for _, node := range listOfSupernodes {
-		if !mapOfChallengers[node] {
-			sliceOfNonChallengingSupernodes = append(sliceOfNonChallengingSupernodes, node)
-		}
-	}
-
-	return sliceOfNonChallengingSupernodes
 }
