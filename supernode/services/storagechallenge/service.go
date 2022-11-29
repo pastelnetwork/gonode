@@ -64,24 +64,27 @@ const defaultTimerBlockCheckDuration = 10 * time.Second
 
 // Run : storage challenge service will run continuously to generate storage challenges.
 func (service *SCService) Run(ctx context.Context) error {
-	ticker := time.NewTicker(defaultTimerBlockCheckDuration)
+	log.WithContext(ctx).Info("Storage challenge service run has been invoked")
 	//does this need to be in its own goroutine?
-	go service.RunHelper(ctx, service.config.PastelID, logPrefix)
-	defer ticker.Stop()
+	go func() {
+		if err := service.RunHelper(ctx, service.config.PastelID, logPrefix); err != nil {
+			log.WithContext(ctx).WithError(err).Error("StorageChallengeService:RunHelper")
+		}
+	}()
 
 	for {
 		select {
-		case <-ticker.C:
-			//log.Println("Ticker has ticked")
+		case <-time.After(defaultTimerBlockCheckDuration):
+			log.WithContext(ctx).Info("Ticker has ticked")
 
-			// if service.CheckNextBlockAvailable(ctx) {
-			// newCtx := context.Background()
-			// task := service.NewSCTask()
-			//task.GenerateStorageChallenges(newCtx)
-			//log.WithContext(ctx).Println("Would normally generate a storage challenge")
-			// } else {
-			//log.WithContext(ctx).Println("Block not available")
-			// }
+			if service.CheckNextBlockAvailable(ctx) {
+				newCtx := context.Background()
+				task := service.NewSCTask()
+				task.GenerateStorageChallenges(newCtx)
+				log.WithContext(ctx).Info("Would normally generate a storage challenge")
+			} else {
+				log.WithContext(ctx).Info("Block not available")
+			}
 		case <-ctx.Done():
 			log.Println("Context done being called in generatestoragechallenge loop in service.go")
 			return nil
@@ -94,6 +97,18 @@ func (service *SCService) NewSCTask() *SCTask {
 	task := NewSCTask(service)
 	service.Worker.AddTask(task)
 	return task
+}
+
+// Task returns the task of the Storage Challenge by the id
+func (service *SCService) Task(id string) *SCTask {
+	scTask, ok := service.Worker.Task(id).(*SCTask)
+	if !ok {
+		log.Error("Error typecasting task to storage challenge task")
+		return nil
+	}
+
+	log.Info("type casted successfully")
+	return scTask
 }
 
 // NewService : Create a new storage challenge service
@@ -121,10 +136,22 @@ func (service *SCService) ListSymbolFileKeysFromNFTTicket(ctx context.Context) (
 	if err != nil {
 		return keys, err
 	}
+	if len(regTickets) == 0 {
+		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no reg tickets retrieved")
+		return keys, nil
+	}
+
+	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Reg tickets retrieved")
 	for _, regTicket := range regTickets {
-		for _, key := range regTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs {
-			keys = append(keys, string(key))
+
+		decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+			continue
 		}
+
+		regTicket.RegTicketData.NFTTicketData = *decTicket
+		keys = append(keys, regTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs...)
 	}
 
 	return keys, nil

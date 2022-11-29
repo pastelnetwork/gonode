@@ -73,8 +73,12 @@ func (service *storageChallengeGRPCClient) ProcessStorageChallenge(ctx context.C
 	_, err := service.client.ProcessStorageChallenge(ctx, &pb.ProcessStorageChallengeRequest{
 		Data: challengeMessage,
 	})
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error sending request from storage challenge grpc client to server")
+		return err
+	}
 
-	return err
+	return nil
 }
 func (service *storageChallengeGRPCClient) VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
 	ctx = contextWithLogPrefix(ctx, service.conn.id)

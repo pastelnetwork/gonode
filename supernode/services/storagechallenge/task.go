@@ -31,11 +31,6 @@ func (task *SCTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.RemoveArtifacts)
 }
 
-// Task returns the task of the Storage Challenge by the id
-func (service *SCService) Task(id string) *SCTask {
-	return service.Worker.Task(id).(*SCTask)
-}
-
 // RemoveArtifacts : Cleanup function defined here, can be filled in later
 func (task *SCTask) RemoveArtifacts() {
 }
