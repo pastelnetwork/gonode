@@ -57,12 +57,14 @@ func (service *SuperNodeService) RunHelper(ctx context.Context, pastelID string,
 	for {
 		select {
 		case <-ctx.Done():
+			log.WithContext(ctx).Error("context done - closing sn service")
 			return nil
 		case <-time.After(5 * time.Second):
 			if err := service.run(ctx, pastelID, prefix); err != nil {
 				service.Worker = task.NewWorker()
 				log.WithContext(ctx).WithError(err).Error("Service run failed, retrying")
 			} else {
+				log.WithContext(ctx).Error("run service failed - closing sn service")
 				return nil
 			}
 		}

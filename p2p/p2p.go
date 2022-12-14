@@ -64,11 +64,13 @@ func (s *p2p) Run(ctx context.Context) error {
 // run the kademlia network
 func (s *p2p) run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
-
 	// configure the kademlia dht for p2p service
 	if err := s.configure(ctx); err != nil {
 		return errors.Errorf("configure kademlia dht: %w", err)
 	}
+
+	// close the store of kademlia network
+	defer s.store.Close(ctx)
 
 	// start the node for kademlia network
 	if err := s.dht.Start(ctx); err != nil {
@@ -83,13 +85,9 @@ func (s *p2p) run(ctx context.Context) error {
 	if err := s.dht.Bootstrap(ctx, s.config.BootstrapIPs); err != nil {
 		// stop the node for kademlia network
 		s.dht.Stop(ctx)
-		// close the store of kademlia network
-		s.store.Close(ctx)
 		return errors.Errorf("bootstrap the node: %w", err)
 	}
 	s.running = true
-
-	//go s.store.InitCleanup(ctx, 5*time.Minute)
 
 	log.P2P().WithContext(ctx).Info("p2p service is started")
 
@@ -98,9 +96,6 @@ func (s *p2p) run(ctx context.Context) error {
 
 	// stop the node for kademlia network
 	s.dht.Stop(ctx)
-
-	// close the store of kademlia network
-	s.store.Close(ctx)
 
 	log.P2P().WithContext(ctx).Info("p2p service is stopped")
 	return nil

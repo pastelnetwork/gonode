@@ -49,3 +49,10 @@ func String(strLength int, allowedChars string) (string, error) {
 
 	return out.String(), nil
 }
+
+// Number generates a random number within (0, max)
+func Number(max int64) int64 {
+	nBig, _ := rand.Int(rand.Reader, big.NewInt(max))
+
+	return nBig.Int64()
+}

@@ -135,6 +135,8 @@ func runApp(ctx context.Context, conf *config.Config) error {
 	hermesConfig := hermes.NewConfig()
 	hermesConfig.SNHost = conf.SNHost
 	hermesConfig.SNPort = conf.SNPort
+	hermesConfig.CreatorPastelID = conf.PastelID
+	hermesConfig.CreatorPastelIDPassphrase = conf.PassPhrase
 	hermesConfig.SetWorkDir(conf.DdWorkDir)
 
 	service, err := hermes.NewService(hermesConfig, pastelClient, nodeClient)

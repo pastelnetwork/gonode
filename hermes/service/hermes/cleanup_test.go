@@ -41,7 +41,6 @@ func TestCleanupInactiveTickets(t *testing.T) {
 				regTicketsReturns:    getRegTickets(),
 				actionTicketsReturns: getActionTickets(),
 			},
-			wantErr: errors.New("test"),
 		},
 
 		"action-tickets-err": {
@@ -51,7 +50,6 @@ func TestCleanupInactiveTickets(t *testing.T) {
 				regTicketsReturns:    getRegTickets(),
 				actionTicketsReturns: getActionTickets(),
 			},
-			wantErr: errors.New("test"),
 		},
 	}
 

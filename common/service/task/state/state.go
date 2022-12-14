@@ -3,6 +3,7 @@
 package state
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -36,6 +37,9 @@ type State interface {
 
 	//SetStateLog set the wallet node task status log to the state status log
 	SetStateLog(statusLog types.Fields)
+
+	// CloseHistoryDB closes history database
+	CloseHistoryDB(context.Context)
 }
 
 type state struct {
@@ -131,6 +135,12 @@ func (state *state) SubscribeStatus() func() <-chan *Status {
 
 func (state *state) SetStateLog(statusLog types.Fields) {
 	state.statusLog = statusLog
+}
+
+func (state *state) CloseHistoryDB(ctx context.Context) {
+	if state.store != nil {
+		state.store.CloseHistoryDB(ctx)
+	}
 }
 
 // New returns a new state instance.

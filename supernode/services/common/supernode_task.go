@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
@@ -31,6 +32,8 @@ func (task *SuperNodeTask) RunHelper(ctx context.Context, clean TaskCleanerFunc)
 	})
 
 	defer clean()
+	defer task.CloseHistoryDB(ctx)
+
 	return task.RunAction(ctx)
 }
 

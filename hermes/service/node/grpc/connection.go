@@ -18,6 +18,16 @@ func (conn *clientConn) HermesP2P() node.HermesP2PInterface {
 	return newHermesP2P(conn)
 }
 
+// RegisterNft implements node.ConnectionInterface.RegisterNft()
+func (conn *clientConn) RegisterNft() node.RegisterNftInterface {
+	return newRegisterNft(conn)
+}
+
+// DownloadNft implements node.ConnectionInterface.DownloadNft()
+func (conn *clientConn) DownloadNft() node.DownloadNftInterface {
+	return newDownloadNft(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.ConnectionInterface {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

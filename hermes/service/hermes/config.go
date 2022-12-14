@@ -1,6 +1,9 @@
 package hermes
 
-import "path/filepath"
+import (
+	"path/filepath"
+	"time"
+)
 
 const (
 	// DefaultInputDir that dd-service monitors for the new file to generate fingerprints
@@ -13,6 +16,12 @@ const (
 	// Should be ~/pastel_dupe_detection_service/support_files/registered_image_fingerprints_db.sqlite
 	DefaultSupportDir         = "support_files"
 	defaultActivationDeadline = 300
+
+	defaultNumberSuperNodes = 3
+
+	defaultConnectToNextNodeDelay = 400 * time.Millisecond
+	defaultAcceptNodesTimeout     = 600 * time.Second // = 3 * (2* ConnectToNodeTimeout)
+	defaultConnectToNodeTimeout   = time.Second * 20
 )
 
 // Config contains settings of the dupe detection service
@@ -33,6 +42,14 @@ type Config struct {
 	ActivationDeadline uint32 `mapstructure:"activation_deadline" json:"activation_deadline,omitempty"`
 	SNHost             string `mapstructure:"sn_host" json:"sn_host"`
 	SNPort             int    `mapstructure:"sn_port" json:"sn_port"`
+
+	NumberSuperNodes int
+
+	ConnectToNodeTimeout      time.Duration
+	ConnectToNextNodeDelay    time.Duration
+	AcceptNodesTimeout        time.Duration
+	CreatorPastelID           string
+	CreatorPastelIDPassphrase string
 }
 
 // SetWorkDir applies `workDir` to OutputDir and InputDir if they were
@@ -59,5 +76,10 @@ func NewConfig() *Config {
 		SupportDir:         DefaultSupportDir,
 		DataFile:           DefaultDataFile,
 		ActivationDeadline: defaultActivationDeadline,
+		NumberSuperNodes:   defaultNumberSuperNodes,
+
+		ConnectToNodeTimeout:   defaultConnectToNodeTimeout,
+		ConnectToNextNodeDelay: defaultConnectToNextNodeDelay,
+		AcceptNodesTimeout:     defaultAcceptNodesTimeout,
 	}
 }

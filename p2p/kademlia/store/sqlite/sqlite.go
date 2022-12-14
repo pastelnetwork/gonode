@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -28,6 +29,7 @@ type Store struct {
 
 	// for stats
 	dbFilePath string
+	rwMtx      *sync.RWMutex
 }
 
 // Record is a data record
@@ -43,7 +45,9 @@ type Record struct {
 
 // NewStore returns a new store
 func NewStore(ctx context.Context, dataDir string, replicate time.Duration, republish time.Duration) (*Store, error) {
-	s := &Store{}
+	s := &Store{
+		rwMtx: &sync.RWMutex{},
+	}
 
 	log.P2P().WithContext(ctx).Debugf("p2p data dir: %v", dataDir)
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
@@ -75,6 +79,9 @@ func NewStore(ctx context.Context, dataDir string, replicate time.Duration, repu
 }
 
 func (s *Store) checkStore() bool {
+	s.rwMtx.RLock()
+	defer s.rwMtx.RUnlock()
+
 	query := `SELECT name FROM sqlite_master WHERE type='table' AND name='data'`
 	var name string
 	err := s.db.Get(&name, query)
@@ -102,6 +109,9 @@ func (s *Store) migrate() error {
 
 // Store will store a key/value pair for the local node
 func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
+	s.rwMtx.Lock()
+	defer s.rwMtx.Unlock()
+
 	hkey := hex.EncodeToString(key)
 
 	now := time.Now().UTC()
@@ -122,6 +132,9 @@ func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
 
 // Retrieve will return the local key/value if it exists
 func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
+	s.rwMtx.RLock()
+	defer s.rwMtx.RUnlock()
+
 	hkey := hex.EncodeToString(key)
 
 	r := Record{}
@@ -134,6 +147,9 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 
 // Delete a key/value pair from the Store
 func (s *Store) Delete(ctx context.Context, key []byte) {
+	s.rwMtx.Lock()
+	defer s.rwMtx.Unlock()
+
 	hkey := hex.EncodeToString(key)
 
 	res, err := s.db.Exec("DELETE FROM data WHERE key = ?", hkey)
@@ -152,6 +168,9 @@ func (s *Store) Delete(ctx context.Context, key []byte) {
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
 func (s *Store) GetKeysForReplication(ctx context.Context) [][]byte {
+	s.rwMtx.Lock()
+	defer s.rwMtx.Unlock()
+
 	now := time.Now().UTC()
 	after := now.Add(-s.replicateInterval).UTC()
 
@@ -211,6 +230,9 @@ func (s *Store) Stats(ctx context.Context) (map[string]interface{}, error) {
 
 // Count the records in store
 func (s *Store) Count(_ context.Context /*, type RecordType*/) (int, error) {
+	s.rwMtx.RLock()
+	defer s.rwMtx.RUnlock()
+
 	var count int
 	err := s.db.Get(&count, `SELECT COUNT(*) FROM data`)
 	if err != nil {
@@ -222,6 +244,9 @@ func (s *Store) Count(_ context.Context /*, type RecordType*/) (int, error) {
 
 // DeleteAll the records in store
 func (s *Store) DeleteAll(_ context.Context /*, type RecordType*/) error {
+	s.rwMtx.Lock()
+	defer s.rwMtx.Unlock()
+
 	res, err := s.db.Exec("DELETE FROM data")
 	if err != nil {
 		return fmt.Errorf("cannot delete ALL records: %w", err)

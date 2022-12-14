@@ -7,31 +7,26 @@ import (
 	"math"
 	"math/rand"
 
+	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/service/hermes/store"
+
 	"os"
 	"testing"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/stretchr/testify/assert"
 )
 
-const createTableStatement = `CREATE TABLE image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text PRIMARY KEY, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text, open_api_subset_id_string text)`
-
-func prepareService(_ *testing.T) *service {
+func prepareService(t *testing.T) *service {
 	tmpfile, err := ioutil.TempFile("", "dupe_detection_image_fingerprint_database.sqlite")
 	if err != nil {
 		panic(err.Error())
 	}
-
-	db, err := sqlx.Connect("sqlite3", tmpfile.Name())
-	if err != nil {
-		panic(err.Error())
-	}
-
-	db.MustExec(createTableStatement)
+	store, err := store.NewSQLiteStore(tmpfile.Name())
+	assert.Nil(t, err)
 
 	tmpfile.Close()
 
@@ -39,8 +34,8 @@ func prepareService(_ *testing.T) *service {
 		config: &Config{
 			DataFile: tmpfile.Name(),
 		},
+		store: store,
 	}
-	s.db = db
 
 	return s
 }
@@ -53,12 +48,12 @@ func randFloats(n int) []float64 {
 	return res
 }
 
-func generateFingerprint(_ *testing.T) *dupeDetectionFingerprints {
+func generateFingerprint(_ *testing.T) *domain.DDFingerprints {
 	fps := randFloats(1500)
 
 	b := make([]byte, 10)
 	rand.Read(b)
-	return &dupeDetectionFingerprints{
+	return &domain.DDFingerprints{
 		Sha256HashOfArtImageFile:           hex.EncodeToString(b),
 		ImageFingerprintVector:             fps,
 		DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
@@ -67,39 +62,36 @@ func generateFingerprint(_ *testing.T) *dupeDetectionFingerprints {
 
 func TestGetEmptyFingerprint(t *testing.T) {
 	s := prepareService(t)
-	defer s.db.Close()
 	defer os.Remove(s.config.DataFile)
 
-	emptyFp, err := s.getLatestFingerprint(context.Background())
+	emptyFp, err := s.store.GetLatestFingerprints(context.Background())
 	assert.True(t, emptyFp == nil)
 	assert.Equal(t, err.Error(), "dd database is empty")
 }
 
 func TestSetFingerprint(t *testing.T) {
 	s := prepareService(t)
-	defer s.db.Close()
 	defer os.Remove(s.config.DataFile)
 
-	err := s.storeFingerprint(context.Background(), generateFingerprint(t))
+	err := s.store.StoreFingerprint(context.Background(), generateFingerprint(t))
 	assert.True(t, err == nil)
 }
 
 func TestGetSetFingerprint(t *testing.T) {
 	s := prepareService(t)
-	defer s.db.Close()
 	defer os.Remove(s.config.DataFile)
 
 	setFp := generateFingerprint(t)
 	ctx := context.Background()
-	err := s.storeFingerprint(ctx, setFp)
+	err := s.store.StoreFingerprint(ctx, setFp)
 
 	assert.True(t, err == nil)
 
-	getFp, err := s.getLatestFingerprint(ctx)
+	getFp, err := s.store.GetLatestFingerprints(ctx)
 
 	assert.True(t, err == nil)
 
-	findFp, err := s.checkIfFingerprintExistsInDatabase(ctx, setFp.Sha256HashOfArtImageFile)
+	findFp, err := s.store.IfFingerprintExists(ctx, setFp.Sha256HashOfArtImageFile)
 
 	assert.True(t, err == nil)
 	assert.True(t, getFp != nil)
@@ -107,14 +99,13 @@ func TestGetSetFingerprint(t *testing.T) {
 	assert.Equal(t, setFp.ImageFingerprintVector, getFp.ImageFingerprintVector)
 	assert.True(t, findFp)
 
-	findFp, err = s.checkIfFingerprintExistsInDatabase(ctx, "blahblah")
+	findFp, err = s.store.IfFingerprintExists(ctx, "blahblah")
 	assert.True(t, err == nil)
 	assert.False(t, findFp)
 }
 
 func TestWaitSynchronizationSuccessful(t *testing.T) {
 	s := prepareService(t)
-	defer s.db.Close()
 	defer os.Remove(s.config.DataFile)
 
 	status := &pastel.MasterNodeStatus{
@@ -131,7 +122,6 @@ func TestWaitSynchronizationSuccessful(t *testing.T) {
 
 func TestWaitSynchronizationTimeout(t *testing.T) {
 	s := prepareService(t)
-	defer s.db.Close()
 	defer os.Remove(s.config.DataFile)
 
 	status := &pastel.MasterNodeStatus{
@@ -148,7 +138,6 @@ func TestWaitSynchronizationTimeout(t *testing.T) {
 
 func TestWaitSynchronizationError(t *testing.T) {
 	s := prepareService(t)
-	defer s.db.Close()
 	defer os.Remove(s.config.DataFile)
 	errMsg := "timeout expired"
 

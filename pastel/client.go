@@ -114,6 +114,15 @@ func (client *client) FindTicketByID(ctx context.Context, pastelID string) (*IDT
 	return &ticket, nil
 }
 
+func (client *client) IncrementPoseBanScore(ctx context.Context, txid string, index int) error {
+	res := make(map[string]interface{})
+	if err := client.callFor(ctx, &res, "masternode", "pose-ban-score", "increment", txid, index); err != nil {
+		return errors.Errorf("failed to increment pose-ban-score: %w", err)
+	}
+
+	return nil
+}
+
 // TicketOwnership implements pastel.Client.TicketOwnership
 func (client *client) TicketOwnership(ctx context.Context, txID, pastelID, passphrase string) (string, error) {
 	var ownership struct {

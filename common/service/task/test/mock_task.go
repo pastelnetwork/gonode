@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/common/service/task/mocks"
@@ -31,6 +32,9 @@ const (
 
 	// RequiredStatusMethod represents RequiredStatus name method
 	RequiredStatusMethod = "RequiredStatus"
+
+	// CloseHistoryDBMethod represent close history method
+	CloseHistoryDBMethod = "CloseHistoryDB"
 )
 
 //Task implementing task.Task mock for testing purpose
@@ -45,6 +49,11 @@ func NewMockTask(t *testing.T) *Task {
 		t:    t,
 		Task: &mocks.Task{},
 	}
+}
+
+// ListenOnCloseHistoryDB listens on close history db
+func (task *Task) ListenOnCloseHistoryDB(_ context.Context) {
+	task.On(CloseHistoryDBMethod).Return()
 }
 
 // ListenOnID listening ID call and returns task id from args

@@ -123,11 +123,12 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 }
 
 // GetTaskHistory - Gets a task's history
-func (service *SenseAPIHandler) GetTaskHistory(_ context.Context, p *sense.GetTaskHistoryPayload) (res []*sense.TaskHistory, err error) {
+func (service *SenseAPIHandler) GetTaskHistory(ctx context.Context, p *sense.GetTaskHistoryPayload) (res []*sense.TaskHistory, err error) {
 	store, err := local.OpenHistoryDB()
 	if err != nil {
 		return nil, sense.MakeInternalServerError(errors.New("error retrieving status"))
 	}
+	defer store.CloseHistoryDB(ctx)
 
 	statuses, err := store.QueryTaskHistory(p.TaskID)
 	if err != nil {
