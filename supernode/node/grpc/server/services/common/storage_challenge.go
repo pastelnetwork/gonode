@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/proto"
 	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 	"google.golang.org/grpc/metadata"
@@ -32,13 +33,17 @@ func (service *StorageChallenge) SessID(ctx context.Context) (string, bool) {
 func (service *StorageChallenge) TaskFromMD(ctx context.Context) (*storagechallenge.SCTask, error) {
 	sessID, ok := service.SessID(ctx)
 	if !ok {
+		log.WithContext(ctx).Error("Error not a valid session id")
+
 		return nil, errors.New("not found sessID in metadata")
 	}
 
 	task := service.Task(sessID)
 	if task == nil {
+		log.WithContext(ctx).Error("task not found")
 		return nil, errors.Errorf("not found %q task", sessID)
 	}
+
 	return task, nil
 }
 
