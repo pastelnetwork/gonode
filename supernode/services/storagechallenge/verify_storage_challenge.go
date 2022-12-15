@@ -17,8 +17,7 @@ import (
 //  	Compute the hash of the data at the indicated byte range
 //		If the hash is correct and within the given byte range, success is indicated otherwise failure is indicated via SaveChallengeMessageState
 func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
-	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(incomingChallengeMessage.MessageType)
-	// Incoming challenge message validation
+	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug("Start verifying storage challenge") // Incoming challenge message validation
 	if err := task.validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
 		return nil, err
 	}
