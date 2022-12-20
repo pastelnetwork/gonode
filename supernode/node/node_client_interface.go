@@ -90,7 +90,7 @@ type StorageChallengeInterface interface {
 
 	ProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error
 
-	VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error
+	VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error)
 }
 
 // ProcessUserdataInterface represents an interaction stream with supernodes for sending userdata.

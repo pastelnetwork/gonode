@@ -1,6 +1,7 @@
 package test
 
 import (
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/supernode/node/mocks"
@@ -82,8 +83,8 @@ func (client *Client) ListenOnProcessStorageChallengeFunc(returnErr error) *Clie
 }
 
 // ListenOnVerifyStorageChallengeFunc returns returnErr
-func (client *Client) ListenOnVerifyStorageChallengeFunc(returnErr error) *Client {
-	client.StorageChallengeInterface.On(VerifyStorageChallengeMethod, mock.Anything, mock.Anything).Return(returnErr)
+func (client *Client) ListenOnVerifyStorageChallengeFunc(data *pb.StorageChallengeData, returnErr error) *Client {
+	client.StorageChallengeInterface.On(VerifyStorageChallengeMethod, mock.Anything, mock.Anything).Return(data, returnErr)
 
 	return client
 }

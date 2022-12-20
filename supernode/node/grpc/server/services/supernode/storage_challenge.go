@@ -89,7 +89,7 @@ func (service *StorageChallengeGRPC) Desc() *grpc.ServiceDesc {
 	return &pb.StorageChallenge_ServiceDesc
 }
 
-//ProcessStorageChallenge is the server side of storage challenge processing GRPC comms
+// ProcessStorageChallenge is the server side of storage challenge processing GRPC comms
 func (service *StorageChallengeGRPC) ProcessStorageChallenge(ctx context.Context, scRequest *pb.ProcessStorageChallengeRequest) (*pb.ProcessStorageChallengeReply, error) {
 	log.WithContext(ctx).WithField("req", scRequest).Info("Process Storage Challenge Request received from gRpc client")
 
@@ -107,12 +107,12 @@ func (service *StorageChallengeGRPC) VerifyStorageChallenge(ctx context.Context,
 	log.WithContext(ctx).WithField("req", scRequest).Debugf("Verify Storage Challenge Request received from gRpc client")
 	task := service.NewSCTask()
 
-	_, err := task.VerifyStorageChallenge(ctx, scRequest.Data)
+	data, err := task.VerifyStorageChallenge(ctx, scRequest.Data)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error verifying storage challenge")
 	}
 
-	return &pb.VerifyStorageChallengeReply{}, nil
+	return &pb.VerifyStorageChallengeReply{Data: data}, nil
 }
 
 // NewStorageChallengeGRPC returns a new StorageChallenge instance.

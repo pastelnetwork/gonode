@@ -5,19 +5,29 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"sync"
+
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"golang.org/x/crypto/sha3"
 )
 
-//ProcessStorageChallenge consists of:
-//	 Getting the file,
-//   Hashing the indicated portion of the file ("responding"),
-//   Identifying the proper validators,
-//   Sending the response to all other supernodes
-//	 Saving challenge state
+const (
+	//ChallengeFailuresThreshold is a threshold which when exceeds will send the challenge for self-healing
+	ChallengeFailuresThreshold = 5
+)
+
+// ProcessStorageChallenge consists of:
+//
+//	Getting the file,
+//	Hashing the indicated portion of the file ("responding"),
+//	Identifying the proper validators,
+//	Sending the response to all other supernodes
+//	Saving challenge state
 func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
 	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug("Start processing storage challenge")
 
@@ -144,13 +154,20 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	sliceOfSupernodesClosestToFileHashExcludingCurrentNode := task.GetNClosestSupernodeIDsToComparisonString(ctx, 10, challengeMessage.ChallengeFile.FileHashToChallenge, sliceOfSupernodeKeysExceptCurrentNode)
 	log.WithContext(ctx).Info(fmt.Sprintf("sliceOfSupernodesClosestToFileHashExcludingCurrentNode:%s", sliceOfSupernodesClosestToFileHashExcludingCurrentNode))
 
+	var (
+		countOfFailures  int
+		wg               sync.WaitGroup
+		responseMessages []pb.StorageChallengeData
+	)
 	err = nil
 	// iterate through supernodes, connecting and sending the message
 	for _, nodeToConnectTo := range sliceOfSupernodesClosestToFileHashExcludingCurrentNode {
 		log.WithContext(ctx).WithField("outgoing_message", challengeMessage).Info("outgoing message from ProcessStorageChallenge")
 
-		var mn pastel.MasterNode
-		var ok bool
+		var (
+			mn pastel.MasterNode
+			ok bool
+		)
 		if mn, ok = mapSupernodesWithoutCurrentNode[nodeToConnectTo]; !ok {
 			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendVerifyStorageChallenge").Warn(fmt.Sprintf("cannot get Supernode info of Supernode id %s", mapSupernodesWithoutCurrentNode))
 			continue
@@ -170,13 +187,57 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 
 		log.WithContext(ctx).Info(fmt.Sprintf("sending challenge message for verification to node:%s", nodeToConnectTo))
 		//Sends the verify storage challenge message to the connected verifying supernode
-		err = storageChallengeIF.VerifyStorageChallenge(ctx, challengeMessage)
-		if err != nil {
-			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("verifierSuperNodeAddress", nodeToConnectTo).Warn("Storage challenge verification failed or didn't process: ", err.Error())
-		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			res, err := storageChallengeIF.VerifyStorageChallenge(ctx, challengeMessage)
+			if err != nil {
+				log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("verifierSuperNodeAddress", nodeToConnectTo).Warn("Storage challenge verification failed or didn't process: ", err.Error())
+				return
+			}
+
+			responseMessages = append(responseMessages, *res)
+			log.WithContext(ctx).WithField("challenge_id", res.ChallengeId).
+				Info("response has been received from verifying node")
+		}()
+		wg.Wait()
 	}
 	if err == nil {
 		log.WithContext(ctx).Println("After calling storage process on " + challengeMessage.ChallengeId + " no nodes returned an error code in verification")
+	}
+
+	//Counting the number of challenges being failed by verifying nodes.
+	var responseMessage pb.StorageChallengeData
+	for _, responseMessage = range responseMessages {
+		if responseMessage.ChallengeStatus == pb.StorageChallengeData_Status_FAILED_INCORRECT_RESPONSE {
+			countOfFailures++
+		}
+	}
+
+	if countOfFailures >= ChallengeFailuresThreshold {
+		//Storing to DB for inspection by Self healing
+		log.WithContext(ctx).Info(fmt.Sprintf("Storage challenge total no of failures exceeds than:%d", ChallengeFailuresThreshold))
+
+		store, err := local.OpenHistoryDB()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		}
+		defer store.CloseHistoryDB(ctx)
+
+		log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
+		failedChallenge := types.FailedStorageChallenge{
+			ChallengeID:    responseMessage.ChallengeId,
+			Status:         types.CreatedStatus.String(),
+			FileHash:       challengeMessage.ChallengeFile.FileHashToChallenge,
+			RespondingNode: task.nodeID,
+		}
+
+		_, err = store.InsertFailedStorageChallenges(failedChallenge)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+		}
+
 	}
 
 	return err

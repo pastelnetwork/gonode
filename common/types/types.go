@@ -41,16 +41,58 @@ type TaskHistory struct {
 	Details   *Details
 }
 
-//Fields represents status log
+// SelfHealingStatus represents possible self-healing statuses of failed challenge
+type SelfHealingStatus int
+
+const (
+	//UndefinedStatus represents invalid status for self-healing operation
+	UndefinedStatus SelfHealingStatus = iota
+	//CreatedStatus represents when the failed challenge gets stored in DB
+	CreatedStatus
+	//InProgressStatus represents when the challenge is retrieved for self-healing inspection
+	InProgressStatus
+	//CompletedStatus represents when the reconstruction has been completed
+	CompletedStatus
+)
+
+// selfHealingStatusMap represents a map of self-healing statuses
+var selfHealingStatusMap = map[SelfHealingStatus]string{
+	CreatedStatus:    "Created",
+	InProgressStatus: "InProgress",
+	CompletedStatus:  "Completed",
+}
+
+// String returns the string for self-healing status
+func (s SelfHealingStatus) String() string {
+	if status, ok := selfHealingStatusMap[s]; ok {
+		return status
+	}
+
+	return "Undefined"
+}
+
+// FailedStorageChallenge represents failed storage challenge
+type FailedStorageChallenge struct {
+	ID                     int64
+	ChallengeID            string
+	FileHash               string
+	RespondingNode         string
+	FileReconstructingNode string
+	Status                 string
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
+}
+
+// Fields represents status log
 type Fields map[string]interface{}
 
-//Details represents status log details with additional fields
+// Details represents status log details with additional fields
 type Details struct {
 	Message string
 	Fields  Fields
 }
 
-//Stringify convert the Details' struct to stringify json
+// Stringify convert the Details' struct to stringify json
 func (d *Details) Stringify() string {
 	details, err := json.Marshal(&d)
 	if err != nil {
@@ -61,7 +103,7 @@ func (d *Details) Stringify() string {
 	return string(details)
 }
 
-//NewDetails initializes and return the valid detail object
+// NewDetails initializes and return the valid detail object
 func NewDetails(msg string, fields Fields) *Details {
 	return &Details{
 		Message: msg,
@@ -69,7 +111,7 @@ func NewDetails(msg string, fields Fields) *Details {
 	}
 }
 
-//IsValid checks if the status log map is not empty
+// IsValid checks if the status log map is not empty
 func (f Fields) IsValid() bool {
 	return len(f) != 0
 }

@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -108,7 +108,7 @@ func NewApp() *cli.App {
 		}
 
 		if config.Quiet {
-			log.SetOutput(ioutil.Discard)
+			log.SetOutput(io.Discard)
 		} else {
 			log.SetOutput(app.Writer)
 		}
