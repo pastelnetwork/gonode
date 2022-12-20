@@ -100,7 +100,7 @@ func (s *service) run(ctx context.Context) error {
 	log.WithContext(ctx).Info("connection established with SN-Service")
 
 	group, gctx := errgroup.WithContext(ctx)
-	/*group.Go(func() error {
+	group.Go(func() error {
 		return s.runTask(gctx)
 	})
 
