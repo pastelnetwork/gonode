@@ -80,15 +80,14 @@ func (service *storageChallengeGRPCClient) ProcessStorageChallenge(ctx context.C
 
 	return nil
 }
-func (service *storageChallengeGRPCClient) VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
+func (service *storageChallengeGRPCClient) VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
 	ctx = contextWithLogPrefix(ctx, service.conn.id)
 	ctx = contextWithMDSessID(ctx, service.sessID)
-	_, err := service.client.VerifyStorageChallenge(ctx, &pb.VerifyStorageChallengeRequest{
+	res, err := service.client.VerifyStorageChallenge(ctx, &pb.VerifyStorageChallengeRequest{
 		Data: challengeMessage,
 	})
 
-	return err
-
+	return res.Data, err
 }
 
 func newStorageChallengeGRPCClient(conn *clientConn) node.StorageChallengeInterface {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
@@ -23,6 +24,18 @@ const createTaskHistory string = `
   );`
 
 const alterTaskHistory string = `ALTER TABLE task_history ADD COLUMN details TEXT;`
+
+const createFailedStorageChallenges string = `
+  CREATE TABLE IF NOT EXISTS failed_storage_challenges (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  challenge_id TEXT NOT NULL,
+  file_hash TEXT NOT NULL,
+  status TEXT NOT NULL,
+  responding_node TEXT NOT NULL,
+  file_reconstructing_node TEXT,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL                                                  
+  );`
 
 const (
 	historyDBName = "history.db"
@@ -96,6 +109,24 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 	return data, nil
 }
 
+// InsertFailedStorageChallenges inserts failed storage challenges
+func (s *SQLiteStore) InsertFailedStorageChallenges(challenge types.FailedStorageChallenge) (hID int, err error) {
+	now := time.Now()
+	const insertQuery = "INSERT INTO failed_storage_challenges(id, challenge_id, file_hash, status, responding_node, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?);"
+
+	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.FileHash, challenge.Status, challenge.RespondingNode, now, now)
+	if err != nil {
+		return 0, err
+	}
+
+	var id int64
+	if id, err = res.LastInsertId(); err != nil {
+		return 0, err
+	}
+
+	return int(id), nil
+}
+
 // OpenHistoryDB opens history DB
 func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	dbFile := filepath.Join(configurer.DefaultPath(), historyDBName)
@@ -105,6 +136,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createTaskHistory); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createFailedStorageChallenges); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 

@@ -45,7 +45,7 @@ type SCService struct {
 	challengeStatusObserver SaveChallengeState
 }
 
-//CheckNextBlockAvailable calls pasteld and checks if a new block is available
+// CheckNextBlockAvailable calls pasteld and checks if a new block is available
 func (service *SCService) CheckNextBlockAvailable(ctx context.Context) bool {
 	blockCount, err := service.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
@@ -112,7 +112,8 @@ func (service *SCService) Task(id string) *SCTask {
 }
 
 // NewService : Create a new storage challenge service
-//  Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
+//
+//	Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client, rqClient rqnode.ClientInterface, challengeStatusObserver SaveChallengeState) *SCService {
 	return &SCService{
 		config:                        config,
@@ -129,7 +130,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 
 //utils below that call pasteld or p2p - mostly just wrapping other functions in better names
 
-//ListSymbolFileKeysFromNFTTicket : Get an NFT Ticket's associated raptor q ticket file id's.  These can then be accessed through p2p.
+// ListSymbolFileKeysFromNFTTicket : Get an NFT Ticket's associated raptor q ticket file id's.  These can then be accessed through p2p.
 func (service *SCService) ListSymbolFileKeysFromNFTTicket(ctx context.Context) ([]string, error) {
 	var keys = make([]string, 0)
 	regTickets, err := service.SuperNodeService.PastelClient.RegTickets(ctx)
@@ -167,12 +168,12 @@ func (service *SCService) StoreSymbolFile(ctx context.Context, data []byte) (key
 	return service.P2PClient.Store(ctx, data)
 }
 
-//RemoveSymbolFileByKey : Wrapper for p2p file storage service - removes a file from kademlia based on its key
+// RemoveSymbolFileByKey : Wrapper for p2p file storage service - removes a file from kademlia based on its key
 func (service *SCService) RemoveSymbolFileByKey(ctx context.Context, key string) error {
 	return service.P2PClient.Delete(ctx, key)
 }
 
-//GetListOfSupernode : Access the supernode service to get a list of all supernodes, including their id's and addresses.
+// GetListOfSupernode : Access the supernode service to get a list of all supernodes, including their id's and addresses.
 // This is used to enumerate supernodes both for calculation and connection
 func (service *SCService) GetListOfSupernode(ctx context.Context) ([]string, error) {
 	var ret = make([]string, 0)
@@ -188,7 +189,7 @@ func (service *SCService) GetListOfSupernode(ctx context.Context) ([]string, err
 	return ret, nil
 }
 
-//FilterOutSupernodes : FilterOutSupernodes gets the full list of supernodes and removes the nodesToBeIgnored
+// FilterOutSupernodes : FilterOutSupernodes gets the full list of supernodes and removes the nodesToBeIgnored
 func (service *SCService) FilterOutSupernodes(listOfSupernodes []string, nodesToBeIgnored []string) []string {
 	mapOfNodesToBeIgnored := make(map[string]bool)
 	for _, node := range nodesToBeIgnored {

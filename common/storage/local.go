@@ -10,5 +10,6 @@ import (
 type LocalStoreInterface interface {
 	InsertTaskHistory(history types.TaskHistory) (int, error)
 	QueryTaskHistory(taskID string) (history []types.TaskHistory, err error)
+	InsertFailedStorageChallenges(challenge types.FailedStorageChallenge) (hID int, err error)
 	CloseHistoryDB(ctx context.Context)
 }
