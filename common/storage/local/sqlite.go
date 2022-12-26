@@ -109,8 +109,8 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 	return data, nil
 }
 
-// InsertFailedStorageChallenges inserts failed storage challenges
-func (s *SQLiteStore) InsertFailedStorageChallenges(challenge types.FailedStorageChallenge) (hID int, err error) {
+// InsertFailedStorageChallenge inserts failed storage challenge to db
+func (s *SQLiteStore) InsertFailedStorageChallenge(challenge types.FailedStorageChallenge) (hID int, err error) {
 	now := time.Now()
 	const insertQuery = "INSERT INTO failed_storage_challenges(id, challenge_id, file_hash, status, responding_node, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?);"
 
@@ -125,6 +125,40 @@ func (s *SQLiteStore) InsertFailedStorageChallenges(challenge types.FailedStorag
 	}
 
 	return int(id), nil
+}
+
+// QueryFailedStorageChallenges retrieves failed challenges stored in DB for self-healing
+func (s *SQLiteStore) QueryFailedStorageChallenges() (challenges []types.FailedStorageChallenge, err error) {
+	const selectQuery = "SELECT * FROM failed_storage_challenges WHERE status = ?"
+	rows, err := s.db.Query(selectQuery, types.CreatedSelfHealingStatus)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		challenge := types.FailedStorageChallenge{}
+		err = rows.Scan(&challenge.ID, &challenge.ChallengeID, &challenge.FileHash, &challenge.Status,
+			&challenge.RespondingNode, challenge.CreatedAt, challenge.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		challenges = append(challenges, challenge)
+	}
+
+	return challenges, nil
+}
+
+// UpdateFailedStorageChallenge update the given failed storage challenge by ID
+func (s *SQLiteStore) UpdateFailedStorageChallenge(challenge types.FailedStorageChallenge) (err error) {
+	const updateQuery = "update failed_storage_challenges set status = ?, file_reconstructing_node = ?, updated_at= ? WHERE id = ?"
+	_, err = s.db.Exec(updateQuery, challenge.Status, challenge.FileReconstructingNode, time.Now(), challenge.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // OpenHistoryDB opens history DB

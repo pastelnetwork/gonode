@@ -7,7 +7,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
-	"github.com/pastelnetwork/gonode/common/utils"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 
 	"github.com/pastelnetwork/gonode/p2p"
@@ -62,14 +61,16 @@ func (service *SHService) Run(ctx context.Context) error {
 			log.WithContext(ctx).Info("Ticker has ticked")
 
 			if service.CheckNextBlockAvailable(ctx) {
-				//Generate Self-Healing Challenge for symbol files
+				//newCtx := context.Background()
+				//task := service.NewSCTask()
+				//task.ExecuteFileHealingWorker(newCtx)
 
-				log.WithContext(ctx).Info("Would normally generate a self-healing challenge")
+				log.WithContext(ctx).Info("Would normally invoke a self-healing worker")
 			} else {
 				log.WithContext(ctx).Info("Block not available")
 			}
 		case <-ctx.Done():
-			log.Println("Context done being called in generate self-healing challenge")
+			log.Println("Context done being called in file-healing worker")
 			return nil
 		}
 	}
@@ -107,9 +108,9 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 	}
 }
 
-// ListSymbolFileKeysFromNFTTicket : Get an NFT Ticket's associated raptor q ticket file id's.  These can then be accessed through p2p.
-func (service *SHService) ListSymbolFileKeysFromNFTTicket(ctx context.Context) ([]string, error) {
-	var keys = make([]string, 0)
+// MapSymbolFileKeysFromNFTTickets : Get an NFT Ticket's associated raptor q ticket file id's and creates a map of them
+func (service *SHService) MapSymbolFileKeysFromNFTTickets(ctx context.Context) (map[string]string, error) {
+	var keys = make(map[string]string)
 	regTickets, err := service.SuperNodeService.PastelClient.RegTickets(ctx)
 	if err != nil {
 		return keys, err
@@ -129,66 +130,11 @@ func (service *SHService) ListSymbolFileKeysFromNFTTicket(ctx context.Context) (
 		}
 
 		regTicket.RegTicketData.NFTTicketData = *decTicket
-		keys = append(keys, regTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs...)
-	}
 
-	return keys, nil
-}
-
-// GetSymbolFileByKey : Wrapper for p2p file storage service - retrieves a file from kademlia based on its key. Here, they should be raptorq symbol files.
-func (service *SHService) GetSymbolFileByKey(ctx context.Context, key string, getFromLocalOnly bool) ([]byte, error) {
-	return service.P2PClient.Retrieve(ctx, key, getFromLocalOnly)
-}
-
-// StoreSymbolFile : Wrapper for p2p file storage service - stores a file in kademlia based on its key
-func (service *SHService) StoreSymbolFile(ctx context.Context, data []byte) (key string, err error) {
-	return service.P2PClient.Store(ctx, data)
-}
-
-// RemoveSymbolFileByKey : Wrapper for p2p file storage service - removes a file from kademlia based on its key
-func (service *SHService) RemoveSymbolFileByKey(ctx context.Context, key string) error {
-	return service.P2PClient.Delete(ctx, key)
-}
-
-// GetListOfSupernode : Access the supernode service to get a list of all supernodes, including their id's and addresses.
-// This is used to enumerate supernodes both for calculation and connection
-func (service *SHService) GetListOfSupernode(ctx context.Context) ([]string, error) {
-	var ret = make([]string, 0)
-	listMN, err := service.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
-	if err != nil {
-		return ret, err
-	}
-
-	for _, node := range listMN {
-		ret = append(ret, node.ExtKey)
-	}
-
-	return ret, nil
-}
-
-// FilterOutSupernodes : FilterOutSupernodes gets the full list of supernodes and removes the nodesToBeIgnored
-func (service *SHService) FilterOutSupernodes(listOfSupernodes []string, nodesToBeIgnored []string) []string {
-	mapOfNodesToBeIgnored := make(map[string]bool)
-	for _, node := range nodesToBeIgnored {
-		mapOfNodesToBeIgnored[node] = true
-	}
-
-	var sliceOfNodesWithoutIgnoredNodes []string
-	for _, node := range listOfSupernodes {
-		if !mapOfNodesToBeIgnored[node] {
-			sliceOfNodesWithoutIgnoredNodes = append(sliceOfNodesWithoutIgnoredNodes, node)
+		for _, rqID := range regTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs {
+			keys[rqID] = regTicket.TXID
 		}
 	}
 
-	return sliceOfNodesWithoutIgnoredNodes
-}
-
-// GetNClosestSupernodeIDsToComparisonString : Wrapper for a utility function that does xor string comparison to a list of strings and returns the smallest distance.
-func (service *SHService) GetNClosestSupernodeIDsToComparisonString(_ context.Context, n int, comparisonString string, listSupernodes []string, ignores ...string) []string {
-	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, listSupernodes, ignores...)
-}
-
-// GetNClosestFileHashesToAGivenComparisonString : Wrapper for a utility function that does xor string comparison to a list of strings and returns the smallest distance.
-func (service *SHService) GetNClosestFileHashesToAGivenComparisonString(_ context.Context, n int, comparisonString string, listFileHashes []string, ignores ...string) []string {
-	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, listFileHashes, ignores...)
+	return keys, nil
 }

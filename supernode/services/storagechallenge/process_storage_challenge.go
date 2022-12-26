@@ -228,12 +228,12 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
 		failedChallenge := types.FailedStorageChallenge{
 			ChallengeID:    responseMessage.ChallengeId,
-			Status:         types.CreatedStatus.String(),
+			Status:         types.CreatedSelfHealingStatus.String(),
 			FileHash:       challengeMessage.ChallengeFile.FileHashToChallenge,
 			RespondingNode: task.nodeID,
 		}
 
-		_, err = store.InsertFailedStorageChallenges(failedChallenge)
+		_, err = store.InsertFailedStorageChallenge(failedChallenge)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
 		}
