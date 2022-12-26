@@ -7,11 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pastelnetwork/gonode/common/utils"
-
-	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
-	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
-
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -20,6 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/sys"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -35,9 +31,12 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/hermes"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
+	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
+	"github.com/pastelnetwork/gonode/supernode/services/selfhealing"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
+	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 )
 
 const (
@@ -246,7 +245,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
 	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, rqClient, nil)
-
+	selfHealing := selfhealing.NewService(&config.SelfHealingChallenge, fileStorage, pastelClient, nodeClient, p2p, rqClient)
 	// // ----Userdata Services----
 	// userdataNodeClient := client.New(pastelClient, secInfo)
 	// userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
@@ -280,5 +279,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger)
+	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger, selfHealing)
 }
