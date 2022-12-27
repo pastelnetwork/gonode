@@ -2,7 +2,13 @@ package selfhealing
 
 import (
 	"context"
-
+	"encoding/json"
+	"github.com/DataDog/zstd"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/pastel"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
@@ -13,6 +19,7 @@ const (
 // SHTask : Self healing task will manage response to self healing challenges requests
 type SHTask struct {
 	*common.SuperNodeTask
+	*common.StorageHandler
 	*SHService
 }
 
@@ -29,8 +36,45 @@ func (task *SHTask) RemoveArtifacts() {
 func NewSHTask(service *SHService) *SHTask {
 	task := &SHTask{
 		SuperNodeTask: common.NewSuperNodeTask(logPrefix),
-		SHService:     service,
+		StorageHandler: common.NewStorageHandler(service.P2PClient, service.RQClient,
+			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
+		SHService: service,
 	}
 
 	return task
+}
+
+func (task *SHTask) getRQSymbolIDs(ctx context.Context, id string, rqIDsData []byte) (rqIDs []string, err error) {
+	fileContent, err := zstd.Decompress(nil, rqIDsData)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Decompress compressed symbol IDs file failed")
+	}
+
+	log.WithContext(ctx).WithField("Content", string(fileContent)).Debugf("symbol IDs file")
+
+	var rqData []byte
+	for i := 0; i < len(fileContent); i++ {
+		if fileContent[i] == pastel.SeparatorByte {
+			rqData = fileContent[:i]
+			if i+1 >= len(fileContent) {
+				return rqIDs, errors.New("invalid rqIDs data")
+			}
+			break
+		}
+	}
+
+	rqDataJSON, err := utils.B64Decode(rqData)
+	if err != nil {
+		return rqIDs, errors.Errorf("decode %s failed: %w", string(rqData), err)
+	}
+
+	file := rqnode.RawSymbolIDFile{}
+	if err := json.Unmarshal(rqDataJSON, &file); err != nil {
+		log.WithContext(ctx).WithError(err).WithField("Content", string(fileContent)).
+			WithField("file", string(rqIDsData)).Error("rq: parsing symbolID file failure")
+
+		return rqIDs, errors.Errorf("parsing file: %s - file content: %s - err: %w", string(rqIDsData), string(fileContent), err)
+	}
+
+	return file.SymbolIdentifiers, nil
 }

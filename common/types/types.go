@@ -45,21 +45,21 @@ type TaskHistory struct {
 type SelfHealingStatus int
 
 const (
-	//UndefinedStatus represents invalid status for self-healing operation
-	UndefinedStatus SelfHealingStatus = iota
-	//CreatedStatus represents when the failed challenge gets stored in DB
-	CreatedStatus
-	//InProgressStatus represents when the challenge is retrieved for self-healing inspection
-	InProgressStatus
-	//CompletedStatus represents when the reconstruction has been completed
-	CompletedStatus
+	//UndefinedSelfHealingStatus represents invalid status for self-healing operation
+	UndefinedSelfHealingStatus SelfHealingStatus = iota
+	//CreatedSelfHealingStatus represents when the failed challenge gets stored in DB
+	CreatedSelfHealingStatus
+	//InProgressSelfHealingStatus represents when the challenge is retrieved for self-healing
+	InProgressSelfHealingStatus
+	//CompletedSelfHealingStatus represents when the reconstruction has been completed
+	CompletedSelfHealingStatus
 )
 
 // selfHealingStatusMap represents a map of self-healing statuses
 var selfHealingStatusMap = map[SelfHealingStatus]string{
-	CreatedStatus:    "Created",
-	InProgressStatus: "InProgress",
-	CompletedStatus:  "Completed",
+	CreatedSelfHealingStatus:    "Created",
+	InProgressSelfHealingStatus: "InProgress",
+	CompletedSelfHealingStatus:  "Completed",
 }
 
 // String returns the string for self-healing status
