@@ -7,10 +7,10 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
-
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
@@ -45,7 +45,7 @@ func (service *SHService) CheckNextBlockAvailable(ctx context.Context) bool {
 
 const defaultTimerBlockCheckDuration = 10 * time.Second
 
-// Run : self-healing service will run continuously to generate self-healings.
+// Run : self-healing service will run continuously to generate self-healing.
 func (service *SHService) Run(ctx context.Context) error {
 	log.WithContext(ctx).Info("self-healing service run func has been invoked")
 	//does this need to be in its own goroutine?
@@ -136,4 +136,9 @@ func (service *SHService) MapSymbolFileKeysFromNFTTickets(ctx context.Context) (
 	}
 
 	return keys, nil
+}
+
+// GetNClosestSupernodeIDsToComparisonString : Wrapper for a utility function that does xor string comparison to a list of strings and returns the smallest distance.
+func (service *SHService) GetNClosestSupernodeIDsToComparisonString(_ context.Context, n int, comparisonString string, listSupernodes []string, ignores ...string) []string {
+	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, listSupernodes, ignores...)
 }
