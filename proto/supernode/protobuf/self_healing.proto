@@ -41,6 +41,7 @@ message SelfHealingData {
   string reconstructed_file_hash = 7;
   challengeFile challenge_file = 8;
   string challenge_id = 9;
+  string reg_ticket_id = 10;
 }
 
 message ProcessSelfHealingChallengeRequest {

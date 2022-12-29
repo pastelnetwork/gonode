@@ -4,12 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
-	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
@@ -216,28 +213,73 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	}
 
 	if countOfFailures >= ChallengeFailuresThreshold {
-		//Storing to DB for inspection by Self healing
-		log.WithContext(ctx).Info(fmt.Sprintf("Storage challenge total no of failures exceeds than:%d", ChallengeFailuresThreshold))
+		closestSupernodeToMerkelRootForSelfHealingChallenge := task.GetNClosestSupernodeIDsToComparisonString(ctx, 1, challengeMessage.ChallengeFile.FileHashToChallenge, sliceOfSupernodeKeysExceptCurrentNode)
+		log.WithContext(ctx).Info(fmt.Sprintf("closestSupernodeToMerkelRootForSelfHealingChallenge:%s", closestSupernodeToMerkelRootForSelfHealingChallenge))
 
-		store, err := local.OpenHistoryDB()
+		var (
+			sn pastel.MasterNode
+			ok bool
+		)
+		if len(closestSupernodeToMerkelRootForSelfHealingChallenge) > 0 {
+			if sn, ok = mapSupernodesWithoutCurrentNode[closestSupernodeToMerkelRootForSelfHealingChallenge[0]]; !ok {
+				log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendProcessSelfHealingChallenge").Warn(fmt.Sprintf("cannot get Supernode info of Supernode id %s", mapSupernodesWithoutCurrentNode))
+			}
+		}
+
+		//We use the ExtAddress of the supernode to connect
+		processingSupernodeAddr := sn.ExtAddress
+		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending self-healing challenge for processing to supernode address: " + processingSupernodeAddr)
+
+		log.WithContext(ctx).Info(fmt.Sprintf("establishing connection with node: %s", processingSupernodeAddr))
+		nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+			log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Connection failed to establish with node: %s", processingSupernodeAddr))
 		}
-		defer store.CloseHistoryDB(ctx)
+		selfHealingChallengeIF := nodeClientConn.SelfHealingChallenge()
+		log.WithContext(ctx).Info(fmt.Sprintf("connection established with node:%s", processingSupernodeAddr))
 
-		log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
-		failedChallenge := types.FailedStorageChallenge{
-			ChallengeID:    responseMessage.ChallengeId,
-			Status:         types.CreatedSelfHealingStatus.String(),
-			FileHash:       challengeMessage.ChallengeFile.FileHashToChallenge,
-			RespondingNode: task.nodeID,
+		log.WithContext(ctx).Info(fmt.Sprintf("sending self-healing challenge message for processing to node:%s", processingSupernodeAddr))
+		//Sends the verify storage challenge message to the connected verifying supernode
+
+		////Storing to DB for inspection by Self healing
+		//log.WithContext(ctx).Info(fmt.Sprintf("Storage challenge total no of failures exceeds than:%d", ChallengeFailuresThreshold))
+		//
+		//store, err := local.OpenHistoryDB()
+		//if err != nil {
+		//	log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		//}
+		//defer store.CloseHistoryDB(ctx)
+		//
+		//log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
+		//failedChallenge := types.FailedStorageChallenge{
+		//	ChallengeID:    responseMessage.ChallengeId,
+		//	Status:         types.CreatedSelfHealingStatus.String(),
+		//	FileHash:       challengeMessage.ChallengeFile.FileHashToChallenge,
+		//	RespondingNode: task.nodeID,
+		//}
+		//
+		//_, err = store.InsertFailedStorageChallenge(failedChallenge)
+		//if err != nil {
+		//	log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+		//}
+
+		data := &pb.SelfHealingData{
+			MessageId: challengeMessage.MerklerootWhenChallengeSent + closestSupernodeToMerkelRootForSelfHealingChallenge[0] +
+				challengeMessage.ChallengeFile.FileHashToChallenge,
+			MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
+			ChallengeStatus:             pb.SelfHealingData_Status_PENDING,
+			MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
+			ChallengingMasternodeId:     task.nodeID,
+			RespondingMasternodeId:      sn.ExtKey,
+			ChallengeFile: &pb.SelfHealingDataChallengeFile{
+				FileHashToChallenge: challengeMessage.ChallengeFile.FileHashToChallenge,
+			},
+			ChallengeId: challengeMessage.ChallengeId,
 		}
 
-		_, err = store.InsertFailedStorageChallenge(failedChallenge)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+		if err := selfHealingChallengeIF.ProcessSelfHealingChallenge(ctx, data); err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error sending self-healing challenge for processing")
 		}
-
 	}
 
 	return err
