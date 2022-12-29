@@ -1,0 +1,60 @@
+// Copyright (c) 2021-2021 The Pastel Core developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode;supernode";
+
+package supernode;
+import "common_sn.proto";
+
+service SelfHealing {
+  rpc Session(stream SessionRequest) returns (stream SessionReply);
+  rpc ProcessSelfHealingChallenge(ProcessSelfHealingChallengeRequest) returns (ProcessSelfHealingChallengeReply);
+  rpc VerifySelfHealingChallenge(VerifySelfHealingChallengeRequest) returns (VerifySelfHealingChallengeReply);
+}
+
+message SelfHealingData {
+  string message_id = 1;
+  enum messageType {
+    MessageType_UNKNOWN = 0;
+    MessageType_SELF_HEALING_ISSUANCE_MESSAGE = 1;
+    MessageType_SELF_HEALING_RESPONSE_MESSAGE = 2;
+    MessageType_SELF_HEALING_VERIFICATION_MESSAGE = 3;
+  }
+  messageType message_type = 2;
+  enum status {
+    Status_UNKNOWN = 0;
+    Status_PENDING = 1;
+    Status_RESPONDED = 2;
+    Status_SUCCEEDED = 3;
+    Status_FAILED_TIMEOUT = 4;
+    Status_FAILED_INCORRECT_RESPONSE = 5;
+  }
+  status challenge_status = 3;
+  string merkleroot_when_challenge_sent = 4;
+  string challenging_masternode_id = 5;
+  string responding_masternode_id = 6;
+  message challengeFile {
+    string file_hash_to_challenge = 1;
+  }
+  string reconstructed_file_hash = 7;
+  challengeFile challenge_file = 8;
+  string challenge_id = 9;
+}
+
+message ProcessSelfHealingChallengeRequest {
+  SelfHealingData data = 1;
+}
+
+message ProcessSelfHealingChallengeReply {
+  SelfHealingData data = 1;
+}
+
+message VerifySelfHealingChallengeRequest {
+  SelfHealingData data = 1;
+}
+
+message VerifySelfHealingChallengeReply {
+  SelfHealingData data = 1;
+}

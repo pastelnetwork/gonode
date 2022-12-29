@@ -5,6 +5,7 @@
 //go:generate mockery --name=RegisterSenseInterface
 //go:generate mockery --name=RegisterCascadeInterface
 //go:generate mockery --name=StorageChallengeInterface
+//go:generate mockery --name=SelfHealingChallengeInterface
 
 package node
 
@@ -29,14 +30,14 @@ type ConnectionInterface interface {
 	Done() <-chan struct{}
 	// RegisterNft returns a new RegisterNft stream.
 	RegisterNft() RegisterNftInterface
-	// ProcessUserdata returns a new ProcessUserdata stream.
-	// ProcessUserdata() ProcessUserdataInterface
 	// RegisterSense returns a new RegisterSense stream
 	RegisterSense() RegisterSenseInterface
 	// RegisterCascade returns a new RegisterCascade stream
 	RegisterCascade() RegisterCascadeInterface
-
+	//StorageChallenge returns a new StorageChallenge stream
 	StorageChallenge() StorageChallengeInterface
+	//SelfHealingChallenge returns a new SelfHealingChallenge stream
+	SelfHealingChallenge() SelfHealingChallengeInterface
 }
 
 // SuperNodePeerAPIInterface base interface for other Node API interfaces
@@ -91,6 +92,15 @@ type StorageChallengeInterface interface {
 	ProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error
 
 	VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error)
+}
+
+// SelfHealingChallengeInterface represents an interaction stream with supernodes for self-healing challenge communications
+type SelfHealingChallengeInterface interface {
+	SuperNodePeerAPIInterface
+
+	ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) error
+
+	VerifySelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) (*pb.SelfHealingData, error)
 }
 
 // ProcessUserdataInterface represents an interaction stream with supernodes for sending userdata.

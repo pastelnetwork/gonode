@@ -59,6 +59,7 @@ gen-proto:
 	cd ./proto/supernode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative register_nft_sn.proto
 	cd ./proto/supernode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative common_sn.proto
 	cd ./proto/supernode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative storage_challenge.proto
+	cd ./proto/supernode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative self_healing.proto
 	cd ./proto/walletnode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative download_nft.proto
 	cd ./proto/walletnode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative register_sense_wn.proto
 	cd ./proto/walletnode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative register_cascade_wn.proto
