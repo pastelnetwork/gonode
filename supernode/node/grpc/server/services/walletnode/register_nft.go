@@ -51,7 +51,7 @@ func (service *RegisterNft) Session(stream pb.RegisterNft_SessionServer) error {
 	defer task.Cancel()
 
 	peer, _ := peer.FromContext(ctx)
-	log.WithContext(ctx).WithField("addr", peer.Addr).Debug("Session stream")
+
 	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debug("Session stream closed")
 
 	req, err := stream.Recv()

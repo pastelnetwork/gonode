@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	defaultLevel = logrus.TraceLevel
+	defaultLevel = logrus.InfoLevel
 )
 
 // Logger represents a wrapped logrus.Logger

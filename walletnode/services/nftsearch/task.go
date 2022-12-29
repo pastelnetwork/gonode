@@ -192,7 +192,6 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 		IsLikelyDupe:  ddAndFpStruct.IsLikelyDupe,
 	}
 	//performs fuzzy matching on string portions of search
-	log.WithContext(ctx).WithField("RegSearch", regSearch).Debug("filter reg ticket match, sending to fuzzy match")
 	return regSearch.Search(task.request)
 }
 

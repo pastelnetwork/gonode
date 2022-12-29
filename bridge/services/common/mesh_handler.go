@@ -73,8 +73,6 @@ func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 
 // SetupMeshOfNSupernodesNodes sets Mesh
 func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, string, error) {
-	log.WithContext(ctx).Debug("SetupMeshOfNSupernodesNodes Starting...")
-
 	// Get current block height & hash
 	blockNum, blockHash, err := m.pastelHandler.GetBlock(ctx)
 	if err != nil {
@@ -145,8 +143,6 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (Super
 }
 
 func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList, n int) (SuperNodeList, error) {
-	log.WithContext(ctx).Debug("setMesh Starting...")
-
 	var errs error
 	var err error
 
@@ -260,8 +256,6 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 
 // meshNodes establishes communication between supernodes.
 func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesNodes SuperNodeList, primaryIndex int) (SuperNodeList, error) {
-	log.WithContext(ctx).Debug("connectToPrimarySecondary Starting...")
-
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
 		PassPhrase: m.passphrase,
@@ -360,8 +354,6 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 func (m *MeshHandler) CloseSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
 	close(nodesDone)
 
-	log.WithContext(ctx).Debug("close connections to ALL supernodes")
-
 	ok := true
 	for _, someNode := range m.Nodes {
 		if err := m.disconnectFromNode(ctx, someNode, false); err != nil {
@@ -399,8 +391,6 @@ func (m *MeshHandler) CheckSNReportedState() bool {
 
 // DisconnectInactiveNodes disconnects nodes which were not marked as activated.
 func (m *MeshHandler) DisconnectInactiveNodes(ctx context.Context) {
-	log.WithContext(ctx).Debug("close connections to inactive supernodes")
-
 	for _, someNode := range m.Nodes {
 		_ = m.disconnectFromNode(ctx, someNode, true)
 	}

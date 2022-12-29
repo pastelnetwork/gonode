@@ -48,7 +48,6 @@ func (service *registerNft) Session(ctx context.Context, isPrimary bool) error {
 	req := &pb.SessionRequest{
 		IsPrimary: isPrimary,
 	}
-	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := stream.Send(req); err != nil {
 		return errors.Errorf("send Session request: %w", err)
@@ -65,7 +64,7 @@ func (service *registerNft) Session(ctx context.Context, isPrimary bool) error {
 		}
 		return errors.Errorf("receive Session response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debug("Session response")
+
 	service.sessID = resp.SessID
 
 	go func() {
@@ -110,13 +109,11 @@ func (service *registerNft) ConnectTo(ctx context.Context, primaryNode types.Mes
 		NodeID: primaryNode.NodeID,
 		SessID: primaryNode.SessID,
 	}
-	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
-	resp, err := service.client.ConnectTo(ctx, req)
+	_, err := service.client.ConnectTo(ctx, req)
 	if err != nil {
 		return err
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debug("ConnectTo response")
 
 	return nil
 }
@@ -223,7 +220,6 @@ func (service *registerNft) UploadImageWithThumbnail(ctx context.Context, image 
 		n, err := file.Read(buffer)
 		payloadSize += n
 		if err != nil && err == io.EOF {
-			log.WithContext(ctx).WithField("Filename", file.Name()).Debug("EOF")
 			lastPiece = true
 			break
 		} else if err != nil {

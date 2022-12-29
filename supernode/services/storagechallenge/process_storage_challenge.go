@@ -26,7 +26,6 @@ const (
 //	Sending the response to all other supernodes
 //	Saving challenge state
 func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
-	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug("Start processing storage challenge")
 
 	// incoming challenge message validation
 	if err := task.validateProcessingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
@@ -85,8 +84,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 
 	//Currently we write our own block when we responded to the storage challenge. Could be changed to calculated by verification node
 	//	but that also has trade-offs.
-	blocksToRespondToStorageChallenge := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
-	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug(fmt.Sprintf("Supernode %s responded to storage challenge for file hash %s in %v blocks!", outgoingChallengeMessage.RespondingMasternodeId, outgoingChallengeMessage.ChallengeFile.FileHashToChallenge, blocksToRespondToStorageChallenge))
+	_ = outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
 
 	// send to Supernodes to validate challenge response hash
 	log.WithContext(ctx).WithField("challenge_id", outgoingChallengeMessage.ChallengeId).Info("sending challenge for verification")

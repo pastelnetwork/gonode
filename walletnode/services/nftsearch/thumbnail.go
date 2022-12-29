@@ -160,8 +160,6 @@ func (h *ThumbnailHandler) fetchAll(ctx context.Context, searchResult []*RegTick
 			// Post on result channel
 			*resultChan <- res
 
-			log.WithContext(ctx).WithField("search_result", res).Debug("Posted search result")
-
 			return nil
 		})
 	}

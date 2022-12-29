@@ -37,7 +37,6 @@ func (service *registerNft) Session(ctx context.Context, nodeID, sessID string) 
 	req := &pb.SessionRequest{
 		NodeID: nodeID,
 	}
-	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := stream.Send(req); err != nil {
 		return errors.Errorf("send Session request: %w", err)

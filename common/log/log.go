@@ -16,7 +16,7 @@ const (
 // DefaultLogger is logger with default settings
 var DefaultLogger = NewLogger()
 var subLevels = map[string]logrus.Level{}
-var currentDefaultLevel = logrus.DebugLevel
+var currentDefaultLevel = logrus.InfoLevel
 var mtx = sync.RWMutex{}
 
 // SetLevelName parses and sets the defaultLogger level.

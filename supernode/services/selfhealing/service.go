@@ -32,7 +32,6 @@ type SHService struct {
 func (service *SHService) CheckNextBlockAvailable(ctx context.Context) bool {
 	blockCount, err := service.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithField("method", "checkNextBlockAvailable.GetBlockCount").Warn("could not get block count")
 		return false
 	}
 	if blockCount > service.currentBlockCount {
@@ -58,16 +57,13 @@ func (service *SHService) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-time.After(defaultTimerBlockCheckDuration):
-			log.WithContext(ctx).Info("Ticker has ticked")
 
 			if service.CheckNextBlockAvailable(ctx) {
 				//newCtx := context.Background()
 				//task := service.NewSCTask()
 				//task.ExecuteFileHealingWorker(newCtx)
 
-				log.WithContext(ctx).Info("Would normally invoke a self-healing worker")
-			} else {
-				log.WithContext(ctx).Info("Block not available")
+				log.WithContext(ctx).Debug("Would normally invoke a self-healing worker")
 			}
 		case <-ctx.Done():
 			log.Println("Context done being called in file-healing worker")
