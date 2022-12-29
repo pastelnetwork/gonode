@@ -91,7 +91,7 @@ func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer)
 }
 
 // AcceptedNodes implements walletnode.RegisterSenseServer.AcceptedNodes()
-func (service *RegisterCascade) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
+func (service *RegisterCascade) AcceptedNodes(ctx context.Context, _ *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
