@@ -10,14 +10,15 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"golang.org/x/crypto/sha3"
 )
 
-// ExecuteFileHealingWorker is called from service run, which retrieves the failed challenges stored in DB,
+// ProcessSelfHealingChallenge is called from grpc server, which processes the self-healing challenge,
 // and will execute the reconstruction work.
-func (task *SHTask) ExecuteFileHealingWorker(ctx context.Context) error {
-	log.WithContext(ctx).Println("File Healing worker has been invoked invoked")
+func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, data *pb.SelfHealingData) error {
+	log.WithContext(ctx).WithField("challenge_id", data.ChallengeId).Info("File Healing worker has been invoked invoked")
 
 	mapOfFileHashes, err := task.MapSymbolFileKeysFromNFTTickets(ctx)
 	if err != nil {

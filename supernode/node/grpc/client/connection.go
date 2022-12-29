@@ -33,6 +33,11 @@ func (conn *clientConn) StorageChallenge() node.StorageChallengeInterface {
 	return newStorageChallengeGRPCClient(conn)
 }
 
+// SelfHealingChallenge implements node.Connection.SelfHealingChallenge()
+func (conn *clientConn) SelfHealingChallenge() node.SelfHealingChallengeInterface {
+	return newSelfHealingGRPCClient(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.ConnectionInterface {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

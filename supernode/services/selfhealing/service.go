@@ -17,7 +17,7 @@ import (
 
 // SHService keeps track of the supernode's nodeID and passes this, the pastel client,
 // and node client interfaces to the tasks it controls.  The run method contains a ticker timer
-// that will check for a new block and generate storage challenges as necessary if a new block
+// that will check for a new block and generate self-healing challenges as necessary if a new block
 // is detected.
 type SHService struct {
 	*common.SuperNodeService
@@ -76,8 +76,8 @@ func (service *SHService) Run(ctx context.Context) error {
 	}
 }
 
-// NewSCTask : self-healing task handles the duties of generating, processing, and verifying self-healing challenges
-func (service *SHService) NewSCTask() *SHTask {
+// NewSHTask : self-healing task handles the duties of generating, processing, and verifying self-healing challenges
+func (service *SHService) NewSHTask() *SHTask {
 	task := NewSHTask(service)
 	service.Worker.AddTask(task)
 	return task
@@ -103,8 +103,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		config:           config,
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2p, rqClient),
 		nodeClient:       nodeClient,
-		// repository:                    newRepository(p2p, pastelClient, challengeStatusObserver),
-		nodeID: config.PastelID,
+		nodeID:           config.PastelID,
 	}
 }
 
