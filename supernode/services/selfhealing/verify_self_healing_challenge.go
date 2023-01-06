@@ -1,6 +1,7 @@
 package selfhealing
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -15,7 +16,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("VerifySelfHealingChallenge has been invoked")
 
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("retrieving reg ticket")
-	regTicket, err := task.SuperNodeService.PastelClient.RegTicket(ctx, challengeMessage.RegTicketId)
+	regTicket, err := task.PastelClient.RegTicket(ctx, challengeMessage.RegTicketId)
 	if err != nil {
 		return nil, err
 	}
@@ -46,10 +47,18 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 	challengeFileHash := challengeMessage.ChallengeFile.FileHashToChallenge
 	log.WithContext(ctx).Info("retrieving reg ticket")
 
-	responseMessage := challengeMessage
-	responseMessage.MessageType = pb.SelfHealingData_MessageType_SELF_HEALING_RESPONSE_MESSAGE
-	responseMessage.ChallengingMasternodeId = task.nodeID
-	responseMessage.RespondingMasternodeId = challengeMessage.ChallengingMasternodeId
+	responseMessage := &pb.SelfHealingData{
+		MessageId:                   challengeMessage.MessageId,
+		MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_RESPONSE_MESSAGE,
+		MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
+		ChallengingMasternodeId:     task.nodeID,
+		RespondingMasternodeId:      challengeMessage.ChallengingMasternodeId,
+		ChallengeFile: &pb.SelfHealingDataChallengeFile{
+			FileHashToChallenge: challengeMessage.ChallengeFile.FileHashToChallenge,
+		},
+		ChallengeId: challengeMessage.ChallengeId,
+		RegTicketId: challengeMessage.RegTicketId,
+	}
 
 	//Checking Process
 	//1. false, nil, err    - should not update the challenge to completed, so that it can be retried again
@@ -76,7 +85,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("File has been reconstructed")
 
 	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("Comparing hashes")
-	if string(reconstructedFileHash) == challengeMessage.ReconstructedFileHash {
+	if !bytes.Equal(reconstructedFileHash, challengeMessage.ReconstructedFileHash) {
 		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("reconstructed file hash does not match with the verifier reconstructed file")
 
 		responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
