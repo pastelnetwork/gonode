@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"golang.org/x/crypto/sha3"
+	"sync"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -11,8 +13,6 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
-	"golang.org/x/crypto/sha3"
-	"sync"
 )
 
 // ProcessSelfHealingChallenge is called from grpc server, which processes the self-healing challenge,
@@ -49,7 +49,14 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 		log.WithContext(ctx).Error("Error retrieving regTicket")
 		return err
 	}
-	log.WithContext(ctx).WithField("reg_ticket_tx_id", regTicket.TXID).Info("reg ticket has been retrieved")
+	decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+		return err
+	}
+
+	regTicket.RegTicketData.NFTTicketData = *decTicket
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("reg ticket has been retrieved")
 
 	//Checking Process
 	//1. false, nil, err    - should not update the challenge to completed, so that it can be retried again
@@ -81,7 +88,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 		ChallengeStatus:             pb.SelfHealingData_Status_RESPONDED,
 		MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
 		ChallengingMasternodeId:     task.nodeID,
-		ReconstructedFileHash:       string(reconstructedFileHash),
+		ReconstructedFileHash:       reconstructedFileHash,
 		ChallengeFile: &pb.SelfHealingDataChallengeFile{
 			FileHashToChallenge: challengeFileHash,
 		},
@@ -184,6 +191,7 @@ func (task *SHTask) selfHealing(ctx context.Context, rqService rqnode.RaptorQ, m
 
 	fileHash := sha3.Sum256(decodeInfo.File)
 	if !bytes.Equal(fileHash[:], regTicket.RegTicketData.NFTTicketData.AppTicketData.DataHash) {
+		err = errors.New("hash file mismatched")
 		log.WithContext(ctx).Error("hash file mismatched")
 		return nil, nil, err
 	}

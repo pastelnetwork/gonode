@@ -38,7 +38,7 @@ message SelfHealingData {
   message challengeFile {
     string file_hash_to_challenge = 1;
   }
-  string reconstructed_file_hash = 7;
+  bytes reconstructed_file_hash = 7;
   challengeFile challenge_file = 8;
   string challenge_id = 9;
   string reg_ticket_id = 10;

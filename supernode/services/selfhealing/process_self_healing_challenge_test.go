@@ -44,6 +44,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 
 	ticket := pastel.RegTicket{}
 	f.Fuzz(&ticket)
+	ticket.RegTicketData.NFTTicketData.AppTicketData.DataHash = fileHash[:]
 	b, err := json.Marshal(ticket.RegTicketData.NFTTicketData.AppTicketData)
 	if err != nil {
 		t.Fatalf("faied to marshal, err: %s", err)
@@ -55,8 +56,6 @@ func TestProcessSelfHealingTest(t *testing.T) {
 		t.Fatalf("faied to marshal, err: %s", err)
 	}
 	ticket.RegTicketData.NFTTicket = b
-
-	ticket.RegTicketData.NFTTicketData.AppTicketData.DataHash = fileHash[:]
 	tickets := pastel.RegTickets{ticket}
 
 	rqIDsData, _ := fakeRQIDsData()
