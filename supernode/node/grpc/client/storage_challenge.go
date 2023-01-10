@@ -36,13 +36,12 @@ func (service *storageChallengeGRPCClient) Session(ctx context.Context, nodeID, 
 	req := &pb.SessionRequest{
 		NodeID: nodeID,
 	}
-	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := stream.Send(req); err != nil {
 		return errors.Errorf("send Session request: %w", err)
 	}
 
-	resp, err := stream.Recv()
+	_, err = stream.Recv()
 	if err != nil {
 		if err == io.EOF {
 			return nil
@@ -53,7 +52,6 @@ func (service *storageChallengeGRPCClient) Session(ctx context.Context, nodeID, 
 		}
 		return errors.Errorf("receive Session response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debug("Session response")
 
 	go func() {
 		defer service.conn.Close()

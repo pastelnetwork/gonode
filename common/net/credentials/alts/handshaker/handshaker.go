@@ -425,7 +425,6 @@ func (s *altsHandshaker) ServerHandshake(ctx context.Context, secClient alts.Sec
 	if err := s.doServerHandshake(ctx, secClient, secInfo); err != nil {
 		return nil, nil, fmt.Errorf("do server handshake: %w", err)
 	}
-	log.WithContext(ctx).Debugf("server handshake is complete")
 
 	// new a secure connection
 	sc, err := conn.NewConn(s.side, s.conn, s.protocol, s.key)

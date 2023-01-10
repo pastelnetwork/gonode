@@ -25,7 +25,6 @@ func (s *service) initLeadershipTransferTrigger(ctx context.Context,
 			// this logic is only for leader, we don't want to exit for loop
 			// as current node can become leader in future
 			if !s.IsLeader() {
-				log.MetaDB().WithContext(ctx).Debug("leadership transfer: non-leader node")
 				break
 			}
 			log.MetaDB().WithContext(ctx).Info("leadership transfer: leader node! Initiaing scheduler")

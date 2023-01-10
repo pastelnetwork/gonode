@@ -160,7 +160,7 @@ func (entry *Entry) Fatalf(format string, args ...interface{}) {
 func (entry *Entry) Logf(levelName, format string, args ...interface{}) {
 	level, err := logrus.ParseLevel(levelName)
 	if err != nil {
-		level = logrus.DebugLevel
+		level = logrus.InfoLevel
 	}
 	if entry.level >= level {
 		entry.Entry.Logf(level, format, args...)

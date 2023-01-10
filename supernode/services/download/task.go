@@ -207,8 +207,6 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) 
 		}
 		ticket.ActionTicketData.ActionTicketData = *actionTicket
 
-		log.WithContext(ctx).Debugf("Art ticket: %s", string(ticket.ActionTicketData.ActionTicket))
-
 		if task.ttype == pastel.ActionTypeCascade {
 			cTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
 			if err != nil {
@@ -238,8 +236,6 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) 
 			task.UpdateStatus(common.StatusNftRegGettingFailed)
 			return
 		}
-
-		log.WithContext(ctx).Debugf("Art ticket: %s", string(nftRegTicket.RegTicketData.NFTTicket))
 
 		// Decode Art Request
 		err = task.decodeRegTicket(&nftRegTicket)

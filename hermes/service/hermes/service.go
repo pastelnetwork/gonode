@@ -286,7 +286,6 @@ func (s *service) runTask(ctx context.Context) error {
 
 		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
-			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
 			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
 			if nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum > lastKnownGoodHeight {
 				lastKnownGoodHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
@@ -294,7 +293,7 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 		if err != nil {
-			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Error("Could not properly query the dd database for this hash")
+			log.WithContext(ctx).Error("Could not properly query the dd database for this hash")
 			continue
 		}
 
@@ -386,7 +385,6 @@ func (s *service) runTask(ctx context.Context) error {
 
 		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
-			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Debug("Found hash of candidate image file already exists in database, not adding.")
 			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
 			if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum > lastKnownGoodHeight {
 				lastKnownGoodHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum

@@ -2,8 +2,9 @@ package client
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/supernode/node"
 	"io"
+
+	"github.com/pastelnetwork/gonode/supernode/node"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -41,7 +42,6 @@ func (service *registerCascade) Session(ctx context.Context, nodeID, sessID stri
 	req := &pb.SessionRequest{
 		NodeID: nodeID,
 	}
-	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := stream.Send(req); err != nil {
 		return errors.Errorf("send Session request: %w", err)

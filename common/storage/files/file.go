@@ -15,7 +15,6 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 )
 
@@ -196,7 +195,6 @@ func (file *File) RemoveAfter(d time.Duration) {
 func (file *File) LoadImage() (image.Image, error) {
 	f, err := file.Open()
 	if err != nil {
-		log.Debug("Failed to open")
 		return nil, err
 	}
 	defer f.Close()
@@ -282,7 +280,6 @@ func (file *File) Thumbnail(coordinate ThumbnailCoordinate) (*File, error) {
 func (file *File) UpdateFormat() error {
 	f, err := file.Open()
 	if err != nil {
-		log.Debug("Failed to open")
 		return err
 	}
 	defer f.Close()

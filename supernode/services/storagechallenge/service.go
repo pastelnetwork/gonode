@@ -49,7 +49,6 @@ type SCService struct {
 func (service *SCService) CheckNextBlockAvailable(ctx context.Context) bool {
 	blockCount, err := service.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithField("method", "checkNextBlockAvailable.GetBlockCount").Warn("could not get block count")
 		return false
 	}
 	if blockCount > int32(service.currentBlockCount) {
@@ -75,15 +74,12 @@ func (service *SCService) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-time.After(defaultTimerBlockCheckDuration):
-			log.WithContext(ctx).Info("Ticker has ticked")
 
 			if service.CheckNextBlockAvailable(ctx) {
 				newCtx := context.Background()
 				task := service.NewSCTask()
 				task.GenerateStorageChallenges(newCtx)
 				log.WithContext(ctx).Info("Would normally generate a storage challenge")
-			} else {
-				log.WithContext(ctx).Info("Block not available")
 			}
 		case <-ctx.Done():
 			log.Println("Context done being called in generatestoragechallenge loop in service.go")

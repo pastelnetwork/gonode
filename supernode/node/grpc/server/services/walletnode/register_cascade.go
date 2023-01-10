@@ -55,14 +55,13 @@ func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer)
 	defer task.Cancel()
 
 	peer, _ := peer.FromContext(ctx)
-	log.WithContext(ctx).WithField("addr", peer.Addr).Debug("Session stream")
+
 	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debug("Session stream closed")
 
 	req, err := stream.Recv()
 	if err != nil {
 		return errors.Errorf("receieve handshake request: %w", err)
 	}
-	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := task.NetworkHandler.Session(ctx, req.IsPrimary); err != nil {
 		return err
@@ -92,8 +91,7 @@ func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer)
 }
 
 // AcceptedNodes implements walletnode.RegisterSenseServer.AcceptedNodes()
-func (service *RegisterCascade) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
+func (service *RegisterCascade) AcceptedNodes(ctx context.Context, _ *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
@@ -120,7 +118,6 @@ func (service *RegisterCascade) AcceptedNodes(ctx context.Context, req *pb.Accep
 
 // ConnectTo implements walletnode.RegisterSenseServer.ConnectTo()
 func (service *RegisterCascade) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
