@@ -14,22 +14,23 @@ var validPastelIDs = []string{
 	"jXZX9sH6Fp5EUhqKQJteiivbNyGhsjPQKYXqVUVHRDTpH9UzGeEuG92c2S5tMTzUz1CLARVohpzjsWLUyZXSGN",
 	"jXZFvrCSNQGfrRA8RaXpzm2TEV38hQiyesNZg7joEjBNjXGieM8ZTyhKYxkBrqdtTpYcACRKQjMLQrmKNpfrL8",
 	"jXXaQm7VuD4p8vG32XyZPq3Z8WBZWdpaRPM92nfZZvcW5pvjVf7RsEnB55qQ214WzuuXr7LoNJsZZKth3ArKAU",
-	"jXYegY26dJ1auzTj5xy1LSUHy3vEn91pMjQrMwAb97nVzH1859xBzbdiU1RsAhJiQ6Z8VbJwQeH5pwGbFAAaHc",
+	"jABegY26dJ1auzTj5xy1LSUHy3vEn91pMjQrMwAb97nVzH1859xBzbdiU1RsAhJiQ6Z8VbJwQeH5pwGbFAAaHc",
+	"jXa7Ypp5fueoTboLYxAbH2ebaGLiQBRDF2u2PFAMYYGRjSMsEzn5sgSgyAy5xYpEfcMUqaUY6xZ8Qcxnn1pWAf",
+	"jXXQD8CjECcKknAUf5NHcCua8aqHhbq4vP5EyE6kCDvD6EWpnbjaUe8VH9ZVpvj8n85hkMtDZyPqrwJXPwYUBi",
+	"jXYqgELnZQUSC2D5ZKPzVxaJwDLKC2NAzTzvEkR5EXU3od7xDJH9JgsMWvU6FoYQaBVP489A1y7qw756m8Er1S",
 }
 
 type Mocker struct {
 	pasteldAddrs []string
 	ddAddrs      []string
-	rqAddrs      []string
 	snAddrs      []string
 	itHelder     *helper.ItHelper
 }
 
-func New(pasteldAddrs []string, ddAddrs []string, rqAddrs []string, snAddrs []string, h *helper.ItHelper) *Mocker {
+func New(pasteldAddrs []string, ddAddrs []string, snAddrs []string, h *helper.ItHelper) *Mocker {
 	return &Mocker{
 		pasteldAddrs: pasteldAddrs,
 		ddAddrs:      ddAddrs,
-		rqAddrs:      rqAddrs,
 		snAddrs:      snAddrs,
 		itHelder:     h,
 	}
@@ -84,25 +85,6 @@ func (m *Mocker) mockDDServerRegExpections(addr string) error {
 	if err := m.mockServer(resp, addr, "rareness",
 		[]string{testconst.ArtistPastelID}, 6); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
-	}
-
-	return nil
-}
-
-func (m *Mocker) mockRqRegExpections(addr string) error {
-	if err := m.mockServer([]byte(encodeInfoResp), addr, "encodemetadata",
-		[]string{testconst.ArtistPastelID}, 6); err != nil {
-		return fmt.Errorf("failed to mock masternode top err: %w", err)
-	}
-
-	if err := m.mockServer([]byte(encodeResp), addr, "encode",
-		[]string{""}, 6); err != nil {
-		return fmt.Errorf("failed to mock encode err: %w", err)
-	}
-
-	if err := m.mockServer([]byte(decodeResp), addr, "decode",
-		[]string{""}, 6); err != nil {
-		return fmt.Errorf("failed to mock decode err: %w", err)
 	}
 
 	return nil
@@ -282,5 +264,80 @@ func (m *Mocker) cleanup(addr string) error {
 		return errors.New(string(rsp))
 	}
 
+	return nil
+}
+
+func (m *Mocker) mockSCPasteldRegExpections(addr string) error {
+
+	if err := m.mockServer([]byte(masterNodesTopRespSC), addr, "masternode", []string{"top"}, 10); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	if err := m.mockServer([]byte(masterNodeExtraRespSC), addr, "masternode", []string{"list", "extra"}, 10); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	for _, id := range validPastelIDs {
+		if err := m.mockServer([]byte(ticketsFindID), addr, "tickets", []string{"find", "id", id}, 6); err != nil {
+			return fmt.Errorf("failed to mock masternode top err: %w", err)
+		}
+	}
+
+	if err := m.mockServer([]byte(ticketsFindIDArtistResp), addr, "tickets",
+		[]string{"find", "id", testconst.ArtistPastelID}, 3); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	if err := m.mockServer([]byte(`[]`), addr, "tickets",
+		[]string{"findbylabel", "nft"}, 3); err != nil {
+		return fmt.Errorf("failed to mock findbylabel err: %w", err)
+	}
+
+	if err := m.mockServer([]byte(blockVerboseResponseSC), addr, "getblock", []string{"160647"}, 10); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	if err := m.mockServer([]byte("160647"), addr, "getblockcount", []string{""}, 100); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	if err := m.mockServer([]byte(signResp), addr, "pastelid", []string{"sign"}, 10); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	if err := m.mockServer([]byte(verifyResp), addr, "pastelid", []string{"verify"}, 10); err != nil {
+		return fmt.Errorf("failed to mock masternode top err: %w", err)
+	}
+
+	tix, tlist := getSCRegTickets()
+
+	for key, val := range tix {
+		if err := m.mockServer(val, addr, "tickets", []string{"get",
+			key}, 20); err != nil {
+
+			return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
+		}
+	}
+
+	if err := m.mockServer(tlist, addr, "tickets", []string{"list",
+		"nft"}, 10); err != nil {
+
+		return fmt.Errorf("failed to mock tickets act err: %w", err)
+	}
+
+	return nil
+}
+
+func (m *Mocker) MockSCRegExpections() error {
+	for _, addr := range m.pasteldAddrs {
+		if err := m.mockSCPasteldRegExpections(addr); err != nil {
+			return fmt.Errorf("server: %s err: %w", addr, err)
+		}
+	}
+
+	/*for _, addr := range m.snAddrs {
+		storeRQIDFile([]byte("rqidfile"), m.itHelder, addr)
+	}
+	*/
 	return nil
 }

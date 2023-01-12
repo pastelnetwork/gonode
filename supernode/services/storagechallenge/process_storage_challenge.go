@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
-	"sync"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -145,7 +147,8 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 			sliceOfSupernodeKeysExceptCurrentNode = append(sliceOfSupernodeKeysExceptCurrentNode, mn.ExtKey)
 		}
 	}
-	log.WithContext(ctx).Info(fmt.Sprintf("current node has been filtered out from the supernodes list:%s", sliceOfSupernodeKeysExceptCurrentNode))
+	log.WithContext(ctx).WithField("len", len(sliceOfSupernodeKeysExceptCurrentNode)).
+		Info(fmt.Sprintf("current node has been filtered out from the supernodes list:%s", sliceOfSupernodeKeysExceptCurrentNode))
 
 	//Finding 10 closest nodes to file hash
 	sliceOfSupernodesClosestToFileHashExcludingCurrentNode := task.GetNClosestSupernodeIDsToComparisonString(ctx, 10, challengeMessage.ChallengeFile.FileHashToChallenge, sliceOfSupernodeKeysExceptCurrentNode)
@@ -165,8 +168,33 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		responseMessages []pb.StorageChallengeData
 	)
 	err = nil
+
+	if store != nil {
+		log.WithContext(ctx).Println("Storing challenge logs to DB")
+		storageChallengeLog := types.StorageChallenge{
+			ChallengeID:     challengeMessage.ChallengeId,
+			FileHash:        challengeMessage.ChallengeFile.FileHashToChallenge,
+			ChallengingNode: challengeMessage.ChallengingMasternodeId,
+			RespondingNode:  task.nodeID,
+			Status:          types.ProcessedStorageChallengeStatus,
+			StartingIndex:   int(challengeMessage.ChallengeFile.ChallengeSliceStartIndex),
+			EndingIndex:     int(challengeMessage.ChallengeFile.ChallengeSliceEndIndex),
+			VerifyingNodes:  strings.Join(sliceOfSupernodesClosestToFileHashExcludingCurrentNode, ","),
+		}
+
+		_, err = store.InsertStorageChallenge(storageChallengeLog)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error storing challenge log to DB")
+			err = nil
+		}
+	}
+
 	// iterate through supernodes, connecting and sending the message
 	for _, nodeToConnectTo := range sliceOfSupernodesClosestToFileHashExcludingCurrentNode {
+		if nodeToConnectTo == "" {
+			continue
+		}
+
 		log.WithContext(ctx).WithField("outgoing_message", challengeMessage).Info("outgoing message from ProcessStorageChallenge")
 
 		var (
@@ -174,7 +202,8 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 			ok bool
 		)
 		if mn, ok = mapSupernodesWithoutCurrentNode[nodeToConnectTo]; !ok {
-			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendVerifyStorageChallenge").Warn(fmt.Sprintf("cannot get Supernode info of Supernode id %s", mapSupernodesWithoutCurrentNode))
+			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendVerifyStorageChallenge").
+				WithField("nodeToConnectTo", nodeToConnectTo).Warn(fmt.Sprintf("cannot get Supernode info of Supernode id %s", mapSupernodesWithoutCurrentNode))
 			continue
 		}
 		//We use the ExtAddress of the supernode to connect
@@ -193,31 +222,18 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		log.WithContext(ctx).Info(fmt.Sprintf("sending challenge message for verification to node:%s", nodeToConnectTo))
 		//Sends the verify storage challenge message to the connected verifying supernode
 
-		if store != nil {
-			log.WithContext(ctx).Println("Storing challenge logs to DB")
-			storageChallengeLog := types.StorageChallenge{
-				ChallengeID:     challengeMessage.ChallengeId,
-				FileHash:        challengeMessage.ChallengeFile.FileHashToChallenge,
-				ChallengingNode: task.nodeID,
-				RespondingNode:  mn.ExtKey,
-				Status:          types.ProcessedStorageChallengeStatus,
-				StartingIndex:   int(challengeMessage.ChallengeFile.ChallengeSliceStartIndex),
-				EndingIndex:     int(challengeMessage.ChallengeFile.ChallengeSliceEndIndex),
-			}
-
-			_, err = store.InsertStorageChallenge(storageChallengeLog)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Error storing challenge log to DB")
-				err = nil
-			}
-		}
-
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			res, err := storageChallengeIF.VerifyStorageChallenge(ctx, challengeMessage)
-			if err != nil {
-				log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("verifierSuperNodeAddress", nodeToConnectTo).Warn("Storage challenge verification failed or didn't process: ", err.Error())
+			if err != nil || res == nil {
+				errStr := "nil response"
+				if err != nil {
+					errStr = err.Error()
+				}
+
+				log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("verifierSuperNodeAddress", nodeToConnectTo).
+					Warnf("Storage challenge verification failed or didn't process: %s\n", errStr)
 				return
 			}
 
@@ -231,7 +247,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		log.WithContext(ctx).Println("After calling storage process on " + challengeMessage.ChallengeId + " no nodes returned an error code in verification")
 	}
 
-	//Counting the number of challenges being failed by verifying nodes.
+	// trigger self healing checking process if count of faliures is not less than threshold
 	var responseMessage pb.StorageChallengeData
 	for _, responseMessage = range responseMessages {
 		if responseMessage.ChallengeStatus == pb.StorageChallengeData_Status_FAILED_INCORRECT_RESPONSE {
@@ -239,76 +255,54 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		}
 	}
 
-	if countOfFailures >= ChallengeFailuresThreshold {
-		closestSupernodeToMerkelRootForSelfHealingChallenge := task.GetNClosestSupernodeIDsToComparisonString(ctx, 1, challengeMessage.ChallengeFile.FileHashToChallenge, sliceOfSupernodeKeysExceptCurrentNode)
-		log.WithContext(ctx).Info(fmt.Sprintf("closestSupernodeToMerkelRootForSelfHealingChallenge:%s", closestSupernodeToMerkelRootForSelfHealingChallenge))
+	if countOfFailures < ChallengeFailuresThreshold {
+		return nil
+	}
 
-		var (
-			sn pastel.MasterNode
-			ok bool
-		)
-		if len(closestSupernodeToMerkelRootForSelfHealingChallenge) > 0 {
-			if sn, ok = mapSupernodesWithoutCurrentNode[closestSupernodeToMerkelRootForSelfHealingChallenge[0]]; !ok {
-				log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendProcessSelfHealingChallenge").Warn(fmt.Sprintf("cannot get Supernode info of Supernode id %s", mapSupernodesWithoutCurrentNode))
-			}
-		}
+	closestSupernodeToMerkelRootForSelfHealingChallenge := task.GetNClosestSupernodeIDsToComparisonString(ctx, 1, challengeMessage.ChallengeFile.FileHashToChallenge, sliceOfSupernodeKeysExceptCurrentNode)
+	log.WithContext(ctx).Info(fmt.Sprintf("closestSupernodeToMerkelRootForSelfHealingChallenge:%s", closestSupernodeToMerkelRootForSelfHealingChallenge))
 
-		//We use the ExtAddress of the supernode to connect
-		processingSupernodeAddr := sn.ExtAddress
-		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending self-healing challenge for processing to supernode address: " + processingSupernodeAddr)
-
-		log.WithContext(ctx).Info(fmt.Sprintf("establishing connection with node: %s", processingSupernodeAddr))
-		nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Connection failed to establish with node: %s", processingSupernodeAddr))
-		}
-		selfHealingChallengeIF := nodeClientConn.SelfHealingChallenge()
-		log.WithContext(ctx).Info(fmt.Sprintf("connection established with node:%s", processingSupernodeAddr))
-
-		log.WithContext(ctx).Info(fmt.Sprintf("sending self-healing challenge message for processing to node:%s", processingSupernodeAddr))
-		//Sends the verify storage challenge message to the connected verifying supernode
-
-		////Storing to DB for inspection by Self healing
-		//log.WithContext(ctx).Info(fmt.Sprintf("Storage challenge total no of failures exceeds than:%d", ChallengeFailuresThreshold))
-		//
-		//store, err := local.OpenHistoryDB()
-		//if err != nil {
-		//	log.WithContext(ctx).WithError(err).Error("Error Opening DB")
-		//}
-		//defer store.CloseHistoryDB(ctx)
-		//
-		//log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
-		//failedChallenge := types.FailedStorageChallenge{
-		//	ChallengeID:    responseMessage.ChallengeId,
-		//	Status:         types.CreatedSelfHealingStatus.String(),
-		//	FileHash:       challengeMessage.ChallengeFile.FileHashToChallenge,
-		//	RespondingNode: task.nodeID,
-		//}
-		//
-		//_, err = store.InsertFailedStorageChallenge(failedChallenge)
-		//if err != nil {
-		//	log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
-		//}
-
-		data := &pb.SelfHealingData{
-			MessageId: challengeMessage.MerklerootWhenChallengeSent + closestSupernodeToMerkelRootForSelfHealingChallenge[0] +
-				challengeMessage.ChallengeFile.FileHashToChallenge,
-			MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
-			ChallengeStatus:             pb.SelfHealingData_Status_PENDING,
-			MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
-			ChallengingMasternodeId:     task.nodeID,
-			RespondingMasternodeId:      sn.ExtKey,
-			ChallengeFile: &pb.SelfHealingDataChallengeFile{
-				FileHashToChallenge: challengeMessage.ChallengeFile.FileHashToChallenge,
-			},
-			ChallengeId: challengeMessage.ChallengeId,
-		}
-
-		if err := selfHealingChallengeIF.ProcessSelfHealingChallenge(ctx, data); err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error sending self-healing challenge for processing")
+	var (
+		sn pastel.MasterNode
+		ok bool
+	)
+	if len(closestSupernodeToMerkelRootForSelfHealingChallenge) > 0 {
+		if sn, ok = mapSupernodesWithoutCurrentNode[closestSupernodeToMerkelRootForSelfHealingChallenge[0]]; !ok {
+			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendProcessSelfHealingChallenge").Warn(fmt.Sprintf("cannot get Supernode info of Supernode id %s", mapSupernodesWithoutCurrentNode))
 		}
 	}
 
+	//We use the ExtAddress of the supernode to connect
+	processingSupernodeAddr := sn.ExtAddress
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending self-healing challenge for processing to supernode address: " + processingSupernodeAddr)
+
+	log.WithContext(ctx).Info(fmt.Sprintf("establishing connection with node: %s", processingSupernodeAddr))
+	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Connection failed to establish with node: %s", processingSupernodeAddr))
+	}
+	selfHealingChallengeIF := nodeClientConn.SelfHealingChallenge()
+	log.WithContext(ctx).Info(fmt.Sprintf("connection established with node:%s", processingSupernodeAddr))
+
+	log.WithContext(ctx).Info(fmt.Sprintf("sending self-healing challenge message for processing to node:%s", processingSupernodeAddr))
+
+	data := &pb.SelfHealingData{
+		MessageId: challengeMessage.MerklerootWhenChallengeSent + closestSupernodeToMerkelRootForSelfHealingChallenge[0] +
+			challengeMessage.ChallengeFile.FileHashToChallenge,
+		MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
+		ChallengeStatus:             pb.SelfHealingData_Status_PENDING,
+		MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
+		ChallengingMasternodeId:     task.nodeID,
+		RespondingMasternodeId:      sn.ExtKey,
+		ChallengeFile: &pb.SelfHealingDataChallengeFile{
+			FileHashToChallenge: challengeMessage.ChallengeFile.FileHashToChallenge,
+		},
+		ChallengeId: challengeMessage.ChallengeId,
+	}
+
+	if err := selfHealingChallengeIF.ProcessSelfHealingChallenge(ctx, data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error sending self-healing challenge for processing")
+	}
+
 	return err
-	//return s.actor.Send(ctx, s.domainActorID, newSendVerifyStorageChallengeMsg(ctx, verifierSupernodesAddr, challengeMessage))
 }

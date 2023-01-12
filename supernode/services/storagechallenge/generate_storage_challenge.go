@@ -54,11 +54,8 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	sliceToCheckIfFileContainedByLocalSupernode := make([]bool, 0)
 	for _, currentFileHash := range sliceOfFileHashes {
 		_, err = task.GetSymbolFileByKey(ctx, currentFileHash, true)
-		if err == nil {
-			sliceToCheckIfFileContainedByLocalSupernode = append(sliceToCheckIfFileContainedByLocalSupernode, true)
-		} else {
-			sliceToCheckIfFileContainedByLocalSupernode = append(sliceToCheckIfFileContainedByLocalSupernode, false)
-		}
+		sliceToCheckIfFileContainedByLocalSupernode = append(sliceToCheckIfFileContainedByLocalSupernode, err == nil)
+
 	}
 	log.WithContext(ctx).Info("raptorq files hosted on this node have been identified")
 
@@ -117,6 +114,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		}
 	}
 	if !isMyNodeAChallenger {
+		log.WithContext(ctx).Info("exit because this node is not a challenger")
 		return nil
 	}
 	challengingSupernodeID := task.nodeID

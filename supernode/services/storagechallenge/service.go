@@ -2,6 +2,7 @@ package storagechallenge
 
 import (
 	"context"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -59,7 +60,7 @@ func (service *SCService) CheckNextBlockAvailable(ctx context.Context) bool {
 	return false
 }
 
-const defaultTimerBlockCheckDuration = 10 * time.Second
+const defaultTimerBlockCheckDuration = 30 * time.Second
 
 // Run : storage challenge service will run continuously to generate storage challenges.
 func (service *SCService) Run(ctx context.Context) error {
@@ -75,7 +76,7 @@ func (service *SCService) Run(ctx context.Context) error {
 		select {
 		case <-time.After(defaultTimerBlockCheckDuration):
 
-			if service.CheckNextBlockAvailable(ctx) {
+			if service.CheckNextBlockAvailable(ctx) || os.Getenv("INTEGRATION_TEST_ENV") == "true" {
 				newCtx := context.Background()
 				task := service.NewSCTask()
 				task.GenerateStorageChallenges(newCtx)

@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/local"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/storage/local"
 
 	"github.com/gorilla/mux"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -31,8 +32,19 @@ type RetrieveResponse struct {
 	Value []byte `json:"value"`
 }
 
+// DeleteRequest indicates request structure of store request
+type DeleteRequest struct {
+	Key string `json:"key"`
+}
+
 // StoreRequest indicates request structure of store request
 type StoreRequest struct {
+	Value []byte `json:"value"`
+}
+
+// LocalStoreRequest indicates request structure of store request
+type LocalStoreRequest struct {
+	Key   string `json:"key"`
 	Value []byte `json:"value"`
 }
 
@@ -63,10 +75,13 @@ func NewService(config *Config, p2pClient p2p.Client) *Service {
 
 	router := mux.NewRouter()
 
+	router.HandleFunc("/local_p2p", service.p2pLocalStore).Methods(http.MethodPost)                    // store data only in local node
 	router.HandleFunc("/p2p/stats", service.p2pStats).Methods(http.MethodGet)                          // Return stats of p2p
 	router.HandleFunc("/p2p", service.p2pStore).Methods(http.MethodPost)                               // store a data
 	router.HandleFunc("/p2p/{key}", service.p2pRetrieve).Methods(http.MethodGet)                       // retrieve a key
-	router.HandleFunc("/storage/challenges", service.storageChallengeRetrieve).Methods(http.MethodGet) // retrieve a key
+	router.HandleFunc("/storage/challenges", service.storageChallengeRetrieve).Methods(http.MethodGet) // retrieve storage challenge data
+	router.HandleFunc("/storage/ceanup", service.storageChallengeCleanup).Methods(http.MethodGet)
+	router.HandleFunc("/p2p/remove", service.p2pDelete).Methods(http.MethodPost)
 	router.HandleFunc("/health", service.p2pHealth).Methods(http.MethodGet)
 
 	service.httpServer = &http.Server{
@@ -119,6 +134,24 @@ func (service *Service) p2pRetrieve(writer http.ResponseWriter, request *http.Re
 		Key:   key,
 		Value: value,
 	})
+}
+
+func (service *Service) storageChallengeCleanup(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+	}
+	defer store.CloseHistoryDB(ctx)
+
+	err = store.CleanupStorageChallenges()
+	if err != nil {
+		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+
+	responseWithJSON(writer, http.StatusOK, make(map[string]interface{}))
 }
 
 func (service *Service) storageChallengeRetrieve(writer http.ResponseWriter, request *http.Request) {
@@ -199,4 +232,49 @@ func (service *Service) Run(ctx context.Context) error {
 			service.cleanTracker.CheckExpires(ctx)
 		}
 	}
+}
+
+func (service *Service) p2pLocalStore(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+	log.WithContext(ctx).Info("p2pLocalStore")
+
+	var storeRequest LocalStoreRequest
+	if err := json.NewDecoder(request.Body).Decode(&storeRequest); err != nil {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"message": "Invalid body"})
+		return
+	}
+
+	key, err := service.p2pClient.LocalStore(ctx, storeRequest.Key, storeRequest.Value)
+	if err != nil {
+		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// Store to remove key after expires
+	service.cleanTracker.Track(key, time.Now().Add(defaultP2PExpiresDuration))
+
+	responseWithJSON(writer, http.StatusOK, &StoreReply{
+		Key: key,
+	})
+}
+
+func (service *Service) p2pDelete(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+	log.WithContext(ctx).Info("p2pDelete")
+
+	var delRequest DeleteRequest
+	if err := json.NewDecoder(request.Body).Decode(&delRequest); err != nil {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"message": "Invalid body"})
+		return
+	}
+
+	err := service.p2pClient.Delete(ctx, delRequest.Key)
+	if err != nil {
+		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	responseWithJSON(writer, http.StatusOK, &StoreReply{
+		Key: delRequest.Key,
+	})
 }

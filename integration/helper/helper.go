@@ -25,6 +25,20 @@ const (
 	HttpDelete = "DELETE"
 	// wsExpectedResponseTimeout in seconds until the websocket recieves the expected response
 	wsExpectedResponseTimeout = 200
+
+	SN1BaseURI = "http://localhost:19090"
+	// SN2BaseURI of SN2 Server
+	SN2BaseURI = "http://localhost:19091"
+	// SN3BaseURI of SN3 Server
+	SN3BaseURI = "http://localhost:19092"
+	// SN4BaseURI of SN4 Server
+	SN4BaseURI = "http://localhost:19093"
+	// SN5BaseURI of SN5 Server
+	SN5BaseURI = "http://localhost:19094"
+	// SN6BaseURI of SN6 Server
+	SN6BaseURI = "http://localhost:19095"
+	// SN7BaseURI of SN6 Server
+	SN7BaseURI = "http://localhost:19096"
 )
 
 // ItHelper is used by integration tests to make requests to server
@@ -41,6 +55,14 @@ func NewItHelper() *ItHelper {
 
 func GetStoreURI(baseURI string) string {
 	return fmt.Sprintf("%s/%s", baseURI, "p2p")
+}
+
+func GetLocalStoreURI(baseURI string) string {
+	return fmt.Sprintf("%s/%s", baseURI, "local_p2p")
+}
+
+func GetStorageChallengeURI(baseURI string) string {
+	return fmt.Sprintf("%s/%s", baseURI, "storage/challenges")
 }
 
 func GetRetrieveURI(baseURI, key string) string {
@@ -89,12 +111,16 @@ func (h *ItHelper) RequestRaw(method string, reqBody []byte, uri string, queryPa
 
 // Request makes a http request onto ItHelper.uri with ItHelper.token set for auth
 func (h *ItHelper) Request(method string, payload interface{}, uri string, queryParams map[string]string) (resp []byte, status int, err error) {
-	reqBody, err := json.Marshal(payload)
-	if err != nil {
-		return resp, 0, err
+
+	if payload != nil {
+		reqBody, err := json.Marshal(payload)
+		if err != nil {
+			return resp, 0, err
+		}
+		return h.RequestRaw(method, reqBody, uri, queryParams)
 	}
 
-	return h.RequestRaw(method, reqBody, uri, queryParams)
+	return h.RequestRaw(method, nil, uri, queryParams)
 }
 
 // Ping checks the health of solo api server

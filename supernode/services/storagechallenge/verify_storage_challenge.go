@@ -3,6 +3,7 @@ package storagechallenge
 import (
 	"context"
 	"fmt"
+
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -107,8 +108,9 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingChalleng
 		storageChallengeLog := types.StorageChallenge{
 			ChallengeID:     outgoingChallengeMessage.ChallengeId,
 			FileHash:        outgoingChallengeMessage.ChallengeFile.FileHashToChallenge,
-			ChallengingNode: task.nodeID,
+			ChallengingNode: incomingChallengeMessage.ChallengingMasternodeId,
 			Status:          types.VerifiedStorageChallengeStatus,
+			RespondingNode:  incomingChallengeMessage.RespondingMasternodeId,
 			GeneratedHash:   challengeCorrectHash,
 			StartingIndex:   int(outgoingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex),
 			EndingIndex:     int(outgoingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex),

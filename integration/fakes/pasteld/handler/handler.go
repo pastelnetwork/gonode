@@ -149,7 +149,7 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 	if err := jrpc2.ParseParams(params, p); err != nil {
 		return nil, err
 	}
-
+	fmt.Println("got params: ", p.Params)
 	if p.Params[0] == "find" && p.Params[1] == "id" && !isValidMNPastelID(p.Params[2]) {
 		return nil, &jrpc2.ErrorObject{
 			Code:    jrpc2.InvalidParamsCode,
@@ -202,8 +202,8 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 		}
 
 		return toRet, nil
-	} else if len(p.Params) > 2 && p.Params[0] == "list" &&
-		((p.Params[1] == "trade" && p.Params[2] == "available") || p.Params[1] == "act") {
+	} else if len(p.Params) >= 2 && p.Params[0] == "list" &&
+		((p.Params[1] == "trade" && p.Params[2] == "available") || p.Params[1] == "act" || p.Params[1] == "nft") {
 		if p.Params[1] == "act" {
 			p.Params = p.Params[:2]
 
@@ -217,6 +217,28 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 				}
 			}
 			toRet := ActTickets{}
+			if err := json.Unmarshal(data, &toRet); err != nil {
+				return nil, &jrpc2.ErrorObject{
+					Code:    jrpc2.InternalErrorCode,
+					Message: jrpc2.ErrorMsg("unable to unmarsal " + err.Error()),
+					Data:    "unmarshal failure",
+				}
+			}
+
+			return toRet, nil
+		} else if p.Params[1] == "nft" {
+			p.Params = p.Params[:2]
+
+			key := "tickets" + "*" + strings.Join(p.Params, "*")
+			data, err := h.store.Get(key)
+			if err != nil {
+				return nil, &jrpc2.ErrorObject{
+					Code:    jrpc2.InternalErrorCode,
+					Message: jrpc2.ErrorMsg("unable to fetch " + err.Error()),
+					Data:    "fetch failure",
+				}
+			}
+			toRet := RegTickets{}
 			if err := json.Unmarshal(data, &toRet); err != nil {
 				return nil, &jrpc2.ErrorObject{
 					Code:    jrpc2.InternalErrorCode,

@@ -686,3 +686,24 @@ func storeDDAndFpFile(f []byte, h *helper.ItHelper, uri string) {
 		return
 	}
 }
+
+func storeRQIDFile(f []byte, h *helper.ItHelper, uri string) {
+	//f should be compressed dd and fp file
+	storeReq := &helper.StoreRequest{
+		Value: f,
+	}
+
+	resp, status, err := h.Request(helper.HttpPost, storeReq, helper.GetStoreURI(uri), nil)
+	if err != nil || status != http.StatusOK {
+		fmt.Println("Failed to store a dd and fp file ")
+		return
+	}
+	repl := &helper.StoreReply{}
+	json.Unmarshal(resp, repl)
+	/*if repl.Key != ddAndFpFileHash {
+		fmt.Println("Stored dd and fp file at different file hash: " + repl.Key)
+		return
+	}*/
+
+	fmt.Printf("rq file stored with hash: %s", repl.Key)
+}

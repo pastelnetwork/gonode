@@ -49,12 +49,12 @@ var _ = BeforeSuite(func() {
 	b.InitialInterval = 200 * time.Millisecond
 
 	pingServers := func() error {
-		servers := append(it.SNServers, it.RQServers...)
-		servers = append(servers, it.DDServers...)
-		servers = append(servers, it.PasteldServers...)
+		servers := it.SCSNServers
+		servers = append(servers, it.SCDDServers...)
+		servers = append(servers, it.SCPasteldServers...)
 		for _, addr := range servers {
 			backoff.Retry(backoff.Operation(func() error {
-				if err := helper.Ping(fmt.Sprintf("%v/%v", it.SN1BaseURI, "health")); err != nil {
+				if err := helper.Ping(fmt.Sprintf("%v/%v", addr, "health")); err != nil {
 					return fmt.Errorf("err reaching server: %s - err: %w", addr, err)
 				}
 

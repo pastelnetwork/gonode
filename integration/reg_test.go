@@ -26,7 +26,7 @@ var _ = Describe("NFTRegistration", func() {
 	)
 
 	BeforeEach(func() {
-		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, it.SNServers, itHelper)
+		mocker = mock.New(it.PasteldServers, it.DDServers, it.SNServers, itHelper)
 
 		uploadImageReq = &helper.UploadImageReq{
 			Filename: filepath.Join(filepath.Dir("."), "testdata", "test.jpg"),
