@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/log"
@@ -149,6 +151,14 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	sliceOfSupernodesClosestToFileHashExcludingCurrentNode := task.GetNClosestSupernodeIDsToComparisonString(ctx, 10, challengeMessage.ChallengeFile.FileHashToChallenge, sliceOfSupernodeKeysExceptCurrentNode)
 	log.WithContext(ctx).Info(fmt.Sprintf("sliceOfSupernodesClosestToFileHashExcludingCurrentNode:%s", sliceOfSupernodesClosestToFileHashExcludingCurrentNode))
 
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
 	var (
 		countOfFailures  int
 		wg               sync.WaitGroup
@@ -182,6 +192,25 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 
 		log.WithContext(ctx).Info(fmt.Sprintf("sending challenge message for verification to node:%s", nodeToConnectTo))
 		//Sends the verify storage challenge message to the connected verifying supernode
+
+		if store != nil {
+			log.WithContext(ctx).Println("Storing challenge logs to DB")
+			storageChallengeLog := types.StorageChallenge{
+				ChallengeID:     challengeMessage.ChallengeId,
+				FileHash:        challengeMessage.ChallengeFile.FileHashToChallenge,
+				ChallengingNode: task.nodeID,
+				RespondingNode:  mn.ExtKey,
+				Status:          types.ProcessedStorageChallengeStatus,
+				StartingIndex:   int(challengeMessage.ChallengeFile.ChallengeSliceStartIndex),
+				EndingIndex:     int(challengeMessage.ChallengeFile.ChallengeSliceEndIndex),
+			}
+
+			_, err = store.InsertStorageChallenge(storageChallengeLog)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("Error storing challenge log to DB")
+				err = nil
+			}
+		}
 
 		wg.Add(1)
 		go func() {

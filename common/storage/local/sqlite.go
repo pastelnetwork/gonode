@@ -25,14 +25,16 @@ const createTaskHistory string = `
 
 const alterTaskHistory string = `ALTER TABLE task_history ADD COLUMN details TEXT;`
 
-const createFailedStorageChallenges string = `
-  CREATE TABLE IF NOT EXISTS failed_storage_challenges (
+const createStorageChallenges string = `
+  CREATE TABLE IF NOT EXISTS storage_challenges (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   challenge_id TEXT NOT NULL,
   file_hash TEXT NOT NULL,
   status TEXT NOT NULL,
   responding_node TEXT NOT NULL,
-  file_reconstructing_node TEXT,
+  generated_hash TEXT,
+  starting_index INTEGER,
+  ending_index INTEGER,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL                                                  
   );`
@@ -109,12 +111,12 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 	return data, nil
 }
 
-// InsertFailedStorageChallenge inserts failed storage challenge to db
-func (s *SQLiteStore) InsertFailedStorageChallenge(challenge types.FailedStorageChallenge) (hID int, err error) {
+// InsertStorageChallenge inserts failed storage challenge to db
+func (s *SQLiteStore) InsertStorageChallenge(challenge types.StorageChallenge) (hID int, err error) {
 	now := time.Now()
-	const insertQuery = "INSERT INTO failed_storage_challenges(id, challenge_id, file_hash, status, responding_node, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?);"
+	const insertQuery = "INSERT INTO storage_challenges(id, challenge_id, file_hash, status, generated_hash, responding_node, starting_index, ending_index, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?,?,?);"
 
-	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.FileHash, challenge.Status, challenge.RespondingNode, now, now)
+	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.FileHash, challenge.Status, challenge.GeneratedHash, challenge.RespondingNode, challenge.StartingIndex, challenge.EndingIndex, now, now)
 	if err != nil {
 		return 0, err
 	}
@@ -127,19 +129,20 @@ func (s *SQLiteStore) InsertFailedStorageChallenge(challenge types.FailedStorage
 	return int(id), nil
 }
 
-// QueryFailedStorageChallenges retrieves failed challenges stored in DB for self-healing
-func (s *SQLiteStore) QueryFailedStorageChallenges() (challenges []types.FailedStorageChallenge, err error) {
+// QueryStorageChallenges retrieves failed challenges stored in DB for self-healing
+func (s *SQLiteStore) QueryStorageChallenges(status types.StorageChallengeStatus) (challenges []types.StorageChallenge, err error) {
 	const selectQuery = "SELECT * FROM failed_storage_challenges WHERE status = ?"
-	rows, err := s.db.Query(selectQuery, types.CreatedSelfHealingStatus)
+	rows, err := s.db.Query(selectQuery, status)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		challenge := types.FailedStorageChallenge{}
+		challenge := types.StorageChallenge{}
 		err = rows.Scan(&challenge.ID, &challenge.ChallengeID, &challenge.FileHash, &challenge.Status,
-			&challenge.RespondingNode, challenge.CreatedAt, challenge.UpdatedAt)
+			&challenge.RespondingNode, &challenge.GeneratedHash, &challenge.StartingIndex, &challenge.EndingIndex,
+			challenge.CreatedAt, challenge.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -148,17 +151,6 @@ func (s *SQLiteStore) QueryFailedStorageChallenges() (challenges []types.FailedS
 	}
 
 	return challenges, nil
-}
-
-// UpdateFailedStorageChallenge update the given failed storage challenge by ID
-func (s *SQLiteStore) UpdateFailedStorageChallenge(challenge types.FailedStorageChallenge) (err error) {
-	const updateQuery = "update failed_storage_challenges set status = ?, file_reconstructing_node = ?, updated_at= ? WHERE id = ?"
-	_, err = s.db.Exec(updateQuery, challenge.Status, challenge.FileReconstructingNode, time.Now(), challenge.ID)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // OpenHistoryDB opens history DB
@@ -173,7 +165,7 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
-	if _, err := db.Exec(createFailedStorageChallenges); err != nil {
+	if _, err := db.Exec(createStorageChallenges); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 

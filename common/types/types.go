@@ -71,16 +71,33 @@ func (s SelfHealingStatus) String() string {
 	return "Undefined"
 }
 
-// FailedStorageChallenge represents failed storage challenge
-type FailedStorageChallenge struct {
-	ID                     int64
-	ChallengeID            string
-	FileHash               string
-	RespondingNode         string
-	FileReconstructingNode string
-	Status                 string
-	CreatedAt              time.Time
-	UpdatedAt              time.Time
+// StorageChallengeStatus represents possible storage challenge statuses
+type StorageChallengeStatus int
+
+const (
+	//UndefinedStorageChallengeStatus represents invalid storage challenge type
+	UndefinedStorageChallengeStatus StorageChallengeStatus = iota
+	//GeneratedStorageChallengeStatus represents when the challenge is stored after generation
+	GeneratedStorageChallengeStatus
+	//ProcessedStorageChallengeStatus represents when the challenge is stored after processing
+	ProcessedStorageChallengeStatus
+	//VerifiedStorageChallengeStatus represents when the challenge is stored after verification
+	VerifiedStorageChallengeStatus
+)
+
+// StorageChallenge represents storage challenge
+type StorageChallenge struct {
+	ID              int64
+	ChallengeID     string
+	FileHash        string
+	ChallengingNode string
+	RespondingNode  string
+	GeneratedHash   string
+	Status          StorageChallengeStatus
+	StartingIndex   int
+	EndingIndex     int
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // Fields represents status log
