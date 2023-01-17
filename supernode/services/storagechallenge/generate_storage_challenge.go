@@ -3,6 +3,8 @@ package storagechallenge
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 	"math"
 	"math/rand"
 	"strconv"
@@ -32,7 +34,7 @@ import (
 // Send the storage challenge message for processing by the responder
 // Save the challenge state
 
-//GenerateStorageChallenges is called from service run, generate storage challenges will determine if we should issue a storage challenge,
+// GenerateStorageChallenges is called from service run, generate storage challenges will determine if we should issue a storage challenge,
 // and if so calculate and issue it.
 func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	log.WithContext(ctx).Println("Generate Storage Challenges invoked")
@@ -143,6 +145,14 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	// challenge those supernodes (they become responder) for the hash selected
 	log.WithContext(ctx).Info("supernodes that will be challenged against the files have been selected")
 
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
 	for idx2, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
 		b, err := task.GetSymbolFileByKey(ctx, currentFileHashToChallenge, false)
 		if err != nil {
@@ -193,6 +203,24 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		}
 		// Save the challenge state
 		task.SaveChallengeMessageState(ctx, "sent", challengeID, challengingSupernodeID, currentBlockCount)
+
+		if store != nil {
+			log.WithContext(ctx).Println("Storing challenge logs to DB")
+			storageChallengeLog := types.StorageChallenge{
+				ChallengeID:     outgoingChallengeMessage.ChallengeId,
+				FileHash:        outgoingChallengeMessage.ChallengeFile.FileHashToChallenge,
+				ChallengingNode: outgoingChallengeMessage.ChallengingMasternodeId,
+				RespondingNode:  outgoingChallengeMessage.RespondingMasternodeId,
+				Status:          types.GeneratedStorageChallengeStatus,
+				StartingIndex:   challengeSliceStartIndex,
+				EndingIndex:     challengeSliceEndIndex,
+			}
+
+			_, err = store.InsertStorageChallenge(storageChallengeLog)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("Error storing challenge log to DB")
+			}
+		}
 	}
 
 	log.WithContext(ctx).Info("files have been challenged")
@@ -237,7 +265,7 @@ func (task *SCTask) SendProcessStorageChallenge(ctx context.Context, challengeMe
 	//return s.actor.Send(ctx, s.domainActorID, newSendProcessStorageChallengeMsg(ctx, processingSupernodeAddr, challengeMessage))
 }
 
-//This is how we programmatically determine which pieces of the file get read and hashed for challenging to determine if the supernodes are properly hosting.
+// This is how we programmatically determine which pieces of the file get read and hashed for challenging to determine if the supernodes are properly hosting.
 func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashString string, blockHashString string, challengingSupernodeID string) (int, int) {
 	//raptorq files are kb in length, so this is unlikely to be run but this check might be useful at a later date
 	if totalDataLengthInBytes < 200 {

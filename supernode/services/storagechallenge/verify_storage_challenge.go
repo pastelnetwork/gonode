@@ -3,19 +3,21 @@ package storagechallenge
 import (
 	"context"
 	"fmt"
-
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
-//VerifyStorageChallenge : Verifying the storage challenge will occur if we are one of the <default 10> closest node ID's to the file hash being challenged.
-//  On receipt of challenge message we:
-// 		Validate it
-//  	Get the file assuming we host it locally (if not, return)
-//  	Compute the hash of the data at the indicated byte range
-//		If the hash is correct and within the given byte range, success is indicated otherwise failure is indicated via SaveChallengeMessageState
+// VerifyStorageChallenge : Verifying the storage challenge will occur if we are one of the <default 10> closest node ID's to the file hash being challenged.
+//
+//	 On receipt of challenge message we:
+//			Validate it
+//	 	Get the file assuming we host it locally (if not, return)
+//	 	Compute the hash of the data at the indicated byte range
+//			If the hash is correct and within the given byte range, success is indicated otherwise failure is indicated via SaveChallengeMessageState
 func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
 	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug("Start verifying storage challenge") // Incoming challenge message validation
 	if err := task.validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
@@ -92,6 +94,30 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingChalleng
 		ChallengeSliceCorrectHash: challengeCorrectHash,
 		ChallengeResponseHash:     incomingChallengeMessage.ChallengeResponseHash,
 		ChallengeId:               incomingChallengeMessage.ChallengeId,
+	}
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+
+		log.WithContext(ctx).Println("Storing challenge logs to DB")
+		storageChallengeLog := types.StorageChallenge{
+			ChallengeID:     outgoingChallengeMessage.ChallengeId,
+			FileHash:        outgoingChallengeMessage.ChallengeFile.FileHashToChallenge,
+			ChallengingNode: task.nodeID,
+			Status:          types.VerifiedStorageChallengeStatus,
+			GeneratedHash:   challengeCorrectHash,
+			StartingIndex:   int(outgoingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex),
+			EndingIndex:     int(outgoingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex),
+		}
+
+		_, err = store.InsertStorageChallenge(storageChallengeLog)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error storing challenge log to DB")
+		}
 	}
 
 	blocksToRespondToStorageChallenge := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
