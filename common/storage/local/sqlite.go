@@ -130,9 +130,9 @@ func (s *SQLiteStore) InsertStorageChallenge(challenge types.StorageChallenge) (
 }
 
 // QueryStorageChallenges retrieves failed challenges stored in DB for self-healing
-func (s *SQLiteStore) QueryStorageChallenges(status types.StorageChallengeStatus) (challenges []types.StorageChallenge, err error) {
-	const selectQuery = "SELECT * FROM failed_storage_challenges WHERE status = ?"
-	rows, err := s.db.Query(selectQuery, status)
+func (s *SQLiteStore) QueryStorageChallenges() (challenges []types.StorageChallenge, err error) {
+	const selectQuery = "SELECT * FROM storage_challenges"
+	rows, err := s.db.Query(selectQuery)
 	if err != nil {
 		return nil, err
 	}
