@@ -20,7 +20,7 @@ services:
     build:
       context: ../..
       dockerfile: ./integration/infra/wn.it.Dockerfile
-    command: sh -c "/app/app --config-file=/configs/wn.yml --pastel-config-file=/configs/p0.conf"
+    command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/wn.yml --pastel-config-file=/configs/p0.conf"
     ports:
       - 18089:8089
   sn1:
@@ -33,7 +33,7 @@ services:
     build:
       context: ../..
       dockerfile: ./integration/infra/sn.it.Dockerfile
-    command: sh -c "/app/app --config-file=/configs/sn1.yml --pastel-config-file=/configs/p1.conf"
+    command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn1.yml --pastel-config-file=/configs/p1.conf"
     ports:
       - 19090:9090
   sn2:
@@ -45,7 +45,7 @@ services:
       - INTEGRATION_TEST_ENV=true
     depends_on:
       - sn1
-    command: sh -c "/app/app --config-file=/configs/sn2.yml --pastel-config-file=/configs/p2.conf"
+    command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn2.yml --pastel-config-file=/configs/p2.conf"
     ports:
       - 19091:9090
   sn3:
@@ -57,7 +57,7 @@ services:
       - INTEGRATION_TEST_ENV=true
     depends_on:
       - sn1
-    command: sh -c "/app/app --config-file=/configs/sn3.yml --pastel-config-file=/configs/p3.conf"
+    command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn3.yml --pastel-config-file=/configs/p3.conf"
     ports:
       - 19092:9090
   sn4:
@@ -69,14 +69,14 @@ services:
       - INTEGRATION_TEST_ENV=true
     depends_on:
       - sn1
-    command: sh -c "/app/app --config-file=/configs/sn4.yml --pastel-config-file=/configs/p4.conf"
+    command: sh -c "/app/pastelup start rq-service &&/app/app --config-file=/configs/sn4.yml --pastel-config-file=/configs/p4.conf"
     ports:
       - 19093:9090
   dd-server-1:
     <<: *default
     container_name: dd-server-1
     hostname: dd-server-1
-    image: gonode-dd-server:0.1
+    image: gonode-dd-server:0.1 
     build:
       context: ../..
       dockerfile: ./integration/infra/dd.it.Dockerfile
@@ -113,49 +113,14 @@ services:
     command: sh -c "/app/app"
     ports:
       - 53052:51052
-  rq-server-1:
-    <<: *default
-    container_name: rq-server-1
-    hostname: rq-server-1
-    image: gonode-rq-server:0.1
-    build:
-      context: ../..
-      dockerfile: ./integration/infra/rq.it.Dockerfile
-    command: sh -c "/app/app"
-    ports:
-      - 51051:51051
-  rq-server-2:
-    <<: *default
-    container_name: rq-server-2
-    hostname: rq-server-2
-    image: gonode-rq-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 52051:51051
-  rq-server-0:
-    <<: *default
-    container_name: rq-server-0
-    hostname: rq-server-0
-    image: gonode-rq-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 49051:51051
-  rq-server-3:
-    <<: *default
-    container_name: rq-server-3
-    hostname: rq-server-3
-    image: gonode-rq-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 53051:51051
-  rq-server-4:
-    <<: *default
-    container_name: rq-server-4
-    hostname: rq-server-4
-    image: gonode-rq-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 54051:51051
+  #rq-server-0:
+  #  <<: *default
+  #  container_name: rq-server-0
+  #  hostname: rq-server-0
+  #  image: gonode-rq-server:0.1
+  #  ports:
+  #    - 49051:50051
+  #  command: sh -c "./pastelup start rq-service && tail -f /root/.pastel/rqservice.log"
   pasteld-1:
     <<: *default
     container_name: pasteld-1
