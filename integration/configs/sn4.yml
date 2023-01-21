@@ -38,7 +38,7 @@ metadb:
   block_interval: 48
 
 raptorq:
-  host: "rq-server-4"
+  host: "127.0.0.1"
   port: 50051
 
 dd-server:

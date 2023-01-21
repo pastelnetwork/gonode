@@ -42,12 +42,12 @@ func (m *Mocker) MockAllRegExpections() error {
 		}
 	}
 
-	for _, addr := range m.rqAddrs {
+	/*for _, addr := range m.rqAddrs {
 		if err := m.mockRqRegExpections(addr); err != nil {
 			return fmt.Errorf("server: %s err: %w", addr, err)
 		}
 	}
-
+	*/
 	for _, addr := range m.ddAddrs {
 		if err := m.mockDDServerRegExpections(addr); err != nil {
 			return fmt.Errorf("server: %s err: %w", addr, err)
@@ -64,7 +64,7 @@ func (m *Mocker) MockAllRegExpections() error {
 }
 
 func (m *Mocker) CleanupAll() error {
-	addrs := append(m.pasteldAddrs, m.rqAddrs...)
+	addrs := m.pasteldAddrs
 	addrs = append(addrs, m.ddAddrs...)
 	for _, addr := range addrs {
 		if err := m.cleanup(addr); err != nil {
