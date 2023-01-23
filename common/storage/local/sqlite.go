@@ -28,7 +28,7 @@ const alterTaskHistory string = `ALTER TABLE task_history ADD COLUMN details TEX
 const createStorageChallenges string = `
   CREATE TABLE IF NOT EXISTS storage_challenges (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  challenge_id TEXT NOT NULL,
+  challenge_id TEXT UNIQUE NOT NULL,
   file_hash TEXT NOT NULL,
   status TEXT NOT NULL,
   responding_node TEXT NOT NULL,
@@ -114,9 +114,9 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 // InsertStorageChallenge inserts failed storage challenge to db
 func (s *SQLiteStore) InsertStorageChallenge(challenge types.StorageChallenge) (hID int, err error) {
 	now := time.Now()
-	const insertQuery = "INSERT INTO storage_challenges(id, challenge_id, file_hash, status, generated_hash, responding_node, starting_index, ending_index, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?,?,?);"
+	const upsertQuery = "INSERT INTO storage_challenges(id, challenge_id, file_hash, status, generated_hash, responding_node, starting_index, ending_index, created_at, updated_at) VALUES(NULL,$1,$2,$3,$4,$5,$6,$7,$8,$8) ON CONFLICT(challenge_id) DO UPDATE SET status = $3, updated_at = $8;"
 
-	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.FileHash, challenge.Status, challenge.GeneratedHash, challenge.RespondingNode, challenge.StartingIndex, challenge.EndingIndex, now, now)
+	res, err := s.db.Exec(upsertQuery, challenge.ChallengeID, challenge.FileHash, challenge.Status, challenge.GeneratedHash, challenge.RespondingNode, challenge.StartingIndex, challenge.EndingIndex, now)
 	if err != nil {
 		return 0, err
 	}
