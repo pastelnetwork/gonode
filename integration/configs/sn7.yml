@@ -15,7 +15,7 @@ rq-files-dir:
 dd-service-dir: 
 
 node:
-  pastel_id: "jXZFvrCSNQGfrRA8RaXpzm2TEV38hQiyesNZg7joEjBNjXGieM8ZTyhKYxkBrqdtTpYcACRKQjMLQrmKNpfrL8"
+  pastel_id: "jXYqgELnZQUSC2D5ZKPzVxaJwDLKC2NAzTzvEkR5EXU3od7xDJH9JgsMWvU6FoYQaBVP489A1y7qw756m8Er1S"
   pass_phrase: "passphrase"
   server:
     listen_addresses: "0.0.0.0"
@@ -25,8 +25,12 @@ p2p:
   listen_address: "0.0.0.0"
   port: 14445
   data_dir: "p2p-data"
-  bootstrap_ips: "snserver-1:14445,snserver-3:14445,snserver-4:14445,snserver-5:14445,snserver-6,snserver-7:14445"
-  external_ip: "snserver-2"
+  bootstrap_ips: "snserver-1:14445,snserver-2:14445,snserver-3:14445,snserver-4:14445,snserver-5:14445,snserver-6:14445"
+  external_ip: "snserver-7"
+
+raptorq:
+  host: "127.0.0.1"
+  port: 50051
 
 metadb:
   is_leader: false
@@ -36,12 +40,8 @@ metadb:
   raft_port: 14447
   data_dir: "metadb-4041"
   block_interval: 48
-
-raptorq:
-  host: "127.0.0.1"
-  port: 50051
-
+  
 dd-server:
-  host: "dd-server-2"
+  host: "dd-server-7"
   port: 50052
   dd-temp-file-dir: "dd-server"

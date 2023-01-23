@@ -211,3 +211,14 @@ func New(config *Config, pastelClient pastel.Client, secInfo *alts.SecInfo) P2P 
 		secInfo:      secInfo,
 	}
 }
+
+// LocalStore store data into the kademlia network
+func (s *p2p) LocalStore(ctx context.Context, key string, data []byte) (string, error) {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	if !s.running {
+		return "", errors.New("p2p service is not running")
+	}
+
+	return s.dht.LocalStore(ctx, key, data)
+}

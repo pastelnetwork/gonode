@@ -249,6 +249,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	if len(localOnly) > 0 && localOnly[0] {
 		return nil, fmt.Errorf("local-only failed to get properly: " + err.Error())
 	}
+	log.WithContext(ctx).Info("Not found locally, searching in other nodes")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
@@ -571,4 +572,16 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 func (s *DHT) NClosestNodes(_ context.Context, n int, key string, ignores ...*Node) []*Node {
 	nodeList := s.ht.closestContacts(n, base58.Decode(key), ignores)
 	return nodeList.Nodes
+}
+
+// LocalStore the data into the network
+func (s *DHT) LocalStore(ctx context.Context, key string, data []byte) (string, error) {
+
+	// store the key to local storage
+	if err := s.retryStore(ctx, []byte(key), data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("local data store failure after retries")
+		return "", fmt.Errorf("retry store data to local storage: %v", err)
+	}
+
+	return key, nil
 }

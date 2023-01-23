@@ -36,7 +36,7 @@ var _ = Describe("Download", func() {
 			PastelID: "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
 		}
 
-		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, it.SNServers, itHelper)
+		mocker = mock.New(it.PasteldServers, it.DDServers, it.SNServers, itHelper)
 		symbol = []byte("test-symbol")
 		id, err := helper.GetP2PID(symbol)
 		Expect(err).NotTo(HaveOccurred())

@@ -84,8 +84,15 @@ func (service *storageChallengeGRPCClient) VerifyStorageChallenge(ctx context.Co
 	res, err := service.client.VerifyStorageChallenge(ctx, &pb.VerifyStorageChallengeRequest{
 		Data: challengeMessage,
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	return res.Data, err
+	if res == nil {
+		return nil, errors.New("nil response from VerifyStorageChallenge")
+	}
+
+	return res.Data, nil
 }
 
 func newStorageChallengeGRPCClient(conn *clientConn) node.StorageChallengeInterface {

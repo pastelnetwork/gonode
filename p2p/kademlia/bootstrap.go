@@ -210,13 +210,13 @@ func (s *DHT) Bootstrap(ctx context.Context, bootstrapIPs string) error {
 				log.P2P().WithContext(ctx).Debugf("ping response: %v", response.String())
 
 				// add the node to the route table
-				log.P2P().WithContext(ctx).WithField("sender-id", response.Sender.ID).
-					WithField("sender-ip", response.Sender.IP).
+				log.P2P().WithContext(ctx).WithField("sender-id", string(response.Sender.ID)).
+					WithField("sender-ip", string(response.Sender.IP)).
 					WithField("sender-port", response.Sender.Port).Info("add-node params")
 
 				if len(response.Sender.ID) != len(s.ht.self.ID) {
-					log.P2P().WithContext(ctx).WithField("sender-id", response.Sender.ID).
-						WithField("self-id", s.ht.self.ID).Warn("self ID && sender ID len don't match")
+					log.P2P().WithContext(ctx).WithField("sender-id", string(response.Sender.ID)).
+						WithField("self-id", string(s.ht.self.ID)).Warn("self ID && sender ID len don't match")
 
 					continue
 				}

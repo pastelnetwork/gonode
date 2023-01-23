@@ -32,6 +32,8 @@ const createStorageChallenges string = `
   file_hash TEXT NOT NULL,
   status TEXT NOT NULL,
   responding_node TEXT NOT NULL,
+  verifying_nodes TEXT NOT NULL,
+  challenging_node TEXT NOT NULL,
   generated_hash TEXT,
   starting_index INTEGER,
   ending_index INTEGER,
@@ -114,9 +116,9 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 // InsertStorageChallenge inserts failed storage challenge to db
 func (s *SQLiteStore) InsertStorageChallenge(challenge types.StorageChallenge) (hID int, err error) {
 	now := time.Now()
-	const insertQuery = "INSERT INTO storage_challenges(id, challenge_id, file_hash, status, generated_hash, responding_node, starting_index, ending_index, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?,?,?);"
+	const insertQuery = "INSERT INTO storage_challenges(id, challenge_id, file_hash, status, generated_hash, responding_node, verifying_nodes, challenging_node, starting_index, ending_index, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?,?,?,?,?);"
 
-	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.FileHash, challenge.Status, challenge.GeneratedHash, challenge.RespondingNode, challenge.StartingIndex, challenge.EndingIndex, now, now)
+	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.FileHash, challenge.Status, challenge.GeneratedHash, challenge.RespondingNode, challenge.VerifyingNodes, challenge.ChallengingNode, challenge.StartingIndex, challenge.EndingIndex, now, now)
 	if err != nil {
 		return 0, err
 	}
@@ -141,8 +143,8 @@ func (s *SQLiteStore) QueryStorageChallenges() (challenges []types.StorageChalle
 	for rows.Next() {
 		challenge := types.StorageChallenge{}
 		err = rows.Scan(&challenge.ID, &challenge.ChallengeID, &challenge.FileHash, &challenge.Status,
-			&challenge.RespondingNode, &challenge.GeneratedHash, &challenge.StartingIndex, &challenge.EndingIndex,
-			challenge.CreatedAt, challenge.UpdatedAt)
+			&challenge.RespondingNode, &challenge.VerifyingNodes, &challenge.ChallengingNode, &challenge.GeneratedHash, &challenge.StartingIndex, &challenge.EndingIndex,
+			&challenge.CreatedAt, &challenge.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -151,6 +153,13 @@ func (s *SQLiteStore) QueryStorageChallenges() (challenges []types.StorageChalle
 	}
 
 	return challenges, nil
+}
+
+// CleanupStorageChallenges cleans up challenges stored in DB for self-healing
+func (s *SQLiteStore) CleanupStorageChallenges() (err error) {
+	const delQuery = "DELETE FROM storage_challenges"
+	_, err = s.db.Exec(delQuery)
+	return err
 }
 
 // OpenHistoryDB opens history DB

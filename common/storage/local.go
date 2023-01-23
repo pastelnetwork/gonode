@@ -12,5 +12,6 @@ type LocalStoreInterface interface {
 	QueryTaskHistory(taskID string) (history []types.TaskHistory, err error)
 	InsertStorageChallenge(challenge types.StorageChallenge) (hID int, err error)
 	QueryStorageChallenges() (challenges []types.StorageChallenge, err error)
+	CleanupStorageChallenges() (err error)
 	CloseHistoryDB(ctx context.Context)
 }

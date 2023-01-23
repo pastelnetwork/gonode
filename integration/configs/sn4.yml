@@ -15,7 +15,7 @@ rq-files-dir:
 dd-service-dir: 
 
 node:
-  pastel_id: "jXYegY26dJ1auzTj5xy1LSUHy3vEn91pMjQrMwAb97nVzH1859xBzbdiU1RsAhJiQ6Z8VbJwQeH5pwGbFAAaHc"
+  pastel_id: "jABegY26dJ1auzTj5xy1LSUHy3vEn91pMjQrMwAb97nVzH1859xBzbdiU1RsAhJiQ6Z8VbJwQeH5pwGbFAAaHc"
   pass_phrase: "passphrase"
   server:
     listen_addresses: "0.0.0.0"
@@ -25,7 +25,7 @@ p2p:
   listen_address: "0.0.0.0"
   port: 14445
   data_dir: "p2p-data"
-  bootstrap_ips: "snserver-1:14445,snserver-2:14445,snserver-3:14445"
+  bootstrap_ips: "snserver-1:14445,snserver-2:14445,snserver-3:14445,snserver-5:14445,snserver-6:14445,snserver-7:14445"
   external_ip: "snserver-4"
 
 metadb:

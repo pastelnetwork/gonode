@@ -22,4 +22,8 @@ type Client interface {
 
 	// NClosestNodes return n closest supernodes to a given key string (NB full node string formatting)
 	NClosestNodes(ctx context.Context, n int, key string, ignores ...string) []string
+
+	// LocalStore store data to the network, which will trigger the iterative store message
+	// - the base58 encoded identifier will be returned
+	LocalStore(ctx context.Context, key string, data []byte) (string, error)
 }

@@ -21,7 +21,7 @@ var _ = Describe("NFTSearch", func() {
 	)
 
 	BeforeEach(func() {
-		mocker = mock.New(it.PasteldServers, it.DDServers, it.RQServers, it.SNServers, itHelper)
+		mocker = mock.New(it.PasteldServers, it.DDServers, it.SNServers, itHelper)
 		Expect(mocker.MockAllRegExpections()).To(Succeed())
 
 		storeReq = &helper.StoreRequest{}

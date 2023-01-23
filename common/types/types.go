@@ -92,6 +92,7 @@ type StorageChallenge struct {
 	FileHash        string
 	ChallengingNode string
 	RespondingNode  string
+	VerifyingNodes  string
 	GeneratedHash   string
 	Status          StorageChallengeStatus
 	StartingIndex   int
