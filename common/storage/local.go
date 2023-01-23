@@ -14,5 +14,6 @@ type LocalStoreInterface interface {
 	QueryStorageChallenges() (challenges []types.StorageChallenge, err error)
 	CleanupStorageChallenges() (err error)
 	InsertSelfHealingChallenge(challenge types.SelfHealingChallenge) (hID int, err error)
+	QuerySelfHealingChallenges() (challenges []types.SelfHealingChallenge, err error)
 	CloseHistoryDB(ctx context.Context)
 }
