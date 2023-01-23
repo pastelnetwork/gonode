@@ -86,7 +86,7 @@ func (service *SelfHealingChallengeGRPC) Session(stream pb.SelfHealing_SessionSe
 
 // Desc returns a description of the service.
 func (service *SelfHealingChallengeGRPC) Desc() *grpc.ServiceDesc {
-	return &pb.StorageChallenge_ServiceDesc
+	return &pb.SelfHealing_ServiceDesc
 }
 
 // ProcessSelfHealingChallenge is the server side of self-healing challenge processing GRPC comms
@@ -105,14 +105,14 @@ func (service *SelfHealingChallengeGRPC) ProcessSelfHealingChallenge(ctx context
 // VerifySelfHealingChallenge is the server side of self-healing challenge verification GRPC comms
 func (service *SelfHealingChallengeGRPC) VerifySelfHealingChallenge(ctx context.Context, scRequest *pb.VerifySelfHealingChallengeRequest) (*pb.VerifySelfHealingChallengeReply, error) {
 	log.WithContext(ctx).WithField("req", scRequest).Debugf("Verify Self-Healing Request received from gRpc client")
-	//task := service.NewSHTask()
+	task := service.NewSHTask()
 
-	//data, err := task.VerifySelfHealingChallenge(ctx, scRequest.Data)
-	//if err != nil {
-	//	log.WithContext(ctx).WithError(err).Error("Error verifying Self-Healing")
-	//}
+	data, err := task.VerifySelfHealingChallenge(ctx, scRequest.Data)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error verifying Self-Healing")
+	}
 
-	return &pb.VerifySelfHealingChallengeReply{}, nil
+	return &pb.VerifySelfHealingChallengeReply{Data: data}, nil
 }
 
 // NewSelfHealingChallengeGRPC returns a new SelfHealing instance.

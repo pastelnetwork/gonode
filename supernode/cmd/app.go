@@ -273,7 +273,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewDownloadNft(nftDownload),
 		bridge.NewDownloadData(nftDownload),
 		supernode.NewStorageChallengeGRPC(storageChallenger),
-		//supernode.NewSelfHealingChallengeGRPC(selfHealing),
+		supernode.NewSelfHealingChallengeGRPC(selfHealing),
 		healthcheck.NewHealthCheck(statsMngr),
 		hermes.NewHermes(p2p),
 	)
