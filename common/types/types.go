@@ -41,36 +41,6 @@ type TaskHistory struct {
 	Details   *Details
 }
 
-// SelfHealingStatus represents possible self-healing statuses of failed challenge
-type SelfHealingStatus int
-
-const (
-	//UndefinedSelfHealingStatus represents invalid status for self-healing operation
-	UndefinedSelfHealingStatus SelfHealingStatus = iota
-	//CreatedSelfHealingStatus represents when the failed challenge gets stored in DB
-	CreatedSelfHealingStatus
-	//InProgressSelfHealingStatus represents when the challenge is retrieved for self-healing
-	InProgressSelfHealingStatus
-	//CompletedSelfHealingStatus represents when the reconstruction has been completed
-	CompletedSelfHealingStatus
-)
-
-// selfHealingStatusMap represents a map of self-healing statuses
-var selfHealingStatusMap = map[SelfHealingStatus]string{
-	CreatedSelfHealingStatus:    "Created",
-	InProgressSelfHealingStatus: "InProgress",
-	CompletedSelfHealingStatus:  "Completed",
-}
-
-// String returns the string for self-healing status
-func (s SelfHealingStatus) String() string {
-	if status, ok := selfHealingStatusMap[s]; ok {
-		return status
-	}
-
-	return "Undefined"
-}
-
 // StorageChallengeStatus represents possible storage challenge statuses
 type StorageChallengeStatus int
 
@@ -99,6 +69,54 @@ type StorageChallenge struct {
 	EndingIndex     int
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+}
+
+// SelfHealingStatus represents possible self-healing statuses of failed challenge
+type SelfHealingStatus int
+
+const (
+	//UndefinedSelfHealingStatus represents invalid status for self-healing operation
+	UndefinedSelfHealingStatus SelfHealingStatus = iota
+	//CreatedSelfHealingStatus represents when the failed challenge gets stored in DB
+	CreatedSelfHealingStatus
+	//InProgressSelfHealingStatus represents when the challenge is retrieved for self-healing
+	InProgressSelfHealingStatus
+	//FailedSelfHealingStatus represents when the reconstruction has been completed
+	FailedSelfHealingStatus
+	//CompletedSelfHealingStatus represents when the reconstruction has been completed
+	CompletedSelfHealingStatus
+)
+
+// selfHealingStatusMap represents a map of self-healing statuses
+var selfHealingStatusMap = map[SelfHealingStatus]string{
+	CreatedSelfHealingStatus:    "Created",
+	InProgressSelfHealingStatus: "InProgress",
+	FailedSelfHealingStatus:     "Failed",
+	CompletedSelfHealingStatus:  "Completed",
+}
+
+// String returns the string for self-healing status
+func (s SelfHealingStatus) String() string {
+	if status, ok := selfHealingStatusMap[s]; ok {
+		return status
+	}
+
+	return "Undefined"
+}
+
+// SelfHealingChallenge represents self-healing challenge
+type SelfHealingChallenge struct {
+	ID                    int64
+	ChallengeID           string
+	MerkleRoot            string
+	FileHash              string
+	ChallengingNode       string
+	RespondingNode        string
+	VerifyingNode         string
+	ReconstructedFileHash []byte
+	Status                SelfHealingStatus
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 // Fields represents status log

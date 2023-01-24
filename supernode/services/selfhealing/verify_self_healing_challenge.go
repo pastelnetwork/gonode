@@ -6,6 +6,9 @@ import (
 	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -60,6 +63,23 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 		RegTicketId: challengeMessage.RegTicketId,
 	}
 
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	shChallenge := types.SelfHealingChallenge{
+		ChallengeID:     responseMessage.ChallengeId,
+		MerkleRoot:      responseMessage.MerklerootWhenChallengeSent,
+		FileHash:        responseMessage.ChallengeFile.FileHashToChallenge,
+		ChallengingNode: responseMessage.ChallengingMasternodeId,
+		RespondingNode:  responseMessage.RespondingMasternodeId,
+		VerifyingNode:   task.nodeID,
+	}
+
 	//Checking Process
 	//1. false, nil, err    - should not update the challenge to completed, so that it can be retried again
 	//2. false, nil, nil    - reconstruction not required
@@ -68,12 +88,16 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 	if err != nil && !isReconstructionReq {
 		log.WithContext(ctx).WithError(err).WithField("failed_challenge_id", challengeMessage.ChallengeId).Error("Error in checking process")
 		responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+		shChallenge.Status = types.FailedSelfHealingStatus
+		storeLogs(ctx, store, shChallenge)
 		return responseMessage, err
 	}
 
 	if !isReconstructionReq && availableSymbols == nil {
 		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info(fmt.Sprintf("Reconstruction is not required for file: %s", challengeFileHash))
 		responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+		shChallenge.Status = types.FailedSelfHealingStatus
+		storeLogs(ctx, store, shChallenge)
 		return responseMessage, nil
 	}
 
@@ -89,10 +113,27 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("reconstructed file hash does not match with the verifier reconstructed file")
 
 		responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+		shChallenge.Status = types.FailedSelfHealingStatus
+		shChallenge.ReconstructedFileHash = reconstructedFileHash
+		storeLogs(ctx, store, shChallenge)
 		return responseMessage, nil
 	}
 	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("hashes have been matched of the responder and verifiers")
 
 	responseMessage.ChallengeStatus = pb.SelfHealingData_Status_SUCCEEDED
+	shChallenge.Status = types.CompletedSelfHealingStatus
+	shChallenge.ReconstructedFileHash = reconstructedFileHash
+	storeLogs(ctx, store, shChallenge)
 	return responseMessage, nil
+}
+
+func storeLogs(ctx context.Context, store storage.LocalStoreInterface, msg types.SelfHealingChallenge) {
+	log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
+
+	if store != nil {
+		_, err := store.InsertSelfHealingChallenge(msg)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+		}
+	}
 }

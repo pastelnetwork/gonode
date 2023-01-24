@@ -41,6 +41,21 @@ const createStorageChallenges string = `
   updated_at DATETIME NOT NULL                                                  
   );`
 
+const createSelfHealingChallenges string = `
+  CREATE TABLE IF NOT EXISTS self_healing_challenges (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  challenge_id TEXT NOT NULL,
+  merkleroot TEXT NOT NULL,
+  file_hash TEXT NOT NULL,
+  challenging_node TEXT NOT NULL,
+  responding_node TEXT NOT NULL,
+  verifying_node TEXT,
+  reconstructed_file_hash BLOB,
+  status TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL                                                  
+  );`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -162,6 +177,24 @@ func (s *SQLiteStore) CleanupStorageChallenges() (err error) {
 	return err
 }
 
+// InsertSelfHealingChallenge inserts self-healing challenge
+func (s *SQLiteStore) InsertSelfHealingChallenge(challenge types.SelfHealingChallenge) (hID int, err error) {
+	now := time.Now()
+	const insertQuery = "INSERT INTO self_healing_challenges(id, challenge_id, merkleroot, file_hash, challenging_node, responding_node, verifying_node, reconstructed_file_hash, status, created_at, updated_at) VALUES(NULL,$1,$2,$3,$4,$5,$6,$7,$8,$9,$9);"
+
+	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MerkleRoot, challenge.FileHash, challenge.ChallengingNode, challenge.RespondingNode, challenge.VerifyingNode, challenge.ReconstructedFileHash, challenge.Status.String(), now)
+	if err != nil {
+		return 0, err
+	}
+
+	var id int64
+	if id, err = res.LastInsertId(); err != nil {
+		return 0, err
+	}
+
+	return int(id), nil
+}
+
 // OpenHistoryDB opens history DB
 func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	dbFile := filepath.Join(configurer.DefaultPath(), historyDBName)
@@ -175,6 +208,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createStorageChallenges); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createSelfHealingChallenges); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 

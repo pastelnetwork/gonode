@@ -5,11 +5,14 @@ import (
 	"context"
 	"fmt"
 	"golang.org/x/crypto/sha3"
+	"strings"
 	"sync"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -87,7 +90,8 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 		MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_VERIFICATION_MESSAGE,
 		ChallengeStatus:             pb.SelfHealingData_Status_RESPONDED,
 		MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
-		ChallengingMasternodeId:     task.nodeID,
+		ChallengingMasternodeId:     challengeMessage.ChallengingMasternodeId,
+		RespondingMasternodeId:      challengeMessage.RespondingMasternodeId,
 		ReconstructedFileHash:       reconstructedFileHash,
 		ChallengeFile: &pb.SelfHealingDataChallengeFile{
 			FileHashToChallenge: challengeFileHash,
@@ -221,6 +225,31 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 	//Finding 5 closest nodes to previous block hash
 	sliceOfSupernodesClosestToPreviousBlockHash := task.GetNClosestSupernodeIDsToComparisonString(ctx, 5, msg.MerklerootWhenChallengeSent, sliceOfSupernodeKeysExceptCurrentNode)
 	log.WithContext(ctx).Info(fmt.Sprintf("sliceOfSupernodesClosestToPreviousBlockHash:%s", sliceOfSupernodesClosestToPreviousBlockHash))
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+
+		log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
+		shChallenge := types.SelfHealingChallenge{
+			ChallengeID:           msg.ChallengeId,
+			MerkleRoot:            msg.MerklerootWhenChallengeSent,
+			FileHash:              msg.ChallengeFile.FileHashToChallenge,
+			ChallengingNode:       msg.ChallengingMasternodeId,
+			RespondingNode:        msg.RespondingMasternodeId,
+			VerifyingNode:         strings.Join(sliceOfSupernodesClosestToPreviousBlockHash, ","),
+			ReconstructedFileHash: msg.ReconstructedFileHash,
+			Status:                types.InProgressSelfHealingStatus,
+		}
+
+		_, err = store.InsertSelfHealingChallenge(shChallenge)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+		}
+	}
 
 	var (
 		countOfFailures  int

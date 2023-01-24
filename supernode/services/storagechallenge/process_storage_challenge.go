@@ -7,10 +7,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
-
-	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
@@ -302,6 +301,44 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 
 	if err := selfHealingChallengeIF.ProcessSelfHealingChallenge(ctx, data); err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error sending self-healing challenge for processing")
+
+		//Storing to DB for inspection by Self healing
+		log.WithContext(ctx).Info(fmt.Sprintf("Storage challenge total no of failures exceeds than:%d", ChallengeFailuresThreshold))
+
+		data := &pb.SelfHealingData{
+			MessageId: challengeMessage.MerklerootWhenChallengeSent + closestSupernodeToMerkelRootForSelfHealingChallenge[0] +
+				challengeMessage.ChallengeFile.FileHashToChallenge,
+			MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
+			ChallengeStatus:             pb.SelfHealingData_Status_PENDING,
+			MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
+			ChallengingMasternodeId:     task.nodeID,
+			RespondingMasternodeId:      sn.ExtKey,
+			ChallengeFile: &pb.SelfHealingDataChallengeFile{
+				FileHashToChallenge: challengeMessage.ChallengeFile.FileHashToChallenge,
+			},
+			ChallengeId: challengeMessage.ChallengeId,
+		}
+
+		if err := selfHealingChallengeIF.ProcessSelfHealingChallenge(ctx, data); err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error sending self-healing challenge for processing")
+		}
+
+		if store != nil {
+			log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
+			failedChallenge := types.SelfHealingChallenge{
+				ChallengeID:     responseMessage.ChallengeId,
+				MerkleRoot:      challengeMessage.MerklerootWhenChallengeSent,
+				FileHash:        challengeMessage.ChallengeFile.FileHashToChallenge,
+				ChallengingNode: task.nodeID,
+				RespondingNode:  sn.ExtKey,
+				Status:          types.CreatedSelfHealingStatus,
+			}
+
+			_, err = store.InsertSelfHealingChallenge(failedChallenge)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+			}
+		}
 	}
 
 	return err
