@@ -16,11 +16,6 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-const (
-	//ChallengeFailuresThreshold is a threshold which when exceeds will send the challenge for self-healing
-	ChallengeFailuresThreshold = 5
-)
-
 // ProcessStorageChallenge consists of:
 //
 //	Getting the file,
@@ -119,6 +114,10 @@ func (task *SCTask) validateProcessingStorageChallengeIncomingData(incomingChall
 }
 
 func (task *SCTask) computeHashOfFileSlice(fileData []byte, challengeSliceStartIndex, challengeSliceEndIndex int64) string {
+	if len(fileData) < int(challengeSliceStartIndex) || len(fileData) < int(challengeSliceEndIndex) {
+		return ""
+	}
+
 	challengeDataSlice := fileData[challengeSliceStartIndex:challengeSliceEndIndex]
 	algorithm := sha3.New256()
 	algorithm.Write(challengeDataSlice)
@@ -254,7 +253,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		}
 	}
 
-	if countOfFailures < ChallengeFailuresThreshold {
+	if countOfFailures < task.config.ChallengeFailuresThreshold {
 		return nil
 	}
 
@@ -303,7 +302,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		log.WithContext(ctx).WithError(err).Error("Error sending self-healing challenge for processing")
 
 		//Storing to DB for inspection by Self healing
-		log.WithContext(ctx).Info(fmt.Sprintf("Storage challenge total no of failures exceeds than:%d", ChallengeFailuresThreshold))
+		log.WithContext(ctx).Info(fmt.Sprintf("Storage challenge total no of failures exceeds than:%d", task.config.ChallengeFailuresThreshold))
 
 		data := &pb.SelfHealingData{
 			MessageId: challengeMessage.MerklerootWhenChallengeSent + closestSupernodeToMerkelRootForSelfHealingChallenge[0] +

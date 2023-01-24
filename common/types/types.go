@@ -85,6 +85,8 @@ const (
 	FailedSelfHealingStatus SelfHealingStatus = "Failed"
 	//CompletedSelfHealingStatus represents when the reconstruction has been completed
 	CompletedSelfHealingStatus SelfHealingStatus = "Completed"
+	//ReconstructionNotRequiredSelfHealingStatus represents when the reconstruction has been completed
+	ReconstructionNotRequiredSelfHealingStatus SelfHealingStatus = "ReconstructionNotRequired"
 )
 
 // SelfHealingChallenge represents self-healing challenge

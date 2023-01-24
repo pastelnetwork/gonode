@@ -238,6 +238,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	config.NftDownload.RaptorQServiceAddress = rqAddr
 	config.NftDownload.RqFilesDir = config.RqFilesDir
+	config.SelfHealingChallenge.RaptorQServiceAddress = rqAddr
+	config.SelfHealingChallenge.RqFilesDir = config.RqFilesDir
 
 	// business logic services
 	nftRegister := nftregister.NewService(&config.NftRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
@@ -257,7 +259,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
 
 	// Debug service
-	debugSerivce := debug.NewService(config.DebugService, p2p)
+	debugSerivce := debug.NewService(config.DebugService, p2p, storageChallenger)
 
 	// server
 	grpc := server.New(config.Server,

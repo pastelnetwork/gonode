@@ -18,27 +18,20 @@ const SeparatorByte byte = 46
 type DDAndFingerprints struct {
 	BlockHash   string `json:"pastel_block_hash_when_request_submitted"`
 	BlockHeight string `json:"pastel_block_height_when_request_submitted"`
-
 	TimestampOfRequest string `json:"utc_timestamp_when_request_submitted"`
 	SubmitterPastelID  string `json:"pastel_id_of_submitter"`
 	SN1PastelID        string `json:"pastel_id_of_registering_supernode_1"`
 	SN2PastelID        string `json:"pastel_id_of_registering_supernode_2"`
 	SN3PastelID        string `json:"pastel_id_of_registering_supernode_3"`
-
 	IsOpenAPIRequest bool `json:"is_pastel_openapi_request"`
-
 	OpenAPISubsetID string `json:"open_api_subset_id_string"`
-
 	DupeDetectionSystemVersion string `json:"dupe_detection_system_version"`
-
 	IsLikelyDupe         bool    `json:"is_likely_dupe"`
 	IsRareOnInternet     bool    `json:"is_rare_on_internet"`
 	OverallRarenessScore float32 `json:"overall_rareness_score "`
-
 	PctOfTop10MostSimilarWithDupeProbAbove25pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct"`
 	PctOfTop10MostSimilarWithDupeProbAbove33pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct"`
 	PctOfTop10MostSimilarWithDupeProbAbove50pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct"`
-
 	RarenessScoresTableJSONCompressedB64 string `json:"rareness_scores_table_json_compressed_b64"`
 
 	InternetRareness *InternetRareness `json:"internet_rareness"`

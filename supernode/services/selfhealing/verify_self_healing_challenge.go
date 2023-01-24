@@ -128,12 +128,12 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 }
 
 func storeLogs(ctx context.Context, store storage.LocalStoreInterface, msg types.SelfHealingChallenge) {
-	log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
+	log.WithContext(ctx).Println("Storing challenge to DB for self healing inspection")
 
 	if store != nil {
 		_, err := store.InsertSelfHealingChallenge(msg)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+			log.WithContext(ctx).WithError(err).Error("Error storing challenge to DB")
 		}
 	}
 }

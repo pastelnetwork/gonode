@@ -1,10 +1,13 @@
 package mock
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/pastelnetwork/gonode/pastel"
 
 	"github.com/pastelnetwork/gonode/integration/fakes/common/testconst"
 	"github.com/pastelnetwork/gonode/integration/helper"
@@ -25,6 +28,7 @@ type Mocker struct {
 	ddAddrs      []string
 	snAddrs      []string
 	itHelder     *helper.ItHelper
+	oti          []byte
 }
 
 func New(pasteldAddrs []string, ddAddrs []string, snAddrs []string, h *helper.ItHelper) *Mocker {
@@ -34,6 +38,10 @@ func New(pasteldAddrs []string, ddAddrs []string, snAddrs []string, h *helper.It
 		snAddrs:      snAddrs,
 		itHelder:     h,
 	}
+}
+
+func (m *Mocker) SetOti(oti []byte) {
+	m.oti = oti
 }
 
 func (m *Mocker) MockAllRegExpections() error {
@@ -269,6 +277,13 @@ func (m *Mocker) cleanup(addr string) error {
 
 func (m *Mocker) mockSCPasteldRegExpections(addr string) error {
 
+	res := pastel.ActionTicketDatas{pastel.ActionRegTicket{}}
+	resp, _ := json.Marshal(res)
+	if err := m.mockServer(resp, addr, "tickets",
+		[]string{"list", "action"}, 10); err != nil {
+		return fmt.Errorf("failed to mock findbylabel err: %w", err)
+	}
+
 	if err := m.mockServer([]byte(masterNodesTopRespSC), addr, "masternode", []string{"top"}, 10); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
@@ -297,7 +312,7 @@ func (m *Mocker) mockSCPasteldRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte("160647"), addr, "getblockcount", []string{""}, 100); err != nil {
+	if err := m.mockServer([]byte("160647"), addr, "getblockcount", []string{""}, 50); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
@@ -309,7 +324,7 @@ func (m *Mocker) mockSCPasteldRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	tix, tlist := getSCRegTickets()
+	tix, tlist := getSCRegTickets(m.oti)
 
 	for key, val := range tix {
 		if err := m.mockServer(val, addr, "tickets", []string{"get",

@@ -105,7 +105,7 @@ var SCPasteldServers = []string{
 func main() {
 	itHelper := helper.NewItHelper()
 
-	mocker := mock.New(PasteldServers, DDServers, SNServers, itHelper)
+	mocker := mock.New(SCPasteldServers, SCDDServers, SCSNServers, itHelper)
 	/*if err := mocker.MockAllRegExpections(); err != nil {
 		panic(err)
 	}*/
@@ -114,59 +114,66 @@ func main() {
 		panic(err)
 	}
 
+	symbols, file, _, err := itHelper.GetRaptorQSymbols()
+	if err != nil {
+		panic(err)
+	}
+	file.ID = "48d745e2-e1d3-4ba8-ab01-b636af38619a"
+	fmt.Println("file:", file)
+	fmt.Println("symbols: ", len(symbols))
+	idfile, err := file.GetIDFile()
+	if err != nil {
+		panic(err)
+	}
+
+	p2pID, _ := helper.GetP2PID(idfile)
+	fmt.Println("p2pID: ", p2pID)
+
 	// insert thumbnails for search
+	//storeReq := &helper.StoreRequest{}
+	/*storeReq.Value = []byte("thumbnail-one")
+
+	   	resp, status, err := itHelper.Request(helper.HttpPost, storeReq, helper.GetLocalStoreURI(SN3BaseURI), nil)
+	  	if err != nil {
+	  		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", err.Error()))
+	  	} else if status != http.StatusOK {
+	  		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", string(resp)))
+	  	}
+
+	  	storeReq.Value = []byte("thumbnail-two")
+	  	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetLocalStoreURI(SN3BaseURI), nil)
+	  	if err != nil {
+	  		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", err.Error()))
+	  	} else if status != http.StatusOK {
+	  		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", string(resp)))
+	  	}
+
+	  	rqfile := mock.GetRqIDFile()
+	  	symbol := []byte("test-symbol")
+	  	storeReq.Value = symbol
+	  	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetLocalStoreURI(SN3BaseURI), nil)
+	  	if err != nil {
+	  		panic(fmt.Sprintf("store thumbnail for search tests: %s", err.Error()))
+	  	} else if status != http.StatusOK {
+	  		panic(fmt.Sprintf("store thumbnail for search tests: %s", string(resp)))
+	  	}
+	  	idFile, err := rqfile.GetIDFile()
+	  	if err != nil {
+	  		panic(fmt.Sprintf("store generate id file for download tests: %s", err.Error()))
+	  	}
+	*/
+
 	storeReq := &helper.StoreRequest{}
-	storeReq.Value = []byte("thumbnail-one")
+	storeReq.Value = idfile
 
-	resp, status, err := itHelper.Request(helper.HttpPost, storeReq, helper.GetLocalStoreURI(SN3BaseURI), nil)
-	if err != nil {
-		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", err.Error()))
-	} else if status != http.StatusOK {
-		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", string(resp)))
-	}
-
-	storeReq.Value = []byte("thumbnail-two")
-	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetLocalStoreURI(SN3BaseURI), nil)
-	if err != nil {
-		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", err.Error()))
-	} else if status != http.StatusOK {
-		panic(fmt.Sprintf("unable to store thumbnail for search tests: %s", string(resp)))
-	}
-
-	rqfile := &helper.RawSymbolIDFile{
-		ID:       "09f6c459-ec2a-4db1-a8fe-0648fd97b5cb",
-		PastelID: "jXY1wJkRFt4hsPn6LnRqUtoRmBx5QTiGcbCXorKq7JuKVy4Zo89PmE8BoGjyujqj6NwfvfGsxhUH2ute6kW2gW",
-	}
-	symbol := []byte("test-symbol")
-	storeReq.Value = symbol
-	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetLocalStoreURI(SN3BaseURI), nil)
-	if err != nil {
-		panic(fmt.Sprintf("store thumbnail for search tests: %s", err.Error()))
-	} else if status != http.StatusOK {
-		panic(fmt.Sprintf("store thumbnail for search tests: %s", string(resp)))
-	}
-
-	storeReq = &helper.StoreRequest{}
-	id, err := helper.GetP2PID(symbol)
-	if err != nil {
-		panic(fmt.Sprintf("generate p2p id of symbol for download tests: %s", err.Error()))
-	}
-	rqfile.SymbolIdentifiers = []string{id}
-	idFile, err := rqfile.GetIDFile()
-	if err != nil {
-		panic(fmt.Sprintf("store generate id file for download tests: %s", err.Error()))
-	}
-
-	storeReq.Value = idFile
-	fmt.Println("this is the correct file:", string(idFile))
-	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetLocalStoreURI(SN3BaseURI), nil)
+	resp, status, err := itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(SN1BaseURI), nil)
 	if err != nil {
 		panic(fmt.Sprintf("store rq_id file for download tests: %s", err.Error()))
 	} else if status != http.StatusOK {
 		panic(fmt.Sprintf("store rq_id file for download tests: %s", string(resp)))
 	}
 
-	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetLocalStoreURI(SN4BaseURI), nil)
+	resp, status, err = itHelper.Request(helper.HttpPost, storeReq, helper.GetStoreURI(SN5BaseURI), nil)
 	if err != nil {
 		panic(fmt.Sprintf("store rq_id file for download tests: %s", err.Error()))
 	} else if status != http.StatusOK {

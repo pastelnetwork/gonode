@@ -149,7 +149,32 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 	if err := jrpc2.ParseParams(params, p); err != nil {
 		return nil, err
 	}
-	fmt.Println("got params: ", p.Params)
+
+	if len(p.Params) >= 2 && p.Params[0] == "list" && p.Params[1] == "action" {
+		fmt.Println("in action tickets")
+		p.Params = p.Params[:2]
+
+		key := "tickets" + "*" + strings.Join(p.Params, "*")
+		data, err := h.store.Get(key)
+		if err != nil {
+			return nil, &jrpc2.ErrorObject{
+				Code:    jrpc2.InternalErrorCode,
+				Message: jrpc2.ErrorMsg("unable to fetch action " + err.Error()),
+				Data:    "fetch failure",
+			}
+		}
+		toRet := ActionTicketDatas{}
+		if err := json.Unmarshal(data, &toRet); err != nil {
+			return nil, &jrpc2.ErrorObject{
+				Code:    jrpc2.InternalErrorCode,
+				Message: jrpc2.ErrorMsg("unable to unmarsal action" + err.Error()),
+				Data:    "unmarshal failure",
+			}
+		}
+
+		return toRet, nil
+	}
+
 	if p.Params[0] == "find" && p.Params[1] == "id" && !isValidMNPastelID(p.Params[2]) {
 		return nil, &jrpc2.ErrorObject{
 			Code:    jrpc2.InvalidParamsCode,
@@ -234,7 +259,7 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 			if err != nil {
 				return nil, &jrpc2.ErrorObject{
 					Code:    jrpc2.InternalErrorCode,
-					Message: jrpc2.ErrorMsg("unable to fetch " + err.Error()),
+					Message: jrpc2.ErrorMsg("unable to fetch nft " + err.Error()),
 					Data:    "fetch failure",
 				}
 			}
@@ -242,7 +267,7 @@ func (h *rpcHandler) HandleTickets(params json.RawMessage) (interface{}, *jrpc2.
 			if err := json.Unmarshal(data, &toRet); err != nil {
 				return nil, &jrpc2.ErrorObject{
 					Code:    jrpc2.InternalErrorCode,
-					Message: jrpc2.ErrorMsg("unable to unmarsal " + err.Error()),
+					Message: jrpc2.ErrorMsg("unable to unmarsal nft" + err.Error()),
 					Data:    "unmarshal failure",
 				}
 			}
@@ -600,4 +625,16 @@ type ActionTicketData struct {
 
 	ActionTicket string `json:"action_ticket"`
 	//ActionTicketData ActionTicket `json:"-"`
+}
+type ActionTicketDatas []ActionRegTicket
+
+// ActionTicket is define a action ticket's details
+type ActionTicket struct {
+	Version       int         `json:"action_ticket_version"`
+	Caller        string      `json:"caller"` // PastelID of the caller
+	BlockNum      int         `json:"blocknum"`
+	BlockHash     string      `json:"block_hash"`
+	ActionType    string      `json:"action_type"`
+	APITicket     string      `json:"api_ticket"` // as ascii85(api_ticket)
+	APITicketData interface{} `json:"-"`
 }

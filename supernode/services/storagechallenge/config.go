@@ -1,6 +1,8 @@
 package storagechallenge
 
 import (
+	"os"
+
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
@@ -11,6 +13,9 @@ const (
 	defaultNumberOfChallengeReplicas = 3
 	//Number of verifying nodes determines how many potential verifiers we test in verify_storage_challenge
 	defaultNumberOfVerifyingNodes = 10
+
+	// ChallengeFailuresThreshold is a threshold which when exceeds will send the challenge for self-healing
+	defaultChallengeFailuresThreshold = 5
 )
 
 // Config storage challenge config
@@ -21,16 +26,23 @@ type Config struct {
 	NumberOfVerifyingNodes        int   `mapstructure:"number_of_verifying_nodes" json:"number_of_verifying_nodes"`
 
 	// raptorq service
-	RaptorQServiceAddress string `mapstructure:"-" json:"-"`
-	RqFilesDir            string
+	RaptorQServiceAddress      string `mapstructure:"-" json:"-"`
+	RqFilesDir                 string
+	ChallengeFailuresThreshold int
 }
 
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
+	challengeFailuresThreshold := defaultChallengeFailuresThreshold
+	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
+		challengeFailuresThreshold = 4
+	}
+
 	return &Config{
 		Config:                        *common.NewConfig(),
 		StorageChallengeExpiredBlocks: defaultStorageChallengeExpiredBlocks,
 		NumberOfChallengeReplicas:     defaultNumberOfChallengeReplicas,
 		NumberOfVerifyingNodes:        defaultNumberOfVerifyingNodes,
+		ChallengeFailuresThreshold:    challengeFailuresThreshold,
 	}
 }

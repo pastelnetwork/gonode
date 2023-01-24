@@ -116,7 +116,7 @@ func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
 
 	now := time.Now().UTC()
 	r := Record{Key: hkey, Data: value, UpdatedAt: now}
-	res, err := s.db.NamedExec(`INSERT INTO data(key, data) values(:key, :data) ON CONFLICT(key) DO UPDATE SET updatedAt=:updatedat`, r)
+	res, err := s.db.NamedExec(`INSERT INTO data(key, data) values(:key, :data) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
 	if err != nil {
 		return fmt.Errorf("cannot insert or update record with key %s: %w", hkey, err)
 	}

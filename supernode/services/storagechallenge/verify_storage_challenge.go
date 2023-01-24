@@ -109,7 +109,7 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingChalleng
 			ChallengeID:     outgoingChallengeMessage.ChallengeId,
 			FileHash:        outgoingChallengeMessage.ChallengeFile.FileHashToChallenge,
 			ChallengingNode: incomingChallengeMessage.ChallengingMasternodeId,
-			Status:          types.VerifiedStorageChallengeStatus,
+			Status:          types.StorageChallengeStatus(challengeStatus),
 			RespondingNode:  incomingChallengeMessage.RespondingMasternodeId,
 			GeneratedHash:   challengeCorrectHash,
 			StartingIndex:   int(outgoingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex),

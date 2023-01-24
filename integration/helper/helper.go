@@ -53,6 +53,10 @@ func NewItHelper() *ItHelper {
 	}
 }
 
+func GetSCInitiateURI(baseURI string) string {
+	return fmt.Sprintf("%s/%s", baseURI, "storage/initiate")
+}
+
 func GetStoreURI(baseURI string) string {
 	return fmt.Sprintf("%s/%s", baseURI, "p2p")
 }
@@ -65,12 +69,56 @@ func GetStorageChallengeURI(baseURI string) string {
 	return fmt.Sprintf("%s/%s", baseURI, "storage/challenges")
 }
 
+func GetSelfHealingChallengeURI(baseURI string) string {
+	return fmt.Sprintf("%s/%s", baseURI, "selfhealing/challenges")
+}
+
 func GetRetrieveURI(baseURI, key string) string {
 	return fmt.Sprintf("%s/%s/%s", baseURI, "p2p", key)
 }
 
+func GetRemoveURI(baseURI string) string {
+	return fmt.Sprintf("%s/%s/remove", baseURI, "p2p")
+}
+
+func GetDeleteStorageChallengeURI(baseURI string) string {
+	return fmt.Sprintf("%s/storage/cleanup", baseURI)
+}
+
+func GetDeleteSelfHealingURI(baseURI string) string {
+	return fmt.Sprintf("%s/selfhealing/cleanup", baseURI)
+}
+
 func GetTaskStatePath(taskID string) string {
 	return fmt.Sprintf("nfts/register/%s/state", taskID)
+}
+
+func (h *ItHelper) GetRaptorQSymbols() (map[string][]byte, *RawSymbolIDFile, []byte, error) {
+
+	file := &RawSymbolIDFile{
+		PastelID:  "jXZvhdVoQ2q2WfaqL2nRCVNZn5hKgGDYGpkaQsjco9AgQA5MH1he4QktDN5RP483qyN17SPFs34o73tjLhfnxs",
+		BlockHash: "0000034f28e923c3b6393d71c9dea286c67fc33d55d3a0a607b3df40e0d34c95",
+		ID:        "48d745e2-e1d3-4ba8-ab01-b636af38619a",
+		SymbolIdentifiers: []string{"38uydDwESDz37Xg7Hhn7z2yhCTfjmhLcAHgdpJoWMCHP", "3vgZe9zyP3caEwKJcLZ78wHWQfByi6aW5E6EbGmYWvM1",
+			"893qE6a4QtrYDFzgJVivDq39W2bcGKfeJcnWQjxtoJzC", "Enmj4KkuBEGeTx4puPdhQTU3gYxL4Rf7PFnmtFhQnpmN", "6AU9Ti8VfQ8ojTRN4ctNACJ7C8cJksvYruko9pC1rh24",
+			"AqGutQGxyUw1nD4E4XsKaLnaeZpcQ8P89dzA1PZprt5r", "DSFV5iFrfDz9ciMudoVYbry35EoUt4LLqP9GBMdpGRJe", "FEzCE2kcNXxPezgpkftk7n2p6tDgbpSVso5pgtBQz5Zk",
+			"CUwccZ6UKeA1CbF8YeyqN8cX9dEn8dEcj7Kw5dcyEnnB", "MoqRvvKYL3NoNAXtS8e1X1FwLSit76YPjsnkdQZAfK3", "7PaDagNq6Dm1UBhC9YAb7hj74cpTbjQtu4GnZBhK3M3F",
+			"5vemfsETYz7xEgTDAgyq6wXmxkNeehw8TP6qrMQVP1WZ", "44ECnUJHJzvs7MM9LzXLqRtXHPSNL63mS8zQ3xbV7MjR", "6N25xCJM9z1BMYdSPP7vf293wt1SNB7XaifNbNNd1ang",
+			"2dWHDqpbSTtwDg9KjKdZxTA2hqHgut6tCktRPcrzep5V", "CaHU26Z3XUDMRUfxf7qnsUJPT7NeobVWSczjASG5oYua", "Ad1M7xuwsZ3P4JYP5Vxuzn2gcKGC8hXeKtpyoL5MDAf1",
+			"6hdN4PPsSoPRi79Wr4j3utxuWZEAR9vRt8YoqUZZ8E4g"},
+	}
+
+	symbols := make(map[string][]byte)
+	for _, id := range file.SymbolIdentifiers {
+		b, err := ioutil.ReadFile(fmt.Sprintf("./testdata/%s", id))
+		if err != nil {
+			panic(err)
+		}
+
+		symbols[id] = b
+	}
+
+	return symbols, file, []byte{0, 0, 1, 10, 236, 0, 195, 80, 1, 0, 1, 8}, nil
 }
 
 // RequestRaw makes a http request onto uri with []byte payload

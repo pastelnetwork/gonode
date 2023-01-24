@@ -3,6 +3,7 @@ package cascaderegister
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -144,14 +145,14 @@ func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
 					log.WithContext(ctx).Debug("all signature received so start validation")
 
 					if err = task.VerifyPeersTicketSignature(ctx, task.Ticket); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
-						err = errors.Errorf("peers' singature mismatched: %w", err)
+						log.WithContext(ctx).WithError(err).Errorf("peers' signature mismatched")
+						err = errors.Errorf("peers' signature mismatched: %w", err)
 						return nil
 					}
 
 					nftRegTxid, err = task.registerAction(ctx)
 					if err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
+						log.WithContext(ctx).WithError(err).Errorf("peers' signature mismatched")
 						err = errors.Errorf("register NFT: %w", err)
 						return nil
 					}
@@ -209,6 +210,7 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 	}
 
 	task.dataHash = apiTicket.DataHash
+	fmt.Println("data hash: ", task.dataHash)
 
 	return nil
 }
