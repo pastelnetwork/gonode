@@ -177,6 +177,30 @@ func (s *SQLiteStore) CleanupStorageChallenges() (err error) {
 	return err
 }
 
+// QuerySelfHealingChallenges retrieves self-healing audit logs stored in DB for self-healing
+func (s *SQLiteStore) QuerySelfHealingChallenges() (challenges []types.SelfHealingChallenge, err error) {
+	const selectQuery = "SELECT * FROM self_healing_challenges"
+	rows, err := s.db.Query(selectQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		challenge := types.SelfHealingChallenge{}
+		err = rows.Scan(&challenge.ID, &challenge.ChallengeID, &challenge.MerkleRoot, &challenge.FileHash,
+			&challenge.ChallengingNode, &challenge.RespondingNode, &challenge.VerifyingNode, &challenge.ReconstructedFileHash,
+			&challenge.Status, &challenge.CreatedAt, &challenge.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		challenges = append(challenges, challenge)
+	}
+
+	return challenges, nil
+}
+
 // InsertSelfHealingChallenge inserts self-healing challenge
 func (s *SQLiteStore) InsertSelfHealingChallenge(challenge types.SelfHealingChallenge) (hID int, err error) {
 	now := time.Now()

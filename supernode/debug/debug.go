@@ -81,7 +81,8 @@ func NewService(config *Config, p2pClient p2p.Client) *Service {
 	router.HandleFunc("/p2p/{key}", service.p2pRetrieve).Methods(http.MethodGet)                       // retrieve a key
 	router.HandleFunc("/storage/challenges", service.storageChallengeRetrieve).Methods(http.MethodGet) // retrieve storage challenge data
 	router.HandleFunc("/storage/ceanup", service.storageChallengeCleanup).Methods(http.MethodGet)
-	router.HandleFunc("/p2p/remove", service.p2pDelete).Methods(http.MethodPost)
+	router.HandleFunc("/p2p/remove", service.p2pDelete).Methods(http.MethodPost)                                // retrieve a key
+	router.HandleFunc("/selfhealing/challenges", service.selfHealingChallengesRetrieve).Methods(http.MethodGet) // retrieve a key
 	router.HandleFunc("/health", service.p2pHealth).Methods(http.MethodGet)
 
 	service.httpServer = &http.Server{
@@ -164,6 +165,24 @@ func (service *Service) storageChallengeRetrieve(writer http.ResponseWriter, req
 	defer store.CloseHistoryDB(ctx)
 
 	challenges, err := store.QueryStorageChallenges()
+	if err != nil {
+		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+
+	responseWithJSON(writer, http.StatusOK, challenges)
+}
+
+func (service *Service) selfHealingChallengesRetrieve(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+	}
+	defer store.CloseHistoryDB(ctx)
+
+	challenges, err := store.QuerySelfHealingChallenges()
 	if err != nil {
 		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
 		return
