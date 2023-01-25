@@ -90,7 +90,7 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 	}
 
 	// DupeDetectionSystemVersion
-	if !strings.EqualFold(lhs.DupeDetectionSystemVersion, rhs.DupeDetectionSystemVersion) {
+	if !compareDupeDetectionSystemVersionNumber(lhs.DupeDetectionSystemVersion, rhs.DupeDetectionSystemVersion) {
 		return errors.Errorf("dupe_detection_system_version not matched: lhs(%s) != rhs(%s)", lhs.DupeDetectionSystemVersion, rhs.DupeDetectionSystemVersion)
 	}
 
@@ -205,6 +205,13 @@ func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScores, rhs *AlternativeNSF
 		return errors.Errorf("sexy score not matched: lhs(%f) != rhs(%f)", lhs.Sexy, rhs.Sexy)
 	}
 	return nil
+}
+
+func compareDupeDetectionSystemVersionNumber(l, r string) bool {
+	lhs := strings.Split(l, ".")
+	rhs := strings.Split(r, ".")
+
+	return lhs[0] == rhs[0]
 }
 
 func compareFloat(l float32, r float32) bool {
