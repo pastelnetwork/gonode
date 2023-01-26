@@ -219,6 +219,13 @@ func (s *SQLiteStore) InsertSelfHealingChallenge(challenge types.SelfHealingChal
 	return int(id), nil
 }
 
+// CleanupSelfHealingChallenges cleans up self-healing challenges stored in DB for inspection
+func (s *SQLiteStore) CleanupSelfHealingChallenges() (err error) {
+	const delQuery = "DELETE FROM self_healing_challenges"
+	_, err = s.db.Exec(delQuery)
+	return err
+}
+
 // OpenHistoryDB opens history DB
 func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	dbFile := filepath.Join(configurer.DefaultPath(), historyDBName)
