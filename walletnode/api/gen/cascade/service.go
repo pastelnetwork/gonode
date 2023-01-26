@@ -119,6 +119,8 @@ type StartProcessingPayload struct {
 	AppPastelID string
 	// Passphrase of the App PastelID
 	AppPastelidPassphrase string
+	// To make it publicly accessible
+	MakePubliclyAccessible bool
 }
 
 // StartProcessingResult is the result type of the cascade service

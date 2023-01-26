@@ -76,7 +76,9 @@ type AppTicket struct {
 	Thumbnail1Hash []byte `json:"thumbnail1_hash"`
 	Thumbnail2Hash []byte `json:"thumbnail2_hash"`
 
-	DataHash []byte `json:"data_hash"`
+	DataHash                []byte `json:"data_hash"`
+	OriginalFileSizeInBytes int    `json:"original_file_size_in_bytes"`
+	MakePubliclyAccessible  bool   `json:"make_publicly_accessible"`
 
 	DDAndFingerprintsIc  uint32   `json:"dd_and_fingerprints_ic"`
 	DDAndFingerprintsMax uint32   `json:"dd_and_fingerprints_max"`

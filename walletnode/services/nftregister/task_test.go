@@ -423,6 +423,7 @@ func TestTaskCreateTicket(t *testing.T) {
 						MediumThumbnailHash: []byte{1, 2, 3},
 						SmallThumbnailHash:  []byte{1, 2, 3},
 					},
+					OriginalFileSizeInBytes: len([]byte{1, 2}),
 				},
 			},
 			wantErr: nil,

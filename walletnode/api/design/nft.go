@@ -323,6 +323,14 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 
 	Attribute("thumbnail_coordinate", ThumbnailCoordinate)
 
+	Attribute("make_publicly_accessible", Boolean, func() {
+		Meta("struct:field:name", "MakePubliclyAccessible")
+		Description("To make it publicly accessible")
+		Example(false)
+		Default(false)
+
+	})
+
 	Required("creator_name", "name", "issued_copies", "creator_pastelid", "creator_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
 

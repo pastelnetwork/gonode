@@ -29,6 +29,8 @@ type StartProcessingRequestBody struct {
 	BurnTxid string `form:"burn_txid" json:"burn_txid" xml:"burn_txid"`
 	// App PastelID
 	AppPastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
+	// To make it publicly accessible
+	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
 }
 
 // UploadAssetResponseBody is the type of the "cascade" service "uploadAsset"
@@ -287,8 +289,15 @@ func NewUploadAssetRequestBody(p *cascade.UploadAssetPayload) *UploadAssetReques
 // of the "startProcessing" endpoint of the "cascade" service.
 func NewStartProcessingRequestBody(p *cascade.StartProcessingPayload) *StartProcessingRequestBody {
 	body := &StartProcessingRequestBody{
-		BurnTxid:    p.BurnTxid,
-		AppPastelID: p.AppPastelID,
+		BurnTxid:               p.BurnTxid,
+		AppPastelID:            p.AppPastelID,
+		MakePubliclyAccessible: p.MakePubliclyAccessible,
+	}
+	{
+		var zero bool
+		if body.MakePubliclyAccessible == zero {
+			body.MakePubliclyAccessible = false
+		}
 	}
 	return body
 }
@@ -507,8 +516,8 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Preburn Registration Fee" || *body.Status == "Downloaded" || *body.Status == "Request Accepted" || *body.Status == "Request Registered" || *body.Status == "Request Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Signatures Dont Match" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Error File Don't Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Find Responding SNs" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Error Invalid Burn TxID" || *body.Status == "Task Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Preburn Registration Fee", "Downloaded", "Request Accepted", "Request Registered", "Request Activated", "Error Insufficient Fee", "Error Signatures Dont Match", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Error File Don't Match", "Error Not Enough SuperNode", "Error Find Responding SNs", "Error Not Enough Downloaded Filed", "Error Download Failed", "Error Invalid Burn TxID", "Task Failed", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Preburn Registration Fee" || *body.Status == "Downloaded" || *body.Status == "Request Accepted" || *body.Status == "Request Registered" || *body.Status == "Request Activated" || *body.Status == "Error Setting up mesh of supernodes" || *body.Status == "Error Sending Reg Metadata" || *body.Status == "Error Uploading Image" || *body.Status == "Error Converting Image to Bytes" || *body.Status == "Error Encoding Image" || *body.Status == "Error Creating Ticket" || *body.Status == "Error Signing Ticket" || *body.Status == "Error Uploading Ticket" || *body.Status == "Error Activating Ticket" || *body.Status == "Error Probing Image" || *body.Status == "Error Generating DD and Fingerprint IDs" || *body.Status == "Error comparing suitable storage fee with task request maximum fee" || *body.Status == "Error balance not sufficient" || *body.Status == "Error getting hash of the image" || *body.Status == "Error sending signed ticket to SNs" || *body.Status == "Error checking balance" || *body.Status == "Error burning reg fee to get reg ticket id" || *body.Status == "Error validating reg ticket txn id" || *body.Status == "Error validating activate ticket txn id" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Signatures Dont Match" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Error File Don't Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Find Responding SNs" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Error Invalid Burn TxID" || *body.Status == "Task Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Preburn Registration Fee", "Downloaded", "Request Accepted", "Request Registered", "Request Activated", "Error Setting up mesh of supernodes", "Error Sending Reg Metadata", "Error Uploading Image", "Error Converting Image to Bytes", "Error Encoding Image", "Error Creating Ticket", "Error Signing Ticket", "Error Uploading Ticket", "Error Activating Ticket", "Error Probing Image", "Error Generating DD and Fingerprint IDs", "Error comparing suitable storage fee with task request maximum fee", "Error balance not sufficient", "Error getting hash of the image", "Error sending signed ticket to SNs", "Error checking balance", "Error burning reg fee to get reg ticket id", "Error validating reg ticket txn id", "Error validating activate ticket txn id", "Error Insufficient Fee", "Error Signatures Dont Match", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Error File Don't Match", "Error Not Enough SuperNode", "Error Find Responding SNs", "Error Not Enough Downloaded Filed", "Error Download Failed", "Error Invalid Burn TxID", "Task Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return

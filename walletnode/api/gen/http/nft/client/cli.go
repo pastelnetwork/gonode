@@ -25,7 +25,7 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 	{
 		err = json.Unmarshal([]byte(nftRegisterBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"creator_name\": \"Leonardo da Vinci\",\n      \"creator_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"creator_pastelid_passphrase\": \"qwerasdf1234\",\n      \"creator_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"green\": false,\n      \"image_id\": \"VK7mpAqZ\",\n      \"issued_copies\": 1,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"maximum_fee\": 100,\n      \"name\": \"Mona Lisa\",\n      \"royalty\": 12,\n      \"series_name\": \"Famous artist\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"thumbnail_coordinate\": {\n         \"bottom_right_x\": 640,\n         \"bottom_right_y\": 480,\n         \"top_left_x\": 0,\n         \"top_left_y\": 0\n      },\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"creator_name\": \"Leonardo da Vinci\",\n      \"creator_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"creator_pastelid_passphrase\": \"qwerasdf1234\",\n      \"creator_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"green\": false,\n      \"image_id\": \"VK7mpAqZ\",\n      \"issued_copies\": 1,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"make_publicly_accessible\": false,\n      \"maximum_fee\": 100,\n      \"name\": \"Mona Lisa\",\n      \"royalty\": 12,\n      \"series_name\": \"Famous artist\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"thumbnail_coordinate\": {\n         \"bottom_right_x\": 640,\n         \"bottom_right_y\": 480,\n         \"top_left_x\": 0,\n         \"top_left_y\": 0\n      },\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
 		}
 		if utf8.RuneCountInString(body.ImageID) < 8 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", body.ImageID, utf8.RuneCountInString(body.ImageID), 8, true))
@@ -113,6 +113,7 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 		MaximumFee:                body.MaximumFee,
 		Royalty:                   body.Royalty,
 		Green:                     body.Green,
+		MakePubliclyAccessible:    body.MakePubliclyAccessible,
 	}
 	{
 		var zero float64
@@ -128,6 +129,12 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 	}
 	if body.ThumbnailCoordinate != nil {
 		v.ThumbnailCoordinate = marshalThumbnailcoordinateRequestBodyToNftThumbnailcoordinate(body.ThumbnailCoordinate)
+	}
+	{
+		var zero bool
+		if v.MakePubliclyAccessible == zero {
+			v.MakePubliclyAccessible = false
+		}
 	}
 
 	return v, nil

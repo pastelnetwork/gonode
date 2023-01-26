@@ -27,10 +27,11 @@ type CascadeRegistrationTask struct {
 	Request *common.ActionRegistrationRequest
 
 	// data to create ticket
-	creatorBlockHeight int
-	creatorBlockHash   string
-	dataHash           []byte
-	registrationFee    int64
+	creatorBlockHeight      int
+	creatorBlockHash        string
+	dataHash                []byte
+	registrationFee         int64
+	originalFileSizeInBytes int
 
 	// ticket
 	creatorSignature []byte
@@ -97,11 +98,14 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 
 	// calculate hash of data
 	imgBytes, err := task.Request.Image.Bytes()
+	task.originalFileSizeInBytes = len(imgBytes)
 	if err != nil {
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
+	task.originalFileSizeInBytes = len(imgBytes)
+
 	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorEncodingImage)
@@ -292,13 +296,15 @@ func (task *CascadeRegistrationTask) createCascadeTicket(_ context.Context) erro
 		BlockNum:   task.creatorBlockHeight,
 		BlockHash:  task.creatorBlockHash,
 		ActionType: pastel.ActionTypeCascade,
-		APITicketData: &pastel.APICascadeTicket{
-			FileName: task.Request.FileName,
-			DataHash: task.dataHash,
-			RQIc:     task.RqHandler.RQIDsIc,
-			RQMax:    task.service.config.RQIDsMax,
-			RQIDs:    task.RqHandler.RQIDs,
-			RQOti:    task.RqHandler.RQEncodeParams.Oti,
+		APITicketData: pastel.APICascadeTicket{
+			FileName:                task.Request.FileName,
+			DataHash:                task.dataHash,
+			RQIc:                    task.RqHandler.RQIDsIc,
+			RQMax:                   task.service.config.RQIDsMax,
+			RQIDs:                   task.RqHandler.RQIDs,
+			RQOti:                   task.RqHandler.RQEncodeParams.Oti,
+			OriginalFileSizeInBytes: task.originalFileSizeInBytes,
+			MakePubliclyAccessible:  task.Request.MakePubliclyAccessible,
 		},
 	}
 

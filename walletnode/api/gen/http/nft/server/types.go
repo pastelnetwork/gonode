@@ -51,6 +51,8 @@ type RegisterRequestBody struct {
 	// trees
 	Green               *bool                           `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
 	ThumbnailCoordinate *ThumbnailcoordinateRequestBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
+	// To make it publicly accessible
+	MakePubliclyAccessible *bool `form:"make_publicly_accessible,omitempty" json:"make_publicly_accessible,omitempty" xml:"make_publicly_accessible,omitempty"`
 }
 
 // UploadImageRequestBody is the type of the "nft" service "uploadImage"
@@ -597,6 +599,8 @@ type NftRegisterPayloadResponseBody struct {
 	// trees
 	Green               bool                             `form:"green" json:"green" xml:"green"`
 	ThumbnailCoordinate *ThumbnailcoordinateResponseBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
+	// To make it publicly accessible
+	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
 }
 
 // ThumbnailcoordinateResponseBody is used to define fields on response body
@@ -656,6 +660,8 @@ type NftRegisterPayloadResponse struct {
 	// trees
 	Green               bool                         `form:"green" json:"green" xml:"green"`
 	ThumbnailCoordinate *ThumbnailcoordinateResponse `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
+	// To make it publicly accessible
+	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
 }
 
 // ThumbnailcoordinateResponse is used to define fields on response body types.
@@ -1141,6 +1147,9 @@ func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
 	if body.Green != nil {
 		v.Green = *body.Green
 	}
+	if body.MakePubliclyAccessible != nil {
+		v.MakePubliclyAccessible = *body.MakePubliclyAccessible
+	}
 	if body.Royalty == nil {
 		v.Royalty = 0
 	}
@@ -1149,6 +1158,9 @@ func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
 	}
 	if body.ThumbnailCoordinate != nil {
 		v.ThumbnailCoordinate = unmarshalThumbnailcoordinateRequestBodyToNftThumbnailcoordinate(body.ThumbnailCoordinate)
+	}
+	if body.MakePubliclyAccessible == nil {
+		v.MakePubliclyAccessible = false
 	}
 
 	return v
