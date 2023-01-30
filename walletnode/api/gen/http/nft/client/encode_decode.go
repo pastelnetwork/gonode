@@ -57,9 +57,9 @@ func EncodeRegisterRequest(encoder func(*http.Request) goahttp.Encoder) func(*ht
 // register endpoint. restoreBody controls whether the response body should be
 // restored after having been read.
 // DecodeRegisterResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeRegisterResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -163,9 +163,9 @@ func (c *Client) BuildRegisterTaskStateRequest(ctx context.Context, v interface{
 // the nft registerTaskState endpoint. restoreBody controls whether the
 // response body should be restored after having been read.
 // DecodeRegisterTaskStateResponse may return the following errors:
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeRegisterTaskStateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -260,9 +260,9 @@ func (c *Client) BuildGetTaskHistoryRequest(ctx context.Context, v interface{}) 
 // nft getTaskHistory endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
 // DecodeGetTaskHistoryResponse may return the following errors:
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeGetTaskHistoryResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -363,9 +363,9 @@ func (c *Client) BuildRegisterTaskRequest(ctx context.Context, v interface{}) (*
 // nft registerTask endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
 // DecodeRegisterTaskResponse may return the following errors:
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeRegisterTaskResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -452,8 +452,8 @@ func (c *Client) BuildRegisterTasksRequest(ctx context.Context, v interface{}) (
 // nft registerTasks endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
 // DecodeRegisterTasksResponse may return the following errors:
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeRegisterTasksResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -559,9 +559,9 @@ func NewNftUploadImageEncoder(encoderFn NftUploadImageEncoderFunc) func(r *http.
 // nft uploadImage endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
 // DecodeUploadImageResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -712,9 +712,9 @@ func EncodeNftSearchRequest(encoder func(*http.Request) goahttp.Encoder) func(*h
 // nftSearch endpoint. restoreBody controls whether the response body should be
 // restored after having been read.
 // DecodeNftSearchResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeNftSearchResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -825,10 +825,10 @@ func EncodeNftGetRequest(encoder func(*http.Request) goahttp.Encoder) func(*http
 // nftGet endpoint. restoreBody controls whether the response body should be
 // restored after having been read.
 // DecodeNftGetResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeNftGetResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -947,9 +947,9 @@ func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*ht
 // download endpoint. restoreBody controls whether the response body should be
 // restored after having been read.
 // DecodeDownloadResponse may return the following errors:
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -1118,6 +1118,7 @@ func unmarshalNftRegisterPayloadResponseBodyToNftviewsNftRegisterPayloadView(v *
 		MaximumFee:                v.MaximumFee,
 		Royalty:                   v.Royalty,
 		Green:                     v.Green,
+		MakePubliclyAccessible:    v.MakePubliclyAccessible,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseBodyToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
@@ -1195,6 +1196,7 @@ func unmarshalNftRegisterPayloadResponseToNftviewsNftRegisterPayloadView(v *NftR
 		MaximumFee:                v.MaximumFee,
 		Royalty:                   v.Royalty,
 		Green:                     v.Green,
+		MakePubliclyAccessible:    v.MakePubliclyAccessible,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)

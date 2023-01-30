@@ -1109,6 +1109,9 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponseBody(v *nf
 	if v.Green != nil {
 		res.Green = *v.Green
 	}
+	if v.MakePubliclyAccessible != nil {
+		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
+	}
 	if v.Royalty == nil {
 		res.Royalty = 0
 	}
@@ -1117,6 +1120,9 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponseBody(v *nf
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = marshalNftviewsThumbnailcoordinateViewToThumbnailcoordinateResponseBody(v.ThumbnailCoordinate)
+	}
+	if v.MakePubliclyAccessible == nil {
+		res.MakePubliclyAccessible = false
 	}
 
 	return res
@@ -1178,6 +1184,9 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponse(v *nftvie
 	if v.Green != nil {
 		res.Green = *v.Green
 	}
+	if v.MakePubliclyAccessible != nil {
+		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
+	}
 	if v.Royalty == nil {
 		res.Royalty = 0
 	}
@@ -1186,6 +1195,9 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponse(v *nftvie
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = marshalNftviewsThumbnailcoordinateViewToThumbnailcoordinateResponse(v.ThumbnailCoordinate)
+	}
+	if v.MakePubliclyAccessible == nil {
+		res.MakePubliclyAccessible = false
 	}
 
 	return res

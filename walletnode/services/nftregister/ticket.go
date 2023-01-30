@@ -23,6 +23,7 @@ type NftRegistrationRequest struct {
 	Green                     bool                      `json:"green"`
 	Royalty                   float64                   `json:"royalty"`
 	Thumbnail                 files.ThumbnailCoordinate `json:"thumbnail_coordinate"`
+	MakePubliclyAccessible    bool                      `json:"make_publicly_accessible"`
 }
 
 // FromNftRegisterPayload converts from one to another
@@ -50,6 +51,7 @@ func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegistrationReques
 		Green:                     payload.Green,
 		Royalty:                   payload.Royalty,
 		Thumbnail:                 thumbnail,
+		MakePubliclyAccessible:    payload.MakePubliclyAccessible,
 	}
 }
 

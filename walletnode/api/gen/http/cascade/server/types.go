@@ -31,6 +31,8 @@ type StartProcessingRequestBody struct {
 	BurnTxid *string `form:"burn_txid,omitempty" json:"burn_txid,omitempty" xml:"burn_txid,omitempty"`
 	// App PastelID
 	AppPastelID *string `form:"app_pastelid,omitempty" json:"app_pastelid,omitempty" xml:"app_pastelid,omitempty"`
+	// To make it publicly accessible
+	MakePubliclyAccessible *bool `form:"make_publicly_accessible,omitempty" json:"make_publicly_accessible,omitempty" xml:"make_publicly_accessible,omitempty"`
 }
 
 // UploadAssetResponseBody is the type of the "cascade" service "uploadAsset"
@@ -483,6 +485,12 @@ func NewStartProcessingPayload(body *StartProcessingRequestBody, fileID string, 
 	v := &cascade.StartProcessingPayload{
 		BurnTxid:    *body.BurnTxid,
 		AppPastelID: *body.AppPastelID,
+	}
+	if body.MakePubliclyAccessible != nil {
+		v.MakePubliclyAccessible = *body.MakePubliclyAccessible
+	}
+	if body.MakePubliclyAccessible == nil {
+		v.MakePubliclyAccessible = false
 	}
 	v.FileID = fileID
 	v.AppPastelidPassphrase = appPastelidPassphrase

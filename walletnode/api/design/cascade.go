@@ -189,6 +189,13 @@ var StartCascadeProcessingPayload = Type("StartCascadeProcessingPayload", func()
 		Description("Passphrase of the App PastelID")
 		Example("qwerasdf1234")
 	})
+	Attribute("make_publicly_accessible", Boolean, func() {
+		Meta("struct:field:name", "MakePubliclyAccessible")
+		Description("To make it publicly accessible")
+		Example(false)
+		Default(false)
+
+	})
 
 	Required("file_id", "burn_txid", "app_pastelid", "app_pastelid_passphrase")
 })

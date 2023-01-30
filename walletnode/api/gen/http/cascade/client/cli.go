@@ -49,7 +49,7 @@ func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStart
 	{
 		err = json.Unmarshal([]byte(cascadeStartProcessingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"burn_txid\": \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"burn_txid\": \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\",\n      \"make_publicly_accessible\": false\n   }'")
 		}
 		if utf8.RuneCountInString(body.BurnTxid) < 64 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", body.BurnTxid, utf8.RuneCountInString(body.BurnTxid), 64, true))
@@ -86,8 +86,15 @@ func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStart
 		appPastelidPassphrase = cascadeStartProcessingAppPastelidPassphrase
 	}
 	v := &cascade.StartProcessingPayload{
-		BurnTxid:    body.BurnTxid,
-		AppPastelID: body.AppPastelID,
+		BurnTxid:               body.BurnTxid,
+		AppPastelID:            body.AppPastelID,
+		MakePubliclyAccessible: body.MakePubliclyAccessible,
+	}
+	{
+		var zero bool
+		if v.MakePubliclyAccessible == zero {
+			v.MakePubliclyAccessible = false
+		}
 	}
 	v.FileID = fileID
 	v.AppPastelidPassphrase = appPastelidPassphrase

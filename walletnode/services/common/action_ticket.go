@@ -18,4 +18,6 @@ type ActionRegistrationRequest struct {
 	OpenAPISubsetID string `json:"open_api_subset_id"`
 	// FileName to save in ticket
 	FileName string `json:"file_name"`
+	//MakePubliclyAccessible to save in ticket
+	MakePubliclyAccessible bool `json:"make_publicly_accessible"`
 }

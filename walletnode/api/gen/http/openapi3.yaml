@@ -401,6 +401,7 @@ paths:
                                     green: false
                                     issued_copies: 1
                                     keywords: Renaissance, sfumato, portrait
+                                    make_publicly_accessible: false
                                     maximum_fee: 100
                                     name: Mona Lisa
                                     royalty: 12
@@ -424,6 +425,7 @@ paths:
                                     green: false
                                     issued_copies: 1
                                     keywords: Renaissance, sfumato, portrait
+                                    make_publicly_accessible: false
                                     maximum_fee: 100
                                     name: Mona Lisa
                                     royalty: 12
@@ -464,6 +466,7 @@ paths:
                             image_id: VK7mpAqZ
                             issued_copies: 1
                             keywords: Renaissance, sfumato, portrait
+                            make_publicly_accessible: false
                             maximum_fee: 100
                             name: Mona Lisa
                             royalty: 12
@@ -541,6 +544,7 @@ paths:
                                     green: false
                                     issued_copies: 1
                                     keywords: Renaissance, sfumato, portrait
+                                    make_publicly_accessible: false
                                     maximum_fee: 100
                                     name: Mona Lisa
                                     royalty: 12
@@ -1224,6 +1228,7 @@ paths:
                         example:
                             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                             burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                            make_publicly_accessible: false
             responses:
                 "201":
                     description: Created response.
@@ -1574,7 +1579,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/StartProcessingRequestBody'
+                            $ref: '#/components/schemas/StartProcessingRequestBody2'
                         example:
                             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                             burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -2728,6 +2733,11 @@ components:
                     description: Keywords
                     example: Renaissance, sfumato, portrait
                     maxLength: 256
+                make_publicly_accessible:
+                    type: boolean
+                    description: To make it publicly accessible
+                    default: false
+                    example: false
                 maximum_fee:
                     type: number
                     description: Used to find a suitable masternode with a fee equal or less
@@ -2775,6 +2785,7 @@ components:
                 green: false
                 issued_copies: 1
                 keywords: Renaissance, sfumato, portrait
+                make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
                 royalty: 12
@@ -3226,6 +3237,11 @@ components:
                     description: Keywords
                     example: Renaissance, sfumato, portrait
                     maxLength: 256
+                make_publicly_accessible:
+                    type: boolean
+                    description: To make it publicly accessible
+                    default: false
+                    example: false
                 maximum_fee:
                     type: number
                     description: Used to find a suitable masternode with a fee equal or less
@@ -3273,6 +3289,7 @@ components:
                 image_id: VK7mpAqZ
                 issued_copies: 1
                 keywords: Renaissance, sfumato, portrait
+                make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
                 royalty: 12
@@ -3344,6 +3361,25 @@ components:
                         - Request Accepted
                         - Request Registered
                         - Request Activated
+                        - Error Setting up mesh of supernodes
+                        - Error Sending Reg Metadata
+                        - Error Uploading Image
+                        - Error Converting Image to Bytes
+                        - Error Encoding Image
+                        - Error Creating Ticket
+                        - Error Signing Ticket
+                        - Error Uploading Ticket
+                        - Error Activating Ticket
+                        - Error Probing Image
+                        - Error Generating DD and Fingerprint IDs
+                        - Error comparing suitable storage fee with task request maximum fee
+                        - Error balance not sufficient
+                        - Error getting hash of the image
+                        - Error sending signed ticket to SNs
+                        - Error checking balance
+                        - Error burning reg fee to get reg ticket id
+                        - Error validating reg ticket txn id
+                        - Error validating activate ticket txn id
                         - Error Insufficient Fee
                         - Error Signatures Dont Match
                         - Error Fingerprints Dont Match
@@ -3384,6 +3420,7 @@ components:
                     green: false
                     issued_copies: 1
                     keywords: Renaissance, sfumato, portrait
+                    make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
                     royalty: 12
@@ -3401,6 +3438,34 @@ components:
                 - status
                 - ticket
         StartProcessingRequestBody:
+            type: object
+            properties:
+                app_pastelid:
+                    type: string
+                    description: App PastelID
+                    example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                    pattern: ^[a-zA-Z0-9]+$
+                    minLength: 86
+                    maxLength: 86
+                burn_txid:
+                    type: string
+                    description: Burn transaction ID
+                    example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                    minLength: 64
+                    maxLength: 64
+                make_publicly_accessible:
+                    type: boolean
+                    description: To make it publicly accessible
+                    default: false
+                    example: false
+            example:
+                app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                make_publicly_accessible: false
+            required:
+                - burn_txid
+                - app_pastelid
+        StartProcessingRequestBody2:
             type: object
             properties:
                 app_pastelid:
@@ -3487,6 +3552,25 @@ components:
                         - Request Accepted
                         - Request Registered
                         - Request Activated
+                        - Error Setting up mesh of supernodes
+                        - Error Sending Reg Metadata
+                        - Error Uploading Image
+                        - Error Converting Image to Bytes
+                        - Error Encoding Image
+                        - Error Creating Ticket
+                        - Error Signing Ticket
+                        - Error Uploading Ticket
+                        - Error Activating Ticket
+                        - Error Probing Image
+                        - Error Generating DD and Fingerprint IDs
+                        - Error comparing suitable storage fee with task request maximum fee
+                        - Error balance not sufficient
+                        - Error getting hash of the image
+                        - Error sending signed ticket to SNs
+                        - Error checking balance
+                        - Error burning reg fee to get reg ticket id
+                        - Error validating reg ticket txn id
+                        - Error validating activate ticket txn id
                         - Error Insufficient Fee
                         - Error Signatures Dont Match
                         - Error Fingerprints Dont Match
@@ -3522,6 +3606,7 @@ components:
                     green: false
                     issued_copies: 1
                     keywords: Renaissance, sfumato, portrait
+                    make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
                     royalty: 12
@@ -3555,6 +3640,7 @@ components:
                     green: false
                     issued_copies: 1
                     keywords: Renaissance, sfumato, portrait
+                    make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
                     royalty: 12
@@ -3578,6 +3664,7 @@ components:
                     green: false
                     issued_copies: 1
                     keywords: Renaissance, sfumato, portrait
+                    make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
                     royalty: 12
@@ -3601,6 +3688,7 @@ components:
                     green: false
                     issued_copies: 1
                     keywords: Renaissance, sfumato, portrait
+                    make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
                     royalty: 12
@@ -3624,6 +3712,7 @@ components:
                     green: false
                     issued_copies: 1
                     keywords: Renaissance, sfumato, portrait
+                    make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
                     royalty: 12
@@ -3658,6 +3747,25 @@ components:
                         - Request Accepted
                         - Request Registered
                         - Request Activated
+                        - Error Setting up mesh of supernodes
+                        - Error Sending Reg Metadata
+                        - Error Uploading Image
+                        - Error Converting Image to Bytes
+                        - Error Encoding Image
+                        - Error Creating Ticket
+                        - Error Signing Ticket
+                        - Error Uploading Ticket
+                        - Error Activating Ticket
+                        - Error Probing Image
+                        - Error Generating DD and Fingerprint IDs
+                        - Error comparing suitable storage fee with task request maximum fee
+                        - Error balance not sufficient
+                        - Error getting hash of the image
+                        - Error sending signed ticket to SNs
+                        - Error checking balance
+                        - Error burning reg fee to get reg ticket id
+                        - Error validating reg ticket txn id
+                        - Error validating activate ticket txn id
                         - Error Insufficient Fee
                         - Error Signatures Dont Match
                         - Error Fingerprints Dont Match

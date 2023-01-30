@@ -1278,6 +1278,25 @@ definitions:
                     - Request Accepted
                     - Request Registered
                     - Request Activated
+                    - Error Setting up mesh of supernodes
+                    - Error Sending Reg Metadata
+                    - Error Uploading Image
+                    - Error Converting Image to Bytes
+                    - Error Encoding Image
+                    - Error Creating Ticket
+                    - Error Signing Ticket
+                    - Error Uploading Ticket
+                    - Error Activating Ticket
+                    - Error Probing Image
+                    - Error Generating DD and Fingerprint IDs
+                    - Error comparing suitable storage fee with task request maximum fee
+                    - Error balance not sufficient
+                    - Error getting hash of the image
+                    - Error sending signed ticket to SNs
+                    - Error checking balance
+                    - Error burning reg fee to get reg ticket id
+                    - Error validating reg ticket txn id
+                    - Error validating activate ticket txn id
                     - Error Insufficient Fee
                     - Error Signatures Dont Match
                     - Error Fingerprints Dont Match
@@ -1401,9 +1420,15 @@ definitions:
                 example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 minLength: 64
                 maxLength: 64
+            make_publicly_accessible:
+                type: boolean
+                description: To make it publicly accessible
+                default: false
+                example: false
         example:
             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+            make_publicly_accessible: false
         required:
             - burn_txid
             - app_pastelid
@@ -2838,6 +2863,11 @@ definitions:
                 description: Keywords
                 example: Renaissance, sfumato, portrait
                 maxLength: 256
+            make_publicly_accessible:
+                type: boolean
+                description: To make it publicly accessible
+                default: false
+                example: false
             maximum_fee:
                 type: number
                 description: Used to find a suitable masternode with a fee equal or less
@@ -2885,6 +2915,7 @@ definitions:
             green: false
             issued_copies: 1
             keywords: Renaissance, sfumato, portrait
+            make_publicly_accessible: false
             maximum_fee: 100
             name: Mona Lisa
             royalty: 12
@@ -2951,6 +2982,11 @@ definitions:
                 description: Keywords
                 example: Renaissance, sfumato, portrait
                 maxLength: 256
+            make_publicly_accessible:
+                type: boolean
+                description: To make it publicly accessible
+                default: false
+                example: false
             maximum_fee:
                 type: number
                 description: Used to find a suitable masternode with a fee equal or less
@@ -2998,6 +3034,7 @@ definitions:
             green: false
             issued_copies: 1
             keywords: Renaissance, sfumato, portrait
+            make_publicly_accessible: false
             maximum_fee: 100
             name: Mona Lisa
             royalty: 12
@@ -3070,6 +3107,11 @@ definitions:
                 description: Keywords
                 example: Renaissance, sfumato, portrait
                 maxLength: 256
+            make_publicly_accessible:
+                type: boolean
+                description: To make it publicly accessible
+                default: false
+                example: false
             maximum_fee:
                 type: number
                 description: Used to find a suitable masternode with a fee equal or less
@@ -3117,6 +3159,7 @@ definitions:
             image_id: VK7mpAqZ
             issued_copies: 1
             keywords: Renaissance, sfumato, portrait
+            make_publicly_accessible: false
             maximum_fee: 100
             name: Mona Lisa
             royalty: 12
@@ -3277,6 +3320,25 @@ definitions:
                     - Request Accepted
                     - Request Registered
                     - Request Activated
+                    - Error Setting up mesh of supernodes
+                    - Error Sending Reg Metadata
+                    - Error Uploading Image
+                    - Error Converting Image to Bytes
+                    - Error Encoding Image
+                    - Error Creating Ticket
+                    - Error Signing Ticket
+                    - Error Uploading Ticket
+                    - Error Activating Ticket
+                    - Error Probing Image
+                    - Error Generating DD and Fingerprint IDs
+                    - Error comparing suitable storage fee with task request maximum fee
+                    - Error balance not sufficient
+                    - Error getting hash of the image
+                    - Error sending signed ticket to SNs
+                    - Error checking balance
+                    - Error burning reg fee to get reg ticket id
+                    - Error validating reg ticket txn id
+                    - Error validating activate ticket txn id
                     - Error Insufficient Fee
                     - Error Signatures Dont Match
                     - Error Fingerprints Dont Match
@@ -3321,6 +3383,7 @@ definitions:
                 green: false
                 issued_copies: 1
                 keywords: Renaissance, sfumato, portrait
+                make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
                 royalty: 12
@@ -3446,6 +3509,25 @@ definitions:
                     - Request Accepted
                     - Request Registered
                     - Request Activated
+                    - Error Setting up mesh of supernodes
+                    - Error Sending Reg Metadata
+                    - Error Uploading Image
+                    - Error Converting Image to Bytes
+                    - Error Encoding Image
+                    - Error Creating Ticket
+                    - Error Signing Ticket
+                    - Error Uploading Ticket
+                    - Error Activating Ticket
+                    - Error Probing Image
+                    - Error Generating DD and Fingerprint IDs
+                    - Error comparing suitable storage fee with task request maximum fee
+                    - Error balance not sufficient
+                    - Error getting hash of the image
+                    - Error sending signed ticket to SNs
+                    - Error checking balance
+                    - Error burning reg fee to get reg ticket id
+                    - Error validating reg ticket txn id
+                    - Error validating activate ticket txn id
                     - Error Insufficient Fee
                     - Error Signatures Dont Match
                     - Error Fingerprints Dont Match
@@ -3776,6 +3858,7 @@ definitions:
                 green: false
                 issued_copies: 1
                 keywords: Renaissance, sfumato, portrait
+                make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
                 royalty: 12
@@ -3806,6 +3889,7 @@ definitions:
                 green: false
                 issued_copies: 1
                 keywords: Renaissance, sfumato, portrait
+                make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
                 royalty: 12
@@ -4359,6 +4443,25 @@ definitions:
                     - Request Accepted
                     - Request Registered
                     - Request Activated
+                    - Error Setting up mesh of supernodes
+                    - Error Sending Reg Metadata
+                    - Error Uploading Image
+                    - Error Converting Image to Bytes
+                    - Error Encoding Image
+                    - Error Creating Ticket
+                    - Error Signing Ticket
+                    - Error Uploading Ticket
+                    - Error Activating Ticket
+                    - Error Probing Image
+                    - Error Generating DD and Fingerprint IDs
+                    - Error comparing suitable storage fee with task request maximum fee
+                    - Error balance not sufficient
+                    - Error getting hash of the image
+                    - Error sending signed ticket to SNs
+                    - Error checking balance
+                    - Error burning reg fee to get reg ticket id
+                    - Error validating reg ticket txn id
+                    - Error validating activate ticket txn id
                     - Error Insufficient Fee
                     - Error Signatures Dont Match
                     - Error Fingerprints Dont Match
@@ -4750,6 +4853,25 @@ definitions:
                     - Request Accepted
                     - Request Registered
                     - Request Activated
+                    - Error Setting up mesh of supernodes
+                    - Error Sending Reg Metadata
+                    - Error Uploading Image
+                    - Error Converting Image to Bytes
+                    - Error Encoding Image
+                    - Error Creating Ticket
+                    - Error Signing Ticket
+                    - Error Uploading Ticket
+                    - Error Activating Ticket
+                    - Error Probing Image
+                    - Error Generating DD and Fingerprint IDs
+                    - Error comparing suitable storage fee with task request maximum fee
+                    - Error balance not sufficient
+                    - Error getting hash of the image
+                    - Error sending signed ticket to SNs
+                    - Error checking balance
+                    - Error burning reg fee to get reg ticket id
+                    - Error validating reg ticket txn id
+                    - Error validating activate ticket txn id
                     - Error Insufficient Fee
                     - Error Signatures Dont Match
                     - Error Fingerprints Dont Match
@@ -4785,6 +4907,7 @@ definitions:
                 green: false
                 issued_copies: 1
                 keywords: Renaissance, sfumato, portrait
+                make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
                 royalty: 12
@@ -4824,6 +4947,25 @@ definitions:
                     - Request Accepted
                     - Request Registered
                     - Request Activated
+                    - Error Setting up mesh of supernodes
+                    - Error Sending Reg Metadata
+                    - Error Uploading Image
+                    - Error Converting Image to Bytes
+                    - Error Encoding Image
+                    - Error Creating Ticket
+                    - Error Signing Ticket
+                    - Error Uploading Ticket
+                    - Error Activating Ticket
+                    - Error Probing Image
+                    - Error Generating DD and Fingerprint IDs
+                    - Error comparing suitable storage fee with task request maximum fee
+                    - Error balance not sufficient
+                    - Error getting hash of the image
+                    - Error sending signed ticket to SNs
+                    - Error checking balance
+                    - Error burning reg fee to get reg ticket id
+                    - Error validating reg ticket txn id
+                    - Error validating activate ticket txn id
                     - Error Insufficient Fee
                     - Error Signatures Dont Match
                     - Error Fingerprints Dont Match

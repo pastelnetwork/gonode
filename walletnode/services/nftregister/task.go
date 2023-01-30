@@ -41,11 +41,12 @@ type NftRegistrationTask struct {
 	Request *NftRegistrationRequest
 
 	// task data to create RegArt ticket
-	creatorBlockHeight int
-	creatorBlockHash   string
-	creationTimestamp  string
-	dataHash           []byte
-	registrationFee    int64
+	creatorBlockHeight      int
+	creatorBlockHash        string
+	creationTimestamp       string
+	dataHash                []byte
+	registrationFee         int64
+	OriginalFileSizeInBytes int
 
 	// ticket
 	creatorSignature      []byte
@@ -121,6 +122,14 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
 		return errors.Errorf("send registration metadata: %w", err)
 	}
+
+	imgBytes, err := task.Request.Image.Bytes()
+	if err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
+		return errors.Errorf("convert image to byte stream %w", err)
+	}
+	task.OriginalFileSizeInBytes = len(imgBytes)
 
 	// probe ORIGINAL image for average rareness, nsfw and seen score
 	if err := task.probeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
@@ -480,6 +489,8 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 			Thumbnail1Hash:             task.ImageHandler.MediumThumbnailHash,
 			Thumbnail2Hash:             task.ImageHandler.SmallThumbnailHash,
 			DataHash:                   task.dataHash,
+			OriginalFileSizeInBytes:    task.OriginalFileSizeInBytes,
+			MakePubliclyAccessible:     task.Request.MakePubliclyAccessible,
 			DDAndFingerprintsIc:        task.FingerprintsHandler.DDAndFingerprintsIc,
 			DDAndFingerprintsMax:       task.service.config.DDAndFingerprintsMax,
 			DDAndFingerprintsIDs:       task.FingerprintsHandler.DDAndFingerprintsIDs,
