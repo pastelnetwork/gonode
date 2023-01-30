@@ -21,6 +21,11 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
+const (
+	//DateTimeFormat following the go convention for request timestamp
+	DateTimeFormat = "2006:01:02 15:04:05"
+)
+
 // NftRegistrationTask an NFT on the blockchain
 // Follow instructions from : https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration//
 // NftRegistrationTask is Run from NftRegisterService.Run(), which eventually calls run, below
@@ -63,8 +68,9 @@ func (task *NftRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 }
 
 // Run sets up a connection to a mesh network of supernodes, then controls the communications to the mesh of nodes.
-//	Task here will abstract away the individual node communications layer, and instead operate at the mesh control layer.
-//  For individual communcations control, see node/grpc/nft_register.go
+//
+//		Task here will abstract away the individual node communications layer, and instead operate at the mesh control layer.
+//	 For individual communcations control, see node/grpc/nft_register.go
 func (task *NftRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -100,7 +106,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
 	//set timestamp for nft reg metadata
-	task.creationTimestamp = time.Now().Format("YYYY-MM-DD hh:mm:ss")
+	task.creationTimestamp = time.Now().Format(DateTimeFormat)
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
 
 	// supervise the connection to top rank nodes
@@ -393,7 +399,7 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 	return nil
 }
 
-//https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+// https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
 // Step 6 - 8 for Walletnode
 func (task *NftRegistrationTask) uploadImage(ctx context.Context) error {
 	// Upload image with pqgsinganature and its thumb to supernodes
