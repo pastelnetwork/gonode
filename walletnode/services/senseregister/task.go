@@ -17,6 +17,11 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
+const (
+	//DateTimeFormat following the go convention for request timestamp
+	DateTimeFormat = "2006:01:02 15:04:05"
+)
+
 // SenseRegistrationTask is the task of registering new nft.
 type SenseRegistrationTask struct {
 	*common.WalletNodeTask
@@ -71,7 +76,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
-	task.creationTimestamp = time.Now().Format("YYYY-MM-DD hh:mm:ss")
+	task.creationTimestamp = time.Now().Format(DateTimeFormat)
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
 
 	// supervise the connection to top rank nodes
