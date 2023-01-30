@@ -83,6 +83,7 @@ func NewService(config *Config, p2pClient p2p.Client) *Service {
 	router.HandleFunc("/storage/ceanup", service.storageChallengeCleanup).Methods(http.MethodGet)
 	router.HandleFunc("/p2p/remove", service.p2pDelete).Methods(http.MethodPost)                                // retrieve a key
 	router.HandleFunc("/selfhealing/challenges", service.selfHealingChallengesRetrieve).Methods(http.MethodGet) // retrieve a key
+	router.HandleFunc("/selfhealing/cleanup", service.selfHealingChallengeCleanup).Methods(http.MethodDelete)   // cleanup self-healing data from history db
 	router.HandleFunc("/health", service.p2pHealth).Methods(http.MethodGet)
 
 	service.httpServer = &http.Server{
@@ -189,6 +190,24 @@ func (service *Service) selfHealingChallengesRetrieve(writer http.ResponseWriter
 	}
 
 	responseWithJSON(writer, http.StatusOK, challenges)
+}
+
+func (service *Service) selfHealingChallengeCleanup(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+	}
+	defer store.CloseHistoryDB(ctx)
+
+	err = store.CleanupSelfHealingChallenges()
+	if err != nil {
+		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+
+	responseWithJSON(writer, http.StatusOK, make(map[string]interface{}))
 }
 
 func (service *Service) p2pHealth(writer http.ResponseWriter, request *http.Request) {
