@@ -109,8 +109,8 @@ There are various ways & tools to test the working of gonode. Because the entire
 19. Register task, change `artist-pastelId`, `spendable-address`, `passphrase` to "passphrase" and `image-id` using the result of upload REST call.
 20. Observe the log and use the command to generate coin to drive the flow. The coin need to be generated at following points.
 - Walletnode sends `preburnt-txid` to supernode(s).
-- Walletnode recieved `reg-art-txid` from supernode(s).
-- Walletnode recieved `reg-act-txid` from the network.
+- Walletnode received `reg-art-txid` from supernode(s).
+- Walletnode received `reg-act-txid` from the network.
 - Each step generate 10 block is safe to drive the flow.
 
 **Notes**:
