@@ -72,37 +72,20 @@ type StorageChallenge struct {
 }
 
 // SelfHealingStatus represents possible self-healing statuses of failed challenge
-type SelfHealingStatus int
+type SelfHealingStatus string
 
 const (
 	//UndefinedSelfHealingStatus represents invalid status for self-healing operation
-	UndefinedSelfHealingStatus SelfHealingStatus = iota
+	UndefinedSelfHealingStatus SelfHealingStatus = "Undefined"
 	//CreatedSelfHealingStatus represents when the failed challenge gets stored in DB
-	CreatedSelfHealingStatus
+	CreatedSelfHealingStatus SelfHealingStatus = "Created"
 	//InProgressSelfHealingStatus represents when the challenge is retrieved for self-healing
-	InProgressSelfHealingStatus
+	InProgressSelfHealingStatus SelfHealingStatus = "InProgress"
 	//FailedSelfHealingStatus represents when the reconstruction has been completed
-	FailedSelfHealingStatus
+	FailedSelfHealingStatus SelfHealingStatus = "Failed"
 	//CompletedSelfHealingStatus represents when the reconstruction has been completed
-	CompletedSelfHealingStatus
+	CompletedSelfHealingStatus SelfHealingStatus = "Completed"
 )
-
-// selfHealingStatusMap represents a map of self-healing statuses
-var selfHealingStatusMap = map[SelfHealingStatus]string{
-	CreatedSelfHealingStatus:    "Created",
-	InProgressSelfHealingStatus: "InProgress",
-	FailedSelfHealingStatus:     "Failed",
-	CompletedSelfHealingStatus:  "Completed",
-}
-
-// String returns the string for self-healing status
-func (s SelfHealingStatus) String() string {
-	if status, ok := selfHealingStatusMap[s]; ok {
-		return status
-	}
-
-	return "Undefined"
-}
 
 // SelfHealingChallenge represents self-healing challenge
 type SelfHealingChallenge struct {
