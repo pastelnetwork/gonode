@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/errors"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
@@ -19,19 +20,40 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("VerifySelfHealingChallenge has been invoked")
 
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("retrieving reg ticket")
-	regTicket, err := task.PastelClient.RegTicket(ctx, challengeMessage.RegTicketId)
-	if err != nil {
-		return nil, err
-	}
 
-	decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
-		return nil, err
-	}
+	var (
+		regTicket     pastel.RegTicket
+		cascadeTicket *pastel.APICascadeTicket
+		actionTicket  pastel.ActionRegTicket
+		err           error
+	)
 
-	regTicket.RegTicketData.NFTTicketData = *decTicket
-	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("reg ticket has been retrieved")
+	if challengeMessage.RegTicketId != "" {
+		regTicket, err = task.getRegTicket(ctx, challengeMessage.RegTicketId)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to retrieve reg ticket")
+		}
+
+		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("reg ticket has been retrieved")
+	} else if challengeMessage.ActionTicketId != "" {
+		actionTicket, err = task.getActionTicket(ctx, challengeMessage.ActionTicketId)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to retrieve cascade ticket")
+			return nil, err
+		}
+
+		cascadeTicket, err = actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
+		if err != nil {
+			log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+				Warnf("Could not get cascade ticket for action ticket data")
+			return nil, err
+		}
+
+		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("cascade reg ticket has been retrieved")
+	} else {
+		log.WithContext(ctx).Info("unable to find reg ticket")
+		return nil, errors.New("reg ticket not found")
+	}
 
 	log.WithContext(ctx).Info("establishing connection with rq service")
 	var rqConnection rqnode.Connection
@@ -101,7 +123,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 		return responseMessage, nil
 	}
 
-	_, reconstructedFileHash, err := task.selfHealing(ctx, rqService, challengeMessage, regTicket, availableSymbols)
+	_, reconstructedFileHash, err := task.selfHealing(ctx, rqService, challengeMessage, regTicket, cascadeTicket, availableSymbols)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
 		return responseMessage, err

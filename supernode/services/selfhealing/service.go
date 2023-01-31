@@ -103,16 +103,18 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 	}
 }
 
-// MapSymbolFileKeysFromNFTTickets : Get an NFT Ticket's associated raptor q ticket file id's and creates a map of them
-func (service *SHService) MapSymbolFileKeysFromNFTTickets(ctx context.Context) (map[string]string, error) {
-	var keys = make(map[string]string)
+// MapSymbolFileKeysFromNFTAndActionTickets : Get an NFT and Action Ticket's associated raptor q ticket file id's and creates a map of them
+func (service *SHService) MapSymbolFileKeysFromNFTAndActionTickets(ctx context.Context) (regTicketKeys map[string]string, actionTicketKeys map[string]string, err error) {
+	regTicketKeys = make(map[string]string)
+	actionTicketKeys = make(map[string]string)
 	regTickets, err := service.SuperNodeService.PastelClient.RegTickets(ctx)
 	if err != nil {
-		return keys, err
+		return regTicketKeys, actionTicketKeys, err
 	}
+
 	if len(regTickets) == 0 {
 		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no reg tickets retrieved")
-		return keys, nil
+		return regTicketKeys, actionTicketKeys, nil
 	}
 
 	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Reg tickets retrieved")
@@ -127,11 +129,42 @@ func (service *SHService) MapSymbolFileKeysFromNFTTickets(ctx context.Context) (
 		regTicket.RegTicketData.NFTTicketData = *decTicket
 
 		for _, rqID := range regTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs {
-			keys[rqID] = regTicket.TXID
+			regTicketKeys[rqID] = regTicket.TXID
 		}
 	}
 
-	return keys, nil
+	actionTickets, err := service.SuperNodeService.PastelClient.ActionTickets(ctx)
+	if err != nil {
+		return regTicketKeys, actionTicketKeys, err
+	}
+
+	if len(actionTickets) == 0 {
+		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no action reg tickets retrieved")
+		return regTicketKeys, actionTicketKeys, nil
+	}
+	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Action tickets retrieved")
+
+	for _, actionTicket := range actionTickets {
+		decTicket, err := pastel.DecodeActionTicket(actionTicket.ActionTicketData.ActionTicket)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+			continue
+		}
+		actionTicket.ActionTicketData.ActionTicketData = *decTicket
+
+		cascadeTicket, err := actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
+		if err != nil {
+			log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+				Warnf("Could not get sense ticket for action ticket data")
+			continue
+		}
+
+		for _, rqID := range cascadeTicket.RQIDs {
+			actionTicketKeys[rqID] = actionTicket.TXID
+		}
+	}
+
+	return regTicketKeys, actionTicketKeys, nil
 }
 
 // GetNClosestSupernodeIDsToComparisonString : Wrapper for a utility function that does xor string comparison to a list of strings and returns the smallest distance.

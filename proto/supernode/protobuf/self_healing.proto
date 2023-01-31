@@ -42,6 +42,7 @@ message SelfHealingData {
   challengeFile challenge_file = 8;
   string challenge_id = 9;
   string reg_ticket_id = 10;
+  string action_ticket_id = 11;
 }
 
 message ProcessSelfHealingChallengeRequest {
