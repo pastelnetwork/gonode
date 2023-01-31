@@ -38,11 +38,11 @@ import (
 // and if so calculate and issue it.
 func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	log.WithContext(ctx).Println("Generate Storage Challenges invoked")
-	// List all NFT tickets, get their raptorq ids
-	// list all RQ symbol keys from nft ticket
+	// List all NFT tickets and API Cascade Tickets, get their raptorq ids
+	// list all RQ symbol keys from nft and action tickets
 
 	log.WithContext(ctx).Info("list symbol file keys from registered nft tickets")
-	sliceOfFileHashes, err := task.ListSymbolFileKeysFromNFTTicket(ctx)
+	sliceOfFileHashes, err := task.ListSymbolFileKeysFromNFTAndActionTickets(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
 		return err

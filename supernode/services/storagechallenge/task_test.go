@@ -81,7 +81,7 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 			pMock := pastelMock.NewMockClient(t)
 			pMock.ListenOnRegTickets(pastel.RegTickets{
 				ticket,
-			}, nil).ListenOnGetBlockCount(1, nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
+			}, nil).ListenOnActionTickets(nil, nil).ListenOnGetBlockCount(1, nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
 				MerkleRoot: tt.args.MerkleRoot,
 			}, nil).ListenOnMasterNodesExtra(nodes, nil)
 
@@ -196,7 +196,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 			pMock := pastelMock.NewMockClient(t)
 			pMock.ListenOnRegTickets(pastel.RegTickets{
 				ticket,
-			}, nil).ListenOnGetBlockCount(1, nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
+			}, nil).ListenOnActionTickets(nil, nil).ListenOnGetBlockCount(1, nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
 				MerkleRoot: tt.args.MerkleRoot,
 			}, nil).ListenOnMasterNodesExtra(nodes, nil)
 
@@ -372,7 +372,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 			pMock := pastelMock.NewMockClient(t)
 			pMock.ListenOnRegTickets(pastel.RegTickets{
 				ticket,
-			}, nil).ListenOnGetBlockCount(int32(tt.args.currentBlockCount), nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
+			}, nil).ListenOnActionTickets(nil, nil).ListenOnGetBlockCount(int32(tt.args.currentBlockCount), nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
 				MerkleRoot: tt.args.MerkleRoot,
 			}, nil).ListenOnMasterNodesExtra(nodes, nil)
 

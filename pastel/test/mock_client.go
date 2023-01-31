@@ -24,6 +24,9 @@ const (
 	// ActTicketsMethod represent ActTickets name method
 	ActTicketsMethod = "ActTickets"
 
+	// ActionTicketsMethod represent ActionTickets name method
+	ActionTicketsMethod = "ActionTickets"
+
 	// RegTicketMethod represent RegTicket name method
 	RegTicketMethod = "RegTicket"
 
@@ -191,6 +194,12 @@ func (client *Client) AssertSignCall(expectedCalls int, arguments ...interface{}
 // ListenOnActTickets listening ActTickets and returns tickets and error from args
 func (client *Client) ListenOnActTickets(tickets pastel.ActTickets, err error) *Client {
 	client.On(ActTicketsMethod, mock.Anything, mock.Anything, mock.Anything).Return(tickets, err)
+	return client
+}
+
+// ListenOnActionTickets listening ActionTickets and returns tickets and error from args
+func (client *Client) ListenOnActionTickets(tickets pastel.ActionTicketDatas, err error) *Client {
+	client.On(ActionTicketsMethod, mock.Anything, mock.Anything, mock.Anything).Return(tickets, err)
 	return client
 }
 
