@@ -206,7 +206,7 @@ func (s *SQLiteStore) InsertSelfHealingChallenge(challenge types.SelfHealingChal
 	now := time.Now()
 	const insertQuery = "INSERT INTO self_healing_challenges(id, challenge_id, merkleroot, file_hash, challenging_node, responding_node, verifying_node, reconstructed_file_hash, status, created_at, updated_at) VALUES(NULL,$1,$2,$3,$4,$5,$6,$7,$8,$9,$9);"
 
-	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MerkleRoot, challenge.FileHash, challenge.ChallengingNode, challenge.RespondingNode, challenge.VerifyingNode, challenge.ReconstructedFileHash, challenge.Status.String(), now)
+	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MerkleRoot, challenge.FileHash, challenge.ChallengingNode, challenge.RespondingNode, challenge.VerifyingNode, challenge.ReconstructedFileHash, challenge.Status, now)
 	if err != nil {
 		return 0, err
 	}
