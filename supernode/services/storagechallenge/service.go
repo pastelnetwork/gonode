@@ -127,8 +127,9 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 
 //utils below that call pasteld or p2p - mostly just wrapping other functions in better names
 
-// ListSymbolFileKeysFromNFTTicket : Get an NFT Ticket's associated raptor q ticket file id's.  These can then be accessed through p2p.
-func (service *SCService) ListSymbolFileKeysFromNFTTicket(ctx context.Context) ([]string, error) {
+// ListSymbolFileKeysFromNFTAndActionTickets : Get an NFT and Action Ticket's associated raptor q ticket file id's.
+// These can then be accessed through p2p.
+func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.Context) ([]string, error) {
 	var keys = make([]string, 0)
 	regTickets, err := service.SuperNodeService.PastelClient.RegTickets(ctx)
 	if err != nil {
@@ -150,6 +151,34 @@ func (service *SCService) ListSymbolFileKeysFromNFTTicket(ctx context.Context) (
 
 		regTicket.RegTicketData.NFTTicketData = *decTicket
 		keys = append(keys, regTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs...)
+	}
+
+	actionTickets, err := service.SuperNodeService.PastelClient.ActionTickets(ctx)
+	if err != nil {
+		return keys, err
+	}
+	if len(actionTickets) == 0 {
+		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no reg tickets retrieved")
+		return keys, nil
+	}
+	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Action tickets retrieved")
+
+	for _, actionTicket := range actionTickets {
+		decTicket, err := pastel.DecodeActionTicket(actionTicket.ActionTicketData.ActionTicket)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+			continue
+		}
+		actionTicket.ActionTicketData.ActionTicketData = *decTicket
+
+		cascadeTicket, err := actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
+		if err != nil {
+			log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+				Warnf("Could not get sense ticket for action ticket data")
+			continue
+		}
+
+		keys = append(keys, cascadeTicket.RQIDs...)
 	}
 
 	return keys, nil
