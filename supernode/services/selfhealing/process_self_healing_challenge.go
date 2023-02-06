@@ -195,6 +195,18 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 			ActionTicketId: actionTicket.TXID,
 		}
 
+		fileBytes, err := json.Marshal(mostCommonFile)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error(err)
+		}
+
+		fileHash, err := utils.Sha3256hash(fileBytes)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error(err)
+		}
+
+		msg.ReconstructedFileHash = fileHash
+
 		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("Self-healing completed")
 	}
 
