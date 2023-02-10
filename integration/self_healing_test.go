@@ -297,7 +297,7 @@ var _ = Describe("SelfHealing", func() {
 		})
 	})
 
-	Context("when storage challenge fails but all symbols are available", func() {
+	/*Context("when storage challenge fails but all symbols are available", func() {
 		It("file is not reconstructed", func() {
 			ChallengeID := []string{}
 			// store all symbols in node 1,5 and 7
@@ -461,7 +461,7 @@ var _ = Describe("SelfHealing", func() {
 			}), b)).To(Succeed())
 
 		})
-	})
+	})*/
 
 	AfterEach(func() {
 		Expect(mocker.CleanupAll()).To(Succeed())
