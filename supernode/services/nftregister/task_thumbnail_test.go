@@ -2,13 +2,14 @@ package nftregister
 
 import (
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/files"
-	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"image"
 	"image/png"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
@@ -178,7 +179,7 @@ func TestCreateAndHashThumbnail(t *testing.T) {
 
 			srcImg, err := tc.args.task.Nft.LoadImage()
 			if err != nil {
-				fmt.Println("errrr: ", err.Error())
+				fmt.Println("error: ", err.Error())
 			}
 			assert.Nil(t, err)
 

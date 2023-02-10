@@ -259,8 +259,8 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 
 					//Step 18
 					if err = task.verifyPeersSignature(ctx); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
-						err = errors.Errorf("peers' singature mismatched: %w", err)
+						log.WithContext(ctx).WithError(err).Errorf("peers' signature mismatched")
+						err = errors.Errorf("peers' signature mismatched: %w", err)
 						return nil
 					}
 

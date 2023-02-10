@@ -3,11 +3,12 @@ package storagechallenge
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/local"
-	"github.com/pastelnetwork/gonode/common/types"
 	"math"
 	"math/rand"
 	"strconv"
+
+	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 
 	"github.com/mkmik/argsort"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -47,6 +48,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
 		return err
 	}
+
 	log.WithContext(ctx).Info("symbol file keys from registered nft tickets have been retrieved")
 
 	// Identify which raptorq files are currently hosted on this node
@@ -66,6 +68,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 			sliceOfFileHashesStoredByLocalSupernode = append(sliceOfFileHashesStoredByLocalSupernode, sliceOfFileHashes[idx])
 		}
 	}
+
 	log.WithContext(ctx).Info("slice of file hashes stored by local SN has been created")
 
 	log.WithContext(ctx).Info("retrieving block no and verbose")

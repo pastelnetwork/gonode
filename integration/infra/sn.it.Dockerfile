@@ -28,8 +28,9 @@ COPY /integration/configs/p4.conf /supernode/p4.conf
 COPY /integration/configs/p5.conf /supernode/p5.conf
 COPY /integration/configs/p6.conf /supernode/p6.conf
 COPY /integration/configs/p7.conf /supernode/p7.conf
+COPY /integration/configs/rqservice.toml /supernode/rqservice.toml
 COPY integration/testdata/ /supernode/testdata/
-RUN curl https://download.pastel.network/beta/pastelup-linux-amd64 -o /supernode/pastelup
+RUN curl https://download.pastel.network/beta/pastelup/pastelup-linux-amd64 -o /supernode/pastelup
 
 WORKDIR /supernode
 RUN go mod download
@@ -47,6 +48,7 @@ RUN chmod a+x pastelup
 RUN mkdir configs
 RUN mkdir testdata
 RUN ./pastelup install rq-service -r beta
+COPY --from=builder /supernode/rqservice.toml /root/.pastel/rqservice.toml
 COPY --from=builder /supernode/sn1.yml /configs/sn1.yml
 COPY --from=builder /supernode/sn2.yml /configs/sn2.yml
 COPY --from=builder /supernode/sn3.yml /configs/sn3.yml

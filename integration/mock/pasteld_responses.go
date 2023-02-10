@@ -306,7 +306,7 @@ func getRegTickets() map[string][]byte {
 				BlockHash:  "",
 				APITicketData: pastel.APICascadeTicket{
 					RQIDs: []string{
-						"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
+						"24NebM99zL1N8JjYkdkmL4YbTfjo9oUN25gUiUpg3yvE",
 					},
 					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
 						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},

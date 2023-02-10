@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"golang.org/x/crypto/sha3"
+	"os"
 	"strings"
 	"sync"
+	"time"
+
+	"golang.org/x/crypto/sha3"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -21,8 +24,12 @@ import (
 // ProcessSelfHealingChallenge is called from grpc server, which processes the self-healing challenge,
 // and will execute the reconstruction work.
 func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) error {
-	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("File Healing worker has been invoked invoked")
+	// wait if test env so tests can mock the p2p
+	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
+		time.Sleep(10 * time.Second)
+	}
 
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("File Healing worker has been invoked invoked")
 	mapOfFileHashes, err := task.MapSymbolFileKeysFromNFTTickets(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not generate the map of symbol file keys")
@@ -34,7 +41,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 	var rqConnection rqnode.Connection
 	rqConnection, err = task.RQClient.Connect(ctx, task.config.RaptorQServiceAddress)
 	if err != nil {
-		log.WithContext(ctx).Error("Error establishing RQ connection")
+		log.WithContext(ctx).WithError(err).Error("Error establishing RQ connection")
 	}
 	defer rqConnection.Done()
 
@@ -73,6 +80,31 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 
 	if !isReconstructionReq && availableSymbols == nil {
 		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info(fmt.Sprintf("Reconstruction is not required for file: %s", challengeFileHash))
+
+		store, err := local.OpenHistoryDB()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		}
+
+		if store != nil {
+			defer store.CloseHistoryDB(ctx)
+
+			log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
+			shChallenge := types.SelfHealingChallenge{
+				ChallengeID:           challengeMessage.ChallengeId,
+				MerkleRoot:            challengeMessage.MerklerootWhenChallengeSent,
+				FileHash:              challengeMessage.ChallengeFile.FileHashToChallenge,
+				ChallengingNode:       challengeMessage.ChallengingMasternodeId,
+				RespondingNode:        challengeMessage.RespondingMasternodeId,
+				ReconstructedFileHash: []byte{},
+				Status:                types.ReconstructionNotRequiredSelfHealingStatus,
+			}
+
+			_, err = store.InsertSelfHealingChallenge(shChallenge)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+			}
+		}
 
 		return nil
 	}
@@ -140,6 +172,7 @@ func (task *SHTask) checkingProcess(ctx context.Context, fileHash string) (requi
 	for _, id := range rqIDs {
 		var symbol []byte
 		symbol, err = task.P2PClient.Retrieve(ctx, id)
+
 		if err != nil {
 			log.WithContext(ctx).WithError(err).WithField("SymbolID", id).Error("Could not retrieve symbol")
 			requiredReconstruction = true
@@ -209,7 +242,7 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 		log.WithContext(ctx).WithField("challengeID", msg.ChallengeId).WithField("method", "sendProcessSelfHealingChallenge").WithError(err).Warn("could not get Supernode extra: ", err.Error())
 		return err
 	}
-	log.WithContext(ctx).Info(fmt.Sprintf("list of supernodes have been retrieved for process storage challenge:%s", listOfSupernodes))
+	log.WithContext(ctx).Info(fmt.Sprintf("list of supernodes have been retrieved for process self healing challenge:%s", listOfSupernodes))
 
 	//list of supernode ext keys without current node to find the 5 closest nodes for verification
 	mapSupernodesWithoutCurrentNode := make(map[string]pastel.MasterNode)

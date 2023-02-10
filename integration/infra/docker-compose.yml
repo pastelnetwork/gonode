@@ -23,6 +23,9 @@ services:
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/wn.yml --pastel-config-file=/configs/p0.conf"
     ports:
       - 18089:8089
+      - 15005:50051
+    volumes:
+      - ~/.pastel/rqfiles:/root/.pastel/rqfiles
   sn1:
     <<: *default
     container_name: snserver-1
@@ -81,6 +84,8 @@ services:
       - INTEGRATION_TEST_ENV=true
     depends_on:
       - sn1
+      - sn2
+      - sn3
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn4.yml --pastel-config-file=/configs/p5.conf"
     ports:
       - 19094:9090
@@ -93,6 +98,8 @@ services:
       - INTEGRATION_TEST_ENV=true
     depends_on:
       - sn1
+      - sn2
+      - sn3
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn4.yml --pastel-config-file=/configs/p6.conf"
     ports:
       - 19095:9090
@@ -105,6 +112,8 @@ services:
       - INTEGRATION_TEST_ENV=true
     depends_on:
       - sn1
+      - sn2
+      - sn3
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn7.yml --pastel-config-file=/configs/p7.conf"
     ports:
       - 19096:9090

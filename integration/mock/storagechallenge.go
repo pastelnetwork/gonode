@@ -3,10 +3,11 @@ package mock
 import (
 	"encoding/json"
 
+	"github.com/pastelnetwork/gonode/integration/helper"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-func getSCRegTickets() (map[string][]byte, []byte) {
+func getSCRegTickets(oti []byte) (map[string][]byte, []byte) {
 	resp := make(map[string][]byte)
 	tix := pastel.RegTickets{}
 
@@ -25,16 +26,17 @@ func getSCRegTickets() (map[string][]byte, []byte) {
 					NFTTitle:      "nft-1",
 					NFTSeriesName: "nft-series",
 					RQIDs: []string{
-						"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",
+						"4aYBeeCEoG7SSnZzXWjq8Ts2oXQ6wW18DGNiEACJJrc4",
 					},
+					RQOti: oti,
 					Thumbnail1Hash: []byte{
 						100, 96, 227, 164, 165, 224, 135, 208, 183, 238, 17, 48, 154, 166, 40,
 						20, 0, 215, 158, 151, 198, 123, 115, 153, 162, 81, 118, 200, 22, 153, 174, 130,
 					},
 					Thumbnail2Hash: []byte{249, 23, 138, 33, 126, 119, 199, 251, 112, 210, 244, 236, 144, 50,
 						149, 172, 64, 148, 230, 63, 44, 221, 144, 63, 173, 131, 97, 25, 227, 105, 181, 127},
-					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220,
-						47, 235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
+					DataHash: []byte{237, 203, 202, 207, 43, 36, 172, 173, 251, 169, 72, 216, 216, 220, 47,
+						235, 33, 171, 187, 188, 199, 189, 250, 43, 39, 154, 14, 144, 51, 135, 12, 68},
 					DDAndFingerprintsIDs: []string{ddAndFpFileHash},
 				},
 			},
@@ -234,3 +236,21 @@ var masterNodesTopRespSC = `{
 	  }
 	]
   }`
+
+func GetRqIDFile() *helper.RawSymbolIDFile {
+	rqfile := &helper.RawSymbolIDFile{
+		ID:        "7aa4746a-450d-4cbb-a5a1-9bef7b0eb58d",
+		PastelID:  "jXZvhdVoQ2q2WfaqL2nRCVNZn5hKgGDYGpkaQsjco9AgQA5MH1he4QktDN5RP483qyN17SPFs34o73tjLhfnxs",
+		BlockHash: "0000034f28e923c3b6393d71c9dea286c67fc33d55d3a0a607b3df40e0d34c95",
+	}
+
+	rqfile.SymbolIdentifiers = []string{`38uydDwESDz37Xg7Hhn7z2yhCTfjmhLcAHgdpJoWMCHP`, `3vgZe9zyP3caEwKJcLZ78wHWQfByi6aW5E6EbGmYWvM1`,
+		`893qE6a4QtrYDFzgJVivDq39W2bcGKfeJcnWQjxtoJzC`, `Enmj4KkuBEGeTx4puPdhQTU3gYxL4Rf7PFnmtFhQnpmN`, `6AU9Ti8VfQ8ojTRN4ctNACJ7C8cJksvYruko9pC1rh24`,
+		`AqGutQGxyUw1nD4E4XsKaLnaeZpcQ8P89dzA1PZprt5r`, `DSFV5iFrfDz9ciMudoVYbry35EoUt4LLqP9GBMdpGRJe`, `FEzCE2kcNXxPezgpkftk7n2p6tDgbpSVso5pgtBQz5Zk`,
+		`CUwccZ6UKeA1CbF8YeyqN8cX9dEn8dEcj7Kw5dcyEnnB`, `MoqRvvKYL3NoNAXtS8e1X1FwLSit76YPjsnkdQZAfK3`, `7PaDagNq6Dm1UBhC9YAb7hj74cpTbjQtu4GnZBhK3M3F`,
+		`5vemfsETYz7xEgTDAgyq6wXmxkNeehw8TP6qrMQVP1WZ`, `44ECnUJHJzvs7MM9LzXLqRtXHPSNL63mS8zQ3xbV7MjR`, `6N25xCJM9z1BMYdSPP7vf293wt1SNB7XaifNbNNd1ang`,
+		`2dWHDqpbSTtwDg9KjKdZxTA2hqHgut6tCktRPcrzep5V`, `CaHU26Z3XUDMRUfxf7qnsUJPT7NeobVWSczjASG5oYua`, `Ad1M7xuwsZ3P4JYP5Vxuzn2gcKGC8hXeKtpyoL5MDAf1`,
+		`6hdN4PPsSoPRi79Wr4j3utxuWZEAR9vRt8YoqUZZ8E4g`}
+
+	return rqfile
+}

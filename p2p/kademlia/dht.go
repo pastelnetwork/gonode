@@ -212,10 +212,6 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	key := s.hashKey(data)
 
 	retKey := base58.Encode(key)
-	if _, err := s.store.Retrieve(ctx, key); err == nil {
-		return retKey, nil
-	}
-
 	// store the key to local storage
 	if err := s.retryStore(ctx, key, data); err != nil {
 		log.WithContext(ctx).WithError(err).Error("local data store failure after retries")
@@ -576,9 +572,13 @@ func (s *DHT) NClosestNodes(_ context.Context, n int, key string, ignores ...*No
 
 // LocalStore the data into the network
 func (s *DHT) LocalStore(ctx context.Context, key string, data []byte) (string, error) {
+	decoded := base58.Decode(key)
+	if len(decoded) != B/8 {
+		return "", fmt.Errorf("invalid key: %v", key)
+	}
 
 	// store the key to local storage
-	if err := s.retryStore(ctx, []byte(key), data); err != nil {
+	if err := s.retryStore(ctx, decoded, data); err != nil {
 		log.WithContext(ctx).WithError(err).Error("local data store failure after retries")
 		return "", fmt.Errorf("retry store data to local storage: %v", err)
 	}

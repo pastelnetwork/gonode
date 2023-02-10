@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
+
 	"github.com/pastelnetwork/gonode/common/storage/local"
 
 	"github.com/gorilla/mux"
@@ -64,13 +66,15 @@ type Service struct {
 	p2pClient    p2p.Client
 	httpServer   *http.Server
 	cleanTracker *CleanTracker
+	scService    *storagechallenge.SCService
 }
 
 // NewService returns debug service
-func NewService(config *Config, p2pClient p2p.Client) *Service {
+func NewService(config *Config, p2pClient p2p.Client, srvc *storagechallenge.SCService) *Service {
 	service := &Service{
 		config:    config,
 		p2pClient: p2pClient,
+		scService: srvc,
 	}
 
 	router := mux.NewRouter()
@@ -80,11 +84,12 @@ func NewService(config *Config, p2pClient p2p.Client) *Service {
 	router.HandleFunc("/p2p", service.p2pStore).Methods(http.MethodPost)                               // store a data
 	router.HandleFunc("/p2p/{key}", service.p2pRetrieve).Methods(http.MethodGet)                       // retrieve a key
 	router.HandleFunc("/storage/challenges", service.storageChallengeRetrieve).Methods(http.MethodGet) // retrieve storage challenge data
-	router.HandleFunc("/storage/ceanup", service.storageChallengeCleanup).Methods(http.MethodGet)
+	router.HandleFunc("/storage/cleanup", service.storageChallengeCleanup).Methods(http.MethodGet)
 	router.HandleFunc("/p2p/remove", service.p2pDelete).Methods(http.MethodPost)                                // retrieve a key
 	router.HandleFunc("/selfhealing/challenges", service.selfHealingChallengesRetrieve).Methods(http.MethodGet) // retrieve a key
 	router.HandleFunc("/selfhealing/cleanup", service.selfHealingChallengeCleanup).Methods(http.MethodDelete)   // cleanup self-healing data from history db
 	router.HandleFunc("/health", service.p2pHealth).Methods(http.MethodGet)
+	router.HandleFunc("/storage/initiate", service.storageInitiate).Methods(http.MethodGet)
 
 	service.httpServer = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.HTTPPort),
@@ -208,6 +213,15 @@ func (service *Service) selfHealingChallengeCleanup(writer http.ResponseWriter, 
 	}
 
 	responseWithJSON(writer, http.StatusOK, make(map[string]interface{}))
+}
+
+func (service *Service) storageInitiate(writer http.ResponseWriter, _ *http.Request) {
+	ctx := context.Background()
+	log.WithContext(ctx).Info("storage challenge initiate")
+	task := service.scService.NewSCTask()
+	go task.GenerateStorageChallenges(ctx)
+
+	responseWithJSON(writer, http.StatusOK, fmt.Sprintf("ok %s", "storage challenge initiated"))
 }
 
 func (service *Service) p2pHealth(writer http.ResponseWriter, request *http.Request) {
