@@ -94,6 +94,17 @@ var _ = Describe("SelfHealing", func() {
 	Context("when storage challenge fails but all symbols are not available", func() {
 		It("file should be reconstructed", func() {
 			ChallengeID := []string{}
+			for id := range symbols {
+				delReq.Key = id
+				for _, url := range []string{helper.SN1BaseURI, helper.SN2BaseURI, helper.SN3BaseURI, helper.SN4BaseURI, helper.SN5BaseURI, helper.SN6BaseURI, helper.SN7BaseURI} {
+
+					_, status, err := itHelper.Request(helper.HttpPost, delReq, helper.GetRemoveURI(url), nil)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(status).To(Equal(http.StatusOK))
+				}
+
+			}
+
 			// store some symbols in node 1,5 and 7
 			i := 0
 			for _, symbol := range symbols {
@@ -297,7 +308,7 @@ var _ = Describe("SelfHealing", func() {
 		})
 	})
 
-	/*Context("when storage challenge fails but all symbols are available", func() {
+	Context("when storage challenge fails but all symbols are available", func() {
 		It("file is not reconstructed", func() {
 			ChallengeID := []string{}
 			// store all symbols in node 1,5 and 7
@@ -461,7 +472,7 @@ var _ = Describe("SelfHealing", func() {
 			}), b)).To(Succeed())
 
 		})
-	})*/
+	})
 
 	AfterEach(func() {
 		Expect(mocker.CleanupAll()).To(Succeed())
