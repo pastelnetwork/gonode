@@ -375,14 +375,19 @@ func (s *service) runTask(ctx context.Context) error {
 		// 	continue
 		// }
 
+		collection := "PASTEL"
+		if nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName != "" {
+			collection = nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName
+		}
+
 		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
 			Sha256HashOfArtImageFile:           ddAndFpFromTicket.HashOfCandidateImageFile,
 			ImageFingerprintVector:             toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
 			DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
 			PathToArtImageFile:                 "",
 			ImageThumbnailAsBase64:             "",
-			RequestType:                        nftRegTickets[i].RegTicketData.Type,
-			IDString:                           "",
+			RequestType:                        typeMapper(nftRegTickets[i].RegTicketData.Type),
+			IDString:                           collection,
 		}); err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
@@ -466,14 +471,16 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
+		collection := "PASTEL"
+
 		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
 			Sha256HashOfArtImageFile:           ddAndFpFromTicket.HashOfCandidateImageFile,
 			ImageFingerprintVector:             toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
 			DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
 			PathToArtImageFile:                 "",
 			ImageThumbnailAsBase64:             "",
-			RequestType:                        senseRegTickets[i].ActionTicketData.Type,
-			IDString:                           "",
+			RequestType:                        typeMapper(senseRegTickets[i].ActionTicketData.Type),
+			IDString:                           collection,
 		}); err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
@@ -580,4 +587,15 @@ func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInte
 		currentActionBlock: 1,
 		scorer:             scorer.New(scorerConfig, pastelClient, sn, store),
 	}, nil
+}
+
+func typeMapper(val string) string {
+	if val == "action-reg" {
+		return "SENSE"
+	}
+	if val == "nft-reg" {
+		return "NFT"
+	}
+
+	return val
 }
