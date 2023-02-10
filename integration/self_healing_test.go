@@ -120,7 +120,7 @@ var _ = Describe("SelfHealing", func() {
 			_, status, err := itHelper.Request(helper.HttpGet, nil, helper.GetSCInitiateURI(it.SN3BaseURI), nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal(http.StatusOK))
-			time.Sleep(2 * time.Second)
+			time.Sleep(3 * time.Second)
 
 			// store the right data  back in node 2,4,5 and 6 so that self healing verification can be done
 			localStoreReq.Key = p2pID
@@ -241,6 +241,7 @@ var _ = Describe("SelfHealing", func() {
 
 				success := false
 				for _, c := range shResp {
+					fmt.Println("C-S:", c.ChallengeID, c.Status)
 					if in(c.ChallengeID, ChallengeID) && c.Status == types.InProgressSelfHealingStatus {
 						success = true
 					}
@@ -271,6 +272,7 @@ var _ = Describe("SelfHealing", func() {
 
 					success := false
 					for _, c := range shResp {
+						fmt.Println("ch: status", c.ChallengeID, c.Status)
 						if in(c.ChallengeID, ChallengeID) && c.Status == types.CompletedSelfHealingStatus {
 							success = true
 						}
