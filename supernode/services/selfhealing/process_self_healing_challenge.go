@@ -3,22 +3,24 @@ package selfhealing
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"golang.org/x/crypto/sha3"
-
+	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	"golang.org/x/crypto/sha3"
 )
 
 // ProcessSelfHealingChallenge is called from grpc server, which processes the self-healing challenge,
@@ -53,117 +55,214 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 	challengeFileHash := challengeMessage.ChallengeFile.FileHashToChallenge
 
 	var (
-		regTicket     pastel.RegTicket
+		regTicket     *pastel.RegTicket
 		cascadeTicket *pastel.APICascadeTicket
-		actionTicket  pastel.ActionRegTicket
+		senseTicket   *pastel.APISenseTicket
+		actionTicket  *pastel.ActionRegTicket
 	)
 
-	log.WithContext(ctx).Info("retrieving the reg ticket based on file hash")
-	if _, ok := regTicketKeys[challengeFileHash]; ok {
-		regTicket, err = task.getRegTicket(ctx, regTicketKeys[challengeFileHash])
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("unable to retrieve reg ticket")
-		}
-		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("reg ticket has been retrieved")
+	regTicket, cascadeTicket, senseTicket, actionTicket, err = task.getTicketInfoFromFileHash(ctx, challengeFileHash, regTicketKeys, actionTicketKeys)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error getRelevantTicketFromFileHash")
+	}
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("reg ticket has been retrieved")
 
-	} else if _, ok = actionTicketKeys[challengeFileHash]; ok {
-		actionTicket, err = task.getActionTicket(ctx, actionTicketKeys[challengeFileHash])
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("unable to retrieve cascade ticket")
-			return err
-		}
-
-		cascadeTicket, err = actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
-		if err != nil {
-			log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
-				Warnf("Could not get cascade ticket for action ticket data")
-			return err
-		}
-
-		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("cascade reg ticket has been retrieved")
-	} else {
-		log.WithContext(ctx).WithError(err).Error("Failed to find reg ticket")
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 	}
 
 	//Checking Process
 	//1. false, nil, err    - should not update the challenge to completed, so that it can be retried again
 	//2. false, nil, nil    - reconstruction not required
 	//3. true, symbols, nil - reconstruction required
-	isReconstructionReq, availableSymbols, err := task.checkingProcess(ctx, challengeFileHash)
-	if err != nil && !isReconstructionReq {
-		log.WithContext(ctx).WithError(err).WithField("failed_challenge_id", challengeMessage.ChallengeId).Error("Error in checking process")
-		return err
-	}
 
-	if !isReconstructionReq && availableSymbols == nil {
-		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info(fmt.Sprintf("Reconstruction is not required for file: %s", challengeFileHash))
+	var msg pb.SelfHealingData
+	if regTicket != nil || cascadeTicket != nil {
+		isReconstructionReq, availableSymbols, err := task.checkingProcess(ctx, challengeFileHash)
+		if err != nil && !isReconstructionReq {
+			log.WithContext(ctx).WithError(err).WithField("failed_challenge_id", challengeMessage.ChallengeId).Error("Error in checking process")
+			return err
+		}
 
-		store, err := local.OpenHistoryDB()
+		if !isReconstructionReq && availableSymbols == nil {
+			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info(fmt.Sprintf("Reconstruction is not required for file: %s", challengeFileHash))
+
+			if store != nil {
+				defer store.CloseHistoryDB(ctx)
+
+				log.WithContext(ctx).Println("Storing self-healing audit log")
+				shChallenge := types.SelfHealingChallenge{
+					ChallengeID:           challengeMessage.ChallengeId,
+					MerkleRoot:            challengeMessage.MerklerootWhenChallengeSent,
+					FileHash:              challengeMessage.ChallengeFile.FileHashToChallenge,
+					ChallengingNode:       challengeMessage.ChallengingMasternodeId,
+					RespondingNode:        challengeMessage.RespondingMasternodeId,
+					ReconstructedFileHash: []byte{},
+					Status:                types.ReconstructionNotRequiredSelfHealingStatus,
+				}
+
+				_, err = store.InsertSelfHealingChallenge(shChallenge)
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+				}
+			}
+
+			return nil
+		}
+
+		file, reconstructedFileHash, err := task.selfHealing(ctx, rqService, challengeMessage, regTicket, cascadeTicket, availableSymbols)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+			log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
+			return err
+		}
+		task.RaptorQSymbols = file
+
+		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("File has been reconstructed")
+
+		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("sending reconstructed file hash for verification")
+		msg = pb.SelfHealingData{
+			MessageId:                   challengeMessage.MessageId,
+			MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_VERIFICATION_MESSAGE,
+			ChallengeStatus:             pb.SelfHealingData_Status_RESPONDED,
+			MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
+			ChallengingMasternodeId:     challengeMessage.ChallengingMasternodeId,
+			RespondingMasternodeId:      challengeMessage.RespondingMasternodeId,
+			ReconstructedFileHash:       reconstructedFileHash,
+			ChallengeFile: &pb.SelfHealingDataChallengeFile{
+				FileHashToChallenge: challengeFileHash,
+			},
+			ChallengeId: challengeMessage.ChallengeId,
+			RegTicketId: regTicket.TXID,
+		}
+		if cascadeTicket != nil {
+			msg.ActionTicketId = actionTicket.TXID
+		}
+	} else if senseTicket != nil {
+		reqSelfHealing, mostCommonFile := task.senseCheckingProcess(ctx, senseTicket.DDAndFingerprintsIDs)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error in checking process for sense action ticket")
 		}
 
-		if store != nil {
-			defer store.CloseHistoryDB(ctx)
+		if !reqSelfHealing {
+			log.WithContext(ctx).WithError(err).Error("self-healing not required for sense action ticket")
 
-			log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
-			shChallenge := types.SelfHealingChallenge{
-				ChallengeID:           challengeMessage.ChallengeId,
-				MerkleRoot:            challengeMessage.MerklerootWhenChallengeSent,
-				FileHash:              challengeMessage.ChallengeFile.FileHashToChallenge,
-				ChallengingNode:       challengeMessage.ChallengingMasternodeId,
-				RespondingNode:        challengeMessage.RespondingMasternodeId,
-				ReconstructedFileHash: []byte{},
-				Status:                types.ReconstructionNotRequiredSelfHealingStatus,
+			if store != nil {
+				defer store.CloseHistoryDB(ctx)
+
+				log.WithContext(ctx).Println("Storing self-healing audit log")
+				shChallenge := types.SelfHealingChallenge{
+					ChallengeID:           challengeMessage.ChallengeId,
+					MerkleRoot:            challengeMessage.MerklerootWhenChallengeSent,
+					FileHash:              challengeMessage.ChallengeFile.FileHashToChallenge,
+					ChallengingNode:       challengeMessage.ChallengingMasternodeId,
+					RespondingNode:        challengeMessage.RespondingMasternodeId,
+					ReconstructedFileHash: []byte{},
+					Status:                types.ReconstructionNotRequiredSelfHealingStatus,
+				}
+
+				_, err = store.InsertSelfHealingChallenge(shChallenge)
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
+				}
 			}
 
-			_, err = store.InsertSelfHealingChallenge(shChallenge)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Error storing failed challenge to DB")
-			}
+			return nil
 		}
 
-		return nil
+		ids, idFiles, err := task.senseSelfHealing(senseTicket, mostCommonFile)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("self-healing not required for sense action ticket")
+			return err
+		}
+		task.IDFiles = idFiles
+
+		msg = pb.SelfHealingData{
+			MessageId:                   challengeMessage.MessageId,
+			MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_VERIFICATION_MESSAGE,
+			ChallengeStatus:             pb.SelfHealingData_Status_RESPONDED,
+			MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
+			ChallengingMasternodeId:     challengeMessage.ChallengingMasternodeId,
+			RespondingMasternodeId:      challengeMessage.RespondingMasternodeId,
+			ReconstructedFileHash:       nil,
+			ChallengeFile: &pb.SelfHealingDataChallengeFile{
+				FileHashToChallenge: challengeFileHash,
+			},
+			ChallengeId:    challengeMessage.ChallengeId,
+			RegTicketId:    "",
+			IsSenseTicket:  true,
+			SenseFileIds:   ids,
+			ActionTicketId: actionTicket.TXID,
+		}
+
+		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("Self-healing completed")
 	}
 
-	file, reconstructedFileHash, err := task.selfHealing(ctx, rqService, challengeMessage, regTicket, cascadeTicket, availableSymbols)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
-		return err
-	}
-
-	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("File has been reconstructed")
-
-	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("sending reconstructed file hash for verification")
-	msg := &pb.SelfHealingData{
-		MessageId:                   challengeMessage.MessageId,
-		MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_VERIFICATION_MESSAGE,
-		ChallengeStatus:             pb.SelfHealingData_Status_RESPONDED,
-		MerklerootWhenChallengeSent: challengeMessage.MerklerootWhenChallengeSent,
-		ChallengingMasternodeId:     challengeMessage.ChallengingMasternodeId,
-		RespondingMasternodeId:      challengeMessage.RespondingMasternodeId,
-		ReconstructedFileHash:       reconstructedFileHash,
-		ChallengeFile: &pb.SelfHealingDataChallengeFile{
-			FileHashToChallenge: challengeFileHash,
-		},
-		ChallengeId: challengeMessage.ChallengeId,
-		RegTicketId: regTicket.TXID,
-	}
-	if cascadeTicket != nil {
-		msg.ActionTicketId = actionTicket.TXID
-	}
-	if err := task.sendSelfHealingVerificationMessage(ctx, msg); err != nil {
+	if err := task.sendSelfHealingVerificationMessage(ctx, &msg); err != nil {
 		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err)
 		return err
 	}
 
-	if err := task.StorageHandler.StoreRaptorQSymbolsIntoP2P(ctx, file, ""); err != nil {
-		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err).Error("Error storing symbols to P2P")
-		return err
+	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info(fmt.Sprintf("Reconstruction is not required for file: %s", challengeFileHash))
+
+	if task.RaptorQSymbols != nil {
+		if err := task.StorageHandler.StoreRaptorQSymbolsIntoP2P(ctx, task.RaptorQSymbols, ""); err != nil {
+			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err).Error("Error storing symbols to P2P")
+			return err
+		}
+	} else {
+		if err := task.StorageHandler.StoreListOfBytesIntoP2P(ctx, task.IDFiles); err != nil {
+			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err).Error("Error storing id files to P2P")
+			return err
+		}
 	}
 
 	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("Self-healing completed")
+
 	return nil
+}
+
+func (task *SHTask) getTicketInfoFromFileHash(ctx context.Context, challengeFileHash string, regTicketKeys, actionTicketKeys map[string]string) (*pastel.RegTicket, *pastel.APICascadeTicket, *pastel.APISenseTicket, *pastel.ActionRegTicket, error) {
+	log.WithContext(ctx).Info("retrieving the reg ticket based on file hash")
+	if _, ok := regTicketKeys[challengeFileHash]; ok {
+		regTicket, err := task.getRegTicket(ctx, regTicketKeys[challengeFileHash])
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to retrieve reg ticket")
+			return nil, nil, nil, nil, err
+		}
+
+		return &regTicket, nil, nil, nil, nil
+	} else if _, ok = actionTicketKeys[challengeFileHash]; ok {
+		actionTicket, err := task.getActionTicket(ctx, actionTicketKeys[challengeFileHash])
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to retrieve cascade ticket")
+			return nil, nil, nil, nil, err
+		}
+
+		switch actionTicket.ActionTicketData.ActionType {
+		case pastel.ActionTypeCascade:
+			cascadeTicket, err := actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
+			if err != nil {
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+					Warnf("Could not get cascade ticket for action ticket data")
+				return nil, nil, nil, nil, err
+			}
+
+			return nil, cascadeTicket, nil, &actionTicket, nil
+		case pastel.ActionTypeSense:
+			senseTicket, err := actionTicket.ActionTicketData.ActionTicketData.APISenseTicket()
+			if err != nil {
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+					Warnf("Could not get sense ticket for action ticket data")
+				return nil, nil, nil, nil, err
+			}
+
+			return nil, nil, senseTicket, &actionTicket, nil
+		}
+
+	}
+
+	return nil, nil, nil, nil, errors.New("failed to find the ticket")
 }
 
 func (task *SHTask) getRegTicket(ctx context.Context, regTicketID string) (regTicket pastel.RegTicket, err error) {
@@ -264,11 +363,11 @@ func (task *SHTask) checkingProcess(ctx context.Context, fileHash string) (requi
 	return false, nil, nil
 }
 
-func (task *SHTask) selfHealing(ctx context.Context, rqService rqnode.RaptorQ, msg *pb.SelfHealingData, regTicket pastel.RegTicket, cascadeTicket *pastel.APICascadeTicket, symbols map[string][]byte) (file, reconstructedFileHash []byte, err error) {
+func (task *SHTask) selfHealing(ctx context.Context, rqService rqnode.RaptorQ, msg *pb.SelfHealingData, regTicket *pastel.RegTicket, cascadeTicket *pastel.APICascadeTicket, symbols map[string][]byte) (file, reconstructedFileHash []byte, err error) {
 	log.WithContext(ctx).WithField("failed_challenge_id", msg.ChallengeId).Info("Self-healing initiated")
 
 	var encodeInfo rqnode.Encode
-	if regTicket.TXID != "" {
+	if regTicket != nil {
 		encodeInfo = rqnode.Encode{
 			Symbols: symbols,
 			EncoderParam: rqnode.EncoderParameters{
@@ -298,6 +397,76 @@ func (task *SHTask) selfHealing(ctx context.Context, rqService rqnode.RaptorQ, m
 	}
 
 	return decodeInfo.File, fileHash[:], nil
+}
+
+func (task *SHTask) senseCheckingProcess(ctx context.Context, ddFPIDs []string) (requiredReconstruction bool, mostCommonFile *pastel.DDAndFingerprints) {
+	//download all the DD and FPIds
+	availableDDFPFiles, err := task.DownloadDDAndFingerprints(ctx, ddFPIDs)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Downloading DD and Fingerprints")
+	}
+
+	//if not able to retrieve all should self-heal
+	if len(ddFPIDs) == len(availableDDFPFiles) {
+		return false, nil
+	}
+
+	//Find most common file (source of truth) for self-healing
+	hashTally := make(map[string]int)
+	fileHashMap := make(map[string]*pastel.DDAndFingerprints)
+	for _, DDFPIdFile := range availableDDFPFiles {
+		bytes, err := json.Marshal(DDFPIdFile)
+		if err != nil {
+			continue
+		}
+
+		fileHash := utils.GetHashStringFromBytes(bytes)
+
+		//Generating hashes, maintaining hash tally and fileHash map to find the file with the most common hash
+		hashTally[fileHash]++
+		fileHashMap[fileHash] = &DDFPIdFile
+	}
+
+	var mostCommonHash string
+	var greatestTally int
+	for hash, tally := range hashTally {
+		if tally > greatestTally {
+			mostCommonHash = hash
+			greatestTally = tally
+		}
+	}
+
+	return true, fileHashMap[mostCommonHash]
+}
+
+func (task *SHTask) senseSelfHealing(senseTicket *pastel.APISenseTicket, ddFPID *pastel.DDAndFingerprints) (ids []string, idFiles [][]byte, err error) {
+	if len(task.SNsSignatures) != 3 {
+		return nil, nil, errors.Errorf("wrong number of signature for fingerprints - %d", len(task.SNsSignatures))
+	}
+
+	ddDataJSON, err := json.Marshal(ddFPID)
+	if err != nil {
+		return nil, nil, errors.Errorf("failed to marshal dd-data: %w", err)
+	}
+
+	ddEncoded := utils.B64Encode(ddDataJSON)
+
+	var buffer bytes.Buffer
+	buffer.Write(ddEncoded)
+	buffer.WriteByte(pastel.SeparatorByte)
+	buffer.Write(task.SNsSignatures[0])
+	buffer.WriteByte(pastel.SeparatorByte)
+	buffer.Write(task.SNsSignatures[1])
+	buffer.WriteByte(pastel.SeparatorByte)
+	buffer.Write(task.SNsSignatures[2])
+	ddFpFile := buffer.Bytes()
+
+	ids, idFiles, err = pastel.GetIDFiles(ddFpFile, senseTicket.DDAndFingerprintsIc, senseTicket.DDAndFingerprintsMax)
+	if err != nil {
+		return nil, nil, errors.Errorf("get ID Files: %w", err)
+	}
+
+	return ids, idFiles, nil
 }
 
 func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg *pb.SelfHealingData) error {
@@ -414,4 +583,61 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 	}
 
 	return nil
+}
+
+// DownloadDDAndFingerprints gets dd and fp file from ticket based on id and returns the file.
+func (task *SHTask) DownloadDDAndFingerprints(ctx context.Context, DDAndFingerprintsIDs []string) (availableDDFPFiles []pastel.DDAndFingerprints, err error) {
+	for i := 0; i < len(DDAndFingerprintsIDs); i++ {
+		file, err := task.P2PClient.Retrieve(ctx, DDAndFingerprintsIDs[i])
+		if err != nil {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails tried to get this file and failed. ")
+			continue
+		}
+		log.WithContext(ctx).WithField("file", file).Println("Got the file")
+		decompressedData, err := zstd.Decompress(nil, file)
+		if err != nil {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
+			continue
+		}
+		log.WithContext(ctx).Println("Decompressed the file")
+		//base64 dataset doesn't contain periods, so we just find the first index of period and chop it and everything else
+		firstIndexOfSeparator := bytes.IndexByte(decompressedData, pastel.SeparatorByte)
+		if firstIndexOfSeparator < 1 {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails got a bad separator index. ")
+			continue
+		}
+		secondIndexOfSeparator := bytes.IndexByte(decompressedData[firstIndexOfSeparator+1:], pastel.SeparatorByte)
+		task.SNsSignatures = append(task.SNsSignatures, decompressedData[firstIndexOfSeparator+1:secondIndexOfSeparator])
+
+		thirdIndexOfSeparator := bytes.IndexByte(decompressedData[secondIndexOfSeparator+1:], pastel.SeparatorByte)
+		task.SNsSignatures = append(task.SNsSignatures, decompressedData[secondIndexOfSeparator+1:thirdIndexOfSeparator])
+
+		fourthIndexOfSeparator := bytes.IndexByte(decompressedData[thirdIndexOfSeparator+1:], pastel.SeparatorByte)
+		task.SNsSignatures = append(task.SNsSignatures, decompressedData[thirdIndexOfSeparator+1:fourthIndexOfSeparator])
+
+		dataToBase64Decode := decompressedData[:firstIndexOfSeparator]
+		log.WithContext(ctx).WithField("first index of separator", firstIndexOfSeparator).WithField("decompd data", string(decompressedData)).WithField("datatobase64decode", string(dataToBase64Decode)).Println("About to base64 decode file")
+		dataToJSONDecode, err := utils.B64Decode(dataToBase64Decode)
+		if err != nil {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not base64 decode. ")
+			continue
+		}
+		log.WithContext(ctx).Println("base64 decoded the file")
+
+		if len(dataToJSONDecode) == 0 {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails file contents are empty")
+			continue
+		}
+
+		ddAndFingerprintFile := &pastel.DDAndFingerprints{}
+		err = json.Unmarshal(dataToJSONDecode, ddAndFingerprintFile)
+		if err != nil {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not JSON unmarshal. ")
+			continue
+		}
+
+		availableDDFPFiles = append(availableDDFPFiles, *ddAndFingerprintFile)
+	}
+
+	return availableDDFPFiles, nil
 }

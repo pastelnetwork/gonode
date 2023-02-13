@@ -24,6 +24,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 	var (
 		regTicket     pastel.RegTicket
 		cascadeTicket *pastel.APICascadeTicket
+		senseTicket   *pastel.APISenseTicket
 		actionTicket  pastel.ActionRegTicket
 		err           error
 	)
@@ -42,11 +43,20 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 			return nil, err
 		}
 
-		cascadeTicket, err = actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
-		if err != nil {
-			log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
-				Warnf("Could not get cascade ticket for action ticket data")
-			return nil, err
+		if challengeMessage.IsSenseTicket {
+			senseTicket, err = actionTicket.ActionTicketData.ActionTicketData.APISenseTicket()
+			if err != nil {
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+					Warnf("Could not get sense ticket for action ticket data")
+				return nil, err
+			}
+		} else {
+			cascadeTicket, err = actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
+			if err != nil {
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+					Warnf("Could not get cascade ticket for action ticket data")
+				return nil, err
+			}
 		}
 
 		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("cascade reg ticket has been retrieved")
@@ -81,8 +91,11 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 		ChallengeFile: &pb.SelfHealingDataChallengeFile{
 			FileHashToChallenge: challengeMessage.ChallengeFile.FileHashToChallenge,
 		},
-		ChallengeId: challengeMessage.ChallengeId,
-		RegTicketId: challengeMessage.RegTicketId,
+		ChallengeId:    challengeMessage.ChallengeId,
+		RegTicketId:    challengeMessage.RegTicketId,
+		ActionTicketId: challengeMessage.ActionTicketId,
+		SenseFileIds:   challengeMessage.SenseFileIds,
+		IsSenseTicket:  challengeMessage.IsSenseTicket,
 	}
 
 	store, err := local.OpenHistoryDB()
@@ -106,41 +119,80 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 	//1. false, nil, err    - should not update the challenge to completed, so that it can be retried again
 	//2. false, nil, nil    - reconstruction not required
 	//3. true, symbols, nil - reconstruction required
-	isReconstructionReq, availableSymbols, err := task.checkingProcess(ctx, challengeFileHash)
-	if err != nil && !isReconstructionReq {
-		log.WithContext(ctx).WithError(err).WithField("failed_challenge_id", challengeMessage.ChallengeId).Error("Error in checking process")
-		responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
-		shChallenge.Status = types.FailedSelfHealingStatus
-		storeLogs(ctx, store, shChallenge)
-		return responseMessage, err
-	}
 
-	if !isReconstructionReq && availableSymbols == nil {
-		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info(fmt.Sprintf("Reconstruction is not required for file: %s", challengeFileHash))
-		responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
-		shChallenge.Status = types.FailedSelfHealingStatus
-		storeLogs(ctx, store, shChallenge)
-		return responseMessage, nil
-	}
+	var reconstructedFileHash []byte
+	if cascadeTicket != nil || regTicket.TXID != "" {
+		isReconstructionReq, availableSymbols, err := task.checkingProcess(ctx, challengeFileHash)
+		if err != nil && !isReconstructionReq {
+			log.WithContext(ctx).WithError(err).WithField("failed_challenge_id", challengeMessage.ChallengeId).Error("Error in checking process")
+			responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+			shChallenge.Status = types.FailedSelfHealingStatus
+			storeLogs(ctx, store, shChallenge)
+			return responseMessage, err
+		}
 
-	_, reconstructedFileHash, err := task.selfHealing(ctx, rqService, challengeMessage, regTicket, cascadeTicket, availableSymbols)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
-		return responseMessage, err
-	}
-	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("File has been reconstructed")
+		if !isReconstructionReq && availableSymbols == nil {
+			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info(fmt.Sprintf("Reconstruction is not required for file: %s", challengeFileHash))
+			responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+			shChallenge.Status = types.FailedSelfHealingStatus
+			storeLogs(ctx, store, shChallenge)
+			return responseMessage, nil
+		}
 
-	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("Comparing hashes")
-	if !bytes.Equal(reconstructedFileHash, challengeMessage.ReconstructedFileHash) {
-		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("reconstructed file hash does not match with the verifier reconstructed file")
+		_, reconstructedFileHash, err = task.selfHealing(ctx, rqService, challengeMessage, &regTicket, cascadeTicket, availableSymbols)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
+			return responseMessage, err
+		}
+		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("File has been reconstructed")
 
-		responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
-		shChallenge.Status = types.FailedSelfHealingStatus
-		shChallenge.ReconstructedFileHash = reconstructedFileHash
-		storeLogs(ctx, store, shChallenge)
-		return responseMessage, nil
+		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("Comparing hashes")
+		if !bytes.Equal(reconstructedFileHash, challengeMessage.ReconstructedFileHash) {
+			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("reconstructed file hash does not match with the verifier reconstructed file")
+
+			responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+			shChallenge.Status = types.FailedSelfHealingStatus
+			shChallenge.ReconstructedFileHash = reconstructedFileHash
+			storeLogs(ctx, store, shChallenge)
+			return responseMessage, nil
+		}
+		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("hashes have been matched of the responder and verifiers")
+	} else if senseTicket != nil {
+		reqSelfHealing, mostCommonFile := task.senseCheckingProcess(ctx, senseTicket.DDAndFingerprintsIDs)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error in checking process for sense action ticket")
+		}
+
+		if !reqSelfHealing {
+			log.WithContext(ctx).WithError(err).Error("self-healing not required for sense action ticket")
+			responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+			shChallenge.Status = types.FailedSelfHealingStatus
+			shChallenge.ReconstructedFileHash = nil
+			storeLogs(ctx, store, shChallenge)
+
+			return responseMessage, nil
+		}
+
+		ids, _, err := task.senseSelfHealing(senseTicket, mostCommonFile)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error while self-healing sense action ticket")
+			responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+			shChallenge.Status = types.FailedSelfHealingStatus
+			shChallenge.ReconstructedFileHash = nil
+			storeLogs(ctx, store, shChallenge)
+
+			return responseMessage, err
+		}
+
+		if ok := compareFileIDs(ids, challengeMessage.SenseFileIds); !ok {
+			responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+			shChallenge.Status = types.FailedSelfHealingStatus
+			shChallenge.ReconstructedFileHash = nil
+			storeLogs(ctx, store, shChallenge)
+
+			return responseMessage, nil
+		}
 	}
-	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("hashes have been matched of the responder and verifiers")
 
 	responseMessage.ChallengeStatus = pb.SelfHealingData_Status_SUCCEEDED
 	shChallenge.Status = types.CompletedSelfHealingStatus
@@ -158,4 +210,23 @@ func storeLogs(ctx context.Context, store storage.LocalStoreInterface, msg types
 			log.WithContext(ctx).WithError(err).Error("Error storing challenge to DB")
 		}
 	}
+}
+
+func compareFileIDs(verifyingFileIDs []string, processedFileIDs []string) bool {
+	verifyingFileIDsMap := make(map[string]bool)
+	for _, id := range verifyingFileIDs {
+		verifyingFileIDsMap[id] = false
+	}
+
+	for _, id := range processedFileIDs {
+		verifyingFileIDsMap[id] = true
+	}
+
+	for _, IsMatched := range verifyingFileIDsMap {
+		if !IsMatched {
+			return false
+		}
+	}
+
+	return true //all file ids matched
 }

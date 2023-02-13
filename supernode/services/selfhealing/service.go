@@ -2,6 +2,7 @@ package selfhealing
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/mixins"
 	"sync/atomic"
 	"time"
 
@@ -21,7 +22,8 @@ import (
 // is detected.
 type SHService struct {
 	*common.SuperNodeService
-	config *Config
+	config        *Config
+	pastelHandler *mixins.PastelHandler
 
 	nodeID            string
 	nodeClient        node.ClientInterface
@@ -100,6 +102,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2p, rqClient),
 		nodeClient:       nodeClient,
 		nodeID:           config.PastelID,
+		pastelHandler:    mixins.NewPastelHandler(pastelClient),
 	}
 }
 
