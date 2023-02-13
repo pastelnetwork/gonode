@@ -7,6 +7,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
@@ -18,9 +19,13 @@ const (
 
 // SHTask : Self healing task will manage response to self healing challenges requests
 type SHTask struct {
+	FingerprintsHandler *mixins.FingerprintsHandler
 	*common.SuperNodeTask
 	*common.StorageHandler
 	*SHService
+	RaptorQSymbols []byte
+	IDFiles        [][]byte
+	SNsSignatures  [][]byte
 }
 
 // Run : RunHelper's cleanup function is currently nil as WIP will determine what needs to be cleaned.
@@ -38,7 +43,8 @@ func NewSHTask(service *SHService) *SHTask {
 		SuperNodeTask: common.NewSuperNodeTask(logPrefix),
 		StorageHandler: common.NewStorageHandler(service.P2PClient, service.RQClient,
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
-		SHService: service,
+		SHService:           service,
+		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 	}
 
 	return task

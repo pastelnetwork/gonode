@@ -43,6 +43,16 @@ func Sha3256hash(msg []byte) ([]byte, error) {
 	return hasher.Sum(nil), nil
 }
 
+// GetHashStringFromBytes generate sha256 hash string from a given byte array
+func GetHashStringFromBytes(msg []byte) string {
+	h := sha3.New256()
+	if _, err := io.Copy(h, bytes.NewReader(msg)); err != nil {
+		return ""
+	}
+
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 // SafeString returns value of str ptr or empty string if ptr is nil
 func SafeString(ptr *string) string {
 	if ptr != nil {

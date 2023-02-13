@@ -43,6 +43,8 @@ message SelfHealingData {
   string challenge_id = 9;
   string reg_ticket_id = 10;
   string action_ticket_id = 11;
+  bool is_sense_ticket = 12;
+  repeated string senseFileIds = 13;
 }
 
 message ProcessSelfHealingChallengeRequest {
