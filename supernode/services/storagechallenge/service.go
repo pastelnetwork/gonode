@@ -171,14 +171,26 @@ func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 		}
 		actionTicket.ActionTicketData.ActionTicketData = *decTicket
 
-		cascadeTicket, err := actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
-		if err != nil {
-			log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
-				Warnf("Could not get sense ticket for action ticket data")
-			continue
-		}
+		switch actionTicket.ActionTicketData.ActionType {
+		case pastel.ActionTypeCascade:
+			cascadeTicket, err := actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
+			if err != nil {
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+					Warnf("Could not get cascade ticket for action ticket data")
+				continue
+			}
 
-		keys = append(keys, cascadeTicket.RQIDs...)
+			keys = append(keys, cascadeTicket.RQIDs...)
+		case pastel.ActionTypeSense:
+			senseTicket, err := actionTicket.ActionTicketData.ActionTicketData.APISenseTicket()
+			if err != nil {
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+					Warnf("Could not get sense ticket for action ticket data")
+				continue
+			}
+
+			keys = append(keys, senseTicket.DDAndFingerprintsIDs...)
+		}
 	}
 
 	return keys, nil
