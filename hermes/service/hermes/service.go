@@ -291,37 +291,44 @@ func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash stri
 }
 
 func (s *service) runTask(ctx context.Context) error {
-	log.WithContext(ctx).Info("getting Reg tickets")
-
-	nftRegTickets, err := s.pastelClient.RegTickets(ctx)
+	log.WithContext(ctx).Info("getting Activation tickets")
+	actTickets, err := s.pastelClient.ActTickets(ctx, pastel.ActTicketAll, s.latestBlockHeight)
 	if err != nil {
-		log.WithError(err).Error("get registered ticket - exit runtask now")
+		log.WithError(err).Error("unable to get act tickets - exit runtask now")
 		return nil
 	}
-
-	if len(nftRegTickets) == 0 {
+	if len(actTickets) == 0 {
 		return nil
 	}
-	log.WithContext(ctx).WithField("count", len(nftRegTickets)).Info("Reg tickets retrieved")
+	log.WithContext(ctx).WithField("count", len(actTickets)).Info("Act tickets retrieved")
 
 	//track latest block height, but don't set it until we check all the nft reg tickets and the sense tickets.
 	latestBlockHeight := s.latestBlockHeight
 	lastKnownGoodHeight := s.latestBlockHeight
 
 	//loop through nft tickets and store newly found nft reg tickets
-	for i := 0; i < len(nftRegTickets); i++ {
-		if nftRegTickets[i].Height <= s.latestBlockHeight {
+	for i := 0; i < len(actTickets); i++ {
+		if actTickets[i].Height <= s.latestBlockHeight {
 			continue
 		}
 
-		decTicket, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
+		regTicket, err := s.pastelClient.RegTicket(ctx, actTickets[i].ActTicketData.RegTXID)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).WithField("regTxid", actTickets[i].ActTicketData.RegTXID).
+				WithField("act-Txid", actTickets[i].TXID).Error("unable to get reg ticket")
+			continue
+		}
+
+		log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).Info("Found new NFT ticket")
+
+		decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
-		nftRegTickets[i].RegTicketData.NFTTicketData = *decTicket
+		regTicket.RegTicketData.NFTTicketData = *decTicket
 
-		ddFPIDs := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
+		ddFPIDs := regTicket.RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
 
 		ddAndFpFromTicket := &pastel.DDAndFingerprints{}
 		//Get the dd and fp file from the ticket
@@ -329,26 +336,28 @@ func (s *service) runTask(ctx context.Context) error {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
 			if err != nil {
 				//probably too verbose even for debug.
-				//log.WithContext(ctx).WithField("error", err).WithField("id", id).Debug("Could not get the fingerprint for this file hash")
+				log.WithContext(ctx).WithField("error", err).WithField("txid", actTickets[i].ActTicketData.RegTXID).WithField("id", id).Debug("Could not get the fingerprint for this file hash")
 				continue
 			}
 			break
 		}
+
 		if ddAndFpFromTicket == nil {
-			log.WithContext(ctx).WithField("txid", nftRegTickets[i].TXID).
-				WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Debugf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).
+				WithField("NFTRegTicket", regTicket.RegTicketData.NFTTicketData).Debugf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
 			continue
 		}
 		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
-			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Debugf("This NFT Reg ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
+			log.WithContext(ctx).WithField("NFTRegTicket", regTicket.RegTicketData.NFTTicketData).Debugf("This NFT Reg ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
 
 		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).Info("fingerprints already exist in database, skipping")
 			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
-			if nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum > lastKnownGoodHeight {
-				lastKnownGoodHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
+			if actTickets[i].Height > lastKnownGoodHeight {
+				lastKnownGoodHeight = regTicket.RegTicketData.NFTTicketData.BlockNum
 			}
 			continue
 		}
@@ -360,24 +369,24 @@ func (s *service) runTask(ctx context.Context) error {
 		//make sure ImageFingerprintOfCnadidateImageFile exists.
 		// this could fail if the ticket is an older version of the DDAndFingerprints struct, so we will continue to next fingerprint
 		if ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile == nil {
-			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Debugf("This NFT Reg ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
+			log.WithContext(ctx).WithField("NFTRegTicket", regTicket.RegTicketData.NFTTicketData).Debugf("This NFT Reg ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
 		if len(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile) < 1 {
-			log.WithContext(ctx).WithField("NFTRegTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Debugf("This NFT Reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
+			log.WithContext(ctx).WithField("NFTRegTicket", regTicket.RegTicketData.NFTTicketData).Debugf("This NFT Reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
 			continue
 		}
 
-		// thumbnailHash := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash
+		// thumbnailHash := regTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash
 		// thumbnail, err := s.p2pClient.Retrieve(ctx, string(thumbnailHash))
 		// if err != nil {
-		// 	log.WithContext(ctx).WithField("thumbnailHash", nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash).Warnf("Could not get the thumbnail with this hash for nftticketdata")
+		// 	log.WithContext(ctx).WithField("thumbnailHash", regTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash).Warnf("Could not get the thumbnail with this hash for nftticketdata")
 		// 	continue
 		// }
 
 		collection := "PASTEL"
-		if nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName != "" {
-			collection = nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName
+		if regTicket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName != "" {
+			collection = regTicket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName
 		}
 
 		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
@@ -386,13 +395,13 @@ func (s *service) runTask(ctx context.Context) error {
 			DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
 			PathToArtImageFile:                 "",
 			ImageThumbnailAsBase64:             "",
-			RequestType:                        typeMapper(nftRegTickets[i].RegTicketData.Type),
+			RequestType:                        typeMapper(regTicket.RegTicketData.Type),
 			IDString:                           collection,
 		}); err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
-		if nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum > latestBlockHeight {
-			latestBlockHeight = nftRegTickets[i].RegTicketData.NFTTicketData.BlockNum
+		if regTicket.RegTicketData.NFTTicketData.BlockNum > latestBlockHeight {
+			latestBlockHeight = regTicket.RegTicketData.NFTTicketData.BlockNum
 		}
 	}
 	//loop through action tickets and store newly found nft reg tickets
@@ -410,6 +419,20 @@ func (s *service) runTask(ctx context.Context) error {
 		if senseRegTickets[i].ActionTicketData.CalledAt <= s.latestBlockHeight {
 			continue
 		}
+		log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).Info("Found sense ticket, checking activation...")
+
+		idt, err := s.pastelClient.FindActionActByActionRegTxid(ctx, senseRegTickets[i].TXID)
+		if err != nil {
+			log.WithContext(ctx).WithField("reg-txid", senseRegTickets[i].TXID).WithError(err).
+				Error("Failed to find action act by action reg txid")
+			continue
+		}
+
+		if idt == nil || idt.TXID == "" {
+			continue
+		}
+
+		log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).Info("Found activated sense ticket")
 
 		decTicket, err := pastel.DecodeActionTicket(senseRegTickets[i].ActionTicketData.ActionTicket)
 		if err != nil {
@@ -434,7 +457,7 @@ func (s *service) runTask(ctx context.Context) error {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
 			if err != nil {
 				//probably too verbose even for debug.
-				//log.WithContext(ctx).WithField("error", err).Debug("Could not get the fingerprint for this file hash")
+				log.WithContext(ctx).WithField("error", err).WithField("sense-txid", senseRegTickets[i].TXID).Debug("Could not get the fingerprint for this file hash")
 				continue
 			}
 			break
@@ -444,12 +467,13 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
-			log.WithContext(ctx).WithField("senseTicket", nftRegTickets[i].RegTicketData.NFTTicketData).Debugf("This NFT sense ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
+			log.WithContext(ctx).WithField("senseTicket", senseTicket).Debugf("This NFT sense ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
 
 		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
+			log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).Info("Fingerprint exists in database, skipping...")
 			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
 			if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum > lastKnownGoodHeight {
 				lastKnownGoodHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum

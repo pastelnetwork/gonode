@@ -10,6 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
 )
 
@@ -52,7 +53,10 @@ func NewSQLiteStore(file string) (*SQLiteStore, error) {
 	}
 
 	_, _ = db.Exec(createFgTableStatement)
-	_, _ = db.Exec(createScoreTableStatement)
+	_, err = db.Exec(createScoreTableStatement)
+	if err != nil {
+		log.WithContext(context.Background()).WithError(err).Error("cannot create score table")
+	}
 
 	return &SQLiteStore{
 		db: db,
