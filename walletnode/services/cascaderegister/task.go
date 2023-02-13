@@ -5,15 +5,16 @@ import (
 	"os"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/common/utils"
-	"github.com/pastelnetwork/gonode/mixins"
-
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
 
 // CascadeRegistrationTask is the task of registering new nft.
@@ -23,8 +24,9 @@ type CascadeRegistrationTask struct {
 	MeshHandler *common.MeshHandler
 	RqHandler   *mixins.RQHandler
 
-	service *CascadeRegistrationService
-	Request *common.ActionRegistrationRequest
+	service         *CascadeRegistrationService
+	downloadService *download.NftDownloadingService
+	Request         *common.ActionRegistrationRequest
 
 	// data to create ticket
 	creatorBlockHeight      int
@@ -152,6 +154,38 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
+
+	now := time.Now()
+	if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
+		log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Error("Error validating cascade ticket data")
+
+		log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Info("initiating the new registration request")
+		request := &common.ActionRegistrationRequest{
+			AppPastelID:            task.Request.AppPastelID,
+			AppPastelIDPassphrase:  task.Request.AppPastelIDPassphrase,
+			BurnTxID:               task.Request.BurnTxID,
+			MakePubliclyAccessible: task.Request.MakePubliclyAccessible,
+			Image:                  task.Request.Image,
+			FileName:               task.Request.FileName,
+		}
+
+		newTask := NewCascadeRegisterTask(task.service, request)
+		task.service.Worker.AddTask(newTask)
+
+		log.WithContext(ctx).WithField("task_id", newTask.ID()).Info("new cascade registration task has been initiated")
+
+		task.UpdateStatus(common.StatusErrorDownloadFailed)
+		task.UpdateStatus(&common.EphemeralStatus{
+			StatusTitle:   "Error validating cascade ticket data",
+			StatusString:  task.regCascadeTxid,
+			IsFailureBool: false,
+			IsFinalBool:   false,
+		})
+
+		task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+
+		return nil
+	}
 
 	log.WithContext(ctx).Infof("Cascade Reg Ticket registered. Cascade Registration Ticket txid: %s", task.regCascadeTxid)
 	log.WithContext(ctx).Debug("Closing SNs connections")
@@ -395,6 +429,36 @@ func (task *CascadeRegistrationTask) Error() error {
 	return task.WalletNodeTask.Error()
 }
 
+// Download downloads the data from p2p for data validation before ticket activation
+func (task *CascadeRegistrationTask) Download(ctx context.Context) error {
+	// add the task to the worker queue, and worker will process the task in the background
+	log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Info("Downloading has been started")
+	taskID := task.downloadService.AddTask(&nft.DownloadPayload{Txid: task.regCascadeTxid, Pid: task.Request.AppPastelID, Key: task.Request.AppPastelIDPassphrase}, pastel.ActionTypeCascade)
+	downloadTask := task.downloadService.GetTask(taskID)
+	defer downloadTask.Cancel()
+
+	sub := downloadTask.SubscribeStatus()
+	log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Info("Subscribed to status channel")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case status := <-sub():
+			if status.IsFailure() {
+				log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).WithError(task.Error())
+
+				return errors.New("Download failed")
+			}
+
+			if status.IsFinal() {
+				log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Info("task has been downloaded successfully")
+				return nil
+			}
+		}
+	}
+}
+
 // NewCascadeRegisterTask returns a new CascadeRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
 func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common.ActionRegistrationRequest) *CascadeRegistrationTask {
@@ -415,10 +479,11 @@ func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common
 	}
 
 	return &CascadeRegistrationTask{
-		WalletNodeTask: task,
-		service:        service,
-		Request:        request,
-		MeshHandler:    common.NewMeshHandler(meshHandlerOpts),
+		WalletNodeTask:  task,
+		downloadService: &service.downloadHandler,
+		service:         service,
+		Request:         request,
+		MeshHandler:     common.NewMeshHandler(meshHandlerOpts),
 		RqHandler: mixins.NewRQHandler(service.rqClient, service.pastelHandler,
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir,
 			service.config.NumberRQIDSFiles, service.config.RQIDsMax),
