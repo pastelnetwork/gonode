@@ -29,8 +29,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 		time.Sleep(10 * time.Second)
 	}
 
-	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("File Healing worker has been invoked invoked")
-	mapOfFileHashes, err := task.MapSymbolFileKeysFromNFTTickets(ctx)
+	regTicketKeys, actionTicketKeys, err := task.MapSymbolFileKeysFromNFTAndActionTickets(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not generate the map of symbol file keys")
 		return err
@@ -53,20 +52,38 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 
 	challengeFileHash := challengeMessage.ChallengeFile.FileHashToChallenge
 
-	log.WithContext(ctx).Info("retrieving reg ticket")
-	regTicket, err := task.PastelClient.RegTicket(ctx, mapOfFileHashes[challengeFileHash])
-	if err != nil {
-		log.WithContext(ctx).Error("Error retrieving regTicket")
-		return err
-	}
-	decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
-		return err
-	}
+	var (
+		regTicket     pastel.RegTicket
+		cascadeTicket *pastel.APICascadeTicket
+		actionTicket  pastel.ActionRegTicket
+	)
 
-	regTicket.RegTicketData.NFTTicketData = *decTicket
-	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("reg ticket has been retrieved")
+	log.WithContext(ctx).Info("retrieving the reg ticket based on file hash")
+	if _, ok := regTicketKeys[challengeFileHash]; ok {
+		regTicket, err = task.getRegTicket(ctx, regTicketKeys[challengeFileHash])
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to retrieve reg ticket")
+		}
+		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("reg ticket has been retrieved")
+
+	} else if _, ok = actionTicketKeys[challengeFileHash]; ok {
+		actionTicket, err = task.getActionTicket(ctx, actionTicketKeys[challengeFileHash])
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to retrieve cascade ticket")
+			return err
+		}
+
+		cascadeTicket, err = actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
+		if err != nil {
+			log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+				Warnf("Could not get cascade ticket for action ticket data")
+			return err
+		}
+
+		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("cascade reg ticket has been retrieved")
+	} else {
+		log.WithContext(ctx).WithError(err).Error("Failed to find reg ticket")
+	}
 
 	//Checking Process
 	//1. false, nil, err    - should not update the challenge to completed, so that it can be retried again
@@ -109,11 +126,12 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 		return nil
 	}
 
-	file, reconstructedFileHash, err := task.selfHealing(ctx, rqService, challengeMessage, regTicket, availableSymbols)
+	file, reconstructedFileHash, err := task.selfHealing(ctx, rqService, challengeMessage, regTicket, cascadeTicket, availableSymbols)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
 		return err
 	}
+
 	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("File has been reconstructed")
 
 	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("sending reconstructed file hash for verification")
@@ -131,6 +149,9 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 		ChallengeId: challengeMessage.ChallengeId,
 		RegTicketId: regTicket.TXID,
 	}
+	if cascadeTicket != nil {
+		msg.ActionTicketId = actionTicket.TXID
+	}
 	if err := task.sendSelfHealingVerificationMessage(ctx, msg); err != nil {
 		log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err)
 		return err
@@ -145,8 +166,42 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 	return nil
 }
 
+func (task *SHTask) getRegTicket(ctx context.Context, regTicketID string) (regTicket pastel.RegTicket, err error) {
+	regTicket, err = task.PastelClient.RegTicket(ctx, regTicketID)
+	if err != nil {
+		log.WithContext(ctx).Error("Error retrieving regTicket")
+		return regTicket, err
+	}
+	decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+		return regTicket, err
+	}
+
+	regTicket.RegTicketData.NFTTicketData = *decTicket
+
+	return regTicket, nil
+}
+
+func (task *SHTask) getActionTicket(ctx context.Context, actionTicketID string) (actionTicket pastel.ActionRegTicket, err error) {
+	actionTicket, err = task.PastelClient.ActionRegTicket(ctx, actionTicketID)
+	if err != nil {
+		log.WithContext(ctx).Error("Error retrieving actionRegTicket")
+		return actionTicket, err
+	}
+
+	decTicket, err := pastel.DecodeActionTicket(actionTicket.ActionTicketData.ActionTicket)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to decode actionRegTicket")
+		return actionTicket, err
+	}
+	actionTicket.ActionTicketData.ActionTicketData = *decTicket
+
+	return actionTicket, nil
+}
+
 func (task *SHTask) checkingProcess(ctx context.Context, fileHash string) (requiredReconstruction bool, symbols map[string][]byte, err error) {
-	rqIDsData, err := task.P2PClient.Retrieve(ctx, fileHash)
+	rqIDsData, err := task.P2PClient.Retrieve(ctx, fileHash, true)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", fileHash).Warn("Retrieve compressed symbol IDs file from P2P failed")
 		err = errors.Errorf("retrieve compressed symbol IDs file: %w", err)
@@ -209,18 +264,27 @@ func (task *SHTask) checkingProcess(ctx context.Context, fileHash string) (requi
 	return false, nil, nil
 }
 
-func (task *SHTask) selfHealing(ctx context.Context, rqService rqnode.RaptorQ, msg *pb.SelfHealingData, regTicket pastel.RegTicket, symbols map[string][]byte) (file, reconstructedFileHash []byte, err error) {
+func (task *SHTask) selfHealing(ctx context.Context, rqService rqnode.RaptorQ, msg *pb.SelfHealingData, regTicket pastel.RegTicket, cascadeTicket *pastel.APICascadeTicket, symbols map[string][]byte) (file, reconstructedFileHash []byte, err error) {
 	log.WithContext(ctx).WithField("failed_challenge_id", msg.ChallengeId).Info("Self-healing initiated")
 
-	var decodeInfo *rqnode.Decode
-	encodeInfo := rqnode.Encode{
-		Symbols: symbols,
-		EncoderParam: rqnode.EncoderParameters{
-			Oti: regTicket.RegTicketData.NFTTicketData.AppTicketData.RQOti,
-		},
+	var encodeInfo rqnode.Encode
+	if regTicket.TXID != "" {
+		encodeInfo = rqnode.Encode{
+			Symbols: symbols,
+			EncoderParam: rqnode.EncoderParameters{
+				Oti: regTicket.RegTicketData.NFTTicketData.AppTicketData.RQOti,
+			},
+		}
+	} else if cascadeTicket != nil {
+		encodeInfo = rqnode.Encode{
+			Symbols: symbols,
+			EncoderParam: rqnode.EncoderParameters{
+				Oti: cascadeTicket.RQOti,
+			},
+		}
 	}
 
-	decodeInfo, err = rqService.Decode(ctx, &encodeInfo)
+	decodeInfo, err := rqService.Decode(ctx, &encodeInfo)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Restore file with rqserivce")
 		return nil, nil, err

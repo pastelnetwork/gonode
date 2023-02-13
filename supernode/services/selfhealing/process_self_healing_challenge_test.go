@@ -42,9 +42,11 @@ func TestProcessSelfHealingTest(t *testing.T) {
 	}
 	fileHash := sha3.Sum256(file)
 
-	ticket := pastel.RegTicket{}
+	ticket := pastel.RegTicket{TXID: "test-tx-id"}
 	f.Fuzz(&ticket)
+	ticket.TXID = "test-tx-id"
 	ticket.RegTicketData.NFTTicketData.AppTicketData.DataHash = fileHash[:]
+	ticket.RegTicketData.NFTTicketData.AppTicketData.RQIDs = []string{"file-hash-to-challenge"}
 	b, err := json.Marshal(ticket.RegTicketData.NFTTicketData.AppTicketData)
 	if err != nil {
 		t.Fatalf("faied to marshal, err: %s", err)
@@ -100,7 +102,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 				RegTicketId: "reg-ticket-tx-id",
 			},
 			setup: func() {
-				pastelClient.ListenOnRegTickets(tickets, nil).ListenOnMasterNodesExtra(nodes, nil)
+				pastelClient.ListenOnRegTickets(tickets, nil).ListenOnActionTickets(nil, nil).ListenOnMasterNodesExtra(nodes, nil)
 				raptorQClient.ListenOnConnect(nil)
 				raptorQClient.ListenOnRaptorQ().ListenOnClose(nil)
 				pastelClient.On("RegTicket", mock.Anything, mock.Anything).Return(ticket, nil).Times(1)
@@ -128,7 +130,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 				RegTicketId: "reg-ticket-tx-id",
 			},
 			setup: func() {
-				pastelClient.ListenOnRegTickets(tickets, nil).ListenOnMasterNodesExtra(nodes, nil)
+				pastelClient.ListenOnRegTickets(tickets, nil).ListenOnActionTickets(nil, nil).ListenOnMasterNodesExtra(nodes, nil)
 				raptorQClient.ListenOnConnect(nil)
 				raptorQClient.ListenOnRaptorQ().ListenOnClose(nil)
 				pastelClient.On("RegTicket", mock.Anything, mock.Anything).Return(ticket, nil).Times(1)
