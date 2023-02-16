@@ -97,22 +97,22 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 
 	// calculate hash of data
-	imgBytes, err := task.Request.Image.Bytes()
-	task.originalFileSizeInBytes = len(imgBytes)
+	nftBytes, err := task.Request.Image.Bytes()
+	task.originalFileSizeInBytes = len(nftBytes)
 	if err != nil {
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
-	task.originalFileSizeInBytes = len(imgBytes)
+	task.originalFileSizeInBytes = len(nftBytes)
 
-	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
+	if task.dataHash, err = utils.Sha3256hash(nftBytes); err != nil {
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorEncodingImage)
 		return errors.Errorf("hash encoded image: %w", err)
 	}
 
-	fileDataInMb := utils.GetFileSizeInMB(imgBytes)
+	fileDataInMb := utils.GetFileSizeInMB(nftBytes)
 	fee, err := task.service.pastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
 	if err != nil {
 		return errors.Errorf("getting estimated fee %w", err)
