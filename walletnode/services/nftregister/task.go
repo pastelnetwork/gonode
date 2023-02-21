@@ -123,13 +123,13 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("send registration metadata: %w", err)
 	}
 
-	imgBytes, err := task.Request.Image.Bytes()
+	nftBytes, err := task.Request.Image.Bytes()
 	if err != nil {
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
-	task.OriginalFileSizeInBytes = len(imgBytes)
+	task.OriginalFileSizeInBytes = len(nftBytes)
 
 	// probe ORIGINAL image for average rareness, nsfw and seen score
 	if err := task.probeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
@@ -477,13 +477,13 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 		Green:     task.Request.Green,
 		AppTicketData: pastel.AppTicket{
 			CreatorName:                task.Request.CreatorName,
-			CreatorWebsite:             utils.SafeString(task.Request.CreatorWebsiteURL),
-			CreatorWrittenStatement:    utils.SafeString(task.Request.Description),
 			NFTTitle:                   utils.SafeString(&task.Request.Name),
 			NFTSeriesName:              utils.SafeString(task.Request.SeriesName),
 			NFTCreationVideoYoutubeURL: utils.SafeString(task.Request.YoutubeURL),
 			NFTKeywordSet:              utils.SafeString(task.Request.Keywords),
 			NFTType:                    nftType,
+			CreatorWebsite:             utils.SafeString(task.Request.CreatorWebsiteURL),
+			CreatorWrittenStatement:    utils.SafeString(task.Request.Description),
 			TotalCopies:                task.Request.IssuedCopies,
 			PreviewHash:                task.ImageHandler.PreviewHash,
 			Thumbnail1Hash:             task.ImageHandler.MediumThumbnailHash,
