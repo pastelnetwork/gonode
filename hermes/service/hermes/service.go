@@ -5,7 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
+	"sync/atomic"
 	"time"
 
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
@@ -29,6 +32,7 @@ const (
 	synchronizationIntervalSec = 5
 	synchronizationTimeoutSec  = 60
 	runTaskInterval            = 10 * time.Minute
+	pastelIDRestartInterval    = 15 * time.Minute
 	masterNodeSuccessfulStatus = "Masternode successfully started"
 )
 
@@ -45,6 +49,7 @@ type service struct {
 
 	currentNFTBlock    int
 	currentActionBlock int
+	currentBlockCount  int32
 }
 
 func toFloat64Array(data []float32) []float64 {
@@ -112,6 +117,10 @@ func (s *service) run(ctx context.Context) error {
 		return s.scorer.Start(gctx)
 	})
 
+	group.Go(func() error {
+		return s.restartPastelID(gctx)
+	})
+
 	if err := group.Wait(); err != nil {
 		log.WithContext(gctx).WithError(err).Errorf("First runTask() failed")
 	}
@@ -169,6 +178,57 @@ func (s *service) checkSynchronized(ctx context.Context) error {
 	return errors.Errorf("node not synced, status is %s", st.Status)
 }
 
+func (s *service) restartPastelID(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			log.WithContext(ctx).Info("context done being called in restartPastelID hermes service")
+			return nil
+		case <-time.After(pastelIDRestartInterval):
+			if isAvailable := s.checkNextBlockAvailable(ctx); !isAvailable {
+				log.WithContext(ctx).Info("next block not available after 15 minutes, should restart pastelid")
+
+				pastelID, err := getPastelIDPath(ctx)
+				if err != nil {
+					return err
+				}
+
+				cmd := exec.Command(pastelID, "stop")
+				if err := cmd.Run(); err != nil {
+					log.WithContext(ctx).WithError(err).Error("Error stopping pastelid")
+					return nil
+				}
+
+				time.Sleep(30 * time.Second)
+
+				cmd = exec.Command(pastelID)
+				if err := cmd.Run(); err != nil {
+					log.WithContext(ctx).WithError(err).Error("Error starting pastelid")
+					return nil
+				}
+
+			} else {
+				log.WithContext(ctx).Info("block count has been updated")
+				return nil
+			}
+		}
+	}
+}
+
+// checkNextBlockAvailable calls pasteld and checks if a new block is available
+func (s *service) checkNextBlockAvailable(ctx context.Context) bool {
+	blockCount, err := s.pastelClient.GetBlockCount(ctx)
+	if err != nil {
+		return false
+	}
+	if blockCount > s.currentBlockCount {
+		atomic.StoreInt32(&s.currentBlockCount, blockCount)
+		return true
+	}
+
+	return false
+}
+
 func (s *service) waitSynchronization(ctx context.Context) error {
 	checkTimeout := func(checked chan<- struct{}) {
 		time.Sleep(synchronizationTimeoutSec * time.Second)
@@ -196,7 +256,7 @@ func (s *service) waitSynchronization(ctx context.Context) error {
 	}
 }
 
-//Utility function to get dd and fp file from an id hash, where the file should be stored
+// Utility function to get dd and fp file from an id hash, where the file should be stored
 func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash string) (*pastel.DDAndFingerprints, error) {
 	rawFile, err := s.p2p.Retrieve(ctx, hash)
 	if err != nil {
@@ -458,6 +518,41 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	}
 
 	return stats, nil
+}
+
+func getPastelIDPath(ctx context.Context) (path string, err error) {
+	//create command
+	findCmd := exec.Command("find", ".", "-print")
+	grepCmd := exec.Command("grep", "-x", "./pastel/pasteld")
+
+	findCmd.Dir, err = os.UserHomeDir()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error getting home dir")
+		return "", err
+	}
+
+	//make a pipe and set the input and output to reader and writer
+	reader, writer := io.Pipe()
+	var buf bytes.Buffer
+
+	findCmd.Stdout = writer
+	grepCmd.Stdin = reader
+
+	//cache the output of "grep" to memory
+	grepCmd.Stdout = &buf
+
+	//starting the commands
+	findCmd.Start()
+	grepCmd.Start()
+
+	//waiting for commands to complete and close the reader & writer
+	findCmd.Wait()
+	writer.Close()
+
+	grepCmd.Wait()
+	reader.Close()
+
+	return buf.String(), nil
 }
 
 // NewService returns a new ddscan service
