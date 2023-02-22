@@ -20,6 +20,7 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
 
 const (
@@ -37,6 +38,8 @@ type CascadeRegistrationService struct {
 	nodeClient    node.ClientInterface
 
 	rqClient rqnode.ClientInterface
+
+	downloadHandler download.NftDownloadingService
 }
 
 // Run starts worker.
@@ -111,17 +114,20 @@ func (service *CascadeRegistrationService) CalculateFee(ctx context.Context, fil
 }
 
 // NewService returns a new Service instance
-// 	NB: Because NewNftApiHandler calls AddTask, a CascadeRegisterTask will actually
+//
+//	NB: Because NewNftApiHandler calls AddTask, a CascadeRegisterTask will actually
 //		be instantiated instead of a generic Task.
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface, db storage.KeyValue, raptorqClient rqnode.ClientInterface,
+	downloadService download.NftDownloadingService,
 ) *CascadeRegistrationService {
 	return &CascadeRegistrationService{
-		Worker:        task.NewWorker(),
-		config:        config,
-		nodeClient:    nodeClient,
-		ImageHandler:  mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
-		pastelHandler: mixins.NewPastelHandler(pastelClient),
-		rqClient:      raptorqClient,
+		Worker:          task.NewWorker(),
+		config:          config,
+		nodeClient:      nodeClient,
+		ImageHandler:    mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
+		pastelHandler:   mixins.NewPastelHandler(pastelClient),
+		rqClient:        raptorqClient,
+		downloadHandler: downloadService,
 	}
 }

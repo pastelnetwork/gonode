@@ -2,6 +2,7 @@ package cascaderegister
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"image"
 	"image/png"
 	"os"
@@ -191,7 +192,8 @@ func TestTaskRun(t *testing.T) {
 			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 			rqClientMock.ListenOnConnect(testCase.args.connectErr)
 
-			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, rqClientMock)
+			downloadService := download.NewNftDownloadService(download.NewConfig(), pastelClientMock, nodeClient)
+			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, rqClientMock, *downloadService)
 			service.config.WaitTxnValidInterval = 1
 
 			go service.Run(testCase.args.ctx)

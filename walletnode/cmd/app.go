@@ -128,15 +128,15 @@ func NewApp() *cli.App {
 	return app
 }
 
-//What walletnode actually does when you run it!
-//- Creates App Context
-//- Registers system interrupts for shutdown
-//- Configures RPC connections to nodeC and raptorq
-//- Sets up local file storage for NFT registration
-//- Set minimum confirmation requirements for transactions
-//- Create services for the functions we want to expose to users, allowing for running and tasking
-//- Create API endpoints for those services
-//- Run those services in their own goroutines and wait for them
+// What walletnode actually does when you run it!
+// - Creates App Context
+// - Registers system interrupts for shutdown
+// - Configures RPC connections to nodeC and raptorq
+// - Sets up local file storage for NFT registration
+// - Set minimum confirmation requirements for transactions
+// - Create services for the functions we want to expose to users, allowing for running and tasking
+// - Create API endpoints for those services
+// - Run those services in their own goroutines and wait for them
 func runApp(ctx context.Context, config *configs.Config) error {
 	//Create App Context
 	log.WithContext(ctx).Info("Start")
@@ -215,7 +215,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftDownload := download.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
 	//userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, db)
-	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, rqClient)
+	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, rqClient, *nftDownload)
 
 	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.
 	//  Since the API Server has access to the services, this is what finally exposes useful methods like
