@@ -104,7 +104,6 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
-	task.originalFileSizeInBytes = len(nftBytes)
 
 	if task.dataHash, err = utils.Sha3256hash(nftBytes); err != nil {
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -297,14 +296,12 @@ func (task *CascadeRegistrationTask) createCascadeTicket(_ context.Context) erro
 		BlockHash:  task.creatorBlockHash,
 		ActionType: pastel.ActionTypeCascade,
 		APITicketData: pastel.APICascadeTicket{
-			FileName:                task.Request.FileName,
-			DataHash:                task.dataHash,
-			RQIc:                    task.RqHandler.RQIDsIc,
-			RQMax:                   task.service.config.RQIDsMax,
-			RQIDs:                   task.RqHandler.RQIDs,
-			RQOti:                   task.RqHandler.RQEncodeParams.Oti,
-			OriginalFileSizeInBytes: task.originalFileSizeInBytes,
-			MakePubliclyAccessible:  task.Request.MakePubliclyAccessible,
+			FileName: task.Request.FileName,
+			DataHash: task.dataHash,
+			RQIc:     task.RqHandler.RQIDsIc,
+			RQMax:    task.service.config.RQIDsMax,
+			RQIDs:    task.RqHandler.RQIDs,
+			RQOti:    task.RqHandler.RQEncodeParams.Oti,
 		},
 	}
 
