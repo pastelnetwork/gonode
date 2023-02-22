@@ -489,8 +489,6 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 			Thumbnail1Hash:             task.ImageHandler.MediumThumbnailHash,
 			Thumbnail2Hash:             task.ImageHandler.SmallThumbnailHash,
 			DataHash:                   task.dataHash,
-			OriginalFileSizeInBytes:    task.OriginalFileSizeInBytes,
-			MakePubliclyAccessible:     task.Request.MakePubliclyAccessible,
 			DDAndFingerprintsIc:        task.FingerprintsHandler.DDAndFingerprintsIc,
 			DDAndFingerprintsMax:       task.service.config.DDAndFingerprintsMax,
 			DDAndFingerprintsIDs:       task.FingerprintsHandler.DDAndFingerprintsIDs,
