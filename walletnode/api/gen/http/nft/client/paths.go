@@ -55,3 +55,8 @@ func NftGetNftPath(txid string) string {
 func DownloadNftPath() string {
 	return "/nfts/download"
 }
+
+// DdServiceOutputFileDetailNftPath returns the URL path to the nft service ddServiceOutputFileDetail HTTP endpoint.
+func DdServiceOutputFileDetailNftPath() string {
+	return "/nfts/get_dd_results"
+}

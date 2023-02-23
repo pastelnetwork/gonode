@@ -208,6 +208,103 @@ type DownloadResponseBody struct {
 	File []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
 }
 
+// DdServiceOutputFileDetailResponseBody is the type of the "nft" service
+// "ddServiceOutputFileDetail" endpoint HTTP response body.
+type DdServiceOutputFileDetailResponseBody struct {
+	// version
+	Version *int `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
+	// Storage fee %
+	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
+	// Block Height When request submitted
+	BlockHeight *string `form:"block_height,omitempty" json:"block_height,omitempty" xml:"block_height,omitempty"`
+	// Timestamp of request when submitted
+	TimestampOfRequest *string `form:"timestamp_of_request,omitempty" json:"timestamp_of_request,omitempty" xml:"timestamp_of_request,omitempty"`
+	// Pastel id of the submitter
+	SubmitterPastelID *string `form:"submitter_pastel_id,omitempty" json:"submitter_pastel_id,omitempty" xml:"submitter_pastel_id,omitempty"`
+	// Pastel id of SN1
+	Sn1PastelID *string `form:"sn1_pastel_id,omitempty" json:"sn1_pastel_id,omitempty" xml:"sn1_pastel_id,omitempty"`
+	// Pastel id of SN2
+	Sn2PastelID *string `form:"sn2_pastel_id,omitempty" json:"sn2_pastel_id,omitempty" xml:"sn2_pastel_id,omitempty"`
+	// Pastel id of SN3
+	Sn3PastelID *string `form:"sn3_pastel_id,omitempty" json:"sn3_pastel_id,omitempty" xml:"sn3_pastel_id,omitempty"`
+	// Is Open API request
+	IsOpenAPIRequest *bool `form:"is_open_api_request,omitempty" json:"is_open_api_request,omitempty" xml:"is_open_api_request,omitempty"`
+	// Subset id of the open API
+	OpenAPISubsetID *string `form:"open_api_subset_id,omitempty" json:"open_api_subset_id,omitempty" xml:"open_api_subset_id,omitempty"`
+	// System version of dupe detection
+	DupeDetectionSystemVersion *string `form:"dupe_detection_system_version,omitempty" json:"dupe_detection_system_version,omitempty" xml:"dupe_detection_system_version,omitempty"`
+	// Is this image likely a duplicate of another known image
+	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
+	// is this nft rare on the internet
+	IsRareOnInternet *bool `form:"is_rare_on_internet,omitempty" json:"is_rare_on_internet,omitempty" xml:"is_rare_on_internet,omitempty"`
+	// pastel rareness score
+	OverallRarenessScore *float32 `form:"overall_rareness_score,omitempty" json:"overall_rareness_score,omitempty" xml:"overall_rareness_score,omitempty"`
+	// PCT of top 10 most similar with dupe probe above 25 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove25pct *float32 `form:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct,omitempty" json:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct,omitempty" xml:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct,omitempty"`
+	// PCT of top 10 most similar with dupe probe above 33 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove33pct *float32 `form:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct,omitempty" json:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct,omitempty" xml:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct,omitempty"`
+	// PCT of top 10 most similar with dupe probe above 50 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove50pct *float32 `form:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct,omitempty" json:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct,omitempty" xml:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct,omitempty"`
+	// Rareness scores table json compressed b64 encoded
+	RarenessScoresTableJSONCompressedB64 *string `form:"rareness_scores_table_json_compressed_b64,omitempty" json:"rareness_scores_table_json_compressed_b64,omitempty" xml:"rareness_scores_table_json_compressed_b64,omitempty"`
+	// internet rareness score
+	InternetRarenessScore *float32 `form:"internet_rareness_score,omitempty" json:"internet_rareness_score,omitempty" xml:"internet_rareness_score,omitempty"`
+	// internet rareness score
+	OpenNsfwScore *float32 `form:"open_nsfw_score,omitempty" json:"open_nsfw_score,omitempty" xml:"open_nsfw_score,omitempty"`
+	// Image fingerprint of candidate image file
+	ImageFingerprintOfCandidateImageFile []float32 `form:"image_fingerprint_of_candidate_image_file,omitempty" json:"image_fingerprint_of_candidate_image_file,omitempty" xml:"image_fingerprint_of_candidate_image_file,omitempty"`
+	// nsfw score
+	DrawingNsfwScore *float32 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
+	// nsfw score
+	NeutralNsfwScore *float32 `form:"neutral_nsfw_score,omitempty" json:"neutral_nsfw_score,omitempty" xml:"neutral_nsfw_score,omitempty"`
+	// nsfw score
+	SexyNsfwScore *float32 `form:"sexy_nsfw_score,omitempty" json:"sexy_nsfw_score,omitempty" xml:"sexy_nsfw_score,omitempty"`
+	// nsfw score
+	PornNsfwScore *float32 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
+	// nsfw score
+	HentaiNsfwScore *float32 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
+	// Preview Image
+	PreviewThumbnail []byte `form:"preview_thumbnail,omitempty" json:"preview_thumbnail,omitempty" xml:"preview_thumbnail,omitempty"`
+	// Base64 Compressed JSON Table of Rare On Internet Summary
+	RareOnInternetSummaryTableJSONB64 *string `form:"rare_on_internet_summary_table_json_b64,omitempty" json:"rare_on_internet_summary_table_json_b64,omitempty" xml:"rare_on_internet_summary_table_json_b64,omitempty"`
+	// Base64 Compressed JSON of Rare On Internet Graph
+	RareOnInternetGraphJSONB64 *string `form:"rare_on_internet_graph_json_b64,omitempty" json:"rare_on_internet_graph_json_b64,omitempty" xml:"rare_on_internet_graph_json_b64,omitempty"`
+	// Base64 Compressed Json of Alternative Rare On Internet Dict
+	AltRareOnInternetDictJSONB64 *string `form:"alt_rare_on_internet_dict_json_b64,omitempty" json:"alt_rare_on_internet_dict_json_b64,omitempty" xml:"alt_rare_on_internet_dict_json_b64,omitempty"`
+	// Minimum Number of Exact Matches on Page
+	MinNumExactMatchesOnPage *uint32 `form:"min_num_exact_matches_on_page,omitempty" json:"min_num_exact_matches_on_page,omitempty" xml:"min_num_exact_matches_on_page,omitempty"`
+	// Earliest Available Date of Internet Results
+	EarliestDateOfResults *string `form:"earliest_date_of_results,omitempty" json:"earliest_date_of_results,omitempty" xml:"earliest_date_of_results,omitempty"`
+	// Thumbnail_1 image
+	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
+	// Thumbnail_2 image
+	Thumbnail2 []byte `form:"thumbnail_2,omitempty" json:"thumbnail_2,omitempty" xml:"thumbnail_2,omitempty"`
+	// txid
+	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	// Name of the NFT
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// Description of the NFT
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies
+	Copies *int `form:"copies,omitempty" json:"copies,omitempty" xml:"copies,omitempty"`
+	// NFT creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	CreatorPastelID *string `form:"creator_pastelid,omitempty" json:"creator_pastelid,omitempty" xml:"creator_pastelid,omitempty"`
+	// Name of the artist
+	CreatorName *string `form:"creator_name,omitempty" json:"creator_name,omitempty" xml:"creator_name,omitempty"`
+	// Artist website URL
+	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
+	// NSFW Average score
+	NsfwScore *float32 `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
+	// Average pastel rareness score
+	RarenessScore *float32 `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
+}
+
 // RegisterBadRequestResponseBody is the type of the "nft" service "register"
 // endpoint HTTP response body for the "BadRequest" error.
 type RegisterBadRequestResponseBody struct {
@@ -522,6 +619,44 @@ type DownloadNotFoundResponseBody struct {
 // DownloadInternalServerErrorResponseBody is the type of the "nft" service
 // "download" endpoint HTTP response body for the "InternalServerError" error.
 type DownloadInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DdServiceOutputFileDetailNotFoundResponseBody is the type of the "nft"
+// service "ddServiceOutputFileDetail" endpoint HTTP response body for the
+// "NotFound" error.
+type DdServiceOutputFileDetailNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DdServiceOutputFileDetailInternalServerErrorResponseBody is the type of the
+// "nft" service "ddServiceOutputFileDetail" endpoint HTTP response body for
+// the "InternalServerError" error.
+type DdServiceOutputFileDetailInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -1216,6 +1351,97 @@ func NewDownloadInternalServerError(body *DownloadInternalServerErrorResponseBod
 	return v
 }
 
+// NewDdServiceOutputFileDetailDDServiceOutputFileResultOK builds a "nft"
+// service "ddServiceOutputFileDetail" endpoint result from a HTTP "OK"
+// response.
+func NewDdServiceOutputFileDetailDDServiceOutputFileResultOK(body *DdServiceOutputFileDetailResponseBody) *nft.DDServiceOutputFileResult {
+	v := &nft.DDServiceOutputFileResult{
+		Version:                    body.Version,
+		StorageFee:                 body.StorageFee,
+		BlockHeight:                body.BlockHeight,
+		TimestampOfRequest:         body.TimestampOfRequest,
+		SubmitterPastelID:          body.SubmitterPastelID,
+		Sn1PastelID:                body.Sn1PastelID,
+		Sn2PastelID:                body.Sn2PastelID,
+		Sn3PastelID:                body.Sn3PastelID,
+		IsOpenAPIRequest:           body.IsOpenAPIRequest,
+		OpenAPISubsetID:            body.OpenAPISubsetID,
+		DupeDetectionSystemVersion: body.DupeDetectionSystemVersion,
+		IsLikelyDupe:               body.IsLikelyDupe,
+		IsRareOnInternet:           body.IsRareOnInternet,
+		OverallRarenessScore:       body.OverallRarenessScore,
+		PctOfTop10MostSimilarWithDupeProbAbove25pct: body.PctOfTop10MostSimilarWithDupeProbAbove25pct,
+		PctOfTop10MostSimilarWithDupeProbAbove33pct: body.PctOfTop10MostSimilarWithDupeProbAbove33pct,
+		PctOfTop10MostSimilarWithDupeProbAbove50pct: body.PctOfTop10MostSimilarWithDupeProbAbove50pct,
+		RarenessScoresTableJSONCompressedB64:        body.RarenessScoresTableJSONCompressedB64,
+		InternetRarenessScore:                       body.InternetRarenessScore,
+		OpenNsfwScore:                               body.OpenNsfwScore,
+		DrawingNsfwScore:                            body.DrawingNsfwScore,
+		NeutralNsfwScore:                            body.NeutralNsfwScore,
+		SexyNsfwScore:                               body.SexyNsfwScore,
+		PornNsfwScore:                               body.PornNsfwScore,
+		HentaiNsfwScore:                             body.HentaiNsfwScore,
+		PreviewThumbnail:                            body.PreviewThumbnail,
+		RareOnInternetSummaryTableJSONB64:           body.RareOnInternetSummaryTableJSONB64,
+		RareOnInternetGraphJSONB64:                  body.RareOnInternetGraphJSONB64,
+		AltRareOnInternetDictJSONB64:                body.AltRareOnInternetDictJSONB64,
+		MinNumExactMatchesOnPage:                    body.MinNumExactMatchesOnPage,
+		EarliestDateOfResults:                       body.EarliestDateOfResults,
+		Thumbnail1:                                  body.Thumbnail1,
+		Thumbnail2:                                  body.Thumbnail2,
+		Txid:                                        *body.Txid,
+		Title:                                       *body.Title,
+		Description:                                 *body.Description,
+		Keywords:                                    body.Keywords,
+		SeriesName:                                  body.SeriesName,
+		Copies:                                      *body.Copies,
+		YoutubeURL:                                  body.YoutubeURL,
+		CreatorPastelID:                             *body.CreatorPastelID,
+		CreatorName:                                 *body.CreatorName,
+		CreatorWebsiteURL:                           body.CreatorWebsiteURL,
+		NsfwScore:                                   body.NsfwScore,
+		RarenessScore:                               body.RarenessScore,
+	}
+	if body.ImageFingerprintOfCandidateImageFile != nil {
+		v.ImageFingerprintOfCandidateImageFile = make([]float32, len(body.ImageFingerprintOfCandidateImageFile))
+		for i, val := range body.ImageFingerprintOfCandidateImageFile {
+			v.ImageFingerprintOfCandidateImageFile[i] = val
+		}
+	}
+
+	return v
+}
+
+// NewDdServiceOutputFileDetailNotFound builds a nft service
+// ddServiceOutputFileDetail endpoint NotFound error.
+func NewDdServiceOutputFileDetailNotFound(body *DdServiceOutputFileDetailNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewDdServiceOutputFileDetailInternalServerError builds a nft service
+// ddServiceOutputFileDetail endpoint InternalServerError error.
+func NewDdServiceOutputFileDetailInternalServerError(body *DdServiceOutputFileDetailInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // ValidateRegisterTaskStateResponseBody runs the validations defined on
 // RegisterTaskStateResponseBody
 func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) (err error) {
@@ -1438,6 +1664,118 @@ func ValidateNftGetResponseBody(body *NftGetResponseBody) (err error) {
 func ValidateDownloadResponseBody(body *DownloadResponseBody) (err error) {
 	if body.File == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+	}
+	return
+}
+
+// ValidateDdServiceOutputFileDetailResponseBody runs the validations defined
+// on DdServiceOutputFileDetailResponseBody
+func ValidateDdServiceOutputFileDetailResponseBody(body *DdServiceOutputFileDetailResponseBody) (err error) {
+	if body.Title == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("title", "body"))
+	}
+	if body.Description == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("description", "body"))
+	}
+	if body.CreatorName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("creator_name", "body"))
+	}
+	if body.Copies == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("copies", "body"))
+	}
+	if body.CreatorPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "body"))
+	}
+	if body.Txid == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("txid", "body"))
+	}
+	if body.Txid != nil {
+		if utf8.RuneCountInString(*body.Txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, true))
+		}
+	}
+	if body.Txid != nil {
+		if utf8.RuneCountInString(*body.Txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, false))
+		}
+	}
+	if body.Title != nil {
+		if utf8.RuneCountInString(*body.Title) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.title", *body.Title, utf8.RuneCountInString(*body.Title), 256, false))
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 1024 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 1024, false))
+		}
+	}
+	if body.Keywords != nil {
+		if utf8.RuneCountInString(*body.Keywords) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.keywords", *body.Keywords, utf8.RuneCountInString(*body.Keywords), 256, false))
+		}
+	}
+	if body.SeriesName != nil {
+		if utf8.RuneCountInString(*body.SeriesName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.series_name", *body.SeriesName, utf8.RuneCountInString(*body.SeriesName), 256, false))
+		}
+	}
+	if body.Copies != nil {
+		if *body.Copies < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.copies", *body.Copies, 1, true))
+		}
+	}
+	if body.Copies != nil {
+		if *body.Copies > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.copies", *body.Copies, 1000, false))
+		}
+	}
+	if body.YoutubeURL != nil {
+		if utf8.RuneCountInString(*body.YoutubeURL) > 128 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.youtube_url", *body.YoutubeURL, utf8.RuneCountInString(*body.YoutubeURL), 128, false))
+		}
+	}
+	if body.CreatorPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.creator_pastelid", *body.CreatorPastelID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.CreatorPastelID != nil {
+		if utf8.RuneCountInString(*body.CreatorPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_pastelid", *body.CreatorPastelID, utf8.RuneCountInString(*body.CreatorPastelID), 86, true))
+		}
+	}
+	if body.CreatorPastelID != nil {
+		if utf8.RuneCountInString(*body.CreatorPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_pastelid", *body.CreatorPastelID, utf8.RuneCountInString(*body.CreatorPastelID), 86, false))
+		}
+	}
+	if body.CreatorName != nil {
+		if utf8.RuneCountInString(*body.CreatorName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_name", *body.CreatorName, utf8.RuneCountInString(*body.CreatorName), 256, false))
+		}
+	}
+	if body.CreatorWebsiteURL != nil {
+		if utf8.RuneCountInString(*body.CreatorWebsiteURL) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.creator_website_url", *body.CreatorWebsiteURL, utf8.RuneCountInString(*body.CreatorWebsiteURL), 256, false))
+		}
+	}
+	if body.NsfwScore != nil {
+		if *body.NsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.nsfw_score", *body.NsfwScore, 0, true))
+		}
+	}
+	if body.NsfwScore != nil {
+		if *body.NsfwScore > 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.nsfw_score", *body.NsfwScore, 1, false))
+		}
+	}
+	if body.RarenessScore != nil {
+		if *body.RarenessScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.rareness_score", *body.RarenessScore, 0, true))
+		}
+	}
+	if body.RarenessScore != nil {
+		if *body.RarenessScore > 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.rareness_score", *body.RarenessScore, 1, false))
+		}
 	}
 	return
 }
@@ -1853,6 +2191,55 @@ func ValidateDownloadNotFoundResponseBody(body *DownloadNotFoundResponseBody) (e
 // ValidateDownloadInternalServerErrorResponseBody runs the validations defined
 // on download_InternalServerError_response_body
 func ValidateDownloadInternalServerErrorResponseBody(body *DownloadInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDdServiceOutputFileDetailNotFoundResponseBody runs the validations
+// defined on ddServiceOutputFileDetail_NotFound_response_body
+func ValidateDdServiceOutputFileDetailNotFoundResponseBody(body *DdServiceOutputFileDetailNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDdServiceOutputFileDetailInternalServerErrorResponseBody runs the
+// validations defined on
+// ddServiceOutputFileDetail_InternalServerError_response_body
+func ValidateDdServiceOutputFileDetailInternalServerErrorResponseBody(body *DdServiceOutputFileDetailInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

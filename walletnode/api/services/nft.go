@@ -314,6 +314,27 @@ func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 	return res, nil
 }
 
+// DdServiceOutputFileDetail returns Dupe detection output file details
+func (service *NftAPIHandler) DdServiceOutputFileDetail(ctx context.Context, p *nft.DownloadPayload) (res *nft.DDServiceOutputFileResult, err error) {
+	ticket, err := service.search.RegTicket(ctx, p.Txid)
+	if err != nil {
+		return nil, nft.MakeBadRequest(err)
+	}
+
+	ddAndFpData, err := service.search.GetDDAndFP(ctx, ticket, p.Pid, p.Key)
+	if err != nil {
+		return nil, nft.MakeInternalServerError(err)
+	}
+	ddAndFpStruct := &pastel.DDAndFingerprints{}
+	json.Unmarshal(ddAndFpData, ddAndFpStruct)
+
+	res = translateNftSummary(res, ticket)
+
+	res = translateDDServiceOutputFile(res, ddAndFpStruct)
+
+	return res, nil
+}
+
 // NewNftAPIHandler returns the nft NftAPIHandler implementation.
 func NewNftAPIHandler(register *nftregister.NftRegistrationService, search *nftsearch.NftSearchingService, download *download.NftDownloadingService) *NftAPIHandler {
 	return &NftAPIHandler{

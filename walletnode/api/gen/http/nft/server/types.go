@@ -208,6 +208,103 @@ type DownloadResponseBody struct {
 	File []byte `form:"file" json:"file" xml:"file"`
 }
 
+// DdServiceOutputFileDetailResponseBody is the type of the "nft" service
+// "ddServiceOutputFileDetail" endpoint HTTP response body.
+type DdServiceOutputFileDetailResponseBody struct {
+	// version
+	Version *int `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
+	// Storage fee %
+	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
+	// Block Height When request submitted
+	BlockHeight *string `form:"block_height,omitempty" json:"block_height,omitempty" xml:"block_height,omitempty"`
+	// Timestamp of request when submitted
+	TimestampOfRequest *string `form:"timestamp_of_request,omitempty" json:"timestamp_of_request,omitempty" xml:"timestamp_of_request,omitempty"`
+	// Pastel id of the submitter
+	SubmitterPastelID *string `form:"submitter_pastel_id,omitempty" json:"submitter_pastel_id,omitempty" xml:"submitter_pastel_id,omitempty"`
+	// Pastel id of SN1
+	Sn1PastelID *string `form:"sn1_pastel_id,omitempty" json:"sn1_pastel_id,omitempty" xml:"sn1_pastel_id,omitempty"`
+	// Pastel id of SN2
+	Sn2PastelID *string `form:"sn2_pastel_id,omitempty" json:"sn2_pastel_id,omitempty" xml:"sn2_pastel_id,omitempty"`
+	// Pastel id of SN3
+	Sn3PastelID *string `form:"sn3_pastel_id,omitempty" json:"sn3_pastel_id,omitempty" xml:"sn3_pastel_id,omitempty"`
+	// Is Open API request
+	IsOpenAPIRequest *bool `form:"is_open_api_request,omitempty" json:"is_open_api_request,omitempty" xml:"is_open_api_request,omitempty"`
+	// Subset id of the open API
+	OpenAPISubsetID *string `form:"open_api_subset_id,omitempty" json:"open_api_subset_id,omitempty" xml:"open_api_subset_id,omitempty"`
+	// System version of dupe detection
+	DupeDetectionSystemVersion *string `form:"dupe_detection_system_version,omitempty" json:"dupe_detection_system_version,omitempty" xml:"dupe_detection_system_version,omitempty"`
+	// Is this image likely a duplicate of another known image
+	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
+	// is this nft rare on the internet
+	IsRareOnInternet *bool `form:"is_rare_on_internet,omitempty" json:"is_rare_on_internet,omitempty" xml:"is_rare_on_internet,omitempty"`
+	// pastel rareness score
+	OverallRarenessScore *float32 `form:"overall_rareness_score,omitempty" json:"overall_rareness_score,omitempty" xml:"overall_rareness_score,omitempty"`
+	// PCT of top 10 most similar with dupe probe above 25 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove25pct *float32 `form:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct,omitempty" json:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct,omitempty" xml:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct,omitempty"`
+	// PCT of top 10 most similar with dupe probe above 33 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove33pct *float32 `form:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct,omitempty" json:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct,omitempty" xml:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct,omitempty"`
+	// PCT of top 10 most similar with dupe probe above 50 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove50pct *float32 `form:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct,omitempty" json:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct,omitempty" xml:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct,omitempty"`
+	// Rareness scores table json compressed b64 encoded
+	RarenessScoresTableJSONCompressedB64 *string `form:"rareness_scores_table_json_compressed_b64,omitempty" json:"rareness_scores_table_json_compressed_b64,omitempty" xml:"rareness_scores_table_json_compressed_b64,omitempty"`
+	// internet rareness score
+	InternetRarenessScore *float32 `form:"internet_rareness_score,omitempty" json:"internet_rareness_score,omitempty" xml:"internet_rareness_score,omitempty"`
+	// internet rareness score
+	OpenNsfwScore *float32 `form:"open_nsfw_score,omitempty" json:"open_nsfw_score,omitempty" xml:"open_nsfw_score,omitempty"`
+	// Image fingerprint of candidate image file
+	ImageFingerprintOfCandidateImageFile []float32 `form:"image_fingerprint_of_candidate_image_file,omitempty" json:"image_fingerprint_of_candidate_image_file,omitempty" xml:"image_fingerprint_of_candidate_image_file,omitempty"`
+	// nsfw score
+	DrawingNsfwScore *float32 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
+	// nsfw score
+	NeutralNsfwScore *float32 `form:"neutral_nsfw_score,omitempty" json:"neutral_nsfw_score,omitempty" xml:"neutral_nsfw_score,omitempty"`
+	// nsfw score
+	SexyNsfwScore *float32 `form:"sexy_nsfw_score,omitempty" json:"sexy_nsfw_score,omitempty" xml:"sexy_nsfw_score,omitempty"`
+	// nsfw score
+	PornNsfwScore *float32 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
+	// nsfw score
+	HentaiNsfwScore *float32 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
+	// Preview Image
+	PreviewThumbnail []byte `form:"preview_thumbnail,omitempty" json:"preview_thumbnail,omitempty" xml:"preview_thumbnail,omitempty"`
+	// Base64 Compressed JSON Table of Rare On Internet Summary
+	RareOnInternetSummaryTableJSONB64 *string `form:"rare_on_internet_summary_table_json_b64,omitempty" json:"rare_on_internet_summary_table_json_b64,omitempty" xml:"rare_on_internet_summary_table_json_b64,omitempty"`
+	// Base64 Compressed JSON of Rare On Internet Graph
+	RareOnInternetGraphJSONB64 *string `form:"rare_on_internet_graph_json_b64,omitempty" json:"rare_on_internet_graph_json_b64,omitempty" xml:"rare_on_internet_graph_json_b64,omitempty"`
+	// Base64 Compressed Json of Alternative Rare On Internet Dict
+	AltRareOnInternetDictJSONB64 *string `form:"alt_rare_on_internet_dict_json_b64,omitempty" json:"alt_rare_on_internet_dict_json_b64,omitempty" xml:"alt_rare_on_internet_dict_json_b64,omitempty"`
+	// Minimum Number of Exact Matches on Page
+	MinNumExactMatchesOnPage *uint32 `form:"min_num_exact_matches_on_page,omitempty" json:"min_num_exact_matches_on_page,omitempty" xml:"min_num_exact_matches_on_page,omitempty"`
+	// Earliest Available Date of Internet Results
+	EarliestDateOfResults *string `form:"earliest_date_of_results,omitempty" json:"earliest_date_of_results,omitempty" xml:"earliest_date_of_results,omitempty"`
+	// Thumbnail_1 image
+	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
+	// Thumbnail_2 image
+	Thumbnail2 []byte `form:"thumbnail_2,omitempty" json:"thumbnail_2,omitempty" xml:"thumbnail_2,omitempty"`
+	// txid
+	Txid string `form:"txid" json:"txid" xml:"txid"`
+	// Name of the NFT
+	Title string `form:"title" json:"title" xml:"title"`
+	// Description of the NFT
+	Description string `form:"description" json:"description" xml:"description"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies
+	Copies int `form:"copies" json:"copies" xml:"copies"`
+	// NFT creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	CreatorPastelID string `form:"creator_pastelid" json:"creator_pastelid" xml:"creator_pastelid"`
+	// Name of the artist
+	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
+	// Artist website URL
+	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
+	// NSFW Average score
+	NsfwScore *float32 `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
+	// Average pastel rareness score
+	RarenessScore *float32 `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
+}
+
 // RegisterBadRequestResponseBody is the type of the "nft" service "register"
 // endpoint HTTP response body for the "BadRequest" error.
 type RegisterBadRequestResponseBody struct {
@@ -522,6 +619,44 @@ type DownloadNotFoundResponseBody struct {
 // DownloadInternalServerErrorResponseBody is the type of the "nft" service
 // "download" endpoint HTTP response body for the "InternalServerError" error.
 type DownloadInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DdServiceOutputFileDetailNotFoundResponseBody is the type of the "nft"
+// service "ddServiceOutputFileDetail" endpoint HTTP response body for the
+// "NotFound" error.
+type DdServiceOutputFileDetailNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DdServiceOutputFileDetailInternalServerErrorResponseBody is the type of the
+// "nft" service "ddServiceOutputFileDetail" endpoint HTTP response body for
+// the "InternalServerError" error.
+type DdServiceOutputFileDetailInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -871,6 +1006,65 @@ func NewDownloadResponseBody(res *nft.DownloadResult) *DownloadResponseBody {
 	return body
 }
 
+// NewDdServiceOutputFileDetailResponseBody builds the HTTP response body from
+// the result of the "ddServiceOutputFileDetail" endpoint of the "nft" service.
+func NewDdServiceOutputFileDetailResponseBody(res *nft.DDServiceOutputFileResult) *DdServiceOutputFileDetailResponseBody {
+	body := &DdServiceOutputFileDetailResponseBody{
+		Version:                    res.Version,
+		StorageFee:                 res.StorageFee,
+		BlockHeight:                res.BlockHeight,
+		TimestampOfRequest:         res.TimestampOfRequest,
+		SubmitterPastelID:          res.SubmitterPastelID,
+		Sn1PastelID:                res.Sn1PastelID,
+		Sn2PastelID:                res.Sn2PastelID,
+		Sn3PastelID:                res.Sn3PastelID,
+		IsOpenAPIRequest:           res.IsOpenAPIRequest,
+		OpenAPISubsetID:            res.OpenAPISubsetID,
+		DupeDetectionSystemVersion: res.DupeDetectionSystemVersion,
+		IsLikelyDupe:               res.IsLikelyDupe,
+		IsRareOnInternet:           res.IsRareOnInternet,
+		OverallRarenessScore:       res.OverallRarenessScore,
+		PctOfTop10MostSimilarWithDupeProbAbove25pct: res.PctOfTop10MostSimilarWithDupeProbAbove25pct,
+		PctOfTop10MostSimilarWithDupeProbAbove33pct: res.PctOfTop10MostSimilarWithDupeProbAbove33pct,
+		PctOfTop10MostSimilarWithDupeProbAbove50pct: res.PctOfTop10MostSimilarWithDupeProbAbove50pct,
+		RarenessScoresTableJSONCompressedB64:        res.RarenessScoresTableJSONCompressedB64,
+		InternetRarenessScore:                       res.InternetRarenessScore,
+		OpenNsfwScore:                               res.OpenNsfwScore,
+		DrawingNsfwScore:                            res.DrawingNsfwScore,
+		NeutralNsfwScore:                            res.NeutralNsfwScore,
+		SexyNsfwScore:                               res.SexyNsfwScore,
+		PornNsfwScore:                               res.PornNsfwScore,
+		HentaiNsfwScore:                             res.HentaiNsfwScore,
+		PreviewThumbnail:                            res.PreviewThumbnail,
+		RareOnInternetSummaryTableJSONB64:           res.RareOnInternetSummaryTableJSONB64,
+		RareOnInternetGraphJSONB64:                  res.RareOnInternetGraphJSONB64,
+		AltRareOnInternetDictJSONB64:                res.AltRareOnInternetDictJSONB64,
+		MinNumExactMatchesOnPage:                    res.MinNumExactMatchesOnPage,
+		EarliestDateOfResults:                       res.EarliestDateOfResults,
+		Thumbnail1:                                  res.Thumbnail1,
+		Thumbnail2:                                  res.Thumbnail2,
+		Txid:                                        res.Txid,
+		Title:                                       res.Title,
+		Description:                                 res.Description,
+		Keywords:                                    res.Keywords,
+		SeriesName:                                  res.SeriesName,
+		Copies:                                      res.Copies,
+		YoutubeURL:                                  res.YoutubeURL,
+		CreatorPastelID:                             res.CreatorPastelID,
+		CreatorName:                                 res.CreatorName,
+		CreatorWebsiteURL:                           res.CreatorWebsiteURL,
+		NsfwScore:                                   res.NsfwScore,
+		RarenessScore:                               res.RarenessScore,
+	}
+	if res.ImageFingerprintOfCandidateImageFile != nil {
+		body.ImageFingerprintOfCandidateImageFile = make([]float32, len(res.ImageFingerprintOfCandidateImageFile))
+		for i, val := range res.ImageFingerprintOfCandidateImageFile {
+			body.ImageFingerprintOfCandidateImageFile[i] = val
+		}
+	}
+	return body
+}
+
 // NewRegisterBadRequestResponseBody builds the HTTP response body from the
 // result of the "register" endpoint of the "nft" service.
 func NewRegisterBadRequestResponseBody(res *goa.ServiceError) *RegisterBadRequestResponseBody {
@@ -1124,6 +1318,36 @@ func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *Download
 	return body
 }
 
+// NewDdServiceOutputFileDetailNotFoundResponseBody builds the HTTP response
+// body from the result of the "ddServiceOutputFileDetail" endpoint of the
+// "nft" service.
+func NewDdServiceOutputFileDetailNotFoundResponseBody(res *goa.ServiceError) *DdServiceOutputFileDetailNotFoundResponseBody {
+	body := &DdServiceOutputFileDetailNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewDdServiceOutputFileDetailInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "ddServiceOutputFileDetail" endpoint of
+// the "nft" service.
+func NewDdServiceOutputFileDetailInternalServerErrorResponseBody(res *goa.ServiceError) *DdServiceOutputFileDetailInternalServerErrorResponseBody {
+	body := &DdServiceOutputFileDetailInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewRegisterPayload builds a nft service register endpoint payload.
 func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
 	v := &nft.RegisterPayload{
@@ -1241,6 +1465,17 @@ func NewNftGetPayload(body *NftGetRequestBody, txid string) *nft.NftGetPayload {
 
 // NewDownloadPayload builds a nft service download endpoint payload.
 func NewDownloadPayload(txid string, pid string, key string) *nft.DownloadPayload {
+	v := &nft.DownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
+
+	return v
+}
+
+// NewDdServiceOutputFileDetailDownloadPayload builds a nft service
+// ddServiceOutputFileDetail endpoint payload.
+func NewDdServiceOutputFileDetailDownloadPayload(txid string, pid string, key string) *nft.DownloadPayload {
 	v := &nft.DownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid

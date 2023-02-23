@@ -16,15 +16,16 @@ import (
 
 // Endpoints wraps the "nft" service endpoints.
 type Endpoints struct {
-	Register          goa.Endpoint
-	RegisterTaskState goa.Endpoint
-	GetTaskHistory    goa.Endpoint
-	RegisterTask      goa.Endpoint
-	RegisterTasks     goa.Endpoint
-	UploadImage       goa.Endpoint
-	NftSearch         goa.Endpoint
-	NftGet            goa.Endpoint
-	Download          goa.Endpoint
+	Register                  goa.Endpoint
+	RegisterTaskState         goa.Endpoint
+	GetTaskHistory            goa.Endpoint
+	RegisterTask              goa.Endpoint
+	RegisterTasks             goa.Endpoint
+	UploadImage               goa.Endpoint
+	NftSearch                 goa.Endpoint
+	NftGet                    goa.Endpoint
+	Download                  goa.Endpoint
+	DdServiceOutputFileDetail goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -51,15 +52,16 @@ func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		Register:          NewRegisterEndpoint(s),
-		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
-		GetTaskHistory:    NewGetTaskHistoryEndpoint(s),
-		RegisterTask:      NewRegisterTaskEndpoint(s),
-		RegisterTasks:     NewRegisterTasksEndpoint(s),
-		UploadImage:       NewUploadImageEndpoint(s),
-		NftSearch:         NewNftSearchEndpoint(s),
-		NftGet:            NewNftGetEndpoint(s),
-		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
+		Register:                  NewRegisterEndpoint(s),
+		RegisterTaskState:         NewRegisterTaskStateEndpoint(s),
+		GetTaskHistory:            NewGetTaskHistoryEndpoint(s),
+		RegisterTask:              NewRegisterTaskEndpoint(s),
+		RegisterTasks:             NewRegisterTasksEndpoint(s),
+		UploadImage:               NewUploadImageEndpoint(s),
+		NftSearch:                 NewNftSearchEndpoint(s),
+		NftGet:                    NewNftGetEndpoint(s),
+		Download:                  NewDownloadEndpoint(s, a.APIKeyAuth),
+		DdServiceOutputFileDetail: NewDdServiceOutputFileDetailEndpoint(s, a.APIKeyAuth),
 	}
 }
 
@@ -74,6 +76,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.NftSearch = m(e.NftSearch)
 	e.NftGet = m(e.NftGet)
 	e.Download = m(e.Download)
+	e.DdServiceOutputFileDetail = m(e.DdServiceOutputFileDetail)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -183,5 +186,24 @@ func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.En
 			return nil, err
 		}
 		return s.Download(ctx, p)
+	}
+}
+
+// NewDdServiceOutputFileDetailEndpoint returns an endpoint function that calls
+// the method "ddServiceOutputFileDetail" of service "nft".
+func NewDdServiceOutputFileDetailEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*DownloadPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.DdServiceOutputFileDetail(ctx, p)
 	}
 }

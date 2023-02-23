@@ -212,6 +212,25 @@ var _ = Service("nft", func() {
 			Response(StatusOK)
 		})
 	})
+
+	Method("ddServiceOutputFileDetail", func() {
+		Description("Duplication detection output file details")
+		Meta("swagger:summary", "Duplication detection output file details")
+
+		Security(APIKeyAuth)
+		Payload(DownloadPayload)
+		Result(DDServiceOutputFileResult)
+
+		HTTP(func() {
+			GET("/get_dd_results")
+			Param("txid")
+			Param("pid")
+
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
 })
 
 // NftSearchResult is NFT search result.

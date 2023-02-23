@@ -217,7 +217,7 @@ func BuildUploadImagePayload(nftUploadImageBody string) (*nft.UploadImagePayload
 	{
 		err = json.Unmarshal([]byte(nftUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"UXVpYnVzZGFtIHZpdGFlIHF1YWVyYXQu\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VmVybyBlbmltIG1hZ25pIHZvbHVwdGF0ZSBwZXJzcGljaWF0aXMgaXBzYSB0b3RhbS4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -606,6 +606,49 @@ func BuildDownloadPayload(nftDownloadTxid string, nftDownloadPid string, nftDown
 	var key string
 	{
 		key = nftDownloadKey
+	}
+	v := &nft.DownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
+
+	return v, nil
+}
+
+// BuildDdServiceOutputFileDetailPayload builds the payload for the nft
+// ddServiceOutputFileDetail endpoint from CLI flags.
+func BuildDdServiceOutputFileDetailPayload(nftDdServiceOutputFileDetailTxid string, nftDdServiceOutputFileDetailPid string, nftDdServiceOutputFileDetailKey string) (*nft.DownloadPayload, error) {
+	var err error
+	var txid string
+	{
+		txid = nftDdServiceOutputFileDetailTxid
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
+		}
+		if utf8.RuneCountInString(txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var pid string
+	{
+		pid = nftDdServiceOutputFileDetailPid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var key string
+	{
+		key = nftDdServiceOutputFileDetailKey
 	}
 	v := &nft.DownloadPayload{}
 	v.Txid = txid

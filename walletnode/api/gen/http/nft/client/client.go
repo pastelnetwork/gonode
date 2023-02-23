@@ -56,6 +56,10 @@ type Client struct {
 	// endpoint.
 	DownloadDoer goahttp.Doer
 
+	// DdServiceOutputFileDetail Doer is the HTTP client used to make requests to
+	// the ddServiceOutputFileDetail endpoint.
+	DdServiceOutputFileDetailDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -90,23 +94,24 @@ func NewClient(
 		cfn = &ConnConfigurer{}
 	}
 	return &Client{
-		RegisterDoer:          doer,
-		RegisterTaskStateDoer: doer,
-		GetTaskHistoryDoer:    doer,
-		RegisterTaskDoer:      doer,
-		RegisterTasksDoer:     doer,
-		UploadImageDoer:       doer,
-		NftSearchDoer:         doer,
-		NftGetDoer:            doer,
-		DownloadDoer:          doer,
-		CORSDoer:              doer,
-		RestoreResponseBody:   restoreBody,
-		scheme:                scheme,
-		host:                  host,
-		decoder:               dec,
-		encoder:               enc,
-		dialer:                dialer,
-		configurer:            cfn,
+		RegisterDoer:                  doer,
+		RegisterTaskStateDoer:         doer,
+		GetTaskHistoryDoer:            doer,
+		RegisterTaskDoer:              doer,
+		RegisterTasksDoer:             doer,
+		UploadImageDoer:               doer,
+		NftSearchDoer:                 doer,
+		NftGetDoer:                    doer,
+		DownloadDoer:                  doer,
+		DdServiceOutputFileDetailDoer: doer,
+		CORSDoer:                      doer,
+		RestoreResponseBody:           restoreBody,
+		scheme:                        scheme,
+		host:                          host,
+		decoder:                       dec,
+		encoder:                       enc,
+		dialer:                        dialer,
+		configurer:                    cfn,
 	}
 }
 
@@ -339,6 +344,30 @@ func (c *Client) Download() goa.Endpoint {
 		resp, err := c.DownloadDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("nft", "download", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DdServiceOutputFileDetail returns an endpoint that makes HTTP requests to
+// the nft service ddServiceOutputFileDetail server.
+func (c *Client) DdServiceOutputFileDetail() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDdServiceOutputFileDetailRequest(c.encoder)
+		decodeResponse = DecodeDdServiceOutputFileDetailResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildDdServiceOutputFileDetailRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DdServiceOutputFileDetailDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("nft", "ddServiceOutputFileDetail", err)
 		}
 		return decodeResponse(resp)
 	}
