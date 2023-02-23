@@ -35,6 +35,8 @@ type Service interface {
 	NftGet(context.Context, *NftGetPayload) (res *NftDetail, err error)
 	// Download registered NFT.
 	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
+	// Duplication detection output file details
+	DdServiceOutputFileDetail(context.Context, *DownloadPayload) (res *DDServiceOutputFileResult, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -51,7 +53,7 @@ const ServiceName = "nft"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [9]string{"register", "registerTaskState", "getTaskHistory", "registerTask", "registerTasks", "uploadImage", "nftSearch", "nftGet", "download"}
+var MethodNames = [10]string{"register", "registerTaskState", "getTaskHistory", "registerTask", "registerTasks", "uploadImage", "nftSearch", "nftGet", "download", "ddServiceOutputFileDetail"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -83,6 +85,103 @@ type NftSearchServerStream interface {
 type NftSearchClientStream interface {
 	// Recv reads instances of "NftSearchResult" from the stream.
 	Recv() (*NftSearchResult, error)
+}
+
+// DDServiceOutputFileResult is the result type of the nft service
+// ddServiceOutputFileDetail method.
+type DDServiceOutputFileResult struct {
+	// version
+	Version *int
+	// Storage fee %
+	StorageFee *int
+	// Block Height When request submitted
+	BlockHeight *string
+	// Timestamp of request when submitted
+	TimestampOfRequest *string
+	// Pastel id of the submitter
+	SubmitterPastelID *string
+	// Pastel id of SN1
+	Sn1PastelID *string
+	// Pastel id of SN2
+	Sn2PastelID *string
+	// Pastel id of SN3
+	Sn3PastelID *string
+	// Is Open API request
+	IsOpenAPIRequest *bool
+	// Subset id of the open API
+	OpenAPISubsetID *string
+	// System version of dupe detection
+	DupeDetectionSystemVersion *string
+	// Is this image likely a duplicate of another known image
+	IsLikelyDupe *bool
+	// is this nft rare on the internet
+	IsRareOnInternet *bool
+	// pastel rareness score
+	OverallRarenessScore *float32
+	// PCT of top 10 most similar with dupe probe above 25 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove25pct *float32
+	// PCT of top 10 most similar with dupe probe above 33 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove33pct *float32
+	// PCT of top 10 most similar with dupe probe above 50 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove50pct *float32
+	// Rareness scores table json compressed b64 encoded
+	RarenessScoresTableJSONCompressedB64 *string
+	// internet rareness score
+	InternetRarenessScore *float32
+	// internet rareness score
+	OpenNsfwScore *float32
+	// Image fingerprint of candidate image file
+	ImageFingerprintOfCandidateImageFile []float32
+	// nsfw score
+	DrawingNsfwScore *float32
+	// nsfw score
+	NeutralNsfwScore *float32
+	// nsfw score
+	SexyNsfwScore *float32
+	// nsfw score
+	PornNsfwScore *float32
+	// nsfw score
+	HentaiNsfwScore *float32
+	// Preview Image
+	PreviewThumbnail []byte
+	// Base64 Compressed JSON Table of Rare On Internet Summary
+	RareOnInternetSummaryTableJSONB64 *string
+	// Base64 Compressed JSON of Rare On Internet Graph
+	RareOnInternetGraphJSONB64 *string
+	// Base64 Compressed Json of Alternative Rare On Internet Dict
+	AltRareOnInternetDictJSONB64 *string
+	// Minimum Number of Exact Matches on Page
+	MinNumExactMatchesOnPage *uint32
+	// Earliest Available Date of Internet Results
+	EarliestDateOfResults *string
+	// Thumbnail_1 image
+	Thumbnail1 []byte
+	// Thumbnail_2 image
+	Thumbnail2 []byte
+	// txid
+	Txid string
+	// Name of the NFT
+	Title string
+	// Description of the NFT
+	Description string
+	// Keywords
+	Keywords *string
+	// Series name
+	SeriesName *string
+	// Number of copies
+	Copies int
+	// NFT creation video youtube URL
+	YoutubeURL *string
+	// Artist's PastelID
+	CreatorPastelID string
+	// Name of the artist
+	CreatorName string
+	// Artist website URL
+	CreatorWebsiteURL *string
+	// NSFW Average score
+	NsfwScore *float32
+	// Average pastel rareness score
+	RarenessScore *float32
 }
 
 type Details struct {

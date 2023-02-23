@@ -20,17 +20,18 @@ import (
 
 // Server lists the nft service endpoint HTTP handlers.
 type Server struct {
-	Mounts            []*MountPoint
-	Register          http.Handler
-	RegisterTaskState http.Handler
-	GetTaskHistory    http.Handler
-	RegisterTask      http.Handler
-	RegisterTasks     http.Handler
-	UploadImage       http.Handler
-	NftSearch         http.Handler
-	NftGet            http.Handler
-	Download          http.Handler
-	CORS              http.Handler
+	Mounts                    []*MountPoint
+	Register                  http.Handler
+	RegisterTaskState         http.Handler
+	GetTaskHistory            http.Handler
+	RegisterTask              http.Handler
+	RegisterTasks             http.Handler
+	UploadImage               http.Handler
+	NftSearch                 http.Handler
+	NftGet                    http.Handler
+	Download                  http.Handler
+	DdServiceOutputFileDetail http.Handler
+	CORS                      http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -85,6 +86,7 @@ func New(
 			{"NftSearch", "GET", "/nfts/search"},
 			{"NftGet", "GET", "/nfts/{txid}"},
 			{"Download", "GET", "/nfts/download"},
+			{"DdServiceOutputFileDetail", "GET", "/nfts/get_dd_results"},
 			{"CORS", "OPTIONS", "/nfts/register"},
 			{"CORS", "OPTIONS", "/nfts/register/{taskId}/state"},
 			{"CORS", "OPTIONS", "/nfts/{taskId}/history"},
@@ -93,17 +95,19 @@ func New(
 			{"CORS", "OPTIONS", "/nfts/search"},
 			{"CORS", "OPTIONS", "/nfts/{txid}"},
 			{"CORS", "OPTIONS", "/nfts/download"},
+			{"CORS", "OPTIONS", "/nfts/get_dd_results"},
 		},
-		Register:          NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
-		RegisterTaskState: NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
-		GetTaskHistory:    NewGetTaskHistoryHandler(e.GetTaskHistory, mux, decoder, encoder, errhandler, formatter),
-		RegisterTask:      NewRegisterTaskHandler(e.RegisterTask, mux, decoder, encoder, errhandler, formatter),
-		RegisterTasks:     NewRegisterTasksHandler(e.RegisterTasks, mux, decoder, encoder, errhandler, formatter),
-		UploadImage:       NewUploadImageHandler(e.UploadImage, mux, NewNftUploadImageDecoder(mux, nftUploadImageDecoderFn), encoder, errhandler, formatter),
-		NftSearch:         NewNftSearchHandler(e.NftSearch, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.NftSearchFn),
-		NftGet:            NewNftGetHandler(e.NftGet, mux, decoder, encoder, errhandler, formatter),
-		Download:          NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter),
-		CORS:              NewCORSHandler(),
+		Register:                  NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
+		RegisterTaskState:         NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
+		GetTaskHistory:            NewGetTaskHistoryHandler(e.GetTaskHistory, mux, decoder, encoder, errhandler, formatter),
+		RegisterTask:              NewRegisterTaskHandler(e.RegisterTask, mux, decoder, encoder, errhandler, formatter),
+		RegisterTasks:             NewRegisterTasksHandler(e.RegisterTasks, mux, decoder, encoder, errhandler, formatter),
+		UploadImage:               NewUploadImageHandler(e.UploadImage, mux, NewNftUploadImageDecoder(mux, nftUploadImageDecoderFn), encoder, errhandler, formatter),
+		NftSearch:                 NewNftSearchHandler(e.NftSearch, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.NftSearchFn),
+		NftGet:                    NewNftGetHandler(e.NftGet, mux, decoder, encoder, errhandler, formatter),
+		Download:                  NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter),
+		DdServiceOutputFileDetail: NewDdServiceOutputFileDetailHandler(e.DdServiceOutputFileDetail, mux, decoder, encoder, errhandler, formatter),
+		CORS:                      NewCORSHandler(),
 	}
 }
 
@@ -121,6 +125,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.NftSearch = m(s.NftSearch)
 	s.NftGet = m(s.NftGet)
 	s.Download = m(s.Download)
+	s.DdServiceOutputFileDetail = m(s.DdServiceOutputFileDetail)
 	s.CORS = m(s.CORS)
 }
 
@@ -135,6 +140,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountNftSearchHandler(mux, h.NftSearch)
 	MountNftGetHandler(mux, h.NftGet)
 	MountDownloadHandler(mux, h.Download)
+	MountDdServiceOutputFileDetailHandler(mux, h.DdServiceOutputFileDetail)
 	MountCORSHandler(mux, h.CORS)
 }
 
@@ -625,6 +631,58 @@ func NewDownloadHandler(
 	})
 }
 
+// MountDdServiceOutputFileDetailHandler configures the mux to serve the "nft"
+// service "ddServiceOutputFileDetail" endpoint.
+func MountDdServiceOutputFileDetailHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := HandleNftOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/nfts/get_dd_results", f)
+}
+
+// NewDdServiceOutputFileDetailHandler creates a HTTP handler which loads the
+// HTTP request and calls the "nft" service "ddServiceOutputFileDetail"
+// endpoint.
+func NewDdServiceOutputFileDetailHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeDdServiceOutputFileDetailRequest(mux, decoder)
+		encodeResponse = EncodeDdServiceOutputFileDetailResponse(encoder)
+		encodeError    = EncodeDdServiceOutputFileDetailError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "ddServiceOutputFileDetail")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "nft")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
 // MountCORSHandler configures the mux to serve the CORS endpoints for the
 // service nft.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
@@ -637,6 +695,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("OPTIONS", "/nfts/search", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/{txid}", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/download", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/nfts/get_dd_results", h.ServeHTTP)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

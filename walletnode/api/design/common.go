@@ -75,7 +75,7 @@ var RegisterTaskState = Type("TaskState", func() {
 	Required("date", "status")
 })
 
-//Details represents status log details with additional fields
+// Details represents status log details with additional fields
 var Details = Type("Details", func() {
 	Attribute("message", String, func() {
 		Description("details regarding the status")
@@ -200,4 +200,112 @@ var DownloadResult = Type("DownloadResult", func() {
 		Description("File downloaded")
 	})
 	Required("file")
+})
+
+// DDServiceOutputFileResult is DD service output file result details.
+var DDServiceOutputFileResult = Type("DDServiceOutputFileResult", func() {
+	Description("Complete details of dd service output file result")
+
+	Extend(NftSummary)
+
+	Attribute("version", Int, func() {
+		Description("version")
+		Example(1)
+	})
+	Attribute("storage_fee", Int, func() {
+		Description("Storage fee %")
+		Example(100)
+	})
+	Attribute("block_height", String, func() {
+		Description("Block Height When request submitted")
+	})
+	Attribute("timestamp_of_request", String, func() {
+		Description("Timestamp of request when submitted")
+	})
+	Attribute("submitter_pastel_id", String, func() {
+		Description("Pastel id of the submitter")
+	})
+	Attribute("sn1_pastel_id", String, func() {
+		Description("Pastel id of SN1")
+	})
+	Attribute("sn2_pastel_id", String, func() {
+		Description("Pastel id of SN2")
+	})
+	Attribute("sn3_pastel_id", String, func() {
+		Description("Pastel id of SN3")
+	})
+	Attribute("is_open_api_request", Boolean, func() {
+		Description("Is Open API request")
+	})
+	Attribute("open_api_subset_id", String, func() {
+		Description("Subset id of the open API")
+	})
+	Attribute("dupe_detection_system_version", String, func() {
+		Description("System version of dupe detection")
+	})
+	Attribute("is_likely_dupe", Boolean, func() {
+		Description("is this nft likely a duplicate")
+		Example(false)
+	})
+	Attribute("is_rare_on_internet", Boolean, func() {
+		Description("is this nft rare on the internet")
+		Example(false)
+	})
+	Attribute("overall_rareness_score", Float32, func() {
+		Description("pastel rareness score")
+	})
+	Attribute("pct_of_top_10_most_similar_with_dupe_prob_above_25pct", Float32, func() {
+		Description("PCT of top 10 most similar with dupe probe above 25 PCT")
+	})
+	Attribute("pct_of_top_10_most_similar_with_dupe_prob_above_33pct", Float32, func() {
+		Description("PCT of top 10 most similar with dupe probe above 33 PCT")
+	})
+	Attribute("pct_of_top_10_most_similar_with_dupe_prob_above_50pct", Float32, func() {
+		Description("PCT of top 10 most similar with dupe probe above 50 PCT")
+	})
+	Attribute("rareness_scores_table_json_compressed_b64", String, func() {
+		Description("Rareness scores table json compressed b64 encoded")
+	})
+	Attribute("internet_rareness_score", Float32, func() {
+		Description("internet rareness score")
+	})
+	Attribute("open_nsfw_score", Float32, func() {
+		Description("internet rareness score")
+	})
+	Attribute("image_fingerprint_of_candidate_image_file", ArrayOf(Float32), func() {
+		Description("Image fingerprint of candidate image file")
+	})
+	Attribute("drawing_nsfw_score", Float32, func() {
+		Description("nsfw score")
+	})
+	Attribute("neutral_nsfw_score", Float32, func() {
+		Description("nsfw score")
+	})
+	Attribute("sexy_nsfw_score", Float32, func() {
+		Description("nsfw score")
+	})
+	Attribute("porn_nsfw_score", Float32, func() {
+		Description("nsfw score")
+	})
+	Attribute("hentai_nsfw_score", Float32, func() {
+		Description("nsfw score")
+	})
+	Attribute("preview_thumbnail", Bytes, func() {
+		Description("Preview Image")
+	})
+	Attribute("rare_on_internet_summary_table_json_b64", String, func() {
+		Description("Base64 Compressed JSON Table of Rare On Internet Summary")
+	})
+	Attribute("rare_on_internet_graph_json_b64", String, func() {
+		Description("Base64 Compressed JSON of Rare On Internet Graph")
+	})
+	Attribute("alt_rare_on_internet_dict_json_b64", String, func() {
+		Description("Base64 Compressed Json of Alternative Rare On Internet Dict")
+	})
+	Attribute("min_num_exact_matches_on_page", UInt32, func() {
+		Description("Minimum Number of Exact Matches on Page")
+	})
+	Attribute("earliest_date_of_results", String, func() {
+		Description("Earliest Available Date of Internet Results")
+	})
 })

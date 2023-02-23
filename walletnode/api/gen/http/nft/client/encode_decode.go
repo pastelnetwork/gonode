@@ -1015,6 +1015,114 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 	}
 }
 
+// BuildDdServiceOutputFileDetailRequest instantiates a HTTP request object
+// with method and path set to call the "nft" service
+// "ddServiceOutputFileDetail" endpoint
+func (c *Client) BuildDdServiceOutputFileDetailRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DdServiceOutputFileDetailNftPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("nft", "ddServiceOutputFileDetail", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeDdServiceOutputFileDetailRequest returns an encoder for requests sent
+// to the nft ddServiceOutputFileDetail server.
+func EncodeDdServiceOutputFileDetailRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*nft.DownloadPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("nft", "ddServiceOutputFileDetail", "*nft.DownloadPayload", v)
+		}
+		{
+			head := p.Key
+			req.Header.Set("Authorization", head)
+		}
+		values := req.URL.Query()
+		values.Add("txid", p.Txid)
+		values.Add("pid", p.Pid)
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeDdServiceOutputFileDetailResponse returns a decoder for responses
+// returned by the nft ddServiceOutputFileDetail endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeDdServiceOutputFileDetailResponse may return the following errors:
+//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
+func DecodeDdServiceOutputFileDetailResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body DdServiceOutputFileDetailResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("nft", "ddServiceOutputFileDetail", err)
+			}
+			err = ValidateDdServiceOutputFileDetailResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("nft", "ddServiceOutputFileDetail", err)
+			}
+			res := NewDdServiceOutputFileDetailDDServiceOutputFileResultOK(&body)
+			return res, nil
+		case http.StatusNotFound:
+			var (
+				body DdServiceOutputFileDetailNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("nft", "ddServiceOutputFileDetail", err)
+			}
+			err = ValidateDdServiceOutputFileDetailNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("nft", "ddServiceOutputFileDetail", err)
+			}
+			return nil, NewDdServiceOutputFileDetailNotFound(&body)
+		case http.StatusInternalServerError:
+			var (
+				body DdServiceOutputFileDetailInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("nft", "ddServiceOutputFileDetail", err)
+			}
+			err = ValidateDdServiceOutputFileDetailInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("nft", "ddServiceOutputFileDetail", err)
+			}
+			return nil, NewDdServiceOutputFileDetailInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("nft", "ddServiceOutputFileDetail", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // marshalNftThumbnailcoordinateToThumbnailcoordinateRequestBody builds a value
 // of type *ThumbnailcoordinateRequestBody from a value of type
 // *nft.Thumbnailcoordinate.

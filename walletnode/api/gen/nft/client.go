@@ -15,29 +15,31 @@ import (
 
 // Client is the "nft" service client.
 type Client struct {
-	RegisterEndpoint          goa.Endpoint
-	RegisterTaskStateEndpoint goa.Endpoint
-	GetTaskHistoryEndpoint    goa.Endpoint
-	RegisterTaskEndpoint      goa.Endpoint
-	RegisterTasksEndpoint     goa.Endpoint
-	UploadImageEndpoint       goa.Endpoint
-	NftSearchEndpoint         goa.Endpoint
-	NftGetEndpoint            goa.Endpoint
-	DownloadEndpoint          goa.Endpoint
+	RegisterEndpoint                  goa.Endpoint
+	RegisterTaskStateEndpoint         goa.Endpoint
+	GetTaskHistoryEndpoint            goa.Endpoint
+	RegisterTaskEndpoint              goa.Endpoint
+	RegisterTasksEndpoint             goa.Endpoint
+	UploadImageEndpoint               goa.Endpoint
+	NftSearchEndpoint                 goa.Endpoint
+	NftGetEndpoint                    goa.Endpoint
+	DownloadEndpoint                  goa.Endpoint
+	DdServiceOutputFileDetailEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "nft" service client given the endpoints.
-func NewClient(register, registerTaskState, getTaskHistory, registerTask, registerTasks, uploadImage, nftSearch, nftGet, download goa.Endpoint) *Client {
+func NewClient(register, registerTaskState, getTaskHistory, registerTask, registerTasks, uploadImage, nftSearch, nftGet, download, ddServiceOutputFileDetail goa.Endpoint) *Client {
 	return &Client{
-		RegisterEndpoint:          register,
-		RegisterTaskStateEndpoint: registerTaskState,
-		GetTaskHistoryEndpoint:    getTaskHistory,
-		RegisterTaskEndpoint:      registerTask,
-		RegisterTasksEndpoint:     registerTasks,
-		UploadImageEndpoint:       uploadImage,
-		NftSearchEndpoint:         nftSearch,
-		NftGetEndpoint:            nftGet,
-		DownloadEndpoint:          download,
+		RegisterEndpoint:                  register,
+		RegisterTaskStateEndpoint:         registerTaskState,
+		GetTaskHistoryEndpoint:            getTaskHistory,
+		RegisterTaskEndpoint:              registerTask,
+		RegisterTasksEndpoint:             registerTasks,
+		UploadImageEndpoint:               uploadImage,
+		NftSearchEndpoint:                 nftSearch,
+		NftGetEndpoint:                    nftGet,
+		DownloadEndpoint:                  download,
+		DdServiceOutputFileDetailEndpoint: ddServiceOutputFileDetail,
 	}
 }
 
@@ -130,4 +132,15 @@ func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res *Downloa
 		return
 	}
 	return ires.(*DownloadResult), nil
+}
+
+// DdServiceOutputFileDetail calls the "ddServiceOutputFileDetail" endpoint of
+// the "nft" service.
+func (c *Client) DdServiceOutputFileDetail(ctx context.Context, p *DownloadPayload) (res *DDServiceOutputFileResult, err error) {
+	var ires interface{}
+	ires, err = c.DdServiceOutputFileDetailEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*DDServiceOutputFileResult), nil
 }

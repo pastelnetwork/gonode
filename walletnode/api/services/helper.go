@@ -90,3 +90,56 @@ func toNftDetail(ticket *pastel.RegTicket) *nft.NftDetail {
 		//SexyNsfwScore:         &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Sexy,
 	}
 }
+
+func translateNftSummary(res *nft.DDServiceOutputFileResult, ticket *pastel.RegTicket) *nft.DDServiceOutputFileResult {
+	ticketData := ticket.RegTicketData.NFTTicketData.AppTicketData
+
+	res.Txid = ticket.TXID
+	res.Title = ticketData.NFTTitle
+	res.Copies = ticket.RegTicketData.NFTTicketData.Copies
+	res.CreatorName = ticketData.CreatorName
+	res.YoutubeURL = &ticketData.NFTCreationVideoYoutubeURL
+	res.CreatorPastelID = ticket.RegTicketData.NFTTicketData.Author
+	res.CreatorWebsiteURL = &ticketData.CreatorWebsite
+	res.Description = ticketData.CreatorWrittenStatement
+	res.Keywords = &ticketData.NFTKeywordSet
+	res.SeriesName = &ticketData.NFTSeriesName
+
+	return res
+}
+
+func translateDDServiceOutputFile(res *nft.DDServiceOutputFileResult, ddAndFpStruct *pastel.DDAndFingerprints) *nft.DDServiceOutputFileResult {
+	res.BlockHeight = &ddAndFpStruct.BlockHeight
+	res.TimestampOfRequest = &ddAndFpStruct.TimestampOfRequest
+	res.SubmitterPastelID = &ddAndFpStruct.SubmitterPastelID
+	res.Sn1PastelID = &ddAndFpStruct.SN1PastelID
+	res.Sn2PastelID = &ddAndFpStruct.SN2PastelID
+	res.Sn3PastelID = &ddAndFpStruct.SN3PastelID
+	res.IsOpenAPIRequest = &ddAndFpStruct.IsOpenAPIRequest
+	res.OpenAPISubsetID = &ddAndFpStruct.OpenAPISubsetID
+	res.DupeDetectionSystemVersion = &ddAndFpStruct.DupeDetectionSystemVersion
+	res.IsLikelyDupe = &ddAndFpStruct.IsLikelyDupe
+	res.IsRareOnInternet = &ddAndFpStruct.IsRareOnInternet
+	res.OverallRarenessScore = &ddAndFpStruct.OverallRarenessScore
+	res.PctOfTop10MostSimilarWithDupeProbAbove25pct = &ddAndFpStruct.PctOfTop10MostSimilarWithDupeProbAbove25pct
+	res.PctOfTop10MostSimilarWithDupeProbAbove33pct = &ddAndFpStruct.PctOfTop10MostSimilarWithDupeProbAbove33pct
+	res.PctOfTop10MostSimilarWithDupeProbAbove50pct = &ddAndFpStruct.PctOfTop10MostSimilarWithDupeProbAbove50pct
+	res.RarenessScoresTableJSONCompressedB64 = &ddAndFpStruct.RarenessScoresTableJSONCompressedB64
+	res.NsfwScore = &ddAndFpStruct.OpenNSFWScore
+
+	//Internet Rareness
+	res.RareOnInternetSummaryTableJSONB64 = &ddAndFpStruct.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64
+	res.RareOnInternetGraphJSONB64 = &ddAndFpStruct.InternetRareness.RareOnInternetGraphJSONCompressedB64
+	res.AltRareOnInternetDictJSONB64 = &ddAndFpStruct.InternetRareness.AlternativeRareOnInternetDictAsJSONCompressedB64
+	res.MinNumExactMatchesOnPage = &ddAndFpStruct.InternetRareness.MinNumberOfExactMatchesInPage
+	res.EarliestDateOfResults = &ddAndFpStruct.InternetRareness.EarliestAvailableDateOfInternetResults
+
+	//Alternative NSFW Scores
+	res.HentaiNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Hentai
+	res.PornNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Porn
+	res.SexyNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Sexy
+	res.DrawingNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Drawings
+	res.NeutralNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Neutral
+
+	return res
+}
