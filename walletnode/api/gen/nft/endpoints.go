@@ -59,7 +59,7 @@ func NewEndpoints(s Service) *Endpoints {
 		RegisterTasks:             NewRegisterTasksEndpoint(s),
 		UploadImage:               NewUploadImageEndpoint(s),
 		NftSearch:                 NewNftSearchEndpoint(s),
-		NftGet:                    NewNftGetEndpoint(s),
+		NftGet:                    NewNftGetEndpoint(s, a.APIKeyAuth),
 		Download:                  NewDownloadEndpoint(s, a.APIKeyAuth),
 		DdServiceOutputFileDetail: NewDdServiceOutputFileDetailEndpoint(s, a.APIKeyAuth),
 	}
@@ -163,9 +163,19 @@ func NewNftSearchEndpoint(s Service) goa.Endpoint {
 
 // NewNftGetEndpoint returns an endpoint function that calls the method
 // "nftGet" of service "nft".
-func NewNftGetEndpoint(s Service) goa.Endpoint {
+func NewNftGetEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*NftGetPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
 		return s.NftGet(ctx, p)
 	}
 }

@@ -64,15 +64,6 @@ type UploadImageRequestBody struct {
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
 
-// NftGetRequestBody is the type of the "nft" service "nftGet" endpoint HTTP
-// request body.
-type NftGetRequestBody struct {
-	// User's PastelID
-	UserPastelID string `form:"user_pastelid" json:"user_pastelid" xml:"user_pastelid"`
-	// Passphrase of the User PastelID
-	UserPassphrase string `form:"user_passphrase" json:"user_passphrase" xml:"user_passphrase"`
-}
-
 // RegisterResponseBody is the type of the "nft" service "register" endpoint
 // HTTP response body.
 type RegisterResponseBody struct {
@@ -931,16 +922,6 @@ func NewUploadImageRequestBody(p *nft.UploadImagePayload) *UploadImageRequestBod
 	body := &UploadImageRequestBody{
 		Bytes:    p.Bytes,
 		Filename: p.Filename,
-	}
-	return body
-}
-
-// NewNftGetRequestBody builds the HTTP request body from the payload of the
-// "nftGet" endpoint of the "nft" service.
-func NewNftGetRequestBody(p *nft.NftGetPayload) *NftGetRequestBody {
-	body := &NftGetRequestBody{
-		UserPastelID:   p.UserPastelID,
-		UserPassphrase: p.UserPassphrase,
 	}
 	return body
 }

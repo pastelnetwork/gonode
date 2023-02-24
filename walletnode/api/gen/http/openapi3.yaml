@@ -5,105 +5,7 @@ info:
 servers:
     - url: http://localhost:8080
 paths:
-    /nfts/{taskId}/history:
-        get:
-            tags:
-                - nft
-            summary: Get history of states as a json string with a list of state objects.
-            description: Gets the history of the task's states.
-            operationId: nft#getTaskHistory
-            parameters:
-                - name: taskId
-                  in: path
-                  description: Task ID of the registration process
-                  required: true
-                  schema:
-                    type: string
-                    description: Task ID of the registration process
-                    example: n6Qn6TFM
-                    minLength: 8
-                    maxLength: 8
-                  example: n6Qn6TFM
-            responses:
-                "200":
-                    description: OK response.
-                    content:
-                        application/json:
-                            schema:
-                                type: array
-                                items:
-                                    $ref: '#/components/schemas/TaskHistory'
-                                example:
-                                    - details:
-                                        fields:
-                                            Quae illum et nisi.: Adipisci dolores qui modi possimus.
-                                        message: Image has been downloaded...
-                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                      status: Started, Image Probed, Downloaded...
-                                      timestamp: 2006-01-02T15:04:05Z07:00
-                                    - details:
-                                        fields:
-                                            Quae illum et nisi.: Adipisci dolores qui modi possimus.
-                                        message: Image has been downloaded...
-                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                      status: Started, Image Probed, Downloaded...
-                                      timestamp: 2006-01-02T15:04:05Z07:00
-                                    - details:
-                                        fields:
-                                            Quae illum et nisi.: Adipisci dolores qui modi possimus.
-                                        message: Image has been downloaded...
-                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                      status: Started, Image Probed, Downloaded...
-                                      timestamp: 2006-01-02T15:04:05Z07:00
-                                    - details:
-                                        fields:
-                                            Quae illum et nisi.: Adipisci dolores qui modi possimus.
-                                        message: Image has been downloaded...
-                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                      status: Started, Image Probed, Downloaded...
-                                      timestamp: 2006-01-02T15:04:05Z07:00
-                            example:
-                                - details:
-                                    fields:
-                                        Quae illum et nisi.: Adipisci dolores qui modi possimus.
-                                    message: Image has been downloaded...
-                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                  status: Started, Image Probed, Downloaded...
-                                  timestamp: 2006-01-02T15:04:05Z07:00
-                                - details:
-                                    fields:
-                                        Quae illum et nisi.: Adipisci dolores qui modi possimus.
-                                    message: Image has been downloaded...
-                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                  status: Started, Image Probed, Downloaded...
-                                  timestamp: 2006-01-02T15:04:05Z07:00
-                                - details:
-                                    fields:
-                                        Quae illum et nisi.: Adipisci dolores qui modi possimus.
-                                    message: Image has been downloaded...
-                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                  status: Started, Image Probed, Downloaded...
-                                  timestamp: 2006-01-02T15:04:05Z07:00
-                                - details:
-                                    fields:
-                                        Quae illum et nisi.: Adipisci dolores qui modi possimus.
-                                    message: Image has been downloaded...
-                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                  status: Started, Image Probed, Downloaded...
-                                  timestamp: 2006-01-02T15:04:05Z07:00
-                "404":
-                    description: 'NotFound: Not Found response.'
-                    content:
-                        application/vnd.goa.error:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                "500":
-                    description: 'InternalServerError: Internal Server Error response.'
-                    content:
-                        application/vnd.goa.error:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-    /nfts/{txid}:
+    /nfts:
         get:
             tags:
                 - nft
@@ -112,25 +14,30 @@ paths:
             operationId: nft#nftGet
             parameters:
                 - name: txid
-                  in: path
-                  description: txid
+                  in: query
+                  description: Nft Registration Request transaction ID
+                  allowEmptyValue: true
                   required: true
                   schema:
                     type: string
-                    description: txid
+                    description: Nft Registration Request transaction ID
                     example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     minLength: 64
                     maxLength: 64
                   example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/NftGetRequestBody'
-                        example:
-                            user_passphrase: qwerasdf1234
-                            user_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                - name: pid
+                  in: query
+                  description: Owner's PastelID
+                  allowEmptyValue: true
+                  required: true
+                  schema:
+                    type: string
+                    description: Owner's PastelID
+                    example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                    pattern: ^[a-zA-Z0-9]+$
+                    minLength: 86
+                    maxLength: 86
+                  example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             responses:
                 "200":
                     description: OK response.
@@ -235,6 +142,106 @@ paths:
                         application/vnd.goa.error:
                             schema:
                                 $ref: '#/components/schemas/Error'
+                "404":
+                    description: 'NotFound: Not Found response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                "500":
+                    description: 'InternalServerError: Internal Server Error response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+            security:
+                - api_key_header_Authorization: []
+    /nfts/{taskId}/history:
+        get:
+            tags:
+                - nft
+            summary: Get history of states as a json string with a list of state objects.
+            description: Gets the history of the task's states.
+            operationId: nft#getTaskHistory
+            parameters:
+                - name: taskId
+                  in: path
+                  description: Task ID of the registration process
+                  required: true
+                  schema:
+                    type: string
+                    description: Task ID of the registration process
+                    example: n6Qn6TFM
+                    minLength: 8
+                    maxLength: 8
+                  example: n6Qn6TFM
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/TaskHistory'
+                                example:
+                                    - details:
+                                        fields:
+                                            Quae illum et nisi.: Adipisci dolores qui modi possimus.
+                                        message: Image has been downloaded...
+                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                      status: Started, Image Probed, Downloaded...
+                                      timestamp: 2006-01-02T15:04:05Z07:00
+                                    - details:
+                                        fields:
+                                            Quae illum et nisi.: Adipisci dolores qui modi possimus.
+                                        message: Image has been downloaded...
+                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                      status: Started, Image Probed, Downloaded...
+                                      timestamp: 2006-01-02T15:04:05Z07:00
+                                    - details:
+                                        fields:
+                                            Quae illum et nisi.: Adipisci dolores qui modi possimus.
+                                        message: Image has been downloaded...
+                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                      status: Started, Image Probed, Downloaded...
+                                      timestamp: 2006-01-02T15:04:05Z07:00
+                                    - details:
+                                        fields:
+                                            Quae illum et nisi.: Adipisci dolores qui modi possimus.
+                                        message: Image has been downloaded...
+                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                      status: Started, Image Probed, Downloaded...
+                                      timestamp: 2006-01-02T15:04:05Z07:00
+                            example:
+                                - details:
+                                    fields:
+                                        Quae illum et nisi.: Adipisci dolores qui modi possimus.
+                                    message: Image has been downloaded...
+                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                  status: Started, Image Probed, Downloaded...
+                                  timestamp: 2006-01-02T15:04:05Z07:00
+                                - details:
+                                    fields:
+                                        Quae illum et nisi.: Adipisci dolores qui modi possimus.
+                                    message: Image has been downloaded...
+                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                  status: Started, Image Probed, Downloaded...
+                                  timestamp: 2006-01-02T15:04:05Z07:00
+                                - details:
+                                    fields:
+                                        Quae illum et nisi.: Adipisci dolores qui modi possimus.
+                                    message: Image has been downloaded...
+                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                  status: Started, Image Probed, Downloaded...
+                                  timestamp: 2006-01-02T15:04:05Z07:00
+                                - details:
+                                    fields:
+                                        Quae illum et nisi.: Adipisci dolores qui modi possimus.
+                                    message: Image has been downloaded...
+                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                  status: Started, Image Probed, Downloaded...
+                                  timestamp: 2006-01-02T15:04:05Z07:00
                 "404":
                     description: 'NotFound: Not Found response.'
                     content:
@@ -3303,26 +3310,6 @@ components:
                 - copies
                 - creator_pastelid
                 - txid
-        NftGetRequestBody:
-            type: object
-            properties:
-                user_passphrase:
-                    type: string
-                    description: Passphrase of the User PastelID
-                    example: qwerasdf1234
-                user_pastelid:
-                    type: string
-                    description: User's PastelID
-                    example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                    pattern: ^[a-zA-Z0-9]+$
-                    minLength: 86
-                    maxLength: 86
-            example:
-                user_passphrase: qwerasdf1234
-                user_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-            required:
-                - user_pastelid
-                - user_passphrase
         NftRegisterPayload:
             type: object
             properties:

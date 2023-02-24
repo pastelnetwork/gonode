@@ -84,7 +84,7 @@ func New(
 			{"RegisterTasks", "GET", "/nfts/register"},
 			{"UploadImage", "POST", "/nfts/register/upload"},
 			{"NftSearch", "GET", "/nfts/search"},
-			{"NftGet", "GET", "/nfts/{txid}"},
+			{"NftGet", "GET", "/nfts"},
 			{"Download", "GET", "/nfts/download"},
 			{"DdServiceOutputFileDetail", "GET", "/nfts/get_dd_results"},
 			{"CORS", "OPTIONS", "/nfts/register"},
@@ -93,7 +93,7 @@ func New(
 			{"CORS", "OPTIONS", "/nfts/register/{taskId}"},
 			{"CORS", "OPTIONS", "/nfts/register/upload"},
 			{"CORS", "OPTIONS", "/nfts/search"},
-			{"CORS", "OPTIONS", "/nfts/{txid}"},
+			{"CORS", "OPTIONS", "/nfts"},
 			{"CORS", "OPTIONS", "/nfts/download"},
 			{"CORS", "OPTIONS", "/nfts/get_dd_results"},
 		},
@@ -538,7 +538,7 @@ func MountNftGetHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/nfts/{txid}", f)
+	mux.Handle("GET", "/nfts", f)
 }
 
 // NewNftGetHandler creates a HTTP handler which loads the HTTP request and
@@ -693,7 +693,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("OPTIONS", "/nfts/register/{taskId}", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/register/upload", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/search", h.ServeHTTP)
-	mux.Handle("OPTIONS", "/nfts/{txid}", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/nfts", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/download", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/nfts/get_dd_results", h.ServeHTTP)
 }
