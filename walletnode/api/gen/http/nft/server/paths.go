@@ -47,8 +47,8 @@ func NftSearchNftPath() string {
 }
 
 // NftGetNftPath returns the URL path to the nft service nftGet HTTP endpoint.
-func NftGetNftPath(txid string) string {
-	return fmt.Sprintf("/nfts/%v", txid)
+func NftGetNftPath() string {
+	return "/nfts"
 }
 
 // DownloadNftPath returns the URL path to the nft service download HTTP endpoint.

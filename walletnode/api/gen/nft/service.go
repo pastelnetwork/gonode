@@ -303,12 +303,12 @@ type NftDetail struct {
 
 // NftGetPayload is the payload type of the nft service nftGet method.
 type NftGetPayload struct {
-	// txid
+	// Nft Registration Request transaction ID
 	Txid string
-	// User's PastelID
-	UserPastelID string
-	// Passphrase of the User PastelID
-	UserPassphrase string
+	// Owner's PastelID
+	Pid string
+	// Passphrase of the owner's PastelID
+	Key string
 }
 
 // Request of the registration NFT

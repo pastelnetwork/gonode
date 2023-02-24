@@ -64,15 +64,6 @@ type UploadImageRequestBody struct {
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
 
-// NftGetRequestBody is the type of the "nft" service "nftGet" endpoint HTTP
-// request body.
-type NftGetRequestBody struct {
-	// User's PastelID
-	UserPastelID *string `form:"user_pastelid,omitempty" json:"user_pastelid,omitempty" xml:"user_pastelid,omitempty"`
-	// Passphrase of the User PastelID
-	UserPassphrase *string `form:"user_passphrase,omitempty" json:"user_passphrase,omitempty" xml:"user_passphrase,omitempty"`
-}
-
 // RegisterResponseBody is the type of the "nft" service "register" endpoint
 // HTTP response body.
 type RegisterResponseBody struct {
@@ -1453,12 +1444,11 @@ func NewNftSearchPayload(artist *string, limit int, query string, creatorName bo
 }
 
 // NewNftGetPayload builds a nft service nftGet endpoint payload.
-func NewNftGetPayload(body *NftGetRequestBody, txid string) *nft.NftGetPayload {
-	v := &nft.NftGetPayload{
-		UserPastelID:   *body.UserPastelID,
-		UserPassphrase: *body.UserPassphrase,
-	}
+func NewNftGetPayload(txid string, pid string, key string) *nft.NftGetPayload {
+	v := &nft.NftGetPayload{}
 	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
 
 	return v
 }
@@ -1620,30 +1610,6 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 func ValidateUploadImageRequestBody(body *UploadImageRequestBody) (err error) {
 	if body.Bytes == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
-	}
-	return
-}
-
-// ValidateNftGetRequestBody runs the validations defined on NftGetRequestBody
-func ValidateNftGetRequestBody(body *NftGetRequestBody) (err error) {
-	if body.UserPastelID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("user_pastelid", "body"))
-	}
-	if body.UserPassphrase == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("user_passphrase", "body"))
-	}
-	if body.UserPastelID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.user_pastelid", *body.UserPastelID, "^[a-zA-Z0-9]+$"))
-	}
-	if body.UserPastelID != nil {
-		if utf8.RuneCountInString(*body.UserPastelID) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", *body.UserPastelID, utf8.RuneCountInString(*body.UserPastelID), 86, true))
-		}
-	}
-	if body.UserPastelID != nil {
-		if utf8.RuneCountInString(*body.UserPastelID) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", *body.UserPastelID, utf8.RuneCountInString(*body.UserPastelID), 86, false))
-		}
 	}
 	return
 }

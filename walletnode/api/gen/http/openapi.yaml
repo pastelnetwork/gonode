@@ -12,6 +12,66 @@ produces:
     - application/xml
     - application/gob
 paths:
+    /nfts:
+        get:
+            tags:
+                - nft
+            summary: Returns the detail of NFT
+            description: Gets the NFT detail
+            operationId: nft#nftGet
+            parameters:
+                - name: txid
+                  in: query
+                  description: Nft Registration Request transaction ID
+                  required: true
+                  type: string
+                  maxLength: 64
+                  minLength: 64
+                - name: pid
+                  in: query
+                  description: Owner's PastelID
+                  required: true
+                  type: string
+                  maxLength: 86
+                  minLength: 86
+                  pattern: ^[a-zA-Z0-9]+$
+                - name: Authorization
+                  in: header
+                  description: Passphrase of the owner's PastelID
+                  required: true
+                  type: string
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/NftNftGetResponseBody'
+                        required:
+                            - rareness_score
+                            - nsfw_score
+                            - is_likely_dupe
+                            - is_rare_on_internet
+                            - title
+                            - description
+                            - creator_name
+                            - copies
+                            - creator_pastelid
+                            - txid
+                "400":
+                    description: Bad Request response.
+                    schema:
+                        $ref: '#/definitions/NftNftGetBadRequestResponseBody'
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/NftNftGetNotFoundResponseBody'
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/NftNftGetInternalServerErrorResponseBody'
+            schemes:
+                - http
+            security:
+                - api_key_header_Authorization: []
     /nfts/{taskId}/history:
         get:
             tags:
@@ -42,59 +102,6 @@ paths:
                     description: Internal Server Error response.
                     schema:
                         $ref: '#/definitions/NftGetTaskHistoryInternalServerErrorResponseBody'
-            schemes:
-                - http
-    /nfts/{txid}:
-        get:
-            tags:
-                - nft
-            summary: Returns the detail of NFT
-            description: Gets the NFT detail
-            operationId: nft#nftGet
-            parameters:
-                - name: txid
-                  in: path
-                  description: txid
-                  required: true
-                  type: string
-                  maxLength: 64
-                  minLength: 64
-                - name: NftGetRequestBody
-                  in: body
-                  required: true
-                  schema:
-                    $ref: '#/definitions/NftNftGetRequestBody'
-                    required:
-                        - user_pastelid
-                        - user_passphrase
-            responses:
-                "200":
-                    description: OK response.
-                    schema:
-                        $ref: '#/definitions/NftNftGetResponseBody'
-                        required:
-                            - rareness_score
-                            - nsfw_score
-                            - is_likely_dupe
-                            - is_rare_on_internet
-                            - title
-                            - description
-                            - creator_name
-                            - copies
-                            - creator_pastelid
-                            - txid
-                "400":
-                    description: Bad Request response.
-                    schema:
-                        $ref: '#/definitions/NftNftGetBadRequestResponseBody'
-                "404":
-                    description: Not Found response.
-                    schema:
-                        $ref: '#/definitions/NftNftGetNotFoundResponseBody'
-                "500":
-                    description: Internal Server Error response.
-                    schema:
-                        $ref: '#/definitions/NftNftGetInternalServerErrorResponseBody'
             schemes:
                 - http
     /nfts/download:
@@ -2654,27 +2661,6 @@ definitions:
             - temporary
             - timeout
             - fault
-    NftNftGetRequestBody:
-        title: NftNftGetRequestBody
-        type: object
-        properties:
-            user_passphrase:
-                type: string
-                description: Passphrase of the User PastelID
-                example: qwerasdf1234
-            user_pastelid:
-                type: string
-                description: User's PastelID
-                example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                pattern: ^[a-zA-Z0-9]+$
-                minLength: 86
-                maxLength: 86
-        example:
-            user_passphrase: qwerasdf1234
-            user_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-        required:
-            - user_pastelid
-            - user_passphrase
     NftNftGetResponseBody:
         title: NftNftGetResponseBody
         type: object

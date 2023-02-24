@@ -783,17 +783,7 @@ func DecodeNftSearchResponse(decoder func(*http.Response) goahttp.Decoder, resto
 // BuildNftGetRequest instantiates a HTTP request object with method and path
 // set to call the "nft" service "nftGet" endpoint
 func (c *Client) BuildNftGetRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	var (
-		txid string
-	)
-	{
-		p, ok := v.(*nft.NftGetPayload)
-		if !ok {
-			return nil, goahttp.ErrInvalidType("nft", "nftGet", "*nft.NftGetPayload", v)
-		}
-		txid = p.Txid
-	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: NftGetNftPath(txid)}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: NftGetNftPath()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, goahttp.ErrInvalidURL("nft", "nftGet", u.String(), err)
@@ -813,10 +803,14 @@ func EncodeNftGetRequest(encoder func(*http.Request) goahttp.Encoder) func(*http
 		if !ok {
 			return goahttp.ErrInvalidType("nft", "nftGet", "*nft.NftGetPayload", v)
 		}
-		body := NewNftGetRequestBody(p)
-		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("nft", "nftGet", err)
+		{
+			head := p.Key
+			req.Header.Set("Authorization", head)
 		}
+		values := req.URL.Query()
+		values.Add("txid", p.Txid)
+		values.Add("pid", p.Pid)
+		req.URL.RawQuery = values.Encode()
 		return nil
 	}
 }

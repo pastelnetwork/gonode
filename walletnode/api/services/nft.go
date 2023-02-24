@@ -281,13 +281,13 @@ func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 	}
 
 	res = toNftDetail(ticket)
-	data, err := service.search.GetThumbnail(ctx, ticket, p.UserPastelID, p.UserPassphrase)
+	data, err := service.search.GetThumbnail(ctx, ticket, p.Pid, p.Key)
 	if err != nil {
 		return nil, nft.MakeInternalServerError(err)
 	}
 	res.PreviewThumbnail = data
 
-	ddAndFpData, err := service.search.GetDDAndFP(ctx, ticket, p.UserPastelID, p.UserPassphrase)
+	ddAndFpData, err := service.search.GetDDAndFP(ctx, ticket, p.Pid, p.Key)
 	if err != nil {
 		return nil, nft.MakeInternalServerError(err)
 	}

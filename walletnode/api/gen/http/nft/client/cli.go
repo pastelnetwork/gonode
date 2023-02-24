@@ -531,25 +531,8 @@ func BuildNftSearchPayload(nftNftSearchArtist string, nftNftSearchLimit string, 
 
 // BuildNftGetPayload builds the payload for the nft nftGet endpoint from CLI
 // flags.
-func BuildNftGetPayload(nftNftGetBody string, nftNftGetTxid string) (*nft.NftGetPayload, error) {
+func BuildNftGetPayload(nftNftGetTxid string, nftNftGetPid string, nftNftGetKey string) (*nft.NftGetPayload, error) {
 	var err error
-	var body NftGetRequestBody
-	{
-		err = json.Unmarshal([]byte(nftNftGetBody), &body)
-		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"user_passphrase\": \"qwerasdf1234\",\n      \"user_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
-		}
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.user_pastelid", body.UserPastelID, "^[a-zA-Z0-9]+$"))
-		if utf8.RuneCountInString(body.UserPastelID) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", body.UserPastelID, utf8.RuneCountInString(body.UserPastelID), 86, true))
-		}
-		if utf8.RuneCountInString(body.UserPastelID) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", body.UserPastelID, utf8.RuneCountInString(body.UserPastelID), 86, false))
-		}
-		if err != nil {
-			return nil, err
-		}
-	}
 	var txid string
 	{
 		txid = nftNftGetTxid
@@ -563,11 +546,28 @@ func BuildNftGetPayload(nftNftGetBody string, nftNftGetTxid string) (*nft.NftGet
 			return nil, err
 		}
 	}
-	v := &nft.NftGetPayload{
-		UserPastelID:   body.UserPastelID,
-		UserPassphrase: body.UserPassphrase,
+	var pid string
+	{
+		pid = nftNftGetPid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
+	var key string
+	{
+		key = nftNftGetKey
+	}
+	v := &nft.NftGetPayload{}
 	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
 
 	return v, nil
 }
