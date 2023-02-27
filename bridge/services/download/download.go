@@ -51,15 +51,21 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.SNCl
 func (s Service) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
-	group.Go(func() error {
-		return s.runThumbnailHelper(ctx)
-	})
+	for {
+		group.Go(func() error {
+			return s.runThumbnailHelper(ctx)
+		})
 
-	group.Go(func() error {
-		return s.runDDFpHandler(ctx)
-	})
+		group.Go(func() error {
+			return s.runDDFpHandler(ctx)
+		})
 
-	return group.Wait()
+		if err := group.Wait(); err != nil {
+			log.WithContext(ctx).WithError(err).Error("run download service failed")
+		}
+
+		time.Sleep(30 * time.Second)
+	}
 }
 
 func (s *Service) runThumbnailHelper(ctx context.Context) error {
