@@ -43,7 +43,7 @@ func BuildUploadImagePayload(senseUploadImageBody string) (*sense.UploadImagePay
 
 // BuildStartProcessingPayload builds the payload for the sense startProcessing
 // endpoint from CLI flags.
-func BuildStartProcessingPayload(senseStartProcessingBody string, senseStartProcessingImageID string, senseStartProcessingAppPastelidPassphrase string) (*sense.StartProcessingPayload, error) {
+func BuildStartProcessingPayload(senseStartProcessingBody string, senseStartProcessingImageID string, senseStartProcessingKey string) (*sense.StartProcessingPayload, error) {
 	var err error
 	var body StartProcessingRequestBody
 	{
@@ -81,16 +81,16 @@ func BuildStartProcessingPayload(senseStartProcessingBody string, senseStartProc
 			return nil, err
 		}
 	}
-	var appPastelidPassphrase string
+	var key string
 	{
-		appPastelidPassphrase = senseStartProcessingAppPastelidPassphrase
+		key = senseStartProcessingKey
 	}
 	v := &sense.StartProcessingPayload{
 		BurnTxid:    body.BurnTxid,
 		AppPastelID: body.AppPastelID,
 	}
 	v.ImageID = imageID
-	v.AppPastelidPassphrase = appPastelidPassphrase
+	v.Key = key
 
 	return v, nil
 }

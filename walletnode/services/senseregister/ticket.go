@@ -10,6 +10,6 @@ func FromStartProcessingPayload(payload *sense.StartProcessingPayload) *common.A
 	return &common.ActionRegistrationRequest{
 		BurnTxID:              payload.BurnTxid,
 		AppPastelID:           payload.AppPastelID,
-		AppPastelIDPassphrase: payload.AppPastelidPassphrase,
+		AppPastelIDPassphrase: payload.Key,
 	}
 }

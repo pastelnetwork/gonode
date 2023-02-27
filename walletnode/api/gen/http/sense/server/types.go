@@ -478,13 +478,13 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *sense.UploadImagePaylo
 
 // NewStartProcessingPayload builds a sense service startProcessing endpoint
 // payload.
-func NewStartProcessingPayload(body *StartProcessingRequestBody, imageID string, appPastelidPassphrase string) *sense.StartProcessingPayload {
+func NewStartProcessingPayload(body *StartProcessingRequestBody, imageID string, key string) *sense.StartProcessingPayload {
 	v := &sense.StartProcessingPayload{
 		BurnTxid:    *body.BurnTxid,
 		AppPastelID: *body.AppPastelID,
 	}
 	v.ImageID = imageID
-	v.AppPastelidPassphrase = appPastelidPassphrase
+	v.Key = key
 
 	return v
 }

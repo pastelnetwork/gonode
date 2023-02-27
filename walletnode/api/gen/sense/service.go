@@ -117,8 +117,8 @@ type StartProcessingPayload struct {
 	BurnTxid string
 	// App PastelID
 	AppPastelID string
-	// Passphrase of the App PastelID
-	AppPastelidPassphrase string
+	// Passphrase of the owner's PastelID
+	Key string
 }
 
 // StartProcessingResult is the result type of the sense service

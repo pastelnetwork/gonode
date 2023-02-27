@@ -139,8 +139,8 @@ func DecodeStartProcessingRequest(mux goahttp.Muxer, decoder func(*http.Request)
 		}
 
 		var (
-			fileID                string
-			appPastelidPassphrase string
+			fileID string
+			key    string
 
 			params = mux.Vars(r)
 		)
@@ -151,14 +151,19 @@ func DecodeStartProcessingRequest(mux goahttp.Muxer, decoder func(*http.Request)
 		if utf8.RuneCountInString(fileID) > 8 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("fileID", fileID, utf8.RuneCountInString(fileID), 8, false))
 		}
-		appPastelidPassphrase = r.Header.Get("app_pastelid_passphrase")
-		if appPastelidPassphrase == "" {
-			err = goa.MergeErrors(err, goa.MissingFieldError("app_pastelid_passphrase", "header"))
+		key = r.Header.Get("Authorization")
+		if key == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "header"))
 		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewStartProcessingPayload(&body, fileID, appPastelidPassphrase)
+		payload := NewStartProcessingPayload(&body, fileID, key)
+		if strings.Contains(payload.Key, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Key, " ", 2)[1]
+			payload.Key = cred
+		}
 
 		return payload, nil
 	}

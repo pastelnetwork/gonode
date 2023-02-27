@@ -117,10 +117,10 @@ type StartProcessingPayload struct {
 	BurnTxid string
 	// App PastelID
 	AppPastelID string
-	// Passphrase of the App PastelID
-	AppPastelidPassphrase string
 	// To make it publicly accessible
 	MakePubliclyAccessible bool
+	// Passphrase of the owner's PastelID
+	Key string
 }
 
 // StartProcessingResult is the result type of the cascade service

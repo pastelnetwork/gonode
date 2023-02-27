@@ -177,8 +177,8 @@ func EncodeStartProcessingRequest(encoder func(*http.Request) goahttp.Encoder) f
 			return goahttp.ErrInvalidType("cascade", "startProcessing", "*cascade.StartProcessingPayload", v)
 		}
 		{
-			head := p.AppPastelidPassphrase
-			req.Header.Set("app_pastelid_passphrase", head)
+			head := p.Key
+			req.Header.Set("Authorization", head)
 		}
 		body := NewStartProcessingRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {

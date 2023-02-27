@@ -481,7 +481,7 @@ func NewUploadAssetPayload(body *UploadAssetRequestBody) *cascade.UploadAssetPay
 
 // NewStartProcessingPayload builds a cascade service startProcessing endpoint
 // payload.
-func NewStartProcessingPayload(body *StartProcessingRequestBody, fileID string, appPastelidPassphrase string) *cascade.StartProcessingPayload {
+func NewStartProcessingPayload(body *StartProcessingRequestBody, fileID string, key string) *cascade.StartProcessingPayload {
 	v := &cascade.StartProcessingPayload{
 		BurnTxid:    *body.BurnTxid,
 		AppPastelID: *body.AppPastelID,
@@ -493,7 +493,7 @@ func NewStartProcessingPayload(body *StartProcessingRequestBody, fileID string, 
 		v.MakePubliclyAccessible = false
 	}
 	v.FileID = fileID
-	v.AppPastelidPassphrase = appPastelidPassphrase
+	v.Key = key
 
 	return v
 }

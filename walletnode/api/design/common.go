@@ -147,13 +147,12 @@ var StartProcessingPayload = Type("StartProcessingPayload", func() {
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
-	Attribute("app_pastelid_passphrase", String, func() {
-		Meta("struct:field:name", "AppPastelidPassphrase")
-		Description("Passphrase of the App PastelID")
-		Example("qwerasdf1234")
+	APIKey("api_key", "key", String, func() {
+		Description("Passphrase of the owner's PastelID")
+		Example("Basic abcdef12345")
 	})
 
-	Required("image_id", "burn_txid", "app_pastelid", "app_pastelid_passphrase")
+	Required("image_id", "burn_txid", "app_pastelid", "key")
 })
 
 // StartProcessingResult - result of starting processing
