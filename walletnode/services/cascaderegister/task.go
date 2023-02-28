@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -34,6 +35,7 @@ type CascadeRegistrationTask struct {
 	dataHash                []byte
 	registrationFee         int64
 	originalFileSizeInBytes int
+	fileType                string
 
 	// ticket
 	creatorSignature []byte
@@ -106,6 +108,9 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
+
+	//Detect the file type
+	task.fileType = mimetype.Detect(nftBytes).String()
 
 	if task.dataHash, err = utils.Sha3256hash(nftBytes); err != nil {
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -330,12 +335,14 @@ func (task *CascadeRegistrationTask) createCascadeTicket(_ context.Context) erro
 		BlockHash:  task.creatorBlockHash,
 		ActionType: pastel.ActionTypeCascade,
 		APITicketData: pastel.APICascadeTicket{
-			FileName: task.Request.FileName,
-			DataHash: task.dataHash,
-			RQIc:     task.RqHandler.RQIDsIc,
-			RQMax:    task.service.config.RQIDsMax,
-			RQIDs:    task.RqHandler.RQIDs,
-			RQOti:    task.RqHandler.RQEncodeParams.Oti,
+			FileName:                task.Request.FileName,
+			DataHash:                task.dataHash,
+			RQIc:                    task.RqHandler.RQIDsIc,
+			RQMax:                   task.service.config.RQIDsMax,
+			RQIDs:                   task.RqHandler.RQIDs,
+			RQOti:                   task.RqHandler.RQEncodeParams.Oti,
+			OriginalFileSizeInBytes: task.originalFileSizeInBytes,
+			FileType:                task.fileType,
 		},
 	}
 
