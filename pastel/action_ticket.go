@@ -104,12 +104,14 @@ type APISenseTicket struct {
 
 // APICascadeTicket represents pastel API Cascade ticket.
 type APICascadeTicket struct {
-	DataHash []byte   `json:"data_hash"`
-	FileName string   `json:"file_name"`
-	RQIc     uint32   `json:"rq_ic"`
-	RQMax    uint32   `json:"rq_max"`
-	RQIDs    []string `json:"rq_ids"`
-	RQOti    []byte   `json:"rq_oti"`
+	DataHash                []byte   `json:"data_hash"`
+	FileName                string   `json:"file_name"`
+	RQIc                    uint32   `json:"rq_ic"`
+	RQMax                   uint32   `json:"rq_max"`
+	RQIDs                   []string `json:"rq_ids"`
+	RQOti                   []byte   `json:"rq_oti"`
+	OriginalFileSizeInBytes int      `json:"original_file_size_in_bytes"`
+	FileType                string   `json:"file_type"`
 }
 
 // EncodeActionTicket encodes  ActionTicket into byte array
