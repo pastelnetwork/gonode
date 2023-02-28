@@ -86,6 +86,9 @@ type AppTicket struct {
 	RQMax uint32   `json:"rq_max"`
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
+
+	OriginalFileSizeInBytes int    `json:"original_file_size_in_bytes"`
+	FileType                string `json:"file_type"`
 }
 
 // GetRegisterNFTFeeRequest represents a request to get registration fee

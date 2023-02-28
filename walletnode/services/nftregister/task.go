@@ -3,6 +3,7 @@ package nftregister
 import (
 	"context"
 	"fmt"
+	"github.com/gabriel-vasile/mimetype"
 	"os"
 	"strconv"
 	"sync"
@@ -46,7 +47,8 @@ type NftRegistrationTask struct {
 	creationTimestamp       string
 	dataHash                []byte
 	registrationFee         int64
-	OriginalFileSizeInBytes int
+	originalFileSizeInBytes int
+	fileType                string
 
 	// ticket
 	creatorSignature      []byte
@@ -129,7 +131,9 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
-	task.OriginalFileSizeInBytes = len(nftBytes)
+	task.originalFileSizeInBytes = len(nftBytes)
+	//Detect the file type
+	task.fileType = mimetype.Detect(nftBytes).String()
 
 	// probe ORIGINAL image for average rareness, nsfw and seen score
 	if err := task.probeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
@@ -496,6 +500,8 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 			RQMax:                      task.service.config.RQIDsMax,
 			RQIDs:                      task.RqHandler.RQIDs,
 			RQOti:                      task.RqHandler.RQEncodeParams.Oti,
+			OriginalFileSizeInBytes:    task.originalFileSizeInBytes,
+			FileType:                   task.fileType,
 		},
 	}
 
