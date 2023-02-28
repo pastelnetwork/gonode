@@ -343,6 +343,7 @@ func (task *CascadeRegistrationTask) createCascadeTicket(_ context.Context) erro
 			RQOti:                   task.RqHandler.RQEncodeParams.Oti,
 			OriginalFileSizeInBytes: task.originalFileSizeInBytes,
 			FileType:                task.fileType,
+			MakePubliclyAccessible:  task.Request.MakePubliclyAccessible,
 		},
 	}
 

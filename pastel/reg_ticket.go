@@ -89,6 +89,7 @@ type AppTicket struct {
 
 	OriginalFileSizeInBytes int    `json:"original_file_size_in_bytes"`
 	FileType                string `json:"file_type"`
+	MakePubliclyAccessible  bool   `json:"make_publicly_accessible"`
 }
 
 // GetRegisterNFTFeeRequest represents a request to get registration fee

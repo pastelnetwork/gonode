@@ -503,6 +503,7 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 			RQOti:                      task.RqHandler.RQEncodeParams.Oti,
 			OriginalFileSizeInBytes:    task.originalFileSizeInBytes,
 			FileType:                   task.fileType,
+			MakePubliclyAccessible:     task.Request.MakePubliclyAccessible,
 		},
 	}
 
