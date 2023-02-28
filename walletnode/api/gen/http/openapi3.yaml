@@ -1334,16 +1334,6 @@ paths:
                     minLength: 8
                     maxLength: 8
                   example: VK7mpAqZ
-                - name: app_pastelid_passphrase
-                  in: header
-                  description: Passphrase of the App PastelID
-                  allowEmptyValue: true
-                  required: true
-                  schema:
-                    type: string
-                    description: Passphrase of the App PastelID
-                    example: qwerasdf1234
-                  example: qwerasdf1234
             requestBody:
                 required: true
                 content:
@@ -1375,6 +1365,8 @@ paths:
                         application/vnd.goa.error:
                             schema:
                                 $ref: '#/components/schemas/Error'
+            security:
+                - api_key_header_Authorization: []
     /openapi/cascade/start/{taskId}/state:
         get:
             tags:
@@ -1667,16 +1659,6 @@ paths:
                     minLength: 8
                     maxLength: 8
                   example: VK7mpAqZ
-                - name: app_pastelid_passphrase
-                  in: header
-                  description: Passphrase of the App PastelID
-                  allowEmptyValue: true
-                  required: true
-                  schema:
-                    type: string
-                    description: Passphrase of the App PastelID
-                    example: qwerasdf1234
-                  example: qwerasdf1234
             requestBody:
                 required: true
                 content:
@@ -1707,6 +1689,8 @@ paths:
                         application/vnd.goa.error:
                             schema:
                                 $ref: '#/components/schemas/Error'
+            security:
+                - api_key_header_Authorization: []
     /openapi/sense/start/{taskId}/state:
         get:
             tags:

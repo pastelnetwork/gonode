@@ -47,6 +47,8 @@ var _ = Service("sense", func() {
 		Description("Start processing the image")
 		Meta("swagger:summary", "Starts processing the image")
 
+		Security(APIKeyAuth)
+
 		Payload(func() {
 			Extend(StartProcessingPayload)
 		})
@@ -57,7 +59,6 @@ var _ = Service("sense", func() {
 			Params(func() {
 				Param("image_id", String)
 			})
-			Header("app_pastelid_passphrase")
 
 			// Define error HTTP statuses.
 			Response("BadRequest", StatusBadRequest)

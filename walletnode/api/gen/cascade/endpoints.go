@@ -39,7 +39,7 @@ func NewEndpoints(s Service) *Endpoints {
 	a := s.(Auther)
 	return &Endpoints{
 		UploadAsset:       NewUploadAssetEndpoint(s),
-		StartProcessing:   NewStartProcessingEndpoint(s),
+		StartProcessing:   NewStartProcessingEndpoint(s, a.APIKeyAuth),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
 		GetTaskHistory:    NewGetTaskHistoryEndpoint(s),
 		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
@@ -71,9 +71,19 @@ func NewUploadAssetEndpoint(s Service) goa.Endpoint {
 
 // NewStartProcessingEndpoint returns an endpoint function that calls the
 // method "startProcessing" of service "cascade".
-func NewStartProcessingEndpoint(s Service) goa.Endpoint {
+func NewStartProcessingEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*StartProcessingPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
 		res, err := s.StartProcessing(ctx, p)
 		if err != nil {
 			return nil, err

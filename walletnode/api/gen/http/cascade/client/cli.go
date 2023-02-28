@@ -43,7 +43,7 @@ func BuildUploadAssetPayload(cascadeUploadAssetBody string) (*cascade.UploadAsse
 
 // BuildStartProcessingPayload builds the payload for the cascade
 // startProcessing endpoint from CLI flags.
-func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStartProcessingFileID string, cascadeStartProcessingAppPastelidPassphrase string) (*cascade.StartProcessingPayload, error) {
+func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStartProcessingFileID string, cascadeStartProcessingKey string) (*cascade.StartProcessingPayload, error) {
 	var err error
 	var body StartProcessingRequestBody
 	{
@@ -81,9 +81,9 @@ func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStart
 			return nil, err
 		}
 	}
-	var appPastelidPassphrase string
+	var key string
 	{
-		appPastelidPassphrase = cascadeStartProcessingAppPastelidPassphrase
+		key = cascadeStartProcessingKey
 	}
 	v := &cascade.StartProcessingPayload{
 		BurnTxid:               body.BurnTxid,
@@ -97,7 +97,7 @@ func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStart
 		}
 	}
 	v.FileID = fileID
-	v.AppPastelidPassphrase = appPastelidPassphrase
+	v.Key = key
 
 	return v, nil
 }

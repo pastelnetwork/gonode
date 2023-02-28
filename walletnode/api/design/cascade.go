@@ -47,6 +47,8 @@ var _ = Service("cascade", func() {
 		Description("Start processing the image")
 		Meta("swagger:summary", "Starts processing the image")
 
+		Security(APIKeyAuth)
+
 		Payload(func() {
 			Extend(StartCascadeProcessingPayload)
 		})
@@ -57,8 +59,6 @@ var _ = Service("cascade", func() {
 			Params(func() {
 				Param("file_id", String)
 			})
-			Header("app_pastelid_passphrase")
-
 			// Define error HTTP statuses.
 			Response("BadRequest", StatusBadRequest)
 			Response("InternalServerError", StatusInternalServerError)
@@ -184,11 +184,6 @@ var StartCascadeProcessingPayload = Type("StartCascadeProcessingPayload", func()
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
-	Attribute("app_pastelid_passphrase", String, func() {
-		Meta("struct:field:name", "AppPastelidPassphrase")
-		Description("Passphrase of the App PastelID")
-		Example("qwerasdf1234")
-	})
 	Attribute("make_publicly_accessible", Boolean, func() {
 		Meta("struct:field:name", "MakePubliclyAccessible")
 		Description("To make it publicly accessible")
@@ -196,6 +191,10 @@ var StartCascadeProcessingPayload = Type("StartCascadeProcessingPayload", func()
 		Default(false)
 
 	})
+	APIKey("api_key", "key", String, func() {
+		Description("Passphrase of the owner's PastelID")
+		Example("Basic abcdef12345")
+	})
 
-	Required("file_id", "burn_txid", "app_pastelid", "app_pastelid_passphrase")
+	Required("file_id", "burn_txid", "app_pastelid", "key")
 })

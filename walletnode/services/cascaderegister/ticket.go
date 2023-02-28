@@ -10,7 +10,7 @@ func FromStartProcessingPayload(payload *cascade.StartProcessingPayload) *common
 	return &common.ActionRegistrationRequest{
 		BurnTxID:               payload.BurnTxid,
 		AppPastelID:            payload.AppPastelID,
-		AppPastelIDPassphrase:  payload.AppPastelidPassphrase,
+		AppPastelIDPassphrase:  payload.Key,
 		MakePubliclyAccessible: payload.MakePubliclyAccessible,
 	}
 }
