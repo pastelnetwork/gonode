@@ -2,12 +2,13 @@ package selfhealing
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
-	fuzz "github.com/google/gofuzz"
-	"golang.org/x/crypto/sha3"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/common/b85"
+	fuzz "github.com/google/gofuzz"
+	"golang.org/x/crypto/sha3"
+
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -43,7 +44,7 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("faied to marshal, err: %s", err)
 	}
-	ticket.RegTicketData.NFTTicketData.AppTicket = b85.Encode(b)
+	ticket.RegTicketData.NFTTicketData.AppTicket = base64.StdEncoding.EncodeToString(b)
 
 	b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
 	if err != nil {

@@ -1,13 +1,14 @@
 package pastel
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"reflect"
 
 	"github.com/pastelnetwork/gonode/common/b85"
-
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Refer https://pastel.wiki/en/Architecture/Components/PastelOpenAPITicketStructures
@@ -122,7 +123,7 @@ func EncodeActionTicket(ticket *ActionTicket) ([]byte, error) {
 		return nil, errors.Errorf("marshal api ticket: %w", err)
 	}
 
-	appTicket := b85.Encode(appTicketBytes)
+	appTicket := base64.RawStdEncoding.EncodeToString(appTicketBytes)
 	ticket.APITicket = appTicket
 
 	b, err := json.Marshal(ticket)
@@ -141,9 +142,13 @@ func DecodeActionTicket(b []byte) (*ActionTicket, error) {
 		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
 	}
 
-	appDecodedBytes, err := b85.Decode(res.APITicket)
+	appDecodedBytes, err := base64.RawStdEncoding.DecodeString(res.APITicket)
 	if err != nil {
-		return nil, fmt.Errorf("b85 decode: %v", err)
+		log.Warnf("b64 decoding failed, trying to b85 decode - err: %v", err)
+		appDecodedBytes, err = b85.Decode(res.APITicket)
+		if err != nil {
+			return nil, fmt.Errorf("b85 decode: %v", err)
+		}
 	}
 
 	switch res.ActionType {

@@ -55,12 +55,12 @@ func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid stri
 	json.Unmarshal(regTicket.RegTicketData.NFTTicket, nftTicket)
 
 	//decode the appticketdata
-	appTicketData, err := b85.Decode(nftTicket.AppTicket)
+	appTicketData, err := base64.StdEncoding.DecodeString(regTicket.RegTicketData.NFTTicketData.AppTicket)
 	if err != nil {
-		log.Warnf("b85 decoding failed, trying to base64 decode - err: %v", err)
-		appTicketData, err = base64.StdEncoding.DecodeString(regTicket.RegTicketData.NFTTicketData.AppTicket)
+		log.Warnf("b64 decoding failed, trying to b85 decode - err: %v", err)
+		appTicketData, err = b85.Decode(nftTicket.AppTicket)
 		if err != nil {
-			return nil, fmt.Errorf("b64 decode: %v", err)
+			return nil, fmt.Errorf("b85 decode: %v", err)
 		}
 	}
 

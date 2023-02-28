@@ -3,6 +3,7 @@ package download
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 
-	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/utils"
 
@@ -72,7 +72,7 @@ func fakeRegiterTicket() pastel.RegTicket {
 
 	appTicketBytes, _ := json.Marshal(&appTicketData)
 
-	appTicket := b85.Encode(appTicketBytes)
+	appTicket := base64.RawStdEncoding.EncodeToString(appTicketBytes)
 
 	nftTicketData := pastel.NFTTicket{
 		Version:       1,

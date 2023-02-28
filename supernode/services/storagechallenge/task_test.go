@@ -2,13 +2,13 @@ package storagechallenge
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"testing"
 
 	fuzz "github.com/google/gofuzz"
-	"github.com/pastelnetwork/gonode/common/b85"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -62,7 +62,7 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 			if err != nil {
 				t.Fatalf("faied to marshal, err: %s", err)
 			}
-			ticket.RegTicketData.NFTTicketData.AppTicket = b85.Encode(b)
+			ticket.RegTicketData.NFTTicketData.AppTicket = base64.StdEncoding.EncodeToString(b)
 
 			b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
 			if err != nil {
@@ -177,7 +177,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 			if err != nil {
 				t.Fatalf("faied to marshal, err: %s", err)
 			}
-			ticket.RegTicketData.NFTTicketData.AppTicket = b85.Encode(b)
+			ticket.RegTicketData.NFTTicketData.AppTicket = base64.StdEncoding.EncodeToString(b)
 
 			b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
 			if err != nil {
@@ -353,7 +353,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 			if err != nil {
 				t.Fatalf("faied to marshal, err: %s", err)
 			}
-			ticket.RegTicketData.NFTTicketData.AppTicket = b85.Encode(b)
+			ticket.RegTicketData.NFTTicketData.AppTicket = base64.StdEncoding.EncodeToString(b)
 
 			b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
 			if err != nil {

@@ -121,7 +121,7 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 		return nil, errors.Errorf("marshal app ticket: %w", err)
 	}
 
-	appTicket := b85.Encode(appTicketBytes)
+	appTicket := base64.RawStdEncoding.EncodeToString(appTicketBytes)
 
 	// NFTTicket is Pastel Art Request
 	nftTicket := internalNFTTicket{
@@ -151,12 +151,12 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
 	}
 
-	appDecodedBytes, err := b85.Decode(res.AppTicket)
+	appDecodedBytes, err := base64.StdEncoding.DecodeString(res.AppTicket)
 	if err != nil {
-		log.Warnf("b85 decoding failed, trying to base64 decode - err: %v", err)
-		appDecodedBytes, err = base64.StdEncoding.DecodeString(res.AppTicket)
+		log.Warnf("b64 decoding failed, trying to b85 decode - err: %v", err)
+		appDecodedBytes, err = b85.Decode(res.AppTicket)
 		if err != nil {
-			return nil, fmt.Errorf("b64 decode: %v", err)
+			return nil, fmt.Errorf("b85 decode: %v", err)
 		}
 	}
 
