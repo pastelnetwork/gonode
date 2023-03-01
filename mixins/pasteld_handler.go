@@ -212,15 +212,13 @@ func (pt *PastelHandler) IsTicketPublic(ctx context.Context, txid, ttype string)
 		}
 		ticket.ActionTicketData.ActionTicketData = *actionTicket
 
-		if ttype == pastel.ActionTypeCascade {
-			cTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("could not get registered ticket")
-				return false
-			}
-
-			return cTicket.MakePubliclyAccessible
+		cTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("could not get registered ticket")
+			return false
 		}
+
+		return cTicket.MakePubliclyAccessible
 
 	default:
 		regTicket, err := pt.RegTicket(ctx, txid)

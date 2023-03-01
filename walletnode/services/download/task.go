@@ -57,7 +57,7 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 
 	// Sign current-timestamp with PastelID passed in request
 	timestamp := time.Now().Format(time.RFC3339)
-	signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, "ed448")
+	signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
 		return errors.Errorf("sign timestamp: %w", err)
