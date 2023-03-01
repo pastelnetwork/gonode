@@ -112,6 +112,7 @@ type APICascadeTicket struct {
 	RQOti                   []byte   `json:"rq_oti"`
 	OriginalFileSizeInBytes int      `json:"original_file_size_in_bytes"`
 	FileType                string   `json:"file_type"`
+	MakePubliclyAccessible  bool     `json:"make_publicly_accessible"`
 }
 
 // EncodeActionTicket encodes  ActionTicket into byte array
