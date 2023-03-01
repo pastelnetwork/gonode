@@ -221,7 +221,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnActivateActionTicket("txid", nil).
 				ListenOnGetActionFee(&pastel.GetActionFeesResult{CascadeFee: 10, SenseFee: 10}, nil)
 
-			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil)
+			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, nil)
 			service.config.WaitTxnValidInterval = 1
 
 			go service.Run(testCase.args.ctx)

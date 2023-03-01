@@ -14,7 +14,9 @@ import (
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
 
 const (
@@ -29,8 +31,9 @@ type SenseRegistrationTask struct {
 	MeshHandler         *common.MeshHandler
 	FingerprintsHandler *mixins.FingerprintsHandler
 
-	service *SenseRegistrationService
-	Request *common.ActionRegistrationRequest
+	service         *SenseRegistrationService
+	downloadService *download.NftDownloadingService
+	Request         *common.ActionRegistrationRequest
 
 	// data to create ticket
 	creatorBlockHeight int
@@ -165,6 +168,39 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	log.WithContext(ctx).Infof("Sense Reg Ticket registered. Sense Registration Ticket txid: %s", task.regSenseTxid)
 	log.WithContext(ctx).Debug("Closing SNs connections")
+
+	now := time.Now()
+	if task.downloadService != nil {
+		if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
+			log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).Error("Error validating sense ticket data")
+
+			log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).Info("initiating the new sense registration request")
+			request := &common.ActionRegistrationRequest{
+				AppPastelID:            task.Request.AppPastelID,
+				AppPastelIDPassphrase:  task.Request.AppPastelIDPassphrase,
+				BurnTxID:               task.Request.BurnTxID,
+				MakePubliclyAccessible: task.Request.MakePubliclyAccessible,
+				Image:                  task.Request.Image,
+				FileName:               task.Request.FileName,
+			}
+			newTask := NewSenseRegisterTask(task.service, request)
+			task.service.Worker.AddTask(newTask)
+
+			log.WithContext(ctx).WithField("task_id", newTask.ID()).Info("new sense registration task has been initiated")
+
+			task.UpdateStatus(common.StatusErrorDownloadFailed)
+			task.UpdateStatus(&common.EphemeralStatus{
+				StatusTitle:   "Error validating cascade ticket data",
+				StatusString:  task.regSenseTxid,
+				IsFailureBool: false,
+				IsFinalBool:   false,
+			})
+
+			task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+
+			return nil
+		}
+	}
 
 	// don't need SNs anymore
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
@@ -417,6 +453,36 @@ func (task *SenseRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 	return task.skipPrimaryNodeTxidVerify || os.Getenv("INTEGRATION_TEST_ENV") == "true"
 }
 
+// Download downloads the data from p2p for data validation before ticket activation
+func (task *SenseRegistrationTask) Download(ctx context.Context) error {
+	// add the task to the worker queue, and worker will process the task in the background
+	log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).Info("Downloading has been started")
+	taskID := task.downloadService.AddTask(&nft.DownloadPayload{Txid: task.regSenseTxid, Pid: task.Request.AppPastelID, Key: task.Request.AppPastelIDPassphrase}, pastel.ActionTypeSense)
+	downloadTask := task.downloadService.GetTask(taskID)
+	defer downloadTask.Cancel()
+
+	sub := downloadTask.SubscribeStatus()
+	log.WithContext(ctx).WithField("reg_tx_id", task.regSenseTxid).Info("Subscribed to status channel")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case status := <-sub():
+			if status.IsFailure() {
+				log.WithContext(ctx).WithField("reg_tx_id", task.regSenseTxid).WithError(task.Error())
+
+				return errors.New("Download failed")
+			}
+
+			if status.IsFinal() {
+				log.WithContext(ctx).WithField("reg_tx_id", task.regSenseTxid).Info("task has been downloaded successfully")
+				return nil
+			}
+		}
+	}
+}
+
 // NewSenseRegisterTask returns a new SenseRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
 func NewSenseRegisterTask(service *SenseRegistrationService, request *common.ActionRegistrationRequest) *SenseRegistrationTask {
@@ -438,6 +504,7 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 
 	return &SenseRegistrationTask{
 		WalletNodeTask:      task,
+		downloadService:     service.downloadHandler,
 		service:             service,
 		Request:             request,
 		MeshHandler:         common.NewMeshHandler(meshHandlerOpts),

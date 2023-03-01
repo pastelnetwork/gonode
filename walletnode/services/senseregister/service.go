@@ -20,6 +20,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
 
 const (
@@ -32,9 +33,10 @@ type SenseRegistrationService struct {
 	*task.Worker
 	config *Config
 
-	ImageHandler  *mixins.FilesHandler
-	pastelHandler *mixins.PastelHandler
-	nodeClient    node.ClientInterface
+	downloadHandler *download.NftDownloadingService
+	ImageHandler    *mixins.FilesHandler
+	pastelHandler   *mixins.PastelHandler
+	nodeClient      node.ClientInterface
 }
 
 // Run starts worker.
@@ -108,20 +110,23 @@ func (service *SenseRegistrationService) CalculateFee(ctx context.Context, fileI
 }
 
 // NewService returns a new Service instance
-// 	NB: Because NewNftApiHandler calls AddTask, a SenseRegisterTask will actually
+//
+//	NB: Because NewNftApiHandler calls AddTask, a SenseRegisterTask will actually
 //		be instantiated instead of a generic Task.
 func NewService(
 	config *Config,
 	pastelClient pastel.Client,
 	nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface,
+	downloadService *download.NftDownloadingService,
 	db storage.KeyValue,
 ) *SenseRegistrationService {
 	return &SenseRegistrationService{
-		Worker:        task.NewWorker(),
-		config:        config,
-		nodeClient:    nodeClient,
-		ImageHandler:  mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
-		pastelHandler: mixins.NewPastelHandler(pastelClient),
+		Worker:          task.NewWorker(),
+		config:          config,
+		nodeClient:      nodeClient,
+		downloadHandler: downloadService,
+		ImageHandler:    mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
+		pastelHandler:   mixins.NewPastelHandler(pastelClient),
 	}
 }
