@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
@@ -15,6 +17,35 @@ import (
 )
 
 func TestTaskRun(t *testing.T) {
+
+	regTicketA := pastel.RegTicket{
+		TXID: "txid",
+		RegTicketData: pastel.RegTicketData{
+			NFTTicketData: pastel.NFTTicket{
+				AppTicketData: pastel.AppTicket{
+					CreatorName:            "Alan Majchrowicz",
+					MakePubliclyAccessible: true,
+				},
+			},
+		},
+	}
+
+	regTicketB := pastel.RegTicket{
+		TXID: "txid",
+		RegTicketData: pastel.RegTicketData{
+			NFTTicketData: pastel.NFTTicket{
+				AppTicketData: pastel.AppTicket{
+					CreatorName:            "Andy",
+					NFTTitle:               "alantic",
+					MakePubliclyAccessible: false,
+				},
+			},
+		},
+	}
+
+	assignBase64strs(t, &regTicketA)
+	assignBase64strs(t, &regTicketB)
+
 	t.Parallel()
 	type fields struct {
 		Request *NftDownloadingRequest
@@ -32,6 +63,7 @@ func TestTaskRun(t *testing.T) {
 		returnErr     error
 		ownerErr      error
 		downloadErr   error
+		wantRegTicket pastel.RegTicket
 	}
 
 	tests := map[string]struct {
@@ -49,11 +81,12 @@ func TestTaskRun(t *testing.T) {
 				},
 			},
 			args: args{
-				ownerErr:    nil,
-				downloadErr: nil,
-				taskID:      "1",
-				ctx:         context.Background(),
-				networkFee:  0.4,
+				wantRegTicket: regTicketA,
+				ownerErr:      nil,
+				downloadErr:   nil,
+				taskID:        "1",
+				ctx:           context.Background(),
+				networkFee:    0.4,
 				masterNodes: pastel.MasterNodes{
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
@@ -83,11 +116,12 @@ func TestTaskRun(t *testing.T) {
 				},
 			},
 			args: args{
-				downloadErr: nil,
-				ownerErr:    nil,
-				taskID:      "1",
-				ctx:         context.Background(),
-				networkFee:  0.4,
+				downloadErr:   nil,
+				ownerErr:      nil,
+				taskID:        "1",
+				ctx:           context.Background(),
+				wantRegTicket: regTicketB,
+				networkFee:    0.4,
 				masterNodes: pastel.MasterNodes{
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
@@ -110,14 +144,48 @@ func TestTaskRun(t *testing.T) {
 				},
 			},
 			args: args{
-				downloadErr: nil,
-				taskID:      "1",
-				ctx:         context.Background(),
-				networkFee:  0.4,
+				downloadErr:   nil,
+				taskID:        "1",
+				ctx:           context.Background(),
+				wantRegTicket: regTicketB,
+				networkFee:    0.4,
 				masterNodes: pastel.MasterNodes{
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
+				},
+				primarySessID: "sesid1",
+				pastelIDS:     []string{"2", "3"},
+				fingerPrint:   []byte("match"),
+				signature:     []byte("sign"),
+				returnErr:     nil,
+				ownerErr:      errors.New("test"),
+			},
+		},
+		"non-owner-but-skip-verify-check": {
+			wantErr: nil,
+			fields: fields{
+				Request: &NftDownloadingRequest{
+					Txid:               "txid",
+					PastelID:           "abc",
+					PastelIDPassphrase: "passphrase",
+				},
+			},
+			args: args{
+				downloadErr:   nil,
+				taskID:        "1",
+				ctx:           context.Background(),
+				wantRegTicket: regTicketA,
+				networkFee:    0.4,
+				masterNodes: pastel.MasterNodes{
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4448", ExtKey: "4"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4449", ExtKey: "5"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4450", ExtKey: "6"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4451", ExtKey: "7"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4452", ExtKey: "8"},
 				},
 				primarySessID: "sesid1",
 				pastelIDS:     []string{"2", "3"},
@@ -150,7 +218,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnTicketOwnership("txid", testCase.args.ownerErr).
 				ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr).
 				ListenOnSign([]byte(testCase.args.signature), testCase.args.returnErr).
-				ListenOnFindTicketByID(&pastel.IDTicket{IDTicketProp: pastel.IDTicketProp{}}, nil)
+				ListenOnFindTicketByID(&pastel.IDTicket{IDTicketProp: pastel.IDTicketProp{}}, nil).On("RegTicket", mock.Anything, mock.Anything).Return(testCase.args.wantRegTicket, nil)
 
 			service := NewNftDownloadService(NewConfig(), pastelClientMock, nodeClient)
 
@@ -261,4 +329,11 @@ func TestMatchFiles(t *testing.T) {
 			}
 		})
 	}
+}
+
+func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
+	artTicketBytes, err := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
+	assert.Nil(t, err)
+	ticket.RegTicketData.NFTTicket = artTicketBytes
+	ticket.RegTicketData.NFTTicketData = pastel.NFTTicket{}
 }

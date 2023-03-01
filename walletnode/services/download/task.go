@@ -40,21 +40,24 @@ func (task *NftDownloadingTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
-func (task *NftDownloadingTask) run(ctx context.Context) error {
+func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	//validate download requested - ensure that the pastelID belongs either to the
 	//  creator of the non-sold NFT or the latest buyer of the NFT
-	ttxid, err := task.service.pastelHandler.PastelClient.TicketOwnership(ctx, task.Request.Txid, task.Request.PastelID, task.Request.PastelIDPassphrase)
-	if err != nil && task.Request.Type != pastel.ActionTypeSense {
-		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("pastelid", task.Request.PastelID).Error("Could not get ticket ownership")
-		return errors.Errorf("get ticket ownership: %w", err)
+	var ttxid string
+	if !task.service.pastelHandler.IsTicketPublic(ctx, task.Request.Txid, task.Request.Type) {
+		ttxid, err = task.service.pastelHandler.PastelClient.TicketOwnership(ctx, task.Request.Txid, task.Request.PastelID, task.Request.PastelIDPassphrase)
+		if err != nil && task.Request.Type != pastel.ActionTypeSense {
+			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("pastelid", task.Request.PastelID).Error("Could not get ticket ownership")
+			return errors.Errorf("get ticket ownership: %w", err)
+		}
 	}
 
 	// Sign current-timestamp with PastelID passed in request
 	timestamp := time.Now().Format(time.RFC3339)
-	signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, "ed448")
+	signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
 		return errors.Errorf("sign timestamp: %w", err)

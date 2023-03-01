@@ -193,6 +193,46 @@ func (pt *PastelHandler) RegTicket(ctx context.Context, RegTXID string) (*pastel
 	return &regTicket, nil
 }
 
+func (pt *PastelHandler) IsTicketPublic(ctx context.Context, txid, ttype string) bool {
+
+	switch ttype {
+	case pastel.ActionTypeSense:
+		return false
+	case pastel.ActionTypeCascade:
+		ticket, err := pt.PastelClient.ActionRegTicket(ctx, txid)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("could not get action registered ticket")
+			return false
+		}
+
+		actionTicket, err := pastel.DecodeActionTicket([]byte(ticket.ActionTicketData.ActionTicket))
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("cloud not decode action ticket: %w", err)
+			return false
+		}
+		ticket.ActionTicketData.ActionTicketData = *actionTicket
+
+		cTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("could not get registered ticket")
+			return false
+		}
+
+		return cTicket.MakePubliclyAccessible
+
+	default:
+		regTicket, err := pt.RegTicket(ctx, txid)
+		if err == nil {
+			return regTicket.RegTicketData.NFTTicketData.AppTicketData.MakePubliclyAccessible
+		} else {
+			log.WithContext(ctx).WithError(err).Error("could not get registered ticket")
+
+		}
+	}
+
+	return false
+}
+
 func (pt *PastelHandler) GetBurnAddress() string {
 	return pt.PastelClient.BurnAddress()
 }
