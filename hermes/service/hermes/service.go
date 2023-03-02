@@ -113,9 +113,9 @@ func (s *service) run(ctx context.Context) error {
 		return s.CleanupInactiveTickets(gctx)
 	})*/
 
-	group.Go(func() error {
+	/*group.Go(func() error {
 		return s.scorer.Start(gctx)
-	})
+	})*/
 
 	group.Go(func() error {
 		return s.restartPastelID(gctx)
@@ -150,9 +150,9 @@ func (s *service) run(ctx context.Context) error {
 				return s.CleanupInactiveTickets(gctx)
 			})*/
 
-			group.Go(func() error {
+			/*group.Go(func() error {
 				return s.scorer.Start(gctx)
-			})
+			})*/
 
 			if err := group.Wait(); err != nil {
 				log.WithContext(gctx).WithError(err).Errorf("run task failed")

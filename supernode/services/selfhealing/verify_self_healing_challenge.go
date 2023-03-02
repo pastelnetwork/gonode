@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 
 	"github.com/pastelnetwork/gonode/common/log"
@@ -46,15 +47,15 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 		if challengeMessage.IsSenseTicket {
 			senseTicket, err = actionTicket.ActionTicketData.ActionTicketData.APISenseTicket()
 			if err != nil {
-				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
-					Warnf("Could not get sense ticket for action ticket data")
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket.TXID).
+					Warnf("Could not get sense ticket for action ticket data verify self healing")
 				return nil, err
 			}
 		} else {
 			cascadeTicket, err = actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
 			if err != nil {
-				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
-					Warnf("Could not get cascade ticket for action ticket data")
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket.TXID).
+					Warnf("Could not get cascade ticket for action ticket data verify self healing")
 				return nil, err
 			}
 		}
