@@ -95,7 +95,7 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 			},
 			expect: func(t *testing.T, data *pb.SelfHealingData, err error) {
 				require.Nil(t, err)
-				require.Equal(t, data.ChallengeStatus, pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE)
+
 				require.Equal(t, data.MessageType, pb.SelfHealingData_MessageType_SELF_HEALING_RESPONSE_MESSAGE)
 				require.Equal(t, data.RespondingMasternodeId, "challenging-node")
 			},

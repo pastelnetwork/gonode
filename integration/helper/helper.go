@@ -250,7 +250,7 @@ func DoNFTSearchWSReq(addr string, path string, expectedKey []string, expectedVa
 				}
 
 				val, ok := resp[key]
-				log.Printf("ws key: %s - expected response: %s - got response: %s\n",
+				fmt.Printf("ws key: %s - expected response: %s - got response: %s\n",
 					key, expectedValue[i], val)
 				if ok {
 					if val == expectedValue[i] {
@@ -265,7 +265,7 @@ func DoNFTSearchWSReq(addr string, path string, expectedKey []string, expectedVa
 			if count == len(expectedKey) {
 				done <- true
 			} else {
-				log.Printf("expected matches: %d - got matches: %d\n", len(expectedKey), count)
+				fmt.Printf("expected matches: %d - got matches: %d\n", len(expectedKey), count)
 				done <- false
 			}
 		}

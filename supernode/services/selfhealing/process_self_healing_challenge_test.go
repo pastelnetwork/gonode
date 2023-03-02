@@ -3,7 +3,6 @@ package selfhealing
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"strconv"
 	"testing"
@@ -48,17 +47,9 @@ func TestProcessSelfHealingTest(t *testing.T) {
 	ticket.TXID = "test-tx-id"
 	ticket.RegTicketData.NFTTicketData.AppTicketData.DataHash = fileHash[:]
 	ticket.RegTicketData.NFTTicketData.AppTicketData.RQIDs = []string{"file-hash-to-challenge"}
-	b, err := json.Marshal(ticket.RegTicketData.NFTTicketData.AppTicketData)
-	if err != nil {
-		t.Fatalf("faied to marshal, err: %s", err)
-	}
-	ticket.RegTicketData.NFTTicketData.AppTicket = base64.StdEncoding.EncodeToString(b)
-
-	b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
-	if err != nil {
-		t.Fatalf("faied to marshal, err: %s", err)
-	}
-	ticket.RegTicketData.NFTTicket = b
+	nftTicket, err := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
+	require.Nil(t, err)
+	ticket.RegTicketData.NFTTicket = nftTicket
 	tickets := pastel.RegTickets{ticket}
 
 	rqIDsData, _ := fakeRQIDsData()
