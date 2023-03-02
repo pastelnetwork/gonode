@@ -2,9 +2,10 @@ package selfhealing
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/mixins"
 	"sync/atomic"
 	"time"
+
+	"github.com/pastelnetwork/gonode/mixins"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
@@ -157,8 +158,8 @@ func (service *SHService) MapSymbolFileKeysFromNFTAndActionTickets(ctx context.C
 
 		cascadeTicket, err := actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
 		if err != nil {
-			log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
-				Warnf("Could not get sense ticket for action ticket data")
+			log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket.TXID).
+				Warnf("Could not get cascade ticket for action ticket data self healing")
 			continue
 		}
 

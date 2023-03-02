@@ -255,8 +255,8 @@ func (task *SHTask) getTicketInfoFromFileHash(ctx context.Context, challengeFile
 		case pastel.ActionTypeCascade:
 			cascadeTicket, err := actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
 			if err != nil {
-				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
-					Warnf("Could not get cascade ticket for action ticket data")
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket.TXID).
+					Warnf("Could not get cascade ticket for action ticket data self-healing")
 				return nil, nil, nil, nil, err
 			}
 
@@ -264,8 +264,8 @@ func (task *SHTask) getTicketInfoFromFileHash(ctx context.Context, challengeFile
 		case pastel.ActionTypeSense:
 			senseTicket, err := actionTicket.ActionTicketData.ActionTicketData.APISenseTicket()
 			if err != nil {
-				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
-					Warnf("Could not get sense ticket for action ticket data")
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket.TXID).
+					Warnf("Could not get sense ticket for action ticket data self-healing")
 				return nil, nil, nil, nil, err
 			}
 

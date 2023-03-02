@@ -186,6 +186,7 @@ type restoreInfo struct {
 	rqOti      []byte
 	dataHash   []byte
 	ddAndFpIDs []string
+	isPublic   bool
 }
 
 func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) (info restoreInfo) {
@@ -219,6 +220,7 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) 
 			info.rqIDs = cTicket.RQIDs
 			info.rqOti = cTicket.RQOti
 			info.dataHash = cTicket.DataHash
+			info.isPublic = cTicket.MakePubliclyAccessible
 		} else {
 			sTicket, err := ticket.ActionTicketData.ActionTicketData.APISenseTicket()
 			if err != nil {
@@ -248,6 +250,7 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) 
 		info.rqOti = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQOti
 		info.dataHash = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.DataHash
 		info.ddAndFpIDs = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
+		info.isPublic = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.MakePubliclyAccessible
 	}
 
 	return info
@@ -335,18 +338,20 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		}
 		// Validate timestamp signature with PastelID from Trade ticket
 		// by calling command `pastelid verify timestamp-string signature PastelID`
-		var isValid bool
-		isValid, err = task.PastelClient.Verify(ctx, []byte(timestamp), signature, pastelID, "ed448")
-		if err != nil {
-			err = errors.Errorf("timestamp signature verify: %w", err)
-			task.UpdateStatus(common.StatusTimestampVerificationFailed)
-			return nil
-		}
+		if !info.isPublic {
+			var isValid bool
+			isValid, err = task.PastelClient.Verify(ctx, []byte(timestamp), signature, pastelID, "ed448")
+			if err != nil {
+				err = errors.Errorf("timestamp signature verify: %w", err)
+				task.UpdateStatus(common.StatusTimestampVerificationFailed)
+				return nil
+			}
 
-		if !isValid {
-			err = errors.New("invalid signature timestamp")
-			task.UpdateStatus(common.StatusTimestampInvalid)
-			return nil
+			if !isValid {
+				err = errors.New("invalid signature timestamp")
+				task.UpdateStatus(common.StatusTimestampInvalid)
+				return nil
+			}
 		}
 
 		// Get symbol identifiers files from Kademlia by using rq_ids - from Art Registration ticket
