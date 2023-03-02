@@ -100,10 +100,19 @@ func translateNftSummary(res *nft.DDServiceOutputFileResult, ticket *pastel.RegT
 	res.CreatorName = ticketData.CreatorName
 	res.YoutubeURL = &ticketData.NFTCreationVideoYoutubeURL
 	res.CreatorPastelID = ticket.RegTicketData.NFTTicketData.Author
-	res.CreatorWebsiteURL = &ticketData.CreatorWebsite
 	res.Description = ticketData.CreatorWrittenStatement
-	res.Keywords = &ticketData.NFTKeywordSet
-	res.SeriesName = &ticketData.NFTSeriesName
+
+	if ticketData.CreatorWebsite != "" {
+		res.CreatorWebsiteURL = &ticketData.CreatorWebsite
+	}
+
+	if ticketData.NFTKeywordSet != "" {
+		res.Keywords = &ticketData.NFTKeywordSet
+	}
+
+	if ticketData.NFTSeriesName != "" {
+		res.SeriesName = &ticketData.NFTSeriesName
+	}
 
 	return res
 }

@@ -328,6 +328,7 @@ func (service *NftAPIHandler) DdServiceOutputFileDetail(ctx context.Context, p *
 	ddAndFpStruct := &pastel.DDAndFingerprints{}
 	json.Unmarshal(ddAndFpData, ddAndFpStruct)
 
+	res = &nft.DDServiceOutputFileResult{}
 	res = translateNftSummary(res, ticket)
 
 	res = translateDDServiceOutputFile(res, ddAndFpStruct)
