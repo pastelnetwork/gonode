@@ -3,9 +3,7 @@ package download
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/supernode/services/common"
@@ -14,7 +12,6 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"golang.org/x/crypto/sha3"
 
-	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -51,21 +48,12 @@ func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid stri
 	}
 
 	//decode the nft ticket
-	nftTicket := &pastel.NFTTicket{}
-	json.Unmarshal(regTicket.RegTicketData.NFTTicket, nftTicket)
-
-	//decode the appticketdata
-	appTicketData, err := base64.StdEncoding.DecodeString(regTicket.RegTicketData.NFTTicketData.AppTicket)
+	nftTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
 	if err != nil {
-		log.Warnf("b64 decoding failed, trying to b85 decode - err: %v", err)
-		appTicketData, err = b85.Decode(nftTicket.AppTicket)
-		if err != nil {
-			return nil, fmt.Errorf("b85 decode: %v", err)
-		}
+		log.WithContext(ctx).WithError(err).WithField("txid", txid).Error("Could not decode ticket")
+		return nil, errors.Errorf("Could not decode: %s", err)
 	}
-
-	appTicket := &pastel.AppTicket{}
-	json.Unmarshal(appTicketData, appTicket)
+	appTicket := nftTicket.AppTicketData
 
 	thumbnailHash := appTicket.Thumbnail1Hash
 	var file1, file2 []byte
@@ -134,7 +122,7 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails tried to get this file and failed. ")
 			continue
 		}
-		log.WithContext(ctx).WithField("file", file).Println("Got the file")
+
 		decompressedData, err := zstd.Decompress(nil, file)
 		if err != nil {
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
