@@ -3,11 +3,10 @@ package services
 import (
 	"context"
 	"io"
-	"mime"
 	"mime/multipart"
-	"path/filepath"
 	"strings"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -105,7 +104,7 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 			continue
 		}
 
-		contentType, _, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
+		contentType, err := mimetype.DetectReader(part)
 		if err != nil {
 			return "", "BadRequest", errors.Errorf("could not parse Content-Type: %w", err)
 		}
@@ -115,11 +114,11 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 
 		image := storage.NewFile()
 		if onlyImage {
-			if !strings.HasPrefix(contentType, contentTypePrefix) {
+			if !strings.HasPrefix(contentType.String(), contentTypePrefix) {
 				return "", "BadRequest", errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix)
 			}
 
-			if err := image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
+			if err := image.SetFormatFromExtension(contentType.Extension()); err != nil {
 				return "", "BadRequest", errors.Errorf("could not set format from extension: %w", err)
 			}
 		}
