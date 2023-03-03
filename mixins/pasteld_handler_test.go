@@ -2,13 +2,11 @@ package mixins
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/pastel"
 
@@ -448,6 +446,7 @@ func TestRegTicket(t *testing.T) {
 			h := NewPastelHandler(pastelClientMock)
 			_ = h.GetBurnAddress()
 			ticket, err := h.RegTicket(context.Background(), "test-txid")
+
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -477,10 +476,6 @@ func fakeRegiterTicket() pastel.RegTicket {
 		RQOti:                      []byte("rq_oti"),
 	}
 
-	appTicketBytes, _ := json.Marshal(&appTicketData)
-
-	appTicket := b85.Encode(appTicketBytes)
-
 	nftTicketData := pastel.NFTTicket{
 		Version:       1,
 		Author:        "pastelID",
@@ -489,10 +484,9 @@ func fakeRegiterTicket() pastel.RegTicket {
 		Copies:        10,
 		Royalty:       99,
 		Green:         false,
-		AppTicket:     appTicket,
 		AppTicketData: appTicketData,
 	}
-	artTicket, _ := json.Marshal(&nftTicketData)
+
 	ticketSignature := pastel.RegTicketSignatures{}
 	regTicketData := pastel.RegTicketData{
 		Type:          "type",
@@ -504,13 +498,17 @@ func fakeRegiterTicket() pastel.RegTicket {
 		TotalCopies:   10,
 		Royalty:       99,
 		Version:       1,
-		NFTTicket:     artTicket,
 		NFTTicketData: nftTicketData,
 	}
+
 	regTicket := pastel.RegTicket{
 		Height:        235,
 		TXID:          "test-txid",
 		RegTicketData: regTicketData,
 	}
+
+	artTicketBytes, _ := pastel.EncodeNFTTicket(&regTicket.RegTicketData.NFTTicketData)
+	regTicket.RegTicketData.NFTTicket = artTicketBytes
+
 	return regTicket
 }
