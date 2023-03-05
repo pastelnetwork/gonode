@@ -151,7 +151,6 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 
 	appDecodedBytes, err := base64.RawStdEncoding.DecodeString(res.AppTicket)
 	if err != nil {
-		//log.Warnf("b64 decoding failed, trying to b85 decode - err: %v", err)
 		appDecodedBytes, err = b85.Decode(res.AppTicket)
 		if err != nil {
 			return nil, fmt.Errorf("b85 decode: %v", err)
