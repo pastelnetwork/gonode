@@ -2,6 +2,7 @@ package senseregister
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/mixins"
@@ -105,7 +106,7 @@ func (service *SenseRegistrationService) CalculateFee(ctx context.Context, fileI
 	if err != nil {
 		return 0.0, err
 	}
-
+	fmt.Println("file:", len(fileData))
 	return service.pastelHandler.GetEstimatedSenseFee(ctx, utils.GetFileSizeInMB(fileData))
 }
 
