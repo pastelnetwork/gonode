@@ -15,6 +15,7 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
 
 const (
@@ -31,7 +32,8 @@ type NftRegistrationService struct {
 	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface
 
-	rqClient rqnode.ClientInterface
+	rqClient        rqnode.ClientInterface
+	downloadHandler *download.NftDownloadingService
 }
 
 // Run starts worker. //TODO: make common with the same from SenseRegisterService
@@ -112,15 +114,17 @@ func (service *NftRegistrationService) CalculateFee(ctx context.Context, fileID 
 
 // NewService returns a new Service instance.
 // NB: although it might appear that a generic task is instantiated here with NewWorker, because of the way the API calls
+//
 //	are  handled in NftApiHandler, an NftRegistrationTask will actually be created via AddTask.
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface, fileStorage storage.FileStorageInterface,
-	db storage.KeyValue, raptorqClient rqnode.ClientInterface) *NftRegistrationService {
+	db storage.KeyValue, downloadService *download.NftDownloadingService, raptorqClient rqnode.ClientInterface) *NftRegistrationService {
 	return &NftRegistrationService{
-		Worker:        task.NewWorker(),
-		config:        config,
-		nodeClient:    nodeClient,
-		ImageHandler:  mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
-		pastelHandler: mixins.NewPastelHandler(pastelClient),
-		rqClient:      raptorqClient,
+		Worker:          task.NewWorker(),
+		config:          config,
+		nodeClient:      nodeClient,
+		ImageHandler:    mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
+		pastelHandler:   mixins.NewPastelHandler(pastelClient),
+		downloadHandler: downloadService,
+		rqClient:        raptorqClient,
 	}
 }

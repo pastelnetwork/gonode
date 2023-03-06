@@ -251,7 +251,7 @@ func TestTaskRun(t *testing.T) {
 			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 			rqClientMock.ListenOnConnect(testCase.args.connectErr)
 
-			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, rqClientMock)
+			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, nil, rqClientMock)
 			service.config.WaitTxnValidInterval = 1
 
 			go service.Run(testCase.args.ctx)

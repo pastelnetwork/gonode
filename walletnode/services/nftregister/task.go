@@ -10,16 +10,17 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
-	"github.com/pastelnetwork/gonode/common/storage/files"
-	"github.com/pastelnetwork/gonode/mixins"
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
-
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
 
 const (
@@ -38,8 +39,9 @@ type NftRegistrationTask struct {
 	ImageHandler        *mixins.NftImageHandler
 	RqHandler           *mixins.RQHandler
 
-	service *NftRegistrationService
-	Request *NftRegistrationRequest
+	service         *NftRegistrationService
+	Request         *NftRegistrationRequest
+	downloadService *download.NftDownloadingService
 
 	// task data to create RegArt ticket
 	creatorBlockHeight      int
@@ -245,6 +247,50 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	})
 	task.UpdateStatus(common.StatusTicketAccepted)
 
+	now := time.Now()
+	if task.downloadService != nil {
+		if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
+			log.WithContext(ctx).WithField("reg_tx_id", task.regNFTTxid).Error("Error validating nft ticket data")
+
+			log.WithContext(ctx).WithField("reg_tx_id", task.regNFTTxid).Info("initiating the new registration request")
+			request := &NftRegistrationRequest{
+				Name:                      task.Request.Name,
+				Description:               task.Request.Description,
+				Keywords:                  task.Request.Keywords,
+				SeriesName:                task.Request.SeriesName,
+				IssuedCopies:              task.Request.IssuedCopies,
+				YoutubeURL:                task.Request.YoutubeURL,
+				CreatorPastelID:           task.Request.CreatorPastelID,
+				CreatorPastelIDPassphrase: task.Request.CreatorPastelIDPassphrase,
+				CreatorName:               task.Request.CreatorName,
+				CreatorWebsiteURL:         task.Request.CreatorWebsiteURL,
+				SpendableAddress:          task.Request.SpendableAddress,
+				MaximumFee:                task.Request.MaximumFee,
+				Green:                     task.Request.Green,
+				Royalty:                   task.Request.Royalty,
+				Thumbnail:                 task.Request.Thumbnail,
+				MakePubliclyAccessible:    task.Request.MakePubliclyAccessible,
+			}
+
+			newTask := NewNFTRegistrationTask(task.service, request)
+			task.service.Worker.AddTask(newTask)
+
+			log.WithContext(ctx).WithField("task_id", newTask.ID()).Info("new NFT registration task has been initiated")
+
+			task.UpdateStatus(common.StatusErrorDownloadFailed)
+			task.UpdateStatus(&common.EphemeralStatus{
+				StatusTitle:   "Error validating cascade ticket data",
+				StatusString:  task.regNFTTxid,
+				IsFailureBool: false,
+				IsFinalBool:   false,
+			})
+
+			task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+
+			return nil
+		}
+	}
+
 	log.WithContext(ctx).Infof("NFT Reg Ticket registered. NFT Registration Ticket txid: %s", task.regNFTTxid)
 	log.WithContext(ctx).Debug("Closing SNs connections")
 
@@ -312,6 +358,39 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Infof("NFT Activation ticket is confirmed. Activation ticket txid: %s", activateTxID)
 
 	return nil
+}
+
+// Download downloads the data from p2p for data validation before ticket activation
+func (task *NftRegistrationTask) Download(ctx context.Context) error {
+	// add the task to the worker queue, and worker will process the task in the background
+	log.WithContext(ctx).WithField("nft_tx_id", task.regNFTTxid).Info("Downloading has been started")
+	taskID := task.downloadService.AddTask(&nft.DownloadPayload{Txid: task.regNFTTxid, Pid: task.Request.CreatorPastelID, Key: task.Request.CreatorPastelIDPassphrase}, "")
+	downloadTask := task.downloadService.GetTask(taskID)
+	defer downloadTask.Cancel()
+
+	sub := downloadTask.SubscribeStatus()
+	log.WithContext(ctx).WithField("nft_tx_id", task.regNFTTxid).Info("Subscribed to status channel")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case status := <-sub():
+			if status.IsFailure() {
+				log.WithContext(ctx).WithField("nft_tx_id", task.regNFTTxid).WithError(task.Error())
+
+				return errors.New("Download failed")
+			}
+
+			if status.IsFinal() {
+				log.WithContext(ctx).WithField("nft_tx_id", task.regNFTTxid).Info("task has been downloaded successfully")
+				return nil
+			}
+		case <-time.After(20 * time.Minute):
+			log.WithContext(ctx).WithField("nft_tx_id", task.regNFTTxid).Info("Download request has been timed out")
+			return errors.New("download request timeout, data validation failed")
+		}
+	}
 }
 
 func (task *NftRegistrationTask) isSuitableStorageFee(ctx context.Context) (bool, error) {
@@ -681,6 +760,7 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 		MeshHandler:         common.NewMeshHandler(meshHandlerOpts),
 		ImageHandler:        mixins.NewImageHandler(service.pastelHandler),
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
+		downloadService:     service.downloadHandler,
 		RqHandler: mixins.NewRQHandler(service.rqClient, service.pastelHandler,
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir,
 			service.config.NumberRQIDSFiles, service.config.RQIDsMax),
