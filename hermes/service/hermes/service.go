@@ -613,12 +613,12 @@ func (s *service) runTask(ctx context.Context) error {
 
 		collection := "PASTEL"
 		if ddAndFpFromTicket.OpenAPIGroupIDString != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPIGroupIDString, "NA") {
-			collection = ddAndFpFromTicket.OpenAPIGroupIDString
+			collection = ddAndFpFromTicket.OpenAPISubsetIDString
 		}
 
 		groupID := "PASTEL"
 		if ddAndFpFromTicket.OpenAPIGroupIDString != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPIGroupIDString, "NA") {
-			collection = ddAndFpFromTicket.OpenAPIGroupIDString
+			groupID = ddAndFpFromTicket.OpenAPIGroupIDString
 		}
 
 		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{

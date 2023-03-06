@@ -24,7 +24,7 @@ type DDAndFingerprints struct {
 	SN2PastelID                                 string  `json:"pastel_id_of_registering_supernode_2"`
 	SN3PastelID                                 string  `json:"pastel_id_of_registering_supernode_3"`
 	IsOpenAPIRequest                            bool    `json:"is_pastel_openapi_request"`
-	OpenAPISubsetID                             string  `json:"open_api_subset_id_string"`
+	OpenAPISubsetIDString                       string  `json:"open_api_subset_id_string"`
 	DupeDetectionSystemVersion                  string  `json:"dupe_detection_system_version"`
 	IsLikelyDupe                                bool    `json:"is_likely_dupe"`
 	IsRareOnInternet                            bool    `json:"is_rare_on_internet"`

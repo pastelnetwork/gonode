@@ -5,7 +5,6 @@
 syntax = "proto3";
 
 option go_package = "github.com/pastelnetwork/gonode/dupedetection";
-package dupedetection;
 
 service DupeDetectionServer {
     rpc ImageRarenessScore(RarenessScoreRequest) returns(ImageRarenessScoreReply);
