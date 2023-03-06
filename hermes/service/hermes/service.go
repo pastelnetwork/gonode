@@ -612,8 +612,8 @@ func (s *service) runTask(ctx context.Context) error {
 		}
 
 		collection := "PASTEL"
-		if ddAndFpFromTicket.OpenAPIGroupIDString != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPIGroupIDString, "NA") {
-			collection = ddAndFpFromTicket.OpenAPISubsetIDString
+		if ddAndFpFromTicket.OpenAPISubsetID != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPISubsetID, "NA") {
+			collection = ddAndFpFromTicket.OpenAPISubsetID
 		}
 
 		groupID := "PASTEL"
