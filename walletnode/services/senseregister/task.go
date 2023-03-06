@@ -456,13 +456,13 @@ func (task *SenseRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 // Download downloads the data from p2p for data validation before ticket activation
 func (task *SenseRegistrationTask) Download(ctx context.Context) error {
 	// add the task to the worker queue, and worker will process the task in the background
-	log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).Info("Downloading has been started")
+	log.WithContext(ctx).WithField("sense_tx_id", task.regSenseTxid).Info("Downloading has been started")
 	taskID := task.downloadService.AddTask(&nft.DownloadPayload{Txid: task.regSenseTxid, Pid: task.Request.AppPastelID, Key: task.Request.AppPastelIDPassphrase}, pastel.ActionTypeSense)
 	downloadTask := task.downloadService.GetTask(taskID)
 	defer downloadTask.Cancel()
 
 	sub := downloadTask.SubscribeStatus()
-	log.WithContext(ctx).WithField("reg_tx_id", task.regSenseTxid).Info("Subscribed to status channel")
+	log.WithContext(ctx).WithField("sense_tx_id", task.regSenseTxid).Info("Subscribed to status channel")
 
 	for {
 		select {
@@ -470,15 +470,18 @@ func (task *SenseRegistrationTask) Download(ctx context.Context) error {
 			return nil
 		case status := <-sub():
 			if status.IsFailure() {
-				log.WithContext(ctx).WithField("reg_tx_id", task.regSenseTxid).WithError(task.Error())
+				log.WithContext(ctx).WithField("sense_tx_id", task.regSenseTxid).WithError(task.Error())
 
 				return errors.New("Download failed")
 			}
 
 			if status.IsFinal() {
-				log.WithContext(ctx).WithField("reg_tx_id", task.regSenseTxid).Info("task has been downloaded successfully")
+				log.WithContext(ctx).WithField("sense_tx_id", task.regSenseTxid).Info("task has been downloaded successfully")
 				return nil
 			}
+		case <-time.After(20 * time.Minute):
+			log.WithContext(ctx).WithField("sense_tx_id", task.regSenseTxid).Info("Download request has been timed out")
+			return errors.New("download request timeout, data validation failed")
 		}
 	}
 }
