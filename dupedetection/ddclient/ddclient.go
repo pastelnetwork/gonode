@@ -131,6 +131,18 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		ImageFingerprintOfCandidateImageFile: res.ImageFingerprintOfCandidateImageFile,
 
 		HashOfCandidateImageFile: res.HashOfCandidateImageFile,
+
+		CollectionNameString:                       res.CollectionNameString,
+		OpenAPIGroupIDString:                       res.OpenApiGroupIdString,
+		GroupRarenessScore:                         res.GroupRarenessScore,
+		CandidateImageThumbnailWebpAsBase64String:  res.CandidateImageThumbnailWebpAsBase64String,
+		DoesNotImpactTheFollowingCollectionStrings: res.DoesNotImpactTheFollowingCollectionStrings,
+		IsInvalidSenseRequest:                      res.IsInvalidSenseRequest,
+		InvalidSenseRequestReason:                  res.InvalidSenseRequestReason,
+		SimilarityScoreToFirstEntryInCollection:    res.SimilarityScoreToFirstEntryInCollection,
+		CPProbability:                              res.CpProbability,
+		ChildProbability:                           res.ChildProbability,
+		ImageFilePath:                              res.ImageFilePath,
 	}
 
 	log.WithContext(ctx).WithField("Rareness Score Response", output).Debug("Image rareness score response from dd-server")

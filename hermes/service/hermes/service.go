@@ -612,15 +612,26 @@ func (s *service) runTask(ctx context.Context) error {
 		}
 
 		collection := "PASTEL"
+		if ddAndFpFromTicket.OpenAPIGroupIDString != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPIGroupIDString, "NA") {
+			collection = ddAndFpFromTicket.OpenAPIGroupIDString
+		}
+
+		groupID := "PASTEL"
+		if ddAndFpFromTicket.OpenAPIGroupIDString != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPIGroupIDString, "NA") {
+			collection = ddAndFpFromTicket.OpenAPIGroupIDString
+		}
 
 		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
-			Sha256HashOfArtImageFile:           ddAndFpFromTicket.HashOfCandidateImageFile,
-			ImageFingerprintVector:             toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
-			DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
-			PathToArtImageFile:                 "",
-			ImageThumbnailAsBase64:             "",
-			RequestType:                        typeMapper(senseRegTickets[i].ActionTicketData.Type),
-			IDString:                           collection,
+			Sha256HashOfArtImageFile:                   ddAndFpFromTicket.HashOfCandidateImageFile,
+			ImageFingerprintVector:                     toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
+			DatetimeFingerprintAddedToDatabase:         time.Now().Format("2006-01-02 15:04:05"),
+			PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
+			ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,
+			RequestType:                                typeMapper(senseRegTickets[i].ActionTicketData.Type),
+			IDString:                                   collection,
+			OpenAPIGroupIDString:                       groupID,
+			CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
+			DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
 		}); err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
@@ -628,6 +639,7 @@ func (s *service) runTask(ctx context.Context) error {
 			latestBlockHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
 		}
 	}
+
 	if lastKnownGoodHeight > latestBlockHeight {
 		s.latestBlockHeight = lastKnownGoodHeight
 	} else {

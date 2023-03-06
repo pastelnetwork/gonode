@@ -54,9 +54,11 @@ func generateFingerprint(_ *testing.T) *domain.DDFingerprints {
 	b := make([]byte, 10)
 	rand.Read(b)
 	return &domain.DDFingerprints{
-		Sha256HashOfArtImageFile:           hex.EncodeToString(b),
-		ImageFingerprintVector:             fps,
-		DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
+		Sha256HashOfArtImageFile:                   hex.EncodeToString(b),
+		ImageFingerprintVector:                     fps,
+		DatetimeFingerprintAddedToDatabase:         time.Now().Format("2006-01-02 15:04:05"),
+		OpenAPIGroupIDString:                       "x",
+		DoesNotImpactTheFollowingCollectionsString: "y,z",
 	}
 }
 

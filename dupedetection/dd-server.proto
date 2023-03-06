@@ -4,9 +4,8 @@
 
 syntax = "proto3";
 
-package dupedetection;
-
 option go_package = "github.com/pastelnetwork/gonode/dupedetection";
+package dupedetection;
 
 service DupeDetectionServer {
     rpc ImageRarenessScore(RarenessScoreRequest) returns(ImageRarenessScoreReply);
@@ -23,6 +22,8 @@ message RarenessScoreRequest {
     string pastel_id_of_registering_supernode_3 = 8;
     bool is_pastel_openapi_request = 9;
     string open_api_subset_id_string = 10;
+    string open_api_group_id_string = 11;
+    string collection_name_string = 12;
 }
 
 message ImageRarenessScoreReply {
@@ -47,7 +48,18 @@ message ImageRarenessScoreReply {
     float open_nsfw_score = 19;
     AltNsfwScores alternative_nsfw_scores = 20;
     repeated float image_fingerprint_of_candidate_image_file = 21;
-    string hash_of_candidate_image_file = 22;
+    string collection_name_string = 22;
+    string hash_of_candidate_image_file = 23;
+    string open_api_group_id_string = 24;
+    float group_rareness_score = 25;
+    string candidate_image_thumbnail_webp_as_base64_string = 26;
+    string does_not_impact_the_following_collection_strings = 27;
+    bool is_invalid_sense_request = 28;
+    string invalid_sense_request_reason = 29;
+    float similarity_score_to_first_entry_in_collection = 30;
+    float cp_probability = 31;
+    float child_probability = 32;
+    string image_file_path = 33;
 }
 
 message InternetRareness {
