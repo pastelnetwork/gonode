@@ -23,3 +23,15 @@ type SnScore struct {
 	IPAddress string
 	Score     int
 }
+
+// MasterNodeConf is the domain representation of masternode.conf file
+type MasterNodeConf struct {
+	MnAddress  string `json:"mnAddress"`
+	MnPrivKey  string `json:"mnPrivKey"`
+	Txid       string `json:"txid"`
+	OutIndex   string `json:"outIndex"`
+	ExtAddress string `json:"extAddress"`
+	ExtP2P     string `json:"extP2P"`
+	ExtCfg     string `json:"extCfg"`
+	ExtKey     string `json:"extKey"`
+}
