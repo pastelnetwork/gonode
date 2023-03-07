@@ -322,3 +322,9 @@ func (h *RegTaskHelper) VerifyPeersSignature(ctx context.Context, data []byte) e
 	}
 	return nil
 }
+
+// GetDupeDetectionDatabaseHash returns hash of a set of dd database's data
+func (h *RegTaskHelper) GetDupeDetectionDatabaseHash(ctx context.Context) string {
+	// TODO: implement
+	return "hash"
+}

@@ -113,6 +113,25 @@ func (service *RegisterSense) AcceptedNodes(ctx context.Context, req *pb.Accepte
 	return resp, nil
 }
 
+// GetDupeDetectionDBHash implements walletnode.RegisterSenseServer.GetDupeDetectionDBHash()
+func (service *RegisterSense) GetDupeDetectionDBHash(ctx context.Context, req *pb.GetDBHashRequest) (*pb.DBHashReply, error) {
+	log.WithContext(ctx).WithField("req", req).Info("DupeDetection DB hash request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	hash := task.GetDupeDetectionDatabaseHash(ctx)
+
+	resp := &pb.DBHashReply{
+		Hash: hash,
+	}
+
+	log.WithContext(ctx).WithField("hash len", len(hash)).Info("DupeDetection DB hash returned")
+
+	return resp, nil
+}
+
 // ConnectTo implements walletnode.RegisterSenseServer.ConnectTo()
 func (service *RegisterSense) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")

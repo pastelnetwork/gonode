@@ -99,6 +99,23 @@ func (service *registerSense) AcceptedNodes(ctx context.Context) (pastelIDs []st
 	return ids, nil
 }
 
+// GetDupeDetectionDBHash implements node.RegisterSense.GetDupeDetectionDBHash
+func (service *registerSense) GetDupeDetectionDBHash(ctx context.Context) (hash string, err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	req := &pb.GetDBHashRequest{}
+	log.WithContext(ctx).WithField("req", req).Debug("DB Hash request")
+
+	resp, err := service.client.GetDDDatabaseHash(ctx, req)
+	if err != nil {
+		return "", errors.Errorf("request to dupe detection db hash request: %w", err)
+	}
+	log.WithContext(ctx).WithField("hash len", len(resp.Hash)).Debug("DB hash response")
+
+	return resp.Hash, nil
+}
+
 // ConnectTo implements node.RegisterNft.ConnectTo()
 func (service *registerSense) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)

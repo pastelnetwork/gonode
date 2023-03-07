@@ -120,6 +120,11 @@ func (service *downloadNft) ConnectTo(_ context.Context, _ types.MeshedSuperNode
 	return nil
 }
 
+// GetDupeDetectionDBHash implements node.RegisterNft.GetDupeDetectionDBHash
+func (service *downloadNft) GetDupeDetectionDBHash(ctx context.Context) (hash string, err error) {
+	return "not implemented", nil
+}
+
 ///<---
 
 func newDownloadNft(conn *clientConn) node.DownloadNftInterface {

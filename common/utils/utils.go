@@ -202,3 +202,15 @@ func GetFileSizeInMB(data []byte) float64 {
 func BytesToMB(bytes uint64) float64 {
 	return float64(bytes) / 1048576.0
 }
+
+// StringInSlice checks if str is in slice
+func StringInSlice(list []string, str string) bool {
+
+	for _, v := range list {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
