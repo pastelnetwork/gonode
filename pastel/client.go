@@ -497,7 +497,7 @@ func (client *client) RegisterActionTicket(ctx context.Context, request Register
 	params = append(params, request.Passphrase)
 	params = append(params, request.Label)
 	params = append(params, fmt.Sprint(request.Fee))
-	log.WithContext(ctx).WithField("ticket", ticketBlob).WithField("signatures", string(signatures)).WithField("pastelid", request.Mn1PastelID).WithField("passphrase", request.Passphrase).WithField("label", request.Label).WithField("fee", request.Fee).Info("RegisterActionTicket Request")
+	log.WithContext(ctx).WithField("ticket", ticketBlob).WithField("signatures", string(signatures)).WithField("pastelid", request.Mn1PastelID).WithField("label", request.Label).WithField("fee", request.Fee).Info("RegisterActionTicket Request")
 	// command : tickets register action "ticket" "{signatures}" "pastelid" "passphrase" "label" "fee"
 	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
 		return "", errors.Errorf("failed to call register NFT ticket: %w", err)
