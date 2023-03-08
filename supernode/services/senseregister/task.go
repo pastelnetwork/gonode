@@ -177,7 +177,7 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 		// sign the ticket if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
 		if err = task.signAndSendSenseTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("signed and send NFT ticket")
+			log.WithContext(ctx).WithError(err).Errorf("sign and send Sense ticket")
 			err = errors.Errorf("signed and send NFT ticket")
 			return nil
 		}
@@ -213,8 +213,8 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 
 					nftRegTxid, err = task.registerAction(ctx)
 					if err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("peers' signature mismatched")
-						err = errors.Errorf("register NFT: %w", err)
+						log.WithContext(ctx).WithError(err).Errorf("register action failed")
+						err = errors.Errorf("register Action: %w", err)
 						return nil
 					}
 

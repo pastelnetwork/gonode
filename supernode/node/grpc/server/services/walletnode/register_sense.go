@@ -278,7 +278,7 @@ func (service *RegisterSense) SendSignedActionTicket(ctx context.Context, req *p
 
 	actionRegTxid, err := task.ValidateAndRegister(ctx, req.ActionTicket, req.CreatorSignature, req.DdFpFiles)
 	if err != nil {
-		return nil, errors.Errorf("get total storage fee %w", err)
+		return nil, errors.Errorf("validate & register: %w", err)
 	}
 
 	rsp := pb.SendSignedActionTicketReply{
