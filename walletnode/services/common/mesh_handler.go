@@ -163,8 +163,8 @@ func (m *MeshHandler) matchDatabaseHash(ctx context.Context, nodesList SuperNode
 	for i, someNode := range nodesList {
 		hash, err := someNode.GetDupeDetectionDBHash(ctx)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("Failed to get dd database hash - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-			return fmt.Errorf("Failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
+			log.WithContext(ctx).WithError(err).Errorf("failed to get dd database hash - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			return fmt.Errorf("failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
 		}
 
 		hashes[someNode.Address()] = hash
@@ -176,8 +176,8 @@ func (m *MeshHandler) matchDatabaseHash(ctx context.Context, nodesList SuperNode
 
 	for key, val := range hashes {
 		if val != matcher {
-			log.WithContext(ctx).Errorf("Database hash mismatch for node %s", key)
-			return fmt.Errorf("Database hash mismatch for node %s", key)
+			log.WithContext(ctx).Errorf("database hash mismatch for node %s", key)
+			return fmt.Errorf("database hash mismatch for node %s", key)
 		}
 	}
 

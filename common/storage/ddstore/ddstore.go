@@ -64,7 +64,7 @@ type pastelblocks struct {
 // GetDDDataHash returns hash of dd data
 func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err error) {
 	r := []fingerprints{}
-	err = s.db.Select(&r, "SELECT * FROM image_hash_to_image_fingerprint_table")
+	err = s.db.Select(&r, "SELECT sha256_hash_of_art_image_file FROM image_hash_to_image_fingerprint_table")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get image_hash_to_image_fingerprint_table")
 	}
@@ -92,6 +92,8 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 	for _, v := range p {
 		hash += fmt.Sprintf("%s_%d", v.BlockHash, v.BlockHeight)
 	}
+
+	log.WithContext(ctx).WithField("hash", len(hash)).Info("dd data hash returned")
 
 	return hash, nil
 }
