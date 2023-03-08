@@ -1,0 +1,99 @@
+package ddstore
+
+import (
+	"context"
+	"fmt"
+	"io/ioutil"
+	"os"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3" //go-sqlite3
+
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+)
+
+// DDStore represents Dupedetection store
+type DDStore interface {
+	GetDDDataHash(ctx context.Context) (hash string, err error)
+}
+
+// SQLiteDDStore is sqlite implementation of DD store and Score store
+type SQLiteDDStore struct {
+	db *sqlx.DB
+}
+
+// NewSQLiteDDStore is new sqlite store constructor
+func NewSQLiteDDStore(file string) (*SQLiteDDStore, error) {
+	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
+		tmpfile, err := ioutil.TempFile("", "registered_image_fingerprints_db.sqlite")
+		if err != nil {
+			panic(err.Error())
+		}
+		file = tmpfile.Name()
+	}
+
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return nil, errors.Errorf("database dd service not found: %w", err)
+	}
+
+	db, err := sqlx.Connect("sqlite3", file)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open dd-service database: %w", err)
+	}
+
+	return &SQLiteDDStore{
+		db: db,
+	}, nil
+}
+
+type fingerprints struct {
+	Sha256HashOfArtImageFile string `db:"sha256_hash_of_art_image_file,omitempty"`
+}
+type collections struct {
+	CollectionTicketTXID string `db:"collection_ticket_txid"`
+	CollectionState      string `db:"collection_state"`
+}
+
+type pastelblocks struct {
+	BlockHash   string `db:"block_hash"`
+	BlockHeight int    `db:"block_height"`
+}
+
+func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err error) {
+	r := []fingerprints{}
+	err = s.db.Get(&r, "SELECT sha256_hash_of_art_image_file FROM image_hash_to_image_fingerprint_table")
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to get image_hash_to_image_fingerprint_table")
+	}
+
+	c := []collections{}
+	err = s.db.Get(&r, "SELECT * FROM collections_table")
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to get collections_table, ignore table")
+	}
+
+	p := []pastelblocks{}
+	err = s.db.Get(&r, "SELECT * FROM pastel_blocks_table")
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to get pastel_blocks_table, ignore table")
+	}
+
+	for _, v := range r {
+		hash += v.Sha256HashOfArtImageFile
+	}
+
+	for _, v := range c {
+		hash += fmt.Sprintf("%s_%s", v.CollectionTicketTXID, v.CollectionState)
+	}
+
+	for _, v := range p {
+		hash += fmt.Sprintf("%s_%d", v.BlockHash, v.BlockHeight)
+	}
+
+	return hash, nil
+}
+
+func (s *SQLiteDDStore) Close() error {
+	return s.db.Close()
+}

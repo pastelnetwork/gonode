@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"runtime/debug"
 
@@ -113,15 +114,14 @@ func (service *RegisterNft) AcceptedNodes(ctx context.Context, req *pb.AcceptedN
 	return resp, nil
 }
 
-// GetDupeDetectionDBHash implements walletnode.RegisterNftServer.GetDupeDetectionDBHash()
-func (service *RegisterNft) GetDupeDetectionDBHash(ctx context.Context, req *pb.GetDBHashRequest) (*pb.DBHashReply, error) {
+// GetDDDatabaseHash implements walletnode.RegisterNftServer.GetDupeDetectionDBHash()
+func (service *RegisterNft) GetDDDatabaseHash(ctx context.Context, req *pb.GetDBHashRequest) (*pb.DBHashReply, error) {
 	log.WithContext(ctx).WithField("req", req).Info("DupeDetection DB hash request")
-	task, err := service.TaskFromMD(ctx)
+	hash, err := service.GetDupeDetectionDatabaseHash(ctx)
 	if err != nil {
-		return nil, err
+		log.WithContext(ctx).WithError(err).Error("GetDDDatabaseHash")
+		return nil, fmt.Errorf("GetDDDatabaseHash: %w", err)
 	}
-
-	hash := task.GetDupeDetectionDatabaseHash(ctx)
 
 	resp := &pb.DBHashReply{
 		Hash: hash,

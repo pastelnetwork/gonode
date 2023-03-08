@@ -108,13 +108,13 @@ func (service *registerNft) GetDupeDetectionDBHash(ctx context.Context) (hash st
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.GetDBHashRequest{}
-	log.WithContext(ctx).WithField("req", req).Debug("DB Hash request")
+	log.WithContext(ctx).WithField("req", req).Info("DB Hash request")
 
 	resp, err := service.client.GetDDDatabaseHash(ctx, req)
 	if err != nil {
 		return "", errors.Errorf("request to dupe detection db hash request: %w", err)
 	}
-	log.WithContext(ctx).WithField("hash len", len(resp.Hash)).Debug("DB hash response")
+	log.WithContext(ctx).WithField("hash len", len(resp.Hash)).Info("DB hash response")
 
 	return resp.Hash, nil
 }
