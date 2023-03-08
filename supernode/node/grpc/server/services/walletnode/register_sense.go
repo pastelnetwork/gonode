@@ -115,8 +115,6 @@ func (service *RegisterSense) AcceptedNodes(ctx context.Context, req *pb.Accepte
 
 // GetDDDatabaseHash implements walletnode.RegisterSenseServer.GetDupeDetectionDBHash()
 func (service *RegisterSense) GetDDDatabaseHash(ctx context.Context, req *pb.GetDBHashRequest) (*pb.DBHashReply, error) {
-	log.WithContext(ctx).WithField("req", req).Info("DupeDetection DB hash request")
-
 	hash, err := service.GetDupeDetectionDatabaseHash(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("GetDDDatabaseHash")

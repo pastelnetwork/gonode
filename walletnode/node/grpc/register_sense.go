@@ -105,8 +105,6 @@ func (service *registerSense) GetDupeDetectionDBHash(ctx context.Context) (hash 
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.GetDBHashRequest{}
-	log.WithContext(ctx).WithField("req", req).Info("DB Hash request")
-
 	resp, err := service.client.GetDDDatabaseHash(ctx, req)
 	if err != nil {
 		return "", errors.Errorf("request to dupe detection db hash request: %w", err)
