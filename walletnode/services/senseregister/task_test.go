@@ -139,6 +139,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnConnectTo(testCase.args.returnErr).
 				ListenOnSessID(testCase.args.primarySessID).
 				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
+				ListenOnSenseGetDupeDetectionDBHash("", nil).
 				ListenOnDone().
 				//ListenOnSendSignedTicket(100, nil).
 				ListenOnClose(nil).ListenOnSendActionAct(nil)

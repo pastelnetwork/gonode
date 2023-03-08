@@ -70,13 +70,13 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 	}
 
 	c := []collections{}
-	err = s.db.Select(&c, "SELECT * FROM collections_table")
+	err = s.db.Select(&c, "SELECT collection_ticket_txid,collection_state FROM collections_table")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get collections_table, ignore table")
 	}
 
 	p := []pastelblocks{}
-	err = s.db.Select(&p, "SELECT * FROM pastel_blocks_table")
+	err = s.db.Select(&p, "SELECT block_hash,block_height FROM pastel_blocks_table")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get pastel_blocks_table, ignore table")
 	}

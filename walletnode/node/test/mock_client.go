@@ -69,6 +69,9 @@ const (
 
 	// UploadAssetMethod represent UploadAsset name method
 	UploadAssetMethod = "UploadAsset"
+
+	// GetDupeDetectionDBHashMethod  is method name for GetDupeDetectionDBHash
+	GetDupeDetectionDBHashMethod = "GetDupeDetectionDBHash"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -107,6 +110,18 @@ func (client *Client) ListenOnRegisterNft() *Client {
 func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Client {
 	client.RegisterNftInterface.On(SendPreBurntFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
 
+	return client
+}
+
+// ListenOnRegisterGetDupeDetectionDBHas listening GetDupeDetectionDBHash call
+func (client *Client) ListenOnRegisterGetDupeDetectionDBHash(hash string, err error) *Client {
+	client.RegisterNftInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
+	return client
+}
+
+// ListenOnSenseGetDupeDetectionDBHas listening GetDupeDetectionDBHash call
+func (client *Client) ListenOnSenseGetDupeDetectionDBHash(hash string, err error) *Client {
+	client.RegisterSenseInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
 	return client
 }
 

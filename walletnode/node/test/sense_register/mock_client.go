@@ -47,6 +47,9 @@ const (
 
 	// SendSignedTicketMethod represent SendSignedTicket method
 	SendSignedTicketMethod = "SendSignedTicket"
+
+	// GetDupeDetectionDBHashMethod  is method name for GetDupeDetectionDBHash
+	GetDupeDetectionDBHashMethod = "GetDupeDetectionDBHash"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -77,6 +80,12 @@ func (client *Client) ListenOnRegisterSense() *Client {
 func (client *Client) ListenOnSendSignedTicket(id string, err error) *Client {
 	client.RegisterSenseInterface.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
+	return client
+}
+
+// ListenOnGetDupeDetectionDBHas listening GetDupeDetectionDBHash call
+func (client *Client) ListenOnGetDupeDetectionDBHash(hash string, err error) *Client {
+	client.RegisterSenseInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
 	return client
 }
 
