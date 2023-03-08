@@ -113,13 +113,13 @@ func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Clien
 	return client
 }
 
-// ListenOnRegisterGetDupeDetectionDBHas listening GetDupeDetectionDBHash call
+// ListenOnRegisterGetDupeDetectionDBHash listening GetDupeDetectionDBHash call
 func (client *Client) ListenOnRegisterGetDupeDetectionDBHash(hash string, err error) *Client {
 	client.RegisterNftInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
 	return client
 }
 
-// ListenOnSenseGetDupeDetectionDBHas listening GetDupeDetectionDBHash call
+// ListenOnSenseGetDupeDetectionDBHash listening GetDupeDetectionDBHash call
 func (client *Client) ListenOnSenseGetDupeDetectionDBHash(hash string, err error) *Client {
 	client.RegisterSenseInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
 	return client

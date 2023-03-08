@@ -180,7 +180,7 @@ func (client *Client) AssertDoneCall(expectedCalls int, arguments ...interface{}
 	return client
 }
 
-// ListenOnGetDupeDetectionDBHas listening GetDupeDetectionDBHash call
+// ListenOnGetDupeDetectionDBHash listening GetDupeDetectionDBHash call
 func (client *Client) ListenOnGetDupeDetectionDBHash(hash string, err error) *Client {
 	client.RegisterNftInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
 	return client

@@ -115,7 +115,7 @@ func (service *RegisterNft) AcceptedNodes(ctx context.Context, req *pb.AcceptedN
 }
 
 // GetDDDatabaseHash implements walletnode.RegisterNftServer.GetDupeDetectionDBHash()
-func (service *RegisterNft) GetDDDatabaseHash(ctx context.Context, req *pb.GetDBHashRequest) (*pb.DBHashReply, error) {
+func (service *RegisterNft) GetDDDatabaseHash(ctx context.Context, _ *pb.GetDBHashRequest) (*pb.DBHashReply, error) {
 	hash, err := service.GetDupeDetectionDatabaseHash(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("GetDDDatabaseHash")

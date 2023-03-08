@@ -83,7 +83,7 @@ func (client *Client) ListenOnSendSignedTicket(id string, err error) *Client {
 	return client
 }
 
-// ListenOnGetDupeDetectionDBHas listening GetDupeDetectionDBHash call
+// ListenOnGetDupeDetectionDBHash listening GetDupeDetectionDBHash call
 func (client *Client) ListenOnGetDupeDetectionDBHash(hash string, err error) *Client {
 	client.RegisterSenseInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
 	return client
