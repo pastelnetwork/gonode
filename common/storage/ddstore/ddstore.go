@@ -15,6 +15,7 @@ import (
 
 // DDStore represents Dupedetection store
 type DDStore interface {
+	// GetDDDataHash returns hash of dd data
 	GetDDDataHash(ctx context.Context) (hash string, err error)
 }
 
@@ -60,21 +61,22 @@ type pastelblocks struct {
 	BlockHeight int    `db:"block_height"`
 }
 
+// GetDDDataHash returns hash of dd data
 func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err error) {
 	r := []fingerprints{}
-	err = s.db.Get(&r, "SELECT sha256_hash_of_art_image_file FROM image_hash_to_image_fingerprint_table")
+	err = s.db.Select(&r, "SELECT * FROM image_hash_to_image_fingerprint_table")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get image_hash_to_image_fingerprint_table")
 	}
 
 	c := []collections{}
-	err = s.db.Get(&r, "SELECT * FROM collections_table")
+	err = s.db.Select(&c, "SELECT * FROM collections_table")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get collections_table, ignore table")
 	}
 
 	p := []pastelblocks{}
-	err = s.db.Get(&r, "SELECT * FROM pastel_blocks_table")
+	err = s.db.Select(&p, "SELECT * FROM pastel_blocks_table")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get pastel_blocks_table, ignore table")
 	}
@@ -94,6 +96,7 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 	return hash, nil
 }
 
+// Close closes the database
 func (s *SQLiteDDStore) Close() error {
 	return s.db.Close()
 }

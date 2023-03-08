@@ -121,7 +121,7 @@ func (service *downloadNft) ConnectTo(_ context.Context, _ types.MeshedSuperNode
 }
 
 // GetDupeDetectionDBHash implements node.RegisterNft.GetDupeDetectionDBHash
-func (service *downloadNft) GetDupeDetectionDBHash(ctx context.Context) (hash string, err error) {
+func (service *downloadNft) GetDupeDetectionDBHash(_ context.Context) (hash string, err error) {
 	return "not implemented", nil
 }
 

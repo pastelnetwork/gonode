@@ -248,7 +248,7 @@ func (service *registerCascade) contextWithMDSessID(ctx context.Context) context
 }
 
 // GetDupeDetectionDBHash implements node.RegisterNft.GetDupeDetectionDBHash
-func (service *registerCascade) GetDupeDetectionDBHash(ctx context.Context) (hash string, err error) {
+func (service *registerCascade) GetDupeDetectionDBHash(_ context.Context) (hash string, err error) {
 	return "not implemented", nil
 }
 
