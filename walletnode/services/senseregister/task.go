@@ -502,6 +502,7 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 			MinSNs:                 service.config.NumberSuperNodes,
 			PastelID:               request.AppPastelID,
 			Passphrase:             request.AppPastelIDPassphrase,
+			CheckDDDatabaseHashes:  true,
 		},
 	}
 

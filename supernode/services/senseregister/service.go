@@ -3,7 +3,9 @@ package senseregister
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/ddstore"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -40,6 +42,25 @@ func (service *SenseRegistrationService) NewSenseRegistrationTask() *SenseRegist
 // Task returns the task of the Sense registration by the given id.
 func (service *SenseRegistrationService) Task(id string) *SenseRegistrationTask {
 	return service.Worker.Task(id).(*SenseRegistrationTask)
+}
+
+// GetDupeDetectionDatabaseHash returns the hash of the dupe detection database.
+func (service *SenseRegistrationService) GetDupeDetectionDatabaseHash(ctx context.Context) (string, error) {
+	db, err := ddstore.NewSQLiteDDStore(service.config.DDDatabase)
+	if err != nil {
+		return "", err
+	}
+
+	hash, err := db.GetDDDataHash(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if err := db.Close(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to close dd database")
+	}
+
+	return hash, nil
 }
 
 // NewService returns a new Service instance.

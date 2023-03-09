@@ -33,6 +33,9 @@ service RegisterSense {
 
     // SendActionAc informs to SN that walletnode activated action_reg
     rpc SendActionAct(SendActionActRequest) returns (SendActionActReply);
+
+    // GetDDDatabaseHash returns hash of dupe detection database hash
+    rpc GetDDDatabaseHash(GetDBHashRequest) returns (DBHashReply);
 }
 
 message SendSignedSenseTicketRequest {

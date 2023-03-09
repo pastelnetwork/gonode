@@ -73,3 +73,9 @@ message SendActionActRequest {
 
 message SendActionActReply {
 }
+
+message GetDBHashRequest {}
+
+message DBHashReply {
+    string hash = 1;
+}

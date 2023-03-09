@@ -53,6 +53,9 @@ const (
 
 	// UploadImageWithThumbnailMethod represent UploadImageWithThumbnail method
 	UploadImageWithThumbnailMethod = "UploadImageWithThumbnail"
+
+	// GetDupeDetectionDBHashMethod  is method name for GetDupeDetectionDBHash
+	GetDupeDetectionDBHashMethod = "GetDupeDetectionDBHash"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -174,6 +177,12 @@ func (client *Client) AssertDoneCall(expectedCalls int, arguments ...interface{}
 		client.ConnectionInterface.AssertCalled(client.t, DoneMethod, arguments...)
 	}
 	client.ConnectionInterface.AssertNumberOfCalls(client.t, DoneMethod, expectedCalls)
+	return client
+}
+
+// ListenOnGetDupeDetectionDBHash listening GetDupeDetectionDBHash call
+func (client *Client) ListenOnGetDupeDetectionDBHash(hash string, err error) *Client {
+	client.RegisterNftInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
 	return client
 }
 

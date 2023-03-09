@@ -19,6 +19,8 @@ type Config struct {
 
 	NumberConnectedNodes       int `mapstructure:"-" json:"number_connected_nodes,omitempty"`
 	PreburntTxMinConfirmations int `mapstructure:"-" json:"preburnt_tx_min_confirmations,omitempty"`
+
+	DDDatabase string `mapstructure:"-" json:"-"`
 }
 
 // NewConfig returns a new Config instance.

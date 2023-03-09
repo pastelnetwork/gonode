@@ -7,10 +7,11 @@
 package supernode
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -527,7 +528,7 @@ func file_process_userdata_sn_proto_init() {
 	if File_process_userdata_sn_proto != nil {
 		return
 	}
-	file_common_sn_proto_init()
+	//file_common_sn_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_process_userdata_sn_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SuperNodeRequest); i {

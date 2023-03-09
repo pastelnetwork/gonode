@@ -37,6 +37,9 @@ service RegisterNft {
 
     // Upload the image after pq signature is appended along with its thumbnail coordinates
     rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
+
+    // GetDDDatabaseHash returns hash of dupe detection database hash
+    rpc GetDDDatabaseHash(GetDBHashRequest) returns (DBHashReply);
 }
 
 message SendSignedNFTTicketRequest {

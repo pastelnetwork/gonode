@@ -212,6 +212,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	rqAddr := fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	// raptorq client
 	config.NftRegister.RaptorQServiceAddress = rqAddr
+	config.NftRegister.DDDatabase = filepath.Join(config.DdWorkDir, "support_files", "registered_image_fingerprints_db.sqlite")
+	config.SenseRegister.DDDatabase = filepath.Join(config.DdWorkDir, "support_files", "registered_image_fingerprints_db.sqlite")
 	config.NftRegister.RqFilesDir = config.RqFilesDir
 	config.CascadeRegister.RaptorQServiceAddress = rqAddr
 	config.CascadeRegister.RqFilesDir = config.RqFilesDir

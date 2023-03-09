@@ -102,6 +102,21 @@ func (service *registerNft) AcceptedNodes(ctx context.Context) (pastelIDs []stri
 	return ids, nil
 }
 
+// GetDupeDetectionDBHash implements node.RegisterNft.GetDupeDetectionDBHash
+func (service *registerNft) GetDupeDetectionDBHash(ctx context.Context) (hash string, err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	req := &pb.GetDBHashRequest{}
+	resp, err := service.client.GetDDDatabaseHash(ctx, req)
+	if err != nil {
+		return "", errors.Errorf("request to dupe detection db hash request: %w", err)
+	}
+	log.WithContext(ctx).WithField("hash len", len(resp.Hash)).Info("DB hash response")
+
+	return resp.Hash, nil
+}
+
 // ConnectTo implements node.RegisterNft.ConnectTo()
 func (service *registerNft) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)

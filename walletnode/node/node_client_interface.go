@@ -55,6 +55,8 @@ type SuperNodeAPIInterface interface {
 	ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error
 	// MeshNodes send to supernode all info of nodes are meshed together (include the received supernode)
 	MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error
+	// GetDupeDetectionDBHash requests hash of dd database
+	GetDupeDetectionDBHash(ctx context.Context) (hash string, err error)
 }
 
 // RealNodeMaker interface to make concrete node types

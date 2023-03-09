@@ -2,7 +2,10 @@ package nftregister
 
 import (
 	"context"
+
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/ddstore"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -39,6 +42,25 @@ func (service *NftRegistrationService) NewNftRegistrationTask() *NftRegistration
 // Task returns the task of the registration Nft by the given id.
 func (service *NftRegistrationService) Task(id string) *NftRegistrationTask {
 	return service.Worker.Task(id).(*NftRegistrationTask)
+}
+
+// GetDupeDetectionDatabaseHash returns the hash of the dupe detection database.
+func (service *NftRegistrationService) GetDupeDetectionDatabaseHash(ctx context.Context) (string, error) {
+	db, err := ddstore.NewSQLiteDDStore(service.config.DDDatabase)
+	if err != nil {
+		return "", err
+	}
+
+	hash, err := db.GetDDDataHash(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if err := db.Close(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to close dd database")
+	}
+
+	return hash, nil
 }
 
 // NewService returns a new Service instance.
