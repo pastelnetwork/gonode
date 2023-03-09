@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	createFgTableStatement           = `CREATE TABLE IF NOT EXISTS image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text PRIMARY KEY, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text, open_api_subset_id_string text)`
+	createFgTableStatement           = `CREATE TABLE IF NOT EXISTS image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text PRIMARY KEY, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text, open_api_subset_id_string text,open_api_group_id_string text,collection_name_string text,does_not_impact_the_following_collection_strings text)`
 	getLatestFingerprintStatement    = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
 	getFingerprintFromHashStatement  = `SELECT * FROM image_hash_to_image_fingerprint_table WHERE sha256_hash_of_art_image_file = ?`
-	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database, thumbnail_of_image, request_type, open_api_subset_id_string) VALUES(?,?,?,?,?,?,?)`
+	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database, thumbnail_of_image, request_type, open_api_subset_id_string,open_api_group_id_string,collection_name_string,does_not_impact_the_following_collection_strings) VALUES(?,?,?,?,?,?,?,?,?,?)`
 	getNumberOfFingerprintsStatement = `SELECT COUNT(*) as count FROM image_hash_to_image_fingerprint_table`
 )
 
@@ -31,6 +31,9 @@ type fingerprints struct {
 	ImageThumbnailAsBase64             string `db:"thumbnail_of_image,omitempty"`
 	RequestType                        string `db:"request_type,omitempty"`
 	IDString                           string `db:"open_api_subset_id_string,omitempty"`
+	OpenAPIGroupIDString               string `db:"open_api_group_id_string"`
+	CollectionNameString               string `db:"collection_name_string"`
+	DoesNotImpactCollectionStrings     string `db:"does_not_impact_the_following_collection_strings"`
 }
 
 func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
@@ -42,13 +45,16 @@ func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
 	}
 
 	return &domain.DDFingerprints{
-		Sha256HashOfArtImageFile:           r.Sha256HashOfArtImageFile,
-		PathToArtImageFile:                 r.PathToArtImageFile,
-		ImageFingerprintVector:             fp,
-		DatetimeFingerprintAddedToDatabase: r.DatetimeFingerprintAddedToDatabase,
-		ImageThumbnailAsBase64:             r.ImageThumbnailAsBase64,
-		RequestType:                        r.RequestType,
-		IDString:                           r.IDString,
+		Sha256HashOfArtImageFile:                   r.Sha256HashOfArtImageFile,
+		PathToArtImageFile:                         r.PathToArtImageFile,
+		ImageFingerprintVector:                     fp,
+		DatetimeFingerprintAddedToDatabase:         r.DatetimeFingerprintAddedToDatabase,
+		ImageThumbnailAsBase64:                     r.ImageThumbnailAsBase64,
+		RequestType:                                r.RequestType,
+		IDString:                                   r.IDString,
+		OpenAPIGroupIDString:                       r.OpenAPIGroupIDString,
+		CollectionNameString:                       r.CollectionNameString,
+		DoesNotImpactTheFollowingCollectionsString: r.DoesNotImpactCollectionStrings,
 	}, nil
 }
 
@@ -71,8 +77,8 @@ func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFing
 
 	_, err = s.db.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
 		 path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database,
-		  thumbnail_of_image, request_type, open_api_subset_id_string) VALUES(?,?,?,?,?,?,?)`, input.Sha256HashOfArtImageFile,
-		input.PathToArtImageFile, fp, input.DatetimeFingerprintAddedToDatabase, input.ImageThumbnailAsBase64, input.RequestType, input.IDString)
+		  thumbnail_of_image, request_type, open_api_subset_id_string,open_api_group_id_string,collection_name_string,does_not_impact_the_following_collection_strings) VALUES(?,?,?,?,?,?,?,?,?,?)`, input.Sha256HashOfArtImageFile,
+		input.PathToArtImageFile, fp, input.DatetimeFingerprintAddedToDatabase, input.ImageThumbnailAsBase64, input.RequestType, input.IDString, input.OpenAPIGroupIDString, input.CollectionNameString, input.DoesNotImpactTheFollowingCollectionsString)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
 		return err

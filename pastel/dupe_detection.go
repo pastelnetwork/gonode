@@ -16,33 +16,40 @@ const SeparatorByte byte = 46
 
 // DDAndFingerprints represents  the dd & fingerprints data returned by dd-service & SN
 type DDAndFingerprints struct {
-	BlockHash   string `json:"pastel_block_hash_when_request_submitted"`
-	BlockHeight string `json:"pastel_block_height_when_request_submitted"`
-	TimestampOfRequest string `json:"utc_timestamp_when_request_submitted"`
-	SubmitterPastelID  string `json:"pastel_id_of_submitter"`
-	SN1PastelID        string `json:"pastel_id_of_registering_supernode_1"`
-	SN2PastelID        string `json:"pastel_id_of_registering_supernode_2"`
-	SN3PastelID        string `json:"pastel_id_of_registering_supernode_3"`
-	IsOpenAPIRequest bool `json:"is_pastel_openapi_request"`
-	OpenAPISubsetID string `json:"open_api_subset_id_string"`
-	DupeDetectionSystemVersion string `json:"dupe_detection_system_version"`
-	IsLikelyDupe         bool    `json:"is_likely_dupe"`
-	IsRareOnInternet     bool    `json:"is_rare_on_internet"`
-	OverallRarenessScore float32 `json:"overall_rareness_score "`
+	BlockHash                                   string  `json:"pastel_block_hash_when_request_submitted"`
+	BlockHeight                                 string  `json:"pastel_block_height_when_request_submitted"`
+	TimestampOfRequest                          string  `json:"utc_timestamp_when_request_submitted"`
+	SubmitterPastelID                           string  `json:"pastel_id_of_submitter"`
+	SN1PastelID                                 string  `json:"pastel_id_of_registering_supernode_1"`
+	SN2PastelID                                 string  `json:"pastel_id_of_registering_supernode_2"`
+	SN3PastelID                                 string  `json:"pastel_id_of_registering_supernode_3"`
+	IsOpenAPIRequest                            bool    `json:"is_pastel_openapi_request"`
+	OpenAPISubsetID                             string  `json:"open_api_subset_id_string"`
+	DupeDetectionSystemVersion                  string  `json:"dupe_detection_system_version"`
+	IsLikelyDupe                                bool    `json:"is_likely_dupe"`
+	IsRareOnInternet                            bool    `json:"is_rare_on_internet"`
+	OverallRarenessScore                        float32 `json:"overall_rareness_score "`
 	PctOfTop10MostSimilarWithDupeProbAbove25pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct"`
 	PctOfTop10MostSimilarWithDupeProbAbove33pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct"`
 	PctOfTop10MostSimilarWithDupeProbAbove50pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct"`
-	RarenessScoresTableJSONCompressedB64 string `json:"rareness_scores_table_json_compressed_b64"`
 
-	InternetRareness *InternetRareness `json:"internet_rareness"`
-
-	OpenNSFWScore float32 `json:"open_nsfw_score"`
-
-	AlternativeNSFWScores *AlternativeNSFWScores `json:"alternative_nsfw_scores"`
-
-	ImageFingerprintOfCandidateImageFile []float32 `json:"image_fingerprint_of_candidate_image_file"`
-
-	HashOfCandidateImageFile string `json:"hash_of_candidate_image_file"`
+	OpenNSFWScore                              float32                `json:"open_nsfw_score"`
+	ImageFingerprintOfCandidateImageFile       []float32              `json:"image_fingerprint_of_candidate_image_file"`
+	HashOfCandidateImageFile                   string                 `json:"hash_of_candidate_image_file"`
+	RarenessScoresTableJSONCompressedB64       string                 `json:"rareness_scores_table_json_compressed_b64"`
+	CollectionNameString                       string                 `json:"collection_name_string,omitempty"`
+	OpenAPIGroupIDString                       string                 `json:"open_api_group_id_string,omitempty"`
+	GroupRarenessScore                         float32                `json:"group_rareness_score,omitempty"`
+	CandidateImageThumbnailWebpAsBase64String  string                 `json:"candidate_image_thumbnail_webp_as_base64_string,omitempty"`
+	DoesNotImpactTheFollowingCollectionStrings string                 `json:"does_not_impact_the_following_collection_strings,omitempty"`
+	IsInvalidSenseRequest                      bool                   `json:"is_invalid_sense_request,omitempty"`
+	InvalidSenseRequestReason                  string                 `json:"invalid_sense_request_reason,omitempty"`
+	SimilarityScoreToFirstEntryInCollection    float32                `json:"similarity_score_to_first_entry_in_collection,omitempty"`
+	CPProbability                              float32                `json:"cp_probability,omitempty"`
+	ChildProbability                           float32                `json:"child_probability,omitempty"`
+	ImageFilePath                              string                 `json:"image_file_path,omitempty"`
+	InternetRareness                           *InternetRareness      `json:"internet_rareness"`
+	AlternativeNSFWScores                      *AlternativeNSFWScores `json:"alternative_nsfw_scores"`
 }
 
 // InternetRareness defines internet rareness scores
