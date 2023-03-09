@@ -90,7 +90,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 
 		TimestampOfRequest: res.UtcTimestampWhenRequestSubmitted,
 		SubmitterPastelID:  res.PastelIdOfSubmitter,
-		SN1PastelID:        res.PastelIdOfSubmitter,
+		SN1PastelID:        res.PastelIdOfRegisteringSupernode_1,
 		SN2PastelID:        res.PastelIdOfRegisteringSupernode_2,
 		SN3PastelID:        res.PastelIdOfRegisteringSupernode_3,
 
