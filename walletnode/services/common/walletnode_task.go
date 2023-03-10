@@ -38,7 +38,7 @@ func (task *WalletNodeTask) RunHelper(ctx context.Context, run TaskRunnerFunc, c
 	defer log.WithContext(ctx).Debug("End task")
 
 	defer clean()
-	defer task.CloseHistoryDB(ctx)
+
 	if err := run(ctx); err != nil {
 		task.err = err
 		task.UpdateStatus(StatusTaskRejected)
