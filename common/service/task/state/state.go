@@ -11,7 +11,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/types"
 )
 
@@ -37,9 +36,6 @@ type State interface {
 
 	//SetStateLog set the wallet node task status log to the state status log
 	SetStateLog(statusLog types.Fields)
-
-	// CloseHistoryDB closes history database
-	CloseHistoryDB(context.Context)
 }
 
 type state struct {
@@ -50,7 +46,6 @@ type state struct {
 	sync.RWMutex
 	subsCh    []chan *Status
 	taskID    string
-	store     storage.LocalStoreInterface
 	statusLog types.Fields
 }
 
@@ -94,8 +89,14 @@ func (state *state) UpdateStatus(subStatus SubStatus) {
 		history.Details = types.NewDetails(status.String(), state.statusLog)
 	}
 
-	if state.store != nil {
-		if _, err := state.store.InsertTaskHistory(history); err != nil {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithError(err).Error("error opening history db")
+	}
+
+	if store != nil {
+		defer store.CloseHistoryDB(context.Background())
+		if _, err := store.InsertTaskHistory(history); err != nil {
 			log.WithError(err).Error("unable to store task status")
 		}
 	}
@@ -137,12 +138,6 @@ func (state *state) SetStateLog(statusLog types.Fields) {
 	state.statusLog = statusLog
 }
 
-func (state *state) CloseHistoryDB(ctx context.Context) {
-	if state.store != nil {
-		state.store.CloseHistoryDB(ctx)
-	}
-}
-
 // New returns a new state instance.
 func New(subStatus SubStatus, taskID string) State {
 	store, err := local.OpenHistoryDB()
@@ -151,6 +146,8 @@ func New(subStatus SubStatus, taskID string) State {
 	}
 
 	if store != nil {
+		defer store.CloseHistoryDB(context.Background())
+
 		if _, err := store.InsertTaskHistory(types.TaskHistory{CreatedAt: time.Now(), TaskID: taskID,
 			Status: subStatus.String()}); err != nil {
 			log.WithError(err).Error("unable to store task status")
@@ -160,6 +157,5 @@ func New(subStatus SubStatus, taskID string) State {
 	return &state{
 		status: NewStatus(subStatus),
 		taskID: taskID,
-		store:  store,
 	}
 }

@@ -34,7 +34,7 @@ import (
 const (
 	synchronizationIntervalSec = 5
 	synchronizationTimeoutSec  = 60
-	runTaskInterval            = 10 * time.Minute
+	runTaskInterval            = 2 * time.Minute
 	pastelIDRestartInterval    = 15 * time.Minute
 	masterNodeSuccessfulStatus = "Masternode successfully started"
 )
@@ -120,9 +120,9 @@ func (s *service) run(ctx context.Context) error {
 		return s.scorer.Start(gctx)
 	})*/
 
-	group.Go(func() error {
+	/*group.Go(func() error {
 		return s.restartPastelID(gctx)
-	})
+	})*/
 
 	if err := group.Wait(); err != nil {
 		log.WithContext(gctx).WithError(err).Errorf("First runTask() failed")
@@ -407,7 +407,15 @@ func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash stri
 }
 
 func (s *service) runTask(ctx context.Context) error {
-	log.WithContext(ctx).Info("getting Activation tickets")
+	log.WithContext(ctx).Info("getting Activation tickets, checking non seed records.")
+	nonseed, err := s.store.CheckNonSeedRecord(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to get nonseed record")
+	} else if !nonseed {
+		log.WithContext(ctx).Info("No NonSeed Record, set latestBlockHeight to 0")
+		s.latestBlockHeight = 0
+	}
+
 	actTickets, err := s.pastelClient.ActTickets(ctx, pastel.ActTicketAll, s.latestBlockHeight)
 	if err != nil {
 		log.WithError(err).Error("unable to get act tickets - exit runtask now")
@@ -448,13 +456,27 @@ func (s *service) runTask(ctx context.Context) error {
 
 		ddAndFpFromTicket := &pastel.DDAndFingerprints{}
 		//Get the dd and fp file from the ticket
+
+		p2pServiceRunning := true
 		for _, id := range ddFPIDs {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
 			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("Failed to get dd and fp file from ticket")
+				if strings.Contains(err.Error(), "p2p service is not running") {
+					p2pServiceRunning = false
+					break
+				}
+
 				//probably too verbose even for debug.
 				log.WithContext(ctx).WithField("error", err).WithField("txid", actTickets[i].ActTicketData.RegTXID).WithField("id", id).Debug("Could not get the fingerprint for this file hash")
 				continue
 			}
+			break
+		}
+		if !p2pServiceRunning {
+			log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).
+				Info("P2P service is not running, so we can't get the fingerprint for this file hash, stopping this run of the task")
+
 			break
 		}
 
@@ -505,14 +527,22 @@ func (s *service) runTask(ctx context.Context) error {
 			collection = regTicket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName
 		}
 
+		groupID := "PASTEL"
+		if ddAndFpFromTicket.OpenAPIGroupIDString != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPIGroupIDString, "NA") {
+			groupID = ddAndFpFromTicket.OpenAPIGroupIDString
+		}
+
 		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
-			Sha256HashOfArtImageFile:           ddAndFpFromTicket.HashOfCandidateImageFile,
-			ImageFingerprintVector:             toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
-			DatetimeFingerprintAddedToDatabase: time.Now().Format("2006-01-02 15:04:05"),
-			PathToArtImageFile:                 "",
-			ImageThumbnailAsBase64:             "",
-			RequestType:                        typeMapper(regTicket.RegTicketData.Type),
-			IDString:                           collection,
+			Sha256HashOfArtImageFile:                   ddAndFpFromTicket.HashOfCandidateImageFile,
+			ImageFingerprintVector:                     toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
+			DatetimeFingerprintAddedToDatabase:         time.Now().Format("2006-01-02 15:04:05"),
+			PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
+			ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,
+			RequestType:                                typeMapper(regTicket.RegTicketData.Type),
+			IDString:                                   collection,
+			OpenAPIGroupIDString:                       groupID,
+			CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
+			DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
 		}); err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
@@ -567,17 +597,31 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
+		p2pServiceRunning := true
 		ddAndFpFromTicket := &pastel.DDAndFingerprints{}
 		//Get the dd and fp file from the ticket
 		for _, id := range senseTicket.DDAndFingerprintsIDs {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
 			if err != nil {
+				if strings.Contains(err.Error(), "p2p service is not running") {
+					p2pServiceRunning = false
+					break
+				}
+
 				//probably too verbose even for debug.
 				log.WithContext(ctx).WithField("error", err).WithField("sense-txid", senseRegTickets[i].TXID).Debug("Could not get the fingerprint for this file hash")
 				continue
 			}
 			break
 		}
+
+		if !p2pServiceRunning {
+			log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).
+				Info("P2P service is not running, so we can't get the fingerprint for this file hash, stopping this run of the task")
+
+			break
+		}
+
 		if ddAndFpFromTicket == nil {
 			log.WithContext(ctx).WithField("senseTicket", senseTicket).Debugf("None of the dd and fp id files for this sense reg ticket could be properly unmarshalled")
 			continue

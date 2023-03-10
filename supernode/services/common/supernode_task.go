@@ -32,7 +32,6 @@ func (task *SuperNodeTask) RunHelper(ctx context.Context, clean TaskCleanerFunc)
 	})
 
 	defer clean()
-	defer task.CloseHistoryDB(ctx)
 
 	return task.RunAction(ctx)
 }

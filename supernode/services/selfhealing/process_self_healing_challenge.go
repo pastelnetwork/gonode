@@ -71,6 +71,9 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
 
 	//Checking Process
 	//1. false, nil, err    - should not update the challenge to completed, so that it can be retried again
@@ -89,8 +92,6 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info(fmt.Sprintf("Reconstruction is not required for file: %s", challengeFileHash))
 
 			if store != nil {
-				defer store.CloseHistoryDB(ctx)
-
 				log.WithContext(ctx).Println("Storing self-healing audit log")
 				shChallenge := types.SelfHealingChallenge{
 					ChallengeID:           challengeMessage.ChallengeId,
@@ -148,8 +149,6 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 			log.WithContext(ctx).WithError(err).Error("self-healing not required for sense action ticket")
 
 			if store != nil {
-				defer store.CloseHistoryDB(ctx)
-
 				log.WithContext(ctx).Println("Storing self-healing audit log")
 				shChallenge := types.SelfHealingChallenge{
 					ChallengeID:           challengeMessage.ChallengeId,
