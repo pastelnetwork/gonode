@@ -120,9 +120,11 @@ func (s *service) run(ctx context.Context) error {
 		return s.scorer.Start(gctx)
 	})*/
 
-	/*group.Go(func() error {
-		return s.restartPastelID(gctx)
-	})*/
+	go func() {
+		if err := s.restartPastelID(gctx); err != nil {
+			log.WithContext(gctx).WithError(err).Error("Failed to restart pastelID")
+		}
+	}()
 
 	if err := group.Wait(); err != nil {
 		log.WithContext(gctx).WithError(err).Errorf("First runTask() failed")
