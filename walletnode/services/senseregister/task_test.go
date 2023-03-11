@@ -9,16 +9,16 @@ import (
 	"time"
 
 	"github.com/DataDog/zstd"
-	"github.com/pastelnetwork/gonode/walletnode/node/test"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const (
@@ -76,7 +76,7 @@ func TestTaskRun(t *testing.T) {
 			},
 			args: args{
 				taskID:     "1",
-				ctx:        context.Background(),
+				ctx:        log.ContextWithServer(context.Background(), "test-ip"),
 				networkFee: 0.4,
 				masterNodes: pastel.MasterNodes{
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
