@@ -85,8 +85,8 @@ func (h *RegTaskHelper) AddPeerTicketSignature(nodeID string, signature []byte, 
 }
 
 // ValidateIDFiles validates received (IDs) file and its (50) IDs:
-// 	1. checks signatures
-//	2. generates list of 50 IDs and compares them to received
+//  1. checks signatures
+//  2. generates list of 50 IDs and compares them to received
 func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 	data []byte, ic uint32, max uint32, ids []string, numSignRequired int,
 	pastelIDs []string,
@@ -295,7 +295,7 @@ func (h *RegTaskHelper) ValidateBurnTxID(ctx context.Context) error {
 		return err
 	}
 
-	log.WithContext(ctx).Debug("Burn Txn confirmed & validated")
+	log.WithContext(ctx).Info("Burn Txn confirmed & validated")
 
 	return nil
 }

@@ -87,6 +87,7 @@ func TestNodesSendImage(t *testing.T) {
 		nodes                     []nodeAttribute
 		args                      args
 		err                       error
+		errString                 string
 		validBurnTxID             bool
 		compressedFingersAndScore []byte
 		numberProbeImageCall      int
@@ -99,6 +100,7 @@ func TestNodesSendImage(t *testing.T) {
 			},
 			args:                      args{ctx, &files.File{}},
 			err:                       nil,
+			errString:                 "",
 			validBurnTxID:             true,
 			compressedFingersAndScore: testCompressedFingerAndScores,
 			numberProbeImageCall:      1,
@@ -110,6 +112,7 @@ func TestNodesSendImage(t *testing.T) {
 			},
 			args:                      args{ctx, &files.File{}},
 			err:                       fmt.Errorf("failed to open stream"),
+			errString:                 "Unable to probe",
 			validBurnTxID:             false,
 			compressedFingersAndScore: testCompressedFingerAndScores,
 			numberProbeImageCall:      1,
@@ -129,7 +132,7 @@ func TestNodesSendImage(t *testing.T) {
 				//client mock
 				client := test.NewMockClient(t)
 				//listen on uploadImage call
-				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.validBurnTxID, testCase.err)
+				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.validBurnTxID, testCase.errString, testCase.err)
 
 				someNode := common.NewSuperNode(client, a.address, "", service.RegisterSenseNodeMaker{})
 				someNode.SuperNodeAPIInterface = &service.SenseRegistrationNode{RegisterSenseInterface: client.RegisterSenseInterface}
