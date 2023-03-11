@@ -35,8 +35,6 @@ type ConnectionInterface interface {
 	RegisterNft() RegisterNftInterface
 	// DownloadNft returns a new DownloadNft stream.
 	DownloadNft() DownloadNftInterface
-	// ProcessUserdata returns a new ProcessUserdata stream.
-	// ProcessUserdata() ProcessUserdataInterface
 	// RegisterSense returns new RegisterSense stream
 	RegisterSense() RegisterSenseInterface
 	// RegisterCascade returns new RegisterCascade stream
@@ -71,7 +69,7 @@ type RegisterSenseInterface interface {
 	// SendRegMetadata send metadata of registration to SNs for next steps
 	SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error
 	// ProbeImage uploads image to supernode.
-	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error)
+	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, string, error)
 	// SendSignedTicket send a reg-nft ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFpFile []byte) (string, error)
 	// SendActionAct send action act to SNs for next steps

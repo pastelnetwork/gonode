@@ -3,6 +3,7 @@ package files
 import (
 	"bytes"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/log"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -286,10 +287,12 @@ func (file *File) UpdateFormat() error {
 
 	_, format, err := image.Decode(f)
 	if err != nil {
+		log.WithError(err).Error(fmt.Sprintf("Not able to decode:%s", err.Error()))
 		return errors.Errorf("decode image(%s): %w", file.Name(), err)
 	}
 	err = file.SetFormatFromExtension(format)
 	if err != nil {
+		log.WithError(err).Error(fmt.Sprintf("not able to set extension:%s", err.Error()))
 		return errors.Errorf("set file format(%s): %w", file.Name(), err)
 	}
 	return nil

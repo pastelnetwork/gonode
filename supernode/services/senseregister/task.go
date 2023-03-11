@@ -2,6 +2,7 @@ package senseregister
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -52,7 +53,8 @@ func (task *SenseRegistrationTask) Run(ctx context.Context) error {
 }
 
 // SendRegMetadata receives registration metadata -
-//		caller/creator PastelID; block when ticket registration has started; txid of the pre-burn fee
+//
+//	caller/creator PastelID; block when ticket registration has started; txid of the pre-burn fee
 func (task *SenseRegistrationTask) SendRegMetadata(_ context.Context, regMetadata *types.ActionRegMetadata) error {
 	if err := task.RequiredStatus(common.StatusConnected); err != nil {
 		return err
@@ -80,6 +82,7 @@ func (task *SenseRegistrationTask) CalculateFee(ctx context.Context, file *files
 	fileDataInMb := utils.GetFileSizeInMB(fileBytes)
 	fee, err := task.PastelHandler.GetEstimatedSenseFee(ctx, fileDataInMb)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("GetEstimatedSenseFeeFailed:%s", err.Error()))
 		return errors.Errorf("getting estimated fee %w", err)
 	}
 

@@ -82,21 +82,21 @@ func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 
 // SetupMeshOfNSupernodesNodes sets Mesh
 func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, string, error) {
-	log.WithContext(ctx).Debug("SetupMeshOfNSupernodesNodes Starting...")
+	log.WithContext(ctx).Info("SetupMeshOfNSupernodesNodes Starting...")
 
 	// Get current block height & hash
 	blockNum, blockHash, err := m.pastelHandler.GetBlock(ctx)
 	if err != nil {
 		return -1, "", errors.Errorf("get block: %v", err)
 	}
-	log.WithContext(ctx).Debugf("Current block is %d", blockNum)
+	log.WithContext(ctx).Infof("Current block is %d", blockNum)
 
 	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
 		return 0, "", err
 	}
-	log.WithContext(ctx).Debugf("Found %d valid SuperNodes", len(connectedNodes))
+	log.WithContext(ctx).Infof("Found %d valid SuperNodes", len(connectedNodes))
 
 	meshedNodes, err := m.setMesh(ctx, connectedNodes, m.minNumberSuperNodes)
 	if err != nil {

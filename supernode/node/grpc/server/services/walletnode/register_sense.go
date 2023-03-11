@@ -200,6 +200,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Unable to retrieve TaskFromMD")
 		return err
 	}
 
@@ -244,11 +245,12 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 
 	err = image.UpdateFormat()
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("UpdateFormatError:%s", err.Error()))
 		return errors.Errorf("add image format: %w", err)
 	}
 
 	if err := task.CalculateFee(ctx, image); err != nil {
-		log.WithContext(ctx).WithError(err).Error("calculate fee failed")
+		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("calculate fee failed:%s", err.Error()))
 		return errors.Errorf("calculate fee: %w", err)
 	}
 
@@ -266,12 +268,16 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 			return fmt.Errorf("task.ProbeImage: %w", err)
 		}
 	} else {
-		log.WithContext(ctx).WithError(err).Error("validate burn txid failed")
+		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("validate burn txid failed:%s", err.Error()))
 	}
 
 	resp := &pb.ProbeImageReply{
 		CompressedSignedDDAndFingerprints: compressedDDFingerAndScores,
 		IsValidBurnTxid:                   isValidBurnTxID,
+	}
+
+	if err != nil && !isValidBurnTxID {
+		resp.ErrString = err.Error()
 	}
 
 	if err := stream.SendAndClose(resp); err != nil {

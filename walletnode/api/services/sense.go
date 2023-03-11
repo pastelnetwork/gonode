@@ -55,18 +55,23 @@ func (service *SenseAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) go
 // UploadImage - Uploads an image and return unique image id
 func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.UploadImagePayload) (res *sense.Image, err error) {
 	if p.Filename == nil {
+		log.WithContext(ctx).WithError(err).Error("Filename not specified")
 		return nil, sense.MakeBadRequest(errors.New("file not specified"))
 	}
 
 	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Error Storing File: %s", err.Error()))
 		return nil, sense.MakeInternalServerError(err)
 	}
+	log.WithContext(ctx).Info(fmt.Sprintf("File has been uploaded: %s", id))
 
 	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Error Calculating Fee: %s", err.Error()))
 		return nil, sense.MakeInternalServerError(err)
 	}
+	log.WithContext(ctx).Info(fmt.Sprintf("Estimated fee has been calculated: %f", fee))
 
 	res = &sense.Image{
 		ImageID:      id,
@@ -78,9 +83,10 @@ func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.Upload
 }
 
 // StartProcessing - Starts a processing image task
-func (service *SenseAPIHandler) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
+func (service *SenseAPIHandler) StartProcessing(ctx context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Unable to add task: %s", err.Error()))
 		return nil, sense.MakeInternalServerError(err)
 	}
 
@@ -88,6 +94,7 @@ func (service *SenseAPIHandler) StartProcessing(_ context.Context, p *sense.Star
 		TaskID: taskID,
 	}
 
+	log.WithContext(ctx).Info(fmt.Sprintf("task has been added: %s", taskID))
 	return res, nil
 }
 
@@ -97,8 +104,10 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
+		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Unable to get task: %s", err.Error()))
 		return sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
+	log.WithContext(ctx).Info(fmt.Sprintf("task has been retrieved: %s", task.ID()))
 
 	sub := task.SubscribeStatus()
 
@@ -113,6 +122,14 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 			}
 			if err := stream.Send(res); err != nil {
 				return sense.MakeInternalServerError(err)
+			}
+
+			if status.IsFailure() {
+				errStr := fmt.Errorf("internal processing error: %s", status.String())
+				if task.Error() != nil {
+					errStr = task.Error()
+				}
+				return nft.MakeInternalServerError(errStr)
 			}
 
 			if status.IsFinal() {
