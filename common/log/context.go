@@ -2,8 +2,8 @@ package log
 
 import (
 	"context"
-
 	"github.com/pastelnetwork/gonode/common/log/hooks"
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 type (
@@ -21,6 +21,14 @@ const (
 
 // ContextWithPrefix returns a new context with PrefixKey value.
 func ContextWithPrefix(ctx context.Context, prefix string) context.Context {
+	ip, err := utils.GetExternalIPAddress()
+	if err != nil {
+		WithContext(ctx).WithError(err).Error("unable to fetch server ip")
+	}
+	WithContext(ctx).Infof("server ip has been fetched: %s", ip)
+
+	ctx = ContextWithServer(ctx, ip)
+
 	return context.WithValue(ctx, PrefixKey, prefix)
 }
 

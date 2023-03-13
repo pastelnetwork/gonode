@@ -46,7 +46,7 @@ func (entry *Entry) WithError(err error) *Entry {
 // WithContext adds a context to the Entry.
 func (entry *Entry) WithContext(ctx context.Context) *Entry {
 	ent := &Entry{Entry: entry.Entry.WithContext(ctx), level: entry.level}
-	server := ctx.Value("server")
+	server := ctx.Value(ServerKey)
 	return ent.WithField("server_ip", server)
 }
 
