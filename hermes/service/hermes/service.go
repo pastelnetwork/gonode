@@ -1,7 +1,6 @@
 package hermes
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -9,7 +8,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -120,11 +118,11 @@ func (s *service) run(ctx context.Context) error {
 		return s.scorer.Start(gctx)
 	})*/
 
-	go func() {
+	/*go func() {
 		if err := s.restartPastelID(gctx); err != nil {
 			log.WithContext(gctx).WithError(err).Error("Failed to restart pastelID")
 		}
-	}()
+	}()*/
 
 	if err := group.Wait(); err != nil {
 		log.WithContext(gctx).WithError(err).Errorf("First runTask() failed")
@@ -183,6 +181,7 @@ func (s *service) checkSynchronized(ctx context.Context) error {
 	return errors.Errorf("node not synced, status is %s", st.Status)
 }
 
+/*
 func (s *service) restartPastelID(ctx context.Context) error {
 	for {
 		select {
@@ -265,7 +264,8 @@ func (s *service) restartPastelID(ctx context.Context) error {
 		}
 	}
 }
-
+*/
+/*
 func getDataDir(ctx context.Context, confFilePath string) (dataDir string, err error) {
 	log.WithContext(ctx).Info("opening the supernode.yml")
 	file, err := os.OpenFile(confFilePath, os.O_RDWR, 0644)
@@ -295,6 +295,7 @@ func getDataDir(ctx context.Context, confFilePath string) (dataDir string, err e
 
 	return dataDir, nil
 }
+
 
 func loadMasternodeConfFile(ctx context.Context, masternodeConfFilePath string) (map[string]domain.MasterNodeConf, error) {
 	// Read ConfData from masternode.conf
@@ -332,6 +333,7 @@ func getMasternodePrivKey(ctx context.Context, masterNodeConffilePath, extIP str
 
 	return "", errors.New("not able to found private key")
 }
+*/
 
 // checkNextBlockAvailable calls pasteld and checks if a new block is available
 func (s *service) checkNextBlockAvailable(ctx context.Context) bool {
