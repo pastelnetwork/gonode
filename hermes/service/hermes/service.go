@@ -5,11 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
@@ -50,7 +47,7 @@ type service struct {
 
 	currentNFTBlock    int
 	currentActionBlock int
-	currentBlockCount  int32
+	//currentBlockCount  int32
 }
 
 func toFloat64Array(data []float32) []float64 {
@@ -333,7 +330,7 @@ func getMasternodePrivKey(ctx context.Context, masterNodeConffilePath, extIP str
 
 	return "", errors.New("not able to found private key")
 }
-*/
+
 
 // checkNextBlockAvailable calls pasteld and checks if a new block is available
 func (s *service) checkNextBlockAvailable(ctx context.Context) bool {
@@ -347,7 +344,7 @@ func (s *service) checkNextBlockAvailable(ctx context.Context) bool {
 	}
 
 	return false
-}
+}*/
 
 func (s *service) waitSynchronization(ctx context.Context) error {
 	checkTimeout := func(checked chan<- struct{}) {
@@ -727,7 +724,7 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	return stats, nil
 }
 
-func getPastelDPath(ctx context.Context) (path string, err error) {
+/*func getPastelDPath(ctx context.Context) (path string, err error) {
 	//create command
 	findCmd := exec.Command("find", ".", "-print")
 	grepCmd := exec.Command("grep", "-x", "./pastel/pasteld")
@@ -798,6 +795,7 @@ func getPastelCliPath(ctx context.Context) (path string, err error) {
 	pathWithEscapeCharacter := buf.String()
 	return strings.Replace(pathWithEscapeCharacter, "\n", "", 1), nil
 }
+*/
 
 // NewService returns a new ddscan service
 func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInterface) (svc.SvcInterface, error) {
