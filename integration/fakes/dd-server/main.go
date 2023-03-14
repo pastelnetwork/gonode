@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/log"
 	"net/http"
 	"time"
 
@@ -46,7 +47,7 @@ func main() {
 		handler.NewDDService(store),
 	)
 
-	if err := grpc.Run(context.Background()); err != nil {
+	if err := grpc.Run(log.ContextWithPrefix(context.Background(), "")); err != nil {
 		panic("unable to run grpc server")
 	}
 

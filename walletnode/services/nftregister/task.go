@@ -298,7 +298,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	// new context because the old context already cancelled
-	newCtx := context.Background()
+	newCtx := log.ContextWithPrefix(context.Background(), "nft-reg")
 	//Start Step 20
 
 	log.WithContext(ctx).Debug("Waiting Confirmations for NFT Reg Ticket")
