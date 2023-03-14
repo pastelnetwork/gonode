@@ -6,10 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/store"
 
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/scorer"
@@ -43,11 +41,16 @@ type service struct {
 
 	scorer             *scorer.Scorer
 	isMasterNodeSynced bool
-	latestBlockHeight  int
 
+	//currentBlockCount  int32
+
+	// used in cleanup inactive tickets task
 	currentNFTBlock    int
 	currentActionBlock int
-	//currentBlockCount  int32
+
+	// used in fingerprints store task
+	latestNFTBlockHeight   int
+	latestSenseBlockHeight int
 }
 
 func toFloat64Array(data []float32) []float64 {
@@ -104,7 +107,7 @@ func (s *service) run(ctx context.Context) error {
 
 	group, gctx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		return s.runTask(gctx)
+		return s.runStoreFingerprintsTask(gctx)
 	})
 
 	/*group.Go(func() error {
@@ -143,7 +146,7 @@ func (s *service) run(ctx context.Context) error {
 
 			group, gctx := errgroup.WithContext(ctx)
 			group.Go(func() error {
-				return s.runTask(gctx)
+				return s.runStoreFingerprintsTask(gctx)
 			})
 
 			/*group.Go(func() error {
@@ -407,291 +410,24 @@ func (s *service) tryToGetFingerprintFileFromHash(ctx context.Context, hash stri
 	return ddFingerprint, nil
 }
 
-func (s *service) runTask(ctx context.Context) error {
+func (s *service) runStoreFingerprintsTask(ctx context.Context) error {
 	log.WithContext(ctx).Info("getting Activation tickets, checking non seed records.")
 	nonseed, err := s.store.CheckNonSeedRecord(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to get nonseed record")
 	} else if !nonseed {
 		log.WithContext(ctx).Info("No NonSeed Record, set latestBlockHeight to 0")
-		s.latestBlockHeight = 0
+		s.latestNFTBlockHeight = 0
+		s.latestSenseBlockHeight = 0
 	}
 
-	actTickets, err := s.pastelClient.ActTickets(ctx, pastel.ActTicketAll, s.latestBlockHeight)
-	if err != nil {
-		log.WithError(err).Error("unable to get act tickets - exit runtask now")
-		return nil
-	}
-	if len(actTickets) == 0 {
-		return nil
-	}
-	log.WithContext(ctx).WithField("count", len(actTickets)).Info("Act tickets retrieved")
-
-	//track latest block height, but don't set it until we check all the nft reg tickets and the sense tickets.
-	latestBlockHeight := s.latestBlockHeight
-	lastKnownGoodHeight := s.latestBlockHeight
-
-	//loop through nft tickets and store newly found nft reg tickets
-	for i := 0; i < len(actTickets); i++ {
-		if actTickets[i].Height <= s.latestBlockHeight {
-			continue
-		}
-
-		regTicket, err := s.pastelClient.RegTicket(ctx, actTickets[i].ActTicketData.RegTXID)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).WithField("regTxid", actTickets[i].ActTicketData.RegTXID).
-				WithField("act-Txid", actTickets[i].TXID).Error("unable to get reg ticket")
-			continue
-		}
-
-		log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).Info("Found new NFT ticket")
-
-		decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
-			continue
-		}
-		regTicket.RegTicketData.NFTTicketData = *decTicket
-
-		ddFPIDs := regTicket.RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs
-
-		ddAndFpFromTicket := &pastel.DDAndFingerprints{}
-		//Get the dd and fp file from the ticket
-
-		p2pServiceRunning := true
-		for _, id := range ddFPIDs {
-			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Failed to get dd and fp file from ticket")
-				if strings.Contains(err.Error(), "p2p service is not running") {
-					p2pServiceRunning = false
-					break
-				}
-
-				//probably too verbose even for debug.
-				log.WithContext(ctx).WithField("error", err).WithField("txid", actTickets[i].ActTicketData.RegTXID).WithField("id", id).Debug("Could not get the fingerprint for this file hash")
-				continue
-			}
-			break
-		}
-		if !p2pServiceRunning {
-			log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).
-				Info("P2P service is not running, so we can't get the fingerprint for this file hash, stopping this run of the task")
-
-			break
-		}
-
-		if ddAndFpFromTicket == nil {
-			log.WithContext(ctx).WithField("txid", regTicket.TXID).
-				WithField("NFTRegTicket", regTicket.RegTicketData.NFTTicketData).Debugf("None of the dd and fp id files for this nft reg ticket could be properly unmarshalled")
-			continue
-		}
-		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
-			log.WithContext(ctx).WithField("NFTRegTicket", regTicket.RegTicketData.NFTTicketData).Debugf("This NFT Reg ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
-			continue
-		}
-
-		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
-		if existsInDatabase {
-			log.WithContext(ctx).WithField("txid", regTicket.TXID).Info("fingerprints already exist in database, skipping")
-			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
-			if actTickets[i].Height > lastKnownGoodHeight {
-				lastKnownGoodHeight = regTicket.RegTicketData.NFTTicketData.BlockNum
-			}
-			continue
-		}
-		if err != nil {
-			log.WithContext(ctx).Error("Could not properly query the dd database for this hash")
-			continue
-		}
-
-		//make sure ImageFingerprintOfCnadidateImageFile exists.
-		// this could fail if the ticket is an older version of the DDAndFingerprints struct, so we will continue to next fingerprint
-		if ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile == nil {
-			log.WithContext(ctx).WithField("NFTRegTicket", regTicket.RegTicketData.NFTTicketData).Debugf("This NFT Reg ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
-			continue
-		}
-		if len(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile) < 1 {
-			log.WithContext(ctx).WithField("NFTRegTicket", regTicket.RegTicketData.NFTTicketData).Debugf("This NFT Reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
-			continue
-		}
-
-		// thumbnailHash := regTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash
-		// thumbnail, err := s.p2pClient.Retrieve(ctx, string(thumbnailHash))
-		// if err != nil {
-		// 	log.WithContext(ctx).WithField("thumbnailHash", regTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash).Warnf("Could not get the thumbnail with this hash for nftticketdata")
-		// 	continue
-		// }
-
-		collection := "PASTEL"
-		if regTicket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName != "" {
-			collection = regTicket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName
-		}
-
-		groupID := "PASTEL"
-		if ddAndFpFromTicket.OpenAPIGroupIDString != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPIGroupIDString, "NA") {
-			groupID = ddAndFpFromTicket.OpenAPIGroupIDString
-		}
-
-		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
-			Sha256HashOfArtImageFile:                   ddAndFpFromTicket.HashOfCandidateImageFile,
-			ImageFingerprintVector:                     toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
-			DatetimeFingerprintAddedToDatabase:         time.Now().Format("2006-01-02 15:04:05"),
-			PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
-			ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,
-			RequestType:                                typeMapper(regTicket.RegTicketData.Type),
-			IDString:                                   collection,
-			OpenAPIGroupIDString:                       groupID,
-			CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
-			DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
-		}); err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
-		}
-		if regTicket.RegTicketData.NFTTicketData.BlockNum > latestBlockHeight {
-			latestBlockHeight = regTicket.RegTicketData.NFTTicketData.BlockNum
-		}
-	}
-	//loop through action tickets and store newly found nft reg tickets
-
-	senseRegTickets, err := s.pastelClient.ActionTickets(ctx)
-	if err != nil {
-		log.WithError(err).Errorf("get registered ticket - exit runTask")
-		return nil
+	if err := s.parseSenseTickets(ctx); err != nil {
+		return err
 	}
 
-	if len(senseRegTickets) == 0 {
-		return nil
+	if err := s.praseNFTTickets(ctx); err != nil {
+		return err
 	}
-	for i := 0; i < len(senseRegTickets); i++ {
-		if senseRegTickets[i].ActionTicketData.CalledAt <= s.latestBlockHeight {
-			continue
-		}
-		log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).Info("Found sense ticket, checking activation...")
-
-		idt, err := s.pastelClient.FindActionActByActionRegTxid(ctx, senseRegTickets[i].TXID)
-		if err != nil {
-			log.WithContext(ctx).WithField("reg-txid", senseRegTickets[i].TXID).WithError(err).
-				Error("Failed to find action act by action reg txid")
-			continue
-		}
-
-		if idt == nil || idt.TXID == "" {
-			continue
-		}
-
-		log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).Info("Found activated sense ticket")
-
-		decTicket, err := pastel.DecodeActionTicket(senseRegTickets[i].ActionTicketData.ActionTicket)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
-			continue
-		}
-		senseRegTickets[i].ActionTicketData.ActionTicketData = *decTicket
-
-		if senseRegTickets[i].ActionTicketData.ActionTicketData.ActionType != "sense" {
-			continue
-		}
-
-		senseTicket, err := senseRegTickets[i].ActionTicketData.ActionTicketData.APISenseTicket()
-		if err != nil {
-			log.WithContext(ctx).WithField("senseRegTickets.ActionTicketData", senseRegTickets[i].ActionTicketData).Debugf("Could not get sense ticket for action ticket data")
-			continue
-		}
-
-		p2pServiceRunning := true
-		ddAndFpFromTicket := &pastel.DDAndFingerprints{}
-		//Get the dd and fp file from the ticket
-		for _, id := range senseTicket.DDAndFingerprintsIDs {
-			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
-			if err != nil {
-				if strings.Contains(err.Error(), "p2p service is not running") {
-					p2pServiceRunning = false
-					break
-				}
-
-				//probably too verbose even for debug.
-				log.WithContext(ctx).WithField("error", err).WithField("sense-txid", senseRegTickets[i].TXID).Debug("Could not get the fingerprint for this file hash")
-				continue
-			}
-			break
-		}
-
-		if !p2pServiceRunning {
-			log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).
-				Info("P2P service is not running, so we can't get the fingerprint for this file hash, stopping this run of the task")
-
-			break
-		}
-
-		if ddAndFpFromTicket == nil {
-			log.WithContext(ctx).WithField("senseTicket", senseTicket).Debugf("None of the dd and fp id files for this sense reg ticket could be properly unmarshalled")
-			continue
-		}
-		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
-			log.WithContext(ctx).WithField("senseTicket", senseTicket).Debugf("This NFT sense ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
-			continue
-		}
-
-		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
-		if existsInDatabase {
-			log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).Info("Fingerprint exists in database, skipping...")
-			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
-			if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum > lastKnownGoodHeight {
-				lastKnownGoodHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
-			}
-			continue
-		}
-		if err != nil {
-			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Error("Could not properly query the dd database for this hash")
-			continue
-		}
-
-		// this could fail if the ticket is an older version of the DDAndFingerprints struct, so we will continue to next fingerprint
-		if ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile == nil {
-			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Debugf("This sense ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
-			continue
-		}
-		if len(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile) < 1 {
-			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Debugf("This sense reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
-			continue
-		}
-
-		collection := "PASTEL"
-		if ddAndFpFromTicket.OpenAPISubsetID != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPISubsetID, "NA") {
-			collection = ddAndFpFromTicket.OpenAPISubsetID
-		}
-
-		groupID := "PASTEL"
-		if ddAndFpFromTicket.OpenAPIGroupIDString != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPIGroupIDString, "NA") {
-			groupID = ddAndFpFromTicket.OpenAPIGroupIDString
-		}
-
-		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
-			Sha256HashOfArtImageFile:                   ddAndFpFromTicket.HashOfCandidateImageFile,
-			ImageFingerprintVector:                     toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
-			DatetimeFingerprintAddedToDatabase:         time.Now().Format("2006-01-02 15:04:05"),
-			PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
-			ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,
-			RequestType:                                typeMapper(senseRegTickets[i].ActionTicketData.Type),
-			IDString:                                   collection,
-			OpenAPIGroupIDString:                       groupID,
-			CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
-			DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
-		}); err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
-		}
-		if senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum > latestBlockHeight {
-			latestBlockHeight = senseRegTickets[i].ActionTicketData.ActionTicketData.BlockNum
-		}
-	}
-
-	if lastKnownGoodHeight > latestBlockHeight {
-		s.latestBlockHeight = lastKnownGoodHeight
-	} else {
-		s.latestBlockHeight = latestBlockHeight
-	}
-
-	log.WithContext(ctx).WithField("latest blockheight", s.latestBlockHeight).Debugf("hermes successfully scanned to latest block height")
 
 	return nil
 }
