@@ -25,7 +25,6 @@ func ContextWithPrefix(ctx context.Context, prefix string) context.Context {
 	if err != nil {
 		WithContext(ctx).WithError(err).Error("unable to fetch server ip")
 	}
-	WithContext(ctx).Infof("server ip has been fetched: %s", ip)
 
 	ctx = ContextWithServer(ctx, ip)
 

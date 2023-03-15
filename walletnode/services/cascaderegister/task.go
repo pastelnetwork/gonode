@@ -200,7 +200,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Debugf("Waiting Confirmations for Cascade Reg Ticket - Ticket txid: %s", task.regCascadeTxid)
 
 	// new context because the old context already cancelled
-	newCtx := context.Background()
+	newCtx := log.ContextWithPrefix(context.Background(), "cascade")
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
