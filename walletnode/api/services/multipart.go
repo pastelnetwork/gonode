@@ -1,13 +1,14 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"io"
-	"mime"
+	"io/ioutil"
 	"mime/multipart"
-	"path/filepath"
 	"strings"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -105,21 +106,24 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 			continue
 		}
 
-		contentType, _, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
+		var data []byte
+		data, err = ioutil.ReadAll(part)
 		if err != nil {
-			return "", "BadRequest", errors.Errorf("could not parse Content-Type: %w", err)
+			return "", "BadRequest", errors.Errorf("could not read part: %w", err)
 		}
+
+		contentType := mimetype.Detect(data)
 
 		filename = part.FileName()
 		log.WithContext(ctx).Debugf("Upload image %q", filename)
 
 		image := storage.NewFile()
 		if onlyImage {
-			if !strings.HasPrefix(contentType, contentTypePrefix) {
+			if !strings.HasPrefix(contentType.String(), contentTypePrefix) {
 				return "", "BadRequest", errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix)
 			}
 
-			if err := image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
+			if err := image.SetFormatFromExtension(contentType.Extension()); err != nil {
 				return "", "BadRequest", errors.Errorf("could not set format from extension: %w", err)
 			}
 		}
@@ -134,9 +138,10 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 		}
 		defer fl.Close()
 
-		if _, err := io.Copy(fl, part); err != nil {
+		if _, err := io.Copy(fl, bytes.NewBuffer(data)); err != nil {
 			return "", "InternalServerError", errors.Errorf("failed to write data to %q: %w", filename, err)
 		}
+
 		log.WithContext(ctx).Debugf("Uploaded image to %q", filename)
 	}
 
