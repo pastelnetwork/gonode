@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"strings"
 
@@ -105,13 +106,13 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 			continue
 		}
 
-		var buf bytes.Buffer
-		tee := io.TeeReader(part, &buf)
-
-		contentType, err := mimetype.DetectReader(part)
+		var data []byte
+		data, err = ioutil.ReadAll(part)
 		if err != nil {
-			return "", "BadRequest", errors.Errorf("could not parse Content-Type: %w", err)
+			return "", "BadRequest", errors.Errorf("could not read part: %w", err)
 		}
+
+		contentType := mimetype.Detect(data)
 
 		filename = part.FileName()
 		log.WithContext(ctx).Debugf("Upload image %q", filename)
@@ -137,7 +138,7 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 		}
 		defer fl.Close()
 
-		if _, err := io.Copy(fl, tee); err != nil {
+		if _, err := io.Copy(fl, bytes.NewBuffer(data)); err != nil {
 			return "", "InternalServerError", errors.Errorf("failed to write data to %q: %w", filename, err)
 		}
 

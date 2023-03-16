@@ -425,11 +425,7 @@ func (s *service) runStoreFingerprintsTask(ctx context.Context) error {
 		return err
 	}
 
-	if err := s.praseNFTTickets(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return s.praseNFTTickets(ctx)
 }
 
 // Stats return status of dupe detection
