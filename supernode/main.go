@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -11,6 +14,7 @@ import (
 
 const (
 	debugModeEnvName = "SUPERNODE_DEBUG"
+	profilingPort    = "8848"
 )
 
 var (
@@ -19,6 +23,10 @@ var (
 
 func main() {
 	defer errors.Recover(log.FatalAndExit)
+
+	go func() {
+		_ = http.ListenAndServe(fmt.Sprintf(":%s", profilingPort), nil)
+	}()
 
 	app := cmd.NewApp()
 	err := app.Run(os.Args)
