@@ -145,9 +145,9 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		ImageFilePath:                              res.ImageFilePath,
 	}
 
-	log.WithContext(ctx).WithField("Rareness Score Response", output).Debug("Image rareness score response from dd-server")
+	log.WithContext(ctx).WithField("Rareness Score Response", output).Info("Image rareness score response from dd-server")
 
-	return output, nil
+	return output, output.Validate()
 }
 
 // ImageRarenessScore call ddserver to calculate scores

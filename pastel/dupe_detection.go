@@ -70,47 +70,50 @@ type AlternativeNSFWScores struct {
 	Sexy     float32 `json:"sexy"`
 }
 
-// // Percentile represents percentile values
-// type Percentile struct {
-// 	PearsonTop1BpsPercentile             float32 `json:"pearson_top_1_bps_percentile"`
-// 	SpearmanTop1BpsPercentile            float32 `json:"spearman_top_1_bps_percentile"`
-// 	KendallTop1BpsPercentile             float32 `json:"kendall_top_1_bps_percentile"`
-// 	HoeffdingTop10BpsPercentile          float32 `json:"hoeffding_top_10_bps_percentile"`
-// 	MutualInformationTop100BpsPercentile float32 `json:"mutual_information_top_100_bps_percentile"`
-// 	HsicTop100BpsPercentile              float32 `json:"hsic_top_100_bps_percentile"`
-// 	XgbimportanceTop100BpsPercentile     float32 `json:"xgbimportance_top_100_bps_percentile"`
-// }
+// Validate validates output
+func (s DDAndFingerprints) Validate() error {
+	if s.BlockHash == "" {
+		return errors.Errorf("BlockHash is empty")
+	}
 
-// // FingerprintsStat represents stat of fringerprints
-// type FingerprintsStat struct {
-// 	NumberOfFingerprintsRequiringFurtherTesting1 uint32 `json:"number_of_fingerprints_requiring_further_testing_1"`
-// 	NumberOfFingerprintsRequiringFurtherTesting2 uint32 `json:"number_of_fingerprints_requiring_further_testing_2"`
-// 	NumberOfFingerprintsRequiringFurtherTesting3 uint32 `json:"number_of_fingerprints_requiring_further_testing_3"`
-// 	NumberOfFingerprintsRequiringFurtherTesting4 uint32 `json:"number_of_fingerprints_requiring_further_testing_4"`
-// 	NumberOfFingerprintsRequiringFurtherTesting5 uint32 `json:"number_of_fingerprints_requiring_further_testing_5"`
-// 	NumberOfFingerprintsRequiringFurtherTesting6 uint32 `json:"number_of_fingerprints_requiring_further_testing_6"`
-// 	NumberOfFingerprintsOfSuspectedDupes         uint32 `json:"number_of_fingerprints_of_suspected_dupes"`
-// }
+	if s.BlockHeight == "" {
+		return errors.Errorf("BlockHeight is empty")
+	}
 
-// // Maxes represents max values
-// type Maxes struct {
-// 	PearsonMax           float32 `json:"pearson_max"`
-// 	SpearmanMax          float32 `json:"spearman_max"`
-// 	KendallMax           float32 `json:"kendall_max"`
-// 	HoeffdingMax         float32 `json:"hoeffding_max"`
-// 	MutualInformationMax float32 `json:"mutual_information_max"`
-// 	HsicMax              float32 `json:"hsic_max"`
-// 	XgbimportanceMax     float32 `json:"xgbimportance_max"`
-// }
+	if s.TimestampOfRequest == "" {
+		return errors.Errorf("TimestampOfRequest is empty")
+	}
 
-// // PerceptualImageHashes represents image hashes from dupe detection service
-// type PerceptualImageHashes struct {
-// 	PDQHash        string `json:"pdq_hash"`
-// 	PerceptualHash string `json:"perceptual_hash"`
-// 	AverageHash    string `json:"average_hash"`
-// 	DifferenceHash string `json:"difference_hash"`
-// 	NeuralHash     string `json:"neuralhash_hash"`
-// }
+	if s.SubmitterPastelID == "" {
+		return errors.Errorf("SubmitterPastelID is empty")
+	}
+
+	if s.SN1PastelID == "" {
+		return errors.Errorf("SN1PastelID is empty")
+	}
+
+	if s.SN2PastelID == "" {
+		return errors.Errorf("SN2PastelID is empty")
+	}
+
+	if s.SN3PastelID == "" {
+		return errors.Errorf("SN3PastelID is empty")
+	}
+
+	if s.HashOfCandidateImageFile == "" {
+		return errors.Errorf("HashOfCandidateImageFile is empty")
+	}
+
+	if len(s.ImageFingerprintOfCandidateImageFile) == 0 {
+		return errors.Errorf("ImageFingerprintOfCandidateImageFile is empty")
+	}
+
+	if s.InternetRareness == nil || s.AlternativeNSFWScores == nil {
+		return errors.Errorf("InternetRareness or AlternativeNSFWScores is nil")
+	}
+
+	return nil
+}
 
 // ExtractCompressSignedDDAndFingerprints  decompresses & decodes
 // the probe image reply which is: Base64URL(compress(dd_and_fingerprints.signature))
