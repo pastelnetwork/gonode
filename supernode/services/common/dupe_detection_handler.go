@@ -57,8 +57,9 @@ func NewDupeDetectionTaskHelper(task *SuperNodeTask,
 }
 
 // ProbeImage uploads the resampled image compute and return a compression of pastel.DDAndFingerprints
-//  Implementing https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration starting with step 4.A.3
-//  Call dd-service to generate near duplicate fingerprints and dupe-detection info from re-sampled image (img1-r)
+//
+//	Implementing https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration starting with step 4.A.3
+//	Call dd-service to generate near duplicate fingerprints and dupe-detection info from re-sampled image (img1-r)
 func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, blockHash string, blockHeight string, timestamp string, creatorPastelID string, tasker Tasker) ([]byte, error) {
 	if err := h.RequiredStatus(StatusConnected); err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		if len(h.NetworkHandler.meshedNodes) != 3 {
 			log.WithContext(ctx).Error("Not enough meshed SuperNodes")
 			err = errors.New("not enough meshed SuperNodes")
-			return nil
+			return err
 		}
 
 		registeringSupernode1 := h.NetworkHandler.meshedNodes[0].NodeID
@@ -118,7 +119,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
 			err = errors.Errorf("generate fingerprints data: %w", err)
-			return nil
+			return err
 		}
 
 		h.UpdateStatus(StatusImageProbed)
@@ -138,7 +139,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 				}).WithError(err).Errorf("get node by extID")
 
 				err = errors.Errorf("get node by extID: %w", err)
-				return nil
+				return err
 			}
 
 			if err = node.Connect(ctx); err != nil {
@@ -148,7 +149,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 				}).WithError(err).Errorf("connect to node")
 				err = errors.Errorf("connect to node: %w", err)
 
-				return nil
+				return err
 			}
 			log.WithContext(ctx).Debugf("sending dd_fp to other SN: %s", node.ID)
 
@@ -161,7 +162,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 				}).WithError(err).Errorf("send signed DDAndFingerprints failed")
 				err = errors.Errorf("send signed DDAndFingerprints failed: %w", err)
 
-				return nil
+				return err
 			}
 		}
 
@@ -189,7 +190,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 					log.WithContext(ctx).WithFields(log.Fields{
 						"nodeID": node.NodeID,
 					}).Errorf("DDAndFingerprints of node not found")
-					return nil
+					return err
 				}
 				dDAndFingerprintsList = append(dDAndFingerprintsList, v)
 			}
@@ -200,7 +201,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 				log.WithContext(ctx).WithFields(log.Fields{
 					"list": dDAndFingerprintsList,
 				}).Errorf("not enough DDAndFingerprints")
-				return nil
+				return err
 			}
 
 			h.calculatedDDAndFingerprints, err = pastel.CombineFingerPrintAndScores(
@@ -212,7 +213,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Errorf("call CombineFingerPrintAndScores() failed")
 				err = errors.Errorf("call CombineFingerPrintAndScores() failed")
-				return nil
+				return err
 			}
 
 			// Creates compress(Base64(dd_and_fingerprints).Base64(signature))
@@ -221,7 +222,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 				log.WithContext(ctx).WithError(err).Errorf("compress combine DDAndFingerPrintAndScore failed")
 
 				err = errors.Errorf("compress combine DDAndFingerPrintAndScore failed: %w", err)
-				return nil
+				return err
 			}
 
 			log.WithContext(ctx).Debug("DDAndFingerprints combined and compressed")
@@ -229,7 +230,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		case <-time.After(600 * time.Second):
 			log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers timeout")
 			err = errors.New("waiting for DDAndFingerprints timeout")
-			return nil
+			return err
 		}
 	})
 
@@ -245,7 +246,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 // Call dd-service to generate near duplicate fingerprints and dupe-detection info from re-sampled image (img1-r)
 // Sign dd_and_fingerprints with SN own PastelID (private key) using cNode API
 // Step 4.A.3 - 4.A.4
-//GenFingerprintsData(ctx, file, blockHash, blockHeight, timestamp, creatorPastelID, registeringSupernode1, registeringSupernode2, registeringSupernode3, false, "")
+// GenFingerprintsData(ctx, file, blockHash, blockHeight, timestamp, creatorPastelID, registeringSupernode1, registeringSupernode2, registeringSupernode3, false, "")
 func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *files.File, blockHash string, blockHeight string, timestamp string, creatorPastelID string, registeringSupernode1 string, registeringSupernode2 string, registeringSupernode3 string, isPastelOpenapiRequest bool, openAPISubsetIDString string) ([]byte, error) {
 	img, err := file.Bytes()
 	if err != nil {
@@ -284,9 +285,9 @@ func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *fi
 	return compressed, nil
 }
 
-//  https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
-//  Step 4.A.4
-//  Sign dd_and_fingerprints with SN own PastelID (private key) using cNode API
+// https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+// Step 4.A.4
+// Sign dd_and_fingerprints with SN own PastelID (private key) using cNode API
 func (h *DupeDetectionHandler) compressAndSignDDAndFingerprints(ctx context.Context, ddData *pastel.DDAndFingerprints) ([]byte, error) {
 	// JSON marshal the ddData
 	ddDataBytes, err := json.Marshal(ddData)
@@ -310,8 +311,9 @@ func (h *DupeDetectionHandler) compressAndSignDDAndFingerprints(ctx context.Cont
 }
 
 // AddSignedDDAndFingerprints adds signed dd and fp
-//  https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
-//  Step 4.A.5 - Send base64’ed (and compressed) dd_and_fingerprints and its signature to the 2 OTHER SNs
+//
+//	https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
+//	Step 4.A.5 - Send base64’ed (and compressed) dd_and_fingerprints and its signature to the 2 OTHER SNs
 func (h *DupeDetectionHandler) AddSignedDDAndFingerprints(nodeID string, compressedSignedDDAndFingerprints []byte) error {
 	h.ddMtx.Lock()
 	defer h.ddMtx.Unlock()
