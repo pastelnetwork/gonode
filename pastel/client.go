@@ -33,6 +33,17 @@ type client struct {
 	burnAddress string
 }
 
+// ActionActivationTicketsFromBlockHeight returns action activation tickets from block height
+func (client *client) ActionActivationTicketsFromBlockHeight(ctx context.Context, blockheight uint64) (ActTickets, error) {
+	tickets := ActTickets{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "action-act", "all", blockheight); err != nil {
+		return nil, errors.Errorf("failed to get action-act tickets: %w", err)
+	}
+
+	return tickets, nil
+}
+
 // MasterNodeConfig implements pastel.Client.MasterNodeConfig
 func (client *client) MasterNodeConfig(ctx context.Context) (*MasterNodeConfig, error) {
 	listConf := make(map[string]MasterNodeConfig)
