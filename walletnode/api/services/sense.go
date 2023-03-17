@@ -129,7 +129,8 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 				if task.Error() != nil {
 					errStr = task.Error()
 				}
-				return nft.MakeInternalServerError(errStr)
+
+				log.WithContext(ctx).Errorf("Error Registering sense:%s", errStr)
 			}
 
 			if status.IsFinal() {
