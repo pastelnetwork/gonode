@@ -57,12 +57,13 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	log.WithContext(ctx).Debug("Setting up mesh with Top Supernodes")
+	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
 	task.StatusLog[common.FieldTaskType] = "Cascade Registration"
 
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
 	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorMeshSetupFailed)
 		return errors.Errorf("connect to top rank nodes: %w", err)
@@ -75,35 +76,40 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	// cancel any ongoing context if the connections are broken
 	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 
-	log.WithContext(ctx).Debug("Uploading data to Supernodes")
+	log.WithContext(ctx).Info("uploading data to supernodes")
 
 	// send registration metadata
 	if err := task.sendActionMetadata(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error sending action metadata")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
 		return errors.Errorf("send registration metadata: %w", err)
 	}
+	log.WithContext(ctx).Info("action metadata has been sent")
 
 	if err := task.uploadImage(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error uploading image")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorUploadImageFailed)
 		return errors.Errorf("upload image: %w", err)
 	}
-
-	log.WithContext(ctx).Debug("Generate RQ IDs")
+	log.WithContext(ctx).Info("image has been uploaded")
 
 	// connect to rq serivce to get rq symbols identifier
 	if err := task.RqHandler.GenRQIdentifiersFiles(ctx, task.Request.Image,
 		task.creatorBlockHash, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error generating RQIDs")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
+	log.WithContext(ctx).Info("rq-ids have been generated")
 
 	// calculate hash of data
 	nftBytes, err := task.Request.Image.Bytes()
 	task.originalFileSizeInBytes = len(nftBytes)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
@@ -113,6 +119,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	task.fileType = mimetype.Detect(nftBytes).String()
 
 	if task.dataHash, err = utils.Sha3256hash(nftBytes); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("error creating hash")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorEncodingImage)
 		return errors.Errorf("hash encoded image: %w", err)
@@ -121,6 +128,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	fileDataInMb := utils.GetFileSizeInMB(nftBytes)
 	fee, err := task.service.pastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error getting estimated fee")
 		return errors.Errorf("getting estimated fee %w", err)
 	}
 	task.registrationFee = int64(fee)
@@ -128,24 +136,26 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	task.StatusLog[common.FieldFileSize] = fileDataInMb
 	task.StatusLog[common.FieldFee] = fee
 
-	log.WithContext(ctx).Debug("Create and sign Cascade Reg Ticket")
 	if err := task.createCascadeTicket(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error creating cascade ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorCreatingTicket)
 		return errors.Errorf("create ticket: %w", err)
 	}
+	log.WithContext(ctx).Info("created cascade reg ticket")
 
 	// sign ticket with creator signature
 	if err := task.signTicket(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error signing ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorSigningTicket)
 		return errors.Errorf("sign cascade ticket: %w", err)
 	}
-
-	log.WithContext(ctx).Debug("Upload signed Cascade Reg Ticket to SNs")
+	log.WithContext(ctx).Info("signed cascade reg ticket")
 
 	// UPLOAD signed ticket to supernodes to validate and register action with the network
 	if err := task.uploadSignedTicket(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error uploading signed ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorUploadingTicket)
 		return errors.Errorf("send signed cascade ticket: %w", err)
@@ -158,51 +168,56 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
+	log.WithContext(ctx).Info("uploaded signed cascade reg ticket to SNs")
 
 	now := time.Now()
-	if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
-		log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Error("Error validating cascade ticket data")
+	if task.downloadService != nil {
+		if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
+			log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Error("error validating cascade ticket data")
 
-		log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Info("initiating the new registration request")
-		request := &common.ActionRegistrationRequest{
-			AppPastelID:            task.Request.AppPastelID,
-			AppPastelIDPassphrase:  task.Request.AppPastelIDPassphrase,
-			BurnTxID:               task.Request.BurnTxID,
-			MakePubliclyAccessible: task.Request.MakePubliclyAccessible,
-			Image:                  task.Request.Image,
-			FileName:               task.Request.FileName,
+			log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Info("initiating the new registration request")
+			request := &common.ActionRegistrationRequest{
+				AppPastelID:            task.Request.AppPastelID,
+				AppPastelIDPassphrase:  task.Request.AppPastelIDPassphrase,
+				BurnTxID:               task.Request.BurnTxID,
+				MakePubliclyAccessible: task.Request.MakePubliclyAccessible,
+				Image:                  task.Request.Image,
+				FileName:               task.Request.FileName,
+			}
+
+			newTask := NewCascadeRegisterTask(task.service, request)
+			task.service.Worker.AddTask(newTask)
+
+			log.WithContext(ctx).WithField("task_id", newTask.ID()).Info("new cascade registration task has been initiated")
+
+			task.UpdateStatus(common.StatusErrorDownloadFailed)
+			task.UpdateStatus(&common.EphemeralStatus{
+				StatusTitle:   "Error validating cascade ticket data",
+				StatusString:  task.regCascadeTxid,
+				IsFailureBool: false,
+				IsFinalBool:   false,
+			})
+
+			task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+
+			return nil
 		}
-
-		newTask := NewCascadeRegisterTask(task.service, request)
-		task.service.Worker.AddTask(newTask)
-
-		log.WithContext(ctx).WithField("task_id", newTask.ID()).Info("new cascade registration task has been initiated")
-
-		task.UpdateStatus(common.StatusErrorDownloadFailed)
-		task.UpdateStatus(&common.EphemeralStatus{
-			StatusTitle:   "Error validating cascade ticket data",
-			StatusString:  task.regCascadeTxid,
-			IsFailureBool: false,
-			IsFinalBool:   false,
-		})
-
-		task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-
-		return nil
 	}
+	log.WithContext(ctx).Info("data-validation completed for cascade-reg ticket")
 
 	log.WithContext(ctx).Infof("Cascade Reg Ticket registered. Cascade Registration Ticket txid: %s", task.regCascadeTxid)
-	log.WithContext(ctx).Debug("Closing SNs connections")
+	log.WithContext(ctx).Info("Closing SNs connections")
 
 	// don't need SNs anymore
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
-	log.WithContext(ctx).Debugf("Waiting Confirmations for Cascade Reg Ticket - Ticket txid: %s", task.regCascadeTxid)
+	log.WithContext(ctx).Infof("Waiting Confirmations for Cascade Reg Ticket - Ticket txid: %s", task.regCascadeTxid)
 
 	// new context because the old context already cancelled
 	newCtx := log.ContextWithPrefix(context.Background(), "cascade")
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error waiting for Reg TXID confirmations")
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
@@ -213,12 +228,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		IsFinalBool:   false,
 	})
 
-	log.WithContext(ctx).Debug("Cascade Reg Ticket confirmed")
-	log.WithContext(ctx).Debug("Activating Cascade Reg Ticket")
+	log.WithContext(ctx).Info("cascade reg ticket confirmed, now activating cascade reg ticket")
 
 	// activate cascade ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error activating action ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorActivatingTicket)
 		return errors.Errorf("active action ticket: %w", err)
@@ -230,13 +245,12 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
-	log.WithContext(ctx).Infof("Cascade ticket activated. Activation ticket txid: %s", activateTxID)
-	log.WithContext(ctx).Debugf("Waiting Confirmations for Cascade Activation Ticket - Ticket txid: %s", activateTxID)
-
+	log.WithContext(ctx).Infof("Cascade ticket activated. Activation ticket txid: %s, waiting for confirmations now", activateTxID)
 	// Wait until activateTxID is valid
 	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.CascadeActTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error waiting for activated Reg TXID confirmations")
 		return errors.Errorf("wait activate txid valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketActivated)

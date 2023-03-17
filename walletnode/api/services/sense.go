@@ -125,12 +125,11 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 			}
 
 			if status.IsFailure() {
-				errStr := fmt.Errorf("internal processing error: %s", status.String())
 				if task.Error() != nil {
-					errStr = task.Error()
+					errStr := task.Error()
+					log.WithContext(ctx).WithError(errStr).Errorf("error registering sense")
 				}
 
-				log.WithContext(ctx).Errorf("Error Registering sense:%s", errStr)
 			}
 
 			if status.IsFinal() {
@@ -192,18 +191,18 @@ func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadP
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, nft.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
+			return nil, sense.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
 		case status := <-sub():
 			if status.IsFailure() {
 				if strings.Contains(utils.SafeErrStr(task.Error()), "ticket ownership") {
-					return nil, nft.MakeBadRequest(errors.New("failed to verify ownership"))
+					return nil, sense.MakeBadRequest(errors.New("failed to verify ownership"))
 				}
 
 				errStr := fmt.Errorf("internal processing error: %s", status.String())
 				if task.Error() != nil {
 					errStr = task.Error()
 				}
-				return nil, nft.MakeInternalServerError(errStr)
+				return nil, sense.MakeInternalServerError(errStr)
 			}
 
 			if status.IsFinal() {
