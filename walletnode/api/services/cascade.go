@@ -6,18 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pastelnetwork/gonode/pastel"
-
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
-
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/cascade/server"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	goahttp "goa.design/goa/v3/http"
@@ -57,18 +55,23 @@ func (service *CascadeAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) 
 // UploadAsset - Uploads an asset file and return unique file id
 func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.UploadAssetPayload) (res *cascade.Asset, err error) {
 	if p.Filename == nil {
+		log.WithContext(ctx).Error("file not specified")
 		return nil, cascade.MakeBadRequest(errors.New("file not specified"))
 	}
 
 	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error storing File")
 		return nil, cascade.MakeInternalServerError(err)
 	}
+	log.WithContext(ctx).Infof("file has been uploaded: %s", id)
 
 	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error calculating fee")
 		return nil, cascade.MakeInternalServerError(err)
 	}
+	log.WithContext(ctx).Infof("estimated fee has been calculated: %f", fee)
 
 	res = &cascade.Asset{
 		FileID:       id,
@@ -80,15 +83,18 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 }
 
 // StartProcessing - Starts a processing image task
-func (service *CascadeAPIHandler) StartProcessing(_ context.Context, p *cascade.StartProcessingPayload) (res *cascade.StartProcessingResult, err error) {
+func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascade.StartProcessingPayload) (res *cascade.StartProcessingResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to add task")
 		return nil, cascade.MakeInternalServerError(err)
 	}
 
 	res = &cascade.StartProcessingResult{
 		TaskID: taskID,
 	}
+
+	log.WithContext(ctx).Infof("task has been added: %s", taskID)
 
 	return res, nil
 }
@@ -99,6 +105,7 @@ func (service *CascadeAPIHandler) RegisterTaskState(ctx context.Context, p *casc
 
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
+		log.WithContext(ctx).Error("unable to get task")
 		return cascade.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
@@ -115,6 +122,14 @@ func (service *CascadeAPIHandler) RegisterTaskState(ctx context.Context, p *casc
 			}
 			if err := stream.Send(res); err != nil {
 				return cascade.MakeInternalServerError(err)
+			}
+
+			if status.IsFailure() {
+				if task.Error() != nil {
+					errStr := task.Error()
+					log.WithContext(ctx).WithError(errStr).Errorf("error registering cascade")
+				}
+
 			}
 
 			if status.IsFinal() {
@@ -142,18 +157,18 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, nft.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
+			return nil, cascade.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
 		case status := <-sub():
 			if status.IsFailure() {
 				if strings.Contains(utils.SafeErrStr(task.Error()), "ticket ownership") {
-					return nil, nft.MakeBadRequest(errors.New("failed to verify ownership"))
+					return nil, cascade.MakeBadRequest(errors.New("failed to verify ownership"))
 				}
 
 				errStr := fmt.Errorf("internal processing error: %s", status.String())
 				if task.Error() != nil {
 					errStr = task.Error()
 				}
-				return nil, nft.MakeInternalServerError(errStr)
+				return nil, cascade.MakeInternalServerError(errStr)
 			}
 
 			if status.IsFinal() {
