@@ -14,59 +14,53 @@ import (
 func (s *service) parseSenseTickets(ctx context.Context) error {
 	lastKnownGoodHeight := s.latestSenseBlockHeight
 
-	senseRegTickets, err := s.pastelClient.ActionTickets(ctx)
+	senseActTickets, err := s.pastelClient.ActionActivationTicketsFromBlockHeight(ctx, uint64(lastKnownGoodHeight))
 	if err != nil {
 		log.WithError(err).Errorf("get registered ticket - exit runTask")
 		return nil
 	}
 
-	sort.Slice(senseRegTickets, func(i, j int) bool {
-		return senseRegTickets[i].Height < senseRegTickets[j].Height
+	sort.Slice(senseActTickets, func(i, j int) bool {
+		return senseActTickets[i].Height < senseActTickets[j].Height
 	})
 
-	if len(senseRegTickets) == 0 {
+	if len(senseActTickets) == 0 {
 		log.WithContext(ctx).WithField("block height", s.latestSenseBlockHeight).Info("No sense tickets found")
 		return nil
 	}
 
-	for i := 0; i < len(senseRegTickets); i++ {
-		if senseRegTickets[i].Height < s.latestSenseBlockHeight {
+	for i := 0; i < len(senseActTickets); i++ {
+		if senseActTickets[i].Height < s.latestSenseBlockHeight {
 			continue
 		}
 
-		log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).WithField("height", senseRegTickets[i].Height).
-			Info("Found sense ticket, checking activation...")
+		log.WithContext(ctx).WithField("txid", senseActTickets[i].TXID).WithField("height", senseActTickets[i].Height).
+			Info("Found sense activation ticket, checking reg ticket...")
 
-		idt, err := s.pastelClient.FindActionActByActionRegTxid(ctx, senseRegTickets[i].TXID)
+		regTicket, err := s.pastelClient.ActionRegTicket(ctx, senseActTickets[i].ActTicketData.RegTXID)
 		if err != nil {
-			log.WithContext(ctx).WithField("reg-txid", senseRegTickets[i].TXID).WithError(err).
+			log.WithContext(ctx).WithField("reg-txid", senseActTickets[i].ActTicketData.RegTXID).WithError(err).
 				Error("Failed to find action act by action reg txid")
 			continue
 		}
 
-		if idt == nil || idt.TXID == "" {
-			log.WithContext(ctx).WithField("reg-txid", senseRegTickets[i].TXID).WithError(err).
-				Error("Failed to find action act by action reg txid")
+		if regTicket.ActionTicketData.ActionType != pastel.ActionTypeSense {
 			continue
 		}
 
-		log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).WithField("act-txid", idt.TXID).Info("Found activated sense ticket")
+		log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Info("Found activated sense ticket")
 
-		decTicket, err := pastel.DecodeActionTicket(senseRegTickets[i].ActionTicketData.ActionTicket)
+		decTicket, err := pastel.DecodeActionTicket(regTicket.ActionTicketData.ActionTicket)
 		if err != nil {
-			log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).WithField("act-txid", idt.TXID).
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).
 				WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
-		senseRegTickets[i].ActionTicketData.ActionTicketData = *decTicket
+		regTicket.ActionTicketData.ActionTicketData = *decTicket
 
-		if !strings.EqualFold(senseRegTickets[i].ActionTicketData.ActionTicketData.ActionType, "sense") {
-			continue
-		}
-
-		senseTicket, err := senseRegTickets[i].ActionTicketData.ActionTicketData.APISenseTicket()
+		senseTicket, err := regTicket.ActionTicketData.ActionTicketData.APISenseTicket()
 		if err != nil {
-			log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).WithField("act-txid", idt.TXID).Error("Could not get sense ticket for action ticket data")
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("Could not get sense ticket for action ticket data")
 			continue
 		}
 
@@ -82,51 +76,52 @@ func (s *service) parseSenseTickets(ctx context.Context) error {
 				}
 
 				//probably too verbose even for debug.
-				log.WithContext(ctx).WithField("error", err).WithField("sense-txid", senseRegTickets[i].TXID).Error("Could not get the fingerprint for this file hash")
+				log.WithContext(ctx).WithField("error", err).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("Could not get the fingerprint for this file hash")
 				continue
 			}
 			break
 		}
 
 		if !p2pServiceRunning {
-			log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).
 				Info("P2P service is not running, so we can't get the fingerprint for this file hash, stopping this run of the task")
 
 			break
 		}
 
 		if ddAndFpFromTicket == nil {
-			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].TXID).Error("None of the dd and fp id files for this sense reg ticket could be properly unmarshalled")
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("None of the dd and fp id files for this sense reg ticket could be properly unmarshalled")
 			continue
 		}
 		if ddAndFpFromTicket.HashOfCandidateImageFile == "" {
-			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].TXID).Error("This NFT sense ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("This NFT sense ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
 
 		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
-			log.WithContext(ctx).WithField("txid", senseRegTickets[i].TXID).WithField("act-txid", idt.TXID).
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).
 				Info("Fingerprint exists in database, skipping...")
 
 			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
-			if senseRegTickets[i].Height > lastKnownGoodHeight {
-				lastKnownGoodHeight = senseRegTickets[i].Height
+			if senseActTickets[i].Height > lastKnownGoodHeight {
+				lastKnownGoodHeight = senseActTickets[i].Height
 			}
 			continue
 		}
 		if err != nil {
-			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).Error("Could not properly query the dd database for this hash")
+			log.WithContext(ctx).WithField("hashOfCandidateImageFile", ddAndFpFromTicket.HashOfCandidateImageFile).
+				WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("Could not properly query the dd database for this hash")
 			continue
 		}
 
 		// this could fail if the ticket is an older version of the DDAndFingerprints struct, so we will continue to next fingerprint
 		if ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile == nil {
-			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Debugf("This sense ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Info("This sense ticket's DDAndFp struct has no ImageFingerprintOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
 		if len(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile) < 1 {
-			log.WithContext(ctx).WithField("senseTicket", senseRegTickets[i].ActionTicketData).Debugf("This sense reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Info("This sense reg ticket's DDAndFp struct's ImageFingerprintOfCandidateImageFile is zero length, perhaps it's an older version.")
 			continue
 		}
 
@@ -146,18 +141,18 @@ func (s *service) parseSenseTickets(ctx context.Context) error {
 			DatetimeFingerprintAddedToDatabase:         time.Now().Format("2006-01-02 15:04:05"),
 			PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
 			ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,
-			RequestType:                                typeMapper(senseRegTickets[i].ActionTicketData.Type),
+			RequestType:                                typeMapper(regTicket.ActionTicketData.Type),
 			IDString:                                   collection,
 			OpenAPIGroupIDString:                       groupID,
 			CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
 			DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
 		}); err != nil {
-			log.WithContext(ctx).WithError(err).WithField("txid", senseRegTickets[i].TXID).WithField("act-txid", idt.TXID).Error("Failed to store fingerprint")
+			log.WithContext(ctx).WithError(err).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("Failed to store fingerprint")
 			continue
 		}
 
-		if senseRegTickets[i].Height > lastKnownGoodHeight {
-			lastKnownGoodHeight = senseRegTickets[i].Height
+		if senseActTickets[i].Height > lastKnownGoodHeight {
+			lastKnownGoodHeight = senseActTickets[i].Height
 		}
 	}
 
@@ -165,7 +160,7 @@ func (s *service) parseSenseTickets(ctx context.Context) error {
 		s.latestSenseBlockHeight = lastKnownGoodHeight
 	}
 
-	log.WithContext(ctx).WithField("latest Sense blockheight", s.latestSenseBlockHeight).Debugf("hermes successfully scanned to latest block height")
+	log.WithContext(ctx).WithField("latest Sense blockheight", s.latestSenseBlockHeight).Info("hermes successfully scanned to latest block height")
 
 	return nil
 }

@@ -207,7 +207,7 @@ func BytesToMB(bytes uint64) float64 {
 func StringInSlice(list []string, str string) bool {
 
 	for _, v := range list {
-		if v == str {
+		if strings.EqualFold(v, str) {
 			return true
 		}
 	}

@@ -177,6 +177,10 @@ type Client interface {
 	// IncrementPoseBanScore increments pose-ban score
 	IncrementPoseBanScore(ctx context.Context, txid string, index int) error
 
+	// ActionActivationTicketsFromBlockHeight returns action activation tickets
+	// Command `tickets list action-act <blockheight>`
+	ActionActivationTicketsFromBlockHeight(ctx context.Context, blockheight uint64) (ActTickets, error)
+
 	// BurnAddress ...
 	BurnAddress() string
 }
