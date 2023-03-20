@@ -40,6 +40,7 @@ const (
 	StatusFileEmpty
 	StatusKeyNotFound
 	StatusFileRestoreFailed
+	StatusFileExists
 
 	// Final
 	StatusTaskCanceled
@@ -77,6 +78,7 @@ var statusNames = map[Status]string{
 	StatusFileEmpty:                           "File empty",
 	StatusFileMismatched:                      "File mismatched",
 	StatusKeyNotFound:                         "Key not found",
+	StatusFileExists:                          "File hash exists",
 	StatusFileRestoreFailed:                   "File restore failed",
 	StatusTaskCanceled:                        "Task Canceled",
 	StatusTaskCompleted:                       "Task Completed",
@@ -109,7 +111,7 @@ func (status Status) IsFailure() bool {
 		status == StatusSymbolMismatched || status == StatusSymbolsNotEnough ||
 		status == StatusFileDecodingFailed || status == StatusFileReadingFailed ||
 		status == StatusFileEmpty || status == StatusFileMismatched ||
-		status == StatusKeyNotFound || status == StatusFileRestoreFailed
+		status == StatusKeyNotFound || status == StatusFileRestoreFailed || status == StatusFileExists
 }
 
 // StatusNames returns a sorted list of status names.

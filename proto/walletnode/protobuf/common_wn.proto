@@ -58,6 +58,7 @@ message ProbeImageReply {
     bytes compressedSignedDDAndFingerprints = 1;
     bool is_valid_burn_txid = 2;
     string err_string = 3;
+    bool is_existing = 4;
 }
 
 message EncoderParameters {

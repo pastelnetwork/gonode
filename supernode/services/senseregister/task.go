@@ -6,6 +6,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/ddstore"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -91,6 +92,43 @@ func (task *SenseRegistrationTask) CalculateFee(ctx context.Context, file *files
 	task.RegTaskHelper.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
 
 	return nil
+}
+
+// HashExists checks if hash exists in database
+func (task *SenseRegistrationTask) HashExists(ctx context.Context, file *files.File) (bool, error) {
+	var fileBytes []byte
+	fileBytes, err := file.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("read image file")
+		return false, errors.Errorf("read image file: %w", err)
+	}
+
+	dataHash, err := utils.Sha3256hash(fileBytes)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error converting bytes to hash")
+		return false, errors.Errorf("hash encoded image: %w", err)
+	}
+
+	db, err := ddstore.NewSQLiteDDStore(task.config.DDDatabase)
+	if err != nil {
+		return false, err
+	}
+
+	exists, err := db.IfFingerprintExists(ctx, string(dataHash))
+	if err != nil {
+		return false, err
+	}
+
+	if err := db.Close(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to close dd database")
+	}
+
+	if exists {
+		task.UpdateStatus(common.StatusFileExists)
+	}
+
+	return exists, nil
+
 }
 
 // ProbeImage sends the original image to dd-server and return a compression of pastel.DDAndFingerprints

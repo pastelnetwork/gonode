@@ -475,10 +475,15 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 		someNode := someNode
 		group.Go(func() (err error) {
 			// result is 4.B.5
-			compress, stateOk, err := nftRegNode.ProbeImage(gctx, file)
+			compress, stateOk, hashExists, err := nftRegNode.ProbeImage(gctx, file)
 			if err != nil {
 				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Errorf("probe image failed:%s", err.Error())
 				return errors.Errorf("node %s: probe failed :%w", someNode.String(), err)
+			}
+
+			if hashExists {
+				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Error("image already registered")
+				return errors.Errorf("remote node %s: image already registered", someNode.String())
 			}
 
 			someNode.SetRemoteState(stateOk)
