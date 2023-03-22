@@ -75,18 +75,25 @@ func (service *NftAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) goah
 // UploadImage uploads an image and return unique image id.
 func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImagePayload) (res *nft.ImageRes, err error) {
 	if p.Filename == nil {
+		log.Error("filename not specified")
 		return nil, nft.MakeBadRequest(errors.New("file not specified"))
 	}
 
 	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
+		log.WithError(err).Error("error storing file")
 		return nil, nft.MakeInternalServerError(err)
 	}
 
+	log.Infof("file has been uploaded: %s", id)
+
 	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
+		log.WithError(err).Error("error calculating fee")
 		return nil, cascade.MakeInternalServerError(err)
 	}
+
+	log.Infof("estimated fee has been calculated: %f", fee)
 
 	res = &nft.ImageRes{
 		ImageID:      id,
@@ -101,12 +108,16 @@ func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 func (service *NftAPIHandler) Register(_ context.Context, p *nft.RegisterPayload) (res *nft.RegisterResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
+		log.WithError(err).Error("unable to add task")
 		return nil, sense.MakeInternalServerError(err)
 	}
 
 	res = &nft.RegisterResult{
 		TaskID: taskID,
 	}
+
+	log.Infof("task has been added: %s", taskID)
+
 	return res, nil
 }
 
@@ -120,6 +131,7 @@ func (service *NftAPIHandler) GetTaskHistory(ctx context.Context, p *nft.GetTask
 
 	statuses, err := store.QueryTaskHistory(p.TaskID)
 	if err != nil {
+		log.WithError(err).Error("error retrieving task history")
 		return nil, nft.MakeNotFound(errors.New("task not found"))
 	}
 
@@ -150,6 +162,7 @@ func (service *NftAPIHandler) RegisterTaskState(ctx context.Context, p *nft.Regi
 
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
+		log.Error("unable to get task")
 		return nft.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
@@ -168,6 +181,13 @@ func (service *NftAPIHandler) RegisterTaskState(ctx context.Context, p *nft.Regi
 				return nft.MakeInternalServerError(err)
 			}
 
+			if status.IsFailure() {
+				if task.Error() != nil {
+					errStr := task.Error()
+					log.WithContext(ctx).WithError(errStr).Error("error registering NFT")
+				}
+			}
+
 			if status.IsFinal() {
 				return nil
 			}
@@ -179,6 +199,7 @@ func (service *NftAPIHandler) RegisterTaskState(ctx context.Context, p *nft.Regi
 func (service *NftAPIHandler) RegisterTask(_ context.Context, p *nft.RegisterTaskPayload) (res *nft.Task, err error) {
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
+		log.Error("error retrieving task")
 		return nil, nft.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
@@ -206,8 +227,8 @@ func (service *NftAPIHandler) RegisterTasks(_ context.Context) (res nft.TaskColl
 
 // Download registered NFT
 func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPayload) (res *nft.DownloadResult, err error) {
-	log.WithContext(ctx).Info("Start downloading")
-	defer log.WithContext(ctx).Info("Finished downloading")
+	log.Info("Start downloading")
+	defer log.Info("Finished downloading")
 	taskID := service.download.AddTask(p, "")
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
@@ -259,6 +280,7 @@ func (service *NftAPIHandler) NftSearch(ctx context.Context, p *nft.NftSearchPay
 		case search, ok := <-resultChan:
 			if !ok {
 				if task.Status().IsFailure() {
+					log.WithContext(ctx).Error("error finding NFT")
 					return nft.MakeInternalServerError(task.Error())
 				}
 
@@ -277,18 +299,22 @@ func (service *NftAPIHandler) NftSearch(ctx context.Context, p *nft.NftSearchPay
 func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) (res *nft.NftDetail, err error) {
 	ticket, err := service.search.RegTicket(ctx, p.Txid)
 	if err != nil {
+		log.WithError(err).Error("error retrieving ticket")
 		return nil, nft.MakeBadRequest(err)
 	}
 
 	res = toNftDetail(ticket)
 	data, err := service.search.GetThumbnail(ctx, ticket, p.Pid, p.Key)
 	if err != nil {
+		log.WithError(err).Error("error retrieving thumbnail")
+
 		return nil, nft.MakeInternalServerError(err)
 	}
 	res.PreviewThumbnail = data
 
 	ddAndFpData, err := service.search.GetDDAndFP(ctx, ticket, p.Pid, p.Key)
 	if err != nil {
+		log.WithError(err).Error("error retrieving DD&FP")
 		return nil, nft.MakeInternalServerError(err)
 	}
 	ddAndFpStruct := &pastel.DDAndFingerprints{}
@@ -318,11 +344,13 @@ func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 func (service *NftAPIHandler) DdServiceOutputFileDetail(ctx context.Context, p *nft.DownloadPayload) (res *nft.DDServiceOutputFileResult, err error) {
 	ticket, err := service.search.RegTicket(ctx, p.Txid)
 	if err != nil {
+		log.WithError(err).Error("error retrieving ticket")
 		return nil, nft.MakeBadRequest(err)
 	}
 
 	ddAndFpData, err := service.search.GetDDAndFP(ctx, ticket, p.Pid, p.Key)
 	if err != nil {
+		log.WithError(err).Error("error retrieving DD&FP")
 		return nil, nft.MakeInternalServerError(err)
 	}
 	ddAndFpStruct := &pastel.DDAndFingerprints{}

@@ -94,14 +94,14 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
-		return 0, "", err
+		return 0, "", errors.Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
 	}
 	log.WithContext(ctx).Infof("Found %d valid SuperNodes", len(connectedNodes))
 
 	meshedNodes, err := m.setMesh(ctx, connectedNodes, m.minNumberSuperNodes)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("failed setting up Mesh of %d SNs from %d SNs", m.minNumberSuperNodes, len(connectedNodes))
-		return 0, "", err
+		return 0, "", errors.Errorf("failed setting up Mesh of %d SNs from %d SNs", m.minNumberSuperNodes, len(connectedNodes))
 	}
 	m.Nodes = meshedNodes
 

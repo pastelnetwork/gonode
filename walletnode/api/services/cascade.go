@@ -55,23 +55,23 @@ func (service *CascadeAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) 
 // UploadAsset - Uploads an asset file and return unique file id
 func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.UploadAssetPayload) (res *cascade.Asset, err error) {
 	if p.Filename == nil {
-		log.WithContext(ctx).Error("file not specified")
+		log.Error("file not specified")
 		return nil, cascade.MakeBadRequest(errors.New("file not specified"))
 	}
 
 	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error storing File")
+		log.WithError(err).Error("error storing File")
 		return nil, cascade.MakeInternalServerError(err)
 	}
-	log.WithContext(ctx).Infof("file has been uploaded: %s", id)
+	log.Infof("file has been uploaded: %s", id)
 
 	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error calculating fee")
+		log.WithError(err).Error("error calculating fee")
 		return nil, cascade.MakeInternalServerError(err)
 	}
-	log.WithContext(ctx).Infof("estimated fee has been calculated: %f", fee)
+	log.Infof("estimated fee has been calculated: %f", fee)
 
 	res = &cascade.Asset{
 		FileID:       id,
@@ -94,7 +94,7 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 		TaskID: taskID,
 	}
 
-	log.WithContext(ctx).Infof("task has been added: %s", taskID)
+	log.Infof("task has been added: %s", taskID)
 
 	return res, nil
 }
@@ -105,7 +105,7 @@ func (service *CascadeAPIHandler) RegisterTaskState(ctx context.Context, p *casc
 
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
-		log.WithContext(ctx).Error("unable to get task")
+		log.Error("unable to get task")
 		return cascade.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
@@ -146,7 +146,7 @@ func (service *CascadeAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 
 // Download registered NFT
 func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) (res *cascade.DownloadResult, err error) {
-	log.WithContext(ctx).Info("Start downloading")
+	log.Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
 	taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade)
 	task := service.download.GetTask(taskID)
