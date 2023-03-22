@@ -17,6 +17,7 @@ func TestStatusNames(t *testing.T) {
 			expectedStatues: []Status{
 				StatusTaskStarted,
 				StatusConnected,
+				StatusValidateBurnTxn,
 				// Sense and NFT reg
 				StatusImageProbed,
 				StatusImageAndThumbnailUploaded,
