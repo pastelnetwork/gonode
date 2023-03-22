@@ -74,6 +74,8 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		PastelIdOfRegisteringSupernode_3:      supernode3,
 		IsPastelOpenapiRequest:                openAPIRequest,
 		OpenApiSubsetIdString:                 openAPISubsetID,
+		OpenApiGroupIdString:                  "",
+		CollectionNameString:                  "",
 	}
 
 	// remove file after use

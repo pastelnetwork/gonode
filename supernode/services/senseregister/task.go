@@ -128,7 +128,7 @@ func (task *SenseRegistrationTask) validateSignedTicketFromWN(ctx context.Contex
 	// TODO: fix this like how can we get the signature before calling cNode
 	task.Ticket, err = pastel.DecodeActionTicket(ticket)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("decode action ticket")
+		log.WithContext(ctx).WithError(err).WithField("ticket", string(ticket)).Errorf("decode action sense ticket")
 		return errors.Errorf("decode action ticket: %w", err)
 	}
 

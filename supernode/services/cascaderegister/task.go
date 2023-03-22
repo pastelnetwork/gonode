@@ -177,7 +177,7 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 	// TODO: fix this like how can we get the signature before calling cNode
 	task.Ticket, err = pastel.DecodeActionTicket(ticket)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("decode action ticket")
+		log.WithContext(ctx).WithError(err).WithField("ticket", string(ticket)).Errorf("decode action cascade ticket")
 		return errors.Errorf("decode action ticket: %w", err)
 	}
 
