@@ -56,6 +56,23 @@ func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
 	}, nil
 }
 
+// CheckNonSeedRecord checks if there's non-seed record
+func (s *SQLiteStore) CheckNonSeedRecord(_ context.Context) (bool, error) {
+	r := []fingerprints{}
+	err := s.db.Select(&r, "SELECT * FROM image_hash_to_image_fingerprint_table")
+	if err != nil {
+		return false, fmt.Errorf("failed to get image_hash_to_image_fingerprint_table: %w", err)
+	}
+
+	for _, v := range r {
+		if v.IDString != "SEED" {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // StoreFingerprint stores fingerprint
 func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFingerprints) error {
 	encodeFloat2Npy := func(v []float64) ([]byte, error) {
