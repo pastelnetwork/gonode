@@ -22,7 +22,7 @@ type hashes struct {
 	pastelID            string
 }
 
-//  NftImageHandler  handles NFT image
+// NftImageHandler  handles NFT image
 type NftImageHandler struct {
 	pastelHandler *PastelHandler
 
@@ -37,7 +37,7 @@ type NftImageHandler struct {
 	thMtx   sync.Mutex
 }
 
-//  GetHashes returns hashes
+// GetHashes returns hashes
 func (h *NftImageHandler) GetHashes() []*hashes {
 	return h.received
 }
@@ -77,7 +77,7 @@ func (h *NftImageHandler) CreateCopyWithEncodedFingerprint(ctx context.Context,
 	if err != nil {
 		return errors.Errorf("copy image to encode: %w", err)
 	}
-	log.WithContext(ctx).WithField("FileName", img.Name()).Debug("image with embedded fingerprints")
+	log.WithContext(ctx).WithField("FileName", img.Name()).Info("image with embedded fingerprints")
 
 	ticket, err := h.pastelHandler.PastelClient.FindTicketByID(ctx, creatorPatelID)
 	if err != nil {

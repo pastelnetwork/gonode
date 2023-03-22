@@ -73,7 +73,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
 	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error Setting up Mesh of Supernodes: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorMeshSetupFailed)
 		return errors.Errorf("connect to top rank nodes: %w", err)
@@ -95,7 +95,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	// send registration metadata
 	if err := task.sendActionMetadata(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error Sending Action Metadata: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error sending action metadata")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
 		return errors.Errorf("send registration metadata: %w", err)
@@ -105,36 +105,34 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	// probe image for average rareness, nsfw and seen score - populate FingerprintsHandler with results
 	if err := task.ProbeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error Probing Image: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error probing image")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorProbeImage)
 		return errors.Errorf("probe image: %w", err)
 	}
 
-	log.WithContext(ctx).Info("image has been probed")
-
-	log.WithContext(ctx).Info("Get DD and Fingerprints from Supernodes")
+	log.WithContext(ctx).Info("image has been probed, getting DD & fingerprints from supernodes")
 
 	// generateDDAndFingerprintsIDs generates dd & fp IDs
 	if err := task.FingerprintsHandler.GenerateDDAndFingerprintsIDs(ctx, task.service.config.DDAndFingerprintsMax); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error Generating DD & Fingerprint IDs: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error generating DD & Fingerprint IDs")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorGenerateDDAndFPIds)
 		return errors.Errorf("generate dd and fp IDs: %w", err)
 	}
 
-	log.WithContext(ctx).Info("Fingerprints have been generated")
+	log.WithContext(ctx).Info("fingerprints have been generated")
 
 	// calculate hash of data
 	imgBytes, err := task.Request.Image.Bytes()
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error converting image to bytes: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
 	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error converting bytes to hash %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error converting bytes to hash")
 
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorEncodingImage)
@@ -143,7 +141,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	fee, err := task.service.pastelHandler.GetEstimatedSenseFee(ctx, utils.GetFileSizeInMB(imgBytes))
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error Getting estimated sense fee: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error getting estimated sense fee")
 		return errors.Errorf("getting estimated fee %w", err)
 	}
 	task.registrationFee = int64(fee)
@@ -152,7 +150,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Info("Create and sign Sense Reg Ticket")
 
 	if err := task.createSenseTicket(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error creating Sense Ticket: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error creating sense ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorCreatingTicket)
 		return errors.Errorf("create ticket: %w", err)
@@ -160,7 +158,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	// sign ticket with creator signature
 	if err := task.signTicket(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error Signing sense ticket: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error signing sense ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorSigningTicket)
 		return errors.Errorf("sign sense ticket: %w", err)
@@ -170,7 +168,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	// UPLOAD signed ticket to supernodes to validate and register action with the network
 	if err := task.uploadSignedTicket(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error Uploading signed ticket: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error uploading signed ticket")
 
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorUploadingTicket)
@@ -192,7 +190,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	now := time.Now()
 	if task.downloadService != nil {
 		if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
-			log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).Error("Error validating sense ticket data")
+			log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).WithError(err).Error("error validating sense ticket data")
 
 			log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).Info("initiating the new sense registration request")
 			request := &common.ActionRegistrationRequest{
@@ -233,7 +231,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
-		log.WithContext(ctx).WithError(err).Errorf("Error Getting confirmations: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations")
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketRegistered)
@@ -244,13 +242,11 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		IsFinalBool:   false,
 	})
 
-	log.WithContext(ctx).Debug("Sense Reg Ticket confirmed")
-	log.WithContext(ctx).Debug("Activating Sense Reg Ticket")
-
+	log.WithContext(ctx).Debug("Sense Reg Ticket confirmed, Activating Sense Reg Ticket")
 	// activate sense ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(newCtx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error Activating sense ticket: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error activating sense ticket")
 
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorActivatingTicket)
@@ -271,7 +267,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.SenseActTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Error getting confirmations for activation: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations for activation")
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait activate txid valid: %w", err)
 	}

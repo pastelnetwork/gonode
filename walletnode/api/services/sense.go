@@ -55,23 +55,23 @@ func (service *SenseAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) go
 // UploadImage - Uploads an image and return unique image id
 func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.UploadImagePayload) (res *sense.Image, err error) {
 	if p.Filename == nil {
-		log.WithContext(ctx).WithError(err).Error("Filename not specified")
+		log.Error("filename not specified")
 		return nil, sense.MakeBadRequest(errors.New("file not specified"))
 	}
 
 	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Error Storing File: %s", err.Error()))
+		log.WithError(err).Error("error storing file")
 		return nil, sense.MakeInternalServerError(err)
 	}
-	log.WithContext(ctx).Info(fmt.Sprintf("File has been uploaded: %s", id))
+	log.Infof("file has been uploaded: %s", id)
 
 	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Error Calculating Fee: %s", err.Error()))
+		log.WithError(err).Error("error calculating fee")
 		return nil, sense.MakeInternalServerError(err)
 	}
-	log.WithContext(ctx).Info(fmt.Sprintf("Estimated fee has been calculated: %f", fee))
+	log.Infof("estimated fee has been calculated: %f", fee)
 
 	res = &sense.Image{
 		ImageID:      id,
@@ -83,10 +83,10 @@ func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.Upload
 }
 
 // StartProcessing - Starts a processing image task
-func (service *SenseAPIHandler) StartProcessing(ctx context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
+func (service *SenseAPIHandler) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Unable to add task: %s", err.Error()))
+		log.WithError(err).Error("unable to add task")
 		return nil, sense.MakeInternalServerError(err)
 	}
 
@@ -94,7 +94,7 @@ func (service *SenseAPIHandler) StartProcessing(ctx context.Context, p *sense.St
 		TaskID: taskID,
 	}
 
-	log.WithContext(ctx).Info(fmt.Sprintf("task has been added: %s", taskID))
+	log.Infof("task has been added: %s", taskID)
 	return res, nil
 }
 
@@ -104,10 +104,10 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
-		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Unable to get task: %s", err.Error()))
+		log.Error("unable to get task")
 		return sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
-	log.WithContext(ctx).Info(fmt.Sprintf("task has been retrieved: %s", task.ID()))
+	log.Info("task has been retrieved")
 
 	sub := task.SubscribeStatus()
 
@@ -180,8 +180,8 @@ func (service *SenseAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *sec
 
 // Download registered NFT
 func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadPayload) (res *sense.DownloadResult, err error) {
-	log.WithContext(ctx).Info("Start downloading")
-	defer log.WithContext(ctx).Info("Finished downloading")
+	log.Info("Start downloading")
+	defer log.Info("Finished downloading")
 	taskID := service.download.AddTask(&nft.DownloadPayload{Txid: p.Txid, Pid: p.Pid, Key: p.Key}, pastel.ActionTypeSense)
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
