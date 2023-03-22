@@ -73,9 +73,9 @@ func NewSenseUploadImageEncoder(encoderFn SenseUploadImageEncoderFunc) func(r *h
 // sense uploadImage endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
 // DecodeUploadImageResponse may return the following errors:
-//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//   - error: internal error
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
 func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -192,9 +192,9 @@ func EncodeStartProcessingRequest(encoder func(*http.Request) goahttp.Encoder) f
 // the sense startProcessing endpoint. restoreBody controls whether the
 // response body should be restored after having been read.
 // DecodeStartProcessingResponse may return the following errors:
-//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//   - error: internal error
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
 func DecodeStartProcessingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -298,9 +298,9 @@ func (c *Client) BuildRegisterTaskStateRequest(ctx context.Context, v interface{
 // the sense registerTaskState endpoint. restoreBody controls whether the
 // response body should be restored after having been read.
 // DecodeRegisterTaskStateResponse may return the following errors:
-//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//   - error: internal error
+//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
 func DecodeRegisterTaskStateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -395,9 +395,9 @@ func (c *Client) BuildGetTaskHistoryRequest(ctx context.Context, v interface{}) 
 // sense getTaskHistory endpoint. restoreBody controls whether the response
 // body should be restored after having been read.
 // DecodeGetTaskHistoryResponse may return the following errors:
-//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//   - error: internal error
+//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
 func DecodeGetTaskHistoryResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -508,9 +508,9 @@ func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*ht
 // download endpoint. restoreBody controls whether the response body should be
 // restored after having been read.
 // DecodeDownloadResponse may return the following errors:
-//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//   - error: internal error
+//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
 func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
