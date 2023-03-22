@@ -152,8 +152,8 @@ func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
 
 					nftRegTxid, err = task.registerAction(ctx)
 					if err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("peers' signature mismatched")
-						err = errors.Errorf("register NFT: %w", err)
+						log.WithContext(ctx).WithError(err).Errorf("register cascade action failed")
+						err = errors.Errorf("register cascade action: %w", err)
 						return nil
 					}
 

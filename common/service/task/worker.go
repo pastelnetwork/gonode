@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Worker represents a pool of the task.
@@ -64,7 +65,10 @@ func (worker *Worker) Run(ctx context.Context) error {
 			return group.Wait()
 		case task := <-worker.taskCh:
 			group.Go(func() error {
-				defer worker.RemoveTask(task)
+				defer func() {
+					log.WithContext(ctx).WithField("task", task.ID()).Info("Task Removed")
+					worker.RemoveTask(task)
+				}()
 
 				return task.Run(ctx)
 			})
