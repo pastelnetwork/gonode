@@ -35,7 +35,7 @@ func NewDupeDetectionServerClient(cc grpc.ClientConnInterface) DupeDetectionServ
 
 func (c *dupeDetectionServerClient) ImageRarenessScore(ctx context.Context, in *RarenessScoreRequest, opts ...grpc.CallOption) (*ImageRarenessScoreReply, error) {
 	out := new(ImageRarenessScoreReply)
-	err := c.cc.Invoke(ctx, "/dupedetection.DupeDetectionServer/ImageRarenessScore", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/DupeDetectionServer/ImageRarenessScore", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func _DupeDetectionServer_ImageRarenessScore_Handler(srv interface{}, ctx contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dupedetection.DupeDetectionServer/ImageRarenessScore",
+		FullMethod: "/DupeDetectionServer/ImageRarenessScore",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DupeDetectionServerServer).ImageRarenessScore(ctx, req.(*RarenessScoreRequest))
@@ -92,7 +92,7 @@ func _DupeDetectionServer_ImageRarenessScore_Handler(srv interface{}, ctx contex
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var DupeDetectionServer_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "dupedetection.DupeDetectionServer",
+	ServiceName: "DupeDetectionServer",
 	HandlerType: (*DupeDetectionServerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

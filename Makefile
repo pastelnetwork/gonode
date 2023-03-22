@@ -53,6 +53,7 @@ gen-mock:
 	cd ./supernode/node && go generate ./...
 	cd ./walletnode/node && go generate ./...
 gen-proto:
+	cd ./dupedetection && protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative dd-server.proto	
 	cd ./proto/hermes/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative hermes_p2p.proto
 	cd ./proto/supernode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative register_cascade_sn.proto
 	cd ./proto/supernode/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative register_sense_sn.proto
