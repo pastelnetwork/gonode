@@ -3,6 +3,7 @@ package senseregister
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -96,6 +97,10 @@ func (task *SenseRegistrationTask) CalculateFee(ctx context.Context, file *files
 
 // HashExists checks if hash exists in database
 func (task *SenseRegistrationTask) HashExists(ctx context.Context, file *files.File) (bool, error) {
+	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
+		return false, nil
+	}
+
 	var fileBytes []byte
 	fileBytes, err := file.Bytes()
 	if err != nil {

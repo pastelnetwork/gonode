@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -49,12 +50,19 @@ func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte) (st
 
 // StoreListOfBytesIntoP2P stores into P2P array of bytes arrays
 func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]byte) error {
+	group, gctx := errgroup.WithContext(ctx)
 	for _, data := range list {
-		if _, err := h.StoreBytesIntoP2P(ctx, data); err != nil {
-			return errors.Errorf("store data into p2p: %w", err)
-		}
+		data := data
+		group.Go(func() (err error) {
+			if _, err := h.StoreBytesIntoP2P(gctx, data); err != nil {
+				return errors.Errorf("store data into p2p: %w", err)
+			}
+
+			return nil
+		})
 	}
-	return nil
+
+	return group.Wait()
 }
 
 // GenerateRaptorQSymbols calls RQ service to produce RQ Symbols

@@ -249,11 +249,10 @@ func (service *RegisterNft) ProbeImage(stream pb.RegisterNft_ProbeImageServer) (
 	}
 
 	exists, err := task.HashExists(ctx, image)
-	log.WithContext(ctx).WithError(err).Error("hash exist check failed")
-
 	if exists || err != nil {
 		resp := &pb.ProbeImageReply{
-			IsExisting: exists,
+			IsExisting:                        exists,
+			CompressedSignedDDAndFingerprints: []byte{},
 		}
 
 		if err != nil {

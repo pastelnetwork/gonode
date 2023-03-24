@@ -29,5 +29,5 @@ type ActTicketData struct {
 	RegTXID       string `json:"reg_txid"`
 	StorageFee    int    `json:"storage_fee"`
 	Version       int    `json:"version"`
-	CalledAt      string `json:"called_at"`
+	CalledAt      int    `json:"called_at"`
 }

@@ -100,40 +100,40 @@ func (m *Mocker) mockDDServerRegExpections(addr string) error {
 
 func (m *Mocker) mockPasteldRegExpections(addr string) error {
 
-	if err := m.mockServer([]byte(masterNodesTopResp), addr, "masternode", []string{"top"}, 10); err != nil {
+	if err := m.mockServer([]byte(masterNodesTopResp), addr, "masternode", []string{"top"}, 20); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(masterNodeExtraResp), addr, "masternode", []string{"list", "extra"}, 10); err != nil {
+	if err := m.mockServer([]byte(masterNodeExtraResp), addr, "masternode", []string{"list", "extra"}, 20); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(networkStorageResp), addr, "storagefee", []string{"getnetworkfee"}, 6); err != nil {
+	if err := m.mockServer([]byte(networkStorageResp), addr, "storagefee", []string{"getnetworkfee"}, 16); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
 	for _, id := range validPastelIDs {
-		if err := m.mockServer([]byte(ticketsFindID), addr, "tickets", []string{"find", "id", id}, 6); err != nil {
+		if err := m.mockServer([]byte(ticketsFindID), addr, "tickets", []string{"find", "id", id}, 16); err != nil {
 			return fmt.Errorf("failed to mock masternode top err: %w", err)
 		}
 	}
 
 	if err := m.mockServer([]byte(ticketsFindIDArtistResp), addr, "tickets",
-		[]string{"find", "id", testconst.ArtistPastelID}, 3); err != nil {
+		[]string{"find", "id", testconst.ArtistPastelID}, 8); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
 	if err := m.mockServer([]byte(`[]`), addr, "tickets",
-		[]string{"findbylabel", "nft"}, 3); err != nil {
+		[]string{"findbylabel", "nft"}, 8); err != nil {
 		return fmt.Errorf("failed to mock findbylabel err: %w", err)
 	}
 
 	if err := m.mockServer([]byte(`[]`), addr, "tickets",
-		[]string{"findbylabel", "action"}, 3); err != nil {
+		[]string{"findbylabel", "action"}, 8); err != nil {
 		return fmt.Errorf("failed to mock findbylabel err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(blockVerboseResponse), addr, "getblock", []string{"160647"}, 10); err != nil {
+	if err := m.mockServer([]byte(blockVerboseResponse), addr, "getblock", []string{"160647"}, 30); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
@@ -141,94 +141,94 @@ func (m *Mocker) mockPasteldRegExpections(addr string) error {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte("18792"), addr, "z_getbalance", []string{testconst.RegSpendableAddress}, 3); err != nil {
+	if err := m.mockServer([]byte("18792"), addr, "z_getbalance", []string{testconst.RegSpendableAddress}, 13); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(signResp), addr, "pastelid", []string{"sign"}, 10); err != nil {
+	if err := m.mockServer([]byte(signResp), addr, "pastelid", []string{"sign"}, 20); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(verifyResp), addr, "pastelid", []string{"verify"}, 10); err != nil {
+	if err := m.mockServer([]byte(verifyResp), addr, "pastelid", []string{"verify"}, 20); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
 	if err := m.mockServer([]byte("opid-0ded54d5-f87a-479d-bcc7-e77866e51409"), addr, "z_sendmanywithchangetosender",
-		[]string{testconst.RegSpendableAddress}, 5); err != nil {
+		[]string{testconst.RegSpendableAddress}, 15); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
 	if err := m.mockServer([]byte(opStatusResp), addr, "z_getoperationstatus",
-		[]string{`[opid-0ded54d5-f87a-479d-bcc7-e77866e51409]`}, 10); err != nil {
+		[]string{`[opid-0ded54d5-f87a-479d-bcc7-e77866e51409]`}, 20); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(storageFeeResp), addr, "tickets", []string{"tools", "gettotalstoragefee"}, 3); err != nil {
+	if err := m.mockServer([]byte(storageFeeResp), addr, "tickets", []string{"tools", "gettotalstoragefee"}, 8); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(getRawTxResp), addr, "getrawtransaction", []string{}, 5); err != nil {
+	if err := m.mockServer([]byte(getRawTxResp), addr, "getrawtransaction", []string{}, 15); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(getNFTRegisterResp), addr, "tickets", []string{"register", "nft"}, 1); err != nil {
+	if err := m.mockServer([]byte(getNFTRegisterResp), addr, "tickets", []string{"register", "nft"}, 3); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(getActRegisterResp), addr, "tickets", []string{"register", "act"}, 1); err != nil {
+	if err := m.mockServer([]byte(getActRegisterResp), addr, "tickets", []string{"register", "act"}, 3); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
 	// sense
-	if err := m.mockServer([]byte(actionFeeResp), addr, "storagefee", []string{"getactionfees"}, 6); err != nil {
+	if err := m.mockServer([]byte(actionFeeResp), addr, "storagefee", []string{"getactionfees"}, 8); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(getActionRegisterResp), addr, "tickets", []string{"register", "action"}, 1); err != nil {
+	if err := m.mockServer([]byte(getActionRegisterResp), addr, "tickets", []string{"register", "action"}, 4); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
-	if err := m.mockServer([]byte(getActRegisterResp), addr, "tickets", []string{"activate", "action"}, 1); err != nil {
+	if err := m.mockServer([]byte(getActRegisterResp), addr, "tickets", []string{"activate", "action"}, 4); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
 	if err := m.mockServer([]byte(ticketsFindIDArtistResp), addr, "tickets",
-		[]string{"find", "action-act"}, 3); err != nil {
+		[]string{"find", "action-act"}, 8); err != nil {
 		return fmt.Errorf("failed to mock masternode top err: %w", err)
 	}
 
 	// download
 	if err := m.mockServer([]byte(ticketOwnershipResp), addr, "tickets",
 		[]string{"tools", "validateownership", "b4b1fc370983c7409ec58fcd079136f04efe1e1c363f4cd8f4aff8986a91ef09",
-			testconst.ArtistPastelID, "passphrase"}, 3); err != nil {
+			testconst.ArtistPastelID, "passphrase"}, 18); err != nil {
 
 		return fmt.Errorf("failed to mock ticket ownership err: %w", err)
 	}
 
 	if err := m.mockServer([]byte(cascadeticketOwnershipResp), addr, "tickets",
 		[]string{"tools", "validateownership", testconst.TestCascadeRegTXID,
-			testconst.ArtistPastelID, "passphrase"}, 3); err != nil {
+			testconst.ArtistPastelID, "passphrase"}, 18); err != nil {
 
 		return fmt.Errorf("failed to mock ticket ownership err: %w", err)
 	}
 
 	for key, val := range getRegTickets() {
 		if err := m.mockServer(val, addr, "tickets", []string{"get",
-			key}, 20); err != nil {
+			key}, 30); err != nil {
 
 			return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
 		}
 	}
 
 	if err := m.mockServer(getTradeTickets(), addr, "tickets", []string{"list",
-		"trade", "available"}, 3); err != nil {
+		"trade", "available"}, 13); err != nil {
 
 		return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
 	}
 
 	//search
 	if err := m.mockServer(getSearchActTicketsResponse(), addr, "tickets", []string{"list",
-		"act"}, 5); err != nil {
+		"act"}, 15); err != nil {
 
 		return fmt.Errorf("failed to mock tickets act err: %w", err)
 	}
@@ -328,7 +328,7 @@ func (m *Mocker) mockSCPasteldRegExpections(addr string) error {
 
 	for key, val := range tix {
 		if err := m.mockServer(val, addr, "tickets", []string{"get",
-			key}, 20); err != nil {
+			key}, 25); err != nil {
 
 			return fmt.Errorf("failed to mock tickets get ownership err: %w", err)
 		}

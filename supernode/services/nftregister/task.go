@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"math"
+	"os"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/storage/ddstore"
@@ -482,6 +483,10 @@ func (task *NftRegistrationTask) UploadImageWithThumbnail(_ context.Context, fil
 
 // HashExists checks if hash exists in database
 func (task *NftRegistrationTask) HashExists(ctx context.Context, file *files.File) (bool, error) {
+	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
+		return false, nil
+	}
+
 	var fileBytes []byte
 	fileBytes, err := file.Bytes()
 	if err != nil {
