@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/hex"
 	"math"
+	"os"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/storage/ddstore"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 
@@ -476,6 +479,47 @@ func (task *NftRegistrationTask) UploadImageWithThumbnail(_ context.Context, fil
 	})
 
 	return previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, err
+}
+
+// HashExists checks if hash exists in database
+func (task *NftRegistrationTask) HashExists(ctx context.Context, file *files.File) (bool, error) {
+	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
+		return false, nil
+	}
+
+	var fileBytes []byte
+	fileBytes, err := file.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("read image file")
+		return false, errors.Errorf("read image file: %w", err)
+	}
+
+	dataHash, err := utils.Sha3256hash(fileBytes)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error converting bytes to hash")
+		return false, errors.Errorf("hash encoded image: %w", err)
+	}
+
+	db, err := ddstore.NewSQLiteDDStore(task.config.DDDatabase)
+	if err != nil {
+		return false, err
+	}
+
+	exists, err := db.IfFingerprintExists(ctx, string(dataHash))
+	if err != nil {
+		return false, err
+	}
+
+	if err := db.Close(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to close dd database")
+	}
+
+	if exists {
+		task.UpdateStatus(common.StatusFileExists)
+	}
+
+	return exists, nil
+
 }
 
 func (task *NftRegistrationTask) removeArtifacts() {

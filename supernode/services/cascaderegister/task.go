@@ -3,7 +3,6 @@ package cascaderegister
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -114,7 +113,7 @@ func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
 		}
 
 		// sign the ticket if not primary node
-		log.WithContext(ctx).Debugf("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
+		log.WithContext(ctx).Infof("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
 		if err = task.signAndSendCascadeTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("signed and send Cascade ticket")
 			err = errors.Errorf("signed and send NFT ticket: %w", err)
@@ -138,11 +137,13 @@ func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
 				case <-ctx.Done():
 					err = ctx.Err()
 					if err != nil {
-						log.WithContext(ctx).Debug("waiting for signature from peers cancelled or timeout")
+						log.WithContext(ctx).WithError(err).Error("waiting for signature from peers cancelled or timeout")
 					}
+
+					log.WithContext(ctx).Info("ctx done return from Validate & Register")
 					return nil
 				case <-task.AllSignaturesReceivedChn:
-					log.WithContext(ctx).Debug("all signature received so start validation")
+					log.WithContext(ctx).Info("all signature received so start validation")
 
 					if err = task.VerifyPeersTicketSignature(ctx, task.Ticket); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("peers' signature mismatched")
@@ -150,12 +151,14 @@ func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
 						return nil
 					}
 
+					log.WithContext(ctx).Info("registering cascade action")
 					nftRegTxid, err = task.registerAction(ctx)
 					if err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("peers' signature mismatched")
-						err = errors.Errorf("register NFT: %w", err)
+						log.WithContext(ctx).WithError(err).Errorf("register cascade action failed")
+						err = errors.Errorf("register cascade action: %w", err)
 						return nil
 					}
+					log.WithContext(ctx).Info("cascade action registered successfully")
 
 					return nil
 				}
@@ -174,7 +177,7 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 	// TODO: fix this like how can we get the signature before calling cNode
 	task.Ticket, err = pastel.DecodeActionTicket(ticket)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("decode action ticket")
+		log.WithContext(ctx).WithError(err).WithField("ticket", string(ticket)).Errorf("decode action cascade ticket")
 		return errors.Errorf("decode action ticket: %w", err)
 	}
 
@@ -210,7 +213,6 @@ func (task *CascadeRegistrationTask) validateSignedTicketFromWN(ctx context.Cont
 	}
 
 	task.dataHash = apiTicket.DataHash
-	fmt.Println("data hash: ", task.dataHash)
 
 	return nil
 }
@@ -263,7 +265,7 @@ func (task *CascadeRegistrationTask) signAndSendCascadeTicket(ctx context.Contex
 	}
 
 	if !isPrimary {
-		log.WithContext(ctx).Debug("send signed cascade ticket to primary node")
+		log.WithContext(ctx).Info("send signed cascade ticket to primary node")
 
 		senseNode, ok := task.NetworkHandler.ConnectedTo.SuperNodePeerAPIInterface.(*CascadeRegistrationNode)
 		if !ok {
@@ -278,7 +280,7 @@ func (task *CascadeRegistrationTask) signAndSendCascadeTicket(ctx context.Contex
 }
 
 func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string, error) {
-	log.WithContext(ctx).Debug("all signature received so start validation")
+	log.WithContext(ctx).Info("all signature received so start register")
 
 	//ticketID := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, hex.EncodeToString(task.dataHash))
 

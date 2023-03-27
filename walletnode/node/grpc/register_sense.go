@@ -184,19 +184,19 @@ func (service *registerSense) SendActionAct(ctx context.Context, actionRegTxid s
 }
 
 // ProbeImage implements node.RegisterNft.ProbeImage()
-func (service *registerSense) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, string, error) {
+func (service *registerSense) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, string, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return nil, false, "", errors.Errorf("open stream: %w", err)
+		return nil, false, "", false, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, false, "", errors.Errorf("open file %q: %w", file.Name(), err)
+		return nil, false, "", false, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -211,16 +211,16 @@ func (service *registerSense) ProbeImage(ctx context.Context, image *files.File)
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
-			return nil, true, "", errors.Errorf("send image data: %w", err)
+			return nil, true, "", false, errors.Errorf("send image data: %w", err)
 		}
 	}
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, true, "", errors.Errorf("receive image response: %w", err)
+		return nil, true, "", false, errors.Errorf("receive image response: %w", err)
 	}
 
-	return resp.CompressedSignedDDAndFingerprints, resp.IsValidBurnTxid, resp.ErrString, nil
+	return resp.CompressedSignedDDAndFingerprints, resp.IsValidBurnTxid, resp.ErrString, resp.IsExisting, nil
 }
 
 func (service *registerSense) contextWithMDSessID(ctx context.Context) context.Context {

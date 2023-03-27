@@ -69,7 +69,7 @@ type RegisterSenseInterface interface {
 	// SendRegMetadata send metadata of registration to SNs for next steps
 	SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error
 	// ProbeImage uploads image to supernode.
-	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, string, error)
+	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, string, bool, error)
 	// SendSignedTicket send a reg-nft ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFpFile []byte) (string, error)
 	// SendActionAct send action act to SNs for next steps
@@ -97,7 +97,7 @@ type RegisterNftInterface interface {
 	// SendRegMetadata send metadata of registration to SNs for next steps
 	SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error
 	// ProbeImage uploads image to supernode.
-	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error)
+	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, bool, error)
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
 	UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) ([]byte, []byte, []byte, error)
 	// SendSignedTicket send a reg-nft ticket signed by cNode to SuperNode

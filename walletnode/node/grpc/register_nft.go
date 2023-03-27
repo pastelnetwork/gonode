@@ -175,19 +175,19 @@ func (service *registerNft) SendRegMetadata(ctx context.Context, regMetadata *ty
 // ProbeImage implements node.RegisterNft.ProbeImage()
 // https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
 // Step 3, expect 4.B.5 in return
-func (service *registerNft) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, error) {
+func (service *registerNft) ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return nil, false, errors.Errorf("open stream: %w", err)
+		return nil, false, false, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, false, errors.Errorf("open file %q: %w", file.Name(), err)
+		return nil, false, false, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -202,16 +202,16 @@ func (service *registerNft) ProbeImage(ctx context.Context, image *files.File) (
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
-			return nil, false, errors.Errorf("send image data: %w", err)
+			return nil, false, false, errors.Errorf("send image data: %w", err)
 		}
 	}
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, false, errors.Errorf("receive image response: %w", err)
+		return nil, false, false, errors.Errorf("receive image response: %w", err)
 	}
 
-	return resp.CompressedSignedDDAndFingerprints, true, nil
+	return resp.CompressedSignedDDAndFingerprints, true, resp.IsExisting, nil
 }
 
 // UploadImageWithThumbnail implements node.RegisterNft.UploadImageWithThumbnail()

@@ -50,6 +50,7 @@ func TestStatusNames(t *testing.T) {
 				StatusFileEmpty,
 				StatusKeyNotFound,
 				StatusFileRestoreFailed,
+				StatusFileExists,
 
 				// Final
 				StatusTaskCanceled,

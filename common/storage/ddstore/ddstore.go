@@ -2,6 +2,7 @@ package ddstore
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -13,10 +14,16 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 )
 
+const (
+	getFingerprintFromHashStatement = `SELECT sha256_hash_of_art_image_file FROM image_hash_to_image_fingerprint_table WHERE sha256_hash_of_art_image_file = ?`
+)
+
 // DDStore represents Dupedetection store
 type DDStore interface {
 	// GetDDDataHash returns hash of dd data
 	GetDDDataHash(ctx context.Context) (hash string, err error)
+	// IfFingerprintExists checks if fg exists against the hash
+	IfFingerprintExists(_ context.Context, hash string) (bool, error)
 }
 
 // SQLiteDDStore is sqlite implementation of DD store and Score store
@@ -59,6 +66,25 @@ type collections struct {
 type pastelblocks struct {
 	BlockHash   string `db:"block_hash"`
 	BlockHeight int    `db:"block_height"`
+}
+
+// IfFingerprintExists checks if fg exists against the hash
+func (s *SQLiteDDStore) IfFingerprintExists(_ context.Context, hash string) (bool, error) {
+	r := fingerprints{}
+	err := s.db.Get(&r, getFingerprintFromHashStatement, hash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get record by key %w : key: %s", err, hash)
+	}
+
+	if r.Sha256HashOfArtImageFile == "" {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 // GetDDDataHash returns hash of dd data

@@ -248,6 +248,21 @@ func (service *RegisterNft) ProbeImage(stream pb.RegisterNft_ProbeImageServer) (
 		return errors.Errorf("add image format: %w", err)
 	}
 
+	exists, err := task.HashExists(ctx, image)
+	if exists || err != nil {
+		resp := &pb.ProbeImageReply{
+			IsExisting:                        exists,
+			CompressedSignedDDAndFingerprints: []byte{},
+		}
+
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("hash exist check failed")
+			resp.ErrString = err.Error()
+		}
+
+		return stream.SendAndClose(resp)
+	}
+
 	//task.ProbeImage will begin Step 3,
 	// Call dd-service to generate near duplicate fingerprints and dupe-detection info from re-sampled image (img1-r)
 	compressedDDFingerAndScores, err := task.ProbeImage(ctx, image)

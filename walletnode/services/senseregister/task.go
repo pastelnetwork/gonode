@@ -339,10 +339,15 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 
 		someNode := someNode
 		group.Go(func() (err error) {
-			compress, stateOk, errString, err := senseRegNode.ProbeImage(gctx, file)
+			compress, stateOk, errString, hashExists, err := senseRegNode.ProbeImage(gctx, file)
 			if err != nil {
 				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("probe image failed")
 				return errors.Errorf("node %s: probe failed :%w", someNode.String(), err)
+			}
+
+			if hashExists {
+				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("image already registered")
+				return errors.Errorf("remote node %s: image already registered: %s", someNode.String(), errString)
 			}
 
 			someNode.SetRemoteState(stateOk)

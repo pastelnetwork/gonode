@@ -5,6 +5,8 @@ const (
 	StatusTaskStarted Status = iota
 	StatusConnected
 
+	StatusValidateBurnTxn
+
 	// Sense and NFT reg
 	StatusImageProbed
 	StatusImageAndThumbnailUploaded
@@ -61,8 +63,9 @@ const (
 )
 
 var statusNames = map[Status]string{
-	StatusTaskStarted: "Task Started",
-	StatusConnected:   "Connected",
+	StatusTaskStarted:     "Task Started",
+	StatusConnected:       "Connected",
+	StatusValidateBurnTxn: "Validating Burn Txn",
 
 	// Sense and NFT reg
 	StatusImageProbed:               "Image Probed",

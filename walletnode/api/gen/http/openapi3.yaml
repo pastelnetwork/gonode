@@ -3967,6 +3967,7 @@ components:
                     enum:
                         - Task Started
                         - Connected
+                        - Validating Burn Txn
                         - Image Probed
                         - Image And Thumbnail Uploaded
                         - Status Gen ReptorQ Symbols
@@ -4157,6 +4158,7 @@ components:
                     enum:
                         - Task Started
                         - Connected
+                        - Validating Burn Txn
                         - Image Probed
                         - Image And Thumbnail Uploaded
                         - Status Gen ReptorQ Symbols
@@ -4304,6 +4306,7 @@ components:
                     enum:
                         - Task Started
                         - Connected
+                        - Validating Burn Txn
                         - Image Probed
                         - Image And Thumbnail Uploaded
                         - Status Gen ReptorQ Symbols

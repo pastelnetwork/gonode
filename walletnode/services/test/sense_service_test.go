@@ -132,7 +132,7 @@ func TestNodesSendImage(t *testing.T) {
 				//client mock
 				client := test.NewMockClient(t)
 				//listen on uploadImage call
-				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.validBurnTxID, testCase.errString, testCase.err)
+				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.validBurnTxID, testCase.errString, false, testCase.err)
 
 				someNode := common.NewSuperNode(client, a.address, "", service.RegisterSenseNodeMaker{})
 				someNode.SuperNodeAPIInterface = &service.SenseRegistrationNode{RegisterSenseInterface: client.RegisterSenseInterface}

@@ -38,6 +38,10 @@ func (service *CascadeRegistrationService) NewCascadeRegistrationTask() *Cascade
 
 // Task returns the task of the Sense registration by the given id.
 func (service *CascadeRegistrationService) Task(id string) *CascadeRegistrationTask {
+	if service.Worker.Task(id) == nil {
+		return nil
+	}
+
 	return service.Worker.Task(id).(*CascadeRegistrationTask)
 }
 

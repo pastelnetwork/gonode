@@ -245,12 +245,27 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 
 	err = image.UpdateFormat()
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("UpdateFormatError:%s", err.Error()))
+		log.WithContext(ctx).WithError(err).Error("updateFormatError")
 		return errors.Errorf("add image format: %w", err)
 	}
 
+	exists, err := task.HashExists(ctx, image)
+	if exists || err != nil {
+		resp := &pb.ProbeImageReply{
+			IsExisting:                        exists,
+			CompressedSignedDDAndFingerprints: []byte{},
+		}
+
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("hash exist check failed")
+			resp.ErrString = err.Error()
+		}
+
+		return stream.SendAndClose(resp)
+	}
+
 	if err := task.CalculateFee(ctx, image); err != nil {
-		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("calculate fee failed:%s", err.Error()))
+		log.WithContext(ctx).WithError(err).Error("calculate fee failed")
 		return errors.Errorf("calculate fee: %w", err)
 	}
 
@@ -268,7 +283,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 			return fmt.Errorf("task.ProbeImage: %w", err)
 		}
 	} else {
-		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("validate burn txid failed:%s", err.Error()))
+		log.WithContext(ctx).WithError(err).Error("validate burn txid failed")
 	}
 
 	resp := &pb.ProbeImageReply{
@@ -283,6 +298,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 	if err := stream.SendAndClose(resp); err != nil {
 		return errors.Errorf("send ProbeImage response: %w", err)
 	}
+
 	return nil
 }
 

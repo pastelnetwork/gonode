@@ -231,7 +231,7 @@ func TestTaskRun(t *testing.T) {
 			compressed, err := pastel.ToCompressSignedDDAndFingerprints(ddData, []byte("signature"))
 			assert.Nil(t, err)
 
-			nodeClient.ListenOnProbeImage(compressed, true, testCase.args.returnErr)
+			nodeClient.ListenOnProbeImage(compressed, true, false, testCase.args.returnErr)
 			nodeClient.RegisterNftInterface.On("SendRegMetadata", mock.Anything, mock.Anything).Return(nil)
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.
