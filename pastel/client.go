@@ -596,8 +596,8 @@ func (client *client) ActionTicketsFromBlockHeight(ctx context.Context, filter R
 	return tickets, nil
 }
 
-// NFTCollectionActivationTicketsFromBlockHeight implements pastel.Client.NFTCollectionActivationTicketsFromBlockHeight
-func (client *client) NFTCollectionActivationTicketsFromBlockHeight(ctx context.Context, blockheight uint64) (ActTickets, error) {
+// CollectionActivationTicketsFromBlockHeight implements pastel.Client.NFTCollectionActivationTicketsFromBlockHeight
+func (client *client) CollectionActivationTicketsFromBlockHeight(ctx context.Context, blockheight int) (ActTickets, error) {
 	tickets := ActTickets{}
 
 	if err := client.callFor(ctx, &tickets, "tickets", "list", "nft-collection-act", "all", blockheight); err != nil {
@@ -607,8 +607,8 @@ func (client *client) NFTCollectionActivationTicketsFromBlockHeight(ctx context.
 	return tickets, nil
 }
 
-// NFTCollectionRegTicket implements pastel.Client.NFTCollectionRegTicket
-func (client *client) NFTCollectionRegTicket(ctx context.Context, regTxid string) (CollectionRegTicket, error) {
+// CollectionRegTicket implements pastel.Client.NFTCollectionRegTicket
+func (client *client) CollectionRegTicket(ctx context.Context, regTxid string) (CollectionRegTicket, error) {
 	ticket := CollectionRegTicket{}
 
 	if err := client.callFor(ctx, &ticket, "tickets", "get", regTxid); err != nil {

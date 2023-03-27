@@ -1,0 +1,56 @@
+package store
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+
+	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+)
+
+type collection struct {
+	CollectionTicketTXID                           string  `db:"collection_ticket_txid"`
+	CollectionName                                 string  `db:"collection_name_string"`
+	CollectionTicketActivationBlockHeight          int     `db:"collection_ticket_activation_block_height"`
+	CollectionFinalAllowedBlockHeight              int     `db:"collection_final_allowed_block_height"`
+	MaxPermittedOpenNSFWScore                      float64 `db:"max_permitted_open_nsfw_score"`
+	MinimumSimilarityScoreToFirstEntryInCollection float64 `db:"minimum_similarity_score_to_first_entry_in_collection"`
+	CollectionState                                string  `db:"collection_state"`
+	DatetimeCollectionStateUpdated                 string  `db:"datetime_collection_state_updated"`
+}
+
+// IfCollectionExists checks if collection exists against the id
+func (s *SQLiteStore) IfCollectionExists(_ context.Context, collectionTxID string) (bool, error) {
+	c := collection{}
+	getCollectionByIDQuery := `SELECT * FROM collections WHERE collection_ticket_txid = ?`
+	err := s.db.Get(&c, getCollectionByIDQuery, collectionTxID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get record: %w : collection_ticket_txid: %s", err, collectionTxID)
+	}
+
+	if c.CollectionTicketTXID == "" {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// StoreCollection store collection object to DB
+func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) error {
+	_, err := s.db.Exec(`INSERT INTO collections(collection_ticket_txid,
+		 collection_name_string, collection_ticket_activation_block_height, collection_final_allowed_block_height,
+		  max_permitted_open_nsfw_score, minimum_similarity_score_to_first_entry_in_collection, collection_state, 
+          datetime_collection_state_updated) VALUES(?,?,?,?,?,?,?)`, c.CollectionTicketTXID,
+		c.CollectionName, c.CollectionTicketActivationBlockHeight, c.CollectionFinalAllowedBlockHeight,
+		c.MaxPermittedOpenNSFWScore, c.MinimumSimilarityScoreToFirstEntryInCollection, c.CollectionState.String(),
+		c.DatetimeCollectionStateUpdated)
+	if err != nil {
+		return fmt.Errorf("failed to insert collection record: %w", err)
+	}
+
+	return nil
+}

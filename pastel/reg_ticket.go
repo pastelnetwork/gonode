@@ -85,9 +85,11 @@ type AppTicket struct {
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
 
-	OriginalFileSizeInBytes int    `json:"original_file_size_in_bytes"`
-	FileType                string `json:"file_type"`
-	MakePubliclyAccessible  bool   `json:"make_publicly_accessible"`
+	OriginalFileSizeInBytes                        int     `json:"original_file_size_in_bytes"`
+	FileType                                       string  `json:"file_type"`
+	MakePubliclyAccessible                         bool    `json:"make_publicly_accessible"`
+	MaxPermittedOpenNSFWScore                      float64 `json:"max_permitted_open_nsfw_score"`
+	MinimumSimilarityScoreToFirstEntryInCollection float64 `json:"minimum_similarity_score_to_first_entry_in_collection"`
 }
 
 // GetRegisterNFTFeeRequest represents a request to get registration fee

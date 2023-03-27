@@ -49,8 +49,9 @@ type service struct {
 	currentActionBlock int
 
 	// used in fingerprints store task
-	latestNFTBlockHeight   int
-	latestSenseBlockHeight int
+	latestNFTBlockHeight        int
+	latestSenseBlockHeight      int
+	latestCollectionBlockHeight int
 }
 
 func toFloat64Array(data []float32) []float64 {
@@ -108,6 +109,10 @@ func (s *service) run(ctx context.Context) error {
 	group, gctx := errgroup.WithContext(ctx)
 	group.Go(func() error {
 		return s.runStoreFingerprintsTask(gctx)
+	})
+
+	group.Go(func() error {
+		return s.runStoreCollectionsTask(gctx)
 	})
 
 	/*group.Go(func() error {
@@ -425,7 +430,11 @@ func (s *service) runStoreFingerprintsTask(ctx context.Context) error {
 		return err
 	}
 
-	return s.praseNFTTickets(ctx)
+	return s.parseNFTTickets(ctx)
+}
+
+func (s *service) runStoreCollectionsTask(ctx context.Context) error {
+	return s.parseCollectionTickets(ctx)
 }
 
 // Stats return status of dupe detection
