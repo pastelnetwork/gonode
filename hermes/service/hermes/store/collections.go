@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/errors"
 
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
 )
@@ -53,4 +54,39 @@ func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) er
 	}
 
 	return nil
+}
+
+type nonImpactedCollections struct {
+	ID                       int    `db:"id"`
+	CollectionName           string `db:"collection_name_string"`
+	Sha256HashOfArtImageFile string `db:"sha256_hash_of_art_image_file"`
+}
+
+func (n *nonImpactedCollections) toDomain() *domain.NonImpactedCollection {
+	return &domain.NonImpactedCollection{
+		ID:                       n.ID,
+		CollectionName:           n.CollectionName,
+		Sha256HashOfArtImageFile: n.Sha256HashOfArtImageFile,
+	}
+}
+
+// GetDoesNotImpactCollections retrieves the collection names which should not be impacted linked to image hash
+func (s *SQLiteStore) GetDoesNotImpactCollections(ctx context.Context, hash string) (domain.NonImpactedCollections, error) {
+	dncs := []nonImpactedCollections{}
+	query := `SELECT * from does_not_impact_collections_table where sha256_hash_of_art_image_file = ?`
+	err := s.db.SelectContext(ctx, &dncs, query, hash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.Errorf("no records found")
+		}
+
+		return nil, fmt.Errorf("failed to get record by hash %w", err)
+	}
+
+	var nonImpactedCollections domain.NonImpactedCollections
+	for _, c := range dncs {
+		nonImpactedCollections = append(nonImpactedCollections, c.toDomain())
+	}
+
+	return nonImpactedCollections, nil
 }

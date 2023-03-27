@@ -23,6 +23,7 @@ type DDStore interface {
 	CheckNonSeedRecord(ctx context.Context) (bool, error)
 	IfCollectionExists(ctx context.Context, collectionTxID string) (bool, error)
 	StoreCollection(_ context.Context, c domain.Collection) error
+	GetDoesNotImpactCollections(ctx context.Context, hash string) (domain.NonImpactedCollections, error)
 }
 
 // ScoreStore is SN Score store
@@ -56,6 +57,7 @@ func NewSQLiteStore(file string) (*SQLiteStore, error) {
 	}
 
 	_, _ = db.Exec(createFgTableStatement)
+	_, _ = db.Exec(createDoesNotImpactCollectionsTableStatement)
 	_, err = db.Exec(createScoreTableStatement)
 	if err != nil {
 		log.WithContext(context.Background()).WithError(err).Error("cannot create score table")

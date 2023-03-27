@@ -72,3 +72,13 @@ func (c CollectionState) String() string {
 
 	return "undefined"
 }
+
+// NonImpactedCollection is the domain representation of the record from does not impact collections table
+type NonImpactedCollection struct {
+	ID                       int    `json:"id"`
+	CollectionName           string `json:"collection_name"`
+	Sha256HashOfArtImageFile string `json:"sha256_hash_of_art_image_file,omitempty"`
+}
+
+// NonImpactedCollections is the array type for holding non-impacted collections
+type NonImpactedCollections []*NonImpactedCollection
