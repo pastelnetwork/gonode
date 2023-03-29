@@ -181,13 +181,13 @@ type Client interface {
 	// Command `tickets list action-act <block-height>`
 	ActionActivationTicketsFromBlockHeight(ctx context.Context, blockheight uint64) (ActTickets, error)
 
-	// NFTCollectionActivationTicketsFromBlockHeight returns nft-collection activation tickets
+	// CollectionActivationTicketsFromBlockHeight returns collection activation tickets
 	// Command `tickets list nft-collection-act <block-height>`
-	NFTCollectionActivationTicketsFromBlockHeight(ctx context.Context, blockheight uint64) (ActTickets, error)
+	CollectionActivationTicketsFromBlockHeight(ctx context.Context, blockheight int) (ActTickets, error)
 
-	// NFTCollectionRegTicket returns NFT collection registration ticket.
+	// CollectionRegTicket returns collection registration ticket.
 	// Command `tickets get <txid>`.
-	NFTCollectionRegTicket(ctx context.Context, regTxid string) (CollectionRegTicket, error)
+	CollectionRegTicket(ctx context.Context, regTxid string) (CollectionRegTicket, error)
 
 	// BurnAddress ...
 	BurnAddress() string

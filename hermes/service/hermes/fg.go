@@ -165,7 +165,7 @@ func (s *service) parseSenseTickets(ctx context.Context) error {
 	return nil
 }
 
-func (s *service) praseNFTTickets(ctx context.Context) error {
+func (s *service) parseNFTTickets(ctx context.Context) error {
 	actTickets, err := s.pastelClient.ActTickets(ctx, pastel.ActTicketAll, s.latestNFTBlockHeight)
 	if err != nil {
 		log.WithError(err).Error("unable to get act tickets - exit runtask now")

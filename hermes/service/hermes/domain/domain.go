@@ -1,8 +1,17 @@
 package domain
 
+// CollectionState represents the state of collection
+type CollectionState string
+
 const (
 	// ScoreReportLimit is the socre limit at which we report to CNode
 	ScoreReportLimit = 3
+	//UndefinedCollectionState is the state of collection when current no collection entries > max no of collection entries
+	UndefinedCollectionState CollectionState = "undefined"
+	// InProcessCollectionState is the state of collection when current no collection entries < max no of collection entries
+	InProcessCollectionState CollectionState = "in-process"
+	// FinalizedCollectionState is the state of collection when current no collection entries = max no of collection entries
+	FinalizedCollectionState CollectionState = "finalized"
 )
 
 // DDFingerprints is dd & fp domain representation
@@ -38,4 +47,28 @@ type MasterNodeConf struct {
 	ExtP2P     string `json:"extP2P"`
 	ExtCfg     string `json:"extCfg"`
 	ExtKey     string `json:"extKey"`
+}
+
+// Collection is the domain representation collection table
+type Collection struct {
+	CollectionTicketTXID                           string          `json:"collection_ticket_txid"`
+	CollectionName                                 string          `json:"collection_name_string"`
+	CollectionTicketActivationBlockHeight          int             `json:"collection_ticket_activation_block_height"`
+	CollectionFinalAllowedBlockHeight              int             `json:"collection_final_allowed_block_height"`
+	MaxPermittedOpenNSFWScore                      float64         `json:"max_permitted_open_nsfw_score"`
+	MinimumSimilarityScoreToFirstEntryInCollection float64         `json:"minimum_similarity_score_to_first_entry_in_collection"`
+	CollectionState                                CollectionState `json:"collection_state"`
+	DatetimeCollectionStateUpdated                 string          `json:"datetime_collection_state_updated"`
+}
+
+// String returns string representation of CollectionState
+func (c CollectionState) String() string {
+	switch c {
+	case InProcessCollectionState:
+		return "in-process"
+	case FinalizedCollectionState:
+		return "finalized"
+	}
+
+	return "undefined"
 }
