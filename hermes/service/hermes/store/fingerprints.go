@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 	"github.com/sbinet/npyio"
@@ -16,11 +17,12 @@ import (
 )
 
 const (
-	createFgTableStatement           = `CREATE TABLE IF NOT EXISTS image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text PRIMARY KEY, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text, open_api_subset_id_string text,open_api_group_id_string text,collection_name_string text)`
-	getLatestFingerprintStatement    = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
-	getFingerprintFromHashStatement  = `SELECT * FROM image_hash_to_image_fingerprint_table WHERE sha256_hash_of_art_image_file = ?`
-	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database, thumbnail_of_image, request_type, open_api_subset_id_string,open_api_group_id_string,collection_name_string) VALUES(?,?,?,?,?,?,?,?,?)`
-	getNumberOfFingerprintsStatement = `SELECT COUNT(*) as count FROM image_hash_to_image_fingerprint_table`
+	createFgTableStatement                       = `CREATE TABLE IF NOT EXISTS image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text PRIMARY KEY, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text, open_api_subset_id_string text,open_api_group_id_string text,collection_name_string text)`
+	getLatestFingerprintStatement                = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
+	getFingerprintFromHashStatement              = `SELECT * FROM image_hash_to_image_fingerprint_table WHERE sha256_hash_of_art_image_file = ?`
+	insertFingerprintStatement                   = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database, thumbnail_of_image, request_type, open_api_subset_id_string,open_api_group_id_string,collection_name_string) VALUES(?,?,?,?,?,?,?,?,?)`
+	getNumberOfFingerprintsStatement             = `SELECT COUNT(*) as count FROM image_hash_to_image_fingerprint_table`
+	createDoesNotImpactCollectionsTableStatement = `CREATE TABLE does_not_impact_collections_table(id integer not null PRIMARY KEY, collection_name_string text, sha256_hash_of_art_image_file text)`
 )
 
 type fingerprints struct {
@@ -97,6 +99,23 @@ func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFing
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
 		return err
+	}
+
+	if input.DoesNotImpactTheFollowingCollectionsString == "" {
+		log.WithContext(ctx).Info("list of non-impacted collections is empty")
+
+		return nil
+	}
+
+	commaSeparatedDoesNotImpactCollectionNamesList := strings.Split(input.DoesNotImpactTheFollowingCollectionsString, ",")
+
+	for _, collectionName := range commaSeparatedDoesNotImpactCollectionNamesList {
+		_, err = s.db.Exec(`INSERT INTO does_not_impact_collections_table(collection_name_string, sha256_hash_of_art_image_file)
+			VALUES(?,?)`, collectionName, input.Sha256HashOfArtImageFile)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to insert collection name  in does not impact collections table")
+			return err
+		}
 	}
 
 	return nil

@@ -6,15 +6,14 @@ import (
 	"io/ioutil"
 	"math"
 	"math/rand"
-
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/store"
-
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/service/hermes/store"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/stretchr/testify/assert"
@@ -104,6 +103,25 @@ func TestGetSetFingerprint(t *testing.T) {
 	findFp, err = s.store.IfFingerprintExists(ctx, "blahblah")
 	assert.True(t, err == nil)
 	assert.False(t, findFp)
+}
+
+func TestDoesNotImpactCollections(t *testing.T) {
+	s := prepareService(t)
+	defer os.Remove(s.config.DataFile)
+
+	setFp := generateFingerprint(t)
+	ctx := context.Background()
+	err := s.store.StoreFingerprint(ctx, setFp)
+
+	assert.NoError(t, err)
+
+	nImpactedCollections, err := s.store.GetDoesNotImpactCollections(ctx, setFp.Sha256HashOfArtImageFile)
+	assert.NoError(t, err)
+	assert.Equal(t, len(nImpactedCollections), 2)
+
+	collectionNames := strings.Split(setFp.DoesNotImpactTheFollowingCollectionsString, ",")
+	assert.Equal(t, nImpactedCollections[0].CollectionName, collectionNames[0])
+	assert.Equal(t, nImpactedCollections[1].CollectionName, collectionNames[1])
 }
 
 func TestWaitSynchronizationSuccessful(t *testing.T) {
