@@ -61,7 +61,7 @@ func TestCleanupInactiveTickets(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnRegTicketsFromBlockHeight(tc.args.regTicketsReturns, 1, tc.args.regTicketsErr).
-				ListenOnActionTicketsFromBlockHeight(tc.args.actionTicketsReturns, 1, tc.args.actionTicketsErr)
+				ListenOnActionTicketsFromBlockHeight(tc.args.actionTicketsReturns, 1, tc.args.actionTicketsErr).ListenOnGetBlockCount(20000, nil)
 
 			p2pClient := p2pMock.NewMockClient(t)
 			p2pClient.ListenOnDelete(nil)
