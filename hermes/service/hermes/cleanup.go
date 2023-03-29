@@ -10,43 +10,61 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
+const (
+	blocksDeadline = 15000
+)
+
 // CleanupInactiveTickets cleans up inactive tickets
 func (s *service) CleanupInactiveTickets(ctx context.Context) error {
-	errReg := s.cleanupRegTickets(ctx)
-	if errReg != nil {
-		log.WithContext(ctx).WithError(errReg).Error("Cleanup Inactive Tickets: cleanupRegTickets failure")
+	count, err := s.pastelClient.GetBlockCount(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to get block count, skipping cleanup")
+		return nil
 	}
 
-	actionErr := s.cleanupActionTickets(ctx)
+	errReg := s.cleanupRegTickets(ctx, count)
+	if errReg != nil {
+		log.WithContext(ctx).WithError(errReg).Error("cleanup Inactive Tickets: cleanupRegTickets failure")
+	}
+
+	actionErr := s.cleanupActionTickets(ctx, count)
 	if actionErr != nil {
-		log.WithContext(ctx).WithError(actionErr).Error("Cleanup Inactive Tickets: cleanupActionTickets failure")
+		log.WithContext(ctx).WithError(actionErr).Error("cleanup Inactive Tickets: cleanupActionTickets failure")
 	}
 
 	return nil
 }
 
-func (s *service) cleanupActionTickets(ctx context.Context) error {
+func (s *service) cleanupActionTickets(ctx context.Context, count int32) error {
 	actionRegTickets, err := s.pastelClient.ActionTicketsFromBlockHeight(ctx, pastel.TicketTypeInactive, uint64(s.currentActionBlock))
 	if err != nil {
 		return errors.Errorf("get ActionTickets: %w", err)
 	}
 
 	log.WithContext(ctx).WithField("action_tickets_count", len(actionRegTickets)).
-		WithField("block-height", s.currentNFTBlock).Info("Received action tickets for cleanup")
+		WithField("block-height", s.currentActionBlock).Info("Received action tickets for cleanup")
 
 	sort.Slice(actionRegTickets, func(i, j int) bool {
-		return actionRegTickets[i].ActionTicketData.CalledAt < actionRegTickets[j].ActionTicketData.CalledAt
+		return actionRegTickets[i].Height < actionRegTickets[j].Height
 	})
 
 	//loop through nft tickets and store newly found nft reg tickets
 	for i := 0; i < len(actionRegTickets); i++ {
-		if actionRegTickets[i].ActionTicketData.CalledAt <= s.currentActionBlock {
+		if actionRegTickets[i].Height < s.currentActionBlock {
 			continue
 		}
 
+		if actionRegTickets[i].Height+blocksDeadline <= int(count) {
+			continue
+		}
+
+		log.WithContext(ctx).WithField("reg_txid", actionRegTickets[i].TXID).
+			WithField("action-block-height", s.currentActionBlock).WithField("current block", count).
+			Info("Cleaning up action ticket")
+
 		decTicket, err := pastel.DecodeActionTicket(actionRegTickets[i].ActionTicketData.ActionTicket)
 		if err != nil {
-			log.WithContext(ctx).WithField("action_txid", actionRegTickets[i].TXID).
+			log.WithContext(ctx).WithField("reg_txid", actionRegTickets[i].TXID).
 				WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
@@ -55,9 +73,9 @@ func (s *service) cleanupActionTickets(ctx context.Context) error {
 		actionTicket := actionRegTickets[i].ActionTicketData.ActionTicketData
 		s.cleanupActionTicketData(ctx, actionTicket)
 
-		s.currentActionBlock = actionRegTickets[i].ActionTicketData.CalledAt
+		s.currentActionBlock = actionRegTickets[i].Height
 
-		log.WithContext(ctx).WithField("action_txid", actionRegTickets[i].TXID).
+		log.WithContext(ctx).WithField("reg_txid", actionRegTickets[i].TXID).
 			Info("cleaned up action ticket")
 	}
 
@@ -95,7 +113,7 @@ func (s *service) removeRegTicketData(ctx context.Context, ticketData pastel.App
 	return nil
 }
 
-func (s *service) cleanupRegTickets(ctx context.Context) error {
+func (s *service) cleanupRegTickets(ctx context.Context, count int32) error {
 	nftRegTickets, err := s.pastelClient.RegTicketsFromBlockHeight(ctx, pastel.TicketTypeInactive, uint64(s.currentNFTBlock))
 	if err != nil {
 		return errors.Errorf("get RegTickets: %w", err)
@@ -110,9 +128,17 @@ func (s *service) cleanupRegTickets(ctx context.Context) error {
 
 	//loop through nft tickets and store newly found nft reg tickets
 	for i := 0; i < len(nftRegTickets); i++ {
-		if nftRegTickets[i].Height <= s.currentNFTBlock {
+		if nftRegTickets[i].Height < s.currentNFTBlock {
 			continue
 		}
+
+		if nftRegTickets[i].Height+blocksDeadline <= int(count) {
+			continue
+		}
+
+		log.WithContext(ctx).WithField("reg_txid", nftRegTickets[i].TXID).
+			WithField("reg-block-height", s.currentNFTBlock).WithField("current block", count).
+			Info("cleaning up reg ticket")
 
 		decTicket, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
 		if err != nil {
