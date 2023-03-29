@@ -115,9 +115,9 @@ func (s *service) run(ctx context.Context) error {
 		return s.runStoreCollectionsTask(gctx)
 	})
 
-	/*group.Go(func() error {
+	group.Go(func() error {
 		return s.CleanupInactiveTickets(gctx)
-	})*/
+	})
 
 	/*group.Go(func() error {
 		return s.scorer.Start(gctx)
@@ -154,9 +154,9 @@ func (s *service) run(ctx context.Context) error {
 				return s.runStoreFingerprintsTask(gctx)
 			})
 
-			/*group.Go(func() error {
+			group.Go(func() error {
 				return s.CleanupInactiveTickets(gctx)
-			})*/
+			})
 
 			/*group.Go(func() error {
 				return s.scorer.Start(gctx)

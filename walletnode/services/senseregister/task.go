@@ -103,6 +103,8 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	log.WithContext(ctx).Info("action metadata has been sent")
 
+	task.UpdateStatus(common.StatusValidateBurnTxn)
+
 	// probe image for average rareness, nsfw and seen score - populate FingerprintsHandler with results
 	if err := task.ProbeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error probing image")
