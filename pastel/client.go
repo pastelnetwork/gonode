@@ -596,6 +596,28 @@ func (client *client) ActionTicketsFromBlockHeight(ctx context.Context, filter R
 	return tickets, nil
 }
 
+// NFTCollectionActivationTicketsFromBlockHeight implements pastel.Client.NFTCollectionActivationTicketsFromBlockHeight
+func (client *client) NFTCollectionActivationTicketsFromBlockHeight(ctx context.Context, blockheight uint64) (ActTickets, error) {
+	tickets := ActTickets{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "nft-collection-act", "all", blockheight); err != nil {
+		return nil, errors.Errorf("failed to get nft-collection-act tickets: %w", err)
+	}
+
+	return tickets, nil
+}
+
+// NFTCollectionRegTicket implements pastel.Client.NFTCollectionRegTicket
+func (client *client) NFTCollectionRegTicket(ctx context.Context, regTxid string) (CollectionRegTicket, error) {
+	ticket := CollectionRegTicket{}
+
+	if err := client.callFor(ctx, &ticket, "tickets", "get", regTxid); err != nil {
+		return ticket, errors.Errorf("failed to get reg ticket %s: %w", regTxid, err)
+	}
+
+	return ticket, nil
+}
+
 // FindNFTRegTicketsByLabel returns all NFT registration tickets with matching labels.
 // Command `tickets findbylabel nft <label>`.
 func (client *client) FindNFTRegTicketsByLabel(ctx context.Context, label string) (RegTickets, error) {
@@ -654,7 +676,9 @@ func (client *client) BurnAddress() string {
 
 // NewClient returns a new Client instance.
 // This client interface connects to the Core Pastel (cNode) RPC Server providing access to:
-//  the blockchain DB, Masternodes DB, Tickets DB, and PastelID DB.
+//
+//	the blockchain DB, Masternodes DB, Tickets DB, and PastelID DB.
+//
 // Via testnet, this will connect over 19932, and over mainnet 9932
 func NewClient(config *Config, burnAddress string) Client {
 	//Configure network addressing
