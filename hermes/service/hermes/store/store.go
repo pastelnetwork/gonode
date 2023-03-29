@@ -24,6 +24,8 @@ type DDStore interface {
 	IfCollectionExists(ctx context.Context, collectionTxID string) (bool, error)
 	StoreCollection(_ context.Context, c domain.Collection) error
 	GetDoesNotImpactCollections(ctx context.Context, hash string) (domain.NonImpactedCollections, error)
+	StorePastelBlock(context.Context, domain.PastelBlock) error
+	GetLatestPastelBlock(ctx context.Context) (domain.PastelBlock, error)
 }
 
 // ScoreStore is SN Score store
@@ -56,6 +58,7 @@ func NewSQLiteStore(file string) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("cannot open dd-service database: %w", err)
 	}
 
+	_, _ = db.Exec(createPbTableStatement)
 	_, _ = db.Exec(createFgTableStatement)
 	_, _ = db.Exec(createDoesNotImpactCollectionsTableStatement)
 	_, err = db.Exec(createScoreTableStatement)

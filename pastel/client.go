@@ -332,7 +332,7 @@ func (client *client) GetBlockCount(ctx context.Context) (int32, error) {
 }
 
 func (client *client) GetBlockHash(ctx context.Context, blkIndex int32) (string, error) {
-	res, err := client.CallWithContext(ctx, "getblockhash", fmt.Sprint(blkIndex))
+	res, err := client.CallWithContext(ctx, "getblockhash", blkIndex)
 	if err != nil {
 		return "", errors.Errorf("failed to call getblockhash: %w", err)
 	}
