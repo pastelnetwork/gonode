@@ -8,7 +8,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
-	"github.com/pastelnetwork/gonode/pastel"
 )
 
 const (
@@ -57,13 +56,6 @@ func (s *service) parseCollectionTickets(ctx context.Context) error {
 		}
 
 		log.WithContext(ctx).WithField("collection_reg_txid", regTxID).Info("Found reg ticket for nft-collection-act ticket")
-
-		decTicket, err := pastel.DecodeCollectionTicket(regTicket.CollectionRegTicketData.CollectionTicket)
-		if err != nil {
-			log.WithContext(ctx).WithField("collection_reg_txid", regTxID).WithError(err).Error("Failed to decode reg ticket")
-			continue
-		}
-		regTicket.CollectionRegTicketData.CollectionTicketData = *decTicket
 
 		existsInDatabase, err := s.store.IfCollectionExists(ctx, actTxID)
 		if existsInDatabase {
