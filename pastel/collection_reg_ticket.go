@@ -1,14 +1,5 @@
 package pastel
 
-import (
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
-
-	"github.com/pastelnetwork/gonode/common/b85"
-	"github.com/pastelnetwork/gonode/common/errors"
-)
-
 // CollectionRegTicket represents pastel collection ticket.
 type CollectionRegTicket struct {
 	Height                  int                     `json:"height"`
@@ -27,8 +18,7 @@ type CollectionRegTicketData struct {
 	CreatorHeight        uint                `json:"creator_height"`
 	RoyaltyAddress       string              `json:"royalty_address"`
 	StorageFee           int64               `json:"storage_fee"`
-	CollectionTicket     []byte              `json:"collection_ticket"`
-	CollectionTicketData CollectionTicket    `json:"-"`
+	CollectionTicketData CollectionTicket    `json:"collection_ticket"`
 }
 
 // CollectionTicket is the json representation of CollectionTicket inside Pastel's CollectionRegTicketData
@@ -44,44 +34,5 @@ type CollectionTicket struct {
 	CollectionItemCopyCount                 uint      `json:"collection_item_copy_count"`
 	Royalty                                 float64   `json:"royalty"`
 	Green                                   bool      `json:"green"`
-	AppTicket                               string    `json:"app_ticket"`
-	AppTicketData                           AppTicket `json:"-"`
-}
-
-// DecodeCollectionTicket decoded byte array into ArtTicket
-func DecodeCollectionTicket(b []byte) (*CollectionTicket, error) {
-	res := CollectionTicket{}
-	err := json.Unmarshal(b, &res)
-	if err != nil {
-		return nil, errors.Errorf("error unmarshalling collection ticket: %w", err)
-	}
-
-	appDecodedBytes, err := base64.RawStdEncoding.DecodeString(res.AppTicket)
-	if err != nil {
-		appDecodedBytes, err = b85.Decode(res.AppTicket)
-		if err != nil {
-			return nil, fmt.Errorf("b85 decode: %v", err)
-		}
-	}
-
-	appTicket := AppTicket{}
-	err = json.Unmarshal(appDecodedBytes, &appTicket)
-	if err != nil {
-		return nil, errors.Errorf("unmarshal app ticket: %w", err)
-	}
-
-	return &CollectionTicket{
-		CollectionTicketVersion:                 res.CollectionTicketVersion,
-		CollectionName:                          res.CollectionName,
-		ItemType:                                res.ItemType,
-		Creator:                                 res.Creator,
-		ListOfPastelIDsOfAuthorizedContributors: res.ListOfPastelIDsOfAuthorizedContributors,
-		BlockNum:                                res.BlockNum,
-		BlockHash:                               res.BlockHash,
-		MaxCollectionEntries:                    res.MaxCollectionEntries,
-		CollectionItemCopyCount:                 res.CollectionItemCopyCount,
-		Royalty:                                 res.Royalty,
-		Green:                                   res.Green,
-		AppTicketData:                           appTicket,
-	}, nil
+	AppTicketData                           AppTicket `json:"app_ticket"`
 }
