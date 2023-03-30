@@ -109,7 +109,7 @@ func (service *registerSense) GetDupeDetectionDBHash(ctx context.Context) (hash 
 	if err != nil {
 		return "", errors.Errorf("request to dupe detection db hash request: %w", err)
 	}
-	log.WithContext(ctx).WithField("hash len", len(resp.Hash)).Info("DB hash response")
+	log.WithContext(ctx).WithField("hash", resp.Hash).Info("DB hash response")
 
 	return resp.Hash, nil
 }
