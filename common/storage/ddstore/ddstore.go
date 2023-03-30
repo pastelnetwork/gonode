@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 
@@ -119,7 +121,9 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 		hash += fmt.Sprintf("%s_%d", v.BlockHash, v.BlockHeight)
 	}
 
-	log.WithContext(ctx).WithField("hash", len(hash)).Info("dd data hash returned")
+	hash = utils.GetHashFromString(hash)
+
+	log.WithContext(ctx).WithField("hash", hash).Info("dd data hash returned")
 
 	return hash, nil
 }
