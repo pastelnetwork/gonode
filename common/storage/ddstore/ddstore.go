@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/utils"
 
@@ -125,10 +124,7 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 		sb.WriteString(p[i].BlockHash)
 	}
 
-	log.WithContext(ctx).WithField("time", time.Now().String()).Info("dd data hash calculate begin")
 	hash = utils.GetHashFromString(sb.String())
-	log.WithContext(ctx).WithField("time", time.Now().String()).Info("dd data hash calculate done")
-
 	log.WithContext(ctx).WithField("hash", hash).Info("dd data hash returned")
 
 	return hash, nil
