@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/pastelnetwork/gonode/common/utils"
 
@@ -109,20 +110,21 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 		log.WithContext(ctx).WithError(err).Error("failed to get pastel_blocks_table, ignore table")
 	}
 
-	for _, v := range r {
-		hash += v.Sha256HashOfArtImageFile
+	var sb strings.Builder
+
+	for i := 0; i < len(r); i++ {
+		sb.WriteString(r[i].Sha256HashOfArtImageFile)
 	}
 
-	for _, v := range c {
-		hash += fmt.Sprintf("%s_%s", v.CollectionTicketTXID, v.CollectionState)
+	for i := 0; i < len(c); i++ {
+		sb.WriteString(c[i].CollectionTicketTXID)
 	}
 
-	for _, v := range p {
-		hash += fmt.Sprintf("%s_%d", v.BlockHash, v.BlockHeight)
+	for i := 0; i < len(p); i++ {
+		sb.WriteString(p[i].BlockHash)
 	}
 
-	hash = utils.GetHashFromString(hash)
-
+	hash = utils.GetHashFromString(sb.String())
 	log.WithContext(ctx).WithField("hash", hash).Info("dd data hash returned")
 
 	return hash, nil
