@@ -82,3 +82,10 @@ type NonImpactedCollection struct {
 
 // NonImpactedCollections is the array type for holding non-impacted collections
 type NonImpactedCollections []*NonImpactedCollection
+
+// PastelBlock is the domain representation of pastel_blocks table
+type PastelBlock struct {
+	BlockHash          string `json:"block_hash"`
+	BlockHeight        int32  `json:"block_height"`
+	DatetimeBlockAdded string `json:"datetime_block_added"`
+}

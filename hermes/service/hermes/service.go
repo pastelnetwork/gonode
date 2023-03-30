@@ -116,6 +116,10 @@ func (s *service) run(ctx context.Context) error {
 	})
 
 	group.Go(func() error {
+		return s.processPastelBlock(ctx)
+	})
+
+	group.Go(func() error {
 		return s.CleanupInactiveTickets(gctx)
 	})
 
@@ -152,6 +156,10 @@ func (s *service) run(ctx context.Context) error {
 			group, gctx := errgroup.WithContext(ctx)
 			group.Go(func() error {
 				return s.runStoreFingerprintsTask(gctx)
+			})
+
+			group.Go(func() error {
+				return s.processPastelBlock(ctx)
 			})
 
 			group.Go(func() error {

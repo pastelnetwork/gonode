@@ -168,3 +168,68 @@ func TestWaitSynchronizationError(t *testing.T) {
 	err := s.waitSynchronization(context.Background())
 	assert.Equal(t, err.Error(), errMsg)
 }
+
+func TestProcessBlocksWhenNoRecordExists(t *testing.T) {
+	s := prepareService(t)
+	defer os.Remove(s.config.DataFile)
+
+	pMock := pastelMock.NewMockClient(t)
+	pMock.ListenOnGetBlockCount(1, nil)
+
+	pMock.ListenOnGetBlockHash("test-hash", nil)
+
+	s.pastelClient = pMock
+
+	err := s.processPastelBlock(context.Background())
+	assert.NoError(t, err)
+
+	latestBlock, err := s.store.GetLatestPastelBlock(context.Background())
+	assert.NoError(t, err)
+
+	assert.Equal(t, latestBlock.BlockHash, "test-hash")
+	assert.Equal(t, latestBlock.BlockHeight, int32(1))
+}
+
+func TestProcessBlocksWhenRecordExistsWithEqualHeight(t *testing.T) {
+	s := prepareService(t)
+	defer os.Remove(s.config.DataFile)
+
+	pMock := pastelMock.NewMockClient(t)
+	pMock.ListenOnGetBlockCount(1, nil)
+
+	pMock.ListenOnGetBlockHash("test-hash", nil)
+
+	s.pastelClient = pMock
+
+	err := s.store.StorePastelBlock(context.Background(), domain.PastelBlock{BlockHeight: 1, BlockHash: "test-hash"})
+	assert.NoError(t, err)
+
+	err = s.processPastelBlock(context.Background())
+	assert.NoError(t, err)
+
+	_, err = s.store.GetLatestPastelBlock(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestProcessBlocksWhenRecordExistsWithLessHeight(t *testing.T) {
+	s := prepareService(t)
+	defer os.Remove(s.config.DataFile)
+
+	pMock := pastelMock.NewMockClient(t)
+	pMock.ListenOnGetBlockCount(2, nil)
+
+	pMock.ListenOnGetBlockHash("test-hash-2", nil)
+
+	s.pastelClient = pMock
+
+	err := s.store.StorePastelBlock(context.Background(), domain.PastelBlock{BlockHeight: 1, BlockHash: "test-hash"})
+	assert.NoError(t, err)
+
+	err = s.processPastelBlock(context.Background())
+	assert.NoError(t, err)
+
+	latestBlock, err := s.store.GetLatestPastelBlock(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, latestBlock.BlockHash, "test-hash-2")
+	assert.Equal(t, latestBlock.BlockHeight, int32(2))
+}

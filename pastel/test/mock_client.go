@@ -9,6 +9,9 @@ import (
 )
 
 const (
+	// GetBlockHashMethod represent GetBlockHash name method
+	GetBlockHashMethod = "GetBlockHash"
+
 	// MasterNodesTopMethod represent MasterNodesTop name method
 	MasterNodesTopMethod = "MasterNodesTop"
 
@@ -89,6 +92,12 @@ const (
 
 	// ActionTicketsFromBlockHeightMethod represents ActionTicketsFromBlockHeightMethod
 	ActionTicketsFromBlockHeightMethod = "ActionTicketsFromBlockHeight"
+
+	//CollectionActivationTicketsFromBlockHeightMethod represents CollectionActivationTicketsFromBlockHeightMethod
+	CollectionActivationTicketsFromBlockHeightMethod = "CollectionActivationTicketsFromBlockHeight"
+
+	//CollectionRegTicketMethod represents CollectionRegTicketMethod
+	CollectionRegTicketMethod = "CollectionRegTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -108,6 +117,12 @@ func NewMockClient(t *testing.T) *Client {
 		t:      t,
 		Client: &mocks.Client{},
 	}
+}
+
+// ListenOnGetBlockHash listening GetBlockHash and returns block hash and error from args
+func (client *Client) ListenOnGetBlockHash(blockHash string, err error) *Client {
+	client.On(GetBlockHashMethod, mock.Anything, mock.Anything).Return(blockHash, err)
+	return client
 }
 
 // ListenOnMasterNodesTop listening MasterNodesTop and returns Mn's and error from args
@@ -338,6 +353,18 @@ func (client *Client) ListenOnRegisterActTicket(retID string, retErr error) *Cli
 // ListenOnRegisterActionTicket listenes register action ticket  return id & err
 func (client *Client) ListenOnRegisterActionTicket(retID string, retErr error) *Client {
 	client.On(RegisterActionTicketMethod, mock.Anything, mock.Anything).Return(retID, retErr)
+	return client
+}
+
+// ListenOnCollectionActivationTicketsFromBlockHeight listens collection act ticket  return act ticket & err
+func (client *Client) ListenOnCollectionActivationTicketsFromBlockHeight(actTickets pastel.ActTickets, retErr error) *Client {
+	client.On(CollectionActivationTicketsFromBlockHeightMethod, mock.Anything, mock.Anything).Return(actTickets, retErr)
+	return client
+}
+
+// ListenOnCollectionRegTicket listens collection reg ticket  return collection-reg ticket & err
+func (client *Client) ListenOnCollectionRegTicket(collectionRegTicket pastel.CollectionRegTicket, retErr error) *Client {
+	client.On(CollectionRegTicketMethod, mock.Anything, mock.Anything).Return(collectionRegTicket, retErr)
 	return client
 }
 
