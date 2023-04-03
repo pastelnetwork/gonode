@@ -44,6 +44,23 @@ func (s *SQLiteStore) GetLatestPastelBlock(ctx context.Context) (domain.PastelBl
 	return pb.toDomain(), nil
 }
 
+// GetPastelBlockByHash gets the pastel-block by hash
+func (s *SQLiteStore) GetPastelBlockByHash(ctx context.Context, hash string) (domain.PastelBlock, error) {
+	pb := pastelBlock{}
+
+	getPastelBlockByHash := `SELECT * from pastel_blocks_table where block_hash=?;`
+	err := s.db.GetContext(ctx, &pb, getPastelBlockByHash, hash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return pb.toDomain(), nil
+		}
+
+		return pb.toDomain(), fmt.Errorf("failed to get record by key %w", err)
+	}
+
+	return pb.toDomain(), nil
+}
+
 // StorePastelBlock store the block hash and height in pastel_blocks table
 func (s *SQLiteStore) StorePastelBlock(ctx context.Context, pb domain.PastelBlock) error {
 	pastelBlockQuery := `INSERT into pastel_blocks_table(block_hash, block_height, datetime_block_added) VALUES(?,?,?)`

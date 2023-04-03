@@ -26,6 +26,7 @@ type DDStore interface {
 	GetDoesNotImpactCollections(ctx context.Context, hash string) (domain.NonImpactedCollections, error)
 	StorePastelBlock(context.Context, domain.PastelBlock) error
 	GetLatestPastelBlock(ctx context.Context) (domain.PastelBlock, error)
+	GetPastelBlockByHash(ctx context.Context, hash string) (domain.PastelBlock, error)
 }
 
 // ScoreStore is SN Score store

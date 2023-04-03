@@ -89,3 +89,8 @@ type PastelBlock struct {
 	BlockHeight        int32  `json:"block_height"`
 	DatetimeBlockAdded string `json:"datetime_block_added"`
 }
+
+// IsValid checks if the pastel block is valid by matching the height and hash passed as an argument
+func (p *PastelBlock) IsValid(blockHeight int32, hash string) bool {
+	return p.BlockHash == hash && p.BlockHeight == blockHeight
+}
