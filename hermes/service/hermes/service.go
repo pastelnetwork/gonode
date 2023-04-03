@@ -28,7 +28,6 @@ const (
 	synchronizationIntervalSec = 5
 	synchronizationTimeoutSec  = 60
 	runTaskInterval            = 2 * time.Minute
-	pastelIDRestartInterval    = 10
 	masterNodeSuccessfulStatus = "Masternode successfully started"
 )
 
@@ -42,8 +41,8 @@ type service struct {
 	scorer             *scorer.Scorer
 	isMasterNodeSynced bool
 
-	currentBlockCount        int32
-	restartPasteldCheckTimer int
+	currentBlockCount           int32
+	restartPastelDExecutionTime time.Time
 
 	// used in cleanup inactive tickets task
 	currentNFTBlock    int
@@ -325,13 +324,14 @@ func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInte
 	}
 
 	return &service{
-		config:             config,
-		pastelClient:       pastelClient,
-		store:              store,
-		sn:                 sn,
-		currentNFTBlock:    1,
-		currentActionBlock: 1,
-		scorer:             scorer.New(scorerConfig, pastelClient, sn, store),
+		config:                      config,
+		pastelClient:                pastelClient,
+		store:                       store,
+		sn:                          sn,
+		currentNFTBlock:             1,
+		currentActionBlock:          1,
+		scorer:                      scorer.New(scorerConfig, pastelClient, sn, store),
+		restartPastelDExecutionTime: time.Now(),
 	}, nil
 }
 
