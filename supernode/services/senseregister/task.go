@@ -98,35 +98,36 @@ func (task *SenseRegistrationTask) CalculateFee(ctx context.Context, file *files
 // HashExists checks if hash exists in database
 func (task *SenseRegistrationTask) HashExists(ctx context.Context, file *files.File) (bool, error) {
 	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
+		log.WithContext(ctx).Info("exist file hash check skipped in integration test environment")
 		return false, nil
 	}
 
 	var fileBytes []byte
 	fileBytes, err := file.Bytes()
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("read image file")
+		log.WithContext(ctx).WithError(err).Error("read image file")
 		return false, errors.Errorf("read image file: %w", err)
 	}
 
-	dataHash, err := utils.Sha3256hash(fileBytes)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Error converting bytes to hash")
-		return false, errors.Errorf("hash encoded image: %w", err)
-	}
+	dataHash := utils.GetHashStringFromBytes(fileBytes)
+	log.WithContext(ctx).WithField("hash", string(dataHash)).Info("checking if file hash exists in database")
 
 	db, err := ddstore.NewSQLiteDDStore(task.config.DDDatabase)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("file hash check failed, unable to open dd database")
 		return false, err
 	}
 
 	exists, err := db.IfFingerprintExists(ctx, string(dataHash))
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("file hash check failed, error checking fingerprint")
 		return false, err
 	}
 
 	if err := db.Close(); err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to close dd database")
 	}
+	log.WithContext(ctx).WithField("hash", string(dataHash)).WithField("exists", exists).Info("file hash check complete")
 
 	if exists {
 		task.UpdateStatus(common.StatusFileExists)

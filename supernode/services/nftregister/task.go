@@ -496,12 +496,8 @@ func (task *NftRegistrationTask) HashExists(ctx context.Context, file *files.Fil
 		return false, errors.Errorf("read image file: %w", err)
 	}
 
-	dataHash, err := utils.Sha3256hash(fileBytes)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Error converting bytes to hash")
-		return false, errors.Errorf("hash encoded image: %w", err)
-	}
-	log.WithContext(ctx).WithField("hash", dataHash).Info("checking if file hash exists in database")
+	dataHash := utils.GetHashStringFromBytes(fileBytes)
+	log.WithContext(ctx).WithField("hash", string(dataHash)).Info("checking if file hash exists in database")
 
 	db, err := ddstore.NewSQLiteDDStore(task.config.DDDatabase)
 	if err != nil {
@@ -522,7 +518,7 @@ func (task *NftRegistrationTask) HashExists(ctx context.Context, file *files.Fil
 	if exists {
 		task.UpdateStatus(common.StatusFileExists)
 	}
-	log.WithContext(ctx).WithField("hash", dataHash).WithField("exists", exists).Info("file hash check complete")
+	log.WithContext(ctx).WithField("hash", string(dataHash)).WithField("exists", exists).Info("file hash check complete")
 
 	return exists, nil
 
