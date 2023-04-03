@@ -78,7 +78,8 @@ func (task *NftRegistrationTask) SendRegMetadata(_ context.Context, regMetadata 
 }
 
 // ProbeImage sends the resampled image to dd-server and return a compression of pastel.DDAndFingerprints
-//  https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration Step 4.A.3
+//
+//	https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration Step 4.A.3
 func (task *NftRegistrationTask) ProbeImage(ctx context.Context, file *files.File) ([]byte, error) {
 	if task.nftRegMetadata == nil || task.nftRegMetadata.BlockHash == "" || task.nftRegMetadata.CreatorPastelID == "" || task.nftRegMetadata.BlockHeight == "" || task.nftRegMetadata.Timestamp == "" {
 		return nil, errors.Errorf("invalid nftRegMetadata")
@@ -119,7 +120,8 @@ func (task *NftRegistrationTask) validateRqIDsAndDdFpIds(ctx context.Context, rq
 // GetNftRegistrationFee get the fee to register Nft to blockchain
 // Step 11.B ALL SuperNode - Validate signature and IDs in the ticket
 // Step 12. ALL SuperNode - Calculate final Registration Fee
-//  Step 11.B.3 Validate dd_and_fingerprints file signature using PastelID’s of all 3 MNs -- Does this exist?
+//
+//	Step 11.B.3 Validate dd_and_fingerprints file signature using PastelID’s of all 3 MNs -- Does this exist?
 func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 	ticket []byte, creatorSignature []byte, label string,
 	rqidFile []byte, ddFpFile []byte, oti []byte,
@@ -499,14 +501,17 @@ func (task *NftRegistrationTask) HashExists(ctx context.Context, file *files.Fil
 		log.WithContext(ctx).WithError(err).Error("Error converting bytes to hash")
 		return false, errors.Errorf("hash encoded image: %w", err)
 	}
+	log.WithContext(ctx).WithField("hash", dataHash).Info("checking if file hash exists in database")
 
 	db, err := ddstore.NewSQLiteDDStore(task.config.DDDatabase)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("file hash check failed, unable to open dd database")
 		return false, err
 	}
 
 	exists, err := db.IfFingerprintExists(ctx, string(dataHash))
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("file hash check failed, error checking fingerprint")
 		return false, err
 	}
 
@@ -517,6 +522,7 @@ func (task *NftRegistrationTask) HashExists(ctx context.Context, file *files.Fil
 	if exists {
 		task.UpdateStatus(common.StatusFileExists)
 	}
+	log.WithContext(ctx).WithField("hash", dataHash).WithField("exists", exists).Info("file hash check complete")
 
 	return exists, nil
 
