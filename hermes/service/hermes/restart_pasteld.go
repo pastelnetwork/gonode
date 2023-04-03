@@ -21,13 +21,13 @@ import (
 )
 
 func (s *service) restartPastelID(ctx context.Context) error {
-	if s.restartPasteldCheckTimer != pastelIDRestartInterval {
-		s.restartPasteldCheckTimer += 2
+	if s.restartPastelDExecutionTime.Add(10 * time.Minute).After(time.Now()) {
+		//do not execute before 10 minutes
+		return nil
 	}
 
-	s.restartPasteldCheckTimer = 0
+	s.restartPastelDExecutionTime = time.Now()
 	if isAvailable := s.checkNextBlockAvailable(ctx); !isAvailable {
-		log.WithContext(ctx).Info("next block not available after 10 minutes, should restart pastelid")
 
 		pastelD, err := getPastelDPath(ctx)
 		if err != nil {
@@ -47,11 +47,21 @@ func (s *service) restartPastelID(ctx context.Context) error {
 			return nil
 		}
 
+		blockCount, err := s.pastelClient.GetBlockCount(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error getting block count")
+		}
+
 		cmd := exec.Command(pastelCli, "stop")
 		cmd.Dir = homeDir
 
-		log.WithContext(ctx).Info("pastel-cli has been stopped")
-		time.Sleep(15 * time.Second)
+		res, err := cmd.Output()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error stopping pastel-cli")
+			return nil
+		}
+
+		log.WithContext(ctx).WithField("block_count", blockCount).Infof("pastel-cli has been stopped:%s", string(res))
 
 		var extIP string
 		if extIP, err = utils.GetExternalIPAddress(); err != nil {
@@ -86,12 +96,19 @@ func (s *service) restartPastelID(ctx context.Context) error {
 		cmd = exec.Command(pastelD, pasteldArgs...)
 		cmd.Dir = homeDir
 
-		if err := cmd.Run(); err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error starting pastelid")
+		res, err = cmd.Output()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error starting pasteld")
 			return nil
 		}
 
-		log.WithContext(ctx).Info("pasteld has been restarted")
+		time.Sleep(10 * time.Second)
+		blockCount, err = s.pastelClient.GetBlockCount(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error getting block count")
+		}
+
+		log.WithContext(ctx).WithField("block_count", blockCount).Infof("pasteld has been restarted:%s", string(res))
 	} else {
 		log.WithContext(ctx).Info("block count has been updated")
 	}
@@ -100,16 +117,12 @@ func (s *service) restartPastelID(ctx context.Context) error {
 }
 
 func getDataDir(ctx context.Context, confFilePath string) (dataDir string, err error) {
-	log.WithContext(ctx).Info("opening the supernode.yml")
 	file, err := os.OpenFile(confFilePath, os.O_RDWR, 0644)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("Could not open supernode.yml - %s", confFilePath)
 		return "", err
 	}
-	log.WithContext(ctx).Info("File opened")
 	defer file.Close()
-
-	log.WithContext(ctx).Info("Parsing data-dir from supernode.yml")
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -154,12 +167,10 @@ func getMasternodePrivKey(ctx context.Context, masterNodeConffilePath, extIP str
 		return "", err
 	}
 
-	log.WithContext(ctx).Info("Attempting to load existing masternode.conf file using external IP address...")
-	for mnName, mnConf := range conf {
+	for _, mnConf := range conf {
 		extAddrPort := strings.Split(mnConf.MnAddress, ":")
 		extAddr := extAddrPort[0] // get Ext IP and Port
 		if extAddr == extIP {
-			log.WithContext(ctx).Info(fmt.Sprintf("Loading masternode.conf file using %s conf", mnName))
 			return mnConf.MnPrivKey, nil
 		}
 	}
