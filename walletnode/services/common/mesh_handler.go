@@ -306,18 +306,18 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 		}
 
 		ok, skip, err := m.databaseHashCheck(ctx, skipNodes, nodes)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("unable to match database hashes - bad nodes %v", skip)
-		}
-
 		if ok {
 			return nodes, nil
 		}
-
 		skipNodes = skip
 
+		if err != nil && len(skipNodes) < 9 {
+			log.WithContext(ctx).WithError(err).WithField("bad nodes", skipNodes).
+				Warn("unable to match database hashes - retrying another set of nodes...")
+		}
+
 		if len(skipNodes) >= 9 {
-			log.WithContext(ctx).WithError(err).Errorf("database hashes do not match - bad nodes %v", skipNodes)
+			log.WithContext(ctx).WithError(err).WithField("bad nodes", skipNodes).Error("database hashes do not match - no more nodes to try")
 			return nil, errors.Errorf("database hashes do not match - bad nodes %v", skipNodes)
 		}
 	}

@@ -63,12 +63,10 @@ type fingerprints struct {
 }
 type collections struct {
 	CollectionTicketTXID string `db:"collection_ticket_txid"`
-	CollectionState      string `db:"collection_state"`
 }
 
 type pastelblocks struct {
-	BlockHash   string `db:"block_hash"`
-	BlockHeight int    `db:"block_height"`
+	BlockHash string `db:"block_hash"`
 }
 
 // IfFingerprintExists checks if fg exists against the hash
@@ -99,13 +97,13 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 	}
 
 	c := []collections{}
-	err = s.db.Select(&c, "SELECT collection_ticket_txid,collection_state FROM collections_table")
+	err = s.db.Select(&c, "SELECT collection_ticket_txid FROM collections_table")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get collections_table, ignore table")
 	}
 
 	p := []pastelblocks{}
-	err = s.db.Select(&p, "SELECT block_hash,block_height FROM pastel_blocks_table")
+	err = s.db.Select(&p, "SELECT block_hash FROM pastel_blocks_table")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get pastel_blocks_table, ignore table")
 	}
