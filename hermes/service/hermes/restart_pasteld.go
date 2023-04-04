@@ -102,10 +102,10 @@ func (s *service) restartPastelID(ctx context.Context) error {
 			return nil
 		}
 
-		time.Sleep(10 * time.Second)
-		blockCount, err = s.pastelClient.GetBlockCount(ctx)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("error getting block count")
+		blockCount, isStarted := s.waitingForPastelDToStart(ctx)
+		if !isStarted {
+			log.WithContext(ctx).Error("pasteld is not able to start")
+			return nil
 		}
 
 		log.WithContext(ctx).WithField("block_count", blockCount).Infof("pasteld has been restarted:%s", string(res))
@@ -262,4 +262,20 @@ func getPastelCliPath(ctx context.Context) (path string, err error) {
 
 	pathWithEscapeCharacter := buf.String()
 	return strings.Replace(pathWithEscapeCharacter, "\n", "", 1), nil
+}
+
+func (s *service) waitingForPastelDToStart(ctx context.Context) (int32, bool) {
+	log.WithContext(ctx).Info("Waiting the pasteld to be started...")
+	var attempts = 0
+	for attempts < 10 {
+		blockCount, err := s.pastelClient.GetBlockCount(ctx)
+		if err == nil && blockCount != 0 {
+			log.WithContext(ctx).WithField("block_count", blockCount).Info("pasteld was started successfully")
+			return blockCount, true
+		}
+		time.Sleep(10 * time.Second)
+		attempts++
+	}
+
+	return 0, false
 }
