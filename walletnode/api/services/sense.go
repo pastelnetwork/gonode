@@ -107,7 +107,6 @@ func (service *SenseAPIHandler) RegisterTaskState(ctx context.Context, p *sense.
 		log.Error("unable to get task")
 		return sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
-	log.Info("task has been retrieved")
 
 	sub := task.SubscribeStatus()
 

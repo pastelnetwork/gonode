@@ -8,13 +8,11 @@ import (
 
 	"github.com/pastelnetwork/gonode/pastel"
 
-	"github.com/cenkalti/backoff"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
@@ -153,39 +151,6 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (Super
 	return foundNodes, nil
 }
 
-// matchDatabaseHash matches database hashes
-func (m *MeshHandler) matchDatabaseHash(ctx context.Context, nodesList SuperNodeList) error {
-
-	log.WithContext(ctx).Infof("Matching database hash for nodes %d", len(nodesList))
-	hashes := make(map[string]string)
-	matcher := ""
-	// Connect to top nodes to find 3SN and validate their info
-	for i, someNode := range nodesList {
-		hash, err := someNode.GetDupeDetectionDBHash(ctx)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("failed to get dd database hash - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-			return fmt.Errorf("failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
-		}
-
-		hashes[someNode.Address()] = hash
-
-		if i == 0 {
-			matcher = hash
-		}
-	}
-
-	for key, val := range hashes {
-		if val != matcher {
-			log.WithContext(ctx).Errorf("database hash mismatch for node %s", key)
-			return fmt.Errorf("database hash mismatch for node %s", key)
-		}
-	}
-
-	log.WithContext(ctx).Infof("DD Database hashes matched")
-
-	return nil
-}
-
 func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList, n int) (SuperNodeList, error) {
 	log.WithContext(ctx).Debug("setMesh Starting...")
 
@@ -276,87 +241,94 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 		Algorithm:  pastel.SignAlgorithmED448,
 	}
 
-	skipNodes := []string{}
+	combinations := combinations(candidatesNodes)
+	retryCount := 0
 
-	for {
-		count := 0
-		nodes := SuperNodeList{}
+	if m.checkDDDatabaseHashes {
+		for _, set := range combinations {
+			nodes := SuperNodeList{}
+			for _, someNode := range set {
+				if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+					log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+					break
+				}
 
-		for _, someNode := range candidatesNodes {
-			if m.checkDDDatabaseHashes && utils.StringInSlice(skipNodes, someNode.Address()) {
-				log.WithContext(ctx).WithField("address", someNode.Address()).Info("skipping node because of dd db hash mismatch")
+				nodes = append(nodes, someNode)
+			}
+
+			if len(nodes) != n {
 				continue
 			}
 
-			if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
-				log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			if err := m.matchDatabaseHash(ctx, nodes); err != nil {
 				continue
-			}
-
-			count++
-			nodes = append(nodes, someNode)
-			if count == n && !m.UseMaxNodes {
-				break
+			} else {
+				return nodes, nil
 			}
 		}
 
-		if count < n {
-			log.WithContext(ctx).Errorf("Failed to validate enough Supernodes - only found %d good", n)
-			return nil, errors.Errorf("validate %d Supernodes from pastel network", n)
+		if retryCount == 3 {
+			return nil, errors.Errorf("nodes not found, could not match database hash")
 		}
 
-		ok, skip, err := m.databaseHashCheck(ctx, skipNodes, nodes)
-		if ok {
-			return nodes, nil
-		}
-		skipNodes = skip
+		retryCount++
+	}
 
-		if err != nil && len(skipNodes) < 9 {
-			log.WithContext(ctx).WithError(err).WithField("bad nodes", skipNodes).
-				Warn("unable to match database hashes - retrying another set of nodes...")
+	count := 0
+	nodes := SuperNodeList{}
+
+	for _, someNode := range candidatesNodes {
+		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			continue
 		}
 
-		if len(skipNodes) >= 9 {
-			log.WithContext(ctx).WithError(err).WithField("bad nodes", skipNodes).Error("database hashes do not match - no more nodes to try")
-			return nil, errors.Errorf("database hashes do not match - bad nodes %v", skipNodes)
+		count++
+		nodes = append(nodes, someNode)
+		if count == n && !m.UseMaxNodes {
+			break
 		}
 	}
+
+	if count < n {
+		log.WithContext(ctx).Errorf("Failed to validate enough Supernodes - only found %d good", n)
+		return nil, errors.Errorf("validate %d Supernodes from pastel network", n)
+	}
+
+	return nodes, nil
 }
 
-func (m *MeshHandler) databaseHashCheck(ctx context.Context, skip []string, nodes SuperNodeList) (ok bool, toskip []string, err error) {
-	if !m.checkDDDatabaseHashes {
-		return true, skip, nil
-	}
+// matchDatabaseHash matches database hashes
+func (m *MeshHandler) matchDatabaseHash(ctx context.Context, nodesList SuperNodeList) error {
 
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 90 * time.Second
-	b.MaxInterval = 20 * time.Second
-	b.InitialInterval = 15 * time.Second
-
-	err = backoff.Retry(backoff.Operation(func() error {
-		if err := m.matchDatabaseHash(ctx, nodes); err != nil {
-			if !utils.StringInSlice(skip, nodes[0].Address()) {
-				skip = append(skip, nodes[0].Address())
-			}
-			if !utils.StringInSlice(skip, nodes[1].Address()) {
-				skip = append(skip, nodes[1].Address())
-			}
-			if !utils.StringInSlice(skip, nodes[2].Address()) {
-				skip = append(skip, nodes[2].Address())
-			}
-
-			return fmt.Errorf("err matching dd database hashes - err: %w", err)
+	log.WithContext(ctx).Infof("Matching database hash for nodes %d", len(nodesList))
+	hashes := make(map[string]string)
+	matcher := ""
+	// Connect to top nodes to find 3SN and validate their info
+	for i, someNode := range nodesList {
+		hash, err := someNode.GetDupeDetectionDBHash(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("failed to get dd database hash - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			return fmt.Errorf("failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
 		}
 
-		return nil
-	}), b)
+		hashes[someNode.Address()] = hash
 
-	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("skip", skip).Error("Failed to match database hashes, trying again")
-		return false, skip, err
+		if i == 0 {
+			matcher = hash
+		}
 	}
 
-	return true, skip, nil
+	for key, val := range hashes {
+		if val != matcher {
+			log.WithContext(ctx).Errorf("database hash mismatch for node %s", key)
+			return fmt.Errorf("database hash mismatch for node %s", key)
+		}
+	}
+
+	log.WithContext(ctx).Infof("DD Database hashes matched")
+
+	return nil
 }
 
 // meshNodes establishes communication between supernodes.
@@ -539,6 +511,21 @@ func (m *MeshHandler) disconnectFromNode(ctx context.Context, someNode *SuperNod
 // AddNewNode adds new SN to the (internal) collection
 func (m *MeshHandler) AddNewNode(address string, pastelID string) {
 	m.Nodes.AddNewNode(m.nodeClient, address, pastelID, m.nodeMaker)
+}
+
+func combinations(candidatesNodes SuperNodeList) []SuperNodeList {
+	n := len(candidatesNodes)
+	var result []SuperNodeList
+
+	for i := 0; i < n-2; i++ {
+		for j := i + 1; j < n-1; j++ {
+			for k := j + 1; k < n; k++ {
+				result = append(result, SuperNodeList{candidatesNodes[i], candidatesNodes[j], candidatesNodes[k]})
+			}
+		}
+	}
+
+	return result
 }
 
 // NewMeshHandlerSimple returns new MeshHandlerSimple
