@@ -89,6 +89,65 @@ func TestIsChainReorgDetected(t *testing.T) {
 	}
 }
 
+func TestFixChainReorg(t *testing.T) {
+	s := prepareService(t)
+	defer os.Remove(s.config.DataFile)
+
+	storeBlockHashes(s, int32(10))
+
+	tests := []struct {
+		testcase                 string
+		lastGoodKnownBlockHeight int32
+		expected                 bool
+		setup                    func(t *testing.T)
+		expect                   func(*testing.T, int32, error)
+	}{
+		{
+			testcase:                 "when chain-reorg is detected, it should fix from good block count up til the end",
+			lastGoodKnownBlockHeight: 7,
+			expected:                 false,
+			setup: func(t *testing.T) {
+				pMock := pastelMock.NewMockClient(t)
+
+				pMock.On(pastelMock.GetBlockCountMethod, mock.Anything).Return(int32(10), nil)
+
+				var i int32
+				for i = 8; i <= 10; i++ {
+					pMock.On(pastelMock.GetBlockHashMethod, mock.Anything, i).Return(fmt.Sprintf("test-hash-%d1", i), nil)
+				}
+
+				s.pastelClient = pMock
+			},
+			expect: func(t *testing.T, lastGoodBlockCount int32, err error) {
+				require.NoError(t, err)
+
+				pastelBlocks, err := getBlocks(s, lastGoodBlockCount)
+				require.NoError(t, err)
+				require.Equal(t, int32(8), pastelBlocks[0].BlockHeight)
+				require.Equal(t, "test-hash-81", pastelBlocks[0].BlockHash)
+
+				require.Equal(t, int32(9), pastelBlocks[1].BlockHeight)
+				require.Equal(t, "test-hash-91", pastelBlocks[1].BlockHash)
+
+				require.Equal(t, int32(10), pastelBlocks[2].BlockHeight)
+				require.Equal(t, "test-hash-101", pastelBlocks[2].BlockHash)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		test := test // add this if there's subtest (t.Run)
+		t.Run(test.testcase, func(t *testing.T) {
+			test.setup(t)
+
+			err := s.FixChainReorg(context.Background(), test.lastGoodKnownBlockHeight)
+
+			test.expect(t, test.lastGoodKnownBlockHeight, err)
+		})
+
+	}
+}
+
 func storeBlockHashes(s *service, blockCount int32) {
 	for i := int32(1); i <= blockCount; i++ {
 		s.store.StorePastelBlock(context.Background(), domain.PastelBlock{
@@ -96,4 +155,18 @@ func storeBlockHashes(s *service, blockCount int32) {
 			BlockHash:   fmt.Sprintf("test-hash-%d", i),
 		})
 	}
+}
+
+func getBlocks(s *service, blockCount int32) ([]domain.PastelBlock, error) {
+	var pastelBlocks []domain.PastelBlock
+	for i := blockCount + 1; i <= 10; i++ {
+		pb, err := s.store.GetPastelBlockByHeight(context.Background(), i)
+		if err != nil {
+			return nil, err
+		}
+
+		pastelBlocks = append(pastelBlocks, pb)
+	}
+
+	return pastelBlocks, nil
 }

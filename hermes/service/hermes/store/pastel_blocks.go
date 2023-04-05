@@ -61,6 +61,23 @@ func (s *SQLiteStore) GetPastelBlockByHash(ctx context.Context, hash string) (do
 	return pb.toDomain(), nil
 }
 
+// GetPastelBlockByHeight gets the pastel-block by height
+func (s *SQLiteStore) GetPastelBlockByHeight(ctx context.Context, height int32) (domain.PastelBlock, error) {
+	pb := pastelBlock{}
+
+	getPastelBlockByHeight := `SELECT * from pastel_blocks_table where block_height=?;`
+	err := s.db.GetContext(ctx, &pb, getPastelBlockByHeight, height)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return pb.toDomain(), nil
+		}
+
+		return pb.toDomain(), fmt.Errorf("failed to get record by key %w", err)
+	}
+
+	return pb.toDomain(), nil
+}
+
 // StorePastelBlock store the block hash and height in pastel_blocks table
 func (s *SQLiteStore) StorePastelBlock(ctx context.Context, pb domain.PastelBlock) error {
 	pastelBlockQuery := `INSERT into pastel_blocks_table(block_hash, block_height, datetime_block_added) VALUES(?,?,?)`
@@ -68,6 +85,18 @@ func (s *SQLiteStore) StorePastelBlock(ctx context.Context, pb domain.PastelBloc
 	_, err := s.db.ExecContext(ctx, pastelBlockQuery, pb.BlockHash, pb.BlockHeight, pb.DatetimeBlockAdded)
 	if err != nil {
 		return errors.Errorf("unable to insert into pastel blocks table")
+	}
+
+	return nil
+}
+
+// UpdatePastelBlock updates the pastel-block by height
+func (s *SQLiteStore) UpdatePastelBlock(ctx context.Context, pb domain.PastelBlock) error {
+	updatePastelBlockQuery := `update pastel_blocks_table set block_hash=? where block_height =?`
+
+	_, err := s.db.ExecContext(ctx, updatePastelBlockQuery, pb.BlockHash, pb.BlockHeight)
+	if err != nil {
+		return errors.Errorf("unable to update pastel blocks table")
 	}
 
 	return nil

@@ -44,6 +44,8 @@ type service struct {
 	currentBlockCount           int32
 	restartPastelDExecutionTime time.Time
 
+	checkChainReorgTime time.Time
+
 	// used in cleanup inactive tickets task
 	currentNFTBlock    int
 	currentActionBlock int
@@ -123,6 +125,10 @@ func (s *service) run(ctx context.Context) error {
 		return s.CleanupInactiveTickets(gctx)
 	})
 
+	group.Go(func() error {
+		return s.runChainReorgTask(gctx)
+	})
+
 	/*group.Go(func() error {
 		return s.scorer.Start(gctx)
 	})*/
@@ -166,6 +172,10 @@ func (s *service) run(ctx context.Context) error {
 
 			group.Go(func() error {
 				return s.restartPastelID(gctx)
+			})
+
+			group.Go(func() error {
+				return s.runChainReorgTask(gctx)
 			})
 
 			/*group.Go(func() error {
@@ -332,6 +342,7 @@ func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInte
 		currentActionBlock:          1,
 		scorer:                      scorer.New(scorerConfig, pastelClient, sn, store),
 		restartPastelDExecutionTime: time.Now(),
+		checkChainReorgTime:         time.Now(),
 	}, nil
 }
 
