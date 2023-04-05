@@ -245,33 +245,37 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 	retryCount := 0
 
 	if m.checkDDDatabaseHashes {
-		for _, set := range combinations {
-			nodes := SuperNodeList{}
-			for _, someNode := range set {
-				if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
-					log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-					break
+		for {
+			for _, set := range combinations {
+				nodes := SuperNodeList{}
+				for _, someNode := range set {
+					if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+						break
+					}
+
+					nodes = append(nodes, someNode)
 				}
 
-				nodes = append(nodes, someNode)
+				if len(nodes) != n {
+					continue
+				}
+
+				if err := m.matchDatabaseHash(ctx, nodes); err != nil {
+					continue
+				} else {
+					return nodes, nil
+				}
 			}
 
-			if len(nodes) != n {
-				continue
+			if retryCount == 3 {
+				return nil, errors.Errorf("nodes not found, could not match database hash")
 			}
 
-			if err := m.matchDatabaseHash(ctx, nodes); err != nil {
-				continue
-			} else {
-				return nodes, nil
-			}
+			log.WithContext(ctx).Info("Could not match database hash, retrying in 30s...")
+			retryCount++
+			time.Sleep(30 * time.Second)
 		}
-
-		if retryCount == 3 {
-			return nil, errors.Errorf("nodes not found, could not match database hash")
-		}
-
-		retryCount++
 	}
 
 	count := 0
