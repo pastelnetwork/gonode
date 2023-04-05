@@ -248,6 +248,7 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 		for {
 			for _, set := range combinations {
 				nodes := SuperNodeList{}
+
 				for _, someNode := range set {
 					if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
@@ -263,9 +264,9 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 
 				if err := m.matchDatabaseHash(ctx, nodes); err != nil {
 					continue
-				} else {
-					return nodes, nil
 				}
+
+				return nodes, nil
 			}
 
 			if retryCount == 3 {
