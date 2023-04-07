@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/utils"
 )
@@ -10,6 +11,7 @@ type (
 	// private type used to define context keys
 	ctxKey    int
 	serverKey string
+	taskID    string
 )
 
 const (
@@ -17,6 +19,8 @@ const (
 	PrefixKey ctxKey = iota
 	// ServerKey is prefix of server ip
 	ServerKey serverKey = "server"
+	// TaskIDKey is prefix of task id
+	TaskIDKey taskID = "task_id"
 )
 
 // ContextWithPrefix returns a new context with PrefixKey value.

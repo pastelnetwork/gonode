@@ -46,7 +46,11 @@ func (s *NodeList) String() string {
 func (s *NodeList) DelNode(node *Node) {
 	for i := 0; i < s.Len(); i++ {
 		if bytes.Equal(s.Nodes[i].ID, node.ID) {
-			s.Nodes = append(s.Nodes[:i], s.Nodes[i+1:]...)
+			s.Nodes = s.Nodes[:i]
+			if i+1 < s.Len() {
+				s.Nodes = append(s.Nodes, s.Nodes[i+1:]...)
+			}
+
 			return
 		}
 	}

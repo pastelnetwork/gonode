@@ -3,6 +3,7 @@ package kademlia
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"sync"
@@ -41,6 +42,7 @@ type DHT struct {
 	externalIP   string
 	mtx          sync.Mutex
 	authHelper   *AuthHelper
+	blacklist    storage.KeyValue
 }
 
 // Options contains configuration options for the local node
@@ -82,6 +84,7 @@ func NewDHT(store Store, pc pastel.Client, secInfo *alts.SecInfo, options *Optio
 		pastelClient: pc,
 		done:         make(chan struct{}),
 		cache:        memory.NewKeyValue(),
+		blacklist:    memory.NewKeyValue(),
 	}
 
 	if options.ExternalIP != "" {
@@ -461,20 +464,41 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 			case IterateFindValue:
 				return nil, nil
 			case IterateStore:
+				taskID := ctx.Value(log.TaskIDKey)
 				// store the value to node list
-				for i, n := range nl.Nodes {
+				for i := 0; i < len(nl.Nodes); i++ {
+					logEntry := log.P2P().WithContext(ctx).WithField("node", nl.Nodes[i]).WithField("task_id", taskID)
 					// limite the count below K
 					if i >= K {
 						return nil, nil
+					}
+					n := nl.Nodes[i]
+
+					num := 0
+					if val, err := s.blacklist.Get(n.IP); err == nil {
+						num = int(binary.BigEndian.Uint32(val))
+					}
+					if num > 5 {
+						logEntry.Error("ignore node as its continuous failed times is more than 5")
+						nl.DelNode(n)
+						i--
+						continue
 					}
 
 					request := &StoreDataRequest{Data: data}
 					response, err := s.sendStoreData(ctx, n, request)
 					if err != nil {
-						// <TODO> need to remove the node ?
-						log.P2P().WithContext(ctx).WithField("node", n).WithError(err).Error("send store data failed")
+						buf := make([]byte, 4)
+						binary.BigEndian.PutUint32(buf, uint32(num+1))
+						if err := s.blacklist.SetWithExpiry(n.IP, buf, time.Hour); err != nil {
+							logEntry.WithError(err).Error("unable to update nodes blacklist")
+						} else {
+							logEntry.WithField("num", num).Error("updated nodes blacklist")
+						}
+
+						logEntry.WithError(err).Error("send store data failed")
 					} else if response.Status.Result != ResultOk {
-						log.P2P().WithContext(ctx).WithField("node", n).WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
+						logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
 					}
 				}
 				return nil, nil

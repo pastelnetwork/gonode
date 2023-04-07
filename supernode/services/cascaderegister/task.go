@@ -44,7 +44,8 @@ func (task *CascadeRegistrationTask) Run(ctx context.Context) error {
 }
 
 // SendRegMetadata receives registration metadata -
-//		caller/creator PastelID; block when ticket registration has started; txid of the pre-burn fee
+//
+//	caller/creator PastelID; block when ticket registration has started; txid of the pre-burn fee
 func (task *CascadeRegistrationTask) SendRegMetadata(_ context.Context, regMetadata *types.ActionRegMetadata) error {
 	if err := task.RequiredStatus(common.StatusConnected); err != nil {
 		return err
@@ -361,6 +362,7 @@ func (task *CascadeRegistrationTask) storeRaptorQSymbols(ctx context.Context) er
 }
 
 func (task *CascadeRegistrationTask) storeIDFiles(ctx context.Context) error {
+	ctx = context.WithValue(ctx, log.TaskIDKey, task.ID())
 	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.rqIDFiles); err != nil {
 		return errors.Errorf("store ID files into kademlia: %w", err)
 	}
