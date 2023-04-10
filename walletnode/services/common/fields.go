@@ -25,4 +25,6 @@ const (
 	FieldNFTRegisterTaskMaxFee = "nft_register_task_max_fee"
 	//FieldSpendableAddress represents the spendable address of the user registering NFT
 	FieldSpendableAddress = "nft_register_task_max_fee"
+	// FieldNodes represents the nodes used for the task
+	FieldNodes = "nodes"
 )

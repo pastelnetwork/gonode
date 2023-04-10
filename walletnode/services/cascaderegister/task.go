@@ -95,6 +95,13 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 	log.WithContext(ctx).Info("image has been uploaded")
 
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Generating RaptorQ symbols' identifiers ",
+		StatusString:  "",
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
+
 	// connect to rq serivce to get rq symbols identifier
 	if err := task.RqHandler.GenRQIdentifiersFiles(ctx, task.Request.Image,
 		task.creatorBlockHash, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase); err != nil {
@@ -135,6 +142,13 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 
 	task.StatusLog[common.FieldFileSize] = fileDataInMb
 	task.StatusLog[common.FieldFee] = fee
+
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Creating Registration Ticket: ",
+		StatusString:  "Please Wait...",
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
 
 	if err := task.createCascadeTicket(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error creating cascade ticket")
@@ -331,6 +345,7 @@ func (task *CascadeRegistrationTask) uploadImage(ctx context.Context) error {
 	}
 
 	task.UpdateStatus(common.StatusImageAndThumbnailUploaded)
+
 	return nil
 }
 
