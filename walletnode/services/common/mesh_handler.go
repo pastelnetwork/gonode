@@ -118,6 +118,7 @@ func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int) error {
 	connectedNodes.Activate()
 	// Cancel context when any connection is broken.
 	m.task.UpdateStatus(StatusConnected)
+
 	m.Nodes = connectedNodes
 
 	return nil
@@ -317,6 +318,7 @@ func (m *MeshHandler) matchDatabaseHash(ctx context.Context, nodesList SuperNode
 			return fmt.Errorf("failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
 		}
 
+		log.WithContext(ctx).WithField("node", someNode.Address()).WithField("hash", hash).Info("DD Database hash for node received")
 		hashes[someNode.Address()] = hash
 
 		if i == 0 {

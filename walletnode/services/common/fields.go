@@ -27,4 +27,6 @@ const (
 	FieldSpendableAddress = "nft_register_task_max_fee"
 	//FieldMeshNodes represents the ips of nodes establish a mesh in reg endpoint
 	FieldMeshNodes = "mesh_nodes_ips"
+	// FieldNodes represents the nodes used for the task
+	FieldNodes = "nodes"
 )
