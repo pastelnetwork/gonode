@@ -27,6 +27,8 @@ type DDStore interface {
 	StorePastelBlock(context.Context, domain.PastelBlock) error
 	GetLatestPastelBlock(ctx context.Context) (domain.PastelBlock, error)
 	GetPastelBlockByHash(ctx context.Context, hash string) (domain.PastelBlock, error)
+	GetPastelBlockByHeight(ctx context.Context, height int32) (domain.PastelBlock, error)
+	UpdatePastelBlock(ctx context.Context, block domain.PastelBlock) error
 }
 
 // ScoreStore is SN Score store
