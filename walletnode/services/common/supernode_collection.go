@@ -59,3 +59,13 @@ func (nodes *SuperNodeList) FindByPastelID(id string) *SuperNodeClient {
 	}
 	return nil
 }
+
+// String returns the comma separated addresses of nodes
+func (nodes *SuperNodeList) String() string {
+	var commaSeparatedList string
+	for _, someNode := range *nodes {
+		commaSeparatedList += someNode.String() + ","
+	}
+
+	return commaSeparatedList
+}

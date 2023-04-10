@@ -194,31 +194,20 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
 			log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).WithError(err).Error("error validating sense ticket data")
 
-			log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).Info("initiating the new sense registration request")
-			request := &common.ActionRegistrationRequest{
-				AppPastelID:            task.Request.AppPastelID,
-				AppPastelIDPassphrase:  task.Request.AppPastelIDPassphrase,
-				BurnTxID:               task.Request.BurnTxID,
-				MakePubliclyAccessible: task.Request.MakePubliclyAccessible,
-				Image:                  task.Request.Image,
-				FileName:               task.Request.FileName,
-			}
-			newTask := NewSenseRegisterTask(task.service, request)
-			task.service.Worker.AddTask(newTask)
-
-			log.WithContext(ctx).WithField("task_id", newTask.ID()).Info("new sense registration task has been initiated")
-
+			task.StatusLog[common.FieldErrorDetail] = err.Error()
+			task.StatusLog[common.FieldMeshNodes] = task.MeshHandler.Nodes.String()
 			task.UpdateStatus(common.StatusErrorDownloadFailed)
 			task.UpdateStatus(&common.EphemeralStatus{
-				StatusTitle:   "Error validating cascade ticket data",
+				StatusTitle:   "Error validating sense ticket data",
 				StatusString:  task.regSenseTxid,
 				IsFailureBool: false,
 				IsFinalBool:   false,
 			})
 
+			task.UpdateStatus(common.StatusTaskRejected)
 			task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
-			return nil
+			return errors.Errorf("error validating sense ticket data")
 		}
 	}
 
