@@ -5,18 +5,16 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/log"
-
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/store"
-
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/scorer/hash"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/scorer/network"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/scorer/thumbnail"
 	"github.com/pastelnetwork/gonode/hermes/service/node"
+	"github.com/pastelnetwork/gonode/hermes/store"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-//  Scorer is scorer service
+// Scorer is scorer service
 type Scorer struct {
 	thumbnailChlngr *thumbnail.ThumbnailsChallenger
 	imgHashChlngr   *hash.ImageHashChallenger

@@ -1,4 +1,4 @@
-package hermes
+package cleaner
 
 import (
 	"context"
@@ -66,10 +66,9 @@ func TestCleanupInactiveTickets(t *testing.T) {
 			p2pClient := p2pMock.NewMockClient(t)
 			p2pClient.ListenOnDelete(nil)
 
-			svc := service{p2p: p2pClient, pastelClient: pastelClientMock,
-				config: NewConfig(), currentActionBlock: 1, currentNFTBlock: 1}
+			svc := cleanupService{p2p: p2pClient, pastelClient: pastelClientMock, currentActionBlock: 1, currentNFTBlock: 1}
 
-			err := svc.CleanupInactiveTickets(context.Background())
+			err := svc.run(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 			} else {

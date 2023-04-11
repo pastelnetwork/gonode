@@ -1,20 +1,23 @@
-package hermes
+package chainreorg
 
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/store"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 func TestIsChainReorgDetected(t *testing.T) {
-	s := prepareService(t)
-	defer os.Remove(s.config.DataFile)
+	s, tmpFileName := prepareTestService(t)
+	defer os.Remove(tmpFileName)
 
 	storeBlockHashes(s, int32(10))
 
@@ -90,8 +93,8 @@ func TestIsChainReorgDetected(t *testing.T) {
 }
 
 func TestFixChainReorg(t *testing.T) {
-	s := prepareService(t)
-	defer os.Remove(s.config.DataFile)
+	s, tmpFileName := prepareTestService(t)
+	defer os.Remove(tmpFileName)
 
 	storeBlockHashes(s, int32(10))
 
@@ -148,7 +151,7 @@ func TestFixChainReorg(t *testing.T) {
 	}
 }
 
-func storeBlockHashes(s *service, blockCount int32) {
+func storeBlockHashes(s *chainReorgService, blockCount int32) {
 	for i := int32(1); i <= blockCount; i++ {
 		s.store.StorePastelBlock(context.Background(), domain.PastelBlock{
 			BlockHeight: i,
@@ -157,7 +160,7 @@ func storeBlockHashes(s *service, blockCount int32) {
 	}
 }
 
-func getBlocks(s *service, blockCount int32) ([]domain.PastelBlock, error) {
+func getBlocks(s *chainReorgService, blockCount int32) ([]domain.PastelBlock, error) {
 	var pastelBlocks []domain.PastelBlock
 	for i := blockCount + 1; i <= 10; i++ {
 		pb, err := s.store.GetPastelBlockByHeight(context.Background(), i)
@@ -169,4 +172,21 @@ func getBlocks(s *service, blockCount int32) ([]domain.PastelBlock, error) {
 	}
 
 	return pastelBlocks, nil
+}
+
+func prepareTestService(t *testing.T) (*chainReorgService, string) {
+	tmpfile, err := ioutil.TempFile("", "dupe_detection_image_fingerprint_database.sqlite")
+	if err != nil {
+		panic(err.Error())
+	}
+	store, err := store.NewSQLiteStore(tmpfile.Name())
+	assert.Nil(t, err)
+
+	tmpfile.Close()
+
+	s := &chainReorgService{
+		store: store,
+	}
+
+	return s, tmpfile.Name()
 }

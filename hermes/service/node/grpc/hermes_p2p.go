@@ -32,7 +32,7 @@ func (service *hermesP2P) Retrieve(ctx context.Context, txid string) (data []byt
 	return res.Data, nil
 }
 
-// DownloadDDAndFingerprints downloads dd & fingerprints
+// DownloadDDAndFingerprints downloads dd & fingerprint
 func (service *hermesP2P) Delete(ctx context.Context, txid string) (err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	in := &pb.DeleteRequest{

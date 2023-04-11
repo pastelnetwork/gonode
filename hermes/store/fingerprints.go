@@ -8,12 +8,11 @@ import (
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
-	"github.com/sbinet/npyio"
-	"gonum.org/v1/gonum/mat"
-
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/domain"
+	"github.com/sbinet/npyio"
+	"gonum.org/v1/gonum/mat"
 )
 
 const (
@@ -102,7 +101,7 @@ func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFing
 	}
 
 	if input.DoesNotImpactTheFollowingCollectionsString == "" {
-		log.WithContext(ctx).Info("list of non-impacted collections is empty")
+		log.WithContext(ctx).Info("list of non-impacted collection is empty")
 
 		return nil
 	}
@@ -113,7 +112,7 @@ func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFing
 		_, err = s.db.Exec(`INSERT INTO does_not_impact_collections_table(collection_name_string, sha256_hash_of_art_image_file)
 			VALUES(?,?)`, collectionName, input.Sha256HashOfArtImageFile)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to insert collection name  in does not impact collections table")
+			log.WithContext(ctx).WithError(err).Error("Failed to insert collection name  in does not impact collection table")
 			return err
 		}
 	}
@@ -135,7 +134,7 @@ func (s *SQLiteStore) GetLatestFingerprints(ctx context.Context) (*domain.DDFing
 
 	dd, err := r.toDomain()
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("converting db data to dd-fingerprints struct failure")
+		log.WithContext(ctx).WithError(err).Error("converting db data to dd-fingerprint struct failure")
 	}
 
 	return dd, nil

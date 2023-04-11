@@ -1,4 +1,4 @@
-package hermes
+package pasteldstarter
 
 import (
 	"bufio"
@@ -14,19 +14,48 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
-func (s *service) restartPastelID(ctx context.Context) error {
-	if s.restartPastelDExecutionTime.Add(10 * time.Minute).After(time.Now()) {
-		//do not execute before 10 minutes
-		return nil
-	}
+const (
+	runTaskInterval = 10 * time.Minute
+)
 
-	s.restartPastelDExecutionTime = time.Now()
+func (s *restartPastelDService) Run(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("context done: %w", ctx.Err())
+		case <-time.After(runTaskInterval):
+			// Check if node is synchronized or not
+			if !s.sync.GetSyncStatus() {
+				if err := s.sync.CheckSynchronized(ctx); err != nil {
+					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
+					continue
+				}
+
+				log.WithContext(ctx).Debug("Done for waiting synchronization status")
+				s.sync.SetSyncStatus(true)
+			}
+
+			group, gctx := errgroup.WithContext(ctx)
+			group.Go(func() error {
+				return s.run(gctx)
+			})
+
+			if err := group.Wait(); err != nil {
+				log.WithContext(gctx).WithError(err).Errorf("run task failed")
+			}
+		}
+	}
+}
+
+func (s restartPastelDService) run(ctx context.Context) error {
+	log.WithContext(ctx).Info("restart pasteld service run() has been invoked")
 	if isAvailable := s.checkNextBlockAvailable(ctx); !isAvailable {
 
 		pastelD, err := getPastelDPath(ctx)
@@ -116,6 +145,11 @@ func (s *service) restartPastelID(ctx context.Context) error {
 	return nil
 }
 
+func (s *restartPastelDService) Stats(_ context.Context) (map[string]interface{}, error) {
+	//restart stats can be implemented here
+	return nil, nil
+}
+
 func getDataDir(ctx context.Context, confFilePath string) (dataDir string, err error) {
 	file, err := os.OpenFile(confFilePath, os.O_RDWR, 0644)
 	if err != nil {
@@ -179,7 +213,7 @@ func getMasternodePrivKey(ctx context.Context, masterNodeConffilePath, extIP str
 }
 
 // checkNextBlockAvailable calls pasteld and checks if a new block is available
-func (s *service) checkNextBlockAvailable(ctx context.Context) bool {
+func (s *restartPastelDService) checkNextBlockAvailable(ctx context.Context) bool {
 	blockCount, err := s.pastelClient.GetBlockCount(ctx)
 	if err != nil {
 		return false
@@ -264,7 +298,7 @@ func getPastelCliPath(ctx context.Context) (path string, err error) {
 	return strings.Replace(pathWithEscapeCharacter, "\n", "", 1), nil
 }
 
-func (s *service) waitingForPastelDToStart(ctx context.Context) (int32, bool) {
+func (s *restartPastelDService) waitingForPastelDToStart(ctx context.Context) (int32, bool) {
 	log.WithContext(ctx).Info("Waiting the pasteld to be started...")
 	var attempts = 0
 	for attempts < 10 {

@@ -2,6 +2,8 @@ package hash
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/store"
 	"image"
 	"image/png"
 	"os"
@@ -9,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/store"
 	"github.com/pastelnetwork/gonode/mixins"
 
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"

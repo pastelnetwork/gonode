@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	// DefaultInputDir that dd-service monitors for the new file to generate fingerprints
+	// DefaultInputDir that dd-service monitors for the new file to generate fingerprint
 	DefaultInputDir = "input_files"
-	// DefaultOutputDir that dd-service uses to put new fingerprints
+	// DefaultOutputDir that dd-service uses to put new fingerprint
 	DefaultOutputDir = "output_files"
-	// DefaultDataFile that dd-service uses to store fingerprints
+	// DefaultDataFile that dd-service uses to store fingerprint
 	DefaultDataFile = "registered_image_fingerprints_db.sqlite"
 	// DefaultSupportDir that dd-service uses for support files
 	// Should be ~/pastel_dupe_detection_service/support_files/registered_image_fingerprints_db.sqlite

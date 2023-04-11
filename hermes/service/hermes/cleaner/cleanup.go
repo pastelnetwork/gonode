@@ -1,21 +1,63 @@
-package hermes
+package cleaner
 
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
 const (
-	blocksDeadline = 15000
+	blocksDeadline  = 15000
+	runTaskInterval = 2 * time.Minute
 )
 
-// CleanupInactiveTickets cleans up inactive tickets
-func (s *service) CleanupInactiveTickets(ctx context.Context) error {
+// Run cleans up inactive tickets
+
+// Run stores the latest block hash and height to DB if not stored already
+func (s *cleanupService) Run(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("context done: %w", ctx.Err())
+		case <-time.After(runTaskInterval):
+			// Check if node is synchronized or not
+			if !s.sync.GetSyncStatus() {
+				if err := s.sync.CheckSynchronized(ctx); err != nil {
+					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
+					continue
+				}
+
+				log.WithContext(ctx).Debug("Done for waiting synchronization status")
+				s.sync.SetSyncStatus(true)
+			}
+
+			group, gctx := errgroup.WithContext(ctx)
+			group.Go(func() error {
+				return s.run(gctx)
+			})
+
+			if err := group.Wait(); err != nil {
+				log.WithContext(gctx).WithError(err).Errorf("run task failed")
+			}
+		}
+	}
+
+}
+
+func (s cleanupService) Stats(_ context.Context) (map[string]interface{}, error) {
+	//cleanup service stats can be implemented here
+	return nil, nil
+}
+
+func (s *cleanupService) run(ctx context.Context) error {
+	log.WithContext(ctx).Info("cleanup block service run() has been invoked")
+
 	count, err := s.pastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to get block count, skipping cleanup")
@@ -35,7 +77,7 @@ func (s *service) CleanupInactiveTickets(ctx context.Context) error {
 	return nil
 }
 
-func (s *service) cleanupActionTickets(ctx context.Context, count int32) error {
+func (s *cleanupService) cleanupActionTickets(ctx context.Context, count int32) error {
 	actionRegTickets, err := s.pastelClient.ActionTicketsFromBlockHeight(ctx, pastel.TicketTypeInactive, uint64(s.currentActionBlock))
 	if err != nil {
 		return errors.Errorf("get ActionTickets: %w", err)
@@ -82,7 +124,7 @@ func (s *service) cleanupActionTickets(ctx context.Context, count int32) error {
 	return nil
 }
 
-func (s *service) removeRegTicketData(ctx context.Context, ticketData pastel.AppTicket) error {
+func (s *cleanupService) removeRegTicketData(ctx context.Context, ticketData pastel.AppTicket) error {
 	// Remove RQ File IDs
 	for _, rqFileID := range ticketData.RQIDs {
 		if err := s.p2p.Delete(ctx, rqFileID); err != nil {
@@ -113,7 +155,7 @@ func (s *service) removeRegTicketData(ctx context.Context, ticketData pastel.App
 	return nil
 }
 
-func (s *service) cleanupRegTickets(ctx context.Context, count int32) error {
+func (s *cleanupService) cleanupRegTickets(ctx context.Context, count int32) error {
 	nftRegTickets, err := s.pastelClient.RegTicketsFromBlockHeight(ctx, pastel.TicketTypeInactive, uint64(s.currentNFTBlock))
 	if err != nil {
 		return errors.Errorf("get RegTickets: %w", err)
@@ -158,7 +200,7 @@ func (s *service) cleanupRegTickets(ctx context.Context, count int32) error {
 	return nil
 }
 
-func (s *service) cleanupActionTicketData(ctx context.Context, actionTicket pastel.ActionTicket) error {
+func (s *cleanupService) cleanupActionTicketData(ctx context.Context, actionTicket pastel.ActionTicket) error {
 	switch actionTicket.ActionType {
 	case pastel.ActionTypeCascade:
 		cascadeTicket, err := actionTicket.APICascadeTicket()

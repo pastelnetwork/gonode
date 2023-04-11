@@ -8,12 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/utils"
-
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
-
-	"github.com/pastelnetwork/gonode/pastel"
-
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -21,9 +15,12 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/store"
+	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/hermes/domain"
 	"github.com/pastelnetwork/gonode/hermes/service/node"
+	"github.com/pastelnetwork/gonode/hermes/store"
 	"github.com/pastelnetwork/gonode/mixins"
+	"github.com/pastelnetwork/gonode/pastel"
 )
 
 // MeshHandler provides networking functionality, including mesh

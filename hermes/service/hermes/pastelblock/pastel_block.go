@@ -1,15 +1,56 @@
-package hermes
+package pastelblock
 
 import (
 	"context"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
-// processPastelBlock stores the latest block hash and height to DB if not stored already
-func (s *service) processPastelBlock(ctx context.Context) error {
+const (
+	runTaskInterval = 2 * time.Minute
+)
+
+// Run stores the latest block hash and height to DB if not stored already
+func (s *pastelBlockService) Run(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("context done: %w", ctx.Err())
+		case <-time.After(runTaskInterval):
+			// Check if node is synchronized or not
+			if !s.sync.GetSyncStatus() {
+				if err := s.sync.CheckSynchronized(ctx); err != nil {
+					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
+					continue
+				}
+
+				log.WithContext(ctx).Debug("Done for waiting synchronization status")
+				s.sync.SetSyncStatus(true)
+			}
+
+			group, gctx := errgroup.WithContext(ctx)
+			group.Go(func() error {
+				return s.run(gctx)
+			})
+
+			if err := group.Wait(); err != nil {
+				log.WithContext(gctx).WithError(err).Errorf("run task failed")
+			}
+		}
+	}
+}
+
+func (s *pastelBlockService) Stats(_ context.Context) (map[string]interface{}, error) {
+	//pastel-block service stats can be implemented here
+	return nil, nil
+}
+
+func (s pastelBlockService) run(ctx context.Context) error {
+	log.WithContext(ctx).Info("pastel block service run() has been invoked")
 	pastelBlock, err := s.store.GetLatestPastelBlock(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error retrieving latest pastel block from DB")
