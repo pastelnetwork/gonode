@@ -25,4 +25,6 @@ const (
 	FieldNFTRegisterTaskMaxFee = "nft_register_task_max_fee"
 	//FieldSpendableAddress represents the spendable address of the user registering NFT
 	FieldSpendableAddress = "nft_register_task_max_fee"
+	//FieldMeshNodes represents the ips of nodes establish a mesh in reg endpoint
+	FieldMeshNodes = "mesh_nodes_ips"
 )

@@ -271,42 +271,20 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
 			log.WithContext(ctx).WithField("reg_tx_id", task.regNFTTxid).WithError(err).Error("error validating nft ticket data")
 
-			log.WithContext(ctx).WithField("reg_tx_id", task.regNFTTxid).Info("initiating the new registration request")
-			request := &NftRegistrationRequest{
-				Name:                      task.Request.Name,
-				Description:               task.Request.Description,
-				Keywords:                  task.Request.Keywords,
-				SeriesName:                task.Request.SeriesName,
-				IssuedCopies:              task.Request.IssuedCopies,
-				YoutubeURL:                task.Request.YoutubeURL,
-				CreatorPastelID:           task.Request.CreatorPastelID,
-				CreatorPastelIDPassphrase: task.Request.CreatorPastelIDPassphrase,
-				CreatorName:               task.Request.CreatorName,
-				CreatorWebsiteURL:         task.Request.CreatorWebsiteURL,
-				SpendableAddress:          task.Request.SpendableAddress,
-				MaximumFee:                task.Request.MaximumFee,
-				Green:                     task.Request.Green,
-				Royalty:                   task.Request.Royalty,
-				Thumbnail:                 task.Request.Thumbnail,
-				MakePubliclyAccessible:    task.Request.MakePubliclyAccessible,
-			}
-
-			newTask := NewNFTRegistrationTask(task.service, request)
-			task.service.Worker.AddTask(newTask)
-
-			log.WithContext(ctx).WithField("task_id", newTask.ID()).Info("new NFT registration task has been initiated")
-
+			task.StatusLog[common.FieldErrorDetail] = err.Error()
+			task.StatusLog[common.FieldMeshNodes] = task.MeshHandler.Nodes.String()
 			task.UpdateStatus(common.StatusErrorDownloadFailed)
 			task.UpdateStatus(&common.EphemeralStatus{
-				StatusTitle:   "Error validating cascade ticket data",
+				StatusTitle:   "Error validating nft ticket data:",
 				StatusString:  task.regNFTTxid,
 				IsFailureBool: false,
 				IsFinalBool:   false,
 			})
 
+			task.UpdateStatus(common.StatusTaskRejected)
 			task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
-			return nil
+			return errors.Errorf("error validating nft ticket data")
 		}
 	}
 

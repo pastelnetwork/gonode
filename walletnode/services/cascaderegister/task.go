@@ -174,22 +174,8 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	if task.downloadService != nil {
 		if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
 			log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).WithError(err).Error("error validating cascade ticket data")
-
-			log.WithContext(ctx).WithField("reg_tx_id", task.regCascadeTxid).Info("initiating the new registration request")
-			request := &common.ActionRegistrationRequest{
-				AppPastelID:            task.Request.AppPastelID,
-				AppPastelIDPassphrase:  task.Request.AppPastelIDPassphrase,
-				BurnTxID:               task.Request.BurnTxID,
-				MakePubliclyAccessible: task.Request.MakePubliclyAccessible,
-				Image:                  task.Request.Image,
-				FileName:               task.Request.FileName,
-			}
-
-			newTask := NewCascadeRegisterTask(task.service, request)
-			task.service.Worker.AddTask(newTask)
-
-			log.WithContext(ctx).WithField("task_id", newTask.ID()).Info("new cascade registration task has been initiated")
-
+			task.StatusLog[common.FieldErrorDetail] = err.Error()
+			task.StatusLog[common.FieldMeshNodes] = task.MeshHandler.Nodes.String()
 			task.UpdateStatus(common.StatusErrorDownloadFailed)
 			task.UpdateStatus(&common.EphemeralStatus{
 				StatusTitle:   "Error validating cascade ticket data",
@@ -198,9 +184,10 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 				IsFinalBool:   false,
 			})
 
+			task.UpdateStatus(common.StatusTaskRejected)
 			task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
-			return nil
+			return errors.Errorf("error validating cascade ticket data")
 		}
 	}
 	log.WithContext(ctx).Info("data-validation completed for cascade-reg ticket")
