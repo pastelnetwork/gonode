@@ -46,10 +46,12 @@ func (s *NodeList) String() string {
 func (s *NodeList) DelNode(node *Node) {
 	for i := 0; i < s.Len(); i++ {
 		if bytes.Equal(s.Nodes[i].ID, node.ID) {
-			s.Nodes = s.Nodes[:i]
+			newList := s.Nodes[:i]
 			if i+1 < s.Len() {
-				s.Nodes = append(s.Nodes, s.Nodes[i+1:]...)
+				newList = append(newList, s.Nodes[i+1:]...)
 			}
+
+			s.Nodes = newList
 
 			return
 		}
@@ -75,12 +77,17 @@ func (s *NodeList) AddNodes(nodes []*Node) {
 	}
 }
 
+// Len check length
 func (s *NodeList) Len() int {
 	return len(s.Nodes)
 }
+
+// Swap swap two nodes
 func (s *NodeList) Swap(i, j int) {
 	s.Nodes[i], s.Nodes[j] = s.Nodes[j], s.Nodes[i]
 }
+
+// Less compare two nodes
 func (s *NodeList) Less(i, j int) bool {
 	id := s.distance(s.Nodes[i].ID, s.Comparator)
 	jd := s.distance(s.Nodes[j].ID, s.Comparator)

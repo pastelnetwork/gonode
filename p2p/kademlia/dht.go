@@ -3,7 +3,6 @@ package kademlia
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"fmt"
 	"sort"
 	"sync"
@@ -42,7 +41,7 @@ type DHT struct {
 	externalIP   string
 	mtx          sync.Mutex
 	authHelper   *AuthHelper
-	blacklist    storage.KeyValue
+	ignorelist   *BanList
 }
 
 // Options contains configuration options for the local node
@@ -69,7 +68,7 @@ type Options struct {
 }
 
 // NewDHT returns a new DHT node
-func NewDHT(store Store, pc pastel.Client, secInfo *alts.SecInfo, options *Options) (*DHT, error) {
+func NewDHT(ctx context.Context, store Store, pc pastel.Client, secInfo *alts.SecInfo, options *Options) (*DHT, error) {
 	// validate the options, if it's invalid, set them to default value
 	if options.IP == "" {
 		options.IP = defaultNetworkAddr
@@ -84,7 +83,7 @@ func NewDHT(store Store, pc pastel.Client, secInfo *alts.SecInfo, options *Optio
 		pastelClient: pc,
 		done:         make(chan struct{}),
 		cache:        memory.NewKeyValue(),
-		blacklist:    memory.NewKeyValue(),
+		ignorelist:   NewBanList(ctx),
 	}
 
 	if options.ExternalIP != "" {
@@ -151,6 +150,7 @@ func (s *DHT) Start(ctx context.Context) error {
 
 	// start a timer for doing update work
 	helpers.StartTimer(ctx, "update work", s.done, defaultUpdateTime, func() error {
+		log.P2P().WithContext(ctx).Info("update work called")
 		// refresh
 		for i := 0; i < B; i++ {
 			if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
@@ -384,7 +384,8 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 // - IterativeFindValue - used to find a value among the network given a key
 func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, data []byte) ([]byte, error) {
 	// find the closest contacts for target node from local route tables
-	nl := s.ht.closestContacts(Alpha, target, []*Node{})
+	nl := s.ht.closestContacts(Alpha, target, s.ignorelist.ToNodeList())
+	log.P2P().WithContext(ctx).WithField("nodes", nl.String()).WithField("ignored", s.ignorelist.String()).Info("closest contacts")
 	// no a closer node, stop search
 	if nl.Len() == 0 {
 		return nil, nil
@@ -466,6 +467,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 			case IterateStore:
 				taskID := ctx.Value(log.TaskIDKey)
 				// store the value to node list
+				storeCount := 0
 				for i := 0; i < len(nl.Nodes); i++ {
 					logEntry := log.P2P().WithContext(ctx).WithField("node", nl.Nodes[i]).WithField("task_id", taskID)
 					// limite the count below K
@@ -474,33 +476,29 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					}
 					n := nl.Nodes[i]
 
-					num := 0
-					if val, err := s.blacklist.Get(n.IP); err == nil {
-						num = int(binary.BigEndian.Uint32(val))
-					}
-					if num > 5 {
-						logEntry.Error("ignore node as its continuous failed times is more than 5")
-						nl.DelNode(n)
-						i--
+					if s.ignorelist.Exists(n) {
+						logEntry.Error("ignore node as its continuous failed count is above threshold")
 						continue
 					}
 
 					request := &StoreDataRequest{Data: data}
 					response, err := s.sendStoreData(ctx, n, request)
 					if err != nil {
-						buf := make([]byte, 4)
-						binary.BigEndian.PutUint32(buf, uint32(num+1))
-						if err := s.blacklist.SetWithExpiry(n.IP, buf, time.Hour); err != nil {
-							logEntry.WithError(err).Error("unable to update nodes blacklist")
-						} else {
-							logEntry.WithField("num", num).Error("updated nodes blacklist")
+						// update the blacklist
+						if s.ignorelist.IncrementCount(n) {
+							s.ignorelist.Add(n)
 						}
 
 						logEntry.WithError(err).Error("send store data failed")
 					} else if response.Status.Result != ResultOk {
 						logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
+					} else {
+						storeCount++
 					}
 				}
+
+				log.P2P().WithContext(ctx).WithField("store count", storeCount).WithField("task_id", taskID).Info("task data stored")
+
 				return nil, nil
 			}
 		} else {

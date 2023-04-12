@@ -193,7 +193,7 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(store, s.pastelClient, s.secInfo, kadOpts)
+	dht, err := kademlia.NewDHT(ctx, store, s.pastelClient, s.secInfo, kadOpts)
 
 	if err != nil {
 		return errors.Errorf("new kademlia dht: %w", err)
