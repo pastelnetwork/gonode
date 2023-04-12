@@ -1,22 +1,60 @@
-package hermes
+package collection
 
 import (
 	"context"
 	"sort"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
 const (
 	// CollectionFinalAllowedBlockHeightDays is to compute time for collection final allowed block height added to activation block height
 	CollectionFinalAllowedBlockHeightDays = 7 * 24 * (60 / 2.5)
+	runTaskInterval                       = 2 * time.Minute
 )
 
-func (s *service) parseCollectionTickets(ctx context.Context) error {
-	collectionActTickets, err := s.pastelClient.CollectionActivationTicketsFromBlockHeight(ctx, s.latestNFTBlockHeight)
+func (s *collectionService) Run(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("context done: %w", ctx.Err())
+		case <-time.After(runTaskInterval):
+			// Check if node is synchronized or not
+			if !s.sync.GetSyncStatus() {
+				if err := s.sync.CheckSynchronized(ctx); err != nil {
+					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
+					continue
+				}
+
+				log.WithContext(ctx).Debug("Done for waiting synchronization status")
+				s.sync.SetSyncStatus(true)
+			}
+
+			group, gctx := errgroup.WithContext(ctx)
+			group.Go(func() error {
+				return s.parseCollectionTickets(gctx)
+			})
+
+			if err := group.Wait(); err != nil {
+				log.WithContext(gctx).WithError(err).Errorf("run task failed")
+			}
+		}
+	}
+}
+
+func (s *collectionService) Stats(_ context.Context) (map[string]interface{}, error) {
+	//collection service stats can be implemented here
+	return nil, nil
+}
+
+func (s collectionService) parseCollectionTickets(ctx context.Context) error {
+	log.WithContext(ctx).Info("collection service run() has been invoked")
+
+	collectionActTickets, err := s.pastelClient.CollectionActivationTicketsFromBlockHeight(ctx, s.latestCollectionBlockHeight)
 	if err != nil {
 		log.WithError(err).Error("unable to get nft-collection act tickets - exit runtask now")
 		return nil
@@ -38,7 +76,7 @@ func (s *service) parseCollectionTickets(ctx context.Context) error {
 
 	//loop through nft-collection-act tickets and store newly found nft reg tickets
 	for i := 0; i < len(collectionActTickets); i++ {
-		if collectionActTickets[i].Height < s.latestNFTBlockHeight {
+		if collectionActTickets[i].Height < s.latestCollectionBlockHeight {
 			continue
 		}
 

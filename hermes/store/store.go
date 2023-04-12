@@ -8,10 +8,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
-
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
 // DDStore represents Dupedetection store
@@ -21,9 +20,16 @@ type DDStore interface {
 	StoreFingerprint(context.Context, *domain.DDFingerprints) error
 	GetFingerprintsCount(context.Context) (int64, error)
 	CheckNonSeedRecord(ctx context.Context) (bool, error)
-	IfCollectionExists(ctx context.Context, collectionTxID string) (bool, error)
-	StoreCollection(_ context.Context, c domain.Collection) error
-	GetDoesNotImpactCollections(ctx context.Context, hash string) (domain.NonImpactedCollections, error)
+}
+
+// ScoreStore is SN Score store
+type ScoreStore interface {
+	GetScoreByTxID(ctx context.Context, txid string) (*domain.SnScore, error)
+	IncrementScore(ctx context.Context, score *domain.SnScore, increment int) (*domain.SnScore, error)
+}
+
+// PastelBlockStore is Pastel Block Store
+type PastelBlockStore interface {
 	StorePastelBlock(context.Context, domain.PastelBlock) error
 	GetLatestPastelBlock(ctx context.Context) (domain.PastelBlock, error)
 	GetPastelBlockByHash(ctx context.Context, hash string) (domain.PastelBlock, error)
@@ -31,10 +37,11 @@ type DDStore interface {
 	UpdatePastelBlock(ctx context.Context, block domain.PastelBlock) error
 }
 
-// ScoreStore is SN Score store
-type ScoreStore interface {
-	GetScoreByTxID(ctx context.Context, txid string) (*domain.SnScore, error)
-	IncrementScore(ctx context.Context, score *domain.SnScore, increment int) (*domain.SnScore, error)
+// CollectionStore is collection store
+type CollectionStore interface {
+	IfCollectionExists(ctx context.Context, collectionTxID string) (bool, error)
+	StoreCollection(_ context.Context, c domain.Collection) error
+	GetDoesNotImpactCollections(ctx context.Context, hash string) (domain.NonImpactedCollections, error)
 }
 
 // SQLiteStore is sqlite implementation of DD store and Score store

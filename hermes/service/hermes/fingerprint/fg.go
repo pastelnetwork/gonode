@@ -1,17 +1,78 @@
-package hermes
+package fingerprint
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/DataDog/zstd"
+	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/hermes/domain"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-func (s *service) parseSenseTickets(ctx context.Context) error {
+const (
+	runTaskInterval = 2 * time.Minute
+)
+
+// Run stores the latest block hash and height to DB if not stored already
+func (s *fingerprintService) Run(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("context done: %w", ctx.Err())
+		case <-time.After(runTaskInterval):
+			// Check if node is synchronized or not
+			if !s.sync.GetSyncStatus() {
+				if err := s.sync.CheckSynchronized(ctx); err != nil {
+					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
+					continue
+				}
+
+				log.WithContext(ctx).Debug("Done for waiting synchronization status")
+				s.sync.SetSyncStatus(true)
+			}
+
+			group, gctx := errgroup.WithContext(ctx)
+			group.Go(func() error {
+				return s.run(gctx)
+			})
+
+			if err := group.Wait(); err != nil {
+				log.WithContext(gctx).WithError(err).Errorf("run task failed")
+			}
+		}
+	}
+
+}
+
+func (s *fingerprintService) run(ctx context.Context) error {
+	log.WithContext(ctx).Info("fingerprint service run() has been invoked")
+
+	log.WithContext(ctx).Info("getting Activation tickets, checking non seed records.")
+	nonseed, err := s.store.CheckNonSeedRecord(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to get nonseed record")
+	} else if !nonseed {
+		log.WithContext(ctx).Info("No NonSeed Record, set latestBlockHeight to 0")
+		s.latestNFTBlockHeight = 0
+		s.latestSenseBlockHeight = 0
+	}
+
+	if err := s.parseSenseTickets(ctx); err != nil {
+		return err
+	}
+
+	return s.parseNFTTickets(ctx)
+}
+
+func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 	lastKnownGoodHeight := s.latestSenseBlockHeight
 
 	senseActTickets, err := s.pastelClient.ActionActivationTicketsFromBlockHeight(ctx, uint64(lastKnownGoodHeight))
@@ -165,7 +226,7 @@ func (s *service) parseSenseTickets(ctx context.Context) error {
 	return nil
 }
 
-func (s *service) parseNFTTickets(ctx context.Context) error {
+func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 	actTickets, err := s.pastelClient.ActTickets(ctx, pastel.ActTicketAll, s.latestNFTBlockHeight)
 	if err != nil {
 		log.WithError(err).Error("unable to get act tickets - exit runtask now")
@@ -249,7 +310,7 @@ func (s *service) parseNFTTickets(ctx context.Context) error {
 
 		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
-			log.WithContext(ctx).WithField("txid", regTicket.TXID).Info("fingerprints already exist in database, skipping")
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).Info("fingerprint already exist in database, skipping")
 			//can't directly update latest block height from here - if there's another ticket in this block we don't want to skip
 			if actTickets[i].Height > lastKnownGoodHeight {
 				lastKnownGoodHeight = actTickets[i].Height
@@ -310,4 +371,43 @@ func (s *service) parseNFTTickets(ctx context.Context) error {
 	log.WithContext(ctx).WithField("latest NFT blockheight", s.latestNFTBlockHeight).Debugf("hermes successfully scanned to latest block height")
 
 	return nil
+}
+
+// Utility function to get dd and fp file from an id hash, where the file should be stored
+func (s *fingerprintService) tryToGetFingerprintFileFromHash(ctx context.Context, hash string) (*pastel.DDAndFingerprints, error) {
+	rawFile, err := s.p2p.Retrieve(ctx, hash)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("retrieve err")
+		return nil, errors.Errorf("Error finding dd and fp file: %w", err)
+	}
+
+	decData, err := zstd.Decompress(nil, rawFile)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("decompress err")
+		return nil, errors.Errorf("decompress: %w", err)
+	}
+
+	splits := bytes.Split(decData, []byte{pastel.SeparatorByte})
+	if (len(splits)) < 2 {
+		log.WithContext(ctx).WithError(err).Error("incorrecrt split err")
+		return nil, errors.Errorf("error separating file by separator bytes, separator not found")
+	}
+	file, err := utils.B64Decode(splits[0])
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("b64 decode err")
+		return nil, errors.Errorf("decode file: %w", err)
+	}
+
+	ddFingerprint := &pastel.DDAndFingerprints{}
+	if err := json.Unmarshal(file, ddFingerprint); err != nil {
+		log.WithContext(ctx).WithError(err).Error("unmarshal err")
+		return nil, errors.Errorf("unmarshal json: %w", err)
+	}
+
+	return ddFingerprint, nil
+}
+
+func (s *fingerprintService) Stats(_ context.Context) (map[string]interface{}, error) {
+	//chain-reorg stats can be implemented here
+	return nil, nil
 }

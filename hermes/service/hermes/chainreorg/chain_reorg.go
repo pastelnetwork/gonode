@@ -1,18 +1,79 @@
-package hermes
+package chainreorg
 
 import (
 	"context"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
 const (
 	defaultBlockCountCheckForReorg = 1000
+	runTaskInterval                = 60 * time.Minute
 )
 
-func (s *service) IsChainReorgDetected(ctx context.Context) (isDetected bool, ReorgStartingIndex int32, err error) {
+func (s *chainReorgService) Run(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("context done: %w", ctx.Err())
+		case <-time.After(runTaskInterval):
+			// Check if node is synchronized or not
+			if !s.sync.GetSyncStatus() {
+				if err := s.sync.CheckSynchronized(ctx); err != nil {
+					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
+					continue
+				}
+
+				log.WithContext(ctx).Debug("Done for waiting synchronization status")
+				s.sync.SetSyncStatus(true)
+			}
+
+			group, gctx := errgroup.WithContext(ctx)
+			group.Go(func() error {
+				return s.run(gctx)
+			})
+
+			if err := group.Wait(); err != nil {
+				log.WithContext(gctx).WithError(err).Errorf("run task failed")
+			}
+		}
+	}
+}
+
+func (s *chainReorgService) run(ctx context.Context) error {
+	log.WithContext(ctx).Info("chain-reorg service run() has been invoked")
+	isDetected, lastGoodBlockHeight, err := s.IsChainReorgDetected(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error detecting chain reorg in hermes")
+		return nil
+	}
+
+	if !isDetected {
+		log.WithContext(ctx).Info("chain reorg is not detected, no action needed")
+		return nil
+	}
+	log.WithContext(ctx).WithField("last_good_block_height", lastGoodBlockHeight).
+		Info("chain-reorg is detected, going to fix now..")
+
+	if err := s.FixChainReorg(ctx, lastGoodBlockHeight); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error fixing the chain reorg in db")
+		return nil
+	}
+
+	log.WithContext(ctx).Info("chain-reorg has been fixed")
+	return nil
+}
+
+func (s chainReorgService) Stats(_ context.Context) (map[string]interface{}, error) {
+	//chain-reorg stats can be implemented here
+	return nil, nil
+}
+
+func (s *chainReorgService) IsChainReorgDetected(ctx context.Context) (isDetected bool, ReorgStartingIndex int32, err error) {
 	latestBlockCount, err := s.pastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error getting block count")
@@ -54,7 +115,7 @@ func (s *service) IsChainReorgDetected(ctx context.Context) (isDetected bool, Re
 	return false, 0, nil
 }
 
-func (s *service) FixChainReorg(ctx context.Context, lastKnownGoodBlockCount int32) error {
+func (s *chainReorgService) FixChainReorg(ctx context.Context, lastKnownGoodBlockCount int32) error {
 	startingBlockToFixChainReorg := lastKnownGoodBlockCount + 1
 
 	latestBlockCount, err := s.pastelClient.GetBlockCount(ctx)
@@ -88,35 +149,5 @@ func (s *service) FixChainReorg(ctx context.Context, lastKnownGoodBlockCount int
 		}
 	}
 
-	return nil
-}
-
-func (s *service) runChainReorgTask(ctx context.Context) error {
-	if s.restartPastelDExecutionTime.Add(60 * time.Minute).After(time.Now()) {
-		//check for reorg after every hour
-		return nil
-	}
-
-	s.restartPastelDExecutionTime = time.Now()
-
-	isDetected, lastGoodBlockHeight, err := s.IsChainReorgDetected(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error detecting chain reorg in hermes")
-		return nil
-	}
-
-	if !isDetected {
-		log.WithContext(ctx).Info("chain reorg is not detected, no action needed")
-		return nil
-	}
-	log.WithContext(ctx).WithField("last_good_block_height", lastGoodBlockHeight).
-		Info("chain-reorg is detected, going to fix now..")
-
-	if err := s.FixChainReorg(ctx, lastGoodBlockHeight); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error fixing the chain reorg in db")
-		return nil
-	}
-
-	log.WithContext(ctx).Info("chain-reorg has been fixed")
 	return nil
 }

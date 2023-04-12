@@ -93,7 +93,7 @@ func (service *downloadNft) DownloadDDAndFingerprints(ctx context.Context, txid 
 	}
 
 	if res.File == nil {
-		return nil, errors.New("nil dd and fingerprints file")
+		return nil, errors.New("nil dd and fingerprint file")
 	}
 
 	return res.File, nil

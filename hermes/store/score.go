@@ -6,9 +6,8 @@ import (
 	"fmt"
 
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
-
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
 const (

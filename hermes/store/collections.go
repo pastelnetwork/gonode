@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/errors"
 
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/domain"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
 type collection struct {
@@ -23,7 +23,7 @@ type collection struct {
 // IfCollectionExists checks if collection exists against the id
 func (s *SQLiteStore) IfCollectionExists(_ context.Context, collectionTxID string) (bool, error) {
 	c := collection{}
-	getCollectionByIDQuery := `SELECT * FROM collections WHERE collection_ticket_txid = ?`
+	getCollectionByIDQuery := `SELECT * FROM collection WHERE collection_ticket_txid = ?`
 	err := s.db.Get(&c, getCollectionByIDQuery, collectionTxID)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -42,7 +42,7 @@ func (s *SQLiteStore) IfCollectionExists(_ context.Context, collectionTxID strin
 
 // StoreCollection store collection object to DB
 func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) error {
-	_, err := s.db.Exec(`INSERT INTO collections(collection_ticket_txid,
+	_, err := s.db.Exec(`INSERT INTO collection(collection_ticket_txid,
 		 collection_name_string, collection_ticket_activation_block_height, collection_final_allowed_block_height,
 		  max_permitted_open_nsfw_score, minimum_similarity_score_to_first_entry_in_collection, collection_state, 
           datetime_collection_state_updated) VALUES(?,?,?,?,?,?,?)`, c.CollectionTicketTXID,
