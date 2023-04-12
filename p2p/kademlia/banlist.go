@@ -85,11 +85,11 @@ func (s *BanList) Delete(node *Node) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 
-	len := len(s.Nodes)
-	for i := 0; i < len; i++ {
+	l := len(s.Nodes)
+	for i := 0; i < l; i++ {
 		if bytes.Equal(s.Nodes[i].ID, node.ID) {
 			newNodes := s.Nodes[:i]
-			if i+1 < len {
+			if i+1 < l {
 				newNodes = append(newNodes, s.Nodes[i+1:]...)
 			}
 			s.Nodes = newNodes

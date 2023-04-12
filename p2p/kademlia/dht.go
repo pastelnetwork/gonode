@@ -150,7 +150,7 @@ func (s *DHT) Start(ctx context.Context) error {
 
 	// start a timer for doing update work
 	helpers.StartTimer(ctx, "update work", s.done, defaultUpdateTime, func() error {
-		log.P2P().WithContext(ctx).Info("update work called")
+		log.P2P().WithContext(ctx).Error("update work called")
 		// refresh
 		for i := 0; i < B; i++ {
 			if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
@@ -385,7 +385,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, data []byte) ([]byte, error) {
 	// find the closest contacts for target node from local route tables
 	nl := s.ht.closestContacts(Alpha, target, s.ignorelist.ToNodeList())
-	log.P2P().WithContext(ctx).WithField("nodes", nl.String()).WithField("ignored", s.ignorelist.String()).Info("closest contacts")
+	log.P2P().WithContext(ctx).WithField("nodes", nl.String()).WithField("ignored", s.ignorelist.String()).Error("closest contacts")
 	// no a closer node, stop search
 	if nl.Len() == 0 {
 		return nil, nil
@@ -497,7 +497,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					}
 				}
 
-				log.P2P().WithContext(ctx).WithField("store count", storeCount).WithField("task_id", taskID).Info("task data stored")
+				log.P2P().WithContext(ctx).WithField("store count", storeCount).WithField("task_id", taskID).Error("task data stored")
 
 				return nil, nil
 			}

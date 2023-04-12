@@ -217,6 +217,7 @@ func StringInSlice(list []string, str string) bool {
 	return false
 }
 
+// CheckInternetConnectivity checks if the device is connected to the internet
 func CheckInternetConnectivity() bool {
 	// Set a timeout duration for the internet connectivity check
 	timeout := time.Second * 5

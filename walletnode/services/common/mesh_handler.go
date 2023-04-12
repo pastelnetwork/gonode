@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -530,6 +531,13 @@ func combinations(candidatesNodes SuperNodeList) []SuperNodeList {
 				result = append(result, SuperNodeList{candidatesNodes[i], candidatesNodes[j], candidatesNodes[k]})
 			}
 		}
+	}
+
+	rand.Seed(time.Now().UnixNano()) // Seed the random number generator
+	for i := len(result) - 1; i > 0; i-- {
+		j := rand.Intn(i + 1) // Generate a random index from 0 to i
+		// Swap elements at index i and j
+		result[i], result[j] = result[j], result[i]
 	}
 
 	return result
