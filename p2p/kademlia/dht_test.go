@@ -191,7 +191,7 @@ func (ts *testSuite) TearDownSuite() {
 	}
 }
 
-func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
+func (ts *testSuite) newDHTNodeWithMemStore(ctx context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
 	options := &Options{
 		IP:   ts.IP,
 		Port: port,
@@ -221,7 +221,7 @@ func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes [
 	// }
 	// transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
 
-	dht, err := NewDHT(ts.memStore, pastelClientMock, secInfo, options)
+	dht, err := NewDHT(ctx, ts.memStore, pastelClientMock, secInfo, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
@@ -229,7 +229,7 @@ func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes [
 	return dht, nil
 }
 
-func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
+func (ts *testSuite) newDHTNodeWithDBStore(ctx context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
 	options := &Options{
 		IP:       ts.IP,
 		Port:     port,
@@ -262,7 +262,7 @@ func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []
 		pub:    TestPub,
 	}
 
-	dht, err := NewDHT(ts.dbStore, fakePastelClient, secInfo, options)
+	dht, err := NewDHT(ctx, ts.dbStore, fakePastelClient, secInfo, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}

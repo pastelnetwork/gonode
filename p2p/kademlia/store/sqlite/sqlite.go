@@ -154,13 +154,13 @@ func (s *Store) Delete(ctx context.Context, key []byte) {
 
 	res, err := s.db.Exec("DELETE FROM data WHERE key = ?", hkey)
 	if err != nil {
-		log.P2P().WithContext(ctx).Errorf("cannot delete record by key %s: %v", hkey, err)
+		log.P2P().WithContext(ctx).Debugf("cannot delete record by key %s: %v", hkey, err)
 	}
 
 	if rowsAffected, err := res.RowsAffected(); err != nil {
-		log.P2P().WithContext(ctx).Errorf("failed to delete record by key %s: %v", hkey, err)
+		log.P2P().WithContext(ctx).Debugf("failed to delete record by key %s: %v", hkey, err)
 	} else if rowsAffected == 0 {
-		log.P2P().WithContext(ctx).Errorf("failed to delete record by key %s", hkey)
+		log.P2P().WithContext(ctx).Debugf("failed to delete record by key %s", hkey)
 	}
 }
 

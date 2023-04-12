@@ -9,10 +9,12 @@ import (
 	"io/ioutil"
 	"math"
 	"math/big"
+	"net"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"golang.org/x/crypto/sha3"
@@ -213,4 +215,19 @@ func StringInSlice(list []string, str string) bool {
 	}
 
 	return false
+}
+
+// CheckInternetConnectivity checks if the device is connected to the internet
+func CheckInternetConnectivity() bool {
+	// Set a timeout duration for the internet connectivity check
+	timeout := time.Second * 5
+
+	// Create a TCP connection to a common DNS server (e.g., Google's Public DNS server)
+	conn, err := net.DialTimeout("tcp", "www.google.com:80", timeout)
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+
+	return true
 }

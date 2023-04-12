@@ -103,7 +103,7 @@ func (service *downloadNft) contextWithLogPrefix(ctx context.Context) context.Co
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-//NON IMPLEMETED--->
+// NON IMPLEMETED--->
 func (service *downloadNft) MeshNodes(_ context.Context, _ []types.MeshedSuperNode) error {
 	return nil
 }
