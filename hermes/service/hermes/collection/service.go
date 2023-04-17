@@ -17,10 +17,10 @@ type collectionService struct {
 }
 
 // NewCollectionService returns a new collection service
-func NewCollectionService(cStore store.CollectionStore, pastelClient pastel.Client, s *synchronizer.Synchronizer) (service.SvcInterface, error) {
+func NewCollectionService(cStore store.CollectionStore, pastelClient pastel.Client) (service.SvcInterface, error) {
 	return &collectionService{
 		pastelClient: pastelClient,
 		store:        cStore,
-		sync:         s,
+		sync:         synchronizer.NewSynchronizer(pastelClient),
 	}, nil
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/fingerprint"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/pastelblock"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/pasteldstarter"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/synchronizer"
 	"github.com/pastelnetwork/gonode/hermes/service/node"
 	"github.com/pastelnetwork/gonode/hermes/store"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -29,42 +28,35 @@ type service struct {
 	p2p          node.HermesP2PInterface
 	sn           node.SNClientInterface
 	store        *store.SQLiteStore
-	sync         *synchronizer.Synchronizer
 }
 
 func (s *service) Run(ctx context.Context) error {
-	if err := s.sync.WaitSynchronization(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("Failed to initial wait synchronization")
-	} else {
-		s.sync.SetSyncStatus(true)
-	}
-
-	collectionService, err := collection.NewCollectionService(s.store, s.pastelClient, s.sync)
+	collectionService, err := collection.NewCollectionService(s.store, s.pastelClient)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize collection service")
 	}
 
-	restartPastelDService, err := pasteldstarter.NewRestartPastelDService(s.pastelClient, s.sync)
+	restartPastelDService, err := pasteldstarter.NewRestartPastelDService(s.pastelClient)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize restart pasteld service")
 	}
 
-	fingerprintService, err := fingerprint.NewFingerprintService(s.store, s.pastelClient, s.p2p, s.sync)
+	fingerprintService, err := fingerprint.NewFingerprintService(s.store, s.pastelClient, s.p2p)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize fingerprint service")
 	}
 
-	chainReorgService, err := chainreorg.NewChainReorgService(s.store, s.pastelClient, s.sync)
+	chainReorgService, err := chainreorg.NewChainReorgService(s.store, s.pastelClient)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize chain reorg service")
 	}
 
-	cleanerService, err := cleaner.NewCleanupService(s.pastelClient, s.p2p, s.sync)
+	cleanerService, err := cleaner.NewCleanupService(s.pastelClient, s.p2p)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize chain reorg service")
 	}
 
-	pastelBlockService, err := pastelblock.NewPastelBlocksService(s.store, s.pastelClient, s.sync)
+	pastelBlockService, err := pastelblock.NewPastelBlocksService(s.store, s.pastelClient)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize restart pastel-d service")
 	}
@@ -144,6 +136,5 @@ func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInte
 		store:        store,
 		sn:           sn,
 		p2p:          p2p,
-		sync:         synchronizer.NewSynchronizer(pastelClient),
 	}, nil
 }

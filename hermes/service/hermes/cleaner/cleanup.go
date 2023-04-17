@@ -26,15 +26,10 @@ func (s *cleanupService) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return errors.Errorf("context done: %w", ctx.Err())
 		case <-time.After(runTaskInterval):
-			// Check if node is synchronized or not
-			if !s.sync.GetSyncStatus() {
-				if err := s.sync.CheckSynchronized(ctx); err != nil {
-					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
-					continue
-				}
-
-				log.WithContext(ctx).Debug("Done for waiting synchronization status")
-				s.sync.SetSyncStatus(true)
+			log.WithContext(ctx).Info("cleanup service run() has been invoked")
+			if err := s.sync.WaitSynchronization(ctx); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error syncing master-node")
+				continue
 			}
 
 			group, gctx := errgroup.WithContext(ctx)
@@ -56,8 +51,6 @@ func (s cleanupService) Stats(_ context.Context) (map[string]interface{}, error)
 }
 
 func (s *cleanupService) run(ctx context.Context) error {
-	log.WithContext(ctx).Info("cleanup block service run() has been invoked")
-
 	count, err := s.pastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to get block count, skipping cleanup")

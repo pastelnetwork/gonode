@@ -13,9 +13,9 @@ type restartPastelDService struct {
 }
 
 // NewRestartPastelDService returns a new restart pastel-d service
-func NewRestartPastelDService(pastelClient pastel.Client, s *synchronizer.Synchronizer) (service.SvcInterface, error) {
+func NewRestartPastelDService(pastelClient pastel.Client) (service.SvcInterface, error) {
 	return &restartPastelDService{
 		pastelClient: pastelClient,
-		sync:         s,
+		sync:         synchronizer.NewSynchronizer(pastelClient),
 	}, nil
 }

@@ -14,10 +14,10 @@ type pastelBlockService struct {
 }
 
 // NewPastelBlocksService returns a new pastel-block service
-func NewPastelBlocksService(pbStore store.PastelBlockStore, pastelClient pastel.Client, s *synchronizer.Synchronizer) (service.SvcInterface, error) {
+func NewPastelBlocksService(pbStore store.PastelBlockStore, pastelClient pastel.Client) (service.SvcInterface, error) {
 	return &pastelBlockService{
 		pastelClient: pastelClient,
 		store:        pbStore,
-		sync:         s,
+		sync:         synchronizer.NewSynchronizer(pastelClient),
 	}, nil
 }

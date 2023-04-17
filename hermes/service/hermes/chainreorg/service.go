@@ -14,10 +14,10 @@ type chainReorgService struct {
 }
 
 // NewChainReorgService returns a new chain-reorg service
-func NewChainReorgService(store store.PastelBlockStore, pastelClient pastel.Client, s *synchronizer.Synchronizer) (svc.SvcInterface, error) {
+func NewChainReorgService(store store.PastelBlockStore, pastelClient pastel.Client) (svc.SvcInterface, error) {
 	return &chainReorgService{
 		pastelClient: pastelClient,
 		store:        store,
-		sync:         s,
+		sync:         synchronizer.NewSynchronizer(pastelClient),
 	}, nil
 }

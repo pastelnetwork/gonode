@@ -32,14 +32,10 @@ func (s *restartPastelDService) Run(ctx context.Context) error {
 			return errors.Errorf("context done: %w", ctx.Err())
 		case <-time.After(runTaskInterval):
 			// Check if node is synchronized or not
-			if !s.sync.GetSyncStatus() {
-				if err := s.sync.CheckSynchronized(ctx); err != nil {
-					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
-					continue
-				}
-
-				log.WithContext(ctx).Debug("Done for waiting synchronization status")
-				s.sync.SetSyncStatus(true)
+			log.WithContext(ctx).Info("pasteld restarter service run() has been invoked")
+			if err := s.sync.WaitSynchronization(ctx); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error syncing master-node")
+				continue
 			}
 
 			group, gctx := errgroup.WithContext(ctx)
@@ -89,8 +85,14 @@ func (s restartPastelDService) run(ctx context.Context) error {
 			log.WithContext(ctx).WithError(err).Error("Error stopping pastel-cli")
 			return nil
 		}
-
 		log.WithContext(ctx).WithField("block_count", blockCount).Infof("pastel-cli has been stopped:%s", string(res))
+
+		blockCount, isStarted := s.waitingForPastelDToStart(ctx)
+		if isStarted {
+			log.WithContext(ctx).WithField("block_count", blockCount).Info("pasteld started automatically, no need for manual run")
+			return nil
+		}
+		log.WithContext(ctx).Error("pasteld is not able to start automatically, trying to start manually now")
 
 		var extIP string
 		if extIP, err = utils.GetExternalIPAddress(); err != nil {
@@ -131,7 +133,7 @@ func (s restartPastelDService) run(ctx context.Context) error {
 			return nil
 		}
 
-		blockCount, isStarted := s.waitingForPastelDToStart(ctx)
+		blockCount, isStarted = s.waitingForPastelDToStart(ctx)
 		if !isStarted {
 			log.WithContext(ctx).Error("pasteld is not able to start")
 			return nil

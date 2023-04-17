@@ -19,11 +19,11 @@ type fingerprintService struct {
 }
 
 // NewFingerprintService returns a new fingerprint service
-func NewFingerprintService(fgStore store.DDStore, pastelClient pastel.Client, hp2p node.HermesP2PInterface, s *synchronizer.Synchronizer) (service.SvcInterface, error) {
+func NewFingerprintService(fgStore store.DDStore, pastelClient pastel.Client, hp2p node.HermesP2PInterface) (service.SvcInterface, error) {
 	return &fingerprintService{
 		pastelClient: pastelClient,
 		store:        fgStore,
 		p2p:          hp2p,
-		sync:         s,
+		sync:         synchronizer.NewSynchronizer(pastelClient),
 	}, nil
 }

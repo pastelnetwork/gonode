@@ -17,12 +17,12 @@ type cleanupService struct {
 }
 
 // NewCleanupService returns a new cleanup service
-func NewCleanupService(pastelClient pastel.Client, hp2p node.HermesP2PInterface, s *synchronizer.Synchronizer) (service.SvcInterface, error) {
+func NewCleanupService(pastelClient pastel.Client, hp2p node.HermesP2PInterface) (service.SvcInterface, error) {
 	return &cleanupService{
 		pastelClient:       pastelClient,
 		p2p:                hp2p,
 		currentNFTBlock:    1,
 		currentActionBlock: 1,
-		sync:               s,
+		sync:               synchronizer.NewSynchronizer(pastelClient),
 	}, nil
 }
