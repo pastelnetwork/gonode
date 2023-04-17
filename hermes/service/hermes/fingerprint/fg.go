@@ -107,6 +107,11 @@ func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 
 		log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Info("Found activated sense ticket")
 
+		if exist, err := s.store.IfFingerprintExistsByRegTxid(ctx, regTicket.TXID); err == nil && exist {
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Info("ticket already exists")
+			continue
+		}
+
 		decTicket, err := pastel.DecodeActionTicket(regTicket.ActionTicketData.ActionTicket)
 		if err != nil {
 			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).
@@ -124,19 +129,20 @@ func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 		p2pServiceRunning := true
 		ddAndFpFromTicket := &pastel.DDAndFingerprints{}
 		//Get the dd and fp file from the ticket
-		for _, id := range senseTicket.DDAndFingerprintsIDs {
+		for idx, id := range senseTicket.DDAndFingerprintsIDs {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
-			if err != nil {
-				if strings.Contains(err.Error(), "p2p service is not running") {
-					p2pServiceRunning = false
-					break
-				}
-
-				//probably too verbose even for debug.
-				log.WithContext(ctx).WithField("error", err).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("Could not get the fingerprint for this file hash")
-				continue
+			if err == nil && ddAndFpFromTicket != nil {
+				break
 			}
-			break
+
+			log.WithContext(ctx).WithError(err).WithField("index", idx).WithField("txid", regTicket.TXID).WithField("txid", senseActTickets[i].TXID).WithField("id", id).Error("Failed to get dd and fp file from ticket")
+			if strings.Contains(err.Error(), "p2p service is not running") {
+				p2pServiceRunning = false
+				break
+			}
+
+			//probably too verbose even for debug.
+			log.WithContext(ctx).WithError(err).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("Could not get the fingerprint for this file hash")
 		}
 
 		if !p2pServiceRunning {
@@ -264,6 +270,11 @@ func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 
 		log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).Info("Found Reg Ticket for NFT-Act ticket")
 
+		if exist, err := s.store.IfFingerprintExistsByRegTxid(ctx, actTickets[i].ActTicketData.RegTXID); err == nil && exist {
+			log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).WithField("act-txid", actTickets[i].TXID).Info("ticket already exists")
+			continue
+		}
+
 		decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
 		if err != nil {
 			log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).WithError(err).Error("Failed to decode reg ticket")
@@ -279,19 +290,21 @@ func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 		p2pServiceRunning := true
 		for _, id := range ddFPIDs {
 			ddAndFpFromTicket, err = s.tryToGetFingerprintFileFromHash(ctx, id)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Failed to get dd and fp file from ticket")
-				if strings.Contains(err.Error(), "p2p service is not running") {
-					p2pServiceRunning = false
-					break
-				}
-
-				//probably too verbose even for debug.
-				log.WithContext(ctx).WithField("error", err).WithField("txid", actTickets[i].ActTicketData.RegTXID).WithField("id", id).Error("Could not get the fingerprint for this file hash")
-				continue
+			if err == nil && ddAndFpFromTicket != nil {
+				break
 			}
-			break
+
+			log.WithContext(ctx).WithError(err).WithField("txid", actTickets[i].ActTicketData.RegTXID).WithField("id", id).Error("Failed to get dd and fp file from ticket")
+			if strings.Contains(err.Error(), "p2p service is not running") {
+				p2pServiceRunning = false
+				break
+			}
+
+			//probably too verbose even for debug.
+			log.WithContext(ctx).WithError(err).WithField("txid", actTickets[i].ActTicketData.RegTXID).WithField("id", id).
+				Error("Could not get the fingerprint for this file hash")
 		}
+
 		if !p2pServiceRunning {
 			log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).
 				Info("P2P service is not running, so we can't get the fingerprint for this file hash, stopping this run of the task")

@@ -170,7 +170,7 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) ([]byte
 		},
 	}
 
-	if value != nil {
+	if len(value) > 0 {
 		// return the value
 		response.Value = value
 	} else {

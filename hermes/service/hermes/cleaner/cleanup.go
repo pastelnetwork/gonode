@@ -89,13 +89,18 @@ func (s *cleanupService) cleanupActionTickets(ctx context.Context, count int32) 
 			continue
 		}
 
-		if actionRegTickets[i].Height+blocksDeadline <= int(count) {
+		if !requiresCleanup(actionRegTickets[i].Height, int(count)) {
+			continue
+		}
+
+		t, err := s.pastelClient.FindActionActByActionRegTxid(ctx, actionRegTickets[i].TXID)
+		if err == nil && t != nil {
 			continue
 		}
 
 		log.WithContext(ctx).WithField("reg_txid", actionRegTickets[i].TXID).
-			WithField("action-block-height", s.currentActionBlock).WithField("current block", count).
-			Info("Cleaning up action ticket")
+			WithField("action-block-height", s.currentActionBlock).WithField("ticket-height", actionRegTickets[i].Height).
+			WithField("current block", int(count)).Info("Cleaning up action ticket")
 
 		decTicket, err := pastel.DecodeActionTicket(actionRegTickets[i].ActionTicketData.ActionTicket)
 		if err != nil {
@@ -167,12 +172,17 @@ func (s *cleanupService) cleanupRegTickets(ctx context.Context, count int32) err
 			continue
 		}
 
-		if nftRegTickets[i].Height+blocksDeadline <= int(count) {
+		if !requiresCleanup(nftRegTickets[i].Height, int(count)) {
+			continue
+		}
+
+		t, err := s.pastelClient.FindActByRegTxid(ctx, nftRegTickets[i].TXID)
+		if err == nil && t != nil {
 			continue
 		}
 
 		log.WithContext(ctx).WithField("reg_txid", nftRegTickets[i].TXID).
-			WithField("reg-block-height", s.currentNFTBlock).WithField("current block", count).
+			WithField("reg-block-height", s.currentNFTBlock).WithField("current block", int(count)).WithField("ticket-height", nftRegTickets[i].Height).
 			Info("cleaning up reg ticket")
 
 		decTicket, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
@@ -232,4 +242,8 @@ func (s *cleanupService) cleanupActionTicketData(ctx context.Context, actionTick
 	}
 
 	return nil
+}
+
+func requiresCleanup(ticketHeight int, currentBlockHeight int) bool {
+	return (ticketHeight + 15000) < currentBlockHeight
 }

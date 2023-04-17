@@ -20,6 +20,7 @@ type DDStore interface {
 	StoreFingerprint(context.Context, *domain.DDFingerprints) error
 	GetFingerprintsCount(context.Context) (int64, error)
 	CheckNonSeedRecord(ctx context.Context) (bool, error)
+	IfFingerprintExistsByRegTxid(_ context.Context, txid string) (bool, error)
 }
 
 // ScoreStore is SN Score store

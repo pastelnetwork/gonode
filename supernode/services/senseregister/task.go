@@ -365,6 +365,8 @@ func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, 
 }
 
 func (task *SenseRegistrationTask) storeIDFiles(ctx context.Context) error {
+	ctx = context.WithValue(ctx, log.TaskIDKey, task.ID())
+	log.WithContext(ctx).WithField("task_id", task.ID()).Info("store task id in context")
 	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.ddFpFiles); err != nil {
 		return errors.Errorf("store ID files into kademlia: %w", err)
 	}

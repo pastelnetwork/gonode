@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -50,7 +51,21 @@ func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte) (st
 
 // StoreListOfBytesIntoP2P stores into P2P array of bytes arrays
 func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]byte) error {
+	val := ctx.Value(log.TaskIDKey)
+	taskID := ""
+	if val != nil {
+		taskID = fmt.Sprintf("%v", val)
+	}
+	log.WithContext(ctx).WithField("task_id", taskID).Info("task_id in storeList")
+
 	group, gctx := errgroup.WithContext(ctx)
+	val = gctx.Value(log.TaskIDKey)
+	taskID = ""
+	if val != nil {
+		taskID = fmt.Sprintf("%v", val)
+	}
+
+	log.WithContext(gctx).WithField("task_id", taskID).Info("task_id in storeList after gctx")
 	for _, data := range list {
 		data := data
 		group.Go(func() (err error) {

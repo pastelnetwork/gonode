@@ -16,7 +16,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/utils"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
 	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
 )
@@ -141,6 +140,56 @@ func (s *DHT) getExternalIP() (string, error) {
 	return externalIP, nil
 }
 
+func (s *DHT) StartReplication(ctx context.Context) error {
+	log.P2P().WithContext(ctx).Error("replication worker started")
+
+	for {
+		select {
+		case <-time.After(10 * time.Minute):
+			s.Replicate(ctx)
+		case <-ctx.Done():
+			log.P2P().WithContext(ctx).Error("closing replication worker")
+			return nil
+		}
+	}
+}
+
+func (s *DHT) Replicate(ctx context.Context) {
+	for i := 0; i < B; i++ {
+		if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
+			// refresh the bucket by iterative find node
+			id := s.ht.randomIDFromBucket(K)
+			if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
+				log.P2P().WithContext(ctx).WithError(err).Error("replicate iterate find node failed")
+			}
+		}
+	}
+
+	// replication
+	replicationKeys := s.store.GetKeysForReplication(ctx)
+	log.P2P().WithContext(ctx).WithField("repkey", len(replicationKeys)).Info("replication keys")
+	for _, key := range replicationKeys {
+		value, err := s.store.Retrieve(ctx, key)
+		if err != nil {
+			log.P2P().WithContext(ctx).WithError(err).Error("replicate store retrieve failed")
+			continue
+		}
+
+		if value != nil {
+			// iterate store the value
+			if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
+				log.P2P().WithContext(ctx).WithError(err).Error("replicate iterate store data failed")
+			} else {
+				if err := s.store.UpdateKeyReplication(ctx, key); err != nil {
+					log.P2P().WithContext(ctx).WithError(err).Error("replicate update key replication failed")
+				}
+			}
+		}
+	}
+
+	log.P2P().WithContext(ctx).Info("Replication done")
+}
+
 // Start the distributed hash table
 func (s *DHT) Start(ctx context.Context) error {
 	// start the network
@@ -148,38 +197,7 @@ func (s *DHT) Start(ctx context.Context) error {
 		return fmt.Errorf("start network: %v", err)
 	}
 
-	// start a timer for doing update work
-	helpers.StartTimer(ctx, "update work", s.done, defaultUpdateTime, func() error {
-		log.P2P().WithContext(ctx).Error("update work called")
-		// refresh
-		for i := 0; i < B; i++ {
-			if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
-				// refresh the bucket by iterative find node
-				id := s.ht.randomIDFromBucket(K)
-				if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
-					log.P2P().WithContext(ctx).WithError(err).Error("iterate find node failed")
-				}
-			}
-		}
-
-		// replication
-		replicationKeys := s.store.GetKeysForReplication(ctx)
-		for _, key := range replicationKeys {
-			value, err := s.store.Retrieve(ctx, key)
-			if err != nil {
-				log.P2P().WithContext(ctx).WithError(err).Error("store retrieve failed")
-				continue
-			}
-			if value != nil {
-				// iterate store the value
-				if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
-					log.P2P().WithContext(ctx).WithError(err).Error("iterate store data failed")
-				}
-			}
-		}
-
-		return nil
-	})
+	go s.StartReplication(ctx)
 
 	return nil
 }
@@ -240,7 +258,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, decoded)
-	if err == nil {
+	if err == nil && len(value) > 0 {
 		return value, nil
 	}
 
@@ -248,13 +266,14 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	if len(localOnly) > 0 && localOnly[0] {
 		return nil, fmt.Errorf("local-only failed to get properly: " + err.Error())
 	}
-	log.WithContext(ctx).Info("Not found locally, searching in other nodes")
+	log.WithContext(ctx).WithField("key", key).Debug("Not found locally, searching in other nodes")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
 	if err != nil {
 		return nil, errors.Errorf("retrieve from peer: %w", err)
 	}
+	log.WithContext(ctx).WithField("key", key).WithField("data len", len(peerValue)).Info("Not found locally, retrieved from other nodes")
 
 	return peerValue, nil
 }
@@ -306,6 +325,7 @@ func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Mes
 func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []byte, nl *NodeList, contacted map[string]bool, haveRest bool) chan *Message {
 	// responses from remote node
 	responses := make(chan *Message, Alpha)
+	mtx := sync.Mutex{}
 
 	go func() {
 		// the nodes which are unreachable
@@ -367,9 +387,14 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 		wg.Wait()
 
 		// delete the node which is unreachable
-		for _, node := range removedNodes {
-			nl.DelNode(node)
-		}
+		go func() {
+			mtx.Lock()
+			defer mtx.Unlock()
+
+			for _, node := range removedNodes {
+				nl.DelNode(node)
+			}
+		}()
 
 		// close the message channel
 		close(responses)
@@ -383,9 +408,18 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 // - IterativeFindNode - used to bootstrap the network
 // - IterativeFindValue - used to find a value among the network given a key
 func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, data []byte) ([]byte, error) {
+	val := ctx.Value(log.TaskIDKey)
+	taskID := ""
+	if val != nil {
+		taskID = fmt.Sprintf("%v", val)
+	}
+
+	igList := s.ignorelist.ToNodeList()
 	// find the closest contacts for target node from local route tables
-	nl := s.ht.closestContacts(Alpha, target, s.ignorelist.ToNodeList())
-	log.P2P().WithContext(ctx).WithField("nodes", nl.String()).WithField("ignored", s.ignorelist.String()).Error("closest contacts")
+	nl := s.ht.closestContacts(Alpha, target, igList)
+	if len(igList) > 0 {
+		log.P2P().WithContext(ctx).WithField("nodes", nl.String()).WithField("ignored", s.ignorelist.String()).Info("closest contacts")
+	}
 	// no a closer node, stop search
 	if nl.Len() == 0 {
 		return nil, nil
@@ -431,7 +465,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 			case FindValue:
 				v, ok := response.Data.(*FindValueResponse)
 				if ok && v.Status.Result == ResultOk {
-					if v.Value != nil {
+					if v.Value != nil && len(v.Value) > 0 {
 						return v.Value, nil
 					}
 					if len(v.Closest) > 0 {
@@ -465,7 +499,6 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 			case IterateFindValue:
 				return nil, nil
 			case IterateStore:
-				taskID := ctx.Value(log.TaskIDKey)
 				// store the value to node list
 				storeCount := 0
 				for i := 0; i < len(nl.Nodes); i++ {
@@ -476,8 +509,8 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					}
 					n := nl.Nodes[i]
 
-					if s.ignorelist.Exists(n) {
-						logEntry.Error("ignore node as its continuous failed count is above threshold")
+					if s.ignorelist.Banned(n) {
+						logEntry.Info("ignore node as its continuous failed count is above threshold")
 						continue
 					}
 
@@ -485,9 +518,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					response, err := s.sendStoreData(ctx, n, request)
 					if err != nil {
 						// update the blacklist
-						if s.ignorelist.IncrementCount(n) {
-							s.ignorelist.Add(n)
-						}
+						s.ignorelist.IncrementCount(n)
 
 						logEntry.WithError(err).Error("send store data failed")
 					} else if response.Status.Result != ResultOk {
@@ -497,7 +528,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					}
 				}
 
-				log.P2P().WithContext(ctx).WithField("store count", storeCount).WithField("task_id", taskID).Error("task data stored")
+				log.P2P().WithContext(ctx).WithField("store count", storeCount).WithField("task_id", taskID).Info("task data stored")
 
 				return nil, nil
 			}
@@ -508,12 +539,11 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	}
 }
 
-func (s *DHT) sendStoreData(_ context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
+func (s *DHT) sendStoreData(ctx context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
 	// new a request message
 	reqMsg := s.newMessage(StoreData, n, request)
 	// send the request and receive the response
-	// FIXME: context background
-	rspMsg, err := s.network.Call(context.Background(), reqMsg)
+	rspMsg, err := s.network.Call(ctx, reqMsg)
 	if err != nil {
 		return nil, errors.Errorf("network call: %w", err)
 	}
@@ -554,7 +584,7 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 		// new a ping request message
 		request := s.newMessage(Ping, first, nil)
 		// new a context with timeout
-		ctx, cancel := context.WithTimeout(context.Background(), defaultPingTime)
+		ctx, cancel := context.WithTimeout(ctx, defaultPingTime)
 		defer cancel()
 
 		// invoke the request and handle the response
@@ -588,7 +618,10 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 
 // NClosestNodes get n closest nodes to a key string
 func (s *DHT) NClosestNodes(_ context.Context, n int, key string, ignores ...*Node) []*Node {
+	list := s.ignorelist.ToNodeList()
+	ignores = append(ignores, list...)
 	nodeList := s.ht.closestContacts(n, base58.Decode(key), ignores)
+
 	return nodeList.Nodes
 }
 
