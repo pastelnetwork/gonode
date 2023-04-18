@@ -46,15 +46,16 @@ type RegTicketData struct {
 
 // NFTTicket is Pastel NFT Request
 type NFTTicket struct {
-	Version       int       `json:"nft_ticket_version"`
-	Author        string    `json:"author"`
-	BlockNum      int       `json:"blocknum"`
-	BlockHash     string    `json:"block_hash"`
-	Copies        int       `json:"copies"`
-	Royalty       float64   `json:"royalty"`
-	Green         bool      `json:"green"`
-	AppTicket     string    `json:"app_ticket"`
-	AppTicketData AppTicket `json:"-"`
+	Version        int       `json:"nft_ticket_version"`
+	Author         string    `json:"author"`
+	BlockNum       int       `json:"blocknum"`
+	BlockHash      string    `json:"block_hash"`
+	Copies         int       `json:"copies"`
+	Royalty        float64   `json:"royalty"`
+	Green          bool      `json:"green"`
+	CollectionTxID []byte    `json:"collection_txid,omitempty"`
+	AppTicket      string    `json:"app_ticket"`
+	AppTicketData  AppTicket `json:"-"`
 }
 
 // AppTicket represents pastel App ticket.
