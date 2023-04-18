@@ -207,6 +207,7 @@ func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 			OpenAPIGroupIDString:                       groupID,
 			CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
 			DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
+			RegTXID: regTicket.TXID,
 		}); err != nil {
 			log.WithContext(ctx).WithError(err).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("Failed to store fingerprint")
 			continue
@@ -359,6 +360,7 @@ func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 			OpenAPIGroupIDString:                       groupID,
 			CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
 			DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
+			RegTXID: regTicket.TXID,
 		}); err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 			continue
