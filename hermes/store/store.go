@@ -41,6 +41,7 @@ type PastelBlockStore interface {
 type CollectionStore interface {
 	IfCollectionExists(ctx context.Context, collectionTxID string) (bool, error)
 	StoreCollection(_ context.Context, c domain.Collection) error
+	GetCollection(ctx context.Context, collectionTxID string) (*domain.Collection, error)
 	GetDoesNotImpactCollections(ctx context.Context, hash string) (domain.NonImpactedCollections, error)
 }
 
@@ -69,6 +70,7 @@ func NewSQLiteStore(file string) (*SQLiteStore, error) {
 	}
 
 	_, _ = db.Exec(createPbTableStatement)
+	_, _ = db.Exec(createCollectionsTableStatement)
 	_, _ = db.Exec(createFgTableStatement)
 	_, _ = db.Exec(createDoesNotImpactCollectionsTableStatement)
 	_, err = db.Exec(createScoreTableStatement)

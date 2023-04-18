@@ -14,6 +14,7 @@ replace (
 require (
 	github.com/DataDog/zstd v1.5.2
 	github.com/btcsuite/btcutil v1.0.2
+	github.com/bxcodec/faker/v4 v4.0.0-beta.3
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mattn/go-sqlite3 v1.14.6

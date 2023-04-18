@@ -9,6 +9,10 @@ import (
 	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
+const (
+	createCollectionsTableStatement = `CREATE TABLE IF NOT EXISTS collections_table (collection_ticket_txid text PRIMARY KEY, collection_name_string text, collection_ticket_activation_block_height int, collection_final_allowed_block_height int, max_permitted_open_nsfw_score float, minimum_similarity_score_to_first_entry_in_collection float, collection_state text, datetime_collection_state_updated text)`
+)
+
 type collection struct {
 	CollectionTicketTXID                           string  `db:"collection_ticket_txid"`
 	CollectionName                                 string  `db:"collection_name_string"`
@@ -23,7 +27,7 @@ type collection struct {
 // IfCollectionExists checks if collection exists against the id
 func (s *SQLiteStore) IfCollectionExists(_ context.Context, collectionTxID string) (bool, error) {
 	c := collection{}
-	getCollectionByIDQuery := `SELECT * FROM collection WHERE collection_ticket_txid = ?`
+	getCollectionByIDQuery := `SELECT * FROM collections_table WHERE collection_ticket_txid = ?`
 	err := s.db.Get(&c, getCollectionByIDQuery, collectionTxID)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -42,10 +46,10 @@ func (s *SQLiteStore) IfCollectionExists(_ context.Context, collectionTxID strin
 
 // StoreCollection store collection object to DB
 func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) error {
-	_, err := s.db.Exec(`INSERT INTO collection(collection_ticket_txid,
+	_, err := s.db.Exec(`INSERT INTO collections_table(collection_ticket_txid,
 		 collection_name_string, collection_ticket_activation_block_height, collection_final_allowed_block_height,
 		  max_permitted_open_nsfw_score, minimum_similarity_score_to_first_entry_in_collection, collection_state, 
-          datetime_collection_state_updated) VALUES(?,?,?,?,?,?,?)`, c.CollectionTicketTXID,
+          datetime_collection_state_updated) VALUES(?,?,?,?,?,?,?,?)`, c.CollectionTicketTXID,
 		c.CollectionName, c.CollectionTicketActivationBlockHeight, c.CollectionFinalAllowedBlockHeight,
 		c.MaxPermittedOpenNSFWScore, c.MinimumSimilarityScoreToFirstEntryInCollection, c.CollectionState.String(),
 		c.DatetimeCollectionStateUpdated)
@@ -54,6 +58,29 @@ func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) er
 	}
 
 	return nil
+}
+
+// GetCollection get collection object from DB
+func (s *SQLiteStore) GetCollection(ctx context.Context, collectionTxID string) (*domain.Collection, error) {
+	c := collection{}
+
+	getCollectionByIDQuery := `SELECT * FROM collections_table WHERE collection_ticket_txid = ?`
+	err := s.db.GetContext(ctx, &c, getCollectionByIDQuery, collectionTxID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get record: %w : collection_ticket_txid: %s", err, collectionTxID)
+	}
+
+	return &domain.Collection{
+		CollectionTicketTXID:                           c.CollectionTicketTXID,
+		CollectionName:                                 c.CollectionName,
+		CollectionTicketActivationBlockHeight:          c.CollectionTicketActivationBlockHeight,
+		CollectionFinalAllowedBlockHeight:              c.CollectionFinalAllowedBlockHeight,
+		MaxPermittedOpenNSFWScore:                      c.MaxPermittedOpenNSFWScore,
+		MinimumSimilarityScoreToFirstEntryInCollection: c.MinimumSimilarityScoreToFirstEntryInCollection,
+		CollectionState:                                domain.CollectionState(c.CollectionState),
+		DatetimeCollectionStateUpdated:                 c.DatetimeCollectionStateUpdated,
+	}, nil
+
 }
 
 type nonImpactedCollections struct {

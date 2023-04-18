@@ -48,13 +48,14 @@ type ActionTicketData struct {
 
 // ActionTicket is define a action ticket's details
 type ActionTicket struct {
-	Version       int         `json:"action_ticket_version"`
-	Caller        string      `json:"caller"` // PastelID of the caller
-	BlockNum      int         `json:"blocknum"`
-	BlockHash     string      `json:"block_hash"`
-	ActionType    string      `json:"action_type"`
-	APITicket     string      `json:"api_ticket"` // as ascii85(api_ticket)
-	APITicketData interface{} `json:"-"`
+	Version        int         `json:"action_ticket_version"`
+	Caller         string      `json:"caller"` // PastelID of the caller
+	BlockNum       int         `json:"blocknum"`
+	BlockHash      string      `json:"block_hash"`
+	ActionType     string      `json:"action_type"`
+	CollectionTxID []byte      `json:"collection_txid,omitempty"`
+	APITicket      string      `json:"api_ticket"` // as ascii85(api_ticket)
+	APITicketData  interface{} `json:"-"`
 }
 
 // APISenseTicket returns APITicketData as *APISenseTicket if ActionType is ActionTypeSense
