@@ -29,14 +29,10 @@ func (s *fingerprintService) Run(ctx context.Context) error {
 			return errors.Errorf("context done: %w", ctx.Err())
 		case <-time.After(runTaskInterval):
 			// Check if node is synchronized or not
-			if !s.sync.GetSyncStatus() {
-				if err := s.sync.CheckSynchronized(ctx); err != nil {
-					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
-					continue
-				}
-
-				log.WithContext(ctx).Debug("Done for waiting synchronization status")
-				s.sync.SetSyncStatus(true)
+			log.WithContext(ctx).Info("fingerprint service run() has been invoked")
+			if err := s.sync.WaitSynchronization(ctx); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error syncing master-node")
+				continue
 			}
 
 			group, gctx := errgroup.WithContext(ctx)
@@ -158,6 +154,10 @@ func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 			log.WithContext(ctx).WithField("txid", regTicket.TXID).WithField("act-txid", senseActTickets[i].TXID).Error("This NFT sense ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
+		log.WithContext(ctx).WithField("image_hash", ddAndFpFromTicket.HashOfCandidateImageFile).
+			WithField("txid", regTicket.TXID).
+			WithField("act-txid", senseActTickets[i].TXID).
+			Info("image hash retrieved")
 
 		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {
@@ -307,6 +307,11 @@ func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 			log.WithContext(ctx).WithField("txid", actTickets[i].ActTicketData.RegTXID).Info("This NFT Reg ticket's DDAndFp struct has no HashOfCandidateImageFile, perhaps it's an older version.")
 			continue
 		}
+
+		log.WithContext(ctx).WithField("image_hash", ddAndFpFromTicket.HashOfCandidateImageFile).
+			WithField("txid", regTicket.TXID).
+			WithField("act-txid", actTickets[i].TXID).
+			Info("image hash retrieved")
 
 		existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
 		if existsInDatabase {

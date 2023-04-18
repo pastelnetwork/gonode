@@ -21,31 +21,25 @@ func (s *chainReorgService) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return errors.Errorf("context done: %w", ctx.Err())
 		case <-time.After(runTaskInterval):
-			// Check if node is synchronized or not
-			if !s.sync.GetSyncStatus() {
-				if err := s.sync.CheckSynchronized(ctx); err != nil {
-					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
-					continue
-				}
-
-				log.WithContext(ctx).Debug("Done for waiting synchronization status")
-				s.sync.SetSyncStatus(true)
+			log.WithContext(ctx).Info("chain-reorg service run() has been invoked")
+			if err := s.sync.WaitSynchronization(ctx); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error syncing master-node")
+				continue
 			}
+		}
 
-			group, gctx := errgroup.WithContext(ctx)
-			group.Go(func() error {
-				return s.run(gctx)
-			})
+		group, gctx := errgroup.WithContext(ctx)
+		group.Go(func() error {
+			return s.run(gctx)
+		})
 
-			if err := group.Wait(); err != nil {
-				log.WithContext(gctx).WithError(err).Errorf("run task failed")
-			}
+		if err := group.Wait(); err != nil {
+			log.WithContext(gctx).WithError(err).Errorf("run task failed")
 		}
 	}
 }
 
 func (s *chainReorgService) run(ctx context.Context) error {
-	log.WithContext(ctx).Info("chain-reorg service run() has been invoked")
 	isDetected, lastGoodBlockHeight, err := s.IsChainReorgDetected(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error detecting chain reorg in hermes")

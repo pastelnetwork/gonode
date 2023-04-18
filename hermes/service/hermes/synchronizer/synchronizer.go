@@ -18,7 +18,7 @@ const (
 )
 
 // CheckSynchronized checks the master node status
-func (s *Synchronizer) CheckSynchronized(ctx context.Context) error {
+func (s *Synchronizer) checkSynchronized(ctx context.Context) error {
 	st, err := s.PastelClient.MasterNodeStatus(ctx)
 	if err != nil {
 		return errors.Errorf("getMasterNodeStatus: %w", err)
@@ -50,7 +50,7 @@ func (s *Synchronizer) WaitSynchronization(ctx context.Context) error {
 		case <-ctx.Done():
 			return errors.Errorf("context done: %w", ctx.Err())
 		case <-time.After(SynchronizationIntervalSec * time.Second):
-			err := s.CheckSynchronized(ctx)
+			err := s.checkSynchronized(ctx)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
 			} else {
@@ -61,17 +61,4 @@ func (s *Synchronizer) WaitSynchronization(ctx context.Context) error {
 			return errors.New("timeout expired")
 		}
 	}
-}
-
-// GetSyncStatus returns the master-node sync status
-func (s *Synchronizer) GetSyncStatus() bool {
-	return s.isMasterNodeSynced
-}
-
-// SetSyncStatus sets the master-node sync status
-func (s *Synchronizer) SetSyncStatus(status bool) {
-	s.syncMutex.Lock()
-	defer s.syncMutex.Unlock()
-
-	s.isMasterNodeSynced = status
 }

@@ -23,15 +23,10 @@ func (s *collectionService) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return errors.Errorf("context done: %w", ctx.Err())
 		case <-time.After(runTaskInterval):
-			// Check if node is synchronized or not
-			if !s.sync.GetSyncStatus() {
-				if err := s.sync.CheckSynchronized(ctx); err != nil {
-					log.WithContext(ctx).WithError(err).Debug("Failed to check synced status from master node")
-					continue
-				}
-
-				log.WithContext(ctx).Debug("Done for waiting synchronization status")
-				s.sync.SetSyncStatus(true)
+			log.WithContext(ctx).Info("collection service run() has been invoked")
+			if err := s.sync.WaitSynchronization(ctx); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error syncing master-node")
+				continue
 			}
 
 			group, gctx := errgroup.WithContext(ctx)
@@ -52,8 +47,6 @@ func (s *collectionService) Stats(_ context.Context) (map[string]interface{}, er
 }
 
 func (s collectionService) parseCollectionTickets(ctx context.Context) error {
-	log.WithContext(ctx).Info("collection service run() has been invoked")
-
 	collectionActTickets, err := s.pastelClient.CollectionActivationTicketsFromBlockHeight(ctx, s.latestCollectionBlockHeight)
 	if err != nil {
 		log.WithError(err).Error("unable to get nft-collection act tickets - exit runtask now")
