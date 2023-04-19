@@ -22,6 +22,7 @@ type Server struct {
 	Mounts             []*MountPoint
 	RegisterCollection http.Handler
 	RegisterTaskState  http.Handler
+	GetTaskHistory     http.Handler
 	CORS               http.Handler
 }
 
@@ -65,11 +66,14 @@ func New(
 		Mounts: []*MountPoint{
 			{"RegisterCollection", "GET", "/openapi/collection/register"},
 			{"RegisterTaskState", "GET", "/openapi/collection/start/{taskId}/state"},
+			{"GetTaskHistory", "GET", "/openapi/collection/{taskId}/history"},
 			{"CORS", "OPTIONS", "/openapi/collection/register"},
 			{"CORS", "OPTIONS", "/openapi/collection/start/{taskId}/state"},
+			{"CORS", "OPTIONS", "/openapi/collection/{taskId}/history"},
 		},
 		RegisterCollection: NewRegisterCollectionHandler(e.RegisterCollection, mux, decoder, encoder, errhandler, formatter),
 		RegisterTaskState:  NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
+		GetTaskHistory:     NewGetTaskHistoryHandler(e.GetTaskHistory, mux, decoder, encoder, errhandler, formatter),
 		CORS:               NewCORSHandler(),
 	}
 }
@@ -81,6 +85,7 @@ func (s *Server) Service() string { return "collection" }
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.RegisterCollection = m(s.RegisterCollection)
 	s.RegisterTaskState = m(s.RegisterTaskState)
+	s.GetTaskHistory = m(s.GetTaskHistory)
 	s.CORS = m(s.CORS)
 }
 
@@ -88,6 +93,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountRegisterCollectionHandler(mux, h.RegisterCollection)
 	MountRegisterTaskStateHandler(mux, h.RegisterTaskState)
+	MountGetTaskHistoryHandler(mux, h.GetTaskHistory)
 	MountCORSHandler(mux, h.CORS)
 }
 
@@ -213,12 +219,64 @@ func NewRegisterTaskStateHandler(
 	})
 }
 
+// MountGetTaskHistoryHandler configures the mux to serve the "collection"
+// service "getTaskHistory" endpoint.
+func MountGetTaskHistoryHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := HandleCollectionOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/openapi/collection/{taskId}/history", f)
+}
+
+// NewGetTaskHistoryHandler creates a HTTP handler which loads the HTTP request
+// and calls the "collection" service "getTaskHistory" endpoint.
+func NewGetTaskHistoryHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetTaskHistoryRequest(mux, decoder)
+		encodeResponse = EncodeGetTaskHistoryResponse(encoder)
+		encodeError    = EncodeGetTaskHistoryError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "getTaskHistory")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "collection")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
 // MountCORSHandler configures the mux to serve the CORS endpoints for the
 // service collection.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	h = HandleCollectionOrigin(h)
 	mux.Handle("OPTIONS", "/openapi/collection/register", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/collection/start/{taskId}/state", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/openapi/collection/{taskId}/history", h.ServeHTTP)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

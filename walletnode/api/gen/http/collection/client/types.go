@@ -50,6 +50,10 @@ type RegisterTaskStateResponseBody struct {
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 }
 
+// GetTaskHistoryResponseBody is the type of the "collection" service
+// "getTaskHistory" endpoint HTTP response body.
+type GetTaskHistoryResponseBody []*TaskHistoryResponse
+
 // RegisterCollectionBadRequestResponseBody is the type of the "collection"
 // service "registerCollection" endpoint HTTP response body for the
 // "BadRequest" error.
@@ -143,6 +147,63 @@ type RegisterTaskStateInternalServerErrorResponseBody struct {
 	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
 	// Is the error a server-side fault?
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetTaskHistoryNotFoundResponseBody is the type of the "collection" service
+// "getTaskHistory" endpoint HTTP response body for the "NotFound" error.
+type GetTaskHistoryNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetTaskHistoryInternalServerErrorResponseBody is the type of the
+// "collection" service "getTaskHistory" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetTaskHistoryInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// TaskHistoryResponse is used to define fields on response body types.
+type TaskHistoryResponse struct {
+	// Timestamp of the status creation
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	// past status string
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// message string (if any)
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// details of the status
+	Details *DetailsResponse `form:"details,omitempty" json:"details,omitempty" xml:"details,omitempty"`
+}
+
+// DetailsResponse is used to define fields on response body types.
+type DetailsResponse struct {
+	// details regarding the status
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// important fields regarding status history
+	Fields map[string]interface{} `form:"fields,omitempty" json:"fields,omitempty" xml:"fields,omitempty"`
 }
 
 // NewRegisterCollectionRequestBody builds the HTTP request body from the
@@ -256,6 +317,47 @@ func NewRegisterTaskStateNotFound(body *RegisterTaskStateNotFoundResponseBody) *
 // NewRegisterTaskStateInternalServerError builds a collection service
 // registerTaskState endpoint InternalServerError error.
 func NewRegisterTaskStateInternalServerError(body *RegisterTaskStateInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetTaskHistoryTaskHistoryOK builds a "collection" service
+// "getTaskHistory" endpoint result from a HTTP "OK" response.
+func NewGetTaskHistoryTaskHistoryOK(body []*TaskHistoryResponse) []*collection.TaskHistory {
+	v := make([]*collection.TaskHistory, len(body))
+	for i, val := range body {
+		v[i] = unmarshalTaskHistoryResponseToCollectionTaskHistory(val)
+	}
+
+	return v
+}
+
+// NewGetTaskHistoryNotFound builds a collection service getTaskHistory
+// endpoint NotFound error.
+func NewGetTaskHistoryNotFound(body *GetTaskHistoryNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetTaskHistoryInternalServerError builds a collection service
+// getTaskHistory endpoint InternalServerError error.
+func NewGetTaskHistoryInternalServerError(body *GetTaskHistoryInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -401,6 +503,63 @@ func ValidateRegisterTaskStateInternalServerErrorResponseBody(body *RegisterTask
 	}
 	if body.Fault == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetTaskHistoryNotFoundResponseBody runs the validations defined on
+// getTaskHistory_NotFound_response_body
+func ValidateGetTaskHistoryNotFoundResponseBody(body *GetTaskHistoryNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetTaskHistoryInternalServerErrorResponseBody runs the validations
+// defined on getTaskHistory_InternalServerError_response_body
+func ValidateGetTaskHistoryInternalServerErrorResponseBody(body *GetTaskHistoryInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateTaskHistoryResponse runs the validations defined on
+// TaskHistoryResponse
+func ValidateTaskHistoryResponse(body *TaskHistoryResponse) (err error) {
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	return
 }

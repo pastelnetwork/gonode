@@ -15,6 +15,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	collection "github.com/pastelnetwork/gonode/walletnode/api/gen/collection"
 	collectionviews "github.com/pastelnetwork/gonode/walletnode/api/gen/collection/views"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
@@ -193,4 +194,120 @@ func EncodeRegisterTaskStateError(encoder func(context.Context, http.ResponseWri
 			return encodeError(ctx, w, v)
 		}
 	}
+}
+
+// EncodeGetTaskHistoryResponse returns an encoder for responses returned by
+// the collection getTaskHistory endpoint.
+func EncodeGetTaskHistoryResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res, _ := v.([]*collection.TaskHistory)
+		enc := encoder(ctx, w)
+		body := NewGetTaskHistoryResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetTaskHistoryRequest returns a decoder for requests sent to the
+// collection getTaskHistory endpoint.
+func DecodeGetTaskHistoryRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			taskID string
+			err    error
+
+			params = mux.Vars(r)
+		)
+		taskID = params["taskId"]
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetTaskHistoryPayload(taskID)
+
+		return payload, nil
+	}
+}
+
+// EncodeGetTaskHistoryError returns an encoder for errors returned by the
+// getTaskHistory collection endpoint.
+func EncodeGetTaskHistoryError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en ErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "NotFound":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetTaskHistoryNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetTaskHistoryInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// marshalCollectionTaskHistoryToTaskHistoryResponse builds a value of type
+// *TaskHistoryResponse from a value of type *collection.TaskHistory.
+func marshalCollectionTaskHistoryToTaskHistoryResponse(v *collection.TaskHistory) *TaskHistoryResponse {
+	res := &TaskHistoryResponse{
+		Timestamp: v.Timestamp,
+		Status:    v.Status,
+		Message:   v.Message,
+	}
+	if v.Details != nil {
+		res.Details = marshalCollectionDetailsToDetailsResponse(v.Details)
+	}
+
+	return res
+}
+
+// marshalCollectionDetailsToDetailsResponse builds a value of type
+// *DetailsResponse from a value of type *collection.Details.
+func marshalCollectionDetailsToDetailsResponse(v *collection.Details) *DetailsResponse {
+	if v == nil {
+		return nil
+	}
+	res := &DetailsResponse{
+		Message: v.Message,
+	}
+	if v.Fields != nil {
+		res.Fields = make(map[string]interface{}, len(v.Fields))
+		for key, val := range v.Fields {
+			tk := key
+			tv := val
+			res.Fields[tk] = tv
+		}
+	}
+
+	return res
 }
