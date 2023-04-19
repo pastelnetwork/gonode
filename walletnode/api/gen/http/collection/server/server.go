@@ -21,6 +21,7 @@ import (
 type Server struct {
 	Mounts             []*MountPoint
 	RegisterCollection http.Handler
+	RegisterTaskState  http.Handler
 	CORS               http.Handler
 }
 
@@ -54,13 +55,21 @@ func New(
 	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
+	upgrader goahttp.Upgrader,
+	configurer *ConnConfigurer,
 ) *Server {
+	if configurer == nil {
+		configurer = &ConnConfigurer{}
+	}
 	return &Server{
 		Mounts: []*MountPoint{
 			{"RegisterCollection", "GET", "/openapi/collection/register"},
+			{"RegisterTaskState", "GET", "/openapi/collection/start/{taskId}/state"},
 			{"CORS", "OPTIONS", "/openapi/collection/register"},
+			{"CORS", "OPTIONS", "/openapi/collection/start/{taskId}/state"},
 		},
 		RegisterCollection: NewRegisterCollectionHandler(e.RegisterCollection, mux, decoder, encoder, errhandler, formatter),
+		RegisterTaskState:  NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
 		CORS:               NewCORSHandler(),
 	}
 }
@@ -71,12 +80,14 @@ func (s *Server) Service() string { return "collection" }
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.RegisterCollection = m(s.RegisterCollection)
+	s.RegisterTaskState = m(s.RegisterTaskState)
 	s.CORS = m(s.CORS)
 }
 
 // Mount configures the mux to serve the collection endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountRegisterCollectionHandler(mux, h.RegisterCollection)
+	MountRegisterTaskStateHandler(mux, h.RegisterTaskState)
 	MountCORSHandler(mux, h.CORS)
 }
 
@@ -136,11 +147,78 @@ func NewRegisterCollectionHandler(
 	})
 }
 
+// MountRegisterTaskStateHandler configures the mux to serve the "collection"
+// service "registerTaskState" endpoint.
+func MountRegisterTaskStateHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := HandleCollectionOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/openapi/collection/start/{taskId}/state", f)
+}
+
+// NewRegisterTaskStateHandler creates a HTTP handler which loads the HTTP
+// request and calls the "collection" service "registerTaskState" endpoint.
+func NewRegisterTaskStateHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+	upgrader goahttp.Upgrader,
+	configurer goahttp.ConnConfigureFunc,
+) http.Handler {
+	var (
+		decodeRequest = DecodeRegisterTaskStateRequest(mux, decoder)
+		encodeError   = EncodeRegisterTaskStateError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "registerTaskState")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "collection")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		v := &collection.RegisterTaskStateEndpointInput{
+			Stream: &RegisterTaskStateServerStream{
+				upgrader:   upgrader,
+				configurer: configurer,
+				cancel:     cancel,
+				w:          w,
+				r:          r,
+			},
+			Payload: payload.(*collection.RegisterTaskStatePayload),
+		}
+		_, err = endpoint(ctx, v)
+		if err != nil {
+			if _, werr := w.Write(nil); werr == http.ErrHijacked {
+				// Response writer has been hijacked, do not encode the error
+				errhandler(ctx, w, err)
+				return
+			}
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+	})
+}
+
 // MountCORSHandler configures the mux to serve the CORS endpoints for the
 // service collection.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	h = HandleCollectionOrigin(h)
 	mux.Handle("OPTIONS", "/openapi/collection/register", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/openapi/collection/start/{taskId}/state", h.ServeHTTP)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

@@ -17,6 +17,17 @@ import (
 // Endpoints wraps the "collection" service endpoints.
 type Endpoints struct {
 	RegisterCollection goa.Endpoint
+	RegisterTaskState  goa.Endpoint
+}
+
+// RegisterTaskStateEndpointInput holds both the payload and the server stream
+// of the "registerTaskState" method.
+type RegisterTaskStateEndpointInput struct {
+	// Payload is the method payload.
+	Payload *RegisterTaskStatePayload
+	// Stream is the server stream used by the "registerTaskState" method to send
+	// data.
+	Stream RegisterTaskStateServerStream
 }
 
 // NewEndpoints wraps the methods of the "collection" service with endpoints.
@@ -25,12 +36,14 @@ func NewEndpoints(s Service) *Endpoints {
 	a := s.(Auther)
 	return &Endpoints{
 		RegisterCollection: NewRegisterCollectionEndpoint(s, a.APIKeyAuth),
+		RegisterTaskState:  NewRegisterTaskStateEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "collection" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.RegisterCollection = m(e.RegisterCollection)
+	e.RegisterTaskState = m(e.RegisterTaskState)
 }
 
 // NewRegisterCollectionEndpoint returns an endpoint function that calls the
@@ -58,5 +71,14 @@ func NewRegisterCollectionEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFu
 		}
 		vres := NewViewedRegisterCollectionResponse(res, "default")
 		return vres, nil
+	}
+}
+
+// NewRegisterTaskStateEndpoint returns an endpoint function that calls the
+// method "registerTaskState" of service "collection".
+func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		ep := req.(*RegisterTaskStateEndpointInput)
+		return nil, s.RegisterTaskState(ctx, ep.Payload, ep.Stream)
 	}
 }

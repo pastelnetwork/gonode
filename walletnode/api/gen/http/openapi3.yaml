@@ -1520,6 +1520,47 @@ paths:
                                 $ref: '#/components/schemas/Error'
             security:
                 - api_key_header_Authorization: []
+    /openapi/collection/start/{taskId}/state:
+        get:
+            tags:
+                - collection
+            summary: Streams state by task ID
+            description: Streams the state of the registration process.
+            operationId: collection#registerTaskState
+            parameters:
+                - name: taskId
+                  in: path
+                  description: Task ID of the registration process
+                  required: true
+                  schema:
+                    type: string
+                    description: Task ID of the registration process
+                    example: n6Qn6TFM
+                    minLength: 8
+                    maxLength: 8
+                  example: n6Qn6TFM
+            responses:
+                "101":
+                    description: Switching Protocols response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TaskState'
+                            example:
+                                date: 2006-01-02T15:04:05Z07:00
+                                status: Task Started
+                "404":
+                    description: 'NotFound: Not Found response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                "500":
+                    description: 'InternalServerError: Internal Server Error response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
     /openapi/sense/{taskId}/history:
         get:
             tags:
