@@ -19,6 +19,8 @@ import (
 type Service interface {
 	// Streams the state of the registration process.
 	RegisterCollection(context.Context, *RegisterCollectionPayload) (res *RegisterCollectionResponse, err error)
+	// Streams the state of the registration process.
+	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -35,7 +37,23 @@ const ServiceName = "collection"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [1]string{"registerCollection"}
+var MethodNames = [2]string{"registerCollection", "registerTaskState"}
+
+// RegisterTaskStateServerStream is the interface a "registerTaskState"
+// endpoint server stream must satisfy.
+type RegisterTaskStateServerStream interface {
+	// Send streams instances of "TaskState".
+	Send(*TaskState) error
+	// Close closes the stream.
+	Close() error
+}
+
+// RegisterTaskStateClientStream is the interface a "registerTaskState"
+// endpoint client stream must satisfy.
+type RegisterTaskStateClientStream interface {
+	// Recv reads instances of "TaskState" from the stream.
+	Recv() (*TaskState, error)
+}
 
 // RegisterCollectionPayload is the payload type of the collection service
 // registerCollection method.
@@ -65,6 +83,22 @@ type RegisterCollectionPayload struct {
 type RegisterCollectionResponse struct {
 	// Uploaded file ID
 	TaskID string
+}
+
+// RegisterTaskStatePayload is the payload type of the collection service
+// registerTaskState method.
+type RegisterTaskStatePayload struct {
+	// Task ID of the registration process
+	TaskID string
+}
+
+// TaskState is the result type of the collection service registerTaskState
+// method.
+type TaskState struct {
+	// Date of the status creation
+	Date string
+	// Status of the registration process
+	Status string
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.

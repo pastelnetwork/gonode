@@ -41,6 +41,23 @@ var _ = Service("collection", func() {
 			Response(StatusOK)
 		})
 	})
+
+	Method("registerTaskState", func() {
+		Description("Streams the state of the registration process.")
+		Meta("swagger:summary", "Streams state by task ID")
+
+		Payload(func() {
+			Extend(RegisterTaskPayload)
+		})
+		StreamingResult(RegisterTaskState)
+
+		HTTP(func() {
+			GET("/start/{taskId}/state")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
 })
 
 // RegisterCollectionPayload represents a payload for registering collection.

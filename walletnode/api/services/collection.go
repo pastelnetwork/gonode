@@ -2,6 +2,10 @@ package services
 
 import (
 	"context"
+	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
@@ -28,6 +32,8 @@ func (service *CollectionAPIHandler) Mount(ctx context.Context, mux goahttp.Muxe
 		goahttp.ResponseEncoder,
 		api.ErrorHandler,
 		nil,
+		&websocket.Upgrader{},
+		nil,
 	)
 	server.Mount(mux, srv)
 
@@ -52,4 +58,44 @@ func (service *CollectionAPIHandler) RegisterCollection(ctx context.Context, p *
 	log.Infof("task has been added: %s", taskID)
 
 	return res, nil
+}
+
+// RegisterTaskState - Registers a task state
+func (service *CollectionAPIHandler) RegisterTaskState(ctx context.Context, p *collection.RegisterTaskStatePayload, stream collection.RegisterTaskStateServerStream) (err error) {
+	defer stream.Close()
+
+	task := service.register.GetTask(p.TaskID)
+	if task == nil {
+		log.Error("unable to get task")
+		return cascade.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+	}
+
+	sub := task.SubscribeStatus()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case status := <-sub():
+			res := &collection.TaskState{
+				Date:   status.CreatedAt.Format(time.RFC3339),
+				Status: status.String(),
+			}
+			if err := stream.Send(res); err != nil {
+				return cascade.MakeInternalServerError(err)
+			}
+
+			if status.IsFailure() {
+				if task.Error() != nil {
+					errStr := task.Error()
+					log.WithContext(ctx).WithError(errStr).Errorf("error registering cascade")
+				}
+
+			}
+
+			if status.IsFinal() {
+				return nil
+			}
+		}
+	}
 }

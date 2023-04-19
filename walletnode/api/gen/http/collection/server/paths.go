@@ -7,7 +7,16 @@
 
 package server
 
+import (
+	"fmt"
+)
+
 // RegisterCollectionCollectionPath returns the URL path to the collection service registerCollection HTTP endpoint.
 func RegisterCollectionCollectionPath() string {
 	return "/openapi/collection/register"
+}
+
+// RegisterTaskStateCollectionPath returns the URL path to the collection service registerTaskState HTTP endpoint.
+func RegisterTaskStateCollectionPath(taskID string) string {
+	return fmt.Sprintf("/openapi/collection/start/%v/state", taskID)
 }

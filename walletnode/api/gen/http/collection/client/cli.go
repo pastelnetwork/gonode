@@ -83,3 +83,26 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 
 	return v, nil
 }
+
+// BuildRegisterTaskStatePayload builds the payload for the collection
+// registerTaskState endpoint from CLI flags.
+func BuildRegisterTaskStatePayload(collectionRegisterTaskStateTaskID string) (*collection.RegisterTaskStatePayload, error) {
+	var err error
+	var taskID string
+	{
+		taskID = collectionRegisterTaskStateTaskID
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &collection.RegisterTaskStatePayload{}
+	v.TaskID = taskID
+
+	return v, nil
+}

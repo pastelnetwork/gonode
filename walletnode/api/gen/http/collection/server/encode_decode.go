@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	collectionviews "github.com/pastelnetwork/gonode/walletnode/api/gen/collection/views"
 	goahttp "goa.design/goa/v3/http"
@@ -116,6 +117,74 @@ func EncodeRegisterCollectionError(encoder func(context.Context, http.ResponseWr
 				body = formatter(res)
 			} else {
 				body = NewRegisterCollectionInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// DecodeRegisterTaskStateRequest returns a decoder for requests sent to the
+// collection registerTaskState endpoint.
+func DecodeRegisterTaskStateRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			taskID string
+			err    error
+
+			params = mux.Vars(r)
+		)
+		taskID = params["taskId"]
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewRegisterTaskStatePayload(taskID)
+
+		return payload, nil
+	}
+}
+
+// EncodeRegisterTaskStateError returns an encoder for errors returned by the
+// registerTaskState collection endpoint.
+func EncodeRegisterTaskStateError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en ErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "NotFound":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewRegisterTaskStateNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewRegisterTaskStateInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.ErrorName())
 			w.WriteHeader(http.StatusInternalServerError)

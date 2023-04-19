@@ -16,12 +16,14 @@ import (
 // Client is the "collection" service client.
 type Client struct {
 	RegisterCollectionEndpoint goa.Endpoint
+	RegisterTaskStateEndpoint  goa.Endpoint
 }
 
 // NewClient initializes a "collection" service client given the endpoints.
-func NewClient(registerCollection goa.Endpoint) *Client {
+func NewClient(registerCollection, registerTaskState goa.Endpoint) *Client {
 	return &Client{
 		RegisterCollectionEndpoint: registerCollection,
+		RegisterTaskStateEndpoint:  registerTaskState,
 	}
 }
 
@@ -34,4 +36,15 @@ func (c *Client) RegisterCollection(ctx context.Context, p *RegisterCollectionPa
 		return
 	}
 	return ires.(*RegisterCollectionResponse), nil
+}
+
+// RegisterTaskState calls the "registerTaskState" endpoint of the "collection"
+// service.
+func (c *Client) RegisterTaskState(ctx context.Context, p *RegisterTaskStatePayload) (res RegisterTaskStateClientStream, err error) {
+	var ires interface{}
+	ires, err = c.RegisterTaskStateEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(RegisterTaskStateClientStream), nil
 }

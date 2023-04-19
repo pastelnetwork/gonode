@@ -43,6 +43,15 @@ type RegisterCollectionResponseBody struct {
 	TaskID string `form:"task_id" json:"task_id" xml:"task_id"`
 }
 
+// RegisterTaskStateResponseBody is the type of the "collection" service
+// "registerTaskState" endpoint HTTP response body.
+type RegisterTaskStateResponseBody struct {
+	// Date of the status creation
+	Date string `form:"date" json:"date" xml:"date"`
+	// Status of the registration process
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
 // RegisterCollectionBadRequestResponseBody is the type of the "collection"
 // service "registerCollection" endpoint HTTP response body for the
 // "BadRequest" error.
@@ -100,11 +109,59 @@ type RegisterCollectionInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// RegisterTaskStateNotFoundResponseBody is the type of the "collection"
+// service "registerTaskState" endpoint HTTP response body for the "NotFound"
+// error.
+type RegisterTaskStateNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterTaskStateInternalServerErrorResponseBody is the type of the
+// "collection" service "registerTaskState" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterTaskStateInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // NewRegisterCollectionResponseBody builds the HTTP response body from the
 // result of the "registerCollection" endpoint of the "collection" service.
 func NewRegisterCollectionResponseBody(res *collectionviews.RegisterCollectionResponseView) *RegisterCollectionResponseBody {
 	body := &RegisterCollectionResponseBody{
 		TaskID: *res.TaskID,
+	}
+	return body
+}
+
+// NewRegisterTaskStateResponseBody builds the HTTP response body from the
+// result of the "registerTaskState" endpoint of the "collection" service.
+func NewRegisterTaskStateResponseBody(res *collection.TaskState) *RegisterTaskStateResponseBody {
+	body := &RegisterTaskStateResponseBody{
+		Date:   res.Date,
+		Status: res.Status,
 	}
 	return body
 }
@@ -153,6 +210,35 @@ func NewRegisterCollectionInternalServerErrorResponseBody(res *goa.ServiceError)
 	return body
 }
 
+// NewRegisterTaskStateNotFoundResponseBody builds the HTTP response body from
+// the result of the "registerTaskState" endpoint of the "collection" service.
+func NewRegisterTaskStateNotFoundResponseBody(res *goa.ServiceError) *RegisterTaskStateNotFoundResponseBody {
+	body := &RegisterTaskStateNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterTaskStateInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "registerTaskState" endpoint of the "collection"
+// service.
+func NewRegisterTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterTaskStateInternalServerErrorResponseBody {
+	body := &RegisterTaskStateInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewRegisterCollectionPayload builds a collection service registerCollection
 // endpoint payload.
 func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *string) *collection.RegisterCollectionPayload {
@@ -175,6 +261,15 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 		v.CollectionFinalAllowedBlockHeight = 7
 	}
 	v.Key = key
+
+	return v
+}
+
+// NewRegisterTaskStatePayload builds a collection service registerTaskState
+// endpoint payload.
+func NewRegisterTaskStatePayload(taskID string) *collection.RegisterTaskStatePayload {
+	v := &collection.RegisterTaskStatePayload{}
+	v.TaskID = taskID
 
 	return v
 }
