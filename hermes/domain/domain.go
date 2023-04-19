@@ -27,6 +27,7 @@ type DDFingerprints struct {
 	OpenAPIGroupIDString                       string `json:"open_api_group_id_string,omitempty"`
 	CollectionNameString                       string `json:"collection_name_string,omitempty"`
 	DoesNotImpactTheFollowingCollectionsString string `json:"does_not_impact_the_following_collection_strings,omitempty"`
+	RegTXID                                    string `json:"registration_ticket_txid"`
 }
 
 // SnScore is domain representation of Sn score record

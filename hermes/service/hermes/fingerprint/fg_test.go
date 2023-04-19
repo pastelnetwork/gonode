@@ -57,7 +57,7 @@ func TestGetEmptyFingerprint(t *testing.T) {
 
 	emptyFp, err := ddStore.GetLatestFingerprints(context.Background())
 	assert.True(t, emptyFp == nil)
-	assert.Equal(t, err.Error(), "dd database is empty")
+	assert.Equal(t, "dd database is empty", err.Error())
 }
 
 func TestSetFingerprint(t *testing.T) {
