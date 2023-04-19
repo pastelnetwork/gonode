@@ -27,6 +27,10 @@ type Client struct {
 	// registerTaskState endpoint.
 	RegisterTaskStateDoer goahttp.Doer
 
+	// GetTaskHistory Doer is the HTTP client used to make requests to the
+	// getTaskHistory endpoint.
+	GetTaskHistoryDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -59,6 +63,7 @@ func NewClient(
 	return &Client{
 		RegisterCollectionDoer: doer,
 		RegisterTaskStateDoer:  doer,
+		GetTaskHistoryDoer:     doer,
 		CORSDoer:               doer,
 		RestoreResponseBody:    restoreBody,
 		scheme:                 scheme,
@@ -129,5 +134,24 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		}()
 		stream := &RegisterTaskStateClientStream{conn: conn}
 		return stream, nil
+	}
+}
+
+// GetTaskHistory returns an endpoint that makes HTTP requests to the
+// collection service getTaskHistory server.
+func (c *Client) GetTaskHistory() goa.Endpoint {
+	var (
+		decodeResponse = DecodeGetTaskHistoryResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildGetTaskHistoryRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetTaskHistoryDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("collection", "getTaskHistory", err)
+		}
+		return decodeResponse(resp)
 	}
 }

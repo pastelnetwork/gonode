@@ -17,13 +17,15 @@ import (
 type Client struct {
 	RegisterCollectionEndpoint goa.Endpoint
 	RegisterTaskStateEndpoint  goa.Endpoint
+	GetTaskHistoryEndpoint     goa.Endpoint
 }
 
 // NewClient initializes a "collection" service client given the endpoints.
-func NewClient(registerCollection, registerTaskState goa.Endpoint) *Client {
+func NewClient(registerCollection, registerTaskState, getTaskHistory goa.Endpoint) *Client {
 	return &Client{
 		RegisterCollectionEndpoint: registerCollection,
 		RegisterTaskStateEndpoint:  registerTaskState,
+		GetTaskHistoryEndpoint:     getTaskHistory,
 	}
 }
 
@@ -47,4 +49,15 @@ func (c *Client) RegisterTaskState(ctx context.Context, p *RegisterTaskStatePayl
 		return
 	}
 	return ires.(RegisterTaskStateClientStream), nil
+}
+
+// GetTaskHistory calls the "getTaskHistory" endpoint of the "collection"
+// service.
+func (c *Client) GetTaskHistory(ctx context.Context, p *GetTaskHistoryPayload) (res []*TaskHistory, err error) {
+	var ires interface{}
+	ires, err = c.GetTaskHistoryEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.([]*TaskHistory), nil
 }

@@ -20,3 +20,8 @@ func RegisterCollectionCollectionPath() string {
 func RegisterTaskStateCollectionPath(taskID string) string {
 	return fmt.Sprintf("/openapi/collection/start/%v/state", taskID)
 }
+
+// GetTaskHistoryCollectionPath returns the URL path to the collection service getTaskHistory HTTP endpoint.
+func GetTaskHistoryCollectionPath(taskID string) string {
+	return fmt.Sprintf("/openapi/collection/%v/history", taskID)
+}

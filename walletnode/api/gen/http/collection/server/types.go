@@ -52,6 +52,10 @@ type RegisterTaskStateResponseBody struct {
 	Status string `form:"status" json:"status" xml:"status"`
 }
 
+// GetTaskHistoryResponseBody is the type of the "collection" service
+// "getTaskHistory" endpoint HTTP response body.
+type GetTaskHistoryResponseBody []*TaskHistoryResponse
+
 // RegisterCollectionBadRequestResponseBody is the type of the "collection"
 // service "registerCollection" endpoint HTTP response body for the
 // "BadRequest" error.
@@ -147,6 +151,63 @@ type RegisterTaskStateInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// GetTaskHistoryNotFoundResponseBody is the type of the "collection" service
+// "getTaskHistory" endpoint HTTP response body for the "NotFound" error.
+type GetTaskHistoryNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// GetTaskHistoryInternalServerErrorResponseBody is the type of the
+// "collection" service "getTaskHistory" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetTaskHistoryInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// TaskHistoryResponse is used to define fields on response body types.
+type TaskHistoryResponse struct {
+	// Timestamp of the status creation
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	// past status string
+	Status string `form:"status" json:"status" xml:"status"`
+	// message string (if any)
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// details of the status
+	Details *DetailsResponse `form:"details,omitempty" json:"details,omitempty" xml:"details,omitempty"`
+}
+
+// DetailsResponse is used to define fields on response body types.
+type DetailsResponse struct {
+	// details regarding the status
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// important fields regarding status history
+	Fields map[string]interface{} `form:"fields,omitempty" json:"fields,omitempty" xml:"fields,omitempty"`
+}
+
 // NewRegisterCollectionResponseBody builds the HTTP response body from the
 // result of the "registerCollection" endpoint of the "collection" service.
 func NewRegisterCollectionResponseBody(res *collectionviews.RegisterCollectionResponseView) *RegisterCollectionResponseBody {
@@ -162,6 +223,16 @@ func NewRegisterTaskStateResponseBody(res *collection.TaskState) *RegisterTaskSt
 	body := &RegisterTaskStateResponseBody{
 		Date:   res.Date,
 		Status: res.Status,
+	}
+	return body
+}
+
+// NewGetTaskHistoryResponseBody builds the HTTP response body from the result
+// of the "getTaskHistory" endpoint of the "collection" service.
+func NewGetTaskHistoryResponseBody(res []*collection.TaskHistory) GetTaskHistoryResponseBody {
+	body := make([]*TaskHistoryResponse, len(res))
+	for i, val := range res {
+		body[i] = marshalCollectionTaskHistoryToTaskHistoryResponse(val)
 	}
 	return body
 }
@@ -239,6 +310,35 @@ func NewRegisterTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) 
 	return body
 }
 
+// NewGetTaskHistoryNotFoundResponseBody builds the HTTP response body from the
+// result of the "getTaskHistory" endpoint of the "collection" service.
+func NewGetTaskHistoryNotFoundResponseBody(res *goa.ServiceError) *GetTaskHistoryNotFoundResponseBody {
+	body := &GetTaskHistoryNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetTaskHistoryInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "getTaskHistory" endpoint of the "collection"
+// service.
+func NewGetTaskHistoryInternalServerErrorResponseBody(res *goa.ServiceError) *GetTaskHistoryInternalServerErrorResponseBody {
+	body := &GetTaskHistoryInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewRegisterCollectionPayload builds a collection service registerCollection
 // endpoint payload.
 func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *string) *collection.RegisterCollectionPayload {
@@ -269,6 +369,15 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 // endpoint payload.
 func NewRegisterTaskStatePayload(taskID string) *collection.RegisterTaskStatePayload {
 	v := &collection.RegisterTaskStatePayload{}
+	v.TaskID = taskID
+
+	return v
+}
+
+// NewGetTaskHistoryPayload builds a collection service getTaskHistory endpoint
+// payload.
+func NewGetTaskHistoryPayload(taskID string) *collection.GetTaskHistoryPayload {
+	v := &collection.GetTaskHistoryPayload{}
 	v.TaskID = taskID
 
 	return v

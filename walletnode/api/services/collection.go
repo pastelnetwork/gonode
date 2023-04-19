@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/collection"
@@ -67,7 +68,7 @@ func (service *CollectionAPIHandler) RegisterTaskState(ctx context.Context, p *c
 	task := service.register.GetTask(p.TaskID)
 	if task == nil {
 		log.Error("unable to get task")
-		return cascade.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+		return collection.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
 	sub := task.SubscribeStatus()
@@ -82,7 +83,7 @@ func (service *CollectionAPIHandler) RegisterTaskState(ctx context.Context, p *c
 				Status: status.String(),
 			}
 			if err := stream.Send(res); err != nil {
-				return cascade.MakeInternalServerError(err)
+				return collection.MakeInternalServerError(err)
 			}
 
 			if status.IsFailure() {
@@ -98,4 +99,37 @@ func (service *CollectionAPIHandler) RegisterTaskState(ctx context.Context, p *c
 			}
 		}
 	}
+}
+
+// GetTaskHistory - Gets a task's history
+func (service *CollectionAPIHandler) GetTaskHistory(ctx context.Context, p *collection.GetTaskHistoryPayload) (history []*collection.TaskHistory, err error) {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		return nil, collection.MakeInternalServerError(errors.New("error retrieving status"))
+	}
+	defer store.CloseHistoryDB(ctx)
+
+	statuses, err := store.QueryTaskHistory(p.TaskID)
+	if err != nil {
+		return nil, collection.MakeNotFound(errors.New("task not found"))
+	}
+
+	for _, entry := range statuses {
+		timestamp := entry.CreatedAt.String()
+		historyItem := &collection.TaskHistory{
+			Timestamp: &timestamp,
+			Status:    entry.Status,
+		}
+
+		if entry.Details != nil {
+			historyItem.Details = &collection.Details{
+				Message: &entry.Details.Message,
+				Fields:  entry.Details.Fields,
+			}
+		}
+
+		history = append(history, historyItem)
+	}
+
+	return history, nil
 }

@@ -106,3 +106,26 @@ func BuildRegisterTaskStatePayload(collectionRegisterTaskStateTaskID string) (*c
 
 	return v, nil
 }
+
+// BuildGetTaskHistoryPayload builds the payload for the collection
+// getTaskHistory endpoint from CLI flags.
+func BuildGetTaskHistoryPayload(collectionGetTaskHistoryTaskID string) (*collection.GetTaskHistoryPayload, error) {
+	var err error
+	var taskID string
+	{
+		taskID = collectionGetTaskHistoryTaskID
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &collection.GetTaskHistoryPayload{}
+	v.TaskID = taskID
+
+	return v, nil
+}

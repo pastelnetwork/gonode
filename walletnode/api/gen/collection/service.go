@@ -21,6 +21,8 @@ type Service interface {
 	RegisterCollection(context.Context, *RegisterCollectionPayload) (res *RegisterCollectionResponse, err error)
 	// Streams the state of the registration process.
 	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
+	// Gets the history of the task's states.
+	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res []*TaskHistory, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -37,7 +39,7 @@ const ServiceName = "collection"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"registerCollection", "registerTaskState"}
+var MethodNames = [3]string{"registerCollection", "registerTaskState", "getTaskHistory"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -53,6 +55,20 @@ type RegisterTaskStateServerStream interface {
 type RegisterTaskStateClientStream interface {
 	// Recv reads instances of "TaskState" from the stream.
 	Recv() (*TaskState, error)
+}
+
+type Details struct {
+	// details regarding the status
+	Message *string
+	// important fields regarding status history
+	Fields map[string]interface{}
+}
+
+// GetTaskHistoryPayload is the payload type of the collection service
+// getTaskHistory method.
+type GetTaskHistoryPayload struct {
+	// Task ID of the registration process
+	TaskID string
 }
 
 // RegisterCollectionPayload is the payload type of the collection service
@@ -90,6 +106,17 @@ type RegisterCollectionResponse struct {
 type RegisterTaskStatePayload struct {
 	// Task ID of the registration process
 	TaskID string
+}
+
+type TaskHistory struct {
+	// Timestamp of the status creation
+	Timestamp *string
+	// past status string
+	Status string
+	// message string (if any)
+	Message *string
+	// details of the status
+	Details *Details
 }
 
 // TaskState is the result type of the collection service registerTaskState

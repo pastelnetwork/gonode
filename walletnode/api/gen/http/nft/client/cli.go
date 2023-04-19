@@ -217,7 +217,7 @@ func BuildUploadImagePayload(nftUploadImageBody string) (*nft.UploadImagePayload
 	{
 		err = json.Unmarshal([]byte(nftUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VmVybyBlbmltIG1hZ25pIHZvbHVwdGF0ZSBwZXJzcGljaWF0aXMgaXBzYSB0b3RhbS4=\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"RGVzZXJ1bnQgaXBzYSBwZXJzcGljaWF0aXMu\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))

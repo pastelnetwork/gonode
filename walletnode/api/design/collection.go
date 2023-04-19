@@ -58,6 +58,23 @@ var _ = Service("collection", func() {
 			Response(StatusOK)
 		})
 	})
+
+	Method("getTaskHistory", func() {
+		Description("Gets the history of the task's states.")
+		Meta("swagger:summary", "Get history of states as a json string with a list of state objects.")
+
+		Payload(func() {
+			Extend(RegisterTaskPayload)
+		})
+		Result(ArrayOf(TaskHistory))
+
+		HTTP(func() {
+			GET("/{taskId}/history")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
 })
 
 // RegisterCollectionPayload represents a payload for registering collection.
