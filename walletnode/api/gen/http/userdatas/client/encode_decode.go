@@ -71,9 +71,9 @@ func NewUserdatasCreateUserdataEncoder(encoderFn UserdatasCreateUserdataEncoderF
 // userdatas createUserdata endpoint. restoreBody controls whether the response
 // body should be restored after having been read.
 // DecodeCreateUserdataResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeCreateUserdataResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -191,9 +191,9 @@ func NewUserdatasUpdateUserdataEncoder(encoderFn UserdatasUpdateUserdataEncoderF
 // userdatas updateUserdata endpoint. restoreBody controls whether the response
 // body should be restored after having been read.
 // DecodeUpdateUserdataResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeUpdateUserdataResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -288,10 +288,10 @@ func (c *Client) BuildGetUserdataRequest(ctx context.Context, v interface{}) (*h
 // userdatas getUserdata endpoint. restoreBody controls whether the response
 // body should be restored after having been read.
 // DecodeGetUserdataResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeGetUserdataResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
