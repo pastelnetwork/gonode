@@ -164,7 +164,8 @@ func (s *Store) Delete(ctx context.Context, key []byte) {
 	}
 }
 
-func (s *Store) UpdateKeyReplication(ctx context.Context, key []byte) error {
+// UpdateKeyReplication updates the replication time for a key
+func (s *Store) UpdateKeyReplication(_ context.Context, key []byte) error {
 	s.rwMtx.Lock()
 	defer s.rwMtx.Unlock()
 

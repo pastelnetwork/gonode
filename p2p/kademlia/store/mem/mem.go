@@ -33,7 +33,7 @@ func (s *Store) GetKeysForReplication(_ context.Context) [][]byte {
 }
 
 // UpdateKeyReplication updates the replication status of the key
-func (s *Store) UpdateKeyReplication(ctx context.Context, key []byte) error {
+func (s *Store) UpdateKeyReplication(_ context.Context, _ []byte) error {
 	return nil
 }
 
