@@ -112,6 +112,14 @@ func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
 	s.rwMtx.Lock()
 	defer s.rwMtx.Unlock()
 
+	if len(key) == 0 {
+		return fmt.Errorf("key cannot be empty")
+	}
+
+	if len(value) == 0 {
+		return fmt.Errorf("value cannot be empty")
+	}
+
 	hkey := hex.EncodeToString(key)
 
 	now := time.Now().UTC()
