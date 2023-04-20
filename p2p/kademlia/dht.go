@@ -25,7 +25,7 @@ var (
 	defaultNetworkPort = 4445
 	defaultRefreshTime = time.Second * 3600
 	defaultPingTime    = time.Second * 10
-	defaultUpdateTime  = time.Minute * 10 // FIXME : not sure how many is enough - but 1 is too small
+	defaultUpdateTime  = time.Minute * 10
 )
 
 // DHT represents the state of the local node in the distributed hash table
@@ -146,7 +146,7 @@ func (s *DHT) StartReplication(ctx context.Context) error {
 
 	for {
 		select {
-		case <-time.After(10 * time.Minute):
+		case <-time.After(defaultUpdateTime):
 			s.Replicate(ctx)
 		case <-ctx.Done():
 			log.P2P().WithContext(ctx).Error("closing replication worker")
