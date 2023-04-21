@@ -4,7 +4,11 @@ package common
 type CollectionRegistrationRequest struct {
 	// CollectionName is name of the collection
 	CollectionName string `json:"collection_name"`
-	// ListOfPastelidsOfAuthorizedContributors is the list of authorized contributors' pastelIDs
+	// ItemType is type of item collection will store
+	ItemType string `json:"item_type"`
+	//BurnTXID is id of burn transaction
+	BurnTXID string `json:"burn_txid"`
+	// ListOfPastelIDsOfAuthorizedContributors is the list of authorized contributors' pastelIDs
 	ListOfPastelIDsOfAuthorizedContributors []string `json:"list_of_pastelids_of_authorized_contributors"`
 	// MaxCollectionEntries in the collection's max entries
 	MaxCollectionEntries int `json:"max_collection_entries"`
@@ -20,4 +24,8 @@ type CollectionRegistrationRequest struct {
 	AppPastelID string `json:"app_pastel_id"`
 	//AppPastelIDPassphrase is the passphrase of the owner
 	AppPastelIDPassphrase string `json:"app_pastel_id_passphrase"`
+	//MaxPermittedOpenNSFWScore is the MaxPermittedOpenNFSWScore allowed for collection items
+	MaxPermittedOpenNSFWScore float64 `json:"max_permitted_open_nsfw_score"`
+	//MaxPermittedOpenNSFWScore is the MinimumSimilarityScoreToFirstEntryInCollection allowed for collection items
+	MinimumSimilarityScoreToFirstEntryInCollection float64 `json:"minimum_similarity_score_to_first_entry_in_collection"`
 }

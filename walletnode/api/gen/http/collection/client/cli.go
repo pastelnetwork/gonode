@@ -24,7 +24,7 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 	{
 		err = json.Unmarshal([]byte(collectionRegisterCollectionBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"collection_final_allowed_block_height\": 5,\n      \"collection_item_copy_count\": 10,\n      \"collection_name\": \"galaxies\",\n      \"green\": false,\n      \"list_of_pastelids_of_authorized_contributors\": [\n         \"apple\",\n         \"banana\",\n         \"orange\"\n      ],\n      \"max_collection_entries\": 5000,\n      \"royalty\": 2.32\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"burn_txid\": \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\",\n      \"collection_final_allowed_block_height\": 5,\n      \"collection_item_copy_count\": 10,\n      \"collection_name\": \"galaxies\",\n      \"green\": false,\n      \"item_type\": \"sense\",\n      \"list_of_pastelids_of_authorized_contributors\": [\n         \"apple\",\n         \"banana\",\n         \"orange\"\n      ],\n      \"max_collection_entries\": 5000,\n      \"max_permitted_open_nsfw_score\": 0.5,\n      \"minimum_similarity_score_to_first_entry_in_collection\": 0.5,\n      \"royalty\": 2.32\n   }'")
 		}
 		if body.ListOfPastelidsOfAuthorizedContributors == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("list_of_pastelids_of_authorized_contributors", "body"))
@@ -40,6 +40,24 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 		}
 		if body.CollectionFinalAllowedBlockHeight > 7 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_final_allowed_block_height", body.CollectionFinalAllowedBlockHeight, 7, false))
+		}
+		if body.MaxPermittedOpenNsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.max_permitted_open_nsfw_score", body.MaxPermittedOpenNsfwScore, 0, true))
+		}
+		if body.MaxPermittedOpenNsfwScore > 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.max_permitted_open_nsfw_score", body.MaxPermittedOpenNsfwScore, 1, false))
+		}
+		if body.MinimumSimilarityScoreToFirstEntryInCollection < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.minimum_similarity_score_to_first_entry_in_collection", body.MinimumSimilarityScoreToFirstEntryInCollection, 0, true))
+		}
+		if body.MinimumSimilarityScoreToFirstEntryInCollection > 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.minimum_similarity_score_to_first_entry_in_collection", body.MinimumSimilarityScoreToFirstEntryInCollection, 1, false))
+		}
+		if utf8.RuneCountInString(body.BurnTxid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", body.BurnTxid, utf8.RuneCountInString(body.BurnTxid), 64, true))
+		}
+		if utf8.RuneCountInString(body.BurnTxid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", body.BurnTxid, utf8.RuneCountInString(body.BurnTxid), 64, false))
 		}
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.app_pastelid", body.AppPastelID, "^[a-zA-Z0-9]+$"))
 		if utf8.RuneCountInString(body.AppPastelID) < 86 {
@@ -60,12 +78,16 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 	}
 	v := &collection.RegisterCollectionPayload{
 		CollectionName:                    body.CollectionName,
+		ItemType:                          body.ItemType,
 		MaxCollectionEntries:              body.MaxCollectionEntries,
 		CollectionFinalAllowedBlockHeight: body.CollectionFinalAllowedBlockHeight,
 		CollectionItemCopyCount:           body.CollectionItemCopyCount,
 		Royalty:                           body.Royalty,
 		Green:                             body.Green,
-		AppPastelID:                       body.AppPastelID,
+		MaxPermittedOpenNsfwScore:         body.MaxPermittedOpenNsfwScore,
+		MinimumSimilarityScoreToFirstEntryInCollection: body.MinimumSimilarityScoreToFirstEntryInCollection,
+		BurnTxid:    body.BurnTxid,
+		AppPastelID: body.AppPastelID,
 	}
 	if body.ListOfPastelidsOfAuthorizedContributors != nil {
 		v.ListOfPastelidsOfAuthorizedContributors = make([]string, len(body.ListOfPastelidsOfAuthorizedContributors))

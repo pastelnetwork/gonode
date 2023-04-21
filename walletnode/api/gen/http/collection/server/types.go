@@ -20,6 +20,8 @@ import (
 type RegisterCollectionRequestBody struct {
 	// name of the collection
 	CollectionName *string `form:"collection_name,omitempty" json:"collection_name,omitempty" xml:"collection_name,omitempty"`
+	// type of items, store by collection
+	ItemType *string `form:"item_type,omitempty" json:"item_type,omitempty" xml:"item_type,omitempty"`
 	// list of authorized contributors
 	ListOfPastelidsOfAuthorizedContributors []string `form:"list_of_pastelids_of_authorized_contributors,omitempty" json:"list_of_pastelids_of_authorized_contributors,omitempty" xml:"list_of_pastelids_of_authorized_contributors,omitempty"`
 	// max no of entries in the collection
@@ -32,6 +34,12 @@ type RegisterCollectionRequestBody struct {
 	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// green
 	Green *bool `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
+	// max open nfsw score sense and nft items can have
+	MaxPermittedOpenNsfwScore *float64 `form:"max_permitted_open_nsfw_score,omitempty" json:"max_permitted_open_nsfw_score,omitempty" xml:"max_permitted_open_nsfw_score,omitempty"`
+	// min similarity for 1st entry to have
+	MinimumSimilarityScoreToFirstEntryInCollection *float64 `form:"minimum_similarity_score_to_first_entry_in_collection,omitempty" json:"minimum_similarity_score_to_first_entry_in_collection,omitempty" xml:"minimum_similarity_score_to_first_entry_in_collection,omitempty"`
+	// Burn transaction ID
+	BurnTxid *string `form:"burn_txid,omitempty" json:"burn_txid,omitempty" xml:"burn_txid,omitempty"`
 	// App PastelID
 	AppPastelID *string `form:"app_pastelid,omitempty" json:"app_pastelid,omitempty" xml:"app_pastelid,omitempty"`
 }
@@ -343,11 +351,15 @@ func NewGetTaskHistoryInternalServerErrorResponseBody(res *goa.ServiceError) *Ge
 // endpoint payload.
 func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *string) *collection.RegisterCollectionPayload {
 	v := &collection.RegisterCollectionPayload{
-		CollectionName:          *body.CollectionName,
-		MaxCollectionEntries:    *body.MaxCollectionEntries,
-		CollectionItemCopyCount: body.CollectionItemCopyCount,
-		Royalty:                 body.Royalty,
-		AppPastelID:             *body.AppPastelID,
+		CollectionName:            *body.CollectionName,
+		ItemType:                  *body.ItemType,
+		MaxCollectionEntries:      *body.MaxCollectionEntries,
+		CollectionItemCopyCount:   body.CollectionItemCopyCount,
+		Royalty:                   body.Royalty,
+		MaxPermittedOpenNsfwScore: *body.MaxPermittedOpenNsfwScore,
+		MinimumSimilarityScoreToFirstEntryInCollection: *body.MinimumSimilarityScoreToFirstEntryInCollection,
+		BurnTxid:    *body.BurnTxid,
+		AppPastelID: *body.AppPastelID,
 	}
 	if body.CollectionFinalAllowedBlockHeight != nil {
 		v.CollectionFinalAllowedBlockHeight = *body.CollectionFinalAllowedBlockHeight
@@ -394,11 +406,23 @@ func ValidateRegisterCollectionRequestBody(body *RegisterCollectionRequestBody) 
 	if body.CollectionName == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("collection_name", "body"))
 	}
+	if body.ItemType == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("item_type", "body"))
+	}
 	if body.ListOfPastelidsOfAuthorizedContributors == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("list_of_pastelids_of_authorized_contributors", "body"))
 	}
 	if body.MaxCollectionEntries == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("max_collection_entries", "body"))
+	}
+	if body.MaxPermittedOpenNsfwScore == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("max_permitted_open_nsfw_score", "body"))
+	}
+	if body.MinimumSimilarityScoreToFirstEntryInCollection == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("minimum_similarity_score_to_first_entry_in_collection", "body"))
+	}
+	if body.BurnTxid == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("burn_txid", "body"))
 	}
 	if body.AppPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("app_pastelid", "body"))
@@ -421,6 +445,36 @@ func ValidateRegisterCollectionRequestBody(body *RegisterCollectionRequestBody) 
 	if body.CollectionFinalAllowedBlockHeight != nil {
 		if *body.CollectionFinalAllowedBlockHeight > 7 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_final_allowed_block_height", *body.CollectionFinalAllowedBlockHeight, 7, false))
+		}
+	}
+	if body.MaxPermittedOpenNsfwScore != nil {
+		if *body.MaxPermittedOpenNsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.max_permitted_open_nsfw_score", *body.MaxPermittedOpenNsfwScore, 0, true))
+		}
+	}
+	if body.MaxPermittedOpenNsfwScore != nil {
+		if *body.MaxPermittedOpenNsfwScore > 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.max_permitted_open_nsfw_score", *body.MaxPermittedOpenNsfwScore, 1, false))
+		}
+	}
+	if body.MinimumSimilarityScoreToFirstEntryInCollection != nil {
+		if *body.MinimumSimilarityScoreToFirstEntryInCollection < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.minimum_similarity_score_to_first_entry_in_collection", *body.MinimumSimilarityScoreToFirstEntryInCollection, 0, true))
+		}
+	}
+	if body.MinimumSimilarityScoreToFirstEntryInCollection != nil {
+		if *body.MinimumSimilarityScoreToFirstEntryInCollection > 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.minimum_similarity_score_to_first_entry_in_collection", *body.MinimumSimilarityScoreToFirstEntryInCollection, 1, false))
+		}
+	}
+	if body.BurnTxid != nil {
+		if utf8.RuneCountInString(*body.BurnTxid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, true))
+		}
+	}
+	if body.BurnTxid != nil {
+		if utf8.RuneCountInString(*body.BurnTxid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, false))
 		}
 	}
 	if body.AppPastelID != nil {

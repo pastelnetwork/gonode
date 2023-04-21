@@ -742,8 +742,12 @@ paths:
                     $ref: '#/definitions/CollectionRegisterCollectionRequestBody'
                     required:
                         - collection_name
+                        - item_type
                         - list_of_pastelids_of_authorized_contributors
                         - max_collection_entries
+                        - max_permitted_open_nsfw_score
+                        - minimum_similarity_score_to_first_entry_in_collection
+                        - burn_txid
                         - app_pastelid
             responses:
                 "200":
@@ -2043,6 +2047,12 @@ definitions:
                 pattern: ^[a-zA-Z0-9]+$
                 minLength: 86
                 maxLength: 86
+            burn_txid:
+                type: string
+                description: Burn transaction ID
+                example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                minLength: 64
+                maxLength: 64
             collection_final_allowed_block_height:
                 type: integer
                 description: final allowed block height in days
@@ -2064,6 +2074,10 @@ definitions:
                 description: green
                 default: false
                 example: false
+            item_type:
+                type: string
+                description: type of items, store by collection
+                example: sense
             list_of_pastelids_of_authorized_contributors:
                 type: array
                 items:
@@ -2080,6 +2094,18 @@ definitions:
                 example: 5000
                 minimum: 1
                 maximum: 10000
+            max_permitted_open_nsfw_score:
+                type: number
+                description: max open nfsw score sense and nft items can have
+                example: 0.5
+                minimum: 0
+                maximum: 1
+            minimum_similarity_score_to_first_entry_in_collection:
+                type: number
+                description: min similarity for 1st entry to have
+                example: 0.5
+                minimum: 0
+                maximum: 1
             royalty:
                 type: number
                 description: royalty fee
@@ -2087,20 +2113,28 @@ definitions:
                 format: double
         example:
             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+            burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             collection_final_allowed_block_height: 5
             collection_item_copy_count: 10
             collection_name: galaxies
             green: false
+            item_type: sense
             list_of_pastelids_of_authorized_contributors:
                 - apple
                 - banana
                 - orange
             max_collection_entries: 5000
+            max_permitted_open_nsfw_score: 0.5
+            minimum_similarity_score_to_first_entry_in_collection: 0.5
             royalty: 2.32
         required:
             - collection_name
+            - item_type
             - list_of_pastelids_of_authorized_contributors
             - max_collection_entries
+            - max_permitted_open_nsfw_score
+            - minimum_similarity_score_to_first_entry_in_collection
+            - burn_txid
             - app_pastelid
     CollectionRegisterCollectionResponseBody:
         title: 'Mediatype identifier: application/collection-registration; view=default'
