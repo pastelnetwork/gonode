@@ -113,13 +113,14 @@ var RegisterCollectionPayload = Type("RegisterCollectionPayload", func() {
 		Example(10)
 	})
 
-	Attribute("royalty", Float32, "royalty fee", func() {
+	Attribute("royalty", Float64, "royalty fee", func() {
 		TypeName("royalty")
 		Example(2.32)
 	})
 
 	Attribute("green", Boolean, "green", func() {
 		TypeName("green")
+		Default(false)
 		Example(false)
 	})
 

@@ -2,6 +2,7 @@
 //go:generate mockery --name=ConnectionInterface
 //go:generate mockery --name=RegisterSenseInterface
 //go:generate mockery --name=RegisterCascadeInterface
+//go:generate mockery --name=RegisterCollectionInterface
 //go:generate mockery --name=RegisterNftInterface
 //go:generate mockery --name=DownloadNftInterface
 //go:generate mockery --name=ProcessUserdataInterface
@@ -39,6 +40,8 @@ type ConnectionInterface interface {
 	RegisterSense() RegisterSenseInterface
 	// RegisterCascade returns new RegisterCascade stream
 	RegisterCascade() RegisterCascadeInterface
+	// RegisterCollection returns new RegisterCollection stream
+	RegisterCollection() RegisterCollectionInterface
 }
 
 // SuperNodeAPIInterface base API interface
@@ -90,6 +93,14 @@ type RegisterCascadeInterface interface {
 	SendActionAct(ctx context.Context, actionRegTxid string) error
 }
 
+// RegisterCollectionInterface contains methods for collection register
+type RegisterCollectionInterface interface {
+	SuperNodeAPIInterface
+
+	// SendTicketForSignature send a collection ticket to be signed by other SNs
+	SendTicketForSignature(ctx context.Context, ticket string, signature []byte, label string, fee int64) ([]byte, error)
+}
+
 // RegisterNftInterface contains methods for registering nft.
 type RegisterNftInterface interface {
 	SuperNodeAPIInterface
@@ -98,11 +109,11 @@ type RegisterNftInterface interface {
 	SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error
 	// ProbeImage uploads image to supernode.
 	ProbeImage(ctx context.Context, image *files.File) ([]byte, bool, bool, error)
-	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
+	// UploadImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
 	UploadImageWithThumbnail(ctx context.Context, image *files.File, thumbnail files.ThumbnailCoordinate) ([]byte, []byte, []byte, error)
 	// SendSignedTicket send a reg-nft ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, label string, rqIdsFile []byte, ddFpFile []byte, encoderParams rqnode.EncoderParameters) (int64, error)
-	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
+	// SendPreBurntFeeTxid send TxId of the transaction in which 10% of registration fee is preburned
 	SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error)
 }
 

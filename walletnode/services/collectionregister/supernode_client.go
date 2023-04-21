@@ -10,11 +10,11 @@ type RegisterCollectionNodeMaker struct {
 }
 
 // MakeNode makes class RegisterCascade for SuperNodeAPIInterface
-func (maker RegisterCollectionNodeMaker) MakeNode(_ node.ConnectionInterface) node.SuperNodeAPIInterface {
-	return nil
+func (maker RegisterCollectionNodeMaker) MakeNode(conn node.ConnectionInterface) node.SuperNodeAPIInterface {
+	return &CollectionRegistrationNode{RegisterCollectionInterface: conn.RegisterCollection()}
 }
 
 // CollectionRegistrationNode represent supernode connection.
 type CollectionRegistrationNode struct {
-	node.RegisterCascadeInterface
+	node.RegisterCollectionInterface
 }

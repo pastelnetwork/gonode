@@ -27,9 +27,9 @@ type RegisterCollectionRequestBody struct {
 	// item copy count in the collection
 	CollectionItemCopyCount *int `form:"collection_item_copy_count,omitempty" json:"collection_item_copy_count,omitempty" xml:"collection_item_copy_count,omitempty"`
 	// royalty fee
-	Royalty *float32 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// green
-	Green *bool `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
+	Green bool `form:"green" json:"green" xml:"green"`
 	// App PastelID
 	AppPastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
 }
@@ -228,6 +228,12 @@ func NewRegisterCollectionRequestBody(p *collection.RegisterCollectionPayload) *
 		var zero int
 		if body.CollectionFinalAllowedBlockHeight == zero {
 			body.CollectionFinalAllowedBlockHeight = 7
+		}
+	}
+	{
+		var zero bool
+		if body.Green == zero {
+			body.Green = false
 		}
 	}
 	return body

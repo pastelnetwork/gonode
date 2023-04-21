@@ -29,7 +29,7 @@ type RegisterCollectionRequestBody struct {
 	// item copy count in the collection
 	CollectionItemCopyCount *int `form:"collection_item_copy_count,omitempty" json:"collection_item_copy_count,omitempty" xml:"collection_item_copy_count,omitempty"`
 	// royalty fee
-	Royalty *float32 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// green
 	Green *bool `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
 	// App PastelID
@@ -347,11 +347,13 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 		MaxCollectionEntries:    *body.MaxCollectionEntries,
 		CollectionItemCopyCount: body.CollectionItemCopyCount,
 		Royalty:                 body.Royalty,
-		Green:                   body.Green,
 		AppPastelID:             *body.AppPastelID,
 	}
 	if body.CollectionFinalAllowedBlockHeight != nil {
 		v.CollectionFinalAllowedBlockHeight = *body.CollectionFinalAllowedBlockHeight
+	}
+	if body.Green != nil {
+		v.Green = *body.Green
 	}
 	v.ListOfPastelidsOfAuthorizedContributors = make([]string, len(body.ListOfPastelidsOfAuthorizedContributors))
 	for i, val := range body.ListOfPastelidsOfAuthorizedContributors {
@@ -359,6 +361,9 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 	}
 	if body.CollectionFinalAllowedBlockHeight == nil {
 		v.CollectionFinalAllowedBlockHeight = 7
+	}
+	if body.Green == nil {
+		v.Green = false
 	}
 	v.Key = key
 

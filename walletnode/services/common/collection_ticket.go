@@ -13,7 +13,7 @@ type CollectionRegistrationRequest struct {
 	// CollectionItemCopyCount is the collection item copy count
 	CollectionItemCopyCount int `json:"collection_item_copy_count"`
 	// Royalty represents the royalty fee
-	Royalty float32 `json:"royalty"`
+	Royalty float64 `json:"royalty"`
 	// Green represents the green
 	Green bool `json:"green"`
 	//AppPastelID is the PastelID of the owner
