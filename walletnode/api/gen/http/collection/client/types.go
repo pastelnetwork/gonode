@@ -18,6 +18,8 @@ import (
 type RegisterCollectionRequestBody struct {
 	// name of the collection
 	CollectionName string `form:"collection_name" json:"collection_name" xml:"collection_name"`
+	// type of items, store by collection
+	ItemType string `form:"item_type" json:"item_type" xml:"item_type"`
 	// list of authorized contributors
 	ListOfPastelidsOfAuthorizedContributors []string `form:"list_of_pastelids_of_authorized_contributors" json:"list_of_pastelids_of_authorized_contributors" xml:"list_of_pastelids_of_authorized_contributors"`
 	// max no of entries in the collection
@@ -30,6 +32,12 @@ type RegisterCollectionRequestBody struct {
 	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// green
 	Green bool `form:"green" json:"green" xml:"green"`
+	// max open nfsw score sense and nft items can have
+	MaxPermittedOpenNsfwScore float64 `form:"max_permitted_open_nsfw_score" json:"max_permitted_open_nsfw_score" xml:"max_permitted_open_nsfw_score"`
+	// min similarity for 1st entry to have
+	MinimumSimilarityScoreToFirstEntryInCollection float64 `form:"minimum_similarity_score_to_first_entry_in_collection" json:"minimum_similarity_score_to_first_entry_in_collection" xml:"minimum_similarity_score_to_first_entry_in_collection"`
+	// Burn transaction ID
+	BurnTxid string `form:"burn_txid" json:"burn_txid" xml:"burn_txid"`
 	// App PastelID
 	AppPastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
 }
@@ -211,12 +219,16 @@ type DetailsResponse struct {
 func NewRegisterCollectionRequestBody(p *collection.RegisterCollectionPayload) *RegisterCollectionRequestBody {
 	body := &RegisterCollectionRequestBody{
 		CollectionName:                    p.CollectionName,
+		ItemType:                          p.ItemType,
 		MaxCollectionEntries:              p.MaxCollectionEntries,
 		CollectionFinalAllowedBlockHeight: p.CollectionFinalAllowedBlockHeight,
 		CollectionItemCopyCount:           p.CollectionItemCopyCount,
 		Royalty:                           p.Royalty,
 		Green:                             p.Green,
-		AppPastelID:                       p.AppPastelID,
+		MaxPermittedOpenNsfwScore:         p.MaxPermittedOpenNsfwScore,
+		MinimumSimilarityScoreToFirstEntryInCollection: p.MinimumSimilarityScoreToFirstEntryInCollection,
+		BurnTxid:    p.BurnTxid,
+		AppPastelID: p.AppPastelID,
 	}
 	if p.ListOfPastelidsOfAuthorizedContributors != nil {
 		body.ListOfPastelidsOfAuthorizedContributors = make([]string, len(p.ListOfPastelidsOfAuthorizedContributors))

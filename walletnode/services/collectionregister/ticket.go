@@ -14,6 +14,9 @@ func FromCollectionRegistrationPayload(payload *collection.RegisterCollectionPay
 		CollectionFinalAllowedBlockHeight:       payload.CollectionFinalAllowedBlockHeight,
 		AppPastelID:                             payload.AppPastelID,
 		Green:                                   payload.Green,
+		MaxPermittedOpenNSFWScore:               payload.MaxPermittedOpenNsfwScore,
+		MinimumSimilarityScoreToFirstEntryInCollection: payload.MinimumSimilarityScoreToFirstEntryInCollection,
+		BurnTXID: payload.BurnTxid,
 	}
 
 	if payload.Key != nil {

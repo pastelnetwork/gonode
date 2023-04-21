@@ -85,6 +85,12 @@ var RegisterCollectionPayload = Type("RegisterCollectionPayload", func() {
 	})
 	Required("collection_name")
 
+	Attribute("item_type", String, "type of items, store by collection", func() {
+		TypeName("itemType")
+		Example("nft", "sense")
+	})
+	Required("item_type")
+
 	Attribute("list_of_pastelids_of_authorized_contributors", ArrayOf(String), "list of authorized contributors", func() {
 		TypeName("listOfPastelIDsOfAuthorizedContributors")
 		Example([]string{"apple", "banana", "orange"})
@@ -123,6 +129,30 @@ var RegisterCollectionPayload = Type("RegisterCollectionPayload", func() {
 		Default(false)
 		Example(false)
 	})
+
+	Attribute("max_permitted_open_nsfw_score", Float64, "max open nfsw score sense and nft items can have", func() {
+		TypeName("maxPermittedOpenNSFWScore")
+		Minimum(0)
+		Maximum(1)
+		Example(0.5)
+	})
+	Required("max_permitted_open_nsfw_score")
+
+	Attribute("minimum_similarity_score_to_first_entry_in_collection", Float64, "min similarity for 1st entry to have", func() {
+		TypeName("minimumSimilarityScoreToFirstEntryInCollection")
+		Minimum(0)
+		Maximum(1)
+		Example(0.5)
+	})
+	Required("minimum_similarity_score_to_first_entry_in_collection")
+
+	Attribute("burn_txid", String, func() {
+		Description("Burn transaction ID")
+		MinLength(64)
+		MaxLength(64)
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
+	Required("burn_txid")
 
 	Attribute("app_pastelid", String, func() {
 		Meta("struct:field:name", "AppPastelID")

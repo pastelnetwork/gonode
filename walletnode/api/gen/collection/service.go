@@ -76,6 +76,8 @@ type GetTaskHistoryPayload struct {
 type RegisterCollectionPayload struct {
 	// name of the collection
 	CollectionName string
+	// type of items, store by collection
+	ItemType string
 	// list of authorized contributors
 	ListOfPastelidsOfAuthorizedContributors []string
 	// max no of entries in the collection
@@ -88,6 +90,12 @@ type RegisterCollectionPayload struct {
 	Royalty *float64
 	// green
 	Green bool
+	// max open nfsw score sense and nft items can have
+	MaxPermittedOpenNsfwScore float64
+	// min similarity for 1st entry to have
+	MinimumSimilarityScoreToFirstEntryInCollection float64
+	// Burn transaction ID
+	BurnTxid string
 	// App PastelID
 	AppPastelID string
 	// Passphrase of the owner's PastelID
