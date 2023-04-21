@@ -131,26 +131,25 @@ func (service *registerCollection) MeshNodes(ctx context.Context, meshedNodes []
 	return err
 }
 
-// SendTicketForSignature sends the collection ticket to other SNs for signature
-func (service *registerCollection) SendTicketForSignature(ctx context.Context, ticket string, signature []byte, label string, fee int64) ([]byte, error) {
+// SendTicketForSignature sends the collection ticket to be signed by other SNs
+func (service *registerCollection) SendTicketForSignature(ctx context.Context, ticket []byte, burnTXID string, signature []byte) (string, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := pb.SendCollectionTicketForSignatureRequest{
 		CollectionTicket: ticket,
 		CreatorSignature: signature,
-		Label:            label,
-		Fee:              fee,
+		BurnTxid:         burnTXID,
 	}
 
 	rsp, err := service.client.SendCollectionTicketForSignature(ctx, &req)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("send signed ticket failed")
 
-		return nil, err
+		return "", err
 	}
 
-	return rsp.Signature, nil
+	return rsp.CollectionRegTxid, nil
 }
 
 // GetDupeDetectionDBHash implements node.RegisterCollection.GetDupeDetectionDBHash

@@ -27,12 +27,11 @@ service RegisterCollection {
 }
 
 message SendCollectionTicketForSignatureRequest {
-  string collection_ticket = 1;
+  bytes collection_ticket = 1;
   bytes creator_signature = 2;
-  string label = 3;
-  int64 fee = 4;
+  string burn_txid = 3;
 }
 
 message SendCollectionTicketForSignatureResponse {
-  bytes signature = 1;
+  string collection_reg_txid = 1;
 }

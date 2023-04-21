@@ -193,6 +193,15 @@ type Client interface {
 	// Command `tickets register collection "{collection-ticket}" "{signatures}" "pastelid" "passphrase" "label" "fee" ["address"] `.
 	RegisterCollectionTicket(ctx context.Context, data string, signatures string, pastelID, passphrase, label string, fee int64) (txID string, err error)
 
+	// SignCollectionTicket signs data by the given pastelID and passphrase, if successful returns signature.
+	// Command `pastelid sign-base64-encoded "base64-encoded-text" "PastelID" <"passphrase"> ("algorithm")"
+	// Algorithm is ed448[default] or legroast
+	SignCollectionTicket(ctx context.Context, data []byte, pastelID, passphrase string, algorithm string) (signature []byte, err error)
+
+	// VerifyCollectionTicket verifies signed data by the given its signature and pastelID, if successful returns true.
+	// Command `pastelid verify-base64-encoded "base64-encoded-text" "PastelID" <"passphrase"> ("algorithm")"
+	VerifyCollectionTicket(ctx context.Context, data []byte, signature, pastelID string, algorithm string) (ok bool, err error)
+
 	// FindActByRegTxid returns the activation ticket by nReg ticket txid
 	// Command `tickets find act <reg-ticket-txid>`
 	FindActByRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error)

@@ -100,6 +100,10 @@ const (
 	CollectionRegTicketMethod = "CollectionRegTicket"
 	//RegisterCollectionTicketMethod represents RegisterCollectionTicketMethod
 	RegisterCollectionTicketMethod = "RegisterCollectionTicket"
+	//SignCollectionTicketMethod represents SignCollectionTicketMethod
+	SignCollectionTicketMethod = "SignCollectionTicket"
+	//VerifyCollectionTicketMethod represents VerifyCollectionTicketMethod
+	VerifyCollectionTicketMethod = "VerifyCollectionTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -374,6 +378,18 @@ func (client *Client) ListenOnCollectionRegTicket(collectionRegTicket pastel.Col
 func (client *Client) ListenOnRegisterCollectionTicket(txID string, retErr error) *Client {
 	client.On(RegisterCollectionTicketMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything).Return(txID, retErr)
+	return client
+}
+
+// ListenOnSignCollectionTicket listens Sign call and returns values from args
+func (client *Client) ListenOnSignCollectionTicket(signature []byte, returnErr error) *Client {
+	client.On(SignCollectionTicketMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(signature, returnErr)
+	return client
+}
+
+// ListenOnVerifyCollectionTicket listens Verify call and returns values from args
+func (client *Client) ListenOnVerifyCollectionTicket(isValid bool, retErr error) *Client {
+	client.On(VerifyCollectionTicketMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(isValid, retErr)
 	return client
 }
 

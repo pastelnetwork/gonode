@@ -646,6 +646,43 @@ func (client *client) RegisterCollectionTicket(ctx context.Context, data string,
 	return res.TxID, nil
 }
 
+// SignCollectionTicket implements pastel.Client.SignCollectionTicket
+func (client *client) SignCollectionTicket(ctx context.Context, data []byte, pastelID, passphrase string, algorithm string) (signature []byte, err error) {
+	var sign struct {
+		Signature string `json:"signature"`
+	}
+	text := base64.StdEncoding.EncodeToString(data)
+
+	switch algorithm {
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
+		if err = client.callFor(ctx, &sign, "pastelid", "sign-base64-encoded", text, pastelID, passphrase, algorithm); err != nil {
+			return nil, errors.Errorf("failed to sign data: %w", err)
+		}
+	default:
+		return nil, errors.Errorf("unsupported algorithm %s", algorithm)
+	}
+	return []byte(sign.Signature), nil
+}
+
+// VerifyCollectionTicket implements pastel.Client.VerifyCollectionTicket
+func (client *client) VerifyCollectionTicket(ctx context.Context, data []byte, signature, pastelID string, algorithm string) (ok bool, err error) {
+	var verify struct {
+		Verification string `json:"verification"`
+	}
+	text := base64.StdEncoding.EncodeToString(data)
+
+	switch algorithm {
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
+		if err = client.callFor(ctx, &verify, "pastelid", "verify-base64-encoded", text, signature, pastelID, algorithm); err != nil {
+			return false, errors.Errorf("failed to verify data: %w", err)
+		}
+	default:
+		return false, errors.Errorf("unsupported algorithm %s", algorithm)
+	}
+
+	return verify.Verification == "OK", nil
+}
+
 // FindNFTRegTicketsByLabel returns all NFT registration tickets with matching labels.
 // Command `tickets findbylabel nft <label>`.
 func (client *client) FindNFTRegTicketsByLabel(ctx context.Context, label string) (RegTickets, error) {
