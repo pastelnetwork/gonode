@@ -633,6 +633,19 @@ func (client *client) CollectionRegTicket(ctx context.Context, regTxid string) (
 	return ticket, nil
 }
 
+// RegisterCollectionTicket registers the collection ticket
+func (client *client) RegisterCollectionTicket(ctx context.Context, data string, signatures string, pastelID, passphrase, label string, fee int64) (txID string, err error) {
+	var res struct {
+		TxID string `json:"txid"`
+	}
+
+	if err = client.callFor(ctx, &res, "tickets", "register", "collection", data, signatures, pastelID, passphrase, label, fee); err != nil {
+		return "", errors.Errorf("failed to sign data: %w", err)
+	}
+
+	return res.TxID, nil
+}
+
 // FindNFTRegTicketsByLabel returns all NFT registration tickets with matching labels.
 // Command `tickets findbylabel nft <label>`.
 func (client *client) FindNFTRegTicketsByLabel(ctx context.Context, label string) (RegTickets, error) {

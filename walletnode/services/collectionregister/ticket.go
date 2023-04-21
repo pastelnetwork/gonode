@@ -13,6 +13,7 @@ func FromCollectionRegistrationPayload(payload *collection.RegisterCollectionPay
 		MaxCollectionEntries:                    payload.MaxCollectionEntries,
 		CollectionFinalAllowedBlockHeight:       payload.CollectionFinalAllowedBlockHeight,
 		AppPastelID:                             payload.AppPastelID,
+		Green:                                   payload.Green,
 	}
 
 	if payload.Key != nil {
@@ -21,10 +22,6 @@ func FromCollectionRegistrationPayload(payload *collection.RegisterCollectionPay
 
 	if payload.Royalty != nil {
 		c.Royalty = *payload.Royalty
-	}
-
-	if payload.Green != nil {
-		c.Green = *payload.Green
 	}
 
 	if payload.CollectionItemCopyCount != nil {

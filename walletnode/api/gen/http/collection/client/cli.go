@@ -79,6 +79,12 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 			v.CollectionFinalAllowedBlockHeight = 7
 		}
 	}
+	{
+		var zero bool
+		if v.Green == zero {
+			v.Green = false
+		}
+	}
 	v.Key = key
 
 	return v, nil

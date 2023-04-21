@@ -85,9 +85,9 @@ type RegisterCollectionPayload struct {
 	// item copy count in the collection
 	CollectionItemCopyCount *int
 	// royalty fee
-	Royalty *float32
+	Royalty *float64
 	// green
-	Green *bool
+	Green bool
 	// App PastelID
 	AppPastelID string
 	// Passphrase of the owner's PastelID

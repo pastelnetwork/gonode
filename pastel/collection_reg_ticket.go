@@ -1,5 +1,12 @@
 package pastel
 
+import (
+	"encoding/base64"
+	"encoding/json"
+
+	"github.com/pastelnetwork/gonode/common/errors"
+)
+
 // CollectionRegTicket represents pastel collection ticket.
 type CollectionRegTicket struct {
 	Height                  int                     `json:"height"`
@@ -30,9 +37,29 @@ type CollectionTicket struct {
 	ListOfPastelIDsOfAuthorizedContributors []string  `json:"list_of_pastelids_of_authorized_contributors"`
 	BlockNum                                uint      `json:"blocknum"`
 	BlockHash                               string    `json:"block_hash"`
+	CollectionFinalAllowedBlockHeight       uint      `json:"collection_final_allowed_block_height"`
 	MaxCollectionEntries                    uint      `json:"max_collection_entries"`
 	CollectionItemCopyCount                 uint      `json:"collection_item_copy_count"`
 	Royalty                                 float64   `json:"royalty"`
 	Green                                   bool      `json:"green"`
-	AppTicketData                           AppTicket `json:"app_ticket"`
+	AppTicket                               string    `json:"app_ticket"`
+	AppTicketData                           AppTicket `json:"-"`
+}
+
+// EncodeCollectionTicket encodes  CollectionTicket to bytes
+func EncodeCollectionTicket(ticket *CollectionTicket) ([]byte, error) {
+	appTicketBytes, err := json.Marshal(ticket.AppTicketData)
+	if err != nil {
+		return nil, errors.Errorf("marshal api ticket: %w", err)
+	}
+
+	appTicket := base64.RawStdEncoding.EncodeToString(appTicketBytes)
+	ticket.AppTicket = appTicket
+
+	b, err := json.Marshal(ticket)
+	if err != nil {
+		return nil, errors.Errorf("marshal action ticket: %w", err)
+	}
+
+	return b, nil
 }

@@ -4010,6 +4010,7 @@ components:
                 green:
                     type: boolean
                     description: green
+                    default: false
                     example: false
                 list_of_pastelids_of_authorized_contributors:
                     type: array
@@ -4031,7 +4032,7 @@ components:
                     type: number
                     description: royalty fee
                     example: 2.32
-                    format: float
+                    format: double
             example:
                 app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 collection_final_allowed_block_height: 5

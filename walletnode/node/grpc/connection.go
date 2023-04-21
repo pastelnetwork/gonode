@@ -38,9 +38,14 @@ func (conn *clientConn) RegisterSense() node.RegisterSenseInterface {
 	return newRegisterSense(conn)
 }
 
-// RegisterSense implements node.ConnectionInterface.RegisterSense()
+// RegisterCascade implements node.ConnectionInterface.RegisterCascade()
 func (conn *clientConn) RegisterCascade() node.RegisterCascadeInterface {
 	return newRegisterCascade(conn)
+}
+
+// RegisterCollection implements node.ConnectionInterface.RegisterCollection()
+func (conn *clientConn) RegisterCollection() node.RegisterCollectionInterface {
+	return newRegisterCollection(conn)
 }
 
 func newClientConn(id string, conn *grpc.ClientConn) node.ConnectionInterface {

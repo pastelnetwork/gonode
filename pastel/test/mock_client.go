@@ -98,6 +98,8 @@ const (
 
 	//CollectionRegTicketMethod represents CollectionRegTicketMethod
 	CollectionRegTicketMethod = "CollectionRegTicket"
+	//RegisterCollectionTicketMethod represents RegisterCollectionTicketMethod
+	RegisterCollectionTicketMethod = "RegisterCollectionTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -365,6 +367,13 @@ func (client *Client) ListenOnCollectionActivationTicketsFromBlockHeight(actTick
 // ListenOnCollectionRegTicket listens collection reg ticket  return collection-reg ticket & err
 func (client *Client) ListenOnCollectionRegTicket(collectionRegTicket pastel.CollectionRegTicket, retErr error) *Client {
 	client.On(CollectionRegTicketMethod, mock.Anything, mock.Anything).Return(collectionRegTicket, retErr)
+	return client
+}
+
+// ListenOnRegisterCollectionTicket listens register collection ticket return TxID of the ticket & err
+func (client *Client) ListenOnRegisterCollectionTicket(txID string, retErr error) *Client {
+	client.On(RegisterCollectionTicketMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything, mock.Anything).Return(txID, retErr)
 	return client
 }
 
