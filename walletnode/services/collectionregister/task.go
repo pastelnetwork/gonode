@@ -2,7 +2,10 @@ package collectionregister
 
 import (
 	"context"
+	"os"
+	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -12,6 +15,11 @@ import (
 const (
 	//CollectionFinalAllowedBlockHeightDaysConversion is the formula to convert days to no of blocks
 	CollectionFinalAllowedBlockHeightDaysConversion = 24 * (60 / 2.5)
+
+	//DateTimeFormat following the go convention for request timestamp
+	DateTimeFormat = "2006:01:02 15:04:05"
+
+	collectionRegFee = 1000
 )
 
 // CollectionRegistrationTask is the task of registering new nft.
@@ -26,11 +34,15 @@ type CollectionRegistrationTask struct {
 	// data to create ticket
 	creatorBlockHeight uint
 	creatorBlockHash   string
+	creationTimestamp  string
 	creatorSignature   []byte
-	signatures         map[string][]byte
 
 	collectionTicket *pastel.CollectionTicket
+	serializedTicket []byte
 	collectionTXID   string
+
+	// only set to true for unit tests
+	skipPrimaryNodeTxidVerify bool
 }
 
 // Run starts the task
@@ -45,7 +57,6 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
 	task.StatusLog[common.FieldTaskType] = "Collection Registration"
 
-	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
 	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
@@ -56,6 +67,9 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	task.creatorBlockHeight = uint(creatorBlockHeight)
 	task.creatorBlockHash = creatorBlockHash
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
+	task.creationTimestamp = time.Now().Format(DateTimeFormat)
+
+	log.WithContext(ctx).Info("Mesh of supernodes have been established")
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
@@ -80,7 +94,87 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	}
 	log.WithContext(ctx).Info("signed collection reg ticket")
 
+	log.WithContext(ctx).Info("upload signed collection reg ticket to SNs")
+
+	// UPLOAD signed ticket to supernodes to validate and register action with the network
+	if err := task.uploadSignedTicket(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error uploading signed ticket")
+
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorUploadingTicket)
+		return errors.Errorf("send signed collection ticket: %w", err)
+	}
+	task.StatusLog[common.FieldRegTicketTxnID] = task.collectionTXID
+
+	task.UpdateStatus(common.StatusTicketAccepted)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validating Collection Reg TXID: ",
+		StatusString:  task.collectionTXID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
+
+	log.WithContext(ctx).Infof("Collection Reg Ticket registered. Collection Registration Ticket txid: %s", task.collectionTXID)
+	log.WithContext(ctx).Info("Closing SNs connections")
+
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+
+	log.WithContext(ctx).Infof("Waiting Confirmations for Collection Reg Ticket - Ticket txid: %s", task.collectionTXID)
+
+	// new context because the old context already cancelled
+	newCtx := log.ContextWithPrefix(context.Background(), "Collection")
+	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.collectionTXID, int64(task.service.config.CollectionRegTxMinConfirmations),
+		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
+		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations")
+		return errors.Errorf("wait reg-collection ticket valid: %w", err)
+	}
+	task.UpdateStatus(common.StatusTicketRegistered)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Validated Collection Reg TXID: ",
+		StatusString:  task.collectionTXID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
+
+	log.WithContext(ctx).Debug("Collection Reg Ticket confirmed, Activating Collection Reg Ticket")
+	// activate Collection ticket registered at previous step by SN
+	activateTxID, err := task.activateActionTicket(newCtx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error activating collection ticket")
+
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorActivatingTicket)
+		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+		return errors.Errorf("active collection ticket: %w", err)
+	}
+	task.StatusLog[common.FieldActivateTicketTxnID] = activateTxID
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Activating Collection Ticket TXID: ",
+		StatusString:  activateTxID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
+	log.WithContext(ctx).Infof("Collection ticket activated. Activation ticket txid: %s", activateTxID)
+	log.WithContext(ctx).Infof("Waiting Confirmations for Collection Activation Ticket - Ticket txid: %s", activateTxID)
+
+	// Wait until activateTxID is valid
+	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.CollectionActTxMinConfirmations),
+		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations for activation")
+		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+		return errors.Errorf("wait activate txid valid: %w", err)
+	}
+	task.UpdateStatus(common.StatusTicketActivated)
+	task.UpdateStatus(&common.EphemeralStatus{
+		StatusTitle:   "Activated Collection Ticket TXID: ",
+		StatusString:  activateTxID,
+		IsFailureBool: false,
+		IsFinalBool:   false,
+	})
+	log.WithContext(ctx).Infof("Collection Activation ticket is confirmed. Activation ticket txid: %s", activateTxID)
 
 	return nil
 }
@@ -89,6 +183,7 @@ func (task *CollectionRegistrationTask) createCollectionTicket(_ context.Context
 	ticket := &pastel.CollectionTicket{
 		CollectionTicketVersion:                 1,
 		CollectionName:                          task.Request.CollectionName,
+		ItemType:                                task.Request.ItemType,
 		BlockNum:                                task.creatorBlockHeight,
 		BlockHash:                               task.creatorBlockHash,
 		Creator:                                 task.Request.AppPastelID,
@@ -98,9 +193,9 @@ func (task *CollectionRegistrationTask) createCollectionTicket(_ context.Context
 		CollectionFinalAllowedBlockHeight:       task.creatorBlockHeight + uint(task.Request.CollectionFinalAllowedBlockHeight*CollectionFinalAllowedBlockHeightDaysConversion),
 		Royalty:                                 task.Request.Royalty / 100,
 		Green:                                   task.Request.Green,
-		AppTicketData:                           pastel.AppTicket{
-			//MaxPermittedOpenNSFWScore: ,
-			//MinimumSimilarityScoreToFirstEntryInCollection:
+		AppTicketData: pastel.AppTicket{
+			MaxPermittedOpenNSFWScore:                      task.Request.MaxPermittedOpenNSFWScore,
+			MinimumSimilarityScoreToFirstEntryInCollection: task.Request.MinimumSimilarityScoreToFirstEntryInCollection,
 		},
 	}
 
@@ -114,15 +209,64 @@ func (task *CollectionRegistrationTask) signTicket(ctx context.Context) error {
 		return errors.Errorf("encode collection ticket %w", err)
 	}
 
-	task.creatorSignature, err = task.service.pastelHandler.PastelClient.Sign(ctx, data, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase, pastel.SignAlgorithmED448)
+	task.creatorSignature, err = task.service.pastelHandler.PastelClient.SignCollectionTicket(ctx, data, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign collection ticket %w", err)
 	}
-
-	task.signatures = make(map[string][]byte)
-	task.signatures["principal"] = task.creatorSignature
+	task.serializedTicket = data
 
 	return nil
+}
+
+// uploadSignedTicket uploads Collection ticket  and its signature to super nodes
+func (task *CollectionRegistrationTask) uploadSignedTicket(ctx context.Context) error {
+	if task.serializedTicket == nil {
+		return errors.Errorf("uploading ticket: serializedTicket is empty")
+	}
+	if task.creatorSignature == nil {
+		return errors.Errorf("uploading ticket: creatorSignature is empty")
+	}
+
+	group, gctx := errgroup.WithContext(ctx)
+	for _, someNode := range task.MeshHandler.Nodes {
+		CollectionRegNode, ok := someNode.SuperNodeAPIInterface.(*CollectionRegistrationNode)
+		if !ok {
+			//TODO: use assert here
+			return errors.Errorf("node %s is not CollectionRegistrationNode", someNode.String())
+		}
+
+		someNode := someNode
+		group.Go(func() error {
+			ticketTxID, err := CollectionRegNode.SendTicketForSignature(gctx, task.serializedTicket, task.Request.BurnTXID, task.creatorSignature)
+			if err != nil {
+				log.WithContext(gctx).WithError(err).WithField("node", CollectionRegNode).Error("send signed ticket failed")
+				return err
+			}
+			if !someNode.IsPrimary() && ticketTxID != "" && !task.skipPrimaryNodeTxidCheck() {
+				return errors.Errorf("receive response %s from secondary node %s", ticketTxID, someNode.PastelID())
+			}
+			if someNode.IsPrimary() {
+				if ticketTxID == "" {
+					return errors.Errorf("primary node - %s, returned empty txid", someNode.PastelID())
+				}
+				task.collectionTXID = ticketTxID
+			}
+			return nil
+		})
+	}
+	return group.Wait()
+}
+
+func (task *CollectionRegistrationTask) activateActionTicket(ctx context.Context) (string, error) {
+	request := pastel.ActivateActionRequest{
+		RegTxID:    task.collectionTXID,
+		BlockNum:   int(task.creatorBlockHeight),
+		Fee:        collectionRegFee,
+		PastelID:   task.Request.AppPastelID,
+		Passphrase: task.Request.AppPastelIDPassphrase,
+	}
+
+	return task.service.pastelHandler.PastelClient.ActivateActionTicket(ctx, request)
 }
 
 func (task *CollectionRegistrationTask) removeArtifacts() {
@@ -132,6 +276,10 @@ func (task *CollectionRegistrationTask) removeArtifacts() {
 // Error returns task err
 func (task *CollectionRegistrationTask) Error() error {
 	return task.WalletNodeTask.Error()
+}
+
+func (task *CollectionRegistrationTask) skipPrimaryNodeTxidCheck() bool {
+	return task.skipPrimaryNodeTxidVerify || os.Getenv("INTEGRATION_TEST_ENV") == "true"
 }
 
 // NewCollectionRegistrationTask returns a new CollectionRegistrationTask instance.

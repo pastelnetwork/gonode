@@ -12,10 +12,9 @@ package node
 import (
 	"context"
 
-	"github.com/pastelnetwork/gonode/common/storage/files"
-
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
@@ -98,7 +97,7 @@ type RegisterCollectionInterface interface {
 	SuperNodeAPIInterface
 
 	// SendTicketForSignature send a collection ticket to be signed by other SNs
-	SendTicketForSignature(ctx context.Context, ticket string, signature []byte, label string, fee int64) ([]byte, error)
+	SendTicketForSignature(ctx context.Context, ticket []byte, burnTXID string, signature []byte) (string, error)
 }
 
 // RegisterNftInterface contains methods for registering nft.
