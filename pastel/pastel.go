@@ -189,6 +189,10 @@ type Client interface {
 	// Command `tickets get <txid>`.
 	CollectionRegTicket(ctx context.Context, regTxid string) (CollectionRegTicket, error)
 
+	// FindActByNFTRegTxid returns the activation ticket by nReg ticket txid
+	// Command `tickets find act <reg-ticket-txid>`
+	FindActByRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error)
+
 	// BurnAddress ...
 	BurnAddress() string
 }

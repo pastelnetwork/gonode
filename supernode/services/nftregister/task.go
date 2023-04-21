@@ -419,6 +419,7 @@ func (task *NftRegistrationTask) storeThumbnails(ctx context.Context) error {
 
 // Step 19
 func (task *NftRegistrationTask) storeIDFiles(ctx context.Context) error {
+	ctx = context.WithValue(ctx, log.TaskIDKey, task.ID())
 	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.ddFpFiles); err != nil {
 		return errors.Errorf("store ddAndFp files into kademlia: %w", err)
 	}

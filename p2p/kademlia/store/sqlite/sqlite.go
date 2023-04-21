@@ -59,7 +59,7 @@ func NewStore(ctx context.Context, dataDir string, replicate time.Duration, repu
 	}
 
 	dbFile := path.Join(dataDir, dbName)
-	db, err := sqlx.Connect("sqlite3", fmt.Sprintf("%s?%s", dbFile, "_journal_mode=WAL"))
+	db, err := sqlx.Connect("sqlite3", dbFile)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open sqlite database: %w", err)
 	}
@@ -111,6 +111,14 @@ func (s *Store) migrate() error {
 func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
 	s.rwMtx.Lock()
 	defer s.rwMtx.Unlock()
+
+	if len(key) == 0 {
+		return fmt.Errorf("key cannot be empty")
+	}
+
+	if len(value) == 0 {
+		return fmt.Errorf("value cannot be empty")
+	}
 
 	hkey := hex.EncodeToString(key)
 
@@ -164,28 +172,37 @@ func (s *Store) Delete(ctx context.Context, key []byte) {
 	}
 }
 
+// UpdateKeyReplication updates the replication time for a key
+func (s *Store) UpdateKeyReplication(_ context.Context, key []byte) error {
+	s.rwMtx.Lock()
+	defer s.rwMtx.Unlock()
+
+	keyStr := hex.EncodeToString(key)
+	_, err := s.db.Exec(`UPDATE data SET replicatedAt = ? WHERE key = ?`, time.Now(), keyStr)
+	if err != nil {
+		return fmt.Errorf("failed to update replicated records: %v", err)
+	}
+
+	return err
+}
+
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
 func (s *Store) GetKeysForReplication(ctx context.Context) [][]byte {
-	s.rwMtx.Lock()
-	defer s.rwMtx.Unlock()
+	s.rwMtx.RLock()
+	defer s.rwMtx.RUnlock()
 
 	now := time.Now().UTC()
 	after := now.Add(-s.replicateInterval).UTC()
 
 	var keys [][]byte
-	if err := s.db.Select(&keys, `SELECT key FROM data WHERE updatedAt < ? and (replicatedAt is NULL OR replicatedAt < ?)`, after, after); err != nil {
+	if err := s.db.Select(&keys, `SELECT key FROM data WHERE updatedAt > ? and replicatedAt is NULL)`, after); err != nil {
 		log.P2P().WithContext(ctx).Errorf("failed to get records for replication older then %s: %v", after, err)
 		return nil
 	}
 	log.P2P().WithContext(ctx).WithField("keyslength", len(keys)).Debugf("Replication keys found: %+v", keys)
-	if len(keys) > 0 {
-		_, err := s.db.Exec(`UPDATE data SET replicatedAt = ? WHERE updatedAt < ? and (replicatedAt is NULL OR replicatedAt < ?)`, now, after, after)
-		if err != nil {
-			log.P2P().WithContext(ctx).Errorf("failed to update replicated records: %v", err)
-		}
-	}
+
 	var unhexedKeys [][]byte
 	for _, key := range keys {
 		dst := make([]byte, hex.DecodedLen(len(key)))
@@ -197,6 +214,7 @@ func (s *Store) GetKeysForReplication(ctx context.Context) [][]byte {
 
 		unhexedKeys = append(unhexedKeys, dst)
 	}
+
 	return unhexedKeys
 }
 

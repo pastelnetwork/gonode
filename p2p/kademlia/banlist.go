@@ -48,18 +48,43 @@ func (s *BanList) Add(node *Node) {
 }
 
 // IncrementCount increments the count of a node in the ban list
-func (s *BanList) IncrementCount(node *Node) (thresholdCross bool) {
+func (s *BanList) IncrementCount(node *Node) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 
+	found := false
 	for i := 0; i < len(s.Nodes); i++ {
 		if bytes.Equal(s.Nodes[i].ID, node.ID) {
 			s.Nodes[i].count++
-			if s.Nodes[i].count > threshold {
-				return true
-			}
+			found = true
 
 			break
+		}
+	}
+
+	if !found {
+		banNode := BanNode{
+			Node: Node{
+				ID:   node.ID,
+				IP:   node.IP,
+				Port: node.Port,
+			},
+			CreatedAt: time.Now(),
+			count:     1,
+		}
+
+		s.Nodes = append(s.Nodes, banNode)
+	}
+}
+
+// Banned return true if the node is banned
+func (s *BanList) Banned(node *Node) bool {
+	s.mtx.RLock()
+	defer s.mtx.RUnlock()
+
+	for _, item := range s.Nodes {
+		if bytes.Equal(item.ID, node.ID) {
+			return item.count > threshold
 		}
 	}
 
@@ -73,7 +98,7 @@ func (s *BanList) Exists(node *Node) bool {
 
 	for _, item := range s.Nodes {
 		if bytes.Equal(item.ID, node.ID) {
-			return item.count > threshold
+			return true
 		}
 	}
 

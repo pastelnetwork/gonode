@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	p2pMock "github.com/pastelnetwork/gonode/hermes/service/node/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -61,7 +63,9 @@ func TestCleanupInactiveTickets(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnRegTicketsFromBlockHeight(tc.args.regTicketsReturns, 1, tc.args.regTicketsErr).
-				ListenOnActionTicketsFromBlockHeight(tc.args.actionTicketsReturns, 1, tc.args.actionTicketsErr).ListenOnGetBlockCount(20000, nil)
+				ListenOnActionTicketsFromBlockHeight(tc.args.actionTicketsReturns, 1, tc.args.actionTicketsErr).
+				ListenOnGetBlockCount(20000, nil).On("FindActByRegTxid", mock.Anything, mock.Anything).Return(nil, nil).
+				On("FindActionActByActionRegTxid", mock.Anything, mock.Anything).Return(nil, nil)
 
 			p2pClient := p2pMock.NewMockClient(t)
 			p2pClient.ListenOnDelete(nil)

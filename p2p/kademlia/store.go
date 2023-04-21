@@ -29,4 +29,7 @@ type Store interface {
 
 	// DeleteAll the records in store
 	DeleteAll(ctx context.Context /*, type RecordType*/) error
+
+	// UpdateKeyReplication updates the replication status of the key
+	UpdateKeyReplication(ctx context.Context, key []byte) error
 }

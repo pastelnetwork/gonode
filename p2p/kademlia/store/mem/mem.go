@@ -32,6 +32,11 @@ func (s *Store) GetKeysForReplication(_ context.Context) [][]byte {
 	return keys
 }
 
+// UpdateKeyReplication updates the replication status of the key
+func (s *Store) UpdateKeyReplication(_ context.Context, _ []byte) error {
+	return nil
+}
+
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
 func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
