@@ -10,7 +10,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 
-	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 )
@@ -46,8 +45,13 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 
 	//validate download requested - ensure that the pastelID belongs either to the
 	//  creator of the non-sold NFT or the latest buyer of the NFT
+	tInfo, err := task.service.pastelHandler.GetTicketInfo(ctx, task.Request.Txid, task.Request.Type)
+	if err != nil {
+		return errors.Errorf("validate ticket: %w", err)
+	}
+
 	var ttxid string
-	if !task.service.pastelHandler.IsTicketPublic(ctx, task.Request.Txid, task.Request.Type) {
+	if !tInfo.IsTicketPublic {
 		ttxid, err = task.service.pastelHandler.PastelClient.TicketOwnership(ctx, task.Request.Txid, task.Request.PastelID, task.Request.PastelIDPassphrase)
 		if err != nil && task.Request.Type != pastel.ActionTypeSense {
 			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("pastelid", task.Request.PastelID).Error("Could not get ticket ownership")
@@ -72,7 +76,7 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 	//send download requests to ALL Supernodes, number defined by mesh handler's "minNumberSuperNodes" (really just set in a config file as NumberSuperNodes)
 	//or max nodes that it was able to connect with defined by mesh handler config.UseMaxNodes
-	downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.Request.Type)
+	downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.Request.Type, tInfo.EstimatedDownloadTime)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not download files")
 		task.UpdateStatus(common.StatusErrorDownloadFailed)
@@ -105,8 +109,8 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 }
 
 // Download downloads image from supernodes.
-func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string) ([]error, error) {
-	group, gctx := errgroup.WithContext(ctx)
+func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string, timeout time.Duration) ([]error, error) {
+	var wg sync.WaitGroup
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
 
 	for _, someNode := range task.MeshHandler.Nodes {
@@ -117,13 +121,20 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		}
 
 		someNode := someNode
-		group.Go(func() error {
-			file, subErr := nftDownNode.Download(gctx, txid, timestamp, signature, ttxid, ttype)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// Create a new context with a timeout for this goroutine
+			goroutineCtx, cancel := context.WithTimeout(ctx, timeout)
+			defer cancel()
+
+			file, subErr := nftDownNode.Download(goroutineCtx, txid, timestamp, signature, ttxid, ttype)
 			if subErr != nil {
-				log.WithContext(gctx).WithField("address", someNode.String()).WithError(subErr).Error("Could not download from supernode")
+				log.WithContext(ctx).WithField("address", someNode.String()).WithError(subErr).Error("Could not download from supernode")
 				errChan <- subErr
 			} else {
-				log.WithContext(gctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
+				log.WithContext(ctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
 			}
 
 			func() {
@@ -131,11 +142,9 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 				defer task.mtx.Unlock()
 				task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
 			}()
-
-			return nil
-		})
+		}()
 	}
-	err := group.Wait()
+	wg.Wait()
 
 	close(errChan)
 
@@ -144,7 +153,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		downloadErrors = append(downloadErrors, subErr)
 	}
 
-	return downloadErrors, err
+	return downloadErrors, nil
 }
 
 // MatchFiles matches files. It loops through the files to find a file that matches any other two in the list

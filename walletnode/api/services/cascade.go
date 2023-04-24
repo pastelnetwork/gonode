@@ -160,6 +160,10 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 			return nil, cascade.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
 		case status := <-sub():
 			if status.IsFailure() {
+				if strings.Contains(utils.SafeErrStr(task.Error()), "validate ticket") {
+					return nil, cascade.MakeBadRequest(errors.New("ticket not found. Please make sure you are using correct registration ticket TXID"))
+				}
+
 				if strings.Contains(utils.SafeErrStr(task.Error()), "ticket ownership") {
 					return nil, cascade.MakeBadRequest(errors.New("failed to verify ownership"))
 				}
@@ -172,7 +176,11 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 			}
 
 			if status.IsFinal() {
-				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("NFT downloaded")
+				if len(task.File) == 0 {
+					return nil, cascade.MakeInternalServerError(errors.New("unable to download file"))
+				}
+
+				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("File downloaded")
 				res = &cascade.DownloadResult{
 					File: task.File,
 				}

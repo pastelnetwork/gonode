@@ -41,6 +41,7 @@ type DHT struct {
 	mtx          sync.Mutex
 	authHelper   *AuthHelper
 	ignorelist   *BanList
+	knownNodes   map[string]time.Time
 }
 
 // Options contains configuration options for the local node
@@ -142,7 +143,7 @@ func (s *DHT) getExternalIP() (string, error) {
 
 // StartReplication starts replication
 func (s *DHT) StartReplication(ctx context.Context) error {
-	log.P2P().WithContext(ctx).Error("replication worker started")
+	log.P2P().WithContext(ctx).Info("replication worker started")
 
 	for {
 		select {

@@ -53,7 +53,7 @@ func (s collectionService) parseCollectionTickets(ctx context.Context) error {
 		return nil
 	}
 	if len(collectionActTickets) == 0 {
-		log.WithContext(ctx).Error("no collection act tickets have been found")
+		log.WithContext(ctx).Debug("no collection act tickets have been found")
 		return nil
 	}
 

@@ -14,14 +14,14 @@ const (
 )
 
 type collection struct {
-	CollectionTicketTXID                           string  `db:"collection_ticket_txid"`
-	CollectionName                                 string  `db:"collection_name_string"`
-	CollectionTicketActivationBlockHeight          int     `db:"collection_ticket_activation_block_height"`
-	CollectionFinalAllowedBlockHeight              int     `db:"collection_final_allowed_block_height"`
-	MaxPermittedOpenNSFWScore                      float64 `db:"max_permitted_open_nsfw_score"`
-	MinimumSimilarityScoreToFirstEntryInCollection float64 `db:"minimum_similarity_score_to_first_entry_in_collection"`
-	CollectionState                                string  `db:"collection_state"`
-	DatetimeCollectionStateUpdated                 string  `db:"datetime_collection_state_updated"`
+	CollectionTicketTXID                           string         `db:"collection_ticket_txid"`
+	CollectionName                                 string         `db:"collection_name_string"`
+	CollectionTicketActivationBlockHeight          int            `db:"collection_ticket_activation_block_height"`
+	CollectionFinalAllowedBlockHeight              int            `db:"collection_final_allowed_block_height"`
+	MaxPermittedOpenNSFWScore                      float64        `db:"max_permitted_open_nsfw_score"`
+	MinimumSimilarityScoreToFirstEntryInCollection float64        `db:"minimum_similarity_score_to_first_entry_in_collection"`
+	CollectionState                                sql.NullString `db:"collection_state"`
+	DatetimeCollectionStateUpdated                 sql.NullString `db:"datetime_collection_state_updated"`
 }
 
 // IfCollectionExists checks if collection exists against the id
@@ -77,8 +77,8 @@ func (s *SQLiteStore) GetCollection(ctx context.Context, collectionTxID string) 
 		CollectionFinalAllowedBlockHeight:              c.CollectionFinalAllowedBlockHeight,
 		MaxPermittedOpenNSFWScore:                      c.MaxPermittedOpenNSFWScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: c.MinimumSimilarityScoreToFirstEntryInCollection,
-		CollectionState:                                domain.CollectionState(c.CollectionState),
-		DatetimeCollectionStateUpdated:                 c.DatetimeCollectionStateUpdated,
+		CollectionState:                                domain.CollectionState(c.CollectionState.String),
+		DatetimeCollectionStateUpdated:                 c.DatetimeCollectionStateUpdated.String,
 	}, nil
 
 }

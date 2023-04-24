@@ -197,8 +197,8 @@ func (s *Store) GetKeysForReplication(ctx context.Context) [][]byte {
 	after := now.Add(-s.replicateInterval).UTC()
 
 	var keys [][]byte
-	if err := s.db.Select(&keys, `SELECT key FROM data WHERE updatedAt > ? and replicatedAt is NULL)`, after); err != nil {
-		log.P2P().WithContext(ctx).Errorf("failed to get records for replication older then %s: %v", after, err)
+	if err := s.db.Select(&keys, `SELECT key FROM data WHERE updatedAt > ? and replicatedAt is NULL`, after); err != nil {
+		log.P2P().WithContext(ctx).Errorf("failed to get records for replication older than %s: %v", after, err)
 		return nil
 	}
 	log.P2P().WithContext(ctx).WithField("keyslength", len(keys)).Debugf("Replication keys found: %+v", keys)

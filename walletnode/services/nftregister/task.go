@@ -754,6 +754,7 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 			PastelID:               request.CreatorPastelID,
 			Passphrase:             request.CreatorPastelIDPassphrase,
 			CheckDDDatabaseHashes:  true,
+			HashCheckMaxRetries:    service.config.HashCheckMaxRetries,
 		},
 	}
 

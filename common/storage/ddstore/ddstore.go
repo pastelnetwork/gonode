@@ -65,10 +65,6 @@ type collections struct {
 	CollectionTicketTXID string `db:"collection_ticket_txid"`
 }
 
-type pastelblocks struct {
-	BlockHash string `db:"block_hash"`
-}
-
 // IfFingerprintExists checks if fg exists against the hash
 func (s *SQLiteDDStore) IfFingerprintExists(_ context.Context, hash string) (bool, error) {
 	r := fingerprints{}
@@ -102,12 +98,6 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 		log.WithContext(ctx).WithError(err).Error("failed to get collections_table, ignore table")
 	}
 
-	p := []pastelblocks{}
-	err = s.db.Select(&p, "SELECT block_hash FROM pastel_blocks_table")
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to get pastel_blocks_table, ignore table")
-	}
-
 	var sb strings.Builder
 
 	for i := 0; i < len(r); i++ {
@@ -116,10 +106,6 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 
 	for i := 0; i < len(c); i++ {
 		sb.WriteString(c[i].CollectionTicketTXID)
-	}
-
-	for i := 0; i < len(p); i++ {
-		sb.WriteString(p[i].BlockHash)
 	}
 
 	hash = utils.GetHashFromString(sb.String())

@@ -10,6 +10,10 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
+const (
+	defaultDownloadTimeout = 30 * time.Second
+)
+
 // PastelHandler handles pastel communication
 type PastelHandler struct {
 	PastelClient pastel.Client
@@ -19,6 +23,12 @@ func NewPastelHandler(pastelClient pastel.Client) *PastelHandler {
 	return &PastelHandler{
 		PastelClient: pastelClient,
 	}
+}
+
+// TicketInfo contains information about the ticket
+type TicketInfo struct {
+	IsTicketPublic        bool
+	EstimatedDownloadTime time.Duration
 }
 
 // VerifySignature verifies the signature of the data
@@ -40,7 +50,9 @@ func (pt *PastelHandler) GetEstimatedSenseFee(ctx context.Context, ImgSizeInMb f
 	if err != nil {
 		return 0, err
 	}
-	return actionFees.SenseFee, nil
+
+	// adding 10.0 PSL because activation ticket takes 10 PSL
+	return (actionFees.SenseFee + 10.0), nil
 }
 
 // GetEstimatedSenseFee returns the estimated Action fee for the given image
@@ -49,7 +61,9 @@ func (pt *PastelHandler) GetEstimatedCascadeFee(ctx context.Context, ImgSizeInMb
 	if err != nil {
 		return 0, err
 	}
-	return actionFees.CascadeFee, nil
+
+	// adding 10.0 PSL because activation ticket takes 10 PSL
+	return (actionFees.CascadeFee + 10.0), nil
 }
 
 // determine current block height & hash of it
@@ -193,44 +207,63 @@ func (pt *PastelHandler) RegTicket(ctx context.Context, RegTXID string) (*pastel
 	return &regTicket, nil
 }
 
-func (pt *PastelHandler) IsTicketPublic(ctx context.Context, txid, ttype string) bool {
-
+func (pt *PastelHandler) GetTicketInfo(ctx context.Context, txid, ttype string) (info TicketInfo, err error) {
+	info.EstimatedDownloadTime = defaultDownloadTimeout
 	switch ttype {
 	case pastel.ActionTypeSense:
-		return false
+		// Intent here is to just verify that the txid is valid, Sense file is always set to public
+		_, err := pt.PastelClient.ActionRegTicket(ctx, txid)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("could not get action registered ticket")
+			return info, err
+		}
+
+		info.IsTicketPublic = false
 	case pastel.ActionTypeCascade:
 		ticket, err := pt.PastelClient.ActionRegTicket(ctx, txid)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("could not get action registered ticket")
-			return false
+			return info, err
 		}
 
 		actionTicket, err := pastel.DecodeActionTicket([]byte(ticket.ActionTicketData.ActionTicket))
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("cloud not decode action ticket: %w", err)
-			return false
+			return info, err
 		}
 		ticket.ActionTicketData.ActionTicketData = *actionTicket
 
 		cTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("could not get registered ticket")
-			return false
+			return info, err
 		}
 
-		return cTicket.MakePubliclyAccessible
+		info.IsTicketPublic = cTicket.MakePubliclyAccessible
+		est := getEstimatedDownloadSizeOnBytes(cTicket.OriginalFileSizeInBytes)
+		if est > defaultDownloadTimeout {
+			info.EstimatedDownloadTime = est
+		}
 
 	default:
 		regTicket, err := pt.RegTicket(ctx, txid)
 		if err == nil {
-			return regTicket.RegTicketData.NFTTicketData.AppTicketData.MakePubliclyAccessible
+			info.IsTicketPublic = regTicket.RegTicketData.NFTTicketData.AppTicketData.MakePubliclyAccessible
+			est := getEstimatedDownloadSizeOnBytes(regTicket.RegTicketData.NFTTicketData.AppTicketData.OriginalFileSizeInBytes)
+			if est > defaultDownloadTimeout {
+				info.EstimatedDownloadTime = est
+			}
 		} else {
 			log.WithContext(ctx).WithError(err).Error("could not get registered ticket")
-
+			return info, err
 		}
 	}
 
-	return false
+	return info, nil
+}
+
+func getEstimatedDownloadSizeOnBytes(size int) time.Duration {
+	return time.Duration((size / 50000)) * (time.Millisecond * 800)
 }
 
 func (pt *PastelHandler) GetBurnAddress() string {

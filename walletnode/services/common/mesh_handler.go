@@ -38,6 +38,7 @@ type MeshHandler struct {
 	Nodes                 SuperNodeList
 	UseMaxNodes           bool
 	checkDDDatabaseHashes bool
+	HashCheckMaxRetries   int
 }
 
 // MeshHandlerOpts set of options to pass to NewMeshHandler
@@ -59,6 +60,7 @@ type MeshHandlerConfig struct {
 	ConnectToNextNodeDelay time.Duration
 	UseMaxNodes            bool
 	CheckDDDatabaseHashes  bool
+	HashCheckMaxRetries    int
 }
 
 // NewMeshHandler returns new NewMeshHandler
@@ -76,6 +78,7 @@ func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 		connectToNextNodeDelay: opts.Configs.ConnectToNextNodeDelay,
 		UseMaxNodes:            opts.Configs.UseMaxNodes,
 		checkDDDatabaseHashes:  opts.Configs.CheckDDDatabaseHashes,
+		HashCheckMaxRetries:    opts.Configs.HashCheckMaxRetries,
 	}
 }
 
@@ -143,7 +146,7 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (Super
 	log.WithContext(ctx).Infof("Found %d Supernodes", len(candidatesNodes))
 
 	// Connect to top nodes to find 3SN and validate their info
-	foundNodes, err := m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n)
+	foundNodes, err := m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n, m.HashCheckMaxRetries)
 	if err != nil {
 		m.task.UpdateStatus(StatusErrorFindRespondingSNs)
 		log.WithContext(ctx).WithError(err).Errorf("unable to validate MN")
@@ -235,74 +238,77 @@ func (m *MeshHandler) getTopNodes(ctx context.Context) (SuperNodeList, error) {
 	return nodes, nil
 }
 
-// validateMNsInfo - validate MNs info, until found at least N valid MNs
-func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candidatesNodes SuperNodeList, n int) (SuperNodeList, error) {
+func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candidatesNodes SuperNodeList, n int, maxRetries int) (SuperNodeList, error) {
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
 		PassPhrase: m.passphrase,
 		Algorithm:  pastel.SignAlgorithmED448,
 	}
 
-	combinations := combinations(candidatesNodes)
-	retryCount := 0
-
 	if m.checkDDDatabaseHashes {
-		for {
-			for _, set := range combinations {
-				nodes := SuperNodeList{}
+		return m.connectToAndValidateSuperNodesWithHashCheck(ctx, candidatesNodes, n, maxRetries, secInfo)
+	}
 
-				for _, someNode := range set {
-					if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-						break
-					}
+	return m.connectToAndValidateSuperNodesWithoutHashCheck(ctx, candidatesNodes, n, secInfo)
+}
 
-					nodes = append(nodes, someNode)
-				}
+func (m *MeshHandler) connectToAndValidateSuperNodesWithHashCheck(ctx context.Context, candidatesNodes SuperNodeList, n int, maxRetries int, secInfo *alts.SecInfo) (SuperNodeList, error) {
+	combinations := combinations(candidatesNodes)
 
-				if len(nodes) != n {
-					continue
-				}
+	for retryCount := 0; retryCount < maxRetries; retryCount++ {
+		for _, set := range combinations {
+			nodes := m.connectToNodes(ctx, set, n, secInfo)
 
-				if err := m.matchDatabaseHash(ctx, nodes); err != nil {
-					continue
-				}
-
-				return nodes, nil
+			if len(nodes) != n {
+				continue
 			}
 
-			if retryCount == 3 {
-				return nil, errors.Errorf("nodes not found, could not match database hash")
+			if err := m.matchDatabaseHash(ctx, nodes); err != nil {
+				continue
 			}
 
-			log.WithContext(ctx).Info("Could not match database hash, retrying in 30s...")
-			retryCount++
-			time.Sleep(30 * time.Second)
+			return nodes, nil
+		}
+
+		log.WithContext(ctx).Infof("Could not match database hash, retrying in 30s... (attempt %d/%d)", retryCount+1, maxRetries)
+
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context canceled while waiting to retry: %w", ctx.Err())
+		case <-time.After(30 * time.Second):
 		}
 	}
 
-	count := 0
-	nodes := SuperNodeList{}
+	return nil, errors.Errorf("nodes not found, could not match database hash after %d attempts", maxRetries)
+}
 
-	for _, someNode := range candidatesNodes {
-		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-			continue
-		}
+func (m *MeshHandler) connectToAndValidateSuperNodesWithoutHashCheck(ctx context.Context, candidatesNodes SuperNodeList, n int, secInfo *alts.SecInfo) (SuperNodeList, error) {
+	nodes := m.connectToNodes(ctx, candidatesNodes, n, secInfo)
 
-		count++
-		nodes = append(nodes, someNode)
-		if count == n && !m.UseMaxNodes {
-			break
-		}
-	}
-
-	if count < n {
+	if len(nodes) < n {
 		log.WithContext(ctx).Errorf("Failed to validate enough Supernodes - only found %d good", n)
 		return nil, errors.Errorf("validate %d Supernodes from pastel network", n)
 	}
 
 	return nodes, nil
+}
+
+func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNodeList, n int, secInfo *alts.SecInfo) SuperNodeList {
+	nodes := SuperNodeList{}
+
+	for _, someNode := range nodesToConnect {
+		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			continue
+		}
+
+		nodes = append(nodes, someNode)
+		if len(nodes) == n && !m.UseMaxNodes {
+			break
+		}
+	}
+
+	return nodes
 }
 
 // matchDatabaseHash matches database hashes
