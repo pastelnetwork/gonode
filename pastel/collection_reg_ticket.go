@@ -3,7 +3,7 @@ package pastel
 import (
 	"encoding/base64"
 	"encoding/json"
-
+	"fmt"
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
@@ -46,7 +46,7 @@ type CollectionTicket struct {
 	AppTicketData                           AppTicket `json:"-"`
 }
 
-// EncodeCollectionTicket encodes  CollectionTicket to bytes
+// EncodeCollectionTicket encodes CollectionTicket to bytes
 func EncodeCollectionTicket(ticket *CollectionTicket) ([]byte, error) {
 	appTicketBytes, err := json.Marshal(ticket.AppTicketData)
 	if err != nil {
@@ -62,4 +62,56 @@ func EncodeCollectionTicket(ticket *CollectionTicket) ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+// DecodeCollectionTicket decodes collection ticket from bytes
+func DecodeCollectionTicket(b []byte) (*CollectionTicket, error) {
+	res := &CollectionTicket{}
+	err := json.Unmarshal(b, &res)
+	if err != nil {
+		return nil, errors.Errorf("unmarshal collection ticket: %w", err)
+	}
+
+	appDecodedBytes, err := base64.RawStdEncoding.DecodeString(res.AppTicket)
+	if err != nil {
+		return nil, fmt.Errorf("base64 decode: %v", err)
+	}
+
+	appTicket := &AppTicket{}
+	err = json.Unmarshal(appDecodedBytes, appTicket)
+	if err != nil {
+		return nil, errors.Errorf("unmarshal api sense ticket: %w", err)
+	}
+	res.AppTicketData = *appTicket
+
+	return res, nil
+}
+
+// CollectionTicketSignatures represents signatures from parties
+type CollectionTicketSignatures struct {
+	Principal map[string]string `json:"principal,omitempty"`
+	Mn2       map[string]string `json:"mn2,omitempty"`
+	Mn3       map[string]string `json:"mn3,omitempty"`
+}
+
+// EncodeCollectionTicketSignatures encodes CollectionTicketSignatures into byte array
+func EncodeCollectionTicketSignatures(signatures CollectionTicketSignatures) ([]byte, error) {
+	// reset signatures of Mn1 if any
+	b, err := json.Marshal(signatures)
+
+	if err != nil {
+		return nil, errors.Errorf("marshal signatures: %w", err)
+	}
+
+	return b, nil
+}
+
+// RegisterCollectionRequest represents request to register a collection ticket
+type RegisterCollectionRequest struct {
+	Ticket      *CollectionTicket
+	Signatures  *CollectionTicketSignatures
+	Mn1PastelID string
+	Passphrase  string
+	Label       string
+	Fee         int64
 }

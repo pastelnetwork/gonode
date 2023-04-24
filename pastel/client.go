@@ -634,13 +634,36 @@ func (client *client) CollectionRegTicket(ctx context.Context, regTxid string) (
 }
 
 // RegisterCollectionTicket registers the collection ticket
-func (client *client) RegisterCollectionTicket(ctx context.Context, data string, signatures string, pastelID, passphrase, label string, fee int64) (txID string, err error) {
+func (client *client) RegisterCollectionTicket(ctx context.Context, req RegisterCollectionRequest) (txID string, err error) {
 	var res struct {
 		TxID string `json:"txid"`
 	}
 
-	if err = client.callFor(ctx, &res, "tickets", "register", "collection", data, signatures, pastelID, passphrase, label, fee); err != nil {
-		return "", errors.Errorf("failed to sign data: %w", err)
+	ticket, err := EncodeCollectionTicket(req.Ticket)
+	if err != nil {
+		return "", errors.Errorf("failed to encode ticket: %w", err)
+	}
+	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
+
+	signatures, err := EncodeCollectionTicketSignatures(*req.Signatures)
+	if err != nil {
+		return "", errors.Errorf("failed to encode signatures: %w", err)
+	}
+
+	params := []interface{}{}
+	params = append(params, "register")
+	params = append(params, "collection")
+	params = append(params, ticketBlob)
+	params = append(params, string(signatures))
+	params = append(params, req.Mn1PastelID)
+	params = append(params, req.Passphrase)
+	params = append(params, req.Label)
+	params = append(params, fmt.Sprint(req.Fee))
+
+	log.WithContext(ctx).WithField("ticket", ticketBlob).WithField("signatures", string(signatures)).WithField("pastelid", req.Mn1PastelID).WithField("label", req.Label).WithField("fee", req.Fee).Info("RegisterCollectionTicket Request")
+	// command : tickets register action "ticket" "{signatures}" "pastelid" "passphrase" "label" "fee"
+	if err := client.callFor(ctx, &res, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call register NFT ticket: %w", err)
 	}
 
 	return res.TxID, nil

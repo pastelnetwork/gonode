@@ -298,7 +298,7 @@ func (service *RegisterCascade) SendSignedActionTicket(ctx context.Context, req 
 	}
 
 	// Validate burn_txid
-	err = task.ValidateBurnTxID(ctx)
+	err = task.ValidateBurnTxID(ctx, 20)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("validate burn request failure")
 		return nil, errors.Errorf("pre-burn txid is bad %w", err)

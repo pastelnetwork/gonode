@@ -376,8 +376,7 @@ func (client *Client) ListenOnCollectionRegTicket(collectionRegTicket pastel.Col
 
 // ListenOnRegisterCollectionTicket listens register collection ticket return TxID of the ticket & err
 func (client *Client) ListenOnRegisterCollectionTicket(txID string, retErr error) *Client {
-	client.On(RegisterCollectionTicketMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything, mock.Anything).Return(txID, retErr)
+	client.On(RegisterCollectionTicketMethod, mock.Anything, mock.Anything).Return(txID, retErr)
 	return client
 }
 
