@@ -41,7 +41,6 @@ type DHT struct {
 	mtx          sync.Mutex
 	authHelper   *AuthHelper
 	ignorelist   *BanList
-	knownNodes   map[string]time.Time
 }
 
 // Options contains configuration options for the local node
