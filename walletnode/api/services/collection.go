@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"goa.design/goa/v3/security"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -132,4 +133,17 @@ func (service *CollectionAPIHandler) GetTaskHistory(ctx context.Context, p *coll
 	}
 
 	return history, nil
+}
+
+// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+func (service *CollectionAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
+	return ctx, nil
+}
+
+// NewCollectionAPIIHandler returns the swagger OpenAPI implementation.
+func NewCollectionAPIIHandler(register *collectionregister.CollectionRegistrationService) *CollectionAPIHandler {
+	return &CollectionAPIHandler{
+		Common:   NewCommon(),
+		register: register,
+	}
 }

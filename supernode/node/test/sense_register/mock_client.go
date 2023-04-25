@@ -30,6 +30,9 @@ const (
 	// RegisterSenseMethod represent RegisterSenseInterface name method
 	RegisterSenseMethod = "RegisterSense"
 
+	// RegisterCollectionMethod represent RegisterCollectionInterface name method
+	RegisterCollectionMethod = "RegisterCollection"
+
 	// SessionMethod represent Session name method
 	SessionMethod = "Session"
 
@@ -47,6 +50,9 @@ const (
 
 	// SendSignedDDAndFingerprintsMethod represent SendSignedDDAndFingerprints method
 	SendSignedDDAndFingerprintsMethod = "SendSignedDDAndFingerprints"
+
+	//SendCollectionTicketSignatureMethod represent SendCollectionTicketSignatureMethod
+	SendCollectionTicketSignatureMethod = "SendCollectionTicketSignature"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -55,15 +61,17 @@ type Client struct {
 	*mocks.ClientInterface
 	*mocks.ConnectionInterface
 	*mocks.RegisterSenseInterface
+	*mocks.RegisterCollectionInterface
 }
 
 // NewMockClient create new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:                      t,
-		ClientInterface:        &mocks.ClientInterface{},
-		ConnectionInterface:    &mocks.ConnectionInterface{},
-		RegisterSenseInterface: &mocks.RegisterSenseInterface{},
+		t:                           t,
+		ClientInterface:             &mocks.ClientInterface{},
+		ConnectionInterface:         &mocks.ConnectionInterface{},
+		RegisterSenseInterface:      &mocks.RegisterSenseInterface{},
+		RegisterCollectionInterface: &mocks.RegisterCollectionInterface{},
 	}
 }
 
@@ -73,12 +81,27 @@ func (client *Client) ListenOnRegisterSense() *Client {
 	return client
 }
 
+// ListenOnRegisterCollection listening RegisterCollectionInterface call
+func (client *Client) ListenOnRegisterCollection() *Client {
+	client.ConnectionInterface.On(RegisterCollectionMethod).Return(client.RegisterCollectionInterface)
+	return client
+}
+
 // AssertRegisterSenseCall assertion RegisterSenseInterface call
 func (client *Client) AssertRegisterSenseCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.ConnectionInterface.AssertCalled(client.t, RegisterSenseMethod, arguments...)
 	}
 	client.ConnectionInterface.AssertNumberOfCalls(client.t, RegisterSenseMethod, expectedCalls)
+	return client
+}
+
+// AssertRegisterCollectionCall assertion RegisterCollectionInterface call
+func (client *Client) AssertRegisterCollectionCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.ConnectionInterface.AssertCalled(client.t, RegisterCollectionMethod, arguments...)
+	}
+	client.ConnectionInterface.AssertNumberOfCalls(client.t, RegisterCollectionMethod, expectedCalls)
 	return client
 }
 
@@ -141,6 +164,12 @@ func (client *Client) ListenOnSession(returnErr error) *Client {
 // ListenOnSendSenseTicketSignature listens on send Sense ticket signature
 func (client *Client) ListenOnSendSenseTicketSignature(returnErr error) *Client {
 	client.RegisterSenseInterface.On(SendSenseTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
+	return client
+}
+
+// ListenOnSendCollectionTicketSignature listens on send Collection ticket signature
+func (client *Client) ListenOnSendCollectionTicketSignature(returnErr error) *Client {
+	client.RegisterSenseInterface.On(SendCollectionTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 

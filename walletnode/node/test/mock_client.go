@@ -52,6 +52,9 @@ const (
 	// SendSignedTicketMethod represent SendSignedTicket method
 	SendSignedTicketMethod = "SendSignedTicket"
 
+	// SendTicketForSignatureMethod represent SendTicketForSignature method
+	SendTicketForSignatureMethod = "SendTicketForSignature"
+
 	// UploadImageWithThumbnailMethod represent UploadImageWithThumbnail method
 	UploadImageWithThumbnailMethod = "UploadImageWithThumbnail"
 
@@ -84,19 +87,21 @@ type Client struct {
 	*mocks.ProcessUserdataInterface
 	*mocks.RegisterSenseInterface
 	*mocks.RegisterCascadeInterface
+	*mocks.RegisterCollectionInterface
 }
 
 // NewMockClient create new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:                        t,
-		ClientInterface:          &mocks.ClientInterface{},
-		ConnectionInterface:      &mocks.ConnectionInterface{},
-		RegisterNftInterface:     &mocks.RegisterNftInterface{},
-		DownloadNftInterface:     &mocks.DownloadNftInterface{},
-		ProcessUserdataInterface: &mocks.ProcessUserdataInterface{},
-		RegisterSenseInterface:   &mocks.RegisterSenseInterface{},
-		RegisterCascadeInterface: &mocks.RegisterCascadeInterface{},
+		t:                           t,
+		ClientInterface:             &mocks.ClientInterface{},
+		ConnectionInterface:         &mocks.ConnectionInterface{},
+		RegisterNftInterface:        &mocks.RegisterNftInterface{},
+		DownloadNftInterface:        &mocks.DownloadNftInterface{},
+		ProcessUserdataInterface:    &mocks.ProcessUserdataInterface{},
+		RegisterSenseInterface:      &mocks.RegisterSenseInterface{},
+		RegisterCascadeInterface:    &mocks.RegisterCascadeInterface{},
+		RegisterCollectionInterface: &mocks.RegisterCollectionInterface{},
 	}
 }
 
@@ -134,6 +139,14 @@ func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
 		mock.Anything).Return(fmt.Sprint(id), err)
 
 	client.RegisterCascadeInterface.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything).Return(fmt.Sprint(id), err)
+
+	return client
+}
+
+// ListenOnSendTicketForSignature listening SendTicketForSignature call
+func (client *Client) ListenOnSendTicketForSignature(id int64, err error) *Client {
+	client.RegisterCollectionInterface.On(SendTicketForSignatureMethod, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything).Return(fmt.Sprint(id), err)
 
 	return client
@@ -269,6 +282,7 @@ func (client *Client) ListenOnSession(returnErr error) *Client {
 	client.RegisterNftInterface.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
 	client.RegisterSenseInterface.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
 	client.RegisterCascadeInterface.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+	client.RegisterCollectionInterface.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
 
 	return client
 }
@@ -293,6 +307,7 @@ func (client *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error)
 	client.RegisterNftInterface.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
 	client.RegisterSenseInterface.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
 	client.RegisterCascadeInterface.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
+	client.RegisterCollectionInterface.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
 
 	return client
 }
@@ -311,6 +326,7 @@ func (client *Client) ListenOnConnectTo(returnErr error) *Client {
 	client.RegisterNftInterface.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
 	client.RegisterSenseInterface.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
 	client.RegisterCascadeInterface.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
+	client.RegisterCollectionInterface.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
 
 	return client
 }
@@ -329,6 +345,7 @@ func (client *Client) ListenOnSessID(sessID string) *Client {
 	client.RegisterNftInterface.On(SessIDMethod).Return(sessID)
 	client.RegisterSenseInterface.On(SessIDMethod).Return(sessID)
 	client.RegisterCascadeInterface.On(SessIDMethod).Return(sessID)
+	client.RegisterCollectionInterface.On(SessIDMethod).Return(sessID)
 
 	return client
 }
@@ -461,5 +478,6 @@ func (client *Client) AssertSessIDCallUserdata(expectedCalls int, arguments ...i
 func (client *Client) ListenOnSendActionAct(retErr error) *Client {
 	client.RegisterSenseInterface.On(SendActionActMethod, mock.Anything, mock.Anything).Return(retErr)
 	client.RegisterCascadeInterface.On(SendActionActMethod, mock.Anything, mock.Anything).Return(retErr)
+
 	return client
 }

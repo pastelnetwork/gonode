@@ -2,7 +2,7 @@ package walletnode
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
+	"google.golang.org/grpc"
 	"io"
 	"runtime/debug"
 
@@ -11,6 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
+	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
@@ -146,6 +147,11 @@ func (service *RegisterCollection) MeshNodes(ctx context.Context, req *pb.MeshNo
 	return &pb.MeshNodesReply{}, err
 }
 
+// Desc returns a description of the service.
+func (service *RegisterCollection) Desc() *grpc.ServiceDesc {
+	return &pb.RegisterCollection_ServiceDesc
+}
+
 // SendCollectionTicketForSignature implements wallet-node.RegisterCollection.SendCollectionTicketForSignature
 func (service *RegisterCollection) SendCollectionTicketForSignature(ctx context.Context, req *pb.SendCollectionTicketForSignatureRequest) (retRes *pb.SendCollectionTicketForSignatureResponse, retErr error) {
 	defer errors.Recover(func(recErr error) {
@@ -170,4 +176,11 @@ func (service *RegisterCollection) SendCollectionTicketForSignature(ctx context.
 	}
 
 	return &rsp, nil
+}
+
+// NewRegisterCollection returns a new RegisterCollection instance.
+func NewRegisterCollection(service *collectionregister.CollectionRegistrationService) *RegisterCollection {
+	return &RegisterCollection{
+		RegisterCollection: common.NewRegisterCollection(service),
+	}
 }

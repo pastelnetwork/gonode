@@ -2,6 +2,7 @@ package supernode
 
 import (
 	"context"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
@@ -99,6 +100,11 @@ func (service *RegisterCollection) SendCollectionTicketSignature(ctx context.Con
 	}
 
 	return &pb.SendTicketSignatureReply{}, nil
+}
+
+// Desc returns a description of the service.
+func (service *RegisterCollection) Desc() *grpc.ServiceDesc {
+	return &pb.RegisterCollection_ServiceDesc
 }
 
 // NewRegisterCollection returns a new RegisterCollection instance.

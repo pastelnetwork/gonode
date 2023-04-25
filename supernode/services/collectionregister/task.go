@@ -8,10 +8,6 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
-const (
-	collectionRegFee = 1000
-)
-
 // CollectionRegistrationTask is the task of registering new Collection.
 type CollectionRegistrationTask struct {
 	*common.SuperNodeTask
@@ -34,23 +30,23 @@ func (task *CollectionRegistrationTask) Run(ctx context.Context) error {
 }
 
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
-func (task *CollectionRegistrationTask) ValidateAndRegister(ctx context.Context, ticket []byte, creatorSignature []byte) (string, error) {
+func (task *CollectionRegistrationTask) ValidateAndRegister(_ context.Context, ticket []byte, creatorSignature []byte) (string, error) {
 	var err error
 
 	task.creatorSignature = creatorSignature
 
-	if err := task.CalculateFee(); err != nil {
-		log.WithContext(ctx).WithError(err).Error("calculate fee failed")
-		return "", errors.Errorf("calculate fee: %w", err)
-	}
-	log.WithContext(ctx).WithError(err).Error("collection reg fee has been computed")
-
-	// Validate burn_txid
-	err = task.ValidateBurnTxID(ctx, 100)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("validate burn txid failed")
-		return "", errors.Errorf("validate burn txid failed")
-	}
+	//if err := task.CalculateFee(); err != nil {
+	//	log.WithContext(ctx).WithError(err).Error("calculate fee failed")
+	//	return "", errors.Errorf("calculate fee: %w", err)
+	//}
+	//log.WithContext(ctx).WithError(err).Error("collection reg fee has been computed")
+	//
+	//// Validate burn_txid
+	//err = task.ValidateBurnTxID(ctx, 100)
+	//if err != nil {
+	//	log.WithContext(ctx).WithError(err).Error("validate burn txid failed")
+	//	return "", errors.Errorf("validate burn txid failed")
+	//}
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if err = task.validateSignedTicketFromWN(ctx, ticket, creatorSignature); err != nil {
@@ -74,7 +70,7 @@ func (task *CollectionRegistrationTask) ValidateAndRegister(ctx context.Context,
 	}
 
 	// only primary node start this action
-	var nftRegTxid string
+	var collectionRegTxid string
 	if task.NetworkHandler.ConnectedTo == nil {
 		<-task.NewAction(func(ctx context.Context) error {
 			log.WithContext(ctx).Debug("waiting for signature from peers")
@@ -95,7 +91,7 @@ func (task *CollectionRegistrationTask) ValidateAndRegister(ctx context.Context,
 						return nil
 					}
 
-					nftRegTxid, err = task.registerAction(ctx)
+					collectionRegTxid, err = task.registerAction(ctx)
 					if err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("register action failed")
 						err = errors.Errorf("register Action: %w", err)
@@ -108,17 +104,17 @@ func (task *CollectionRegistrationTask) ValidateAndRegister(ctx context.Context,
 		})
 	}
 
-	return nftRegTxid, err
+	return collectionRegTxid, err
 }
 
 // CalculateFee calculates and assigns fee
-func (task *CollectionRegistrationTask) CalculateFee() error {
-	task.registrationFee = int64(collectionRegFee)
-	task.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
-	task.RegTaskHelper.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
-
-	return nil
-}
+//func (task *CollectionRegistrationTask) CalculateFee() error {
+//	task.registrationFee = int64(collectionRegFee)
+//	task.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
+//	task.RegTaskHelper.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
+//
+//	return nil
+//}
 
 func (task *CollectionRegistrationTask) validateSignedTicketFromWN(ctx context.Context, ticket []byte, creatorSignature []byte) error {
 	var err error
@@ -179,10 +175,22 @@ func (task *CollectionRegistrationTask) registerAction(ctx context.Context) (str
 
 	req := pastel.RegisterCollectionRequest{
 		Ticket: &pastel.CollectionTicket{
-			CollectionTicketVersion: task.Ticket.CollectionTicketVersion,
-			Creator:                 task.Ticket.Creator,
-			BlockNum:                task.Ticket.BlockNum,
-			BlockHash:               task.Ticket.BlockHash,
+			CollectionTicketVersion:                 task.Ticket.CollectionTicketVersion,
+			CollectionName:                          task.Ticket.CollectionName,
+			ItemType:                                task.Ticket.ItemType,
+			Creator:                                 task.Ticket.Creator,
+			ListOfPastelIDsOfAuthorizedContributors: task.Ticket.ListOfPastelIDsOfAuthorizedContributors,
+			BlockNum:                                task.Ticket.BlockNum,
+			BlockHash:                               task.Ticket.BlockHash,
+			CollectionFinalAllowedBlockHeight:       task.Ticket.CollectionFinalAllowedBlockHeight,
+			MaxCollectionEntries:                    task.Ticket.MaxCollectionEntries,
+			CollectionItemCopyCount:                 task.Ticket.CollectionItemCopyCount,
+			Royalty:                                 task.Ticket.Royalty,
+			Green:                                   task.Ticket.Green,
+			AppTicketData: pastel.AppTicket{
+				MaxPermittedOpenNSFWScore:                      task.Ticket.AppTicketData.MaxPermittedOpenNSFWScore,
+				MinimumSimilarityScoreToFirstEntryInCollection: task.Ticket.AppTicketData.MinimumSimilarityScoreToFirstEntryInCollection,
+			},
 		},
 		Signatures: &pastel.CollectionTicketSignatures{
 			Principal: map[string]string{

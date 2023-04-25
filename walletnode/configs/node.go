@@ -3,6 +3,7 @@ package configs
 import (
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
+	"github.com/pastelnetwork/gonode/walletnode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
@@ -14,11 +15,12 @@ type Node struct {
 	// `squash` field cannot be pointer
 	API *api.Config `mapstructure:"api" json:"api,omitempty"`
 
-	NftRegister     nftregister.Config     `mapstructure:",squash" json:"nft_register,omitempty"`
-	NftSearch       nftsearch.Config       `mapstructure:",squash" json:"nft_search,omitempty"`
-	NftDownload     download.Config        `mapstructure:",squash" json:"nft_download,omitempty"`
-	SenseRegister   senseregister.Config   `mapstructure:"sense_register" json:"sense_register,omitempty"`
-	CascadeRegister cascaderegister.Config `mapstructure:"cascade_register" json:"cascade_register,omitempty"`
+	NftRegister        nftregister.Config        `mapstructure:",squash" json:"nft_register,omitempty"`
+	NftSearch          nftsearch.Config          `mapstructure:",squash" json:"nft_search,omitempty"`
+	NftDownload        download.Config           `mapstructure:",squash" json:"nft_download,omitempty"`
+	SenseRegister      senseregister.Config      `mapstructure:"sense_register" json:"sense_register,omitempty"`
+	CascadeRegister    cascaderegister.Config    `mapstructure:"cascade_register" json:"cascade_register,omitempty"`
+	CollectionRegister collectionregister.Config `mapstructure:"collection_register" json:"collection_register,omitempty"`
 
 	// UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
 

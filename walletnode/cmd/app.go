@@ -25,6 +25,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/configs"
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
+	"github.com/pastelnetwork/gonode/walletnode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
@@ -199,12 +200,14 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		config.NftRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
 		config.SenseRegister.SenseRegTxMinConfirmations = config.RegTxMinConfirmations
 		config.CascadeRegister.CascadeRegTxMinConfirmations = config.RegTxMinConfirmations
+		config.CollectionRegister.CollectionRegTxMinConfirmations = config.RegTxMinConfirmations
 	}
 
 	if config.ActTxMinConfirmations > 0 {
 		config.NftRegister.NFTActTxMinConfirmations = config.ActTxMinConfirmations
 		config.SenseRegister.SenseActTxMinConfirmations = config.ActTxMinConfirmations
 		config.CascadeRegister.CascadeActTxMinConfirmations = config.ActTxMinConfirmations
+		config.CollectionRegister.CollectionActTxMinConfirmations = config.ActTxMinConfirmations
 	}
 
 	// These services connect the different clients and configs together to provide tasking and handling for
@@ -216,6 +219,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, rqClient, *nftDownload)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, nftDownload, db)
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload, rqClient)
+	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient)
 
 	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.
 	//  Since the API Server has access to the services, this is what finally exposes useful methods like
@@ -225,6 +229,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		// services.NewUserdataAPIHandler(userdataProcess),
 		services.NewSenseAPIHandler(senseRegister, nftDownload),
 		services.NewCascadeAPIHandler(cascadeRegister, nftDownload),
+		services.NewCollectionAPIIHandler(collectionRegister),
 		services.NewSwagger(),
 	)
 
@@ -234,5 +239,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	//NB: Tasks are defined individually for each service, and probably override the actual task struct's functions.
 	//  For instance, nftRegister uses the NftRegistrationTask found in services/nftregister/task.go
 	//return runServices(ctx, server, nftRegister, nftSearch, nftDownload, userdataProcess, senseRegister)
-	return runServices(ctx, server, nftRegister, nftSearch, nftDownload, senseRegister, cascadeRegister)
+	return runServices(ctx, server, nftRegister, nftSearch, nftDownload, senseRegister, cascadeRegister, collectionRegister)
 }

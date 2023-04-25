@@ -26,7 +26,7 @@ func (service *registerCollection) SessID() string {
 	return service.sessID
 }
 
-// Session implements node.RegisterNft.Session()
+// Session implements node.RegisterCollection.Session()
 func (service *registerCollection) Session(ctx context.Context, nodeID, sessID string) error {
 	service.sessID = sessID
 

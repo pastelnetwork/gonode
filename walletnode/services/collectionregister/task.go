@@ -95,8 +95,6 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Info("signed collection reg ticket")
 
 	log.WithContext(ctx).Info("upload signed collection reg ticket to SNs")
-
-	// UPLOAD signed ticket to supernodes to validate and register action with the network
 	if err := task.uploadSignedTicket(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error uploading signed ticket")
 
@@ -113,15 +111,12 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
-
 	log.WithContext(ctx).Infof("Collection Reg Ticket registered. Collection Registration Ticket txid: %s", task.collectionTXID)
 	log.WithContext(ctx).Info("Closing SNs connections")
 
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	log.WithContext(ctx).Infof("Waiting Confirmations for Collection Reg Ticket - Ticket txid: %s", task.collectionTXID)
-
-	// new context because the old context already cancelled
 	newCtx := log.ContextWithPrefix(context.Background(), "Collection")
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.collectionTXID, int64(task.service.config.CollectionRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
@@ -138,7 +133,7 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 		IsFinalBool:   false,
 	})
 
-	log.WithContext(ctx).Debug("Collection Reg Ticket confirmed, Activating Collection Reg Ticket")
+	log.WithContext(ctx).Info("Collection Reg Ticket confirmed, Activating Collection Reg Ticket")
 	// activate Collection ticket registered at previous step by SN
 	activateTxID, err := task.activateCollectionTicket(newCtx)
 	if err != nil {
