@@ -140,7 +140,7 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 
 	log.WithContext(ctx).Debug("Collection Reg Ticket confirmed, Activating Collection Reg Ticket")
 	// activate Collection ticket registered at previous step by SN
-	activateTxID, err := task.activateActionTicket(newCtx)
+	activateTxID, err := task.activateCollectionTicket(newCtx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error activating collection ticket")
 
@@ -257,7 +257,7 @@ func (task *CollectionRegistrationTask) uploadSignedTicket(ctx context.Context) 
 	return group.Wait()
 }
 
-func (task *CollectionRegistrationTask) activateActionTicket(ctx context.Context) (string, error) {
+func (task *CollectionRegistrationTask) activateCollectionTicket(ctx context.Context) (string, error) {
 	request := pastel.ActivateActionRequest{
 		RegTxID:    task.collectionTXID,
 		BlockNum:   int(task.creatorBlockHeight),

@@ -273,7 +273,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 	isValidBurnTxID := false
 	var compressedDDFingerAndScores []byte
 
-	err = task.ValidateBurnTxID(ctx)
+	err = task.ValidateBurnTxID(ctx, 20)
 	if err == nil {
 		isValidBurnTxID = true
 

@@ -28,6 +28,11 @@ func (conn *clientConn) RegisterCascade() node.RegisterCascadeInterface {
 	return newRegisterCascade(conn)
 }
 
+// RegisterCollection implements node.ConnectionInterface.RegisterCollection()
+func (conn *clientConn) RegisterCollection() node.RegisterCollectionInterface {
+	return newRegisterCollection(conn)
+}
+
 // StorageChallenge implements node.Connection.StorageChallenge()
 func (conn *clientConn) StorageChallenge() node.StorageChallengeInterface {
 	return newStorageChallengeGRPCClient(conn)

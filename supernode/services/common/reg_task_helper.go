@@ -84,6 +84,33 @@ func (h *RegTaskHelper) AddPeerTicketSignature(nodeID string, signature []byte, 
 	return err
 }
 
+// AddPeerCollectionTicketSignature waits for ticket signatures from other SNs and adds them into internal array
+func (h *RegTaskHelper) AddPeerCollectionTicketSignature(nodeID string, signature []byte) error {
+	h.peersTicketSignatureMtx.Lock()
+	defer h.peersTicketSignatureMtx.Unlock()
+
+	var err error
+
+	<-h.NewAction(func(ctx context.Context) error {
+		log.WithContext(ctx).Debugf("receive collection ticket signature from node %s", nodeID)
+		if node := h.NetworkHandler.Accepted.ByID(nodeID); node == nil {
+			log.WithContext(ctx).WithField("node", nodeID).Errorf("node is not in Accepted list")
+			err = errors.Errorf("node %s not in Accepted list", nodeID)
+			return nil
+		}
+
+		h.PeersTicketSignature[nodeID] = signature
+		if len(h.PeersTicketSignature) == len(h.NetworkHandler.Accepted) {
+			log.WithContext(ctx).Debug("all signature received")
+			go func() {
+				close(h.AllSignaturesReceivedChn)
+			}()
+		}
+		return nil
+	})
+	return err
+}
+
 // ValidateIDFiles validates received (IDs) file and its (50) IDs:
 //  1. checks signatures
 //  2. generates list of 50 IDs and compares them to received
@@ -269,7 +296,7 @@ func (h *RegTaskHelper) checkBurnTxID(ctx context.Context, burnTXID string) erro
 }
 
 // ValidateBurnTxID - validates the pre-burnt fee transaction created by the caller
-func (h *RegTaskHelper) ValidateBurnTxID(ctx context.Context) error {
+func (h *RegTaskHelper) ValidateBurnTxID(ctx context.Context, percentage float64) error {
 	var err error
 
 	if err := h.checkBurnTxID(ctx, h.ActionTicketRegMetadata.BurnTxID); err != nil {
@@ -280,8 +307,8 @@ func (h *RegTaskHelper) ValidateBurnTxID(ctx context.Context) error {
 	}
 
 	confirmationChn := h.WaitConfirmation(ctx, h.ActionTicketRegMetadata.BurnTxID,
-		int64(h.preburntTxMinConfirmations), 15*time.Second, true, float64(h.ActionTicketRegMetadata.EstimatedFee), 20)
-	log.WithContext(ctx).Debug("waiting for confimation")
+		int64(h.preburntTxMinConfirmations), 15*time.Second, true, float64(h.ActionTicketRegMetadata.EstimatedFee), percentage)
+	log.WithContext(ctx).Debug("waiting for confirmation")
 	select {
 	case retErr := <-confirmationChn:
 		if retErr != nil {
@@ -315,6 +342,29 @@ func (h *RegTaskHelper) VerifyPeersTicketSignature(ctx context.Context, ticket *
 func (h *RegTaskHelper) VerifyPeersSignature(ctx context.Context, data []byte) error {
 	for nodeID, signature := range h.PeersTicketSignature {
 		if ok, err := h.PastelHandler.PastelClient.Verify(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {
+			return errors.Errorf("verify signature %s of node %s", signature, nodeID)
+		} else if !ok {
+			return errors.Errorf("signature of node %s mistmatch", nodeID)
+		}
+	}
+	return nil
+}
+
+// VerifyPeersCollectionTicketSignature verifies collection ticket signatures of other SNs
+func (h *RegTaskHelper) VerifyPeersCollectionTicketSignature(ctx context.Context, ticket *pastel.CollectionTicket) error {
+	log.WithContext(ctx).Debug("all signature received so start validation")
+
+	data, err := pastel.EncodeCollectionTicket(ticket)
+	if err != nil {
+		return errors.Errorf("encoded NFT ticket: %w", err)
+	}
+	return h.VerifyCollectionPeersSignature(ctx, data)
+}
+
+// VerifyCollectionPeersSignature verifies collection data signatures of other SNs
+func (h *RegTaskHelper) VerifyCollectionPeersSignature(ctx context.Context, data []byte) error {
+	for nodeID, signature := range h.PeersTicketSignature {
+		if ok, err := h.PastelHandler.PastelClient.VerifyCollectionTicket(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {
 			return errors.Errorf("verify signature %s of node %s", signature, nodeID)
 		} else if !ok {
 			return errors.Errorf("signature of node %s mistmatch", nodeID)

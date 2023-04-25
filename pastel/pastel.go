@@ -191,7 +191,7 @@ type Client interface {
 
 	// RegisterCollectionTicket registers collection ticket and returns the TxID.
 	// Command `tickets register collection "{collection-ticket}" "{signatures}" "pastelid" "passphrase" "label" "fee" ["address"] `.
-	RegisterCollectionTicket(ctx context.Context, data string, signatures string, pastelID, passphrase, label string, fee int64) (txID string, err error)
+	RegisterCollectionTicket(ctx context.Context, request RegisterCollectionRequest) (txID string, err error)
 
 	// SignCollectionTicket signs data by the given pastelID and passphrase, if successful returns signature.
 	// Command `pastelid sign-base64-encoded "base64-encoded-text" "PastelID" <"passphrase"> ("algorithm")"

@@ -4,6 +4,7 @@
 //go:generate mockery --name=ProcessUserdataInterface
 //go:generate mockery --name=RegisterSenseInterface
 //go:generate mockery --name=RegisterCascadeInterface
+//go:generate mockery --name=RegisterCollectionInterface
 //go:generate mockery --name=StorageChallengeInterface
 //go:generate mockery --name=SelfHealingChallengeInterface
 
@@ -38,6 +39,8 @@ type ConnectionInterface interface {
 	StorageChallenge() StorageChallengeInterface
 	//SelfHealingChallenge returns a new SelfHealingChallenge stream
 	SelfHealingChallenge() SelfHealingChallengeInterface
+	// RegisterCollection returns a new RegisterCollection stream
+	RegisterCollection() RegisterCollectionInterface
 }
 
 // SuperNodePeerAPIInterface base interface for other Node API interfaces
@@ -73,8 +76,16 @@ type RegisterSenseInterface interface {
 
 	// SendSignedDDAndFingerprints send compressedDDAndFingerprints from fromNodeID to target SN
 	SendSignedDDAndFingerprints(ctx context.Context, sessionID string, fromNodeID string, compressedDDAndFingerprints []byte) error
-	// Send signature of ticket to primary supernode
+	// SendSenseTicketSignature sends signature of ticket to primary supernode
 	SendSenseTicketSignature(ctx context.Context, nodeID string, signature []byte) error
+}
+
+// RegisterCollectionInterface represents an interaction stream with supernodes for registering collection.
+type RegisterCollectionInterface interface {
+	SuperNodePeerAPIInterface
+
+	// SendCollectionTicketSignature sends signature of ticket to primary supernode
+	SendCollectionTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }
 
 // RegisterCascadeInterface represents an interaction stream with supernodes for registering sense.
