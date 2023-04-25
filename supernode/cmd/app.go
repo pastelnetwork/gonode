@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
 	"io"
 	"os"
 	"path/filepath"
@@ -214,11 +215,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	if config.NumberConnectedNodes > 0 {
 		config.NftRegister.NumberConnectedNodes = config.NumberConnectedNodes
 		config.CascadeRegister.NumberConnectedNodes = config.NumberConnectedNodes
+		config.CollectionRegister.NumberConnectedNodes = config.NumberConnectedNodes
 	}
 
 	if config.PreburntTxMinConfirmations > 0 {
 		config.NftRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
 		config.CascadeRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
+		config.CollectionRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
 	}
 
 	rqClient := rqgrpc.NewClient()
@@ -241,6 +244,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftDownload := download.NewService(&config.NftDownload, pastelClient, p2p, rqClient)
 	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
+	collectionRegister := collectionregister.NewService(&config.CollectionRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
 	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, rqClient, nil)
 	selfHealing := selfhealing.NewService(&config.SelfHealingChallenge, fileStorage, pastelClient, nodeClient, p2p, rqClient)
 	// // ----Userdata Services----
@@ -267,6 +271,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterSense(senseRegister),
 		walletnode.NewRegisterCascade(cascadeRegister),
 		supernode.NewRegisterCascade(cascadeRegister),
+		walletnode.NewRegisterCollection(collectionRegister),
+		supernode.NewRegisterCollection(collectionRegister),
 		walletnode.NewDownloadNft(nftDownload),
 		bridge.NewDownloadData(nftDownload),
 		supernode.NewStorageChallengeGRPC(storageChallenger),

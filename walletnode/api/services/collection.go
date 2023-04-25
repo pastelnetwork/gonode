@@ -133,3 +133,11 @@ func (service *CollectionAPIHandler) GetTaskHistory(ctx context.Context, p *coll
 
 	return history, nil
 }
+
+// NewCollectionAPIIHandler returns the swagger OpenAPI implementation.
+func NewCollectionAPIIHandler(register *collectionregister.CollectionRegistrationService) *CollectionAPIHandler {
+	return &CollectionAPIHandler{
+		Common:   NewCommon(),
+		register: register,
+	}
+}

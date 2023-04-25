@@ -64,8 +64,13 @@ func (service *CollectionRegistrationService) AddTask(p *collection.RegisterColl
 }
 
 // NewService returns a new Service instance
-func NewService(pastelClient pastel.Client, nodeClient node.ClientInterface) *CollectionRegistrationService {
+func NewService(
+	config *Config,
+	pastelClient pastel.Client,
+	nodeClient node.ClientInterface,
+) *CollectionRegistrationService {
 	return &CollectionRegistrationService{
+		config:        config,
 		Worker:        task.NewWorker(),
 		nodeClient:    nodeClient,
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
