@@ -19,26 +19,6 @@ import (
 	"github.com/tj/assert"
 )
 
-func makeConnected(task *CollectionRegistrationTask, status common.Status) *CollectionRegistrationTask {
-	meshedNodes := []types.MeshedSuperNode{
-		types.MeshedSuperNode{
-			NodeID: "PrimaryID",
-		},
-		types.MeshedSuperNode{
-			NodeID: "A",
-		},
-		types.MeshedSuperNode{
-			NodeID: "B",
-		},
-	}
-
-	task.UpdateStatus(common.StatusConnected)
-	task.NetworkHandler.MeshNodes(context.TODO(), meshedNodes)
-	task.UpdateStatus(status)
-
-	return task
-}
-
 func add2NodesAnd2TicketSignatures(task *CollectionRegistrationTask) *CollectionRegistrationTask {
 	task.NetworkHandler.Accepted = common.SuperNodePeerList{
 		&common.SuperNodePeer{ID: "A"},

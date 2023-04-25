@@ -3,11 +3,11 @@ package collectionregister
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/files"
 	"testing"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/p2p"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"

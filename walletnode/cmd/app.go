@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/walletnode/services/collectionregister"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -26,6 +25,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/configs"
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
+	"github.com/pastelnetwork/gonode/walletnode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"

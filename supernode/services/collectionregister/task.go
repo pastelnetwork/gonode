@@ -8,10 +8,6 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
-const (
-	collectionRegFee = 1000
-)
-
 // CollectionRegistrationTask is the task of registering new Collection.
 type CollectionRegistrationTask struct {
 	*common.SuperNodeTask
@@ -34,7 +30,7 @@ func (task *CollectionRegistrationTask) Run(ctx context.Context) error {
 }
 
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
-func (task *CollectionRegistrationTask) ValidateAndRegister(ctx context.Context, ticket []byte, creatorSignature []byte) (string, error) {
+func (task *CollectionRegistrationTask) ValidateAndRegister(_ context.Context, ticket []byte, creatorSignature []byte) (string, error) {
 	var err error
 
 	task.creatorSignature = creatorSignature

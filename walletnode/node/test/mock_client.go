@@ -52,6 +52,7 @@ const (
 	// SendSignedTicketMethod represent SendSignedTicket method
 	SendSignedTicketMethod = "SendSignedTicket"
 
+	// SendTicketForSignatureMethod represent SendTicketForSignature method
 	SendTicketForSignatureMethod = "SendTicketForSignature"
 
 	// UploadImageWithThumbnailMethod represent UploadImageWithThumbnail method

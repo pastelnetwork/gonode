@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
 	"io"
 	"os"
 	"path/filepath"
@@ -32,6 +31,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
+	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/selfhealing"
@@ -283,5 +283,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger, selfHealing)
+	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger, selfHealing, collectionRegister)
 }
