@@ -9,6 +9,7 @@ import (
 func FromCollectionRegistrationPayload(payload *collection.RegisterCollectionPayload) *common.CollectionRegistrationRequest {
 	c := &common.CollectionRegistrationRequest{
 		CollectionName:                          payload.CollectionName,
+		ItemType:                                payload.ItemType,
 		ListOfPastelIDsOfAuthorizedContributors: payload.ListOfPastelidsOfAuthorizedContributors,
 		MaxCollectionEntries:                    payload.MaxCollectionEntries,
 		CollectionFinalAllowedBlockHeight:       payload.CollectionFinalAllowedBlockHeight,
@@ -16,7 +17,6 @@ func FromCollectionRegistrationPayload(payload *collection.RegisterCollectionPay
 		Green:                                   payload.Green,
 		MaxPermittedOpenNSFWScore:               payload.MaxPermittedOpenNsfwScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: payload.MinimumSimilarityScoreToFirstEntryInCollection,
-		BurnTXID: payload.BurnTxid,
 	}
 
 	if payload.Key != nil {

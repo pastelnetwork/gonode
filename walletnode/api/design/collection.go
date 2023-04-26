@@ -146,14 +146,6 @@ var RegisterCollectionPayload = Type("RegisterCollectionPayload", func() {
 	})
 	Required("minimum_similarity_score_to_first_entry_in_collection")
 
-	Attribute("burn_txid", String, func() {
-		Description("Burn transaction ID")
-		MinLength(64)
-		MaxLength(64)
-		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
-	})
-	Required("burn_txid")
-
 	Attribute("app_pastelid", String, func() {
 		Meta("struct:field:name", "AppPastelID")
 		Description("App PastelID")

@@ -747,7 +747,6 @@ paths:
                         - max_collection_entries
                         - max_permitted_open_nsfw_score
                         - minimum_similarity_score_to_first_entry_in_collection
-                        - burn_txid
                         - app_pastelid
             responses:
                 "200":
@@ -2047,12 +2046,6 @@ definitions:
                 pattern: ^[a-zA-Z0-9]+$
                 minLength: 86
                 maxLength: 86
-            burn_txid:
-                type: string
-                description: Burn transaction ID
-                example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-                minLength: 64
-                maxLength: 64
             collection_final_allowed_block_height:
                 type: integer
                 description: final allowed block height in days
@@ -2113,7 +2106,6 @@ definitions:
                 format: double
         example:
             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-            burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             collection_final_allowed_block_height: 5
             collection_item_copy_count: 10
             collection_name: galaxies
@@ -2134,7 +2126,6 @@ definitions:
             - max_collection_entries
             - max_permitted_open_nsfw_score
             - minimum_similarity_score_to_first_entry_in_collection
-            - burn_txid
             - app_pastelid
     CollectionRegisterCollectionResponseBody:
         title: 'Mediatype identifier: application/collection-registration; view=default'

@@ -2,10 +2,16 @@ package collectionregister
 
 import (
 	"context"
+	"fmt"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
+)
+
+const (
+	collectionRegFee = 1000
 )
 
 // CollectionRegistrationTask is the task of registering new Collection.
@@ -30,23 +36,16 @@ func (task *CollectionRegistrationTask) Run(ctx context.Context) error {
 }
 
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
-func (task *CollectionRegistrationTask) ValidateAndRegister(_ context.Context, ticket []byte, creatorSignature []byte) (string, error) {
+func (task *CollectionRegistrationTask) ValidateAndRegister(ctx context.Context, ticket []byte, creatorSignature []byte) (string, error) {
 	var err error
 
 	task.creatorSignature = creatorSignature
 
-	//if err := task.CalculateFee(); err != nil {
-	//	log.WithContext(ctx).WithError(err).Error("calculate fee failed")
-	//	return "", errors.Errorf("calculate fee: %w", err)
-	//}
-	//log.WithContext(ctx).WithError(err).Error("collection reg fee has been computed")
-	//
-	//// Validate burn_txid
-	//err = task.ValidateBurnTxID(ctx, 100)
-	//if err != nil {
-	//	log.WithContext(ctx).WithError(err).Error("validate burn txid failed")
-	//	return "", errors.Errorf("validate burn txid failed")
-	//}
+	if err := task.CalculateFee(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("calculate fee failed")
+		return "", errors.Errorf("calculate fee: %w", err)
+	}
+	log.WithContext(ctx).WithError(err).Error("collection reg fee has been computed")
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if err = task.validateSignedTicketFromWN(ctx, ticket, creatorSignature); err != nil {
@@ -108,13 +107,13 @@ func (task *CollectionRegistrationTask) ValidateAndRegister(_ context.Context, t
 }
 
 // CalculateFee calculates and assigns fee
-//func (task *CollectionRegistrationTask) CalculateFee() error {
-//	task.registrationFee = int64(collectionRegFee)
-//	task.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
-//	task.RegTaskHelper.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
-//
-//	return nil
-//}
+func (task *CollectionRegistrationTask) CalculateFee() error {
+	task.registrationFee = int64(collectionRegFee)
+	task.ActionTicketRegMetadata = &types.ActionRegMetadata{EstimatedFee: task.registrationFee}
+	task.RegTaskHelper.ActionTicketRegMetadata = &types.ActionRegMetadata{EstimatedFee: task.registrationFee}
+
+	return nil
+}
 
 func (task *CollectionRegistrationTask) validateSignedTicketFromWN(ctx context.Context, ticket []byte, creatorSignature []byte) error {
 	var err error
@@ -206,7 +205,7 @@ func (task *CollectionRegistrationTask) registerAction(ctx context.Context) (str
 		Mn1PastelID: task.config.PastelID,
 		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
-		Label:       task.ActionTicketRegMetadata.BurnTxID,
+		Label:       fmt.Sprintf("%s-%s", task.config.PastelID, task.Ticket.CollectionName),
 	}
 
 	nftRegTxid, err := task.PastelClient.RegisterCollectionTicket(ctx, req)

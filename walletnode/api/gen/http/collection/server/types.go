@@ -38,8 +38,6 @@ type RegisterCollectionRequestBody struct {
 	MaxPermittedOpenNsfwScore *float64 `form:"max_permitted_open_nsfw_score,omitempty" json:"max_permitted_open_nsfw_score,omitempty" xml:"max_permitted_open_nsfw_score,omitempty"`
 	// min similarity for 1st entry to have
 	MinimumSimilarityScoreToFirstEntryInCollection *float64 `form:"minimum_similarity_score_to_first_entry_in_collection,omitempty" json:"minimum_similarity_score_to_first_entry_in_collection,omitempty" xml:"minimum_similarity_score_to_first_entry_in_collection,omitempty"`
-	// Burn transaction ID
-	BurnTxid *string `form:"burn_txid,omitempty" json:"burn_txid,omitempty" xml:"burn_txid,omitempty"`
 	// App PastelID
 	AppPastelID *string `form:"app_pastelid,omitempty" json:"app_pastelid,omitempty" xml:"app_pastelid,omitempty"`
 }
@@ -358,7 +356,6 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 		Royalty:                   body.Royalty,
 		MaxPermittedOpenNsfwScore: *body.MaxPermittedOpenNsfwScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: *body.MinimumSimilarityScoreToFirstEntryInCollection,
-		BurnTxid:    *body.BurnTxid,
 		AppPastelID: *body.AppPastelID,
 	}
 	if body.CollectionFinalAllowedBlockHeight != nil {
@@ -421,9 +418,6 @@ func ValidateRegisterCollectionRequestBody(body *RegisterCollectionRequestBody) 
 	if body.MinimumSimilarityScoreToFirstEntryInCollection == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("minimum_similarity_score_to_first_entry_in_collection", "body"))
 	}
-	if body.BurnTxid == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("burn_txid", "body"))
-	}
 	if body.AppPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("app_pastelid", "body"))
 	}
@@ -465,16 +459,6 @@ func ValidateRegisterCollectionRequestBody(body *RegisterCollectionRequestBody) 
 	if body.MinimumSimilarityScoreToFirstEntryInCollection != nil {
 		if *body.MinimumSimilarityScoreToFirstEntryInCollection > 1 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.minimum_similarity_score_to_first_entry_in_collection", *body.MinimumSimilarityScoreToFirstEntryInCollection, 1, false))
-		}
-	}
-	if body.BurnTxid != nil {
-		if utf8.RuneCountInString(*body.BurnTxid) < 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, true))
-		}
-	}
-	if body.BurnTxid != nil {
-		if utf8.RuneCountInString(*body.BurnTxid) > 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, false))
 		}
 	}
 	if body.AppPastelID != nil {
