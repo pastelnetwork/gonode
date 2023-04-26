@@ -142,7 +142,7 @@ func (s *DHT) getExternalIP() (string, error) {
 
 // StartReplication starts replication
 func (s *DHT) StartReplication(ctx context.Context) error {
-	log.P2P().WithContext(ctx).Error("replication worker started")
+	log.P2P().WithContext(ctx).Info("replication worker started")
 
 	for {
 		select {

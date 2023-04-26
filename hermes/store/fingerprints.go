@@ -34,7 +34,7 @@ type fingerprints struct {
 	RequestType                        string         `db:"request_type,omitempty"`
 	IDString                           string         `db:"open_api_subset_id_string,omitempty"`
 	OpenAPIGroupIDString               sql.NullString `db:"open_api_group_id_string"`
-	CollectionNameString               string         `db:"collection_name_string"`
+	CollectionNameString               sql.NullString `db:"collection_name_string"`
 	RegistrationTicketTXID             sql.NullString `db:"registration_ticket_txid"`
 }
 
@@ -55,7 +55,7 @@ func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
 		RequestType:                        r.RequestType,
 		IDString:                           r.IDString,
 		OpenAPIGroupIDString:               r.OpenAPIGroupIDString.String,
-		CollectionNameString:               r.CollectionNameString,
+		CollectionNameString:               r.CollectionNameString.String,
 		RegTXID:                            r.RegistrationTicketTXID.String,
 	}, nil
 

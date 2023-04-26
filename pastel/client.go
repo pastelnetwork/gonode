@@ -615,8 +615,8 @@ func (client *client) ActionTicketsFromBlockHeight(ctx context.Context, filter R
 func (client *client) CollectionActivationTicketsFromBlockHeight(ctx context.Context, blockheight int) (ActTickets, error) {
 	tickets := ActTickets{}
 
-	if err := client.callFor(ctx, &tickets, "tickets", "list", "nft-collection-act", "all", blockheight); err != nil {
-		return nil, errors.Errorf("failed to get nft-collection-act tickets: %w", err)
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "collection-act", "all", blockheight); err != nil {
+		return nil, errors.Errorf("failed to get collection-act tickets: %w", err)
 	}
 
 	return tickets, nil

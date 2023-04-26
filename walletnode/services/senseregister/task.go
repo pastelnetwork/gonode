@@ -519,6 +519,7 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 			PastelID:               request.AppPastelID,
 			Passphrase:             request.AppPastelIDPassphrase,
 			CheckDDDatabaseHashes:  true,
+			HashCheckMaxRetries:    service.config.HashCheckMaxRetries,
 		},
 	}
 

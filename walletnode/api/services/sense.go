@@ -193,6 +193,10 @@ func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadP
 			return nil, sense.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
 		case status := <-sub():
 			if status.IsFailure() {
+				if strings.Contains(utils.SafeErrStr(task.Error()), "validate ticket") {
+					return nil, sense.MakeBadRequest(errors.New("ticket not found. Please make sure you are using correct registration ticket TXID"))
+				}
+
 				if strings.Contains(utils.SafeErrStr(task.Error()), "ticket ownership") {
 					return nil, sense.MakeBadRequest(errors.New("failed to verify ownership"))
 				}
@@ -205,7 +209,11 @@ func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadP
 			}
 
 			if status.IsFinal() {
-				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("NFT downloaded")
+				if len(task.File) == 0 {
+					return nil, sense.MakeInternalServerError(errors.New("unable to download file"))
+				}
+
+				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("Sense Output file downloaded")
 				res = &sense.DownloadResult{
 					File: task.File,
 				}

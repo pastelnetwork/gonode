@@ -13,7 +13,7 @@ import (
 
 const (
 	// defaultTimeout specifies the server handshake timeout.
-	defaultTimeout = 30 * time.Second
+	defaultTimeout = 7 * time.Second
 )
 
 // ClientOptions contains the client-side options of an ALTS channel. These
