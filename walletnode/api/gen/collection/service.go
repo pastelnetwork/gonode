@@ -94,8 +94,6 @@ type RegisterCollectionPayload struct {
 	MaxPermittedOpenNsfwScore float64
 	// min similarity for 1st entry to have
 	MinimumSimilarityScoreToFirstEntryInCollection float64
-	// Burn transaction ID
-	BurnTxid string
 	// App PastelID
 	AppPastelID string
 	// Passphrase of the owner's PastelID

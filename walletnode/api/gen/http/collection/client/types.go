@@ -36,8 +36,6 @@ type RegisterCollectionRequestBody struct {
 	MaxPermittedOpenNsfwScore float64 `form:"max_permitted_open_nsfw_score" json:"max_permitted_open_nsfw_score" xml:"max_permitted_open_nsfw_score"`
 	// min similarity for 1st entry to have
 	MinimumSimilarityScoreToFirstEntryInCollection float64 `form:"minimum_similarity_score_to_first_entry_in_collection" json:"minimum_similarity_score_to_first_entry_in_collection" xml:"minimum_similarity_score_to_first_entry_in_collection"`
-	// Burn transaction ID
-	BurnTxid string `form:"burn_txid" json:"burn_txid" xml:"burn_txid"`
 	// App PastelID
 	AppPastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
 }
@@ -227,7 +225,6 @@ func NewRegisterCollectionRequestBody(p *collection.RegisterCollectionPayload) *
 		Green:                             p.Green,
 		MaxPermittedOpenNsfwScore:         p.MaxPermittedOpenNsfwScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: p.MinimumSimilarityScoreToFirstEntryInCollection,
-		BurnTxid:    p.BurnTxid,
 		AppPastelID: p.AppPastelID,
 	}
 	if p.ListOfPastelidsOfAuthorizedContributors != nil {

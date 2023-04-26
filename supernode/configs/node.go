@@ -33,10 +33,11 @@ type Node struct {
 // NewNode returns a new Node instance
 func NewNode() Node {
 	return Node{
-		NftRegister:     *nftregister.NewConfig(),
-		SenseRegister:   *senseregister.NewConfig(),
-		CascadeRegister: *cascaderegister.NewConfig(),
-		NftDownload:     *download.NewConfig(),
+		NftRegister:        *nftregister.NewConfig(),
+		SenseRegister:      *senseregister.NewConfig(),
+		CascadeRegister:    *cascaderegister.NewConfig(),
+		NftDownload:        *download.NewConfig(),
+		CollectionRegister: *collectionregister.NewConfig(),
 		// UserdataProcess: *userdataprocess.NewConfig(),
 		Server: server.NewConfig(),
 	}

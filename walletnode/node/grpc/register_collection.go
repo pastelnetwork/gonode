@@ -132,14 +132,13 @@ func (service *registerCollection) MeshNodes(ctx context.Context, meshedNodes []
 }
 
 // SendTicketForSignature sends the collection ticket to be signed by other SNs
-func (service *registerCollection) SendTicketForSignature(ctx context.Context, ticket []byte, burnTXID string, signature []byte) (string, error) {
+func (service *registerCollection) SendTicketForSignature(ctx context.Context, ticket []byte, signature []byte) (string, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := pb.SendCollectionTicketForSignatureRequest{
 		CollectionTicket: ticket,
 		CreatorSignature: signature,
-		BurnTxid:         burnTXID,
 	}
 
 	rsp, err := service.client.SendCollectionTicketForSignature(ctx, &req)

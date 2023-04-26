@@ -232,7 +232,7 @@ func (task *CollectionRegistrationTask) uploadSignedTicket(ctx context.Context) 
 
 		someNode := someNode
 		group.Go(func() error {
-			ticketTxID, err := CollectionRegNode.SendTicketForSignature(gctx, task.serializedTicket, task.Request.BurnTXID, task.creatorSignature)
+			ticketTxID, err := CollectionRegNode.SendTicketForSignature(gctx, task.serializedTicket, task.creatorSignature)
 			if err != nil {
 				log.WithContext(gctx).WithError(err).WithField("node", CollectionRegNode).Error("send signed ticket failed")
 				return err
