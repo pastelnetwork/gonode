@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	defaultDownloadTimeout = 30 * time.Second
+	defaultDownloadTimeout = 300 * time.Second
 )
 
 // PastelHandler handles pastel communication
@@ -52,7 +52,7 @@ func (pt *PastelHandler) GetEstimatedSenseFee(ctx context.Context, ImgSizeInMb f
 	}
 
 	// adding 10.0 PSL because activation ticket takes 10 PSL
-	return (actionFees.SenseFee + 10.0), nil
+	return actionFees.SenseFee, nil
 }
 
 // GetEstimatedSenseFee returns the estimated Action fee for the given image
@@ -63,7 +63,7 @@ func (pt *PastelHandler) GetEstimatedCascadeFee(ctx context.Context, ImgSizeInMb
 	}
 
 	// adding 10.0 PSL because activation ticket takes 10 PSL
-	return (actionFees.CascadeFee + 10.0), nil
+	return actionFees.CascadeFee, nil
 }
 
 // determine current block height & hash of it

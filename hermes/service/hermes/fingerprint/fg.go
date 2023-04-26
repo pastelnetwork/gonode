@@ -204,10 +204,10 @@ func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 
 		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
 			Sha256HashOfArtImageFile:                   ddAndFpFromTicket.HashOfCandidateImageFile,
-			ImageFingerprintVector:                     toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
+			ImageFingerprintVector:                     ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile,
 			DatetimeFingerprintAddedToDatabase:         time.Now().Format("2006-01-02 15:04:05"),
 			PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
-			ImageThumbnailAsBase64:                     ddAndFpFromTicket.HashOfCandidateImageFile,
+			ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,
 			RequestType:                                typeMapper(regTicket.ActionTicketData.Type),
 			IDString:                                   collection,
 			OpenAPIGroupIDString:                       groupID,
@@ -364,10 +364,10 @@ func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 
 		if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
 			Sha256HashOfArtImageFile:                   ddAndFpFromTicket.HashOfCandidateImageFile,
-			ImageFingerprintVector:                     toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
+			ImageFingerprintVector:                     ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile,
 			DatetimeFingerprintAddedToDatabase:         time.Now().Format("2006-01-02 15:04:05"),
 			PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
-			ImageThumbnailAsBase64:                     ddAndFpFromTicket.HashOfCandidateImageFile,
+			ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,
 			RequestType:                                typeMapper(regTicket.RegTicketData.Type),
 			IDString:                                   collection,
 			OpenAPIGroupIDString:                       groupID,

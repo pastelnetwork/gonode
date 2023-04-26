@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"fmt"
 	"strings"
 
@@ -11,8 +12,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/hermes/domain"
-	"github.com/sbinet/npyio"
-	"gonum.org/v1/gonum/mat"
 )
 
 const (
@@ -39,11 +38,10 @@ type fingerprints struct {
 }
 
 func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
-	f := bytes.NewBuffer(r.ImageFingerprintVector)
 
-	var fp []float64
-	if err := npyio.Read(f, &fp); err != nil {
-		return nil, errors.New("Failed to convert npy to float64")
+	fp, err := byteSliceToFloat32Slice(r.ImageFingerprintVector)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert byte to float32: %w", err)
 	}
 
 	return &domain.DDFingerprints{
@@ -80,19 +78,9 @@ func (s *SQLiteStore) CheckNonSeedRecord(_ context.Context) (bool, error) {
 
 // StoreFingerprint stores fingerprint
 func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFingerprints) error {
-	encodeFloat2Npy := func(v []float64) ([]byte, error) {
-		// create numpy matrix Nx1
-		m := mat.NewDense(len(v), 1, v)
-		f := bytes.NewBuffer(nil)
-		if err := npyio.Write(f, m); err != nil {
-			return nil, errors.Errorf("encode to npy: %w", err)
-		}
-		return f.Bytes(), nil
-	}
-
-	fp, err := encodeFloat2Npy(input.ImageFingerprintVector)
+	fp, err := float32SliceToByteSlice(input.ImageFingerprintVector)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to convert float32 to byte: %w", err)
 	}
 
 	_, err = s.db.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
@@ -195,4 +183,29 @@ func (s *SQLiteStore) GetFingerprintsCount(_ context.Context) (int64, error) {
 	}
 
 	return Data.Count, nil
+}
+
+func float32SliceToByteSlice(floats []float32) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	err := binary.Write(buf, binary.LittleEndian, floats)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func byteSliceToFloat32Slice(byteSlice []byte) ([]float32, error) {
+	if len(byteSlice)%4 != 0 {
+		return nil, fmt.Errorf("byte slice length is not a multiple of 4")
+	}
+
+	floatCount := len(byteSlice) / 4
+	floats := make([]float32, floatCount)
+	buf := bytes.NewReader(byteSlice)
+	err := binary.Read(buf, binary.LittleEndian, &floats)
+	if err != nil {
+		return nil, fmt.Errorf("binary.Read failed: %v", err)
+	}
+	return floats, nil
 }
