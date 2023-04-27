@@ -18,7 +18,7 @@ const (
 type DDFingerprints struct {
 	Sha256HashOfArtImageFile           string    `json:"sha256_hash_of_art_image_file,omitempty"`
 	PathToArtImageFile                 string    `json:"path_to_art_image_file,omitempty"`
-	ImageFingerprintVector             []float32 `json:"new_model_image_fingerprint_vector,omitempty"`
+	ImageFingerprintVector             []float64 `json:"new_model_image_fingerprint_vector,omitempty"`
 	DatetimeFingerprintAddedToDatabase string    `json:"datetime_fingerprint_added_to_database,omitempty"`
 	ImageThumbnailAsBase64             string    `json:"thumbnail_of_image,omitempty"`
 	RequestType                        string    `json:"request_type,omitempty"`

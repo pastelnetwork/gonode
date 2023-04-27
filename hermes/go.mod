@@ -22,15 +22,12 @@ require (
 	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/proto v0.0.0-00010101000000-000000000000
-	github.com/sbinet/npyio v0.6.0
 	github.com/stretchr/testify v1.7.2
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
-	gonum.org/v1/gonum v0.11.0
 	google.golang.org/grpc v1.47.0
 )
 
 require (
-	github.com/campoy/embedmd v1.0.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect

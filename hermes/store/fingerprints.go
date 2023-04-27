@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
@@ -39,7 +40,7 @@ type fingerprints struct {
 
 func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
 
-	fp, err := byteSliceToFloat32Slice(r.ImageFingerprintVector)
+	fp, err := readFloat64SliceFromBytes(r.ImageFingerprintVector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert byte to float32: %w", err)
 	}
@@ -78,12 +79,9 @@ func (s *SQLiteStore) CheckNonSeedRecord(_ context.Context) (bool, error) {
 
 // StoreFingerprint stores fingerprint
 func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFingerprints) error {
-	fp, err := float32SliceToByteSlice(input.ImageFingerprintVector)
-	if err != nil {
-		return fmt.Errorf("failed to convert float32 to byte: %w", err)
-	}
+	fp := writeFloat64SliceToBytes(input.ImageFingerprintVector)
 
-	_, err = s.db.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
+	_, err := s.db.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
 		 path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database,
 		  thumbnail_of_image, request_type, open_api_subset_id_string,open_api_group_id_string,collection_name_string, registration_ticket_txid) VALUES(?,?,?,?,?,?,?,?,?,?)`, input.Sha256HashOfArtImageFile,
 		input.PathToArtImageFile, fp, input.DatetimeFingerprintAddedToDatabase, input.ImageThumbnailAsBase64, input.RequestType, input.IDString, input.OpenAPIGroupIDString, input.CollectionNameString, input.RegTXID)
@@ -185,27 +183,58 @@ func (s *SQLiteStore) GetFingerprintsCount(_ context.Context) (int64, error) {
 	return Data.Count, nil
 }
 
-func float32SliceToByteSlice(floats []float32) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.LittleEndian, floats)
+func float64ToBytes(f float64) []byte {
+	bits := math.Float64bits(f)
+	bytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, bits)
+	return bytes
+}
+
+func bytesToFloat64(b []byte) float64 {
+	bits := binary.LittleEndian.Uint64(b)
+	return math.Float64frombits(bits)
+}
+
+func writeFloat64SliceToBytes(data []float64) []byte {
+	header := fmt.Sprintf("{'descr': '<f8', 'fortran_order': False, 'shape': (%d, 1), }", len(data))
+	paddedHeader := header + strings.Repeat(" ", (128-len(header)-1)) + "\n"
+
+	var buf bytes.Buffer
+	buf.Write([]byte("\x93NUMPY")) // Magic string
+	buf.WriteByte(0x01)            // Major version
+	buf.WriteByte(0x00)            // Minor version
+	buf.Write([]byte{0x76, 0x00})  // Header length (little endian uint16)
+	buf.WriteString(paddedHeader)  // Header
+	for _, value := range data {
+		buf.Write(float64ToBytes(value)) // Data
+	}
+
+	return buf.Bytes()
+}
+
+func readFloat64SliceFromBytes(content []byte) ([]float64, error) {
+	if !bytes.HasPrefix(content, []byte("\x93NUMPY")) {
+		return nil, fmt.Errorf("Invalid magic string")
+	}
+
+	headerLength := binary.LittleEndian.Uint16(content[8:10])
+	header := string(content[10 : 10+headerLength])
+
+	var dataLength int
+	_, err := fmt.Sscanf(header, "{'descr': '<f8', 'fortran_order': False, 'shape': (%d, 1), }", &dataLength)
 	if err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
-}
-
-func byteSliceToFloat32Slice(byteSlice []byte) ([]float32, error) {
-	if len(byteSlice)%4 != 0 {
-		return nil, fmt.Errorf("byte slice length is not a multiple of 4")
+	dataBytes := content[10+headerLength:]
+	if len(dataBytes)%8 != 0 {
+		return nil, fmt.Errorf("Invalid byte slice length")
 	}
 
-	floatCount := len(byteSlice) / 4
-	floats := make([]float32, floatCount)
-	buf := bytes.NewReader(byteSlice)
-	err := binary.Read(buf, binary.LittleEndian, &floats)
-	if err != nil {
-		return nil, fmt.Errorf("binary.Read failed: %v", err)
+	data := make([]float64, dataLength)
+	for i := 0; i < dataLength; i++ {
+		data[i] = bytesToFloat64(dataBytes[i*8 : (i+1)*8])
 	}
-	return floats, nil
+
+	return data, nil
 }
