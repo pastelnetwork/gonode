@@ -214,7 +214,7 @@ func writeFloat64SliceToBytes(data []float64) []byte {
 
 func readFloat64SliceFromBytes(content []byte) ([]float64, error) {
 	if !bytes.HasPrefix(content, []byte("\x93NUMPY")) {
-		return nil, fmt.Errorf("Invalid magic string")
+		return nil, fmt.Errorf("invalid magic string")
 	}
 
 	headerLength := binary.LittleEndian.Uint16(content[8:10])
@@ -228,7 +228,7 @@ func readFloat64SliceFromBytes(content []byte) ([]float64, error) {
 
 	dataBytes := content[10+headerLength:]
 	if len(dataBytes)%8 != 0 {
-		return nil, fmt.Errorf("Invalid byte slice length")
+		return nil, fmt.Errorf("invalid byte slice length")
 	}
 
 	data := make([]float64, dataLength)
