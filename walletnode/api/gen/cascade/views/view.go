@@ -37,7 +37,9 @@ type AssetView struct {
 	// File expiration
 	ExpiresIn *string
 	// Estimated fee
-	EstimatedFee *float64
+	TotalEstimatedFee *float64
+	// The amount that's required to be preburned
+	RequiredPreburnAmount *float64
 }
 
 // StartProcessingResultView is a type that runs validations on a projected
@@ -53,7 +55,8 @@ var (
 		"default": {
 			"file_id",
 			"expires_in",
-			"estimated_fee",
+			"total_estimated_fee",
+			"required_preburn_amount",
 		},
 	}
 	// StartProcessingResultMap is a map indexing the attribute names of
@@ -97,8 +100,8 @@ func ValidateAssetView(result *AssetView) (err error) {
 	if result.ExpiresIn == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("expires_in", "result"))
 	}
-	if result.EstimatedFee == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("estimated_fee", "result"))
+	if result.TotalEstimatedFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_estimated_fee", "result"))
 	}
 	if result.FileID != nil {
 		if utf8.RuneCountInString(*result.FileID) < 8 {
@@ -113,9 +116,14 @@ func ValidateAssetView(result *AssetView) (err error) {
 	if result.ExpiresIn != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.expires_in", *result.ExpiresIn, goa.FormatDateTime))
 	}
-	if result.EstimatedFee != nil {
-		if *result.EstimatedFee < 1e-05 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.estimated_fee", *result.EstimatedFee, 1e-05, true))
+	if result.TotalEstimatedFee != nil {
+		if *result.TotalEstimatedFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.total_estimated_fee", *result.TotalEstimatedFee, 1e-05, true))
+		}
+	}
+	if result.RequiredPreburnAmount != nil {
+		if *result.RequiredPreburnAmount < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.required_preburn_amount", *result.RequiredPreburnAmount, 1e-05, true))
 		}
 	}
 	return

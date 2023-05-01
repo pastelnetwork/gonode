@@ -39,7 +39,9 @@ type UploadImageResponseBody struct {
 	// Image expiration
 	ExpiresIn *string `form:"expires_in,omitempty" json:"expires_in,omitempty" xml:"expires_in,omitempty"`
 	// Estimated fee
-	EstimatedFee *float64 `form:"estimated_fee,omitempty" json:"estimated_fee,omitempty" xml:"estimated_fee,omitempty"`
+	TotalEstimatedFee *float64 `form:"total_estimated_fee,omitempty" json:"total_estimated_fee,omitempty" xml:"total_estimated_fee,omitempty"`
+	// The amount that's required to be preburned
+	RequiredPreburnAmount *float64 `form:"required_preburn_amount,omitempty" json:"required_preburn_amount,omitempty" xml:"required_preburn_amount,omitempty"`
 }
 
 // StartProcessingResponseBody is the type of the "sense" service
@@ -297,9 +299,10 @@ func NewStartProcessingRequestBody(p *sense.StartProcessingPayload) *StartProces
 // result from a HTTP "Created" response.
 func NewUploadImageImageCreated(body *UploadImageResponseBody) *senseviews.ImageView {
 	v := &senseviews.ImageView{
-		ImageID:      body.ImageID,
-		ExpiresIn:    body.ExpiresIn,
-		EstimatedFee: body.EstimatedFee,
+		ImageID:               body.ImageID,
+		ExpiresIn:             body.ExpiresIn,
+		TotalEstimatedFee:     body.TotalEstimatedFee,
+		RequiredPreburnAmount: body.RequiredPreburnAmount,
 	}
 
 	return v

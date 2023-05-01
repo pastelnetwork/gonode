@@ -151,14 +151,21 @@ var AssetUploadResult = ResultType("application/vnd.cascade.upload-file", func()
 			Example(time.RFC3339)
 		})
 
-		Attribute("estimated_fee", Float64, func() {
+		Attribute("total_estimated_fee", Float64, func() {
 			Description("Estimated fee")
 			Minimum(0.00001)
 			Default(1)
 			Example(100)
 		})
+
+		Attribute("required_preburn_amount", Float64, func() {
+			Description("The amount that's required to be preburned")
+			Minimum(0.00001)
+			Default(1)
+			Example(100)
+		})
 	})
-	Required("file_id", "expires_in", "estimated_fee")
+	Required("file_id", "expires_in", "total_estimated_fee")
 })
 
 // StartCascadeProcessingPayload - Payload for starting processing

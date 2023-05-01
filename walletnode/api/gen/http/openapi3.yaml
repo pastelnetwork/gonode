@@ -1601,9 +1601,10 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Asset'
                             example:
-                                estimated_fee: 100
                                 expires_in: 2006-01-02T15:04:05Z07:00
                                 file_id: VK7mpAqZ
+                                required_preburn_amount: 100
+                                total_estimated_fee: 100
                 "400":
                     description: 'BadRequest: Bad Request response.'
                     content:
@@ -2114,9 +2115,10 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Image'
                             example:
-                                estimated_fee: 100
                                 expires_in: 2006-01-02T15:04:05Z07:00
                                 image_id: VK7mpAqZ
+                                required_preburn_amount: 100
+                                total_estimated_fee: 100
                 "400":
                     description: 'BadRequest: Bad Request response.'
                     content:
@@ -2320,12 +2322,6 @@ components:
         Asset:
             type: object
             properties:
-                estimated_fee:
-                    type: number
-                    description: Estimated fee
-                    default: 1
-                    example: 100
-                    minimum: 1e-05
                 expires_in:
                     type: string
                     description: File expiration
@@ -2337,14 +2333,27 @@ components:
                     example: VK7mpAqZ
                     minLength: 8
                     maxLength: 8
+                required_preburn_amount:
+                    type: number
+                    description: The amount that's required to be preburned
+                    default: 1
+                    example: 100
+                    minimum: 1e-05
+                total_estimated_fee:
+                    type: number
+                    description: Estimated fee
+                    default: 1
+                    example: 100
+                    minimum: 1e-05
             example:
-                estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
                 file_id: VK7mpAqZ
+                required_preburn_amount: 100
+                total_estimated_fee: 100
             required:
                 - file_id
                 - expires_in
-                - estimated_fee
+                - total_estimated_fee
         CreateUserdataRequestBody:
             type: object
             properties:
@@ -3031,12 +3040,6 @@ components:
         Image:
             type: object
             properties:
-                estimated_fee:
-                    type: number
-                    description: Estimated fee
-                    default: 1
-                    example: 100
-                    minimum: 1e-05
                 expires_in:
                     type: string
                     description: Image expiration
@@ -3048,14 +3051,27 @@ components:
                     example: VK7mpAqZ
                     minLength: 8
                     maxLength: 8
+                required_preburn_amount:
+                    type: number
+                    description: The amount that's required to be preburned
+                    default: 1
+                    example: 100
+                    minimum: 1e-05
+                total_estimated_fee:
+                    type: number
+                    description: Estimated fee
+                    default: 1
+                    example: 100
+                    minimum: 1e-05
             example:
-                estimated_fee: 100
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
+                required_preburn_amount: 100
+                total_estimated_fee: 100
             required:
                 - image_id
                 - expires_in
-                - estimated_fee
+                - total_estimated_fee
         ImageRes:
             type: object
             properties:
