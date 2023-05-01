@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/hermes/domain"
-	"github.com/sbinet/npyio"
-	"gonum.org/v1/gonum/mat"
 )
 
 const (
@@ -39,11 +39,10 @@ type fingerprints struct {
 }
 
 func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
-	f := bytes.NewBuffer(r.ImageFingerprintVector)
 
-	var fp []float64
-	if err := npyio.Read(f, &fp); err != nil {
-		return nil, errors.New("Failed to convert npy to float64")
+	fp, err := readFloat64SliceFromBytes(r.ImageFingerprintVector)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert byte to float32: %w", err)
 	}
 
 	return &domain.DDFingerprints{
@@ -80,22 +79,9 @@ func (s *SQLiteStore) CheckNonSeedRecord(_ context.Context) (bool, error) {
 
 // StoreFingerprint stores fingerprint
 func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFingerprints) error {
-	encodeFloat2Npy := func(v []float64) ([]byte, error) {
-		// create numpy matrix Nx1
-		m := mat.NewDense(len(v), 1, v)
-		f := bytes.NewBuffer(nil)
-		if err := npyio.Write(f, m); err != nil {
-			return nil, errors.Errorf("encode to npy: %w", err)
-		}
-		return f.Bytes(), nil
-	}
+	fp := writeFloat64SliceToBytes(input.ImageFingerprintVector)
 
-	fp, err := encodeFloat2Npy(input.ImageFingerprintVector)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.db.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
+	_, err := s.db.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
 		 path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database,
 		  thumbnail_of_image, request_type, open_api_subset_id_string,open_api_group_id_string,collection_name_string, registration_ticket_txid) VALUES(?,?,?,?,?,?,?,?,?,?)`, input.Sha256HashOfArtImageFile,
 		input.PathToArtImageFile, fp, input.DatetimeFingerprintAddedToDatabase, input.ImageThumbnailAsBase64, input.RequestType, input.IDString, input.OpenAPIGroupIDString, input.CollectionNameString, input.RegTXID)
@@ -195,4 +181,60 @@ func (s *SQLiteStore) GetFingerprintsCount(_ context.Context) (int64, error) {
 	}
 
 	return Data.Count, nil
+}
+
+func float64ToBytes(f float64) []byte {
+	bits := math.Float64bits(f)
+	bytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, bits)
+	return bytes
+}
+
+func bytesToFloat64(b []byte) float64 {
+	bits := binary.LittleEndian.Uint64(b)
+	return math.Float64frombits(bits)
+}
+
+func writeFloat64SliceToBytes(data []float64) []byte {
+	header := fmt.Sprintf("{'descr': '<f8', 'fortran_order': False, 'shape': (%d, 1), }", len(data))
+	paddedHeader := header + strings.Repeat(" ", (128-len(header)-1)) + "\n"
+
+	var buf bytes.Buffer
+	buf.Write([]byte("\x93NUMPY")) // Magic string
+	buf.WriteByte(0x01)            // Major version
+	buf.WriteByte(0x00)            // Minor version
+	buf.Write([]byte{0x76, 0x00})  // Header length (little endian uint16)
+	buf.WriteString(paddedHeader)  // Header
+	for _, value := range data {
+		buf.Write(float64ToBytes(value)) // Data
+	}
+
+	return buf.Bytes()
+}
+
+func readFloat64SliceFromBytes(content []byte) ([]float64, error) {
+	if !bytes.HasPrefix(content, []byte("\x93NUMPY")) {
+		return nil, fmt.Errorf("invalid magic string")
+	}
+
+	headerLength := binary.LittleEndian.Uint16(content[8:10])
+	header := string(content[10 : 10+headerLength])
+
+	var dataLength int
+	_, err := fmt.Sscanf(header, "{'descr': '<f8', 'fortran_order': False, 'shape': (%d, 1), }", &dataLength)
+	if err != nil {
+		return nil, err
+	}
+
+	dataBytes := content[10+headerLength:]
+	if len(dataBytes)%8 != 0 {
+		return nil, fmt.Errorf("invalid byte slice length")
+	}
+
+	data := make([]float64, dataLength)
+	for i := 0; i < dataLength; i++ {
+		data[i] = bytesToFloat64(dataBytes[i*8 : (i+1)*8])
+	}
+
+	return data, nil
 }

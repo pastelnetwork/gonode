@@ -37,17 +37,17 @@ type DDAndFingerprints struct {
 	ImageFingerprintOfCandidateImageFile       []float32              `json:"image_fingerprint_of_candidate_image_file"`
 	HashOfCandidateImageFile                   string                 `json:"hash_of_candidate_image_file"`
 	RarenessScoresTableJSONCompressedB64       string                 `json:"rareness_scores_table_json_compressed_b64"`
-	CollectionNameString                       string                 `json:"collection_name_string,omitempty"`
-	OpenAPIGroupIDString                       string                 `json:"open_api_group_id_string,omitempty"`
-	GroupRarenessScore                         float32                `json:"group_rareness_score,omitempty"`
-	CandidateImageThumbnailWebpAsBase64String  string                 `json:"candidate_image_thumbnail_webp_as_base64_string,omitempty"`
-	DoesNotImpactTheFollowingCollectionStrings string                 `json:"does_not_impact_the_following_collection_strings,omitempty"`
-	IsInvalidSenseRequest                      bool                   `json:"is_invalid_sense_request,omitempty"`
-	InvalidSenseRequestReason                  string                 `json:"invalid_sense_request_reason,omitempty"`
-	SimilarityScoreToFirstEntryInCollection    float32                `json:"similarity_score_to_first_entry_in_collection,omitempty"`
-	CPProbability                              float32                `json:"cp_probability,omitempty"`
-	ChildProbability                           float32                `json:"child_probability,omitempty"`
-	ImageFilePath                              string                 `json:"image_file_path,omitempty"`
+	CollectionNameString                       string                 `json:"collection_name_string"`
+	OpenAPIGroupIDString                       string                 `json:"open_api_group_id_string"`
+	GroupRarenessScore                         float32                `json:"group_rareness_score"`
+	CandidateImageThumbnailWebpAsBase64String  string                 `json:"candidate_image_thumbnail_webp_as_base64_string"`
+	DoesNotImpactTheFollowingCollectionStrings string                 `json:"does_not_impact_the_following_collection_strings"`
+	IsInvalidSenseRequest                      bool                   `json:"is_invalid_sense_request"`
+	InvalidSenseRequestReason                  string                 `json:"invalid_sense_request_reason"`
+	SimilarityScoreToFirstEntryInCollection    float32                `json:"similarity_score_to_first_entry_in_collection"`
+	CPProbability                              float32                `json:"cp_probability"`
+	ChildProbability                           float32                `json:"child_probability"`
+	ImageFilePath                              string                 `json:"image_file_path"`
 	InternetRareness                           *InternetRareness      `json:"internet_rareness"`
 	AlternativeNSFWScores                      *AlternativeNSFWScores `json:"alternative_nsfw_scores"`
 }
@@ -112,15 +112,19 @@ func (s DDAndFingerprints) Validate() error {
 		return errors.Errorf("InternetRareness or AlternativeNSFWScores is nil")
 	}
 
+	if len(s.CandidateImageThumbnailWebpAsBase64String) == 0 {
+		return errors.Errorf("Image thumbnail is nil")
+	}
+
 	return nil
 }
 
 // ExtractCompressSignedDDAndFingerprints  decompresses & decodes
 // the probe image reply which is: Base64URL(compress(dd_and_fingerprints.signature))
 // and returns :
-//- DDAndFingerprints structure data
-//- JSON bytes of DDAndFingerprints struct (due to float value, so marshal might different on different platform)
-//- signature, signature returned is base64 string of signature
+// - DDAndFingerprints structure data
+// - JSON bytes of DDAndFingerprints struct (due to float value, so marshal might different on different platform)
+// - signature, signature returned is base64 string of signature
 func ExtractCompressSignedDDAndFingerprints(compressed []byte) (*DDAndFingerprints, []byte, []byte, error) {
 	// Decompress compressedSignedDDAndFingerprints
 	decompressedReply, err := zstd.Decompress(nil, compressed)

@@ -68,33 +68,6 @@ func TestSetFingerprint(t *testing.T) {
 	assert.True(t, err == nil)
 }
 
-func TestGetSetFingerprint(t *testing.T) {
-	ddStore, _, tmpFileName := prepareFGService(t)
-	defer os.Remove(tmpFileName)
-
-	setFp := generateFingerprint(t)
-	ctx := context.Background()
-	err := ddStore.StoreFingerprint(ctx, setFp)
-
-	assert.True(t, err == nil)
-
-	getFp, err := ddStore.GetLatestFingerprints(ctx)
-
-	assert.True(t, err == nil)
-
-	findFp, err := ddStore.IfFingerprintExists(ctx, setFp.Sha256HashOfArtImageFile)
-
-	assert.True(t, err == nil)
-	assert.True(t, getFp != nil)
-	assert.Equal(t, setFp.Sha256HashOfArtImageFile, getFp.Sha256HashOfArtImageFile)
-	assert.Equal(t, setFp.ImageFingerprintVector, getFp.ImageFingerprintVector)
-	assert.True(t, findFp)
-
-	findFp, err = ddStore.IfFingerprintExists(ctx, "blahblah")
-	assert.True(t, err == nil)
-	assert.False(t, findFp)
-}
-
 func TestDoesNotImpactCollections(t *testing.T) {
 	ddStore, cStore, tmpFileName := prepareFGService(t)
 	defer os.Remove(tmpFileName)

@@ -39,12 +39,26 @@ func copyFingerPrintAndScores(origin *DDAndFingerprints) *DDAndFingerprints {
 		ImageFingerprintOfCandidateImageFile: origin.ImageFingerprintOfCandidateImageFile,
 
 		HashOfCandidateImageFile: origin.HashOfCandidateImageFile,
+
+		CollectionNameString:                       origin.CollectionNameString,
+		OpenAPIGroupIDString:                       origin.OpenAPIGroupIDString,
+		GroupRarenessScore:                         origin.GroupRarenessScore,
+		CandidateImageThumbnailWebpAsBase64String:  origin.CandidateImageThumbnailWebpAsBase64String,
+		DoesNotImpactTheFollowingCollectionStrings: origin.DoesNotImpactTheFollowingCollectionStrings,
+		IsInvalidSenseRequest:                      origin.IsInvalidSenseRequest,
+		InvalidSenseRequestReason:                  origin.InvalidSenseRequestReason,
+		SimilarityScoreToFirstEntryInCollection:    origin.SimilarityScoreToFirstEntryInCollection,
+		CPProbability:                              origin.CPProbability,
+		ChildProbability:                           origin.ChildProbability,
+		ImageFilePath:                              origin.ImageFilePath,
 	}
 	return copied
 }
 
 // CombineFingerPrintAndScores verifies erify dd_and_fingerprints data received from 2 other
-//  SuperNodes and SNs own dd_and_fingerprints are the same or “close enough”
+//
+//	SuperNodes and SNs own dd_and_fingerprints are the same or “close enough”
+//
 // Refer: https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - 4.B.3
 // The order of DDAndFingerprints should be higher rank first
 func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerprints, third *DDAndFingerprints) (*DDAndFingerprints, error) {
