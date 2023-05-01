@@ -400,3 +400,9 @@ func (client *Client) AssertVerifyCall(expectedCalls int, arguments ...interface
 	client.AssertNumberOfCalls(client.t, VerifyMethod, expectedCalls)
 	return client
 }
+
+// ListenOnActionActivationTicketsFromBlockHeight listening ActionActivationTicketsFromBlockHeight call and returns values from args
+func (client *Client) ListenOnActionActivationTicketsFromBlockHeight(tix pastel.ActTickets, err error) *Client {
+	client.On("ActionActivationTicketsFromBlockHeight", mock.Anything, mock.Anything).Return(tix, err)
+	return client
+}
