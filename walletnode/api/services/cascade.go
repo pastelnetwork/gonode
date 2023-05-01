@@ -74,9 +74,10 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 	log.Infof("estimated fee has been calculated: %f", fee)
 
 	res = &cascade.Asset{
-		FileID:       id,
-		ExpiresIn:    expiry,
-		EstimatedFee: fee,
+		FileID:                id,
+		ExpiresIn:             expiry,
+		TotalEstimatedFee:     fee + 10.0, // 10 is activation ticket fee
+		RequiredPreburnAmount: fee * 0.2,
 	}
 
 	return res, nil

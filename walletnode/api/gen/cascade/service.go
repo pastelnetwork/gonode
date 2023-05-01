@@ -68,7 +68,9 @@ type Asset struct {
 	// File expiration
 	ExpiresIn string
 	// Estimated fee
-	EstimatedFee float64
+	TotalEstimatedFee float64
+	// The amount that's required to be preburned
+	RequiredPreburnAmount float64
 }
 
 type Details struct {
@@ -220,11 +222,17 @@ func newAsset(vres *cascadeviews.AssetView) *Asset {
 	if vres.ExpiresIn != nil {
 		res.ExpiresIn = *vres.ExpiresIn
 	}
-	if vres.EstimatedFee != nil {
-		res.EstimatedFee = *vres.EstimatedFee
+	if vres.TotalEstimatedFee != nil {
+		res.TotalEstimatedFee = *vres.TotalEstimatedFee
 	}
-	if vres.EstimatedFee == nil {
-		res.EstimatedFee = 1
+	if vres.RequiredPreburnAmount != nil {
+		res.RequiredPreburnAmount = *vres.RequiredPreburnAmount
+	}
+	if vres.TotalEstimatedFee == nil {
+		res.TotalEstimatedFee = 1
+	}
+	if vres.RequiredPreburnAmount == nil {
+		res.RequiredPreburnAmount = 1
 	}
 	return res
 }
@@ -233,9 +241,10 @@ func newAsset(vres *cascadeviews.AssetView) *Asset {
 // the "default" view.
 func newAssetView(res *Asset) *cascadeviews.AssetView {
 	vres := &cascadeviews.AssetView{
-		FileID:       &res.FileID,
-		ExpiresIn:    &res.ExpiresIn,
-		EstimatedFee: &res.EstimatedFee,
+		FileID:                &res.FileID,
+		ExpiresIn:             &res.ExpiresIn,
+		TotalEstimatedFee:     &res.TotalEstimatedFee,
+		RequiredPreburnAmount: &res.RequiredPreburnAmount,
 	}
 	return vres
 }

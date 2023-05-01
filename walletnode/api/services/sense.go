@@ -74,9 +74,10 @@ func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.Upload
 	log.Infof("estimated fee has been calculated: %f", fee)
 
 	res = &sense.Image{
-		ImageID:      id,
-		ExpiresIn:    expiry,
-		EstimatedFee: fee,
+		ImageID:               id,
+		ExpiresIn:             expiry,
+		TotalEstimatedFee:     fee + 10.0, // 10 is activation ticket fee
+		RequiredPreburnAmount: fee * 0.2,
 	}
 
 	return res, nil

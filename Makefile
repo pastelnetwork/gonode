@@ -98,3 +98,5 @@ release:
 	docker cp gn_builder:/hermes/hermes-linux-amd64 ./dist/$(BINARY_HERMES)-linux-amd64
 	docker rm -f gn_builder
 
+goa-gen:
+	cd ./walletnode/api && goa gen github.com/pastelnetwork/gonode/walletnode/api/design
