@@ -22,4 +22,6 @@ type ActionRegistrationRequest struct {
 	MakePubliclyAccessible bool `json:"make_publicly_accessible"`
 	//CollectionTxID to add it into the collection
 	CollectionTxID string `json:"collection_txid"`
+	// GroupID to add it into the collection
+	GroupID string `json:"group_id"`
 }

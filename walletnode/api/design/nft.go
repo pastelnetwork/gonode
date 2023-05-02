@@ -358,6 +358,10 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
 	})
 
+	Attribute("open_api_group_id", String, func() {
+		Description("OpenAPI GroupID string")
+	})
+
 	Required("creator_name", "name", "issued_copies", "creator_pastelid", "creator_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
 

@@ -1214,6 +1214,7 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponseBody(v *nf
 		SpendableAddress:          *v.SpendableAddress,
 		MaximumFee:                *v.MaximumFee,
 		CollectionActTxid:         v.CollectionActTxid,
+		OpenAPIGroupID:            v.OpenAPIGroupID,
 	}
 	if v.Royalty != nil {
 		res.Royalty = *v.Royalty
@@ -1290,6 +1291,7 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponse(v *nftvie
 		SpendableAddress:          *v.SpendableAddress,
 		MaximumFee:                *v.MaximumFee,
 		CollectionActTxid:         v.CollectionActTxid,
+		OpenAPIGroupID:            v.OpenAPIGroupID,
 	}
 	if v.Royalty != nil {
 		res.Royalty = *v.Royalty

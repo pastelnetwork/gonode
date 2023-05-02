@@ -478,6 +478,8 @@ func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
 		CreatorPastelID: task.Request.CreatorPastelID,
 		BlockHeight:     strconv.Itoa(task.creatorBlockHeight),
 		Timestamp:       task.creationTimestamp,
+		GroupID:         task.Request.OpenAPIGroupID,
+		CollectionTxID:  task.Request.CollectionTxID,
 	}
 
 	group, gctx := errgroup.WithContext(ctx)

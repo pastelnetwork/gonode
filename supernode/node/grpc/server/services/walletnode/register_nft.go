@@ -181,6 +181,8 @@ func (service *RegisterNft) SendRegMetadata(ctx context.Context, req *pb.SendReg
 		CreatorPastelID: req.CreatorPastelID,
 		BlockHeight:     req.BlockHeight,
 		Timestamp:       req.Timestamp,
+		GroupID:         req.GroupId,
+		CollectionTxID:  req.CollectionTxid,
 	}
 
 	err = task.SendRegMetadata(ctx, reqMetadata)
@@ -189,7 +191,7 @@ func (service *RegisterNft) SendRegMetadata(ctx context.Context, req *pb.SendReg
 }
 
 // ProbeImage implements walletnode.RegisterNftServer.ProbeImage()
-//As part of register NFT New Art Registration Workflow from
+// As part of register NFT New Art Registration Workflow from
 // https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
 // Step number 4.A begins here, with file reception
 func (service *RegisterNft) ProbeImage(stream pb.RegisterNft_ProbeImageServer) (retErr error) {

@@ -25,6 +25,7 @@ type NftRegistrationRequest struct {
 	Thumbnail                 files.ThumbnailCoordinate `json:"thumbnail_coordinate"`
 	MakePubliclyAccessible    bool                      `json:"make_publicly_accessible"`
 	CollectionTxID            string                    `json:"collection_txid"`
+	OpenAPIGroupID            string                    `json:"open_api_group_id"`
 }
 
 // FromNftRegisterPayload converts from one to another
@@ -53,6 +54,10 @@ func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegistrationReques
 		Royalty:                   payload.Royalty,
 		Thumbnail:                 thumbnail,
 		MakePubliclyAccessible:    payload.MakePubliclyAccessible,
+	}
+
+	if payload.OpenAPIGroupID != nil {
+		req.OpenAPIGroupID = *payload.OpenAPIGroupID
 	}
 
 	if payload.CollectionActTxid != nil {

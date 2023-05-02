@@ -31,6 +31,10 @@ type StartProcessingRequestBody struct {
 	BurnTxid *string `form:"burn_txid,omitempty" json:"burn_txid,omitempty" xml:"burn_txid,omitempty"`
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
+	// OpenAPI GroupID string
+	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
+	// OpenAPI Subset string
+	OpenAPISubsetID *string `form:"open_api_subset_id,omitempty" json:"open_api_subset_id,omitempty" xml:"open_api_subset_id,omitempty"`
 	// App PastelID
 	AppPastelID *string `form:"app_pastelid,omitempty" json:"app_pastelid,omitempty" xml:"app_pastelid,omitempty"`
 }
@@ -492,7 +496,14 @@ func NewStartProcessingPayload(body *StartProcessingRequestBody, imageID string,
 	v := &sense.StartProcessingPayload{
 		BurnTxid:          *body.BurnTxid,
 		CollectionActTxid: body.CollectionActTxid,
+		OpenAPIGroupID:    body.OpenAPIGroupID,
 		AppPastelID:       *body.AppPastelID,
+	}
+	if body.OpenAPISubsetID != nil {
+		v.OpenAPISubsetID = *body.OpenAPISubsetID
+	}
+	if body.OpenAPISubsetID == nil {
+		v.OpenAPISubsetID = "ANY"
 	}
 	v.ImageID = imageID
 	v.Key = key

@@ -50,7 +50,14 @@ type NftRegistrationTask struct {
 	rqIDFiles   [][]byte
 	rawDdFpFile []byte
 	ddFpFiles   [][]byte
+
+	collectionTxID string
 }
+
+const (
+	// DefaultSubsetID
+	defaultSubsetID = "NFT"
+)
 
 type tasker struct {
 }
@@ -74,6 +81,12 @@ func (task *NftRegistrationTask) SendRegMetadata(_ context.Context, regMetadata 
 		return err
 	}
 	task.nftRegMetadata = regMetadata
+	task.collectionTxID = regMetadata.CollectionTxID
+
+	collectionName := "" // TODO: get collection name from the ticket txid
+
+	task.DupeDetectionHandler.SetDDFields(false, defaultSubsetID, regMetadata.GroupID, collectionName)
+
 	return nil
 }
 
@@ -542,15 +555,10 @@ func NewNftRegistrationTask(service *NftRegistrationService) *NftRegistrationTas
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
 	}
 
-	task.DupeDetectionHandler = common.NewDupeDetectionTaskHelper(task.SuperNodeTask, service.ddClient,
-		task.config.PastelID, task.config.PassPhrase,
+	task.DupeDetectionHandler = common.NewDupeDetectionTaskHelper(task.SuperNodeTask, service.ddClient, task.config.PastelID, task.config.PassPhrase,
 		common.NewNetworkHandler(task.SuperNodeTask, service.nodeClient,
-			RegisterNftNodeMaker{}, service.PastelClient,
-			task.config.PastelID,
-			service.config.NumberConnectedNodes),
-		service.PastelClient,
-		task.config.PreburntTxMinConfirmations,
-	)
+			RegisterNftNodeMaker{}, service.PastelClient, task.config.PastelID, service.config.NumberConnectedNodes),
+		service.PastelClient, task.config.PreburntTxMinConfirmations)
 
 	return task
 }

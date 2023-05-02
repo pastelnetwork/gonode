@@ -1222,6 +1222,7 @@ func unmarshalNftRegisterPayloadResponseBodyToNftviewsNftRegisterPayloadView(v *
 		Green:                     v.Green,
 		MakePubliclyAccessible:    v.MakePubliclyAccessible,
 		CollectionActTxid:         v.CollectionActTxid,
+		OpenAPIGroupID:            v.OpenAPIGroupID,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseBodyToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
@@ -1301,6 +1302,7 @@ func unmarshalNftRegisterPayloadResponseToNftviewsNftRegisterPayloadView(v *NftR
 		Green:                     v.Green,
 		MakePubliclyAccessible:    v.MakePubliclyAccessible,
 		CollectionActTxid:         v.CollectionActTxid,
+		OpenAPIGroupID:            v.OpenAPIGroupID,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)

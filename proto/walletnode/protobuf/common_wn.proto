@@ -46,6 +46,8 @@ message SendRegMetadataRequest {
     string blockHeight = 4;
     string timestamp = 5;
     string openapi_subset_id = 6;
+    string group_id = 7;
+    string collection_txid = 8; 
 }
 
 message SendRegMetadataReply {}
