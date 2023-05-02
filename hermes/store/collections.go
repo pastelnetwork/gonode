@@ -73,6 +73,7 @@ func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) er
 	return nil
 }
 
+// GetAllInProcessCollections get all collections in process state
 func (s *SQLiteStore) GetAllInProcessCollections(ctx context.Context) ([]*domain.Collection, error) {
 	c := []*collection{}
 
