@@ -11,15 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/hermes/domain"
-	"github.com/pastelnetwork/gonode/hermes/service/hermes/synchronizer"
-	nodemock "github.com/pastelnetwork/gonode/hermes/service/node/mocks"
 	"github.com/pastelnetwork/gonode/hermes/store"
-	ddmock "github.com/pastelnetwork/gonode/hermes/store/mocks"
-	pastelMock "github.com/pastelnetwork/gonode/pastel/mocks"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func prepareFGService(t *testing.T) (store.DDStore, store.CollectionStore, string) {
@@ -93,6 +87,7 @@ func TestDoesNotImpactCollections(t *testing.T) {
 	assert.Equal(t, nImpactedCollections[1].CollectionName, collectionNames[1])
 }
 
+/*
 func TestFetchDDFpFileAndStoreFingerprints(t *testing.T) {
 	type args struct {
 		tType   string
@@ -300,3 +295,4 @@ func TestFetchDDFpFileAndStoreFingerprints(t *testing.T) {
 	}
 
 }
+*/

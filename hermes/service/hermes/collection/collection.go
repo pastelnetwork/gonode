@@ -29,21 +29,26 @@ func (s *collectionService) Run(ctx context.Context) error {
 				continue
 			}
 
-			group, gctx := errgroup.WithContext(ctx)
-			group.Go(func() error {
-				return s.parseCollectionTickets(gctx)
+			groupA, cctx := errgroup.WithContext(ctx)
+			groupB, gctx := errgroup.WithContext(ctx)
+
+			groupA.Go(func() error {
+				return s.parseCollectionTickets(cctx)
 			})
 
-			if err := group.Wait(); err != nil {
-				log.WithContext(gctx).WithError(err).Errorf("run task failed")
+			groupB.Go(func() error {
+				return s.finalizeCollections(gctx)
+			})
+
+			if err := groupA.Wait(); err != nil {
+				log.WithContext(cctx).WithError(err).Errorf("parseCollectionTickets failed")
+			}
+
+			if err := groupB.Wait(); err != nil {
+				log.WithContext(gctx).WithError(err).Errorf("finalizeCollections failed")
 			}
 		}
 	}
-}
-
-func (s *collectionService) Stats(_ context.Context) (map[string]interface{}, error) {
-	//collection service stats can be implemented here
-	return nil, nil
 }
 
 func (s collectionService) parseCollectionTickets(ctx context.Context) error {
@@ -104,7 +109,7 @@ func (s collectionService) parseCollectionTickets(ctx context.Context) error {
 			CollectionTicketTXID:                           actTxID,
 			CollectionName:                                 regTicket.CollectionRegTicketData.CollectionTicketData.CollectionName,
 			CollectionTicketActivationBlockHeight:          collectionActTickets[i].Height,
-			CollectionFinalAllowedBlockHeight:              collectionActTickets[i].Height + CollectionFinalAllowedBlockHeightDays,
+			CollectionFinalAllowedBlockHeight:              int(regTicket.CollectionRegTicketData.CollectionTicketData.CollectionFinalAllowedBlockHeight),
 			MaxPermittedOpenNSFWScore:                      regTicket.CollectionRegTicketData.CollectionTicketData.AppTicketData.MaxPermittedOpenNSFWScore,
 			MinimumSimilarityScoreToFirstEntryInCollection: regTicket.CollectionRegTicketData.CollectionTicketData.AppTicketData.MinimumSimilarityScoreToFirstEntryInCollection,
 			CollectionState:                                domain.InProcessCollectionState,
@@ -127,24 +132,7 @@ func (s collectionService) parseCollectionTickets(ctx context.Context) error {
 	return nil
 }
 
-/*
-func getCollectionState(ctx context.Context, currentNoOfCollectionEntries, maxNoOfCollectionEntries uint) (collectionState domain.CollectionState, datetimeCollectionStateUpdated string, err error) {
-	ent := log.WithContext(ctx).WithField("current_no_of_col_entries", currentNoOfCollectionEntries).
-		WithField("max_no_of_collection_entries", maxNoOfCollectionEntries)
-
-	if currentNoOfCollectionEntries == maxNoOfCollectionEntries {
-		ent.Info("current and max no of collection entries are equal, collection state is finalized")
-		return domain.FinalizedCollectionState, time.Now().Format(time.RFC3339), nil
-	}
-
-	if currentNoOfCollectionEntries < maxNoOfCollectionEntries {
-		ent.Info("current no of collection entries are less than max no of collection entries, collection state is in-process")
-
-		return domain.InProcessCollectionState, time.Now().Format(time.RFC3339), nil
-	}
-
-	ent.Error("current no of collection entries are less than max no of collection entries, collection state is in-process")
-	err = errors.Errorf("current no of collection entries are greater than max no of collection entries")
-	return domain.UndefinedCollectionState, "", err
+func (s *collectionService) Stats(_ context.Context) (map[string]interface{}, error) {
+	//collection service stats can be implemented here
+	return nil, nil
 }
-*/

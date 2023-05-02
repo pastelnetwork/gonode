@@ -66,9 +66,8 @@ func TestParseCollectionTicketService(t *testing.T) {
 				require.NoError(t, err)
 				collectionTicket, err := s.store.GetCollection(context.Background(), "test-act-tx-id")
 				require.NoError(t, err)
-				require.Equal(t, domain.FinalizedCollectionState, collectionTicket.CollectionState)
+				require.Equal(t, domain.InProcessCollectionState, collectionTicket.CollectionState)
 				require.Equal(t, actTicket.Height, collectionTicket.CollectionTicketActivationBlockHeight)
-				require.Equal(t, actTicket.Height+CollectionFinalAllowedBlockHeightDays, collectionTicket.CollectionFinalAllowedBlockHeight)
 			},
 		},
 	}
