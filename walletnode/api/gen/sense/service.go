@@ -117,6 +117,8 @@ type StartProcessingPayload struct {
 	ImageID string
 	// Burn transaction ID
 	BurnTxid string
+	// Act Collection TxID to add given ticket in collection
+	CollectionActTxid *string
 	// App PastelID
 	AppPastelID string
 	// Passphrase of the owner's PastelID

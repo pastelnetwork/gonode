@@ -4020,6 +4020,10 @@ definitions:
         title: NftRegisterPayloadResponse
         type: object
         properties:
+            collection_act_txid:
+                type: string
+                description: 'Act Collection TxID to add given ticket in collection '
+                example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             creator_name:
                 type: string
                 description: Name of the NFT creator
@@ -4107,6 +4111,7 @@ definitions:
                 maxLength: 128
         description: Request of the registration NFT
         example:
+            collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             creator_name: Leonardo da Vinci
             creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             creator_pastelid_passphrase: qwerasdf1234
@@ -4139,6 +4144,10 @@ definitions:
         title: NftRegisterPayloadResponseBody
         type: object
         properties:
+            collection_act_txid:
+                type: string
+                description: 'Act Collection TxID to add given ticket in collection '
+                example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             creator_name:
                 type: string
                 description: Name of the NFT creator
@@ -4226,6 +4235,7 @@ definitions:
                 maxLength: 128
         description: Request of the registration NFT
         example:
+            collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             creator_name: Leonardo da Vinci
             creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             creator_pastelid_passphrase: qwerasdf1234
@@ -4258,6 +4268,10 @@ definitions:
         title: NftRegisterRequestBody
         type: object
         properties:
+            collection_act_txid:
+                type: string
+                description: 'Act Collection TxID to add given ticket in collection '
+                example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             creator_name:
                 type: string
                 description: Name of the NFT creator
@@ -4350,6 +4364,7 @@ definitions:
                 example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
                 maxLength: 128
         example:
+            collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             creator_name: Leonardo da Vinci
             creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             creator_pastelid_passphrase: qwerasdf1234
@@ -4574,6 +4589,7 @@ definitions:
                   status: Task Started
             status: Task Started
             ticket:
+                collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 creator_pastelid_passphrase: qwerasdf1234
@@ -5039,6 +5055,7 @@ definitions:
                   status: Task Started
               status: Task Started
               ticket:
+                collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 creator_pastelid_passphrase: qwerasdf1234
@@ -5070,6 +5087,7 @@ definitions:
                   status: Task Started
               status: Task Started
               ticket:
+                collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 creator_pastelid_passphrase: qwerasdf1234
@@ -5101,6 +5119,7 @@ definitions:
                   status: Task Started
               status: Task Started
               ticket:
+                collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 creator_pastelid_passphrase: qwerasdf1234
@@ -5858,9 +5877,14 @@ definitions:
                 example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 minLength: 64
                 maxLength: 64
+            collection_act_txid:
+                type: string
+                description: 'Act Collection TxID to add given ticket in collection '
+                example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         example:
             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+            collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         required:
             - burn_txid
             - app_pastelid
@@ -6174,6 +6198,7 @@ definitions:
             id: n6Qn6TFM
             status: Task Started
             ticket:
+                collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 creator_pastelid_passphrase: qwerasdf1234

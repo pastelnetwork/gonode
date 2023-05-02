@@ -622,12 +622,23 @@ func (client *client) CollectionActivationTicketsFromBlockHeight(ctx context.Con
 	return tickets, nil
 }
 
-// CollectionRegTicket implements pastel.Client.NFTCollectionRegTicket
+// CollectionRegTicket implements pastel.Client.CollectionRegTicket
 func (client *client) CollectionRegTicket(ctx context.Context, regTxid string) (CollectionRegTicket, error) {
 	ticket := CollectionRegTicket{}
 
 	if err := client.callFor(ctx, &ticket, "tickets", "get", regTxid); err != nil {
 		return ticket, errors.Errorf("failed to get reg ticket %s: %w", regTxid, err)
+	}
+
+	return ticket, nil
+}
+
+// CollectionActTicket implements pastel.Client.CollectionActTicket
+func (client *client) CollectionActTicket(ctx context.Context, actTxid string) (CollectionActTicket, error) {
+	ticket := CollectionActTicket{}
+
+	if err := client.callFor(ctx, &ticket, "tickets", "get", actTxid); err != nil {
+		return ticket, errors.Errorf("failed to get reg ticket %s: %w", actTxid, err)
 	}
 
 	return ticket, nil

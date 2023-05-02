@@ -46,6 +46,30 @@ type CollectionTicket struct {
 	AppTicketData                           AppTicket `json:"-"`
 }
 
+// CollectionActTickets is an array of CollectionActTicket
+type CollectionActTickets []CollectionActTicket
+
+// CollectionActTicket represents pastel collection-activation ticket.
+type CollectionActTicket struct {
+	Height                  int                     `json:"height"`
+	TXID                    string                  `json:"txid"`
+	CollectionActTicketData CollectionActTicketData `json:"ticket"`
+}
+
+// CollectionActTicketData represents activation collection ticket properties
+type CollectionActTicketData struct {
+	PastelID          string `json:"pastelID"`
+	Signature         string `json:"signature"`
+	Type              string `json:"type"`
+	CreatorHeight     int    `json:"creator_height"`
+	RegTXID           string `json:"reg_txid"`
+	StorageFee        int    `json:"storage_fee"`
+	Version           int    `json:"version"`
+	CalledAt          int    `json:"called_at"`
+	IsFull            bool   `json:"is_full"`
+	IsExpiredByHeight bool   `json:"is_expired_by_height"`
+}
+
 // EncodeCollectionTicket encodes CollectionTicket to bytes
 func EncodeCollectionTicket(ticket *CollectionTicket) ([]byte, error) {
 	appTicketBytes, err := json.Marshal(ticket.AppTicketData)

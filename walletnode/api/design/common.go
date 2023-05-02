@@ -146,6 +146,10 @@ var StartProcessingPayload = Type("StartProcessingPayload", func() {
 		MaxLength(64)
 		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
 	})
+	Attribute("collection_act_txid", String, func() {
+		Description("Act Collection TxID to add given ticket in collection ")
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
 	Attribute("app_pastelid", String, func() {
 		Meta("struct:field:name", "AppPastelID")
 		Description("App PastelID")

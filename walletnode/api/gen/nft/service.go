@@ -346,6 +346,8 @@ type NftRegisterPayload struct {
 	ThumbnailCoordinate *Thumbnailcoordinate
 	// To make it publicly accessible
 	MakePubliclyAccessible bool
+	// Act Collection TxID to add given ticket in collection
+	CollectionActTxid *string
 }
 
 // NftSearchPayload is the payload type of the nft service nftSearch method.
@@ -472,6 +474,8 @@ type RegisterPayload struct {
 	ThumbnailCoordinate *Thumbnailcoordinate
 	// To make it publicly accessible
 	MakePubliclyAccessible bool
+	// Act Collection TxID to add given ticket in collection
+	CollectionActTxid *string
 }
 
 // RegisterResult is the result type of the nft service register method.
@@ -882,6 +886,7 @@ func transformNftviewsNftRegisterPayloadViewToNftRegisterPayload(v *nftviews.Nft
 		CreatorWebsiteURL:         v.CreatorWebsiteURL,
 		SpendableAddress:          *v.SpendableAddress,
 		MaximumFee:                *v.MaximumFee,
+		CollectionActTxid:         v.CollectionActTxid,
 	}
 	if v.Royalty != nil {
 		res.Royalty = *v.Royalty
@@ -959,6 +964,7 @@ func transformNftRegisterPayloadToNftviewsNftRegisterPayloadView(v *NftRegisterP
 		Royalty:                   &v.Royalty,
 		Green:                     &v.Green,
 		MakePubliclyAccessible:    &v.MakePubliclyAccessible,
+		CollectionActTxid:         v.CollectionActTxid,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = transformThumbnailcoordinateToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)

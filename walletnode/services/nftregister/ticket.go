@@ -24,6 +24,7 @@ type NftRegistrationRequest struct {
 	Royalty                   float64                   `json:"royalty"`
 	Thumbnail                 files.ThumbnailCoordinate `json:"thumbnail_coordinate"`
 	MakePubliclyAccessible    bool                      `json:"make_publicly_accessible"`
+	CollectionTxID            string                    `json:"collection_txid"`
 }
 
 // FromNftRegisterPayload converts from one to another
@@ -35,7 +36,7 @@ func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegistrationReques
 		BottomRightY: payload.ThumbnailCoordinate.BottomRightY,
 	}
 
-	return &NftRegistrationRequest{
+	req := &NftRegistrationRequest{
 		Name:                      payload.Name,
 		Description:               payload.Description,
 		Keywords:                  payload.Keywords,
@@ -53,6 +54,12 @@ func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegistrationReques
 		Thumbnail:                 thumbnail,
 		MakePubliclyAccessible:    payload.MakePubliclyAccessible,
 	}
+
+	if payload.CollectionActTxid != nil {
+		req.CollectionTxID = *payload.CollectionActTxid
+	}
+
+	return req
 }
 
 // ToNftRegisterTicket converts from one to another
@@ -63,7 +70,7 @@ func ToNftRegisterTicket(request *NftRegistrationRequest) *nft.NftRegisterPayloa
 		BottomRightY: request.Thumbnail.BottomRightY,
 		BottomRightX: request.Thumbnail.BottomRightX,
 	}
-	return &nft.NftRegisterPayload{
+	payload := &nft.NftRegisterPayload{
 		Name:                      request.Name,
 		Description:               request.Description,
 		Keywords:                  request.Keywords,
@@ -80,4 +87,10 @@ func ToNftRegisterTicket(request *NftRegistrationRequest) *nft.NftRegisterPayloa
 		Royalty:                   request.Royalty,
 		ThumbnailCoordinate:       &thumbnail,
 	}
+
+	if request.CollectionTxID != "" {
+		payload.CollectionActTxid = &request.CollectionTxID
+	}
+
+	return payload
 }

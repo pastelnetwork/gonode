@@ -53,6 +53,8 @@ type RegisterRequestBody struct {
 	ThumbnailCoordinate *ThumbnailcoordinateRequestBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 	// To make it publicly accessible
 	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
+	// Act Collection TxID to add given ticket in collection
+	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 }
 
 // UploadImageRequestBody is the type of the "nft" service "uploadImage"
@@ -740,6 +742,8 @@ type NftRegisterPayloadResponseBody struct {
 	ThumbnailCoordinate *ThumbnailcoordinateResponseBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 	// To make it publicly accessible
 	MakePubliclyAccessible *bool `form:"make_publicly_accessible,omitempty" json:"make_publicly_accessible,omitempty" xml:"make_publicly_accessible,omitempty"`
+	// Act Collection TxID to add given ticket in collection
+	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 }
 
 // ThumbnailcoordinateResponseBody is used to define fields on response body
@@ -811,6 +815,8 @@ type NftRegisterPayloadResponse struct {
 	ThumbnailCoordinate *ThumbnailcoordinateResponse `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 	// To make it publicly accessible
 	MakePubliclyAccessible *bool `form:"make_publicly_accessible,omitempty" json:"make_publicly_accessible,omitempty" xml:"make_publicly_accessible,omitempty"`
+	// Act Collection TxID to add given ticket in collection
+	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 }
 
 // ThumbnailcoordinateResponse is used to define fields on response body types.
@@ -891,6 +897,7 @@ func NewRegisterRequestBody(p *nft.RegisterPayload) *RegisterRequestBody {
 		Royalty:                   p.Royalty,
 		Green:                     p.Green,
 		MakePubliclyAccessible:    p.MakePubliclyAccessible,
+		CollectionActTxid:         p.CollectionActTxid,
 	}
 	{
 		var zero float64

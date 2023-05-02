@@ -189,6 +189,10 @@ type Client interface {
 	// Command `tickets get <txid>`.
 	CollectionRegTicket(ctx context.Context, regTxid string) (CollectionRegTicket, error)
 
+	// CollectionActTicket returns collection activation ticket.
+	// Command `tickets get <txid>`.
+	CollectionActTicket(ctx context.Context, actTxid string) (CollectionActTicket, error)
+
 	// RegisterCollectionTicket registers collection ticket and returns the TxID.
 	// Command `tickets register collection "{collection-ticket}" "{signatures}" "pastelid" "passphrase" "label" "fee" ["address"] `.
 	RegisterCollectionTicket(ctx context.Context, request RegisterCollectionRequest) (txID string, err error)

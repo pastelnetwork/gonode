@@ -2,9 +2,11 @@ package nftregister
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,6 +28,7 @@ import (
 const (
 	//DateTimeFormat following the go convention for request timestamp
 	DateTimeFormat = "2006:01:02 15:04:05"
+	taskTypeNFT    = "nft"
 )
 
 // NftRegistrationTask an NFT on the blockchain
@@ -57,7 +60,9 @@ type NftRegistrationTask struct {
 	nftRegistrationTicket *pastel.NFTTicket
 	serializedTicket      []byte
 
-	regNFTTxid string
+	regNFTTxid     string
+	collectionTxID []byte
+	taskType       string
 
 	// only set to true for unit tests
 	skipPrimaryNodeTxidVerify bool
@@ -79,6 +84,13 @@ func (task *NftRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 func (task *NftRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	log.WithContext(ctx).Info("checking collection verification")
+	err := task.IsValidForCollection(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("ticket is not valid to be added in collection")
+		return err
+	}
 
 	log.WithContext(ctx).Info("checking storage fee")
 	task.StatusLog[common.FieldTaskType] = "NFT Registration"
@@ -390,6 +402,60 @@ func (task *NftRegistrationTask) Download(ctx context.Context) error {
 	}
 }
 
+// IsValidForCollection checks if the ticket is valid to be added to collection
+func (task *NftRegistrationTask) IsValidForCollection(ctx context.Context) error {
+	if task.Request.CollectionTxID == "" {
+		log.WithContext(ctx).Info("no collection txid found in the request, should proceed with normal registration")
+		return nil
+	}
+
+	collectionActTicket, err := task.service.pastelHandler.PastelClient.CollectionActTicket(ctx, task.Request.CollectionTxID)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("collection_act_tx_id", task.Request.CollectionTxID).Error("error getting collection-act ticket")
+		return errors.Errorf("error retrieving collection ticket")
+	}
+
+	collectionTicket, err := task.service.pastelHandler.PastelClient.CollectionRegTicket(ctx, collectionActTicket.CollectionActTicketData.RegTXID)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("collection_reg_tx_id", collectionActTicket.CollectionActTicketData.RegTXID).Error("error getting collection-reg ticket")
+		return errors.Errorf("error retrieving collection ticket")
+	}
+
+	ticket := collectionTicket.CollectionRegTicketData.CollectionTicketData
+
+	isValidContributor := false
+	for _, pastelID := range ticket.ListOfPastelIDsOfAuthorizedContributors {
+		if task.Request.CreatorPastelID == pastelID {
+			isValidContributor = true
+		}
+	}
+
+	if !isValidContributor {
+		return errors.Errorf("creator's pastelid is not a found in list of authorized contributors")
+	}
+
+	if task.taskType != strings.ToLower(ticket.ItemType) {
+		return errors.Errorf("ticket item type does not match with collection item type")
+	}
+
+	if collectionActTicket.CollectionActTicketData.IsFull {
+		return errors.Errorf("collection does not have capacity for more items, max collection entries have been reached")
+	}
+
+	if collectionActTicket.CollectionActTicketData.IsExpiredByHeight {
+		return errors.Errorf("block height exceeds than collection final allowed block height")
+	}
+
+	collectionTxID, err := json.Marshal(task.Request.CollectionTxID)
+	if err != nil {
+		return errors.Errorf("error converting collection tx-id to bytes")
+	}
+
+	task.collectionTxID = collectionTxID
+
+	return nil
+}
+
 func (task *NftRegistrationTask) isSuitableStorageFee(ctx context.Context) (bool, error) {
 	fee, err := task.service.pastelHandler.PastelClient.StorageNetworkFee(ctx)
 	if err != nil {
@@ -538,7 +604,7 @@ func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, f
 	return group.Wait()
 }
 
-func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
+func (task *NftRegistrationTask) createNftTicket(_ context.Context) (err error) {
 	if task.dataHash == nil {
 		return common.ErrEmptyDatahash
 	}
@@ -587,6 +653,10 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) error {
 			FileType:                   task.fileType,
 			MakePubliclyAccessible:     task.Request.MakePubliclyAccessible,
 		},
+	}
+
+	if task.collectionTxID != nil {
+		ticket.CollectionTxID = task.collectionTxID
 	}
 
 	task.nftRegistrationTicket = ticket
@@ -766,6 +836,7 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 		ImageHandler:        mixins.NewImageHandler(service.pastelHandler),
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 		downloadService:     service.downloadHandler,
+		taskType:            taskTypeNFT,
 		RqHandler: mixins.NewRQHandler(service.rqClient, service.pastelHandler,
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir,
 			service.config.NumberRQIDSFiles, service.config.RQIDsMax),

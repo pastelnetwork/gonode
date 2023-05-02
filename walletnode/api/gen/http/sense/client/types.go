@@ -27,6 +27,8 @@ type UploadImageRequestBody struct {
 type StartProcessingRequestBody struct {
 	// Burn transaction ID
 	BurnTxid string `form:"burn_txid" json:"burn_txid" xml:"burn_txid"`
+	// Act Collection TxID to add given ticket in collection
+	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// App PastelID
 	AppPastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
 }
@@ -289,8 +291,9 @@ func NewUploadImageRequestBody(p *sense.UploadImagePayload) *UploadImageRequestB
 // of the "startProcessing" endpoint of the "sense" service.
 func NewStartProcessingRequestBody(p *sense.StartProcessingPayload) *StartProcessingRequestBody {
 	body := &StartProcessingRequestBody{
-		BurnTxid:    p.BurnTxid,
-		AppPastelID: p.AppPastelID,
+		BurnTxid:          p.BurnTxid,
+		CollectionActTxid: p.CollectionActTxid,
+		AppPastelID:       p.AppPastelID,
 	}
 	return body
 }

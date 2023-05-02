@@ -104,6 +104,8 @@ const (
 	SignCollectionTicketMethod = "SignCollectionTicket"
 	//VerifyCollectionTicketMethod represents VerifyCollectionTicketMethod
 	VerifyCollectionTicketMethod = "VerifyCollectionTicket"
+	//CollectionActTicketMethod represents CollectionActTicketMethod
+	CollectionActTicketMethod = "CollectionActTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -371,6 +373,12 @@ func (client *Client) ListenOnCollectionActivationTicketsFromBlockHeight(actTick
 // ListenOnCollectionRegTicket listens collection reg ticket  return collection-reg ticket & err
 func (client *Client) ListenOnCollectionRegTicket(collectionRegTicket pastel.CollectionRegTicket, retErr error) *Client {
 	client.On(CollectionRegTicketMethod, mock.Anything, mock.Anything).Return(collectionRegTicket, retErr)
+	return client
+}
+
+// ListenOnCollectionActTicket listens collection act ticket  return collection-act ticket & err
+func (client *Client) ListenOnCollectionActTicket(collectionActTicket pastel.CollectionActTicket, retErr error) *Client {
+	client.On(CollectionActTicketMethod, mock.Anything, mock.Anything).Return(collectionActTicket, retErr)
 	return client
 }
 
