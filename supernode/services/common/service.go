@@ -64,7 +64,7 @@ func (service *SuperNodeService) RunHelper(ctx context.Context, pastelID string,
 				service.Worker = task.NewWorker()
 				log.WithContext(ctx).WithError(err).Error("Service run failed, retrying")
 			} else {
-				log.WithContext(ctx).Error("run service failed - closing sn service")
+				log.WithContext(ctx).Info("Service run completed successfully - closing sn service")
 				return nil
 			}
 		}

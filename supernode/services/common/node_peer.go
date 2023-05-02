@@ -70,7 +70,11 @@ func (list *SuperNodePeerList) ByID(id string) *SuperNodePeer {
 func (list *SuperNodePeerList) Remove(id string) {
 	for i, someNode := range *list {
 		if someNode.ID == id {
-			*list = append((*list)[:i], (*list)[:i+1]...)
+			if i+1 < len(*list) {
+				*list = append((*list)[:i], (*list)[i+1:]...)
+			} else {
+				*list = (*list)[:i]
+			}
 			break
 		}
 	}
