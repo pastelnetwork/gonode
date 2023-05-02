@@ -43,7 +43,9 @@ type UploadAssetResponseBody struct {
 	// File expiration
 	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
 	// Estimated fee
-	EstimatedFee float64 `form:"estimated_fee" json:"estimated_fee" xml:"estimated_fee"`
+	TotalEstimatedFee float64 `form:"total_estimated_fee" json:"total_estimated_fee" xml:"total_estimated_fee"`
+	// The amount that's required to be preburned
+	RequiredPreburnAmount float64 `form:"required_preburn_amount" json:"required_preburn_amount" xml:"required_preburn_amount"`
 }
 
 // StartProcessingResponseBody is the type of the "cascade" service
@@ -281,9 +283,15 @@ type DetailsResponse struct {
 // the "uploadAsset" endpoint of the "cascade" service.
 func NewUploadAssetResponseBody(res *cascadeviews.AssetView) *UploadAssetResponseBody {
 	body := &UploadAssetResponseBody{
-		FileID:       *res.FileID,
-		ExpiresIn:    *res.ExpiresIn,
-		EstimatedFee: *res.EstimatedFee,
+		FileID:            *res.FileID,
+		ExpiresIn:         *res.ExpiresIn,
+		TotalEstimatedFee: *res.TotalEstimatedFee,
+	}
+	if res.RequiredPreburnAmount != nil {
+		body.RequiredPreburnAmount = *res.RequiredPreburnAmount
+	}
+	if res.RequiredPreburnAmount == nil {
+		body.RequiredPreburnAmount = 1
 	}
 	return body
 }

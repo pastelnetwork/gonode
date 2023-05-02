@@ -98,7 +98,9 @@ type Image struct {
 	// Image expiration
 	ExpiresIn string
 	// Estimated fee
-	EstimatedFee float64
+	TotalEstimatedFee float64
+	// The amount that's required to be preburned
+	RequiredPreburnAmount float64
 }
 
 // RegisterTaskStatePayload is the payload type of the sense service
@@ -218,11 +220,17 @@ func newImage(vres *senseviews.ImageView) *Image {
 	if vres.ExpiresIn != nil {
 		res.ExpiresIn = *vres.ExpiresIn
 	}
-	if vres.EstimatedFee != nil {
-		res.EstimatedFee = *vres.EstimatedFee
+	if vres.TotalEstimatedFee != nil {
+		res.TotalEstimatedFee = *vres.TotalEstimatedFee
 	}
-	if vres.EstimatedFee == nil {
-		res.EstimatedFee = 1
+	if vres.RequiredPreburnAmount != nil {
+		res.RequiredPreburnAmount = *vres.RequiredPreburnAmount
+	}
+	if vres.TotalEstimatedFee == nil {
+		res.TotalEstimatedFee = 1
+	}
+	if vres.RequiredPreburnAmount == nil {
+		res.RequiredPreburnAmount = 1
 	}
 	return res
 }
@@ -231,9 +239,10 @@ func newImage(vres *senseviews.ImageView) *Image {
 // the "default" view.
 func newImageView(res *Image) *senseviews.ImageView {
 	vres := &senseviews.ImageView{
-		ImageID:      &res.ImageID,
-		ExpiresIn:    &res.ExpiresIn,
-		EstimatedFee: &res.EstimatedFee,
+		ImageID:               &res.ImageID,
+		ExpiresIn:             &res.ExpiresIn,
+		TotalEstimatedFee:     &res.TotalEstimatedFee,
+		RequiredPreburnAmount: &res.RequiredPreburnAmount,
 	}
 	return vres
 }
