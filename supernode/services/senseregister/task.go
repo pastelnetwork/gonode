@@ -262,7 +262,7 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 					if err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("register action failed")
 						err = errors.Errorf("register Action: %w", err)
-						return nil
+						return err
 					}
 
 					// Store dd_and_fingerprints into Kademlia

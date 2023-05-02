@@ -20,4 +20,6 @@ type ActionRegistrationRequest struct {
 	FileName string `json:"file_name"`
 	//MakePubliclyAccessible to save in ticket
 	MakePubliclyAccessible bool `json:"make_publicly_accessible"`
+	//CollectionTxID to add it into the collection
+	CollectionTxID string `json:"collection_txid"`
 }

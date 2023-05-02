@@ -1,5 +1,9 @@
 package common
 
+import (
+	"context"
+)
+
 // CollectionRegistrationRequest represents a request for the registration collection
 type CollectionRegistrationRequest struct {
 	// CollectionName is name of the collection
@@ -28,4 +32,9 @@ type CollectionRegistrationRequest struct {
 	MaxPermittedOpenNSFWScore float64 `json:"max_permitted_open_nsfw_score"`
 	//MaxPermittedOpenNSFWScore is the MinimumSimilarityScoreToFirstEntryInCollection allowed for collection items
 	MinimumSimilarityScoreToFirstEntryInCollection float64 `json:"minimum_similarity_score_to_first_entry_in_collection"`
+}
+
+// CollectionVerifier represents an interface with the func that checks if nft/sense if valid to enter in collection
+type CollectionVerifier interface {
+	IsValidForCollection(ctx context.Context) error
 }

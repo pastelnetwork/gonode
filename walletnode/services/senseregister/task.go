@@ -2,8 +2,10 @@ package senseregister
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -22,6 +24,8 @@ import (
 const (
 	//DateTimeFormat following the go convention for request timestamp
 	DateTimeFormat = "2006:01:02 15:04:05"
+
+	taskTypeSense = "sense"
 )
 
 // SenseRegistrationTask is the task of registering new nft.
@@ -47,7 +51,9 @@ type SenseRegistrationTask struct {
 	actionTicket     *pastel.ActionTicket
 	serializedTicket []byte
 
-	regSenseTxid string
+	regSenseTxid   string
+	collectionTxID []byte
+	taskType       string
 
 	// only set to true for unit tests
 	skipPrimaryNodeTxidVerify bool
@@ -66,6 +72,13 @@ func (task *SenseRegistrationTask) Error() error {
 func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	log.WithContext(ctx).Info("checking collection verification")
+	err := task.IsValidForCollection(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("ticket is not valid to be added in collection")
+		return err
+	}
 
 	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
 	task.StatusLog[common.FieldTaskType] = "Sense Registration"
@@ -369,7 +382,7 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 	return nil
 }
 
-func (task *SenseRegistrationTask) createSenseTicket(_ context.Context) error {
+func (task *SenseRegistrationTask) createSenseTicket(_ context.Context) (err error) {
 	if task.dataHash == nil ||
 		task.FingerprintsHandler.DDAndFingerprintsIDs == nil {
 		return common.ErrEmptyDatahash
@@ -387,6 +400,10 @@ func (task *SenseRegistrationTask) createSenseTicket(_ context.Context) error {
 			DDAndFingerprintsMax: task.service.config.DDAndFingerprintsMax,
 			DDAndFingerprintsIDs: task.FingerprintsHandler.DDAndFingerprintsIDs,
 		},
+	}
+
+	if task.collectionTxID != nil {
+		ticket.CollectionTxID = task.collectionTxID
 	}
 
 	task.actionTicket = ticket
@@ -502,6 +519,60 @@ func (task *SenseRegistrationTask) Download(ctx context.Context) error {
 	}
 }
 
+// IsValidForCollection checks if the ticket is valid to be added to collection
+func (task *SenseRegistrationTask) IsValidForCollection(ctx context.Context) error {
+	if task.Request.CollectionTxID == "" {
+		log.WithContext(ctx).Info("no collection txid found in the request, should proceed with normal registration")
+		return nil
+	}
+
+	collectionActTicket, err := task.service.pastelHandler.PastelClient.CollectionActTicket(ctx, task.Request.CollectionTxID)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("collection_act_tx_id", task.Request.CollectionTxID).Error("error getting collection-act ticket")
+		return errors.Errorf("error retrieving collection ticket")
+	}
+
+	collectionTicket, err := task.service.pastelHandler.PastelClient.CollectionRegTicket(ctx, collectionActTicket.CollectionActTicketData.RegTXID)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("collection_reg_tx_id", collectionActTicket.CollectionActTicketData.RegTXID).Error("error getting collection-reg ticket")
+		return errors.Errorf("error retrieving collection ticket")
+	}
+
+	ticket := collectionTicket.CollectionRegTicketData.CollectionTicketData
+
+	isValidContributor := false
+	for _, pastelID := range ticket.ListOfPastelIDsOfAuthorizedContributors {
+		if task.Request.AppPastelID == pastelID {
+			isValidContributor = true
+		}
+	}
+
+	if !isValidContributor {
+		return errors.Errorf("creator's pastelid is not a found in list of authorized contributors")
+	}
+
+	if task.taskType != strings.ToLower(ticket.ItemType) {
+		return errors.Errorf("ticket item type does not match with collection item type")
+	}
+
+	if collectionActTicket.CollectionActTicketData.IsFull {
+		return errors.Errorf("collection does not have capacity for more items, max collection entries have been reached")
+	}
+
+	if collectionActTicket.CollectionActTicketData.IsExpiredByHeight {
+		return errors.Errorf("block height exceeds than collection final allowed block height")
+	}
+
+	collectionTxID, err := json.Marshal(task.Request.CollectionTxID)
+	if err != nil {
+		return errors.Errorf("error converting collection tx-id to bytes")
+	}
+
+	task.collectionTxID = collectionTxID
+
+	return nil
+}
+
 // NewSenseRegisterTask returns a new SenseRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
 func NewSenseRegisterTask(service *SenseRegistrationService, request *common.ActionRegistrationRequest) *SenseRegistrationTask {
@@ -529,6 +600,7 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 		service:             service,
 		Request:             request,
 		MeshHandler:         common.NewMeshHandler(meshHandlerOpts),
+		taskType:            taskTypeSense,
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 	}
 }

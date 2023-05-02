@@ -7,9 +7,15 @@ import (
 
 // FromStartProcessingPayload convert StartProcessingPayload to ActionRegistrationRequest
 func FromStartProcessingPayload(payload *sense.StartProcessingPayload) *common.ActionRegistrationRequest {
-	return &common.ActionRegistrationRequest{
+	req := &common.ActionRegistrationRequest{
 		BurnTxID:              payload.BurnTxid,
 		AppPastelID:           payload.AppPastelID,
 		AppPastelIDPassphrase: payload.Key,
 	}
+
+	if payload.CollectionActTxid != nil {
+		req.CollectionTxID = *payload.CollectionActTxid
+	}
+
+	return req
 }
