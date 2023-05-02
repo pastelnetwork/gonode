@@ -24,7 +24,7 @@ var (
 )
 
 func TestIntegration(t *testing.T) {
-	if os.Getenv("INTEGRATION_TEST_ENV") != "true" {
+	if os.Getenv("INTEGRATION_TEST_ENV") == "true" { // change it to !="true" to run integration tests
 		log.Println("Skipping integration tests")
 		return
 	}

@@ -1,6 +1,5 @@
 package main_test
 
-/*
 import (
 	"encoding/json"
 	"fmt"
@@ -157,4 +156,3 @@ var _ = Describe("Download", func() {
 		Expect(mocker.CleanupAll()).To(Succeed())
 	})
 })
-*/

@@ -87,7 +87,10 @@ func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid stri
 	}
 	resMap := make(map[int][]byte)
 	resMap[0] = file1
-	resMap[1] = file2
+	if numnails > 1 {
+		resMap[1] = file2
+	}
+
 	return resMap, err
 }
 
