@@ -13,6 +13,8 @@ import (
 	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
+//go:generate mockery --name=DDStore
+
 // DDStore represents Dupedetection store
 type DDStore interface {
 	GetLatestFingerprints(context.Context) (*domain.DDFingerprints, error)

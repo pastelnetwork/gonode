@@ -63,11 +63,8 @@ func (s collectionService) parseCollectionTickets(ctx context.Context) error {
 	})
 
 	log.WithContext(ctx).WithField("count", len(collectionActTickets)).Info("nft-collection-act tickets have been sorted")
-
-	//track latest block height, but don't set it until we check all the nft reg tickets and the sense tickets.
 	lastKnownGoodHeight := s.latestCollectionBlockHeight
 
-	//loop through nft-collection-act tickets and store newly found nft reg tickets
 	for i := 0; i < len(collectionActTickets); i++ {
 		if collectionActTickets[i].Height < s.latestCollectionBlockHeight {
 			continue
@@ -103,16 +100,6 @@ func (s collectionService) parseCollectionTickets(ctx context.Context) error {
 			continue
 		}
 
-		collectionState, datetimeCollectionStateUpdated, err := getCollectionState(ctx,
-			regTicket.CollectionRegTicketData.CollectionTicketData.CollectionItemCopyCount,
-			regTicket.CollectionRegTicketData.CollectionTicketData.MaxCollectionEntries,
-		)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("undefined collection state")
-
-			return err
-		}
-
 		if err := s.store.StoreCollection(ctx, domain.Collection{
 			CollectionTicketTXID:                           actTxID,
 			CollectionName:                                 regTicket.CollectionRegTicketData.CollectionTicketData.CollectionName,
@@ -120,8 +107,8 @@ func (s collectionService) parseCollectionTickets(ctx context.Context) error {
 			CollectionFinalAllowedBlockHeight:              collectionActTickets[i].Height + CollectionFinalAllowedBlockHeightDays,
 			MaxPermittedOpenNSFWScore:                      regTicket.CollectionRegTicketData.CollectionTicketData.AppTicketData.MaxPermittedOpenNSFWScore,
 			MinimumSimilarityScoreToFirstEntryInCollection: regTicket.CollectionRegTicketData.CollectionTicketData.AppTicketData.MinimumSimilarityScoreToFirstEntryInCollection,
-			CollectionState:                                collectionState,
-			DatetimeCollectionStateUpdated:                 datetimeCollectionStateUpdated,
+			CollectionState:                                domain.InProcessCollectionState,
+			DatetimeCollectionStateUpdated:                 time.Now().Format(time.RFC3339),
 		}); err != nil {
 			log.WithContext(ctx).WithError(err).Error("failed to store collection")
 			continue
@@ -130,7 +117,6 @@ func (s collectionService) parseCollectionTickets(ctx context.Context) error {
 			lastKnownGoodHeight = collectionActTickets[i].Height
 		}
 	}
-	//loop through action tickets and store newly found nft reg tickets
 
 	if lastKnownGoodHeight > s.latestCollectionBlockHeight {
 		s.latestCollectionBlockHeight = lastKnownGoodHeight
@@ -141,6 +127,7 @@ func (s collectionService) parseCollectionTickets(ctx context.Context) error {
 	return nil
 }
 
+/*
 func getCollectionState(ctx context.Context, currentNoOfCollectionEntries, maxNoOfCollectionEntries uint) (collectionState domain.CollectionState, datetimeCollectionStateUpdated string, err error) {
 	ent := log.WithContext(ctx).WithField("current_no_of_col_entries", currentNoOfCollectionEntries).
 		WithField("max_no_of_collection_entries", maxNoOfCollectionEntries)
@@ -160,3 +147,4 @@ func getCollectionState(ctx context.Context, currentNoOfCollectionEntries, maxNo
 	err = errors.Errorf("current no of collection entries are greater than max no of collection entries")
 	return domain.UndefinedCollectionState, "", err
 }
+*/
