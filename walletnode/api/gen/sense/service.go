@@ -119,6 +119,10 @@ type StartProcessingPayload struct {
 	BurnTxid string
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string
+	// OpenAPI GroupID string
+	OpenAPIGroupID *string
+	// OpenAPI Subset string
+	OpenAPISubsetID string
 	// App PastelID
 	AppPastelID string
 	// Passphrase of the owner's PastelID

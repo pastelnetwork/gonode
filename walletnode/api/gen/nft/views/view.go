@@ -109,6 +109,8 @@ type NftRegisterPayloadView struct {
 	MakePubliclyAccessible *bool
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string
+	// OpenAPI GroupID string
+	OpenAPIGroupID *string
 }
 
 // ThumbnailcoordinateView is a type that runs validations on a projected type.

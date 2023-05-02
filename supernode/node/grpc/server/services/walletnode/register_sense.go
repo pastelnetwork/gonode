@@ -182,6 +182,8 @@ func (service *RegisterSense) SendRegMetadata(ctx context.Context, req *pb.SendR
 		BlockHeight:     req.BlockHeight,
 		Timestamp:       req.Timestamp,
 		OpenAPISubsetID: req.OpenapiSubsetId,
+		GroupID:         req.GroupId,
+		CollectionTxID:  req.CollectionTxid,
 	}
 
 	err = task.SendRegMetadata(ctx, reqMetadata)

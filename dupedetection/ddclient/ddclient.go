@@ -23,7 +23,8 @@ const (
 // DDServerClient contains methods for request services from dd-server service.
 type DDServerClient interface {
 	// ImageRarenessScore returns rareness score of image
-	ImageRarenessScore(ctx context.Context, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string, supernode1 string, supernode2 string, supernode3 string, openAPIRequest bool, openAPISubsetID string) (*pastel.DDAndFingerprints, error)
+	ImageRarenessScore(ctx context.Context, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string,
+		supernode1 string, supernode2 string, supernode3 string, openAPIRequest bool, openAPISubsetID string, groupID string, collectionName string) (*pastel.DDAndFingerprints, error)
 }
 
 type ddServerClientImpl struct {
@@ -53,7 +54,9 @@ func createInputDDFile(base string, data []byte, format string) (string, error) 
 }
 
 // call ddserver's ImageRarenessScore service
-func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, client pb.DupeDetectionServerClient, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string, supernode1 string, supernode2 string, supernode3 string, openAPIRequest bool, openAPISubsetID string) (*pastel.DDAndFingerprints, error) {
+func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, client pb.DupeDetectionServerClient, img []byte, format string,
+	blockHash string, blockHeight string, timestamp string, pastelID string, supernode1 string, supernode2 string, supernode3 string,
+	openAPIRequest bool, openAPISubsetID string, groupID string, collectionName string) (*pastel.DDAndFingerprints, error) {
 	if img == nil {
 		return nil, errors.Errorf("invalid data")
 	}
@@ -74,8 +77,8 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		PastelIdOfRegisteringSupernode_3:      supernode3,
 		IsPastelOpenapiRequest:                openAPIRequest,
 		OpenApiSubsetIdString:                 openAPISubsetID,
-		OpenApiGroupIdString:                  "",
-		CollectionNameString:                  "",
+		OpenApiGroupIdString:                  groupID,
+		CollectionNameString:                  collectionName,
 	}
 
 	// remove file after use
@@ -153,7 +156,9 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 }
 
 // ImageRarenessScore call ddserver to calculate scores
-func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string, supernode1 string, supernode2 string, supernode3 string, openAPIRequest bool, openAPISubsetID string) (*pastel.DDAndFingerprints, error) {
+func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img []byte, format string, blockHash string, blockHeight string,
+	timestamp string, pastelID string, supernode1 string, supernode2 string, supernode3 string, openAPIRequest bool,
+	openAPISubsetID string, groupID string, collectionName string) (*pastel.DDAndFingerprints, error) {
 	ctx = ddClient.contextWithLogPrefix(ctx)
 
 	baseClient := NewClient()
@@ -166,7 +171,8 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 	defer conn.Close()
 	client := pb.NewDupeDetectionServerClient(conn)
 
-	return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2, supernode3, openAPIRequest, openAPISubsetID)
+	return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2,
+		supernode3, openAPIRequest, openAPISubsetID, groupID, collectionName)
 }
 
 func (ddClient *ddServerClientImpl) contextWithLogPrefix(ctx context.Context) context.Context {

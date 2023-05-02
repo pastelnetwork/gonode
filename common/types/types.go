@@ -19,6 +19,8 @@ type NftRegMetadata struct {
 	BlockHash       string
 	BlockHeight     string
 	Timestamp       string
+	GroupID         string
+	CollectionTxID  string
 }
 
 // ActionRegMetadata represents action reg metadata
@@ -30,6 +32,8 @@ type ActionRegMetadata struct {
 	Timestamp       string
 	OpenAPISubsetID string
 	EstimatedFee    int64
+	GroupID         string
+	CollectionTxID  string
 }
 
 // TaskHistory represents task history

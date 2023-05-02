@@ -55,6 +55,8 @@ type RegisterRequestBody struct {
 	MakePubliclyAccessible *bool `form:"make_publicly_accessible,omitempty" json:"make_publicly_accessible,omitempty" xml:"make_publicly_accessible,omitempty"`
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
+	// OpenAPI GroupID string
+	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
 }
 
 // UploadImageRequestBody is the type of the "nft" service "uploadImage"
@@ -731,6 +733,8 @@ type NftRegisterPayloadResponseBody struct {
 	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
+	// OpenAPI GroupID string
+	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
 }
 
 // ThumbnailcoordinateResponseBody is used to define fields on response body
@@ -794,6 +798,8 @@ type NftRegisterPayloadResponse struct {
 	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
+	// OpenAPI GroupID string
+	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
 }
 
 // ThumbnailcoordinateResponse is used to define fields on response body types.
@@ -1362,6 +1368,7 @@ func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
 		SpendableAddress:          *body.SpendableAddress,
 		MaximumFee:                *body.MaximumFee,
 		CollectionActTxid:         body.CollectionActTxid,
+		OpenAPIGroupID:            body.OpenAPIGroupID,
 	}
 	if body.Royalty != nil {
 		v.Royalty = *body.Royalty

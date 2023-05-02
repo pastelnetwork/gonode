@@ -304,6 +304,8 @@ func (task *SenseRegistrationTask) sendActionMetadata(ctx context.Context) error
 		CreatorPastelID: task.Request.AppPastelID,
 		BurnTxID:        task.Request.BurnTxID,
 		OpenAPISubsetID: task.Request.OpenAPISubsetID,
+		GroupID:         task.Request.GroupID,
+		CollectionTxID:  task.Request.CollectionTxID,
 	}
 
 	group, gctx := errgroup.WithContext(ctx)

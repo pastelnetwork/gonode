@@ -36,6 +36,8 @@ type SenseRegistrationTask struct {
 
 	rawDdFpFile []byte
 	ddFpFiles   [][]byte
+
+	collectionTxID string
 }
 
 type tasker struct {
@@ -62,6 +64,11 @@ func (task *SenseRegistrationTask) SendRegMetadata(_ context.Context, regMetadat
 		return err
 	}
 	task.ActionTicketRegMetadata = regMetadata
+	task.collectionTxID = regMetadata.CollectionTxID
+
+	collectionName := "" // TODO: get collection name from the ticket txid
+
+	task.DupeDetectionHandler.SetDDFields(true, regMetadata.OpenAPISubsetID, regMetadata.GroupID, collectionName)
 
 	return nil
 }

@@ -164,6 +164,8 @@ func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *
 		BlockHeight:     regMetadata.BlockHeight,
 		Timestamp:       regMetadata.Timestamp,
 		OpenapiSubsetId: regMetadata.OpenAPISubsetID,
+		GroupId:         regMetadata.GroupID,
+		CollectionTxid:  regMetadata.CollectionTxID,
 	}
 
 	_, err := service.client.SendRegMetadata(ctx, request)
