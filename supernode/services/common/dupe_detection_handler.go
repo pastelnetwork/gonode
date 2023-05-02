@@ -42,6 +42,7 @@ type DupeDetectionHandler struct {
 	collectionName                        string
 }
 
+// SetDDFields sets isOpenAPI, subsetID, groupID, collectionName
 func (h *DupeDetectionHandler) SetDDFields(isOpenAPI bool, subsetID, groupID, collectionName string) {
 	h.isOpenAPI = isOpenAPI
 	h.subsetID = subsetID
