@@ -24,6 +24,19 @@ type collection struct {
 	DatetimeCollectionStateUpdated                 sql.NullString `db:"datetime_collection_state_updated"`
 }
 
+func (c *collection) ToDomain() *domain.Collection {
+	return &domain.Collection{
+		CollectionTicketTXID:                           c.CollectionTicketTXID,
+		CollectionName:                                 c.CollectionName,
+		CollectionTicketActivationBlockHeight:          c.CollectionTicketActivationBlockHeight,
+		CollectionFinalAllowedBlockHeight:              c.CollectionFinalAllowedBlockHeight,
+		MaxPermittedOpenNSFWScore:                      c.MaxPermittedOpenNSFWScore,
+		MinimumSimilarityScoreToFirstEntryInCollection: c.MinimumSimilarityScoreToFirstEntryInCollection,
+		CollectionState:                                domain.CollectionState(c.CollectionState.String),
+		DatetimeCollectionStateUpdated:                 c.DatetimeCollectionStateUpdated.String,
+	}
+}
+
 // IfCollectionExists checks if collection exists against the id
 func (s *SQLiteStore) IfCollectionExists(_ context.Context, collectionTxID string) (bool, error) {
 	c := collection{}
@@ -60,6 +73,23 @@ func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) er
 	return nil
 }
 
+func (s *SQLiteStore) GetAllInProcessCollections(ctx context.Context) ([]*domain.Collection, error) {
+	c := []*collection{}
+
+	getCollectionByStateQuery := `SELECT * FROM collections_table WHERE collection_state = ?`
+	err := s.db.GetContext(ctx, &c, getCollectionByStateQuery, domain.InProcessCollectionState)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get record: %w : collection_state: %s", err, domain.InProcessCollectionState)
+	}
+
+	collections := []*domain.Collection{}
+	for _, collection := range c {
+		collections = append(collections, collection.ToDomain())
+	}
+
+	return collections, nil
+}
+
 // GetCollection get collection object from DB
 func (s *SQLiteStore) GetCollection(ctx context.Context, collectionTxID string) (*domain.Collection, error) {
 	c := collection{}
@@ -70,17 +100,17 @@ func (s *SQLiteStore) GetCollection(ctx context.Context, collectionTxID string) 
 		return nil, fmt.Errorf("failed to get record: %w : collection_ticket_txid: %s", err, collectionTxID)
 	}
 
-	return &domain.Collection{
-		CollectionTicketTXID:                           c.CollectionTicketTXID,
-		CollectionName:                                 c.CollectionName,
-		CollectionTicketActivationBlockHeight:          c.CollectionTicketActivationBlockHeight,
-		CollectionFinalAllowedBlockHeight:              c.CollectionFinalAllowedBlockHeight,
-		MaxPermittedOpenNSFWScore:                      c.MaxPermittedOpenNSFWScore,
-		MinimumSimilarityScoreToFirstEntryInCollection: c.MinimumSimilarityScoreToFirstEntryInCollection,
-		CollectionState:                                domain.CollectionState(c.CollectionState.String),
-		DatetimeCollectionStateUpdated:                 c.DatetimeCollectionStateUpdated.String,
-	}, nil
+	return c.ToDomain(), nil
+}
 
+// FinalizeCollectionState finalizes collection state
+func (s *SQLiteStore) FinalizeCollectionState(_ context.Context, txid string) error {
+	_, err := s.db.Exec(`UPDATE collections_table SET collection_state = ? WHERE collection_ticket_txid `, domain.FinalizedCollectionState, txid)
+	if err != nil {
+		return fmt.Errorf("failed to update collection record: %w", err)
+	}
+
+	return nil
 }
 
 type nonImpactedCollections struct {

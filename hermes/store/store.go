@@ -13,8 +13,6 @@ import (
 	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
-//go:generate mockery --name=DDStore
-
 // DDStore represents Dupedetection store
 type DDStore interface {
 	GetLatestFingerprints(context.Context) (*domain.DDFingerprints, error)
@@ -46,6 +44,8 @@ type CollectionStore interface {
 	StoreCollection(_ context.Context, c domain.Collection) error
 	GetCollection(ctx context.Context, collectionTxID string) (*domain.Collection, error)
 	GetDoesNotImpactCollections(ctx context.Context, hash string) (domain.NonImpactedCollections, error)
+	GetAllInProcessCollections(ctx context.Context) ([]*domain.Collection, error)
+	FinalizeCollectionState(ctx context.Context, txid string) error
 }
 
 // SQLiteStore is sqlite implementation of DD store and Score store

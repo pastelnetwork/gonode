@@ -260,17 +260,7 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 		return false, true
 	}
 
-	collection := "PASTEL"
-	if series != "" {
-		collection = series
-	} else if tType == pastel.ActionTypeSense && ddAndFpFromTicket.OpenAPISubsetID != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPISubsetID, "NA") {
-		collection = ddAndFpFromTicket.OpenAPISubsetID
-	}
-
-	groupID := "PASTEL"
-	if ddAndFpFromTicket.OpenAPIGroupIDString != "" && !strings.EqualFold(ddAndFpFromTicket.OpenAPIGroupIDString, "NA") {
-		groupID = ddAndFpFromTicket.OpenAPIGroupIDString
-	}
+	groupID, subsetID := getGroupIDAndSubsetID(series, tType, ddAndFpFromTicket.OpenAPIGroupIDString, ddAndFpFromTicket.OpenAPISubsetID)
 
 	if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
 		Sha256HashOfArtImageFile:                   ddAndFpFromTicket.HashOfCandidateImageFile,
@@ -279,7 +269,7 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 		PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
 		ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,
 		RequestType:                                typeMapper(tType),
-		IDString:                                   collection,
+		IDString:                                   subsetID,
 		OpenAPIGroupIDString:                       groupID,
 		CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
 		DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
@@ -353,4 +343,28 @@ func (s *fingerprintService) getSenseTicket(ctx context.Context, regTXID string)
 	}
 
 	return &regTicket, senseTicket, nil
+}
+
+// getGroupIDAndSubsetID returns the groupID and subsetID for a given Sense or NFT ticket.
+// ddGroupID is open_api_group_id_string from the output of dd-service.
+// ddSubsetID is open_api_subset_id_string from the output of dd-service.
+// tType can be either "NFT" or "SENSE"
+// nftSeriesName will be sent as empty if tType is NFT,
+func getGroupIDAndSubsetID(nftSeriesName, tType, ddGroupID, ddSubsetID string) (groupID, subsetID string) {
+	subsetID = "PASTEL"
+	if nftSeriesName != "" {
+		subsetID = nftSeriesName
+	} else if tType == pastel.ActionTypeSense {
+
+		if ddSubsetID != "" && !strings.EqualFold(ddSubsetID, "NA") {
+			subsetID = ddSubsetID
+		}
+	}
+
+	groupID = "PASTEL"
+	if ddGroupID != "" && !strings.EqualFold(ddGroupID, "NA") {
+		groupID = ddGroupID
+	}
+
+	return groupID, subsetID
 }
