@@ -253,7 +253,7 @@ func (task *CollectionRegistrationTask) uploadSignedTicket(ctx context.Context) 
 }
 
 func (task *CollectionRegistrationTask) activateCollectionTicket(ctx context.Context) (string, error) {
-	request := pastel.ActivateActionRequest{
+	request := pastel.ActivateCollectionRequest{
 		RegTxID:    task.collectionTXID,
 		BlockNum:   int(task.creatorBlockHeight),
 		Fee:        collectionRegFee,
@@ -261,7 +261,7 @@ func (task *CollectionRegistrationTask) activateCollectionTicket(ctx context.Con
 		Passphrase: task.Request.AppPastelIDPassphrase,
 	}
 
-	return task.service.pastelHandler.PastelClient.ActivateActionTicket(ctx, request)
+	return task.service.pastelHandler.PastelClient.ActivateCollectionTicket(ctx, request)
 }
 
 func (task *CollectionRegistrationTask) removeArtifacts() {

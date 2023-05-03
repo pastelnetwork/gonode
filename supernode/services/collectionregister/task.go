@@ -90,10 +90,10 @@ func (task *CollectionRegistrationTask) ValidateAndRegister(ctx context.Context,
 						return nil
 					}
 
-					collectionRegTxid, err = task.registerAction(ctx)
+					collectionRegTxid, err = task.registerCollection(ctx)
 					if err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("register action failed")
-						err = errors.Errorf("register Action: %w", err)
+						log.WithContext(ctx).WithError(err).Errorf("register collection failed")
+						err = errors.Errorf("register Collection: %w", err)
 						return nil
 					}
 
@@ -121,8 +121,8 @@ func (task *CollectionRegistrationTask) validateSignedTicketFromWN(ctx context.C
 
 	task.Ticket, err = pastel.DecodeCollectionTicket(ticket)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("ticket", string(ticket)).Errorf("decode action collection ticket")
-		return errors.Errorf("decode action ticket: %w", err)
+		log.WithContext(ctx).WithError(err).WithField("ticket", string(ticket)).Errorf("decode collection ticket")
+		return errors.Errorf("decode collection ticket: %w", err)
 	}
 
 	verified, err := task.PastelClient.VerifyCollectionTicket(ctx, ticket, string(creatorSignature), task.Ticket.Creator, pastel.SignAlgorithmED448)
@@ -140,11 +140,11 @@ func (task *CollectionRegistrationTask) validateSignedTicketFromWN(ctx context.C
 	return nil
 }
 
-// sign and send NFT ticket if not primary
+// sign and send collection ticket if not primary
 func (task *CollectionRegistrationTask) signAndSendCollectionTicket(ctx context.Context, isPrimary bool) error {
 	ticket, err := pastel.EncodeCollectionTicket(task.Ticket)
 	if err != nil {
-		return errors.Errorf("serialize NFT ticket: %w", err)
+		return errors.Errorf("serialize collection ticket: %w", err)
 	}
 
 	task.ownSignature, err = task.PastelClient.SignCollectionTicket(ctx, ticket, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
@@ -167,7 +167,7 @@ func (task *CollectionRegistrationTask) signAndSendCollectionTicket(ctx context.
 	return nil
 }
 
-func (task *CollectionRegistrationTask) registerAction(ctx context.Context) (string, error) {
+func (task *CollectionRegistrationTask) registerCollection(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
 	//ticketID := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, hex.EncodeToString(task.dataHash))
@@ -208,11 +208,12 @@ func (task *CollectionRegistrationTask) registerAction(ctx context.Context) (str
 		Label:       fmt.Sprintf("%s-%s", task.config.PastelID, task.Ticket.CollectionName),
 	}
 
-	nftRegTxid, err := task.PastelClient.RegisterCollectionTicket(ctx, req)
+	collectionRegTxID, err := task.PastelClient.RegisterCollectionTicket(ctx, req)
 	if err != nil {
-		return "", errors.Errorf("register action ticket: %w", err)
+		return "", errors.Errorf("register collection ticket: %w", err)
 	}
-	return nftRegTxid, nil
+
+	return collectionRegTxID, nil
 }
 
 func (task *CollectionRegistrationTask) removeArtifacts() {

@@ -111,6 +111,23 @@ func DecodeCollectionTicket(b []byte) (*CollectionTicket, error) {
 	return res, nil
 }
 
+// DecodeCollectionAppTicket decodes collection app ticket from base64 string
+func (regTicket *CollectionRegTicket) DecodeCollectionAppTicket() error {
+	appDecodedBytes, err := base64.RawStdEncoding.DecodeString(regTicket.CollectionRegTicketData.CollectionTicketData.AppTicket)
+	if err != nil {
+		return fmt.Errorf("base64 decode: %v", err)
+	}
+
+	appTicket := &AppTicket{}
+	err = json.Unmarshal(appDecodedBytes, appTicket)
+	if err != nil {
+		return errors.Errorf("unmarshal api sense ticket: %w", err)
+	}
+	regTicket.CollectionRegTicketData.CollectionTicketData.AppTicketData = *appTicket
+
+	return nil
+}
+
 // CollectionTicketSignatures represents signatures from parties
 type CollectionTicketSignatures struct {
 	Principal map[string]string `json:"principal,omitempty"`
@@ -138,4 +155,13 @@ type RegisterCollectionRequest struct {
 	Passphrase  string
 	Label       string
 	Fee         int64
+}
+
+// ActivateCollectionRequest - represents request to activate an action ticket
+type ActivateCollectionRequest struct {
+	RegTxID    string
+	BlockNum   int
+	Fee        int64
+	PastelID   string
+	Passphrase string
 }

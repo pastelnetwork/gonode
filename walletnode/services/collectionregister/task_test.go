@@ -131,7 +131,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnSendFromAddress("pre-burnt-txid", nil).
 				ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 12}, nil).
 				ListenOnVerifyCollectionTicket(true, nil).ListenOnGetBalance(10, nil).
-				ListenOnActivateActionTicket("txid", nil)
+				ListenOnActivateCollectionTicket("txid", nil)
 
 			service := NewService(NewConfig(), pastelClientMock, nodeClient)
 			service.config.WaitTxnValidInterval = 1

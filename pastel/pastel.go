@@ -206,6 +206,9 @@ type Client interface {
 	// Command `pastelid verify-base64-encoded "base64-encoded-text" "PastelID" <"passphrase"> ("algorithm")"
 	VerifyCollectionTicket(ctx context.Context, data []byte, signature, pastelID string, algorithm string) (ok bool, err error)
 
+	// ActivateCollectionTicket activates the collection ticket, if successful returns act-txid.
+	// Command `tickets activate collection "reg-ticket-txid" "called-at-height" "fee" "PastelID" "passphrase" ["address"]`
+	ActivateCollectionTicket(ctx context.Context, request ActivateCollectionRequest) (string, error)
 	// FindActByRegTxid returns the activation ticket by nReg ticket txid
 	// Command `tickets find act <reg-ticket-txid>`
 	FindActByRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error)

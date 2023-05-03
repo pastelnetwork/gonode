@@ -106,6 +106,8 @@ const (
 	VerifyCollectionTicketMethod = "VerifyCollectionTicket"
 	//CollectionActTicketMethod represents CollectionActTicketMethod
 	CollectionActTicketMethod = "CollectionActTicket"
+	//ActivateCollectionTicketMethod represents ActivateCollectionTicketMethod
+	ActivateCollectionTicketMethod = "ActivateCollectionTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -397,6 +399,12 @@ func (client *Client) ListenOnSignCollectionTicket(signature []byte, returnErr e
 // ListenOnVerifyCollectionTicket listens Verify call and returns values from args
 func (client *Client) ListenOnVerifyCollectionTicket(isValid bool, retErr error) *Client {
 	client.On(VerifyCollectionTicketMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(isValid, retErr)
+	return client
+}
+
+// ListenOnActivateCollectionTicket listens activation call and returns values from args
+func (client *Client) ListenOnActivateCollectionTicket(actTxID string, retErr error) *Client {
+	client.On(ActivateCollectionTicketMethod, mock.Anything, mock.Anything).Return(actTxID, retErr)
 	return client
 }
 

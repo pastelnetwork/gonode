@@ -2,6 +2,8 @@ package collection
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -29,6 +31,17 @@ func TestParseCollectionTicketService(t *testing.T) {
 	collectionRegTicket.TXID = "test-reg-tx-id"
 	collectionRegTicket.CollectionRegTicketData.CollectionTicketData.CollectionItemCopyCount = 10
 	collectionRegTicket.CollectionRegTicketData.CollectionTicketData.MaxCollectionEntries = 10
+
+	appTicketData := pastel.AppTicket{
+		MaxPermittedOpenNSFWScore:                      0.5,
+		MinimumSimilarityScoreToFirstEntryInCollection: 0.3,
+	}
+
+	appTicketBytes, err := json.Marshal(appTicketData)
+	require.NoError(t, err)
+
+	appTicket := base64.RawStdEncoding.EncodeToString(appTicketBytes)
+	collectionRegTicket.CollectionRegTicketData.CollectionTicketData.AppTicket = appTicket
 
 	tests := []struct {
 		testcase string
@@ -68,6 +81,8 @@ func TestParseCollectionTicketService(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, domain.InProcessCollectionState, collectionTicket.CollectionState)
 				require.Equal(t, actTicket.Height, collectionTicket.CollectionTicketActivationBlockHeight)
+				require.Equal(t, collectionTicket.MinimumSimilarityScoreToFirstEntryInCollection, 0.3)
+				require.Equal(t, collectionTicket.MaxPermittedOpenNSFWScore, 0.5)
 			},
 		},
 	}
