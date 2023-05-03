@@ -27,8 +27,11 @@ import (
 
 const (
 	//DateTimeFormat following the go convention for request timestamp
-	DateTimeFormat = "2006:01:02 15:04:05"
-	taskTypeNFT    = "nft"
+	DateTimeFormat      = "2006:01:02 15:04:05"
+	taskTypeNFT         = "nft"
+	defaultGreen        = false
+	defaultIssuedCopies = 1
+	defaultRoyalty      = 0.0
 )
 
 // NftRegistrationTask an NFT on the blockchain
@@ -406,6 +409,22 @@ func (task *NftRegistrationTask) Download(ctx context.Context) error {
 func (task *NftRegistrationTask) IsValidForCollection(ctx context.Context) error {
 	if task.Request.CollectionTxID == "" {
 		log.WithContext(ctx).Info("no collection txid found in the request, should proceed with normal registration")
+
+		if task.Request.Green == nil {
+			g := defaultGreen
+			task.Request.Green = &g
+		}
+
+		if task.Request.Royalty == nil {
+			r := defaultRoyalty
+			task.Request.Royalty = &r
+		}
+
+		if task.Request.IssuedCopies == nil {
+			ic := defaultIssuedCopies
+			task.Request.IssuedCopies = &ic
+		}
+
 		return nil
 	}
 
@@ -453,6 +472,19 @@ func (task *NftRegistrationTask) IsValidForCollection(ctx context.Context) error
 
 	task.collectionTxID = collectionTxID
 
+	if task.Request.Green == nil {
+		task.Request.Green = &ticket.Green
+	}
+
+	if task.Request.IssuedCopies == nil {
+		intCopyCount := int(ticket.CollectionItemCopyCount)
+		task.Request.IssuedCopies = &intCopyCount
+	}
+
+	if task.Request.Royalty == nil {
+		task.Request.Royalty = &ticket.Royalty
+	}
+
 	return nil
 }
 
@@ -479,7 +511,10 @@ func (task *NftRegistrationTask) sendRegMetadata(ctx context.Context) error {
 		BlockHeight:     strconv.Itoa(task.creatorBlockHeight),
 		Timestamp:       task.creationTimestamp,
 		GroupID:         task.Request.OpenAPIGroupID,
-		CollectionTxID:  task.Request.CollectionTxID,
+	}
+
+	if task.Request.CollectionTxID != "" {
+		regMetadata.CollectionTxID = task.Request.CollectionTxID
 	}
 
 	group, gctx := errgroup.WithContext(ctx)
@@ -623,13 +658,13 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) (err error) 
 	nftType := pastel.NFTTypeImage
 
 	ticket := &pastel.NFTTicket{
-		Version:   1,
+		Version:   2,
 		Author:    task.Request.CreatorPastelID,
 		BlockNum:  task.creatorBlockHeight,
 		BlockHash: task.creatorBlockHash,
-		Copies:    task.Request.IssuedCopies,
-		Royalty:   (task.Request.Royalty) / 100,
-		Green:     task.Request.Green,
+		Copies:    utils.SafeInt(task.Request.IssuedCopies, defaultIssuedCopies),
+		Royalty:   (utils.SafeFloat(task.Request.Royalty, defaultRoyalty)) / 100,
+		Green:     utils.SafeBool(task.Request.Green, defaultGreen),
 		AppTicketData: pastel.AppTicket{
 			CreatorName:                task.Request.CreatorName,
 			NFTTitle:                   utils.SafeString(&task.Request.Name),
@@ -639,7 +674,7 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) (err error) 
 			NFTType:                    nftType,
 			CreatorWebsite:             utils.SafeString(task.Request.CreatorWebsiteURL),
 			CreatorWrittenStatement:    utils.SafeString(task.Request.Description),
-			TotalCopies:                task.Request.IssuedCopies,
+			TotalCopies:                utils.SafeInt(task.Request.IssuedCopies, defaultIssuedCopies),
 			PreviewHash:                task.ImageHandler.PreviewHash,
 			Thumbnail1Hash:             task.ImageHandler.MediumThumbnailHash,
 			Thumbnail2Hash:             task.ImageHandler.SmallThumbnailHash,

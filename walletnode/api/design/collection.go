@@ -116,11 +116,17 @@ var RegisterCollectionPayload = Type("RegisterCollectionPayload", func() {
 
 	Attribute("collection_item_copy_count", Int, "item copy count in the collection", func() {
 		TypeName("collectionItemCopyCount")
+		Minimum(1)
+		Maximum(1000)
+		Default(1)
 		Example(10)
 	})
 
 	Attribute("royalty", Float64, "royalty fee", func() {
 		TypeName("royalty")
+		Minimum(0.0)
+		Maximum(20.0)
+		Default(0.0)
 		Example(2.32)
 	})
 

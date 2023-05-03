@@ -63,6 +63,30 @@ func SafeString(ptr *string) string {
 	return ""
 }
 
+// SafeInt returns value of int ptr or default int if ptr is nil
+func SafeInt(ptr *int, def int) int {
+	if ptr != nil {
+		return *ptr
+	}
+	return def
+}
+
+// SafeFloat returns value of float ptr or default float if ptr is nil
+func SafeFloat(ptr *float64, def float64) float64 {
+	if ptr != nil {
+		return *ptr
+	}
+	return def
+}
+
+// SafeBool returns value of bool ptr or default bool if ptr is nil
+func SafeBool(ptr *bool, def bool) bool {
+	if ptr != nil {
+		return *ptr
+	}
+	return def
+}
+
 // IsContextErr checks if err is related to context
 func IsContextErr(err error) bool {
 	if err != nil {

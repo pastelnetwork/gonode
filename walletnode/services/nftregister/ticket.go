@@ -12,7 +12,7 @@ type NftRegistrationRequest struct {
 	Description               *string                   `json:"description"`
 	Keywords                  *string                   `json:"keywords"`
 	SeriesName                *string                   `json:"series_name"`
-	IssuedCopies              int                       `json:"issued_copies"`
+	IssuedCopies              *int                      `json:"issued_copies"`
 	YoutubeURL                *string                   `json:"youtube_url"`
 	CreatorPastelID           string                    `json:"creator_pastel_id"`
 	CreatorPastelIDPassphrase string                    `json:"creator_pastel_id_passphrase"`
@@ -20,8 +20,8 @@ type NftRegistrationRequest struct {
 	CreatorWebsiteURL         *string                   `json:"creator_website_url"`
 	SpendableAddress          string                    `json:"spendable_address"`
 	MaximumFee                float64                   `json:"maximum_fee"`
-	Green                     bool                      `json:"green"`
-	Royalty                   float64                   `json:"royalty"`
+	Green                     *bool                     `json:"green"`
+	Royalty                   *float64                  `json:"royalty"`
 	Thumbnail                 files.ThumbnailCoordinate `json:"thumbnail_coordinate"`
 	MakePubliclyAccessible    bool                      `json:"make_publicly_accessible"`
 	CollectionTxID            string                    `json:"collection_txid"`

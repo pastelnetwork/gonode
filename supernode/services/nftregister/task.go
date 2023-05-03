@@ -76,14 +76,18 @@ func (task *NftRegistrationTask) Run(ctx context.Context) error {
 }
 
 // SendRegMetadata sends reg metadata NB this method should really be called SET regMetadata
-func (task *NftRegistrationTask) SendRegMetadata(_ context.Context, regMetadata *types.NftRegMetadata) error {
+func (task *NftRegistrationTask) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
 	if err := task.RequiredStatus(common.StatusConnected); err != nil {
 		return err
 	}
 	task.nftRegMetadata = regMetadata
 	task.collectionTxID = regMetadata.CollectionTxID
 
-	collectionName := "" // TODO: get collection name from the ticket txid
+	collectionName, err := task.getCollectionName(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to retrieve collection name")
+		return err
+	}
 
 	task.DupeDetectionHandler.SetDDFields(false, defaultSubsetID, regMetadata.GroupID, collectionName)
 
@@ -536,6 +540,24 @@ func (task *NftRegistrationTask) HashExists(ctx context.Context, file *files.Fil
 
 	return exists, nil
 
+}
+
+func (task *NftRegistrationTask) getCollectionName(ctx context.Context) (string, error) {
+	if task.collectionTxID == "" {
+		return "", nil
+	}
+
+	collectionActTicket, err := task.PastelClient.CollectionActTicket(ctx, task.collectionTxID)
+	if err != nil {
+		return "", errors.Errorf("unable to retrieve collection-act ticket")
+	}
+
+	collectionRegTicket, err := task.PastelClient.CollectionRegTicket(ctx, collectionActTicket.CollectionActTicketData.RegTXID)
+	if err != nil {
+		return "", errors.Errorf("unable to retrieve collection-reg ticket")
+	}
+
+	return collectionRegTicket.CollectionRegTicketData.CollectionTicketData.CollectionName, nil
 }
 
 func (task *NftRegistrationTask) removeArtifacts() {

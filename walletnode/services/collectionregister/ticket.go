@@ -16,19 +16,13 @@ func FromCollectionRegistrationPayload(payload *collection.RegisterCollectionPay
 		AppPastelID:                             payload.AppPastelID,
 		Green:                                   payload.Green,
 		MaxPermittedOpenNSFWScore:               payload.MaxPermittedOpenNsfwScore,
+		Royalty:                                 payload.Royalty,
+		CollectionItemCopyCount:                 payload.CollectionItemCopyCount,
 		MinimumSimilarityScoreToFirstEntryInCollection: payload.MinimumSimilarityScoreToFirstEntryInCollection,
 	}
 
 	if payload.Key != nil {
 		c.AppPastelIDPassphrase = *payload.Key
-	}
-
-	if payload.Royalty != nil {
-		c.Royalty = *payload.Royalty
-	}
-
-	if payload.CollectionItemCopyCount != nil {
-		c.CollectionItemCopyCount = *payload.CollectionItemCopyCount
 	}
 
 	return c

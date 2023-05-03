@@ -305,7 +305,10 @@ func (task *SenseRegistrationTask) sendActionMetadata(ctx context.Context) error
 		BurnTxID:        task.Request.BurnTxID,
 		OpenAPISubsetID: task.Request.OpenAPISubsetID,
 		GroupID:         task.Request.GroupID,
-		CollectionTxID:  task.Request.CollectionTxID,
+	}
+
+	if task.Request.CollectionTxID != "" {
+		regMetadata.CollectionTxID = task.Request.CollectionTxID
 	}
 
 	group, gctx := errgroup.WithContext(ctx)
@@ -391,7 +394,7 @@ func (task *SenseRegistrationTask) createSenseTicket(_ context.Context) (err err
 	}
 
 	ticket := &pastel.ActionTicket{
-		Version:    1,
+		Version:    2,
 		Caller:     task.Request.AppPastelID,
 		BlockNum:   task.creatorBlockHeight,
 		BlockHash:  task.creatorBlockHash,

@@ -391,9 +391,6 @@ func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) 
 	if result.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "result"))
 	}
-	if result.IssuedCopies == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "result"))
-	}
 	if result.CreatorPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "result"))
 	}
@@ -424,11 +421,6 @@ func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) 
 	if result.SeriesName != nil {
 		if utf8.RuneCountInString(*result.SeriesName) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("result.series_name", *result.SeriesName, utf8.RuneCountInString(*result.SeriesName), 256, false))
-		}
-	}
-	if result.IssuedCopies != nil {
-		if *result.IssuedCopies < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.issued_copies", *result.IssuedCopies, 1, true))
 		}
 	}
 	if result.IssuedCopies != nil {
@@ -480,11 +472,6 @@ func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) 
 	if result.MaximumFee != nil {
 		if *result.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("result.maximum_fee", *result.MaximumFee, 1e-05, true))
-		}
-	}
-	if result.Royalty != nil {
-		if *result.Royalty < 0 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.royalty", *result.Royalty, 0, true))
 		}
 	}
 	if result.Royalty != nil {

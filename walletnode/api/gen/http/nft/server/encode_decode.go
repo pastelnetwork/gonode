@@ -1205,7 +1205,7 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponseBody(v *nf
 		Description:               v.Description,
 		Keywords:                  v.Keywords,
 		SeriesName:                v.SeriesName,
-		IssuedCopies:              *v.IssuedCopies,
+		IssuedCopies:              v.IssuedCopies,
 		YoutubeURL:                v.YoutubeURL,
 		CreatorPastelID:           *v.CreatorPastelID,
 		CreatorPastelIDPassphrase: *v.CreatorPastelIDPassphrase,
@@ -1213,23 +1213,13 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponseBody(v *nf
 		CreatorWebsiteURL:         v.CreatorWebsiteURL,
 		SpendableAddress:          *v.SpendableAddress,
 		MaximumFee:                *v.MaximumFee,
+		Royalty:                   v.Royalty,
+		Green:                     v.Green,
 		CollectionActTxid:         v.CollectionActTxid,
 		OpenAPIGroupID:            v.OpenAPIGroupID,
 	}
-	if v.Royalty != nil {
-		res.Royalty = *v.Royalty
-	}
-	if v.Green != nil {
-		res.Green = *v.Green
-	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
-	}
-	if v.Royalty == nil {
-		res.Royalty = 0
-	}
-	if v.Green == nil {
-		res.Green = false
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = marshalNftviewsThumbnailcoordinateViewToThumbnailcoordinateResponseBody(v.ThumbnailCoordinate)
@@ -1282,7 +1272,7 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponse(v *nftvie
 		Description:               v.Description,
 		Keywords:                  v.Keywords,
 		SeriesName:                v.SeriesName,
-		IssuedCopies:              *v.IssuedCopies,
+		IssuedCopies:              v.IssuedCopies,
 		YoutubeURL:                v.YoutubeURL,
 		CreatorPastelID:           *v.CreatorPastelID,
 		CreatorPastelIDPassphrase: *v.CreatorPastelIDPassphrase,
@@ -1290,23 +1280,13 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponse(v *nftvie
 		CreatorWebsiteURL:         v.CreatorWebsiteURL,
 		SpendableAddress:          *v.SpendableAddress,
 		MaximumFee:                *v.MaximumFee,
+		Royalty:                   v.Royalty,
+		Green:                     v.Green,
 		CollectionActTxid:         v.CollectionActTxid,
 		OpenAPIGroupID:            v.OpenAPIGroupID,
 	}
-	if v.Royalty != nil {
-		res.Royalty = *v.Royalty
-	}
-	if v.Green != nil {
-		res.Green = *v.Green
-	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
-	}
-	if v.Royalty == nil {
-		res.Royalty = 0
-	}
-	if v.Green == nil {
-		res.Green = false
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = marshalNftviewsThumbnailcoordinateViewToThumbnailcoordinateResponse(v.ThumbnailCoordinate)

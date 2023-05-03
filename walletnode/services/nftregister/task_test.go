@@ -283,6 +283,8 @@ func TestTaskCreateTicket(t *testing.T) {
 		task *NftRegistrationTask
 	}
 
+	issuedCopies := 10
+
 	testCases := map[string]struct {
 		args    args
 		want    *pastel.NFTTicket
@@ -403,7 +405,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &NftRegistrationRequest{
 						CreatorPastelID: "test-id",
 						CreatorName:     "test-name",
-						IssuedCopies:    10,
+						IssuedCopies:    &issuedCopies,
 					},
 					dataHash: []byte{1, 2},
 					service: &NftRegistrationService{

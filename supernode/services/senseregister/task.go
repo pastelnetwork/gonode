@@ -59,14 +59,18 @@ func (task *SenseRegistrationTask) Run(ctx context.Context) error {
 // SendRegMetadata receives registration metadata -
 //
 //	caller/creator PastelID; block when ticket registration has started; txid of the pre-burn fee
-func (task *SenseRegistrationTask) SendRegMetadata(_ context.Context, regMetadata *types.ActionRegMetadata) error {
+func (task *SenseRegistrationTask) SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error {
 	if err := task.RequiredStatus(common.StatusConnected); err != nil {
 		return err
 	}
 	task.ActionTicketRegMetadata = regMetadata
 	task.collectionTxID = regMetadata.CollectionTxID
 
-	collectionName := "" // TODO: get collection name from the ticket txid
+	collectionName, err := task.getCollectionName(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to retrieve collection name")
+		return err
+	}
 
 	task.DupeDetectionHandler.SetDDFields(true, regMetadata.OpenAPISubsetID, regMetadata.GroupID, collectionName)
 
@@ -378,6 +382,24 @@ func (task *SenseRegistrationTask) storeIDFiles(ctx context.Context) error {
 		return errors.Errorf("store ID files into kademlia: %w", err)
 	}
 	return nil
+}
+
+func (task *SenseRegistrationTask) getCollectionName(ctx context.Context) (string, error) {
+	if task.collectionTxID == "" {
+		return "", nil
+	}
+
+	collectionActTicket, err := task.PastelClient.CollectionActTicket(ctx, task.collectionTxID)
+	if err != nil {
+		return "", errors.Errorf("unable to retrieve collection-act ticket")
+	}
+
+	collectionRegTicket, err := task.PastelClient.CollectionRegTicket(ctx, collectionActTicket.CollectionActTicketData.RegTXID)
+	if err != nil {
+		return "", errors.Errorf("unable to retrieve collection-reg ticket")
+	}
+
+	return collectionRegTicket.CollectionRegTicketData.CollectionTicketData.CollectionName, nil
 }
 
 func (task *SenseRegistrationTask) removeArtifacts() {
