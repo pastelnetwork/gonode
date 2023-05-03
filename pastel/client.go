@@ -680,6 +680,26 @@ func (client *client) RegisterCollectionTicket(ctx context.Context, req Register
 	return res.TxID, nil
 }
 
+func (client *client) ActivateCollectionTicket(ctx context.Context, request ActivateCollectionRequest) (string, error) {
+	var txID struct {
+		TxID string `json:"txid"`
+	}
+
+	params := []interface{}{}
+	params = append(params, "activate")
+	params = append(params, "collection")
+	params = append(params, request.RegTxID)
+	params = append(params, fmt.Sprint(request.BlockNum))
+	params = append(params, fmt.Sprint(request.Fee))
+	params = append(params, request.PastelID)
+	params = append(params, request.Passphrase)
+
+	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call activate action ticket: %w", err)
+	}
+	return txID.TxID, nil
+}
+
 // SignCollectionTicket implements pastel.Client.SignCollectionTicket
 func (client *client) SignCollectionTicket(ctx context.Context, data []byte, pastelID, passphrase string, algorithm string) (signature []byte, err error) {
 	var sign struct {

@@ -72,7 +72,7 @@ func TestTaskRegisterAction(t *testing.T) {
 			task := makeEmptyCollectionRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
 			task = add2NodesAnd2TicketSignatures(task)
 
-			id, err := task.registerAction(context.Background())
+			id, err := task.registerCollection(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

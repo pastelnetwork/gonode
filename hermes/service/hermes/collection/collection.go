@@ -88,6 +88,14 @@ func (s collectionService) parseCollectionTickets(ctx context.Context) error {
 			continue
 		}
 
+		if err := regTicket.DecodeCollectionAppTicket(); err != nil {
+			log.WithContext(ctx).WithError(err).
+				WithField("collection_reg_txid", regTxID).
+				WithField("collection_act_txid", actTxID).
+				Error("error decoding collection app ticket")
+			continue
+		}
+
 		log.WithContext(ctx).WithField("collection_reg_txid", regTxID).Info("Found reg ticket for nft-collection-act ticket")
 
 		existsInDatabase, err := s.store.IfCollectionExists(ctx, actTxID)
