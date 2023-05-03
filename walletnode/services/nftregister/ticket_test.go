@@ -15,6 +15,9 @@ func TestFromNftRegisterPayload(t *testing.T) {
 	key := "key"
 	series := "series"
 	url := "url"
+	issuedCopies := 5
+	green := true
+	royalty := 10.4
 
 	type args struct {
 		payload *nft.RegisterPayload
@@ -31,7 +34,7 @@ func TestFromNftRegisterPayload(t *testing.T) {
 					Description:               &des,
 					Keywords:                  &key,
 					SeriesName:                &series,
-					IssuedCopies:              5,
+					IssuedCopies:              &issuedCopies,
 					YoutubeURL:                &url,
 					CreatorPastelID:           "pastelid",
 					CreatorPastelIDPassphrase: "passphrase",
@@ -39,8 +42,8 @@ func TestFromNftRegisterPayload(t *testing.T) {
 					CreatorWebsiteURL:         &url,
 					SpendableAddress:          "spendaddr",
 					MaximumFee:                12,
-					Green:                     true,
-					Royalty:                   10.4,
+					Green:                     &green,
+					Royalty:                   &royalty,
 					ThumbnailCoordinate: &nft.Thumbnailcoordinate{
 						TopLeftX:     0,
 						TopLeftY:     0,
@@ -80,6 +83,9 @@ func TestToNftRegisterTicket(t *testing.T) {
 	key := "key"
 	series := "series"
 	url := "url"
+	issuedCopies := 5
+	green := true
+	royalty := 10.4
 
 	type args struct {
 		payload *NftRegistrationRequest
@@ -96,7 +102,7 @@ func TestToNftRegisterTicket(t *testing.T) {
 					Description:               &des,
 					Keywords:                  &key,
 					SeriesName:                &series,
-					IssuedCopies:              5,
+					IssuedCopies:              &issuedCopies,
 					YoutubeURL:                &url,
 					CreatorPastelID:           "pastelid",
 					CreatorPastelIDPassphrase: "passphrase",
@@ -104,8 +110,8 @@ func TestToNftRegisterTicket(t *testing.T) {
 					CreatorWebsiteURL:         &url,
 					SpendableAddress:          "spendaddr",
 					MaximumFee:                12,
-					Green:                     true,
-					Royalty:                   10.4,
+					Green:                     &green,
+					Royalty:                   &royalty,
 					Thumbnail: files.ThumbnailCoordinate{
 						TopLeftX:     0,
 						TopLeftY:     0,

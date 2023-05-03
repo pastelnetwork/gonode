@@ -352,14 +352,18 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 		CollectionName:            *body.CollectionName,
 		ItemType:                  *body.ItemType,
 		MaxCollectionEntries:      *body.MaxCollectionEntries,
-		CollectionItemCopyCount:   body.CollectionItemCopyCount,
-		Royalty:                   body.Royalty,
 		MaxPermittedOpenNsfwScore: *body.MaxPermittedOpenNsfwScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: *body.MinimumSimilarityScoreToFirstEntryInCollection,
 		AppPastelID: *body.AppPastelID,
 	}
 	if body.CollectionFinalAllowedBlockHeight != nil {
 		v.CollectionFinalAllowedBlockHeight = *body.CollectionFinalAllowedBlockHeight
+	}
+	if body.CollectionItemCopyCount != nil {
+		v.CollectionItemCopyCount = *body.CollectionItemCopyCount
+	}
+	if body.Royalty != nil {
+		v.Royalty = *body.Royalty
 	}
 	if body.Green != nil {
 		v.Green = *body.Green
@@ -370,6 +374,12 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 	}
 	if body.CollectionFinalAllowedBlockHeight == nil {
 		v.CollectionFinalAllowedBlockHeight = 7
+	}
+	if body.CollectionItemCopyCount == nil {
+		v.CollectionItemCopyCount = 1
+	}
+	if body.Royalty == nil {
+		v.Royalty = 0
 	}
 	if body.Green == nil {
 		v.Green = false
@@ -439,6 +449,26 @@ func ValidateRegisterCollectionRequestBody(body *RegisterCollectionRequestBody) 
 	if body.CollectionFinalAllowedBlockHeight != nil {
 		if *body.CollectionFinalAllowedBlockHeight > 7 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_final_allowed_block_height", *body.CollectionFinalAllowedBlockHeight, 7, false))
+		}
+	}
+	if body.CollectionItemCopyCount != nil {
+		if *body.CollectionItemCopyCount < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_item_copy_count", *body.CollectionItemCopyCount, 1, true))
+		}
+	}
+	if body.CollectionItemCopyCount != nil {
+		if *body.CollectionItemCopyCount > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_item_copy_count", *body.CollectionItemCopyCount, 1000, false))
+		}
+	}
+	if body.Royalty != nil {
+		if *body.Royalty < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 0, true))
+		}
+	}
+	if body.Royalty != nil {
+		if *body.Royalty > 20 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 20, false))
 		}
 	}
 	if body.MaxPermittedOpenNsfwScore != nil {

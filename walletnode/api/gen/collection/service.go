@@ -85,9 +85,9 @@ type RegisterCollectionPayload struct {
 	// final allowed block height in days
 	CollectionFinalAllowedBlockHeight int
 	// item copy count in the collection
-	CollectionItemCopyCount *int
+	CollectionItemCopyCount int
 	// royalty fee
-	Royalty *float64
+	Royalty float64
 	// green
 	Green bool
 	// max open nfsw score sense and nft items can have

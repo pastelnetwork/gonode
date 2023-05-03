@@ -51,11 +51,10 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 				err = goa.MergeErrors(err, goa.InvalidLengthError("body.series_name", *body.SeriesName, utf8.RuneCountInString(*body.SeriesName), 256, false))
 			}
 		}
-		if body.IssuedCopies < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", body.IssuedCopies, 1, true))
-		}
-		if body.IssuedCopies > 1000 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", body.IssuedCopies, 1000, false))
+		if body.IssuedCopies != nil {
+			if *body.IssuedCopies > 1000 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1000, false))
+			}
 		}
 		if body.YoutubeURL != nil {
 			if utf8.RuneCountInString(*body.YoutubeURL) > 128 {
@@ -87,11 +86,10 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 		if body.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", body.MaximumFee, 1e-05, true))
 		}
-		if body.Royalty < 0 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", body.Royalty, 0, true))
-		}
-		if body.Royalty > 20 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", body.Royalty, 20, false))
+		if body.Royalty != nil {
+			if *body.Royalty > 20 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 20, false))
+			}
 		}
 		if err != nil {
 			return nil, err
@@ -116,18 +114,6 @@ func BuildRegisterPayload(nftRegisterBody string) (*nft.RegisterPayload, error) 
 		MakePubliclyAccessible:    body.MakePubliclyAccessible,
 		CollectionActTxid:         body.CollectionActTxid,
 		OpenAPIGroupID:            body.OpenAPIGroupID,
-	}
-	{
-		var zero float64
-		if v.Royalty == zero {
-			v.Royalty = 0
-		}
-	}
-	{
-		var zero bool
-		if v.Green == zero {
-			v.Green = false
-		}
 	}
 	if body.ThumbnailCoordinate != nil {
 		v.ThumbnailCoordinate = marshalThumbnailcoordinateRequestBodyToNftThumbnailcoordinate(body.ThumbnailCoordinate)

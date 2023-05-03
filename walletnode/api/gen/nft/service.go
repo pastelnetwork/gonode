@@ -322,7 +322,7 @@ type NftRegisterPayload struct {
 	// Series name
 	SeriesName *string
 	// Number of copies issued
-	IssuedCopies int
+	IssuedCopies *int
 	// NFT creation video youtube URL
 	YoutubeURL *string
 	// Creator's PastelID
@@ -339,10 +339,10 @@ type NftRegisterPayload struct {
 	MaximumFee float64
 	// Percentage the artist received in future sales. If set to 0% he only get
 	// paids for the first sale on each copy of the NFT
-	Royalty float64
+	Royalty *float64
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green               bool
+	Green               *bool
 	ThumbnailCoordinate *Thumbnailcoordinate
 	// To make it publicly accessible
 	MakePubliclyAccessible bool
@@ -452,7 +452,7 @@ type RegisterPayload struct {
 	// Series name
 	SeriesName *string
 	// Number of copies issued
-	IssuedCopies int
+	IssuedCopies *int
 	// NFT creation video youtube URL
 	YoutubeURL *string
 	// Creator's PastelID
@@ -469,10 +469,10 @@ type RegisterPayload struct {
 	MaximumFee float64
 	// Percentage the artist received in future sales. If set to 0% he only get
 	// paids for the first sale on each copy of the NFT
-	Royalty float64
+	Royalty *float64
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green               bool
+	Green               *bool
 	ThumbnailCoordinate *Thumbnailcoordinate
 	// To make it publicly accessible
 	MakePubliclyAccessible bool
@@ -882,7 +882,7 @@ func transformNftviewsNftRegisterPayloadViewToNftRegisterPayload(v *nftviews.Nft
 		Description:               v.Description,
 		Keywords:                  v.Keywords,
 		SeriesName:                v.SeriesName,
-		IssuedCopies:              *v.IssuedCopies,
+		IssuedCopies:              v.IssuedCopies,
 		YoutubeURL:                v.YoutubeURL,
 		CreatorPastelID:           *v.CreatorPastelID,
 		CreatorPastelIDPassphrase: *v.CreatorPastelIDPassphrase,
@@ -890,23 +890,13 @@ func transformNftviewsNftRegisterPayloadViewToNftRegisterPayload(v *nftviews.Nft
 		CreatorWebsiteURL:         v.CreatorWebsiteURL,
 		SpendableAddress:          *v.SpendableAddress,
 		MaximumFee:                *v.MaximumFee,
+		Royalty:                   v.Royalty,
+		Green:                     v.Green,
 		CollectionActTxid:         v.CollectionActTxid,
 		OpenAPIGroupID:            v.OpenAPIGroupID,
 	}
-	if v.Royalty != nil {
-		res.Royalty = *v.Royalty
-	}
-	if v.Green != nil {
-		res.Green = *v.Green
-	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
-	}
-	if v.Royalty == nil {
-		res.Royalty = 0
-	}
-	if v.Green == nil {
-		res.Green = false
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = transformNftviewsThumbnailcoordinateViewToThumbnailcoordinate(v.ThumbnailCoordinate)
@@ -958,7 +948,7 @@ func transformNftRegisterPayloadToNftviewsNftRegisterPayloadView(v *NftRegisterP
 		Description:               v.Description,
 		Keywords:                  v.Keywords,
 		SeriesName:                v.SeriesName,
-		IssuedCopies:              &v.IssuedCopies,
+		IssuedCopies:              v.IssuedCopies,
 		YoutubeURL:                v.YoutubeURL,
 		CreatorPastelID:           &v.CreatorPastelID,
 		CreatorPastelIDPassphrase: &v.CreatorPastelIDPassphrase,
@@ -966,8 +956,8 @@ func transformNftRegisterPayloadToNftviewsNftRegisterPayloadView(v *NftRegisterP
 		CreatorWebsiteURL:         v.CreatorWebsiteURL,
 		SpendableAddress:          &v.SpendableAddress,
 		MaximumFee:                &v.MaximumFee,
-		Royalty:                   &v.Royalty,
-		Green:                     &v.Green,
+		Royalty:                   v.Royalty,
+		Green:                     v.Green,
 		MakePubliclyAccessible:    &v.MakePubliclyAccessible,
 		CollectionActTxid:         v.CollectionActTxid,
 		OpenAPIGroupID:            v.OpenAPIGroupID,

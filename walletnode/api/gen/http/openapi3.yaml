@@ -3446,14 +3446,11 @@ components:
                 green:
                     type: boolean
                     description: To donate 2% of the sale proceeds on every sale to TeamTrees which plants trees
-                    default: false
                     example: false
                 issued_copies:
                     type: integer
                     description: Number of copies issued
-                    default: 1
                     example: 1
-                    minimum: 1
                     maximum: 1000
                 keywords:
                     type: string
@@ -3483,9 +3480,7 @@ components:
                 royalty:
                     type: number
                     description: Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT
-                    default: 0
                     example: 12
-                    minimum: 0
                     maximum: 20
                 series_name:
                     type: string
@@ -3533,7 +3528,6 @@ components:
             required:
                 - creator_name
                 - name
-                - issued_copies
                 - creator_pastelid
                 - creator_pastelid_passphrase
                 - spendable_address
@@ -3931,8 +3925,10 @@ components:
                 collection_item_copy_count:
                     type: integer
                     description: item copy count in the collection
+                    default: 1
                     example: 10
-                    format: int64
+                    minimum: 1
+                    maximum: 1000
                 collection_name:
                     type: string
                     description: name of the collection
@@ -3977,8 +3973,10 @@ components:
                 royalty:
                     type: number
                     description: royalty fee
+                    default: 0
                     example: 2.32
-                    format: double
+                    minimum: 0
+                    maximum: 20
             example:
                 app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 collection_final_allowed_block_height: 5
@@ -4051,7 +4049,6 @@ components:
                 green:
                     type: boolean
                     description: To donate 2% of the sale proceeds on every sale to TeamTrees which plants trees
-                    default: false
                     example: false
                 image_id:
                     type: string
@@ -4062,9 +4059,7 @@ components:
                 issued_copies:
                     type: integer
                     description: Number of copies issued
-                    default: 1
                     example: 1
-                    minimum: 1
                     maximum: 1000
                 keywords:
                     type: string
@@ -4094,9 +4089,7 @@ components:
                 royalty:
                     type: number
                     description: Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT
-                    default: 0
                     example: 12
-                    minimum: 0
                     maximum: 20
                 series_name:
                     type: string
@@ -4145,7 +4138,6 @@ components:
                 - image_id
                 - creator_name
                 - name
-                - issued_copies
                 - creator_pastelid
                 - creator_pastelid_passphrase
                 - spendable_address

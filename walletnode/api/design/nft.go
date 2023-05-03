@@ -280,9 +280,7 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 	})
 	Attribute("issued_copies", Int, func() {
 		Description("Number of copies issued")
-		Minimum(1)
 		Maximum(1000)
-		Default(1)
 		Example(1)
 	})
 	Attribute("youtube_url", String, func() {
@@ -331,16 +329,13 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 
 	Attribute("royalty", Float64, func() {
 		Description("Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT")
-		Default(0.0)
 		Example(12.0)
-		Minimum(0.0)
 		Maximum(20.0)
 	})
 
 	Attribute("green", Boolean, func() {
 		Description("To donate 2% of the sale proceeds on every sale to TeamTrees which plants trees")
 		Example(false)
-		Default(false)
 	})
 
 	Attribute("thumbnail_coordinate", ThumbnailCoordinate)
@@ -362,7 +357,7 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 		Description("OpenAPI GroupID string")
 	})
 
-	Required("creator_name", "name", "issued_copies", "creator_pastelid", "creator_pastelid_passphrase", "spendable_address", "maximum_fee")
+	Required("creator_name", "name", "creator_pastelid", "creator_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
 
 // NftRegisterResult is NFT registeration result.

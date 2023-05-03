@@ -27,9 +27,9 @@ type RegisterCollectionRequestBody struct {
 	// final allowed block height in days
 	CollectionFinalAllowedBlockHeight int `form:"collection_final_allowed_block_height" json:"collection_final_allowed_block_height" xml:"collection_final_allowed_block_height"`
 	// item copy count in the collection
-	CollectionItemCopyCount *int `form:"collection_item_copy_count,omitempty" json:"collection_item_copy_count,omitempty" xml:"collection_item_copy_count,omitempty"`
+	CollectionItemCopyCount int `form:"collection_item_copy_count" json:"collection_item_copy_count" xml:"collection_item_copy_count"`
 	// royalty fee
-	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
 	// green
 	Green bool `form:"green" json:"green" xml:"green"`
 	// max open nfsw score sense and nft items can have
@@ -237,6 +237,18 @@ func NewRegisterCollectionRequestBody(p *collection.RegisterCollectionPayload) *
 		var zero int
 		if body.CollectionFinalAllowedBlockHeight == zero {
 			body.CollectionFinalAllowedBlockHeight = 7
+		}
+	}
+	{
+		var zero int
+		if body.CollectionItemCopyCount == zero {
+			body.CollectionItemCopyCount = 1
+		}
+	}
+	{
+		var zero float64
+		if body.Royalty == zero {
+			body.Royalty = 0
 		}
 	}
 	{

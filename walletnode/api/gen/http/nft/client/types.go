@@ -29,7 +29,7 @@ type RegisterRequestBody struct {
 	// Series name
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
-	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
+	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
 	// NFT creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Creator's PastelID
@@ -46,10 +46,10 @@ type RegisterRequestBody struct {
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
 	// Percentage the artist received in future sales. If set to 0% he only get
 	// paids for the first sale on each copy of the NFT
-	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green               bool                            `form:"green" json:"green" xml:"green"`
+	Green               *bool                           `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
 	ThumbnailCoordinate *ThumbnailcoordinateRequestBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 	// To make it publicly accessible
 	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
@@ -905,18 +905,6 @@ func NewRegisterRequestBody(p *nft.RegisterPayload) *RegisterRequestBody {
 		MakePubliclyAccessible:    p.MakePubliclyAccessible,
 		CollectionActTxid:         p.CollectionActTxid,
 		OpenAPIGroupID:            p.OpenAPIGroupID,
-	}
-	{
-		var zero float64
-		if body.Royalty == zero {
-			body.Royalty = 0
-		}
-	}
-	{
-		var zero bool
-		if body.Green == zero {
-			body.Green = false
-		}
 	}
 	if p.ThumbnailCoordinate != nil {
 		body.ThumbnailCoordinate = marshalNftThumbnailcoordinateToThumbnailcoordinateRequestBody(p.ThumbnailCoordinate)
@@ -2291,9 +2279,6 @@ func ValidateNftRegisterPayloadResponseBody(body *NftRegisterPayloadResponseBody
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
-	if body.IssuedCopies == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
-	}
 	if body.CreatorPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "body"))
 	}
@@ -2324,11 +2309,6 @@ func ValidateNftRegisterPayloadResponseBody(body *NftRegisterPayloadResponseBody
 	if body.SeriesName != nil {
 		if utf8.RuneCountInString(*body.SeriesName) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.series_name", *body.SeriesName, utf8.RuneCountInString(*body.SeriesName), 256, false))
-		}
-	}
-	if body.IssuedCopies != nil {
-		if *body.IssuedCopies < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1, true))
 		}
 	}
 	if body.IssuedCopies != nil {
@@ -2380,11 +2360,6 @@ func ValidateNftRegisterPayloadResponseBody(body *NftRegisterPayloadResponseBody
 	if body.MaximumFee != nil {
 		if *body.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
-		}
-	}
-	if body.Royalty != nil {
-		if *body.Royalty < 0 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 0, true))
 		}
 	}
 	if body.Royalty != nil {
@@ -2494,9 +2469,6 @@ func ValidateNftRegisterPayloadResponse(body *NftRegisterPayloadResponse) (err e
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
-	if body.IssuedCopies == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
-	}
 	if body.CreatorPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "body"))
 	}
@@ -2527,11 +2499,6 @@ func ValidateNftRegisterPayloadResponse(body *NftRegisterPayloadResponse) (err e
 	if body.SeriesName != nil {
 		if utf8.RuneCountInString(*body.SeriesName) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.series_name", *body.SeriesName, utf8.RuneCountInString(*body.SeriesName), 256, false))
-		}
-	}
-	if body.IssuedCopies != nil {
-		if *body.IssuedCopies < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1, true))
 		}
 	}
 	if body.IssuedCopies != nil {
@@ -2583,11 +2550,6 @@ func ValidateNftRegisterPayloadResponse(body *NftRegisterPayloadResponse) (err e
 	if body.MaximumFee != nil {
 		if *body.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
-		}
-	}
-	if body.Royalty != nil {
-		if *body.Royalty < 0 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 0, true))
 		}
 	}
 	if body.Royalty != nil {

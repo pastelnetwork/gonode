@@ -707,7 +707,7 @@ type NftRegisterPayloadResponseBody struct {
 	// Series name
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
-	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
+	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
 	// NFT creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Creator's PastelID
@@ -724,10 +724,10 @@ type NftRegisterPayloadResponseBody struct {
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
 	// Percentage the artist received in future sales. If set to 0% he only get
 	// paids for the first sale on each copy of the NFT
-	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green               bool                             `form:"green" json:"green" xml:"green"`
+	Green               *bool                            `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
 	ThumbnailCoordinate *ThumbnailcoordinateResponseBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 	// To make it publicly accessible
 	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
@@ -772,7 +772,7 @@ type NftRegisterPayloadResponse struct {
 	// Series name
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
-	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
+	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
 	// NFT creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Creator's PastelID
@@ -789,10 +789,10 @@ type NftRegisterPayloadResponse struct {
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
 	// Percentage the artist received in future sales. If set to 0% he only get
 	// paids for the first sale on each copy of the NFT
-	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green               bool                         `form:"green" json:"green" xml:"green"`
+	Green               *bool                        `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
 	ThumbnailCoordinate *ThumbnailcoordinateResponse `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 	// To make it publicly accessible
 	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
@@ -1359,7 +1359,7 @@ func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
 		Description:               body.Description,
 		Keywords:                  body.Keywords,
 		SeriesName:                body.SeriesName,
-		IssuedCopies:              *body.IssuedCopies,
+		IssuedCopies:              body.IssuedCopies,
 		YoutubeURL:                body.YoutubeURL,
 		CreatorPastelID:           *body.CreatorPastelID,
 		CreatorPastelIDPassphrase: *body.CreatorPastelIDPassphrase,
@@ -1367,23 +1367,13 @@ func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
 		CreatorWebsiteURL:         body.CreatorWebsiteURL,
 		SpendableAddress:          *body.SpendableAddress,
 		MaximumFee:                *body.MaximumFee,
+		Royalty:                   body.Royalty,
+		Green:                     body.Green,
 		CollectionActTxid:         body.CollectionActTxid,
 		OpenAPIGroupID:            body.OpenAPIGroupID,
 	}
-	if body.Royalty != nil {
-		v.Royalty = *body.Royalty
-	}
-	if body.Green != nil {
-		v.Green = *body.Green
-	}
 	if body.MakePubliclyAccessible != nil {
 		v.MakePubliclyAccessible = *body.MakePubliclyAccessible
-	}
-	if body.Royalty == nil {
-		v.Royalty = 0
-	}
-	if body.Green == nil {
-		v.Green = false
 	}
 	if body.ThumbnailCoordinate != nil {
 		v.ThumbnailCoordinate = unmarshalThumbnailcoordinateRequestBodyToNftThumbnailcoordinate(body.ThumbnailCoordinate)
@@ -1500,9 +1490,6 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
-	if body.IssuedCopies == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
-	}
 	if body.CreatorPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "body"))
 	}
@@ -1543,11 +1530,6 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 	if body.SeriesName != nil {
 		if utf8.RuneCountInString(*body.SeriesName) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.series_name", *body.SeriesName, utf8.RuneCountInString(*body.SeriesName), 256, false))
-		}
-	}
-	if body.IssuedCopies != nil {
-		if *body.IssuedCopies < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1, true))
 		}
 	}
 	if body.IssuedCopies != nil {
@@ -1599,11 +1581,6 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 	if body.MaximumFee != nil {
 		if *body.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
-		}
-	}
-	if body.Royalty != nil {
-		if *body.Royalty < 0 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 0, true))
 		}
 	}
 	if body.Royalty != nil {

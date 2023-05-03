@@ -41,6 +41,18 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 		if body.CollectionFinalAllowedBlockHeight > 7 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_final_allowed_block_height", body.CollectionFinalAllowedBlockHeight, 7, false))
 		}
+		if body.CollectionItemCopyCount < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_item_copy_count", body.CollectionItemCopyCount, 1, true))
+		}
+		if body.CollectionItemCopyCount > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_item_copy_count", body.CollectionItemCopyCount, 1000, false))
+		}
+		if body.Royalty < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", body.Royalty, 0, true))
+		}
+		if body.Royalty > 20 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", body.Royalty, 20, false))
+		}
 		if body.MaxPermittedOpenNsfwScore < 0 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.max_permitted_open_nsfw_score", body.MaxPermittedOpenNsfwScore, 0, true))
 		}
@@ -92,6 +104,18 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 		var zero int
 		if v.CollectionFinalAllowedBlockHeight == zero {
 			v.CollectionFinalAllowedBlockHeight = 7
+		}
+	}
+	{
+		var zero int
+		if v.CollectionItemCopyCount == zero {
+			v.CollectionItemCopyCount = 1
+		}
+	}
+	{
+		var zero float64
+		if v.Royalty == zero {
+			v.Royalty = 0
 		}
 	}
 	{
