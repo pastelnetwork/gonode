@@ -58,8 +58,13 @@ func (s *SQLiteStore) IfCollectionExists(_ context.Context, collectionTxID strin
 }
 
 // StoreCollection store collection object to DB
-func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) error {
-	_, err := s.db.Exec(`INSERT INTO collections_table(collection_ticket_txid,
+func (s *SQLiteStore) StoreCollection(ctx context.Context, c domain.Collection) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Errorf("unable to begin transaction")
+	}
+
+	_, err = tx.Exec(`INSERT INTO collections_table(collection_ticket_txid,
 		 collection_name_string, collection_ticket_activation_block_height, collection_final_allowed_block_height,
 		  max_permitted_open_nsfw_score, minimum_similarity_score_to_first_entry_in_collection, collection_state, 
           datetime_collection_state_updated) VALUES(?,?,?,?,?,?,?,?)`, c.CollectionTicketTXID,
@@ -67,7 +72,13 @@ func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) er
 		c.MaxPermittedOpenNSFWScore, c.MinimumSimilarityScoreToFirstEntryInCollection, c.CollectionState.String(),
 		c.DatetimeCollectionStateUpdated)
 	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("failed to insert collection record: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return errors.Errorf("unable to commit transaction")
 	}
 
 	return nil
@@ -75,10 +86,10 @@ func (s *SQLiteStore) StoreCollection(_ context.Context, c domain.Collection) er
 
 // GetAllInProcessCollections get all collections in process state
 func (s *SQLiteStore) GetAllInProcessCollections(ctx context.Context) ([]*domain.Collection, error) {
-	c := []*collection{}
+	c := []collection{}
 
 	getCollectionByStateQuery := `SELECT * FROM collections_table WHERE collection_state = ?`
-	err := s.db.GetContext(ctx, &c, getCollectionByStateQuery, domain.InProcessCollectionState)
+	err := s.db.SelectContext(ctx, &c, getCollectionByStateQuery, domain.InProcessCollectionState)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get record: %w : collection_state: %s", err, domain.InProcessCollectionState)
 	}
@@ -105,10 +116,21 @@ func (s *SQLiteStore) GetCollection(ctx context.Context, collectionTxID string) 
 }
 
 // FinalizeCollectionState finalizes collection state
-func (s *SQLiteStore) FinalizeCollectionState(_ context.Context, txid string) error {
-	_, err := s.db.Exec(`UPDATE collections_table SET collection_state = ? WHERE collection_ticket_txid `, domain.FinalizedCollectionState, txid)
+func (s *SQLiteStore) FinalizeCollectionState(ctx context.Context, txid string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		return errors.Errorf("unable to begin transaction")
+	}
+
+	_, err = tx.Exec(`UPDATE collections_table SET collection_state = ? WHERE collection_ticket_txid = ?`, domain.FinalizedCollectionState, txid)
+	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("failed to update collection record: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return errors.Errorf("unable to commit transaction")
 	}
 
 	return nil
