@@ -46,6 +46,7 @@ func (s *SQLiteStore) GetScoreByTxID(_ context.Context, txid string) (*domain.Sn
 	return r.toDomain(), nil
 }
 
+// IncrementScore increments score by txid
 func (s *SQLiteStore) IncrementScore(ctx context.Context, score *domain.SnScore, increment int) (*domain.SnScore, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
