@@ -341,12 +341,13 @@ func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, 
 
 	req := pastel.RegisterActionRequest{
 		Ticket: &pastel.ActionTicket{
-			Version:       task.Ticket.Version,
-			Caller:        task.Ticket.Caller,
-			BlockNum:      task.Ticket.BlockNum,
-			BlockHash:     task.Ticket.BlockHash,
-			ActionType:    task.Ticket.ActionType,
-			APITicketData: task.Ticket.APITicketData,
+			Version:        task.Ticket.Version,
+			Caller:         task.Ticket.Caller,
+			BlockNum:       task.Ticket.BlockNum,
+			BlockHash:      task.Ticket.BlockHash,
+			ActionType:     task.Ticket.ActionType,
+			APITicketData:  task.Ticket.APITicketData,
+			CollectionTxID: task.Ticket.CollectionTxID,
 		},
 		Signatures: &pastel.ActionTicketSignatures{
 			Principal: map[string]string{

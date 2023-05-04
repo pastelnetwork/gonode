@@ -199,30 +199,26 @@ func (s *SQLiteStore) GetFingerprintsCount(_ context.Context) (int64, error) {
 	return Data.Count, nil
 }
 
-func float64ToBytes(f float64) []byte {
-	bits := math.Float64bits(f)
-	bytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bytes, bits)
-	return bytes
-}
-
-func bytesToFloat64(b []byte) float64 {
-	bits := binary.LittleEndian.Uint64(b)
-	return math.Float64frombits(bits)
-}
-
 func writeFloat64SliceToBytes(data []float64) []byte {
-	header := fmt.Sprintf("{'descr': '<f8', 'fortran_order': False, 'shape': (%d, 1), }", len(data))
-	paddedHeader := header + strings.Repeat(" ", (128-len(header)-1)) + "\n"
+	header := fmt.Sprintf("{\"descr\": \"<f8\", \"fortran_order\": False, \"shape\": (%d, 1), }", len(data))
+	headerLen := len(header) + 1 // Account for the newline character
+	padding := 0
+
+	// Find the padding needed to make the total length divisible by 64
+	if remainder := (10 + headerLen) % 64; remainder != 0 {
+		padding = 64 - remainder
+	}
+
+	paddedHeader := header + strings.Repeat(" ", padding) + "\n" // Apply the padding and the newline character
 
 	var buf bytes.Buffer
-	buf.Write([]byte("\x93NUMPY")) // Magic string
-	buf.WriteByte(0x01)            // Major version
-	buf.WriteByte(0x00)            // Minor version
-	buf.Write([]byte{0x76, 0x00})  // Header length (little endian uint16)
-	buf.WriteString(paddedHeader)  // Header
+	buf.Write([]byte("\x93NUMPY"))                                     // Magic string
+	buf.Write([]byte{1, 0})                                            // Major, minor version
+	binary.Write(&buf, binary.LittleEndian, uint16(len(paddedHeader))) // Header length
+	buf.WriteString(paddedHeader)                                      // Padded header
+
 	for _, value := range data {
-		buf.Write(float64ToBytes(value)) // Data
+		binary.Write(&buf, binary.LittleEndian, value) // Array data
 	}
 
 	return buf.Bytes()
@@ -237,7 +233,7 @@ func readFloat64SliceFromBytes(content []byte) ([]float64, error) {
 	header := string(content[10 : 10+headerLength])
 
 	var dataLength int
-	_, err := fmt.Sscanf(header, "{'descr': '<f8', 'fortran_order': False, 'shape': (%d, 1), }", &dataLength)
+	_, err := fmt.Sscanf(header, "{\"descr\": \"<f8\", \"fortran_order\": False, \"shape\": (%d, 1), }  \n", &dataLength)
 	if err != nil {
 		return nil, err
 	}
@@ -253,4 +249,10 @@ func readFloat64SliceFromBytes(content []byte) ([]float64, error) {
 	}
 
 	return data, nil
+}
+
+func bytesToFloat64(b []byte) float64 {
+	bits := binary.LittleEndian.Uint64(b)
+	float := math.Float64frombits(bits)
+	return float
 }
