@@ -45,7 +45,7 @@ func (task *CollectionRegistrationTask) ValidateAndRegister(ctx context.Context,
 		log.WithContext(ctx).WithError(err).Error("calculate fee failed")
 		return "", errors.Errorf("calculate fee: %w", err)
 	}
-	log.WithContext(ctx).WithError(err).Error("collection reg fee has been computed")
+	log.WithContext(ctx).Info("collection reg fee has been computed")
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if err = task.validateSignedTicketFromWN(ctx, ticket, creatorSignature); err != nil {

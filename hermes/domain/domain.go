@@ -9,7 +9,7 @@ const (
 	//UndefinedCollectionState is the state of collection when current no collection entries > max no of collection entries
 	UndefinedCollectionState CollectionState = "undefined"
 	// InProcessCollectionState is the state of collection when current no collection entries < max no of collection entries
-	InProcessCollectionState CollectionState = "in-process"
+	InProcessCollectionState CollectionState = "in_process"
 	// FinalizedCollectionState is the state of collection when current no collection entries = max no of collection entries
 	FinalizedCollectionState CollectionState = "finalized"
 )
@@ -66,7 +66,7 @@ type Collection struct {
 func (c CollectionState) String() string {
 	switch c {
 	case InProcessCollectionState:
-		return "in-process"
+		return "in_process"
 	case FinalizedCollectionState:
 		return "finalized"
 	}
