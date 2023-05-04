@@ -79,19 +79,29 @@ func (s *SQLiteStore) CheckNonSeedRecord(_ context.Context) (bool, error) {
 
 // StoreFingerprint stores fingerprint
 func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFingerprints) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Errorf("unable to begin transaction")
+	}
+
 	fp := writeFloat64SliceToBytes(input.ImageFingerprintVector)
 
-	_, err := s.db.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
+	_, err = tx.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
 		 path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database,
 		  thumbnail_of_image, request_type, open_api_subset_id_string,open_api_group_id_string,collection_name_string, registration_ticket_txid) VALUES(?,?,?,?,?,?,?,?,?,?)`, input.Sha256HashOfArtImageFile,
 		input.PathToArtImageFile, fp, input.DatetimeFingerprintAddedToDatabase, input.ImageThumbnailAsBase64, input.RequestType, input.IDString, input.OpenAPIGroupIDString, input.CollectionNameString, input.RegTXID)
 	if err != nil {
+		tx.Rollback()
 		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
 		return err
 	}
 
 	if input.DoesNotImpactTheFollowingCollectionsString == "" {
 		log.WithContext(ctx).Info("list of non-impacted collection is empty")
+		if err := tx.Commit(); err != nil {
+			tx.Rollback()
+			return errors.Errorf("unable to commit transaction")
+		}
 
 		return nil
 	}
@@ -99,12 +109,18 @@ func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFing
 	commaSeparatedDoesNotImpactCollectionNamesList := strings.Split(input.DoesNotImpactTheFollowingCollectionsString, ",")
 
 	for _, collectionName := range commaSeparatedDoesNotImpactCollectionNamesList {
-		_, err = s.db.Exec(`INSERT INTO does_not_impact_collections_table(collection_name_string, sha256_hash_of_art_image_file)
+		_, err = tx.Exec(`INSERT INTO does_not_impact_collections_table(collection_name_string, sha256_hash_of_art_image_file)
 			VALUES(?,?)`, collectionName, input.Sha256HashOfArtImageFile)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to insert collection name  in does not impact collection table")
+			tx.Rollback()
 			return err
 		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return errors.Errorf("unable to commit transaction")
 	}
 
 	return nil

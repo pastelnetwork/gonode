@@ -80,11 +80,21 @@ func (s *SQLiteStore) GetPastelBlockByHeight(ctx context.Context, height int32) 
 
 // StorePastelBlock store the block hash and height in pastel_blocks table
 func (s *SQLiteStore) StorePastelBlock(ctx context.Context, pb domain.PastelBlock) error {
-	pastelBlockQuery := `INSERT into pastel_blocks_table(block_hash, block_height, datetime_block_added) VALUES(?,?,?)`
-
-	_, err := s.db.ExecContext(ctx, pastelBlockQuery, pb.BlockHash, pb.BlockHeight, pb.DatetimeBlockAdded)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		return errors.Errorf("unable to begin transaction")
+	}
+
+	pastelBlockQuery := `INSERT into pastel_blocks_table(block_hash, block_height, datetime_block_added) VALUES(?,?,?)`
+	_, err = tx.ExecContext(ctx, pastelBlockQuery, pb.BlockHash, pb.BlockHeight, pb.DatetimeBlockAdded)
+	if err != nil {
+		tx.Rollback()
 		return errors.Errorf("unable to insert into pastel blocks table")
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return errors.Errorf("unable to commit transaction")
 	}
 
 	return nil
@@ -92,11 +102,21 @@ func (s *SQLiteStore) StorePastelBlock(ctx context.Context, pb domain.PastelBloc
 
 // UpdatePastelBlock updates the pastel-block by height
 func (s *SQLiteStore) UpdatePastelBlock(ctx context.Context, pb domain.PastelBlock) error {
-	updatePastelBlockQuery := `update pastel_blocks_table set block_hash=? where block_height =?`
-
-	_, err := s.db.ExecContext(ctx, updatePastelBlockQuery, pb.BlockHash, pb.BlockHeight)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		return errors.Errorf("unable to begin transaction")
+	}
+
+	updatePastelBlockQuery := `update pastel_blocks_table set block_hash=? where block_height =?`
+	_, err = tx.ExecContext(ctx, updatePastelBlockQuery, pb.BlockHash, pb.BlockHeight)
+	if err != nil {
+		tx.Rollback()
 		return errors.Errorf("unable to update pastel blocks table")
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return errors.Errorf("unable to commit transaction")
 	}
 
 	return nil

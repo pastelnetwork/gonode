@@ -50,8 +50,6 @@ func (s *fingerprintService) Run(ctx context.Context) error {
 }
 
 func (s *fingerprintService) run(ctx context.Context) error {
-	log.WithContext(ctx).Info("fingerprint service run() has been invoked")
-
 	log.WithContext(ctx).Info("getting Activation tickets, checking non seed records.")
 	nonseed, err := s.store.CheckNonSeedRecord(ctx)
 	if err != nil {
@@ -62,11 +60,14 @@ func (s *fingerprintService) run(ctx context.Context) error {
 		s.latestSenseBlockHeight = 0
 	}
 
-	if err := s.parseSenseTickets(ctx); err != nil {
-		return err
+	senseErr := s.parseSenseTickets(ctx)
+	nftErr := s.parseNFTTickets(ctx)
+
+	if senseErr != nil {
+		return senseErr
 	}
 
-	return s.parseNFTTickets(ctx)
+	return nftErr
 }
 
 func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
@@ -87,12 +88,15 @@ func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 		return nil
 	}
 
+	log.WithContext(ctx).WithField("count", len(senseActTickets)).WithField("latest-sense-block-height", s.latestSenseBlockHeight).Info("Sense tickets retrieved")
+
 	for i := 0; i < len(senseActTickets); i++ {
 		if senseActTickets[i].Height < s.latestSenseBlockHeight {
 			continue
 		}
 
-		regTicket, senseTicket, err := s.getSenseTicket(ctx, senseActTickets[i].TXID)
+		log.WithContext(ctx).WithField("txid", senseActTickets[i].TXID).WithField("height", senseActTickets[i].Height).Info("Found sense activation ticket")
+		regTicket, senseTicket, err := s.getSenseTicket(ctx, senseActTickets[i].ActTicketData.RegTXID)
 		if err != nil {
 			if !strings.Contains(err.Error(), "not a sense ticket") {
 				log.WithContext(ctx).WithField("txid", senseActTickets[i].TXID).WithField("height", senseActTickets[i].Height).
@@ -102,7 +106,7 @@ func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 		}
 
 		log.WithContext(ctx).WithField("act-txid", senseActTickets[i].TXID).WithField("reg-txid", regTicket.TXID).WithField("height", senseActTickets[i].Height).
-			Info("Found sense activation ticket")
+			Info("Found valid sense activation ticket")
 
 		stored, p2pRunning := s.fetchDDFpFileAndStoreFingerprints(ctx, regTicket.ActionTicketData.ActionType, "", senseActTickets[i].TXID,
 			regTicket.TXID, senseTicket.DDAndFingerprintsIDs)

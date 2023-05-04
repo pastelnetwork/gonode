@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/hermes/domain"
 )
@@ -45,15 +46,21 @@ func (s *SQLiteStore) GetScoreByTxID(_ context.Context, txid string) (*domain.Sn
 	return r.toDomain(), nil
 }
 
-// IncrementScore increments score and if not exists, it creates a record
+// IncrementScore increments score by txid
 func (s *SQLiteStore) IncrementScore(ctx context.Context, score *domain.SnScore, increment int) (*domain.SnScore, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, errors.Errorf("unable to begin transaction")
+	}
+
 	r := snScore{}
-	err := s.db.Get(&r, getScoreFromTxidStatement, score.TxID)
+	err = tx.QueryRowContext(ctx, getScoreFromTxidStatement, score.TxID).Scan(&r.TxID, &r.ExtKey, &r.IPAddress, &r.Score)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			_, err = s.db.Exec(insertSnScoreStatement, score.TxID, score.PastelID, score.IPAddress, score.Score)
+			_, err = tx.Exec(insertSnScoreStatement, score.TxID, score.PastelID, score.IPAddress, score.Score)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("txid", score.TxID).Error("Failed to insert sn_score record")
+				tx.Rollback()
 				return nil, err
 			}
 		} else {
@@ -62,10 +69,16 @@ func (s *SQLiteStore) IncrementScore(ctx context.Context, score *domain.SnScore,
 	}
 
 	r.Score = r.Score + increment
-	_, err = s.db.Exec(updateSnScoreStatement, r.Score, r.TxID)
+	_, err = tx.Exec(updateSnScoreStatement, r.Score, r.TxID)
 	if err != nil {
 		log.WithContext(ctx).WithField("txid", r.TxID).WithError(err).Error("Failed to update sn_score record")
+		tx.Rollback()
 		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return nil, errors.Errorf("unable to commit transaction")
 	}
 
 	return r.toDomain(), nil

@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/hermes/domain"
@@ -29,24 +28,14 @@ func (s *collectionService) Run(ctx context.Context) error {
 				continue
 			}
 
-			groupA, cctx := errgroup.WithContext(ctx)
-			groupB, gctx := errgroup.WithContext(ctx)
-
-			groupA.Go(func() error {
-				return s.parseCollectionTickets(cctx)
-			})
-
-			groupB.Go(func() error {
-				return s.finalizeCollections(gctx)
-			})
-
-			if err := groupA.Wait(); err != nil {
-				log.WithContext(cctx).WithError(err).Errorf("parseCollectionTickets failed")
+			if err := s.parseCollectionTickets(ctx); err != nil {
+				log.WithContext(ctx).WithError(err).Error("parseCollectionTickets failed")
 			}
 
-			if err := groupB.Wait(); err != nil {
-				log.WithContext(gctx).WithError(err).Errorf("finalizeCollections failed")
+			if err := s.finalizeCollections(ctx); err != nil {
+				log.WithContext(ctx).WithError(err).Error("finalizeCollections failed")
 			}
+
 		}
 	}
 }
