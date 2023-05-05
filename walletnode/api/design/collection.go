@@ -15,7 +15,7 @@ var _ = Service("collection", func() {
 
 	cors.Origin("localhost")
 	HTTP(func() {
-		Path("/openapi/collection")
+		Path("/collection")
 	})
 
 	Error("BadRequest", ErrorResult)
@@ -52,7 +52,7 @@ var _ = Service("collection", func() {
 		StreamingResult(RegisterTaskState)
 
 		HTTP(func() {
-			GET("/start/{taskId}/state")
+			GET("/{taskId}/state")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
@@ -88,6 +88,7 @@ var RegisterCollectionPayload = Type("RegisterCollectionPayload", func() {
 	Attribute("item_type", String, "type of items, store by collection", func() {
 		TypeName("itemType")
 		Example("nft", "sense")
+		Enum("sense", "nft")
 	})
 	Required("item_type")
 
@@ -106,8 +107,8 @@ var RegisterCollectionPayload = Type("RegisterCollectionPayload", func() {
 	})
 	Required("max_collection_entries")
 
-	Attribute("collection_final_allowed_block_height", Int, "final allowed block height in days", func() {
-		TypeName("collectionFinalAllowedBlockHeight")
+	Attribute("no_of_days_to_finalize_collection", Int, "no of days to finalize collection", func() {
+		TypeName("no_of_days_to_finalize_collection")
 		Minimum(1)
 		Maximum(7)
 		Default(7)

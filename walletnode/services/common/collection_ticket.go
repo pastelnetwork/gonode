@@ -17,7 +17,7 @@ type CollectionRegistrationRequest struct {
 	// MaxCollectionEntries in the collection's max entries
 	MaxCollectionEntries int `json:"max_collection_entries"`
 	// CollectionFinalAllowedBlockHeight is the height of final allowed block in days
-	CollectionFinalAllowedBlockHeight int `json:"collection_final_allowed_block_height"`
+	NoOfDaysToFinalizeCollection int `json:"NoOfDaysToFinalizeCollection"`
 	// CollectionItemCopyCount is the collection item copy count
 	CollectionItemCopyCount int `json:"collection_item_copy_count"`
 	// Royalty represents the royalty fee

@@ -187,6 +187,11 @@ func (task *SenseRegistrationTask) validateSignedTicketFromWN(ctx context.Contex
 		return errors.Errorf("decode action ticket: %w", err)
 	}
 
+	if task.Ticket.CollectionTxID != nil {
+		log.WithContext(ctx).WithField("collection_act_txid", string(task.Ticket.CollectionTxID)).
+			Info("collection_txid has been received in the sense ticket")
+	}
+
 	// Verify APISenseTicket
 	apiTicket, err := task.Ticket.APISenseTicket()
 	if err != nil {
@@ -368,11 +373,11 @@ func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, 
 		Label:       task.ActionTicketRegMetadata.BurnTxID,
 	}
 
-	nftRegTxid, err := task.PastelClient.RegisterActionTicket(ctx, req)
+	senseRegTxid, err := task.PastelClient.RegisterActionTicket(ctx, req)
 	if err != nil {
 		return "", errors.Errorf("register action ticket: %w", err)
 	}
-	return nftRegTxid, nil
+	return senseRegTxid, nil
 }
 
 func (task *SenseRegistrationTask) storeIDFiles(ctx context.Context) error {

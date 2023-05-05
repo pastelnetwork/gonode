@@ -5,6 +5,202 @@ info:
 servers:
     - url: http://localhost:8080
 paths:
+    /collection/{taskId}/history:
+        get:
+            tags:
+                - collection
+            summary: Get history of states as a json string with a list of state objects.
+            description: Gets the history of the task's states.
+            operationId: collection#getTaskHistory
+            parameters:
+                - name: taskId
+                  in: path
+                  description: Task ID of the registration process
+                  required: true
+                  schema:
+                    type: string
+                    description: Task ID of the registration process
+                    example: n6Qn6TFM
+                    minLength: 8
+                    maxLength: 8
+                  example: n6Qn6TFM
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/TaskHistory'
+                                example:
+                                    - details:
+                                        fields:
+                                            Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
+                                            Ipsa totam.: Id quia.
+                                        message: Image has been downloaded...
+                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                      status: Started, Image Probed, Downloaded...
+                                      timestamp: 2006-01-02T15:04:05Z07:00
+                                    - details:
+                                        fields:
+                                            Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
+                                            Ipsa totam.: Id quia.
+                                        message: Image has been downloaded...
+                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                      status: Started, Image Probed, Downloaded...
+                                      timestamp: 2006-01-02T15:04:05Z07:00
+                                    - details:
+                                        fields:
+                                            Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
+                                            Ipsa totam.: Id quia.
+                                        message: Image has been downloaded...
+                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                      status: Started, Image Probed, Downloaded...
+                                      timestamp: 2006-01-02T15:04:05Z07:00
+                                    - details:
+                                        fields:
+                                            Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
+                                            Ipsa totam.: Id quia.
+                                        message: Image has been downloaded...
+                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                      status: Started, Image Probed, Downloaded...
+                                      timestamp: 2006-01-02T15:04:05Z07:00
+                            example:
+                                - details:
+                                    fields:
+                                        Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
+                                        Ipsa totam.: Id quia.
+                                    message: Image has been downloaded...
+                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                  status: Started, Image Probed, Downloaded...
+                                  timestamp: 2006-01-02T15:04:05Z07:00
+                                - details:
+                                    fields:
+                                        Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
+                                        Ipsa totam.: Id quia.
+                                    message: Image has been downloaded...
+                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                  status: Started, Image Probed, Downloaded...
+                                  timestamp: 2006-01-02T15:04:05Z07:00
+                                - details:
+                                    fields:
+                                        Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
+                                        Ipsa totam.: Id quia.
+                                    message: Image has been downloaded...
+                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                  status: Started, Image Probed, Downloaded...
+                                  timestamp: 2006-01-02T15:04:05Z07:00
+                "404":
+                    description: 'NotFound: Not Found response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                "500":
+                    description: 'InternalServerError: Internal Server Error response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+    /collection/{taskId}/state:
+        get:
+            tags:
+                - collection
+            summary: Streams state by task ID
+            description: Streams the state of the registration process.
+            operationId: collection#registerTaskState
+            parameters:
+                - name: taskId
+                  in: path
+                  description: Task ID of the registration process
+                  required: true
+                  schema:
+                    type: string
+                    description: Task ID of the registration process
+                    example: n6Qn6TFM
+                    minLength: 8
+                    maxLength: 8
+                  example: n6Qn6TFM
+            responses:
+                "101":
+                    description: Switching Protocols response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TaskState'
+                            example:
+                                date: 2006-01-02T15:04:05Z07:00
+                                status: Task Started
+                "404":
+                    description: 'NotFound: Not Found response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                "500":
+                    description: 'InternalServerError: Internal Server Error response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+    /collection/register:
+        get:
+            tags:
+                - collection
+            summary: Streams state by task ID
+            description: Streams the state of the registration process.
+            operationId: collection#registerCollection
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RegisterCollectionRequestBody'
+                        example:
+                            app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                            collection_item_copy_count: 10
+                            collection_name: galaxies
+                            green: false
+                            item_type: sense
+                            list_of_pastelids_of_authorized_contributors:
+                                - apple
+                                - banana
+                                - orange
+                            max_collection_entries: 5000
+                            max_permitted_open_nsfw_score: 0.5
+                            minimum_similarity_score_to_first_entry_in_collection: 0.5
+                            no_of_days_to_finalize_collection: 5
+                            royalty: 2.32
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RegisterCollectionResponse'
+                            example:
+                                task_id: VK7mpAqZ
+                "400":
+                    description: 'BadRequest: Bad Request response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                "404":
+                    description: 'NotFound: Not Found response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                "500":
+                    description: 'InternalServerError: Internal Server Error response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+            security:
+                - api_key_header_Authorization: []
     /nfts:
         get:
             tags:
@@ -1538,202 +1734,6 @@ paths:
                                 total_estimated_fee: 100
                 "400":
                     description: 'BadRequest: Bad Request response.'
-                    content:
-                        application/vnd.goa.error:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                "500":
-                    description: 'InternalServerError: Internal Server Error response.'
-                    content:
-                        application/vnd.goa.error:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-    /openapi/collection/{taskId}/history:
-        get:
-            tags:
-                - collection
-            summary: Get history of states as a json string with a list of state objects.
-            description: Gets the history of the task's states.
-            operationId: collection#getTaskHistory
-            parameters:
-                - name: taskId
-                  in: path
-                  description: Task ID of the registration process
-                  required: true
-                  schema:
-                    type: string
-                    description: Task ID of the registration process
-                    example: n6Qn6TFM
-                    minLength: 8
-                    maxLength: 8
-                  example: n6Qn6TFM
-            responses:
-                "200":
-                    description: OK response.
-                    content:
-                        application/json:
-                            schema:
-                                type: array
-                                items:
-                                    $ref: '#/components/schemas/TaskHistory'
-                                example:
-                                    - details:
-                                        fields:
-                                            Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
-                                            Ipsa totam.: Id quia.
-                                        message: Image has been downloaded...
-                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                      status: Started, Image Probed, Downloaded...
-                                      timestamp: 2006-01-02T15:04:05Z07:00
-                                    - details:
-                                        fields:
-                                            Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
-                                            Ipsa totam.: Id quia.
-                                        message: Image has been downloaded...
-                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                      status: Started, Image Probed, Downloaded...
-                                      timestamp: 2006-01-02T15:04:05Z07:00
-                                    - details:
-                                        fields:
-                                            Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
-                                            Ipsa totam.: Id quia.
-                                        message: Image has been downloaded...
-                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                      status: Started, Image Probed, Downloaded...
-                                      timestamp: 2006-01-02T15:04:05Z07:00
-                                    - details:
-                                        fields:
-                                            Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
-                                            Ipsa totam.: Id quia.
-                                        message: Image has been downloaded...
-                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                      status: Started, Image Probed, Downloaded...
-                                      timestamp: 2006-01-02T15:04:05Z07:00
-                            example:
-                                - details:
-                                    fields:
-                                        Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
-                                        Ipsa totam.: Id quia.
-                                    message: Image has been downloaded...
-                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                  status: Started, Image Probed, Downloaded...
-                                  timestamp: 2006-01-02T15:04:05Z07:00
-                                - details:
-                                    fields:
-                                        Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
-                                        Ipsa totam.: Id quia.
-                                    message: Image has been downloaded...
-                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                  status: Started, Image Probed, Downloaded...
-                                  timestamp: 2006-01-02T15:04:05Z07:00
-                                - details:
-                                    fields:
-                                        Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
-                                        Ipsa totam.: Id quia.
-                                    message: Image has been downloaded...
-                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                  status: Started, Image Probed, Downloaded...
-                                  timestamp: 2006-01-02T15:04:05Z07:00
-                "404":
-                    description: 'NotFound: Not Found response.'
-                    content:
-                        application/vnd.goa.error:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                "500":
-                    description: 'InternalServerError: Internal Server Error response.'
-                    content:
-                        application/vnd.goa.error:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-    /openapi/collection/register:
-        get:
-            tags:
-                - collection
-            summary: Streams state by task ID
-            description: Streams the state of the registration process.
-            operationId: collection#registerCollection
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/RegisterCollectionRequestBody'
-                        example:
-                            app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                            collection_final_allowed_block_height: 5
-                            collection_item_copy_count: 10
-                            collection_name: galaxies
-                            green: false
-                            item_type: sense
-                            list_of_pastelids_of_authorized_contributors:
-                                - apple
-                                - banana
-                                - orange
-                            max_collection_entries: 5000
-                            max_permitted_open_nsfw_score: 0.5
-                            minimum_similarity_score_to_first_entry_in_collection: 0.5
-                            royalty: 2.32
-            responses:
-                "200":
-                    description: OK response.
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/RegisterCollectionResponse'
-                            example:
-                                task_id: VK7mpAqZ
-                "400":
-                    description: 'BadRequest: Bad Request response.'
-                    content:
-                        application/vnd.goa.error:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                "404":
-                    description: 'NotFound: Not Found response.'
-                    content:
-                        application/vnd.goa.error:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                "500":
-                    description: 'InternalServerError: Internal Server Error response.'
-                    content:
-                        application/vnd.goa.error:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-            security:
-                - api_key_header_Authorization: []
-    /openapi/collection/start/{taskId}/state:
-        get:
-            tags:
-                - collection
-            summary: Streams state by task ID
-            description: Streams the state of the registration process.
-            operationId: collection#registerTaskState
-            parameters:
-                - name: taskId
-                  in: path
-                  description: Task ID of the registration process
-                  required: true
-                  schema:
-                    type: string
-                    description: Task ID of the registration process
-                    example: n6Qn6TFM
-                    minLength: 8
-                    maxLength: 8
-                  example: n6Qn6TFM
-            responses:
-                "101":
-                    description: Switching Protocols response.
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/TaskState'
-                            example:
-                                date: 2006-01-02T15:04:05Z07:00
-                                status: Task Started
-                "404":
-                    description: 'NotFound: Not Found response.'
                     content:
                         application/vnd.goa.error:
                             schema:
@@ -3915,13 +3915,6 @@ components:
                     pattern: ^[a-zA-Z0-9]+$
                     minLength: 86
                     maxLength: 86
-                collection_final_allowed_block_height:
-                    type: integer
-                    description: final allowed block height in days
-                    default: 7
-                    example: 5
-                    minimum: 1
-                    maximum: 7
                 collection_item_copy_count:
                     type: integer
                     description: item copy count in the collection
@@ -3942,6 +3935,9 @@ components:
                     type: string
                     description: type of items, store by collection
                     example: sense
+                    enum:
+                        - sense
+                        - nft
                 list_of_pastelids_of_authorized_contributors:
                     type: array
                     items:
@@ -3970,6 +3966,13 @@ components:
                     example: 0.5
                     minimum: 0
                     maximum: 1
+                no_of_days_to_finalize_collection:
+                    type: integer
+                    description: no of days to finalize collection
+                    default: 7
+                    example: 5
+                    minimum: 1
+                    maximum: 7
                 royalty:
                     type: number
                     description: royalty fee
@@ -3979,7 +3982,6 @@ components:
                     maximum: 20
             example:
                 app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                collection_final_allowed_block_height: 5
                 collection_item_copy_count: 10
                 collection_name: galaxies
                 green: false
@@ -3991,6 +3993,7 @@ components:
                 max_collection_entries: 5000
                 max_permitted_open_nsfw_score: 0.5
                 minimum_similarity_score_to_first_entry_in_collection: 0.5
+                no_of_days_to_finalize_collection: 5
                 royalty: 2.32
             required:
                 - collection_name

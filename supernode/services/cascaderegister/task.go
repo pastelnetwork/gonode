@@ -314,12 +314,12 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 		Label:       task.ActionTicketRegMetadata.BurnTxID,
 	}
 
-	nftRegTxid, err := task.PastelClient.RegisterActionTicket(ctx, req)
+	cascadeRegTxid, err := task.PastelClient.RegisterActionTicket(ctx, req)
 	if err != nil {
 		return "", errors.Errorf("register action ticket: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("txid", nftRegTxid).Info("storing rq symbols")
+	log.WithContext(ctx).WithField("txid", cascadeRegTxid).Info("storing rq symbols")
 	if err = task.storeRaptorQSymbols(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("store raptor symbols")
 		err = errors.Errorf("store raptor symbols: %w", err)
@@ -327,15 +327,15 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 	}
 
 	// Store dd_and_fingerprints into Kademlia
-	log.WithContext(ctx).WithField("txid", nftRegTxid).Info("storing id files")
+	log.WithContext(ctx).WithField("txid", cascadeRegTxid).Info("storing id files")
 	if err = task.storeIDFiles(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("store id files")
 		err = errors.Errorf("store id files: %w", err)
 		return "", err
 	}
 
-	log.WithContext(ctx).WithField("txid", nftRegTxid).Info("ID files & symbols stored")
-	return nftRegTxid, nil
+	log.WithContext(ctx).WithField("txid", cascadeRegTxid).Info("ID files & symbols stored")
+	return cascadeRegTxid, nil
 }
 
 // ValidateActionActAndConfirm checks Action activation ticket and reStore if possible

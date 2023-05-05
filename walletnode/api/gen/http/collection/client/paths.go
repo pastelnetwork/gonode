@@ -13,15 +13,15 @@ import (
 
 // RegisterCollectionCollectionPath returns the URL path to the collection service registerCollection HTTP endpoint.
 func RegisterCollectionCollectionPath() string {
-	return "/openapi/collection/register"
+	return "/collection/register"
 }
 
 // RegisterTaskStateCollectionPath returns the URL path to the collection service registerTaskState HTTP endpoint.
 func RegisterTaskStateCollectionPath(taskID string) string {
-	return fmt.Sprintf("/openapi/collection/start/%v/state", taskID)
+	return fmt.Sprintf("/collection/%v/state", taskID)
 }
 
 // GetTaskHistoryCollectionPath returns the URL path to the collection service getTaskHistory HTTP endpoint.
 func GetTaskHistoryCollectionPath(taskID string) string {
-	return fmt.Sprintf("/openapi/collection/%v/history", taskID)
+	return fmt.Sprintf("/collection/%v/history", taskID)
 }

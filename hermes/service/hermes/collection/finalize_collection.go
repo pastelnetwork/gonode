@@ -10,7 +10,7 @@ import (
 func (s *collectionService) finalizeCollections(ctx context.Context) error {
 	collections, err := s.store.GetAllInProcessCollections(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error getting all in-process collections")
+		log.WithContext(ctx).WithError(err).Error("error getting all in_process collections")
 		return err
 	}
 
