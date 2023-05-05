@@ -200,7 +200,7 @@ func (s *SQLiteStore) GetFingerprintsCount(_ context.Context) (int64, error) {
 }
 
 func writeFloat64SliceToBytes(data []float64) []byte {
-	header := fmt.Sprintf("{\"descr\": \"<f8\", \"fortran_order\": False, \"shape\": (%d, 1), }", len(data))
+	header := fmt.Sprintf("{'descr': '<f8', 'fortran_order': False, 'shape': (%d, 1), }", len(data))
 	headerLen := len(header) + 1 // Account for the newline character
 	padding := 0
 
@@ -233,7 +233,7 @@ func readFloat64SliceFromBytes(content []byte) ([]float64, error) {
 	header := string(content[10 : 10+headerLength])
 
 	var dataLength int
-	_, err := fmt.Sscanf(header, "{\"descr\": \"<f8\", \"fortran_order\": False, \"shape\": (%d, 1), }  \n", &dataLength)
+	_, err := fmt.Sscanf(header, "{'descr': '<f8', 'fortran_order': False, 'shape': (%d, 1), }  \n", &dataLength)
 	if err != nil {
 		return nil, err
 	}
