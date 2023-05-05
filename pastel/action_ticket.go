@@ -53,7 +53,7 @@ type ActionTicket struct {
 	BlockNum       int         `json:"blocknum"`
 	BlockHash      string      `json:"block_hash"`
 	ActionType     string      `json:"action_type"`
-	CollectionTxID []byte      `json:"collection_txid,omitempty"`
+	CollectionTxID string      `json:"collection_txid,omitempty"`
 	APITicket      string      `json:"api_ticket"` // as ascii85(api_ticket)
 	APITicketData  interface{} `json:"-"`
 }

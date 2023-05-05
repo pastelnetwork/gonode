@@ -187,8 +187,8 @@ func (task *SenseRegistrationTask) validateSignedTicketFromWN(ctx context.Contex
 		return errors.Errorf("decode action ticket: %w", err)
 	}
 
-	if task.Ticket.CollectionTxID != nil {
-		log.WithContext(ctx).WithField("collection_act_txid", string(task.Ticket.CollectionTxID)).
+	if task.Ticket.CollectionTxID != "" {
+		log.WithContext(ctx).WithField("collection_act_txid", task.Ticket.CollectionTxID).
 			Info("collection_txid has been received in the sense ticket")
 	}
 

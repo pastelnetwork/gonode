@@ -163,8 +163,8 @@ func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 			return nil
 		}
 
-		if task.Ticket.CollectionTxID != nil {
-			log.WithContext(ctx).WithField("collection_act_txid", string(task.Ticket.CollectionTxID)).
+		if task.Ticket.CollectionTxID != "" {
+			log.WithContext(ctx).WithField("collection_act_txid", task.Ticket.CollectionTxID).
 				Info("collection_txid has been received in the nft ticket")
 		}
 

@@ -2,7 +2,6 @@ package nftregister
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -64,7 +63,7 @@ type NftRegistrationTask struct {
 	serializedTicket      []byte
 
 	regNFTTxid     string
-	collectionTxID []byte
+	collectionTxID string
 	taskType       string
 
 	// only set to true for unit tests
@@ -465,12 +464,7 @@ func (task *NftRegistrationTask) IsValidForCollection(ctx context.Context) error
 		return errors.Errorf("block height exceeds than collection final allowed block height")
 	}
 
-	collectionTxID, err := json.Marshal(task.Request.CollectionTxID)
-	if err != nil {
-		return errors.Errorf("error converting collection tx-id to bytes")
-	}
-
-	task.collectionTxID = collectionTxID
+	task.collectionTxID = task.Request.CollectionTxID
 
 	if task.Request.Green == nil {
 		task.Request.Green = &ticket.Green
@@ -692,7 +686,7 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) (err error) 
 		},
 	}
 
-	if task.collectionTxID != nil {
+	if task.collectionTxID != "" {
 		ticket.CollectionTxID = task.collectionTxID
 	}
 

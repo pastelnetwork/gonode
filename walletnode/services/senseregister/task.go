@@ -2,7 +2,6 @@ package senseregister
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"strconv"
 	"strings"
@@ -52,7 +51,7 @@ type SenseRegistrationTask struct {
 	serializedTicket []byte
 
 	regSenseTxid   string
-	collectionTxID []byte
+	collectionTxID string
 	taskType       string
 
 	// only set to true for unit tests
@@ -407,7 +406,7 @@ func (task *SenseRegistrationTask) createSenseTicket(_ context.Context) (err err
 		},
 	}
 
-	if task.collectionTxID != nil {
+	if task.collectionTxID != "" {
 		ticket.CollectionTxID = task.collectionTxID
 	}
 
@@ -568,12 +567,7 @@ func (task *SenseRegistrationTask) IsValidForCollection(ctx context.Context) err
 		return errors.Errorf("block height exceeds than collection final allowed block height")
 	}
 
-	collectionTxID, err := json.Marshal(task.Request.CollectionTxID)
-	if err != nil {
-		return errors.Errorf("error converting collection tx-id to bytes")
-	}
-
-	task.collectionTxID = collectionTxID
+	task.collectionTxID = task.Request.CollectionTxID
 
 	return nil
 }
