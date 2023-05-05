@@ -187,8 +187,8 @@ func (task *SenseRegistrationTask) validateSignedTicketFromWN(ctx context.Contex
 		return errors.Errorf("decode action ticket: %w", err)
 	}
 
-	if task.Ticket.CollectionTxID != nil {
-		log.WithContext(ctx).WithField("collection_act_txid", string(task.Ticket.CollectionTxID)).
+	if task.Ticket.CollectionTxID != "" {
+		log.WithContext(ctx).WithField("collection_act_txid", task.Ticket.CollectionTxID).
 			Info("collection_txid has been received in the sense ticket")
 	}
 
@@ -346,12 +346,13 @@ func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, 
 
 	req := pastel.RegisterActionRequest{
 		Ticket: &pastel.ActionTicket{
-			Version:       task.Ticket.Version,
-			Caller:        task.Ticket.Caller,
-			BlockNum:      task.Ticket.BlockNum,
-			BlockHash:     task.Ticket.BlockHash,
-			ActionType:    task.Ticket.ActionType,
-			APITicketData: task.Ticket.APITicketData,
+			Version:        task.Ticket.Version,
+			Caller:         task.Ticket.Caller,
+			BlockNum:       task.Ticket.BlockNum,
+			BlockHash:      task.Ticket.BlockHash,
+			ActionType:     task.Ticket.ActionType,
+			APITicketData:  task.Ticket.APITicketData,
+			CollectionTxID: task.Ticket.CollectionTxID,
 		},
 		Signatures: &pastel.ActionTicketSignatures{
 			Principal: map[string]string{

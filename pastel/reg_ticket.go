@@ -53,7 +53,7 @@ type NFTTicket struct {
 	Copies         int       `json:"copies"`
 	Royalty        float64   `json:"royalty"`
 	Green          bool      `json:"green"`
-	CollectionTxID []byte    `json:"collection_txid,omitempty"`
+	CollectionTxID string    `json:"collection_txid,omitempty"`
 	AppTicket      string    `json:"app_ticket"`
 	AppTicketData  AppTicket `json:"-"`
 }
