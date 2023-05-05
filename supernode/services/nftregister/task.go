@@ -378,14 +378,15 @@ func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error
 
 	req := pastel.RegisterNFTRequest{
 		Ticket: &pastel.NFTTicket{
-			Version:       task.Ticket.Version,
-			Author:        task.Ticket.Author,
-			BlockNum:      task.Ticket.BlockNum,
-			BlockHash:     task.Ticket.BlockHash,
-			Copies:        task.Ticket.Copies,
-			Royalty:       task.Ticket.Royalty,
-			Green:         task.Ticket.Green,
-			AppTicketData: task.Ticket.AppTicketData,
+			Version:        task.Ticket.Version,
+			Author:         task.Ticket.Author,
+			BlockNum:       task.Ticket.BlockNum,
+			BlockHash:      task.Ticket.BlockHash,
+			Copies:         task.Ticket.Copies,
+			Royalty:        task.Ticket.Royalty,
+			Green:          task.Ticket.Green,
+			AppTicketData:  task.Ticket.AppTicketData,
+			CollectionTxID: task.Ticket.CollectionTxID,
 		},
 		Signatures: &pastel.RegTicketSignatures{
 			Creator: map[string]string{

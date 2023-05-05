@@ -674,7 +674,7 @@ func (client *client) RegisterCollectionTicket(ctx context.Context, req Register
 	log.WithContext(ctx).WithField("ticket", ticketBlob).WithField("signatures", string(signatures)).WithField("pastelid", req.Mn1PastelID).WithField("label", req.Label).WithField("fee", req.Fee).Info("RegisterCollectionTicket Request")
 	// command : tickets register action "ticket" "{signatures}" "pastelid" "passphrase" "label" "fee"
 	if err := client.callFor(ctx, &res, "tickets", params...); err != nil {
-		return "", errors.Errorf("failed to call register NFT ticket: %w", err)
+		return "", errors.Errorf("failed to call register collection ticket: %w", err)
 	}
 
 	return res.TxID, nil
@@ -695,7 +695,7 @@ func (client *client) ActivateCollectionTicket(ctx context.Context, request Acti
 	params = append(params, request.Passphrase)
 
 	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
-		return "", errors.Errorf("failed to call activate action ticket: %w", err)
+		return "", errors.Errorf("failed to call activate collection ticket: %w", err)
 	}
 	return txID.TxID, nil
 }
