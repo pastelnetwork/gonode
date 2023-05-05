@@ -570,7 +570,7 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 				return
 			}
 
-			responseMessages = append(responseMessages, *res)
+			responseMessages = task.appendResponses(responseMessages, res)
 			log.WithContext(ctx).WithField("challenge_id", res.ChallengeId).
 				Info("response has been received from verifying node")
 		}()
@@ -594,6 +594,14 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 	}
 
 	return nil
+}
+
+func (task *SHTask) appendResponses(responseMessages []pb.SelfHealingData, message *pb.SelfHealingData) []pb.SelfHealingData {
+	task.responseMessageMu.Lock()
+	defer task.responseMessageMu.Unlock()
+	responseMessages = append(responseMessages, *message)
+
+	return responseMessages
 }
 
 // DownloadDDAndFingerprints gets dd and fp file from ticket based on id and returns the file.

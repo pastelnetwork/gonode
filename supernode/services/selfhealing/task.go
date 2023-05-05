@@ -11,6 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
+	"sync"
 )
 
 const (
@@ -26,6 +27,9 @@ type SHTask struct {
 	RaptorQSymbols []byte
 	IDFiles        [][]byte
 	SNsSignatures  [][]byte
+
+	//response message mutex to avoid race conditions
+	responseMessageMu sync.Mutex
 }
 
 // Run : RunHelper's cleanup function is currently nil as WIP will determine what needs to be cleaned.
