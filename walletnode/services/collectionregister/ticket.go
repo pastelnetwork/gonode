@@ -12,7 +12,7 @@ func FromCollectionRegistrationPayload(payload *collection.RegisterCollectionPay
 		ItemType:                                payload.ItemType,
 		ListOfPastelIDsOfAuthorizedContributors: payload.ListOfPastelidsOfAuthorizedContributors,
 		MaxCollectionEntries:                    payload.MaxCollectionEntries,
-		CollectionFinalAllowedBlockHeight:       payload.CollectionFinalAllowedBlockHeight,
+		NoOfDaysToFinalizeCollection:            payload.NoOfDaysToFinalizeCollection,
 		AppPastelID:                             payload.AppPastelID,
 		Green:                                   payload.Green,
 		MaxPermittedOpenNSFWScore:               payload.MaxPermittedOpenNsfwScore,

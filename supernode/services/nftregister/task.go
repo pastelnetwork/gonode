@@ -163,6 +163,11 @@ func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 			return nil
 		}
 
+		if task.Ticket.CollectionTxID != nil {
+			log.WithContext(ctx).WithField("collection_act_txid", string(task.Ticket.CollectionTxID)).
+				Info("collection_txid has been received in the nft ticket")
+		}
+
 		verified, err := task.PastelClient.Verify(ctx, ticket, string(creatorSignature), task.Ticket.Author, pastel.SignAlgorithmED448)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("verify ticket signature")

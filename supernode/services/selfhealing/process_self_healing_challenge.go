@@ -428,6 +428,7 @@ func (task *SHTask) senseCheckingProcess(ctx context.Context, ddFPIDs []string) 
 	for _, DDFPIdFile := range availableDDFPFiles {
 		bytes, err := json.Marshal(DDFPIdFile)
 		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to marshal DDFPIdFile")
 			continue
 		}
 

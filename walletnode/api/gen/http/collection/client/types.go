@@ -24,8 +24,8 @@ type RegisterCollectionRequestBody struct {
 	ListOfPastelidsOfAuthorizedContributors []string `form:"list_of_pastelids_of_authorized_contributors" json:"list_of_pastelids_of_authorized_contributors" xml:"list_of_pastelids_of_authorized_contributors"`
 	// max no of entries in the collection
 	MaxCollectionEntries int `form:"max_collection_entries" json:"max_collection_entries" xml:"max_collection_entries"`
-	// final allowed block height in days
-	CollectionFinalAllowedBlockHeight int `form:"collection_final_allowed_block_height" json:"collection_final_allowed_block_height" xml:"collection_final_allowed_block_height"`
+	// no of days to finalize collection
+	NoOfDaysToFinalizeCollection int `form:"no_of_days_to_finalize_collection" json:"no_of_days_to_finalize_collection" xml:"no_of_days_to_finalize_collection"`
 	// item copy count in the collection
 	CollectionItemCopyCount int `form:"collection_item_copy_count" json:"collection_item_copy_count" xml:"collection_item_copy_count"`
 	// royalty fee
@@ -216,14 +216,14 @@ type DetailsResponse struct {
 // payload of the "registerCollection" endpoint of the "collection" service.
 func NewRegisterCollectionRequestBody(p *collection.RegisterCollectionPayload) *RegisterCollectionRequestBody {
 	body := &RegisterCollectionRequestBody{
-		CollectionName:                    p.CollectionName,
-		ItemType:                          p.ItemType,
-		MaxCollectionEntries:              p.MaxCollectionEntries,
-		CollectionFinalAllowedBlockHeight: p.CollectionFinalAllowedBlockHeight,
-		CollectionItemCopyCount:           p.CollectionItemCopyCount,
-		Royalty:                           p.Royalty,
-		Green:                             p.Green,
-		MaxPermittedOpenNsfwScore:         p.MaxPermittedOpenNsfwScore,
+		CollectionName:               p.CollectionName,
+		ItemType:                     p.ItemType,
+		MaxCollectionEntries:         p.MaxCollectionEntries,
+		NoOfDaysToFinalizeCollection: p.NoOfDaysToFinalizeCollection,
+		CollectionItemCopyCount:      p.CollectionItemCopyCount,
+		Royalty:                      p.Royalty,
+		Green:                        p.Green,
+		MaxPermittedOpenNsfwScore:    p.MaxPermittedOpenNsfwScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: p.MinimumSimilarityScoreToFirstEntryInCollection,
 		AppPastelID: p.AppPastelID,
 	}
@@ -235,8 +235,8 @@ func NewRegisterCollectionRequestBody(p *collection.RegisterCollectionPayload) *
 	}
 	{
 		var zero int
-		if body.CollectionFinalAllowedBlockHeight == zero {
-			body.CollectionFinalAllowedBlockHeight = 7
+		if body.NoOfDaysToFinalizeCollection == zero {
+			body.NoOfDaysToFinalizeCollection = 7
 		}
 	}
 	{

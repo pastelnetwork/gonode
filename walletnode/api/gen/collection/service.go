@@ -82,8 +82,8 @@ type RegisterCollectionPayload struct {
 	ListOfPastelidsOfAuthorizedContributors []string
 	// max no of entries in the collection
 	MaxCollectionEntries int
-	// final allowed block height in days
-	CollectionFinalAllowedBlockHeight int
+	// no of days to finalize collection
+	NoOfDaysToFinalizeCollection int
 	// item copy count in the collection
 	CollectionItemCopyCount int
 	// royalty fee

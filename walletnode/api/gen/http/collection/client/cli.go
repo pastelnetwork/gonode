@@ -24,10 +24,13 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 	{
 		err = json.Unmarshal([]byte(collectionRegisterCollectionBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"collection_final_allowed_block_height\": 5,\n      \"collection_item_copy_count\": 10,\n      \"collection_name\": \"galaxies\",\n      \"green\": false,\n      \"item_type\": \"sense\",\n      \"list_of_pastelids_of_authorized_contributors\": [\n         \"apple\",\n         \"banana\",\n         \"orange\"\n      ],\n      \"max_collection_entries\": 5000,\n      \"max_permitted_open_nsfw_score\": 0.5,\n      \"minimum_similarity_score_to_first_entry_in_collection\": 0.5,\n      \"royalty\": 2.32\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"collection_item_copy_count\": 10,\n      \"collection_name\": \"galaxies\",\n      \"green\": false,\n      \"item_type\": \"sense\",\n      \"list_of_pastelids_of_authorized_contributors\": [\n         \"apple\",\n         \"banana\",\n         \"orange\"\n      ],\n      \"max_collection_entries\": 5000,\n      \"max_permitted_open_nsfw_score\": 0.5,\n      \"minimum_similarity_score_to_first_entry_in_collection\": 0.5,\n      \"no_of_days_to_finalize_collection\": 5,\n      \"royalty\": 2.32\n   }'")
 		}
 		if body.ListOfPastelidsOfAuthorizedContributors == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("list_of_pastelids_of_authorized_contributors", "body"))
+		}
+		if !(body.ItemType == "sense" || body.ItemType == "nft") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.item_type", body.ItemType, []interface{}{"sense", "nft"}))
 		}
 		if body.MaxCollectionEntries < 1 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.max_collection_entries", body.MaxCollectionEntries, 1, true))
@@ -35,11 +38,11 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 		if body.MaxCollectionEntries > 10000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.max_collection_entries", body.MaxCollectionEntries, 10000, false))
 		}
-		if body.CollectionFinalAllowedBlockHeight < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_final_allowed_block_height", body.CollectionFinalAllowedBlockHeight, 1, true))
+		if body.NoOfDaysToFinalizeCollection < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.no_of_days_to_finalize_collection", body.NoOfDaysToFinalizeCollection, 1, true))
 		}
-		if body.CollectionFinalAllowedBlockHeight > 7 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_final_allowed_block_height", body.CollectionFinalAllowedBlockHeight, 7, false))
+		if body.NoOfDaysToFinalizeCollection > 7 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.no_of_days_to_finalize_collection", body.NoOfDaysToFinalizeCollection, 7, false))
 		}
 		if body.CollectionItemCopyCount < 1 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_item_copy_count", body.CollectionItemCopyCount, 1, true))
@@ -83,14 +86,14 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 		}
 	}
 	v := &collection.RegisterCollectionPayload{
-		CollectionName:                    body.CollectionName,
-		ItemType:                          body.ItemType,
-		MaxCollectionEntries:              body.MaxCollectionEntries,
-		CollectionFinalAllowedBlockHeight: body.CollectionFinalAllowedBlockHeight,
-		CollectionItemCopyCount:           body.CollectionItemCopyCount,
-		Royalty:                           body.Royalty,
-		Green:                             body.Green,
-		MaxPermittedOpenNsfwScore:         body.MaxPermittedOpenNsfwScore,
+		CollectionName:               body.CollectionName,
+		ItemType:                     body.ItemType,
+		MaxCollectionEntries:         body.MaxCollectionEntries,
+		NoOfDaysToFinalizeCollection: body.NoOfDaysToFinalizeCollection,
+		CollectionItemCopyCount:      body.CollectionItemCopyCount,
+		Royalty:                      body.Royalty,
+		Green:                        body.Green,
+		MaxPermittedOpenNsfwScore:    body.MaxPermittedOpenNsfwScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: body.MinimumSimilarityScoreToFirstEntryInCollection,
 		AppPastelID: body.AppPastelID,
 	}
@@ -102,8 +105,8 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 	}
 	{
 		var zero int
-		if v.CollectionFinalAllowedBlockHeight == zero {
-			v.CollectionFinalAllowedBlockHeight = 7
+		if v.NoOfDaysToFinalizeCollection == zero {
+			v.NoOfDaysToFinalizeCollection = 7
 		}
 	}
 	{

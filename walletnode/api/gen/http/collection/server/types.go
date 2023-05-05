@@ -26,8 +26,8 @@ type RegisterCollectionRequestBody struct {
 	ListOfPastelidsOfAuthorizedContributors []string `form:"list_of_pastelids_of_authorized_contributors,omitempty" json:"list_of_pastelids_of_authorized_contributors,omitempty" xml:"list_of_pastelids_of_authorized_contributors,omitempty"`
 	// max no of entries in the collection
 	MaxCollectionEntries *int `form:"max_collection_entries,omitempty" json:"max_collection_entries,omitempty" xml:"max_collection_entries,omitempty"`
-	// final allowed block height in days
-	CollectionFinalAllowedBlockHeight *int `form:"collection_final_allowed_block_height,omitempty" json:"collection_final_allowed_block_height,omitempty" xml:"collection_final_allowed_block_height,omitempty"`
+	// no of days to finalize collection
+	NoOfDaysToFinalizeCollection *int `form:"no_of_days_to_finalize_collection,omitempty" json:"no_of_days_to_finalize_collection,omitempty" xml:"no_of_days_to_finalize_collection,omitempty"`
 	// item copy count in the collection
 	CollectionItemCopyCount *int `form:"collection_item_copy_count,omitempty" json:"collection_item_copy_count,omitempty" xml:"collection_item_copy_count,omitempty"`
 	// royalty fee
@@ -356,8 +356,8 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 		MinimumSimilarityScoreToFirstEntryInCollection: *body.MinimumSimilarityScoreToFirstEntryInCollection,
 		AppPastelID: *body.AppPastelID,
 	}
-	if body.CollectionFinalAllowedBlockHeight != nil {
-		v.CollectionFinalAllowedBlockHeight = *body.CollectionFinalAllowedBlockHeight
+	if body.NoOfDaysToFinalizeCollection != nil {
+		v.NoOfDaysToFinalizeCollection = *body.NoOfDaysToFinalizeCollection
 	}
 	if body.CollectionItemCopyCount != nil {
 		v.CollectionItemCopyCount = *body.CollectionItemCopyCount
@@ -372,8 +372,8 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 	for i, val := range body.ListOfPastelidsOfAuthorizedContributors {
 		v.ListOfPastelidsOfAuthorizedContributors[i] = val
 	}
-	if body.CollectionFinalAllowedBlockHeight == nil {
-		v.CollectionFinalAllowedBlockHeight = 7
+	if body.NoOfDaysToFinalizeCollection == nil {
+		v.NoOfDaysToFinalizeCollection = 7
 	}
 	if body.CollectionItemCopyCount == nil {
 		v.CollectionItemCopyCount = 1
@@ -431,6 +431,11 @@ func ValidateRegisterCollectionRequestBody(body *RegisterCollectionRequestBody) 
 	if body.AppPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("app_pastelid", "body"))
 	}
+	if body.ItemType != nil {
+		if !(*body.ItemType == "sense" || *body.ItemType == "nft") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.item_type", *body.ItemType, []interface{}{"sense", "nft"}))
+		}
+	}
 	if body.MaxCollectionEntries != nil {
 		if *body.MaxCollectionEntries < 1 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.max_collection_entries", *body.MaxCollectionEntries, 1, true))
@@ -441,14 +446,14 @@ func ValidateRegisterCollectionRequestBody(body *RegisterCollectionRequestBody) 
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.max_collection_entries", *body.MaxCollectionEntries, 10000, false))
 		}
 	}
-	if body.CollectionFinalAllowedBlockHeight != nil {
-		if *body.CollectionFinalAllowedBlockHeight < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_final_allowed_block_height", *body.CollectionFinalAllowedBlockHeight, 1, true))
+	if body.NoOfDaysToFinalizeCollection != nil {
+		if *body.NoOfDaysToFinalizeCollection < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.no_of_days_to_finalize_collection", *body.NoOfDaysToFinalizeCollection, 1, true))
 		}
 	}
-	if body.CollectionFinalAllowedBlockHeight != nil {
-		if *body.CollectionFinalAllowedBlockHeight > 7 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.collection_final_allowed_block_height", *body.CollectionFinalAllowedBlockHeight, 7, false))
+	if body.NoOfDaysToFinalizeCollection != nil {
+		if *body.NoOfDaysToFinalizeCollection > 7 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.no_of_days_to_finalize_collection", *body.NoOfDaysToFinalizeCollection, 7, false))
 		}
 	}
 	if body.CollectionItemCopyCount != nil {

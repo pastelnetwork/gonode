@@ -64,12 +64,12 @@ func New(
 	}
 	return &Server{
 		Mounts: []*MountPoint{
-			{"RegisterCollection", "GET", "/openapi/collection/register"},
-			{"RegisterTaskState", "GET", "/openapi/collection/start/{taskId}/state"},
-			{"GetTaskHistory", "GET", "/openapi/collection/{taskId}/history"},
-			{"CORS", "OPTIONS", "/openapi/collection/register"},
-			{"CORS", "OPTIONS", "/openapi/collection/start/{taskId}/state"},
-			{"CORS", "OPTIONS", "/openapi/collection/{taskId}/history"},
+			{"RegisterCollection", "GET", "/collection/register"},
+			{"RegisterTaskState", "GET", "/collection/{taskId}/state"},
+			{"GetTaskHistory", "GET", "/collection/{taskId}/history"},
+			{"CORS", "OPTIONS", "/collection/register"},
+			{"CORS", "OPTIONS", "/collection/{taskId}/state"},
+			{"CORS", "OPTIONS", "/collection/{taskId}/history"},
 		},
 		RegisterCollection: NewRegisterCollectionHandler(e.RegisterCollection, mux, decoder, encoder, errhandler, formatter),
 		RegisterTaskState:  NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
@@ -111,7 +111,7 @@ func MountRegisterCollectionHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/openapi/collection/register", f)
+	mux.Handle("GET", "/collection/register", f)
 }
 
 // NewRegisterCollectionHandler creates a HTTP handler which loads the HTTP
@@ -162,7 +162,7 @@ func MountRegisterTaskStateHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/openapi/collection/start/{taskId}/state", f)
+	mux.Handle("GET", "/collection/{taskId}/state", f)
 }
 
 // NewRegisterTaskStateHandler creates a HTTP handler which loads the HTTP
@@ -228,7 +228,7 @@ func MountGetTaskHistoryHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/openapi/collection/{taskId}/history", f)
+	mux.Handle("GET", "/collection/{taskId}/history", f)
 }
 
 // NewGetTaskHistoryHandler creates a HTTP handler which loads the HTTP request
@@ -274,9 +274,9 @@ func NewGetTaskHistoryHandler(
 // service collection.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	h = HandleCollectionOrigin(h)
-	mux.Handle("OPTIONS", "/openapi/collection/register", h.ServeHTTP)
-	mux.Handle("OPTIONS", "/openapi/collection/start/{taskId}/state", h.ServeHTTP)
-	mux.Handle("OPTIONS", "/openapi/collection/{taskId}/history", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/collection/register", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/collection/{taskId}/state", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/collection/{taskId}/history", h.ServeHTTP)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

@@ -185,7 +185,7 @@ func (task *CollectionRegistrationTask) createCollectionTicket(_ context.Context
 		ListOfPastelIDsOfAuthorizedContributors: task.Request.ListOfPastelIDsOfAuthorizedContributors,
 		MaxCollectionEntries:                    uint(task.Request.MaxCollectionEntries),
 		CollectionItemCopyCount:                 uint(task.Request.CollectionItemCopyCount),
-		CollectionFinalAllowedBlockHeight:       task.creatorBlockHeight + uint(task.Request.CollectionFinalAllowedBlockHeight*CollectionFinalAllowedBlockHeightDaysConversion),
+		CollectionFinalAllowedBlockHeight:       task.creatorBlockHeight + uint(task.Request.NoOfDaysToFinalizeCollection*CollectionFinalAllowedBlockHeightDaysConversion),
 		Royalty:                                 task.Request.Royalty / 100,
 		Green:                                   task.Request.Green,
 		AppTicketData: pastel.AppTicket{

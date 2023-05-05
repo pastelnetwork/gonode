@@ -12,6 +12,118 @@ produces:
     - application/xml
     - application/gob
 paths:
+    /collection/{taskId}/history:
+        get:
+            tags:
+                - collection
+            summary: Get history of states as a json string with a list of state objects.
+            description: Gets the history of the task's states.
+            operationId: collection#getTaskHistory
+            parameters:
+                - name: taskId
+                  in: path
+                  description: Task ID of the registration process
+                  required: true
+                  type: string
+                  maxLength: 8
+                  minLength: 8
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        type: array
+                        items:
+                            $ref: '#/definitions/TaskHistoryResponse'
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/CollectionGetTaskHistoryNotFoundResponseBody'
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/CollectionGetTaskHistoryInternalServerErrorResponseBody'
+            schemes:
+                - http
+    /collection/{taskId}/state:
+        get:
+            tags:
+                - collection
+            summary: Streams state by task ID
+            description: Streams the state of the registration process.
+            operationId: collection#registerTaskState
+            parameters:
+                - name: taskId
+                  in: path
+                  description: Task ID of the registration process
+                  required: true
+                  type: string
+                  maxLength: 8
+                  minLength: 8
+            responses:
+                "101":
+                    description: Switching Protocols response.
+                    schema:
+                        $ref: '#/definitions/CollectionRegisterTaskStateResponseBody'
+                        required:
+                            - date
+                            - status
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/CollectionRegisterTaskStateNotFoundResponseBody'
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/CollectionRegisterTaskStateInternalServerErrorResponseBody'
+            schemes:
+                - ws
+    /collection/register:
+        get:
+            tags:
+                - collection
+            summary: Streams state by task ID
+            description: Streams the state of the registration process.
+            operationId: collection#registerCollection
+            parameters:
+                - name: Authorization
+                  in: header
+                  description: Passphrase of the owner's PastelID
+                  required: false
+                  type: string
+                - name: RegisterCollectionRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/CollectionRegisterCollectionRequestBody'
+                    required:
+                        - collection_name
+                        - item_type
+                        - list_of_pastelids_of_authorized_contributors
+                        - max_collection_entries
+                        - max_permitted_open_nsfw_score
+                        - minimum_similarity_score_to_first_entry_in_collection
+                        - app_pastelid
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/CollectionRegisterCollectionResponseBody'
+                "400":
+                    description: Bad Request response.
+                    schema:
+                        $ref: '#/definitions/CollectionRegisterCollectionBadRequestResponseBody'
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/CollectionRegisterCollectionNotFoundResponseBody'
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/CollectionRegisterCollectionInternalServerErrorResponseBody'
+            schemes:
+                - http
+            security:
+                - api_key_header_Authorization: []
     /nfts:
         get:
             tags:
@@ -689,118 +801,6 @@ paths:
                         $ref: '#/definitions/CascadeUploadAssetInternalServerErrorResponseBody'
             schemes:
                 - http
-    /openapi/collection/{taskId}/history:
-        get:
-            tags:
-                - collection
-            summary: Get history of states as a json string with a list of state objects.
-            description: Gets the history of the task's states.
-            operationId: collection#getTaskHistory
-            parameters:
-                - name: taskId
-                  in: path
-                  description: Task ID of the registration process
-                  required: true
-                  type: string
-                  maxLength: 8
-                  minLength: 8
-            responses:
-                "200":
-                    description: OK response.
-                    schema:
-                        type: array
-                        items:
-                            $ref: '#/definitions/TaskHistoryResponse'
-                "404":
-                    description: Not Found response.
-                    schema:
-                        $ref: '#/definitions/CollectionGetTaskHistoryNotFoundResponseBody'
-                "500":
-                    description: Internal Server Error response.
-                    schema:
-                        $ref: '#/definitions/CollectionGetTaskHistoryInternalServerErrorResponseBody'
-            schemes:
-                - http
-    /openapi/collection/register:
-        get:
-            tags:
-                - collection
-            summary: Streams state by task ID
-            description: Streams the state of the registration process.
-            operationId: collection#registerCollection
-            parameters:
-                - name: Authorization
-                  in: header
-                  description: Passphrase of the owner's PastelID
-                  required: false
-                  type: string
-                - name: RegisterCollectionRequestBody
-                  in: body
-                  required: true
-                  schema:
-                    $ref: '#/definitions/CollectionRegisterCollectionRequestBody'
-                    required:
-                        - collection_name
-                        - item_type
-                        - list_of_pastelids_of_authorized_contributors
-                        - max_collection_entries
-                        - max_permitted_open_nsfw_score
-                        - minimum_similarity_score_to_first_entry_in_collection
-                        - app_pastelid
-            responses:
-                "200":
-                    description: OK response.
-                    schema:
-                        $ref: '#/definitions/CollectionRegisterCollectionResponseBody'
-                "400":
-                    description: Bad Request response.
-                    schema:
-                        $ref: '#/definitions/CollectionRegisterCollectionBadRequestResponseBody'
-                "404":
-                    description: Not Found response.
-                    schema:
-                        $ref: '#/definitions/CollectionRegisterCollectionNotFoundResponseBody'
-                "500":
-                    description: Internal Server Error response.
-                    schema:
-                        $ref: '#/definitions/CollectionRegisterCollectionInternalServerErrorResponseBody'
-            schemes:
-                - http
-            security:
-                - api_key_header_Authorization: []
-    /openapi/collection/start/{taskId}/state:
-        get:
-            tags:
-                - collection
-            summary: Streams state by task ID
-            description: Streams the state of the registration process.
-            operationId: collection#registerTaskState
-            parameters:
-                - name: taskId
-                  in: path
-                  description: Task ID of the registration process
-                  required: true
-                  type: string
-                  maxLength: 8
-                  minLength: 8
-            responses:
-                "101":
-                    description: Switching Protocols response.
-                    schema:
-                        $ref: '#/definitions/CollectionRegisterTaskStateResponseBody'
-                        required:
-                            - date
-                            - status
-                "404":
-                    description: Not Found response.
-                    schema:
-                        $ref: '#/definitions/CollectionRegisterTaskStateNotFoundResponseBody'
-                "500":
-                    description: Internal Server Error response.
-                    schema:
-                        $ref: '#/definitions/CollectionRegisterTaskStateInternalServerErrorResponseBody'
-            schemes:
-                - ws
     /openapi/sense/{taskId}/history:
         get:
             tags:
@@ -2033,13 +2033,6 @@ definitions:
                 pattern: ^[a-zA-Z0-9]+$
                 minLength: 86
                 maxLength: 86
-            collection_final_allowed_block_height:
-                type: integer
-                description: final allowed block height in days
-                default: 7
-                example: 5
-                minimum: 1
-                maximum: 7
             collection_item_copy_count:
                 type: integer
                 description: item copy count in the collection
@@ -2060,6 +2053,9 @@ definitions:
                 type: string
                 description: type of items, store by collection
                 example: sense
+                enum:
+                    - sense
+                    - nft
             list_of_pastelids_of_authorized_contributors:
                 type: array
                 items:
@@ -2088,6 +2084,13 @@ definitions:
                 example: 0.5
                 minimum: 0
                 maximum: 1
+            no_of_days_to_finalize_collection:
+                type: integer
+                description: no of days to finalize collection
+                default: 7
+                example: 5
+                minimum: 1
+                maximum: 7
             royalty:
                 type: number
                 description: royalty fee
@@ -2097,7 +2100,6 @@ definitions:
                 maximum: 20
         example:
             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-            collection_final_allowed_block_height: 5
             collection_item_copy_count: 10
             collection_name: galaxies
             green: false
@@ -2109,6 +2111,7 @@ definitions:
             max_collection_entries: 5000
             max_permitted_open_nsfw_score: 0.5
             minimum_similarity_score_to_first_entry_in_collection: 0.5
+            no_of_days_to_finalize_collection: 5
             royalty: 2.32
         required:
             - collection_name
