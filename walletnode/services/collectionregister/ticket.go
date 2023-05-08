@@ -18,6 +18,7 @@ func FromCollectionRegistrationPayload(payload *collection.RegisterCollectionPay
 		MaxPermittedOpenNSFWScore:               payload.MaxPermittedOpenNsfwScore,
 		Royalty:                                 payload.Royalty,
 		CollectionItemCopyCount:                 payload.CollectionItemCopyCount,
+		SpendableAddress:                        payload.SpendableAddress,
 		MinimumSimilarityScoreToFirstEntryInCollection: payload.MinimumSimilarityScoreToFirstEntryInCollection,
 	}
 

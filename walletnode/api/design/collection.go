@@ -163,6 +163,15 @@ var RegisterCollectionPayload = Type("RegisterCollectionPayload", func() {
 	})
 	Required("app_pastelid")
 
+	Attribute("spendable_address", String, func() {
+		Description("Spendable address")
+		MinLength(35)
+		MaxLength(35)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j")
+	})
+	Required("spendable_address")
+
 	APIKey("api_key", "key", String, func() {
 		Description("Passphrase of the owner's PastelID")
 		Example("Basic abcdef12345")

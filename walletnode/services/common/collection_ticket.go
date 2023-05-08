@@ -32,6 +32,8 @@ type CollectionRegistrationRequest struct {
 	MaxPermittedOpenNSFWScore float64 `json:"max_permitted_open_nsfw_score"`
 	//MaxPermittedOpenNSFWScore is the MinimumSimilarityScoreToFirstEntryInCollection allowed for collection items
 	MinimumSimilarityScoreToFirstEntryInCollection float64 `json:"minimum_similarity_score_to_first_entry_in_collection"`
+	//SpendableAddress is the SpendableAddress for 10% burning of reg fee
+	SpendableAddress string `json:"spendable_address"`
 }
 
 // CollectionVerifier represents an interface with the func that checks if nft/sense if valid to enter in collection

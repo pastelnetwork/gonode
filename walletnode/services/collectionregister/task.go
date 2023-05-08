@@ -2,6 +2,7 @@ package collectionregister
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -40,6 +41,7 @@ type CollectionRegistrationTask struct {
 	collectionTicket *pastel.CollectionTicket
 	serializedTicket []byte
 	collectionTXID   string
+	burnTxID         string
 
 	// only set to true for unit tests
 	skipPrimaryNodeTxidVerify bool
@@ -93,6 +95,15 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("sign collection ticket: %w", err)
 	}
 	log.WithContext(ctx).Info("signed collection reg ticket")
+
+	task.UpdateStatus(common.StatusPreburntRegistrationFee)
+	if err := task.preBurnRegistrationFee(ctx); err != nil {
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		log.WithContext(ctx).WithError(err).Error("error pre-burning collectionreg fee")
+
+		return err
+	}
+	log.WithContext(ctx).Info("pre-burned 10% of collection reg fee")
 
 	log.WithContext(ctx).Info("upload signed collection reg ticket to SNs")
 	if err := task.uploadSignedTicket(ctx); err != nil {
@@ -213,6 +224,31 @@ func (task *CollectionRegistrationTask) signTicket(ctx context.Context) error {
 	return nil
 }
 
+func (task *CollectionRegistrationTask) preBurnRegistrationFee(ctx context.Context) (err error) {
+	address := task.Request.SpendableAddress
+	balance, err := task.service.pastelHandler.PastelClient.GetBalance(ctx, address)
+	if err != nil {
+		task.UpdateStatus(common.StatusErrorCheckBalance)
+		return errors.Errorf("get balance of address(%s): %w", address, err)
+	}
+
+	if balance < collectionRegFee {
+		task.UpdateStatus(common.StatusErrorInsufficientBalance)
+		return errors.Errorf("not enough PSL - balance(%f) < registration-fee(%d)", balance, collectionRegFee)
+	}
+
+	task.burnTxID, err = task.service.pastelHandler.BurnSomeCoins(ctx, address,
+		collectionRegFee, 10)
+	if err != nil {
+		task.UpdateStatus(common.StatusErrorPreburnRegFeeGetTicketID)
+		return fmt.Errorf("burn some coins: %w", err)
+	}
+
+	task.StatusLog[common.FieldBurnTxnID] = task.burnTxID
+
+	return nil
+}
+
 // uploadSignedTicket uploads Collection ticket  and its signature to super nodes
 func (task *CollectionRegistrationTask) uploadSignedTicket(ctx context.Context) error {
 	if task.serializedTicket == nil {
@@ -232,7 +268,7 @@ func (task *CollectionRegistrationTask) uploadSignedTicket(ctx context.Context) 
 
 		someNode := someNode
 		group.Go(func() error {
-			ticketTxID, err := CollectionRegNode.SendTicketForSignature(gctx, task.serializedTicket, task.creatorSignature)
+			ticketTxID, err := CollectionRegNode.SendTicketForSignature(gctx, task.serializedTicket, task.creatorSignature, task.burnTxID)
 			if err != nil {
 				log.WithContext(gctx).WithError(err).WithField("node", CollectionRegNode).Error("send signed ticket failed")
 				return err

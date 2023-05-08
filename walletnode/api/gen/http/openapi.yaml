@@ -103,6 +103,7 @@ paths:
                         - max_permitted_open_nsfw_score
                         - minimum_similarity_score_to_first_entry_in_collection
                         - app_pastelid
+                        - spendable_address
             responses:
                 "200":
                     description: OK response.
@@ -2098,6 +2099,13 @@ definitions:
                 example: 2.32
                 minimum: 0
                 maximum: 20
+            spendable_address:
+                type: string
+                description: Spendable address
+                example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                pattern: ^[a-zA-Z0-9]+$
+                minLength: 35
+                maxLength: 35
         example:
             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             collection_item_copy_count: 10
@@ -2113,6 +2121,7 @@ definitions:
             minimum_similarity_score_to_first_entry_in_collection: 0.5
             no_of_days_to_finalize_collection: 5
             royalty: 2.32
+            spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         required:
             - collection_name
             - item_type
@@ -2121,6 +2130,7 @@ definitions:
             - max_permitted_open_nsfw_score
             - minimum_similarity_score_to_first_entry_in_collection
             - app_pastelid
+            - spendable_address
     CollectionRegisterCollectionResponseBody:
         title: 'Mediatype identifier: application/collection-registration; view=default'
         type: object

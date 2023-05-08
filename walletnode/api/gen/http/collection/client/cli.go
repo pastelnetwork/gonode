@@ -24,7 +24,7 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 	{
 		err = json.Unmarshal([]byte(collectionRegisterCollectionBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"collection_item_copy_count\": 10,\n      \"collection_name\": \"galaxies\",\n      \"green\": false,\n      \"item_type\": \"sense\",\n      \"list_of_pastelids_of_authorized_contributors\": [\n         \"apple\",\n         \"banana\",\n         \"orange\"\n      ],\n      \"max_collection_entries\": 5000,\n      \"max_permitted_open_nsfw_score\": 0.5,\n      \"minimum_similarity_score_to_first_entry_in_collection\": 0.5,\n      \"no_of_days_to_finalize_collection\": 5,\n      \"royalty\": 2.32\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"collection_item_copy_count\": 10,\n      \"collection_name\": \"galaxies\",\n      \"green\": false,\n      \"item_type\": \"sense\",\n      \"list_of_pastelids_of_authorized_contributors\": [\n         \"apple\",\n         \"banana\",\n         \"orange\"\n      ],\n      \"max_collection_entries\": 5000,\n      \"max_permitted_open_nsfw_score\": 0.5,\n      \"minimum_similarity_score_to_first_entry_in_collection\": 0.5,\n      \"no_of_days_to_finalize_collection\": 5,\n      \"royalty\": 2.32,\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\"\n   }'")
 		}
 		if body.ListOfPastelidsOfAuthorizedContributors == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("list_of_pastelids_of_authorized_contributors", "body"))
@@ -75,6 +75,13 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 		if utf8.RuneCountInString(body.AppPastelID) > 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.app_pastelid", body.AppPastelID, utf8.RuneCountInString(body.AppPastelID), 86, false))
 		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.spendable_address", body.SpendableAddress, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.SpendableAddress) < 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", body.SpendableAddress, utf8.RuneCountInString(body.SpendableAddress), 35, true))
+		}
+		if utf8.RuneCountInString(body.SpendableAddress) > 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", body.SpendableAddress, utf8.RuneCountInString(body.SpendableAddress), 35, false))
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +102,8 @@ func BuildRegisterCollectionPayload(collectionRegisterCollectionBody string, col
 		Green:                        body.Green,
 		MaxPermittedOpenNsfwScore:    body.MaxPermittedOpenNsfwScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: body.MinimumSimilarityScoreToFirstEntryInCollection,
-		AppPastelID: body.AppPastelID,
+		AppPastelID:      body.AppPastelID,
+		SpendableAddress: body.SpendableAddress,
 	}
 	if body.ListOfPastelidsOfAuthorizedContributors != nil {
 		v.ListOfPastelidsOfAuthorizedContributors = make([]string, len(body.ListOfPastelidsOfAuthorizedContributors))

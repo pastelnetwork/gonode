@@ -165,6 +165,10 @@ func (service *RegisterCollection) SendCollectionTicketForSignature(ctx context.
 		return nil, errors.Errorf("get task from metada %w", err)
 	}
 
+	if err := task.ValidatePreBurnTransaction(ctx, req.BurnTxid); err != nil {
+		return nil, errors.Errorf("error validating pre-burn-txid")
+	}
+
 	collectionRegTxID, err := task.ValidateAndRegister(ctx, req.CollectionTicket, req.CreatorSignature)
 	if err != nil {
 		return nil, errors.Errorf("validate & register: %w", err)

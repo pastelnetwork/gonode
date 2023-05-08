@@ -3,6 +3,8 @@ package collectionregister
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -28,6 +30,7 @@ type CollectionRegistrationTask struct {
 
 	creatorSignature []byte
 	registrationFee  int64
+	burnTxID         string
 }
 
 // Run starts the task
@@ -35,18 +38,42 @@ func (task *CollectionRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.removeArtifacts)
 }
 
+// ValidatePreBurnTransaction validates the pre-burn txid
+func (task *CollectionRegistrationTask) ValidatePreBurnTransaction(ctx context.Context, txid string) error {
+	var err error
+	log.WithContext(ctx).Debugf("pre-burn-txid: %s", txid)
+
+	if err = task.CalculateFee(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("calculate fee failed")
+		return errors.Errorf("calculate fee: %w", err)
+	}
+	log.WithContext(ctx).Info("collection reg fee has been computed")
+
+	<-task.NewAction(func(ctx context.Context) error {
+		task.burnTxID = txid
+
+		confirmationChn := task.WaitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations),
+			15*time.Second, true, float64(task.registrationFee), 10)
+
+		log.WithContext(ctx).Debug("waiting for confirmation")
+		if err = <-confirmationChn; err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("validate pre-burn transaction validation")
+			err = errors.Errorf("validate pre-burn transaction validation :%w", err)
+			return err
+		}
+		log.WithContext(ctx).Debug("confirmation done")
+		return nil
+	})
+
+	return err
+}
+
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
 func (task *CollectionRegistrationTask) ValidateAndRegister(ctx context.Context, ticket []byte, creatorSignature []byte) (string, error) {
 	var err error
 
+	log.WithContext(ctx).Info("validating collection registration")
 	task.creatorSignature = creatorSignature
-
-	if err := task.CalculateFee(); err != nil {
-		log.WithContext(ctx).WithError(err).Error("calculate fee failed")
-		return "", errors.Errorf("calculate fee: %w", err)
-	}
-	log.WithContext(ctx).Info("collection reg fee has been computed")
-
 	<-task.NewAction(func(ctx context.Context) error {
 		if err = task.validateSignedTicketFromWN(ctx, ticket, creatorSignature); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("validate signed ticket failure")

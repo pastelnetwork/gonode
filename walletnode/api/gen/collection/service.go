@@ -96,6 +96,8 @@ type RegisterCollectionPayload struct {
 	MinimumSimilarityScoreToFirstEntryInCollection float64
 	// App PastelID
 	AppPastelID string
+	// Spendable address
+	SpendableAddress string
 	// Passphrase of the owner's PastelID
 	Key *string
 }
