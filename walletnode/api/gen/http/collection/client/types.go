@@ -38,6 +38,8 @@ type RegisterCollectionRequestBody struct {
 	MinimumSimilarityScoreToFirstEntryInCollection float64 `form:"minimum_similarity_score_to_first_entry_in_collection" json:"minimum_similarity_score_to_first_entry_in_collection" xml:"minimum_similarity_score_to_first_entry_in_collection"`
 	// App PastelID
 	AppPastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
+	// Spendable address
+	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
 }
 
 // RegisterCollectionResponseBody is the type of the "collection" service
@@ -225,7 +227,8 @@ func NewRegisterCollectionRequestBody(p *collection.RegisterCollectionPayload) *
 		Green:                        p.Green,
 		MaxPermittedOpenNsfwScore:    p.MaxPermittedOpenNsfwScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: p.MinimumSimilarityScoreToFirstEntryInCollection,
-		AppPastelID: p.AppPastelID,
+		AppPastelID:      p.AppPastelID,
+		SpendableAddress: p.SpendableAddress,
 	}
 	if p.ListOfPastelidsOfAuthorizedContributors != nil {
 		body.ListOfPastelidsOfAuthorizedContributors = make([]string, len(p.ListOfPastelidsOfAuthorizedContributors))

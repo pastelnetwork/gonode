@@ -29,6 +29,7 @@ service RegisterCollection {
 message SendCollectionTicketForSignatureRequest {
   bytes collection_ticket = 1;
   bytes creator_signature = 2;
+  string burn_txid = 3;
 }
 
 message SendCollectionTicketForSignatureResponse {

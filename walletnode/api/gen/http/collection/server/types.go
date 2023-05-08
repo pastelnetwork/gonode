@@ -40,6 +40,8 @@ type RegisterCollectionRequestBody struct {
 	MinimumSimilarityScoreToFirstEntryInCollection *float64 `form:"minimum_similarity_score_to_first_entry_in_collection,omitempty" json:"minimum_similarity_score_to_first_entry_in_collection,omitempty" xml:"minimum_similarity_score_to_first_entry_in_collection,omitempty"`
 	// App PastelID
 	AppPastelID *string `form:"app_pastelid,omitempty" json:"app_pastelid,omitempty" xml:"app_pastelid,omitempty"`
+	// Spendable address
+	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
 }
 
 // RegisterCollectionResponseBody is the type of the "collection" service
@@ -354,7 +356,8 @@ func NewRegisterCollectionPayload(body *RegisterCollectionRequestBody, key *stri
 		MaxCollectionEntries:      *body.MaxCollectionEntries,
 		MaxPermittedOpenNsfwScore: *body.MaxPermittedOpenNsfwScore,
 		MinimumSimilarityScoreToFirstEntryInCollection: *body.MinimumSimilarityScoreToFirstEntryInCollection,
-		AppPastelID: *body.AppPastelID,
+		AppPastelID:      *body.AppPastelID,
+		SpendableAddress: *body.SpendableAddress,
 	}
 	if body.NoOfDaysToFinalizeCollection != nil {
 		v.NoOfDaysToFinalizeCollection = *body.NoOfDaysToFinalizeCollection
@@ -430,6 +433,9 @@ func ValidateRegisterCollectionRequestBody(body *RegisterCollectionRequestBody) 
 	}
 	if body.AppPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("app_pastelid", "body"))
+	}
+	if body.SpendableAddress == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
 	}
 	if body.ItemType != nil {
 		if !(*body.ItemType == "sense" || *body.ItemType == "nft") {
@@ -507,6 +513,19 @@ func ValidateRegisterCollectionRequestBody(body *RegisterCollectionRequestBody) 
 	if body.AppPastelID != nil {
 		if utf8.RuneCountInString(*body.AppPastelID) > 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.app_pastelid", *body.AppPastelID, utf8.RuneCountInString(*body.AppPastelID), 86, false))
+		}
+	}
+	if body.SpendableAddress != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.spendable_address", *body.SpendableAddress, "^[a-zA-Z0-9]+$"))
+	}
+	if body.SpendableAddress != nil {
+		if utf8.RuneCountInString(*body.SpendableAddress) < 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, true))
+		}
+	}
+	if body.SpendableAddress != nil {
+		if utf8.RuneCountInString(*body.SpendableAddress) > 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, false))
 		}
 	}
 	return

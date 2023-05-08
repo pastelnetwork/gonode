@@ -97,7 +97,7 @@ type RegisterCollectionInterface interface {
 	SuperNodeAPIInterface
 
 	// SendTicketForSignature send a collection ticket to be signed by other SNs
-	SendTicketForSignature(ctx context.Context, ticket []byte, signature []byte) (string, error)
+	SendTicketForSignature(ctx context.Context, ticket []byte, signature []byte, burnTxID string) (string, error)
 }
 
 // RegisterNftInterface contains methods for registering nft.
