@@ -48,7 +48,7 @@ message ImageRarenessScoreReply {
     InternetRareness internet_rareness = 18;
     float open_nsfw_score = 19;
     AltNsfwScores alternative_nsfw_scores = 20;
-    repeated float image_fingerprint_of_candidate_image_file = 21;
+    repeated double image_fingerprint_of_candidate_image_file = 21;
     string collection_name_string = 22;
     string hash_of_candidate_image_file = 23;
     string open_api_group_id_string = 24;

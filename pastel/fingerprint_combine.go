@@ -270,10 +270,10 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 	}
 
 	// ImageFingerprintOfCandidateImageFile
-	if !compareFloats(first.ImageFingerprintOfCandidateImageFile, second.ImageFingerprintOfCandidateImageFile) {
+	if !compareDoubles(first.ImageFingerprintOfCandidateImageFile, second.ImageFingerprintOfCandidateImageFile) {
 		return nil, errors.New("first couple of image_fingerprint_of_candidate_image_file nsfw score do not match")
 	}
-	if !compareFloats(first.ImageFingerprintOfCandidateImageFile, third.ImageFingerprintOfCandidateImageFile) {
+	if !compareDoubles(first.ImageFingerprintOfCandidateImageFile, third.ImageFingerprintOfCandidateImageFile) {
 		return nil, errors.New("second couple of image_fingerprint_of_candidate_image_file nsfw score do not match")
 	}
 

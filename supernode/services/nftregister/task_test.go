@@ -230,7 +230,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 				Sexy:     0.5,
 			},
 
-			ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+			ImageFingerprintOfCandidateImageFile: []float64{1, 2, 3},
 
 			HashOfCandidateImageFile: "HashOfCandidateImageFile",
 		}
@@ -799,7 +799,7 @@ func TestTaskProbeImage(t *testing.T) {
 				Sexy:     0.5,
 			},
 
-			ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+			ImageFingerprintOfCandidateImageFile: []float64{1, 2, 3},
 
 			HashOfCandidateImageFile: "HashOfCandidateImageFile",
 		}
@@ -1283,7 +1283,7 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 						Sexy:     0.5,
 					},
 
-					ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+					ImageFingerprintOfCandidateImageFile: []float64{1, 2, 3},
 
 					HashOfCandidateImageFile: "HashOfCandidateImageFile",
 				},

@@ -34,7 +34,7 @@ type DDAndFingerprints struct {
 	PctOfTop10MostSimilarWithDupeProbAbove50pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct"`
 
 	OpenNSFWScore                              float32                `json:"open_nsfw_score"`
-	ImageFingerprintOfCandidateImageFile       []float32              `json:"image_fingerprint_of_candidate_image_file"`
+	ImageFingerprintOfCandidateImageFile       []float64              `json:"image_fingerprint_of_candidate_image_file"`
 	HashOfCandidateImageFile                   string                 `json:"hash_of_candidate_image_file"`
 	RarenessScoresTableJSONCompressedB64       string                 `json:"rareness_scores_table_json_compressed_b64"`
 	CollectionNameString                       string                 `json:"collection_name_string"`
