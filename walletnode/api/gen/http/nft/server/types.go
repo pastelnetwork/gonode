@@ -730,7 +730,7 @@ type NftRegisterPayloadResponseBody struct {
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// OpenAPI GroupID string
-	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
+	OpenAPIGroupID string `form:"open_api_group_id" json:"open_api_group_id" xml:"open_api_group_id"`
 	// Passphrase of the owner's PastelID
 	Key string `form:"key" json:"key" xml:"key"`
 }
@@ -795,7 +795,7 @@ type NftRegisterPayloadResponse struct {
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// OpenAPI GroupID string
-	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
+	OpenAPIGroupID string `form:"open_api_group_id" json:"open_api_group_id" xml:"open_api_group_id"`
 	// Passphrase of the owner's PastelID
 	Key string `form:"key" json:"key" xml:"key"`
 }
@@ -1367,16 +1367,21 @@ func NewRegisterPayload(body *RegisterRequestBody, key string) *nft.RegisterPayl
 		Royalty:           body.Royalty,
 		Green:             body.Green,
 		CollectionActTxid: body.CollectionActTxid,
-		OpenAPIGroupID:    body.OpenAPIGroupID,
 	}
 	if body.MakePubliclyAccessible != nil {
 		v.MakePubliclyAccessible = *body.MakePubliclyAccessible
+	}
+	if body.OpenAPIGroupID != nil {
+		v.OpenAPIGroupID = *body.OpenAPIGroupID
 	}
 	if body.ThumbnailCoordinate != nil {
 		v.ThumbnailCoordinate = unmarshalThumbnailcoordinateRequestBodyToNftThumbnailcoordinate(body.ThumbnailCoordinate)
 	}
 	if body.MakePubliclyAccessible == nil {
 		v.MakePubliclyAccessible = false
+	}
+	if body.OpenAPIGroupID == nil {
+		v.OpenAPIGroupID = "PASTEL"
 	}
 	v.Key = key
 

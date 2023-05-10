@@ -1652,7 +1652,7 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
@@ -1664,7 +1664,7 @@ definitions:
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: false
-            timeout: false
+            timeout: true
         required:
             - name
             - id
@@ -1679,7 +1679,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -1695,19 +1695,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: false
         description: uploadAsset_InternalServerError_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: true
-            timeout: true
+            timeout: false
         required:
             - name
             - id
@@ -1723,7 +1723,26 @@ definitions:
                 type: string
                 description: File to upload
                 example:
-                    - 70
+                    - 73
+                    - 116
+                    - 97
+                    - 113
+                    - 117
+                    - 101
+                    - 32
+                    - 111
+                    - 112
+                    - 116
+                    - 105
+                    - 111
+                    - 32
+                    - 115
+                    - 97
+                    - 101
+                    - 112
+                    - 101
+                    - 32
+                    - 102
                     - 97
                     - 99
                     - 105
@@ -4002,6 +4021,7 @@ definitions:
             open_api_group_id:
                 type: string
                 description: OpenAPI GroupID string
+                default: PASTEL
                 example: Explicabo nam doloremque aut.
             royalty:
                 type: number
@@ -4125,6 +4145,7 @@ definitions:
             open_api_group_id:
                 type: string
                 description: OpenAPI GroupID string
+                default: PASTEL
                 example: Qui at.
             royalty:
                 type: number
@@ -4250,6 +4271,7 @@ definitions:
             open_api_group_id:
                 type: string
                 description: OpenAPI GroupID string
+                default: PASTEL
                 example: Eius est assumenda aut.
             royalty:
                 type: number
@@ -4507,7 +4529,7 @@ definitions:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Deserunt ipsa perspiciatis.
+                open_api_group_id: Accusamus quia deserunt qui deserunt ipsa perspiciatis.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -4990,7 +5012,7 @@ definitions:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Deserunt ipsa perspiciatis.
+                open_api_group_id: Accusamus quia deserunt qui deserunt ipsa perspiciatis.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -5025,7 +5047,7 @@ definitions:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Deserunt ipsa perspiciatis.
+                open_api_group_id: Accusamus quia deserunt qui deserunt ipsa perspiciatis.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -5060,7 +5082,7 @@ definitions:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Deserunt ipsa perspiciatis.
+                open_api_group_id: Accusamus quia deserunt qui deserunt ipsa perspiciatis.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -5095,7 +5117,7 @@ definitions:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Deserunt ipsa perspiciatis.
+                open_api_group_id: Accusamus quia deserunt qui deserunt ipsa perspiciatis.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -5313,7 +5335,7 @@ definitions:
                 example: true
         description: download_InternalServerError_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
@@ -5333,7 +5355,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -5349,18 +5371,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: download_NotFound_response_body result type (default view)
         example:
             fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: false
         required:
             - name
@@ -5377,58 +5399,16 @@ definitions:
                 type: string
                 description: File downloaded
                 example:
-                    - 67
-                    - 111
-                    - 110
-                    - 115
+                    - 84
                     - 101
-                    - 113
-                    - 117
-                    - 97
-                    - 116
-                    - 117
-                    - 114
-                    - 32
-                    - 112
-                    - 101
-                    - 114
-                    - 115
-                    - 112
-                    - 105
-                    - 99
-                    - 105
-                    - 97
-                    - 116
-                    - 105
-                    - 115
-                    - 32
-                    - 97
-                    - 99
-                    - 99
-                    - 117
-                    - 115
-                    - 97
-                    - 110
-                    - 116
-                    - 105
-                    - 117
                     - 109
-                    - 32
-                    - 115
-                    - 101
-                    - 100
-                    - 32
-                    - 101
-                    - 118
-                    - 101
-                    - 110
+                    - 112
+                    - 111
+                    - 114
                     - 105
-                    - 101
-                    - 116
-                    - 32
-                    - 113
+                    - 98
                     - 117
-                    - 105
+                    - 115
                     - 32
                     - 113
                     - 117
@@ -5437,22 +5417,69 @@ definitions:
                 format: byte
         example:
             file:
-                - 85
-                - 116
+                - 83
+                - 101
+                - 100
                 - 32
-                - 105
-                - 110
+                - 101
+                - 114
+                - 114
+                - 111
+                - 114
+                - 32
+                - 101
+                - 120
+                - 101
+                - 114
                 - 99
                 - 105
-                - 100
-                - 117
-                - 110
                 - 116
-                - 32
                 - 97
+                - 116
+                - 105
+                - 111
+                - 110
+                - 101
+                - 109
+                - 32
+                - 118
+                - 101
                 - 108
                 - 105
+                - 116
+                - 32
+                - 112
+                - 111
+                - 115
+                - 115
+                - 105
+                - 109
+                - 117
+                - 115
+                - 32
+                - 99
+                - 111
+                - 110
+                - 115
+                - 101
+                - 113
+                - 117
                 - 97
+                - 116
+                - 117
+                - 114
+                - 32
+                - 112
+                - 101
+                - 114
+                - 115
+                - 112
+                - 105
+                - 99
+                - 105
+                - 97
+                - 116
+                - 105
                 - 115
                 - 46
         required:
@@ -5480,19 +5507,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: false
         description: getTaskHistory_InternalServerError_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: true
-            timeout: true
+            timeout: false
         required:
             - name
             - id
@@ -5507,7 +5534,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -5523,18 +5550,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: true
         description: getTaskHistory_NotFound_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
+            temporary: false
             timeout: false
         required:
             - name
@@ -5550,7 +5577,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -5566,7 +5593,7 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
@@ -5609,18 +5636,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: false
         description: registerTaskState_NotFound_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: false
         required:
             - name
@@ -5802,18 +5829,13 @@ definitions:
             open_api_group_id:
                 type: string
                 description: OpenAPI GroupID string
+                default: PASTEL
                 example: Cupiditate nihil quis expedita.
-            open_api_subset_id:
-                type: string
-                description: OpenAPI Subset string
-                default: ANY
-                example: Itaque voluptatem.
         example:
             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-            open_api_group_id: Et consequatur.
-            open_api_subset_id: Nisi molestias voluptatem odit.
+            open_api_group_id: Itaque voluptatem.
         required:
             - burn_txid
             - app_pastelid
@@ -6082,8 +6104,8 @@ definitions:
         example:
             details:
                 fields:
-                    Impedit tenetur harum molestias tempore.: Eveniet ut expedita cumque quam est.
-                    Ipsa totam.: Id quia.
+                    Eaque id quia eius.: Tenetur harum molestias tempore.
+                    Voluptas rerum impedit.: Enim magni voluptate perspiciatis ipsa.
                 message: Image has been downloaded...
             message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
             status: Started, Image Probed, Downloaded...
@@ -6416,7 +6438,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -6439,12 +6461,12 @@ definitions:
                 example: false
         description: createUserdata_BadRequest_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
-            timeout: false
+            temporary: true
+            timeout: true
         required:
             - name
             - id
@@ -6482,12 +6504,12 @@ definitions:
                 example: false
         description: createUserdata_InternalServerError_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: false
-            timeout: true
+            timeout: false
         required:
             - name
             - id
@@ -6661,7 +6683,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -6677,11 +6699,11 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: getUserdata_BadRequest_response_body result type (default view)
         example:
             fault: false
@@ -6704,7 +6726,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -6724,15 +6746,15 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: getUserdata_InternalServerError_response_body result type (default view)
         example:
             fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
-            timeout: true
+            temporary: true
+            timeout: false
         required:
             - name
             - id
@@ -6763,11 +6785,11 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: getUserdata_NotFound_response_body result type (default view)
         example:
             fault: false
@@ -6885,19 +6907,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: updateUserdata_BadRequest_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
-            timeout: true
+            temporary: true
+            timeout: false
         required:
             - name
             - id
@@ -6928,7 +6950,7 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
@@ -6939,7 +6961,7 @@ definitions:
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: true
         required:
             - name

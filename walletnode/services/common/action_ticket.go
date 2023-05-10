@@ -14,8 +14,6 @@ type ActionRegistrationRequest struct {
 	AppPastelID string `json:"app_pastel_id"`
 	// AppPastelIDPassphrase is field
 	AppPastelIDPassphrase string `json:"app_pastel_id_passphrase"`
-	// OpenAPISubsetID is field
-	OpenAPISubsetID string `json:"open_api_subset_id"`
 	// FileName to save in ticket
 	FileName string `json:"file_name"`
 	//MakePubliclyAccessible to save in ticket

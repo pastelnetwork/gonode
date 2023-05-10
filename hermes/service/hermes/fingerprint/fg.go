@@ -264,7 +264,7 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 		return false, true
 	}
 
-	groupID, subsetID := getGroupIDAndSubsetID(series, ddAndFpFromTicket.OpenAPIGroupIDString)
+	groupID := getGroupIDAndSubsetID(series)
 
 	if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
 		Sha256HashOfArtImageFile:                   ddAndFpFromTicket.HashOfCandidateImageFile,
@@ -273,7 +273,6 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 		PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
 		ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,
 		RequestType:                                typeMapper(tType),
-		IDString:                                   subsetID,
 		OpenAPIGroupIDString:                       groupID,
 		CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
 		DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
@@ -352,16 +351,11 @@ func (s *fingerprintService) getSenseTicket(ctx context.Context, regTXID string)
 // getGroupIDAndSubsetID returns the groupID and subsetID for a given Sense or NFT ticket.
 // ddGroupID is open_api_group_id_string from the output of dd-service.
 // ddSubsetID is open_api_subset_id_string from the output of dd-service.
-func getGroupIDAndSubsetID(ddGroupID, ddSubsetID string) (groupID, subsetID string) {
-	subsetID = "PASTEL"
-	if ddSubsetID != "" && !strings.EqualFold(ddSubsetID, "NA") {
-		subsetID = ddSubsetID
-	}
-
+func getGroupIDAndSubsetID(ddGroupID string) (groupID string) {
 	groupID = "PASTEL"
 	if ddGroupID != "" && !strings.EqualFold(ddGroupID, "NA") {
 		groupID = ddGroupID
 	}
 
-	return groupID, subsetID
+	return groupID
 }

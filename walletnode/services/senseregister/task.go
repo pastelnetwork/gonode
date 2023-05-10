@@ -302,7 +302,6 @@ func (task *SenseRegistrationTask) sendActionMetadata(ctx context.Context) error
 		Timestamp:       task.creationTimestamp,
 		CreatorPastelID: task.Request.AppPastelID,
 		BurnTxID:        task.Request.BurnTxID,
-		OpenAPISubsetID: task.Request.OpenAPISubsetID,
 		GroupID:         task.Request.GroupID,
 	}
 

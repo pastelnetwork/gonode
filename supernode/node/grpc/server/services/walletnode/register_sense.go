@@ -181,7 +181,6 @@ func (service *RegisterSense) SendRegMetadata(ctx context.Context, req *pb.SendR
 		BurnTxID:        req.BurnTxid,
 		BlockHeight:     req.BlockHeight,
 		Timestamp:       req.Timestamp,
-		OpenAPISubsetID: req.OpenapiSubsetId,
 		GroupID:         req.GroupId,
 		CollectionTxID:  req.CollectionTxid,
 	}

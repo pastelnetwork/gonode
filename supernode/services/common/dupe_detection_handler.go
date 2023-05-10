@@ -37,15 +37,13 @@ type DupeDetectionHandler struct {
 	allDDAndFingerprints                  map[string]*pastel.DDAndFingerprints
 	allSignedDDAndFingerprintsReceivedChn chan struct{}
 	isOpenAPI                             bool
-	subsetID                              string
 	groupID                               string
 	collectionName                        string
 }
 
 // SetDDFields sets isOpenAPI, subsetID, groupID, collectionName
-func (h *DupeDetectionHandler) SetDDFields(isOpenAPI bool, subsetID, groupID, collectionName string) {
+func (h *DupeDetectionHandler) SetDDFields(isOpenAPI bool, groupID, collectionName string) {
 	h.isOpenAPI = isOpenAPI
-	h.subsetID = subsetID
 	h.groupID = groupID
 	h.collectionName = collectionName
 }
@@ -124,7 +122,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		// NB currently isPastelOpenapiRequest and openAPISubsetIDString are both fixed values here.
 		log.WithContext(ctx).Debug("asking dd server to process image")
 		compressed, err = h.GenFingerprintsData(ctx, file, blockHash, blockHeight, timestamp, creatorPastelID, registeringSupernode1,
-			registeringSupernode2, registeringSupernode3, h.isOpenAPI, h.subsetID, h.groupID, h.collectionName)
+			registeringSupernode2, registeringSupernode3, h.isOpenAPI, h.groupID, h.collectionName)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
 			err = errors.Errorf("generate fingerprints data: %w", err)
@@ -258,7 +256,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 // GenFingerprintsData(ctx, file, blockHash, blockHeight, timestamp, creatorPastelID, registeringSupernode1, registeringSupernode2, registeringSupernode3, false, "")
 func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *files.File, blockHash string, blockHeight string, timestamp string,
 	creatorPastelID string, registeringSupernode1 string, registeringSupernode2 string, registeringSupernode3 string,
-	isPastelOpenapiRequest bool, openAPISubsetIDString string, groupID string, collectionName string) ([]byte, error) {
+	isPastelOpenapiRequest bool, groupID string, collectionName string) ([]byte, error) {
 	img, err := file.Bytes()
 	if err != nil {
 		return nil, errors.Errorf("get content of image %s: %w", file.Name(), err)
@@ -279,7 +277,6 @@ func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *fi
 		registeringSupernode2,
 		registeringSupernode3,
 		isPastelOpenapiRequest,
-		openAPISubsetIDString,
 		groupID,
 		collectionName,
 	)

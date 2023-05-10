@@ -54,10 +54,7 @@ func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegistrationReques
 		Royalty:                   payload.Royalty,
 		Thumbnail:                 thumbnail,
 		MakePubliclyAccessible:    payload.MakePubliclyAccessible,
-	}
-
-	if payload.OpenAPIGroupID != nil {
-		req.OpenAPIGroupID = *payload.OpenAPIGroupID
+		OpenAPIGroupID:            payload.OpenAPIGroupID,
 	}
 
 	if payload.CollectionActTxid != nil {

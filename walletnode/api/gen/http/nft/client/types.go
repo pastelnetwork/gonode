@@ -54,7 +54,7 @@ type RegisterRequestBody struct {
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// OpenAPI GroupID string
-	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
+	OpenAPIGroupID string `form:"open_api_group_id" json:"open_api_group_id" xml:"open_api_group_id"`
 }
 
 // UploadImageRequestBody is the type of the "nft" service "uploadImage"
@@ -910,6 +910,12 @@ func NewRegisterRequestBody(p *nft.RegisterPayload) *RegisterRequestBody {
 		var zero bool
 		if body.MakePubliclyAccessible == zero {
 			body.MakePubliclyAccessible = false
+		}
+	}
+	{
+		var zero string
+		if body.OpenAPIGroupID == zero {
+			body.OpenAPIGroupID = "PASTEL"
 		}
 	}
 	return body

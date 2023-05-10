@@ -54,11 +54,6 @@ type NftRegistrationTask struct {
 	collectionTxID string
 }
 
-const (
-	// DefaultSubsetID
-	defaultSubsetID = "NFT"
-)
-
 type tasker struct {
 }
 
@@ -89,7 +84,7 @@ func (task *NftRegistrationTask) SendRegMetadata(ctx context.Context, regMetadat
 		return err
 	}
 
-	task.DupeDetectionHandler.SetDDFields(false, defaultSubsetID, regMetadata.GroupID, collectionName)
+	task.DupeDetectionHandler.SetDDFields(false, regMetadata.GroupID, collectionName)
 
 	return nil
 }

@@ -72,7 +72,7 @@ func (task *SenseRegistrationTask) SendRegMetadata(ctx context.Context, regMetad
 		return err
 	}
 
-	task.DupeDetectionHandler.SetDDFields(true, regMetadata.OpenAPISubsetID, regMetadata.GroupID, collectionName)
+	task.DupeDetectionHandler.SetDDFields(true, regMetadata.GroupID, collectionName)
 
 	return nil
 }

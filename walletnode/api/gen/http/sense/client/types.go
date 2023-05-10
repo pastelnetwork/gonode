@@ -30,9 +30,7 @@ type StartProcessingRequestBody struct {
 	// Act Collection TxID to add given ticket in collection
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// OpenAPI GroupID string
-	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
-	// OpenAPI Subset string
-	OpenAPISubsetID string `form:"open_api_subset_id" json:"open_api_subset_id" xml:"open_api_subset_id"`
+	OpenAPIGroupID string `form:"open_api_group_id" json:"open_api_group_id" xml:"open_api_group_id"`
 	// App PastelID
 	AppPastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
 }
@@ -298,13 +296,12 @@ func NewStartProcessingRequestBody(p *sense.StartProcessingPayload) *StartProces
 		BurnTxid:          p.BurnTxid,
 		CollectionActTxid: p.CollectionActTxid,
 		OpenAPIGroupID:    p.OpenAPIGroupID,
-		OpenAPISubsetID:   p.OpenAPISubsetID,
 		AppPastelID:       p.AppPastelID,
 	}
 	{
 		var zero string
-		if body.OpenAPISubsetID == zero {
-			body.OpenAPISubsetID = "ANY"
+		if body.OpenAPIGroupID == zero {
+			body.OpenAPIGroupID = "PASTEL"
 		}
 	}
 	return body
