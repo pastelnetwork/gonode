@@ -222,8 +222,6 @@ type DdServiceOutputFileDetailResponseBody struct {
 	Sn3PastelID *string `form:"sn3_pastel_id,omitempty" json:"sn3_pastel_id,omitempty" xml:"sn3_pastel_id,omitempty"`
 	// Is Open API request
 	IsOpenAPIRequest *bool `form:"is_open_api_request,omitempty" json:"is_open_api_request,omitempty" xml:"is_open_api_request,omitempty"`
-	// Subset id of the open API
-	OpenAPISubsetID *string `form:"open_api_subset_id,omitempty" json:"open_api_subset_id,omitempty" xml:"open_api_subset_id,omitempty"`
 	// System version of dupe detection
 	DupeDetectionSystemVersion *string `form:"dupe_detection_system_version,omitempty" json:"dupe_detection_system_version,omitempty" xml:"dupe_detection_system_version,omitempty"`
 	// Is this image likely a duplicate of another known image
@@ -245,7 +243,7 @@ type DdServiceOutputFileDetailResponseBody struct {
 	// internet rareness score
 	OpenNsfwScore *float32 `form:"open_nsfw_score,omitempty" json:"open_nsfw_score,omitempty" xml:"open_nsfw_score,omitempty"`
 	// Image fingerprint of candidate image file
-	ImageFingerprintOfCandidateImageFile []float32 `form:"image_fingerprint_of_candidate_image_file,omitempty" json:"image_fingerprint_of_candidate_image_file,omitempty" xml:"image_fingerprint_of_candidate_image_file,omitempty"`
+	ImageFingerprintOfCandidateImageFile []float64 `form:"image_fingerprint_of_candidate_image_file,omitempty" json:"image_fingerprint_of_candidate_image_file,omitempty" xml:"image_fingerprint_of_candidate_image_file,omitempty"`
 	// nsfw score
 	DrawingNsfwScore *float32 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
 	// nsfw score
@@ -1351,7 +1349,6 @@ func NewDdServiceOutputFileDetailDDServiceOutputFileResultOK(body *DdServiceOutp
 		Sn2PastelID:                body.Sn2PastelID,
 		Sn3PastelID:                body.Sn3PastelID,
 		IsOpenAPIRequest:           body.IsOpenAPIRequest,
-		OpenAPISubsetID:            body.OpenAPISubsetID,
 		DupeDetectionSystemVersion: body.DupeDetectionSystemVersion,
 		IsLikelyDupe:               body.IsLikelyDupe,
 		IsRareOnInternet:           body.IsRareOnInternet,
@@ -1389,7 +1386,7 @@ func NewDdServiceOutputFileDetailDDServiceOutputFileResultOK(body *DdServiceOutp
 		RarenessScore:                               body.RarenessScore,
 	}
 	if body.ImageFingerprintOfCandidateImageFile != nil {
-		v.ImageFingerprintOfCandidateImageFile = make([]float32, len(body.ImageFingerprintOfCandidateImageFile))
+		v.ImageFingerprintOfCandidateImageFile = make([]float64, len(body.ImageFingerprintOfCandidateImageFile))
 		for i, val := range body.ImageFingerprintOfCandidateImageFile {
 			v.ImageFingerprintOfCandidateImageFile[i] = val
 		}

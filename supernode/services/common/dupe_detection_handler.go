@@ -41,7 +41,7 @@ type DupeDetectionHandler struct {
 	collectionName                        string
 }
 
-// SetDDFields sets isOpenAPI, subsetID, groupID, collectionName
+// SetDDFields sets isOpenAPI, groupID, collectionName
 func (h *DupeDetectionHandler) SetDDFields(isOpenAPI bool, groupID, collectionName string) {
 	h.isOpenAPI = isOpenAPI
 	h.groupID = groupID
@@ -105,7 +105,6 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		// 	pastel_id_of_registeringSupernode2 = 'jXpDb5K6S81ghCusMOXLP6k0RvqgFhkBJSFf6OhjEmpvCWGZiptRyRgfQ9cTD709sA58m5czpipFnvpoHuPX0F'
 		// 	pastel_id_of_registeringSupernode3 = 'jXS9NIXHj8pd9mLNsP2uKgIh1b3EH2aq5dwupUF7hoaltTE8Zlf6R7Pke0cGr071kxYxqXHQmfVO5dA4jH0ejQ'
 		// 	isPastelOpenapiRequest = 'False'
-		// 	openAPISubsetIDString = ''
 
 		// 	command_string = 'python3 /home/ubuntu/pastel/dd-service/tools/grpc-client.py 50052 ' + \
 		// 	image_filepath + ' ' + \
@@ -117,9 +116,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		// 	pastel_id_of_registeringSupernode2 + ' ' + \
 		// 	pastel_id_of_registeringSupernode3 + ' ' + \
 		// 	isPastelOpenapiRequest + ' ' + \
-		// 	openAPISubsetIDString
 		//
-		// NB currently isPastelOpenapiRequest and openAPISubsetIDString are both fixed values here.
 		log.WithContext(ctx).Debug("asking dd server to process image")
 		compressed, err = h.GenFingerprintsData(ctx, file, blockHash, blockHeight, timestamp, creatorPastelID, registeringSupernode1,
 			registeringSupernode2, registeringSupernode3, h.isOpenAPI, h.groupID, h.collectionName)
@@ -264,7 +261,7 @@ func (h *DupeDetectionHandler) GenFingerprintsData(ctx context.Context, file *fi
 
 	// Get DDAndFingerprints
 	// SuperNode makes ImageRarenessScore gRPC call to dd-service
-	//   ctx context.Context, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string, sn_1 string, sn_2 string, sn_3 string, openapi_request bool, open_api_subset_id string
+	//   ctx context.Context, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string, sn_1 string, sn_2 string, sn_3 string, openapi_request bool,
 	h.myDDAndFingerprints, err = h.DdClient.ImageRarenessScore(
 		ctx,
 		img,

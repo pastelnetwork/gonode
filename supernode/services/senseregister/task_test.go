@@ -193,9 +193,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			SN2PastelID:        "SN2PastelID",
 			SN3PastelID:        "SN3PastelID",
 
-			IsOpenAPIRequest: false,
-			OpenAPISubsetID:  "",
-
+			IsOpenAPIRequest:           false,
 			DupeDetectionSystemVersion: "v1.0",
 
 			IsLikelyDupe:     true,
@@ -517,7 +515,6 @@ func TestTaskProbeImage(t *testing.T) {
 			SN3PastelID:        "SN3PastelID",
 
 			IsOpenAPIRequest: false,
-			OpenAPISubsetID:  "",
 
 			DupeDetectionSystemVersion: "v1.0",
 
@@ -845,7 +842,6 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 					SN3PastelID:        "SN3PastelID",
 
 					IsOpenAPIRequest: false,
-					OpenAPISubsetID:  "",
 
 					DupeDetectionSystemVersion: "v1.0",
 

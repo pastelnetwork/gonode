@@ -52,11 +52,6 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 		return errors.Errorf("IsOpenAPIRequest not matched: lhs(%t) != rhs(%t)", lhs.IsOpenAPIRequest, rhs.IsOpenAPIRequest)
 	}
 
-	// OpenAPISubsetID
-	if !strings.EqualFold(lhs.OpenAPISubsetID, rhs.OpenAPISubsetID) {
-		return errors.Errorf("OpenAPISubsetID not matched: lhs(%s) != rhs(%s)", lhs.OpenAPISubsetID, rhs.OpenAPISubsetID)
-	}
-
 	// DupeDetectionSystemVersion
 	if !compareDupeDetectionSystemVersionNumber(lhs.DupeDetectionSystemVersion, rhs.DupeDetectionSystemVersion) {
 		return errors.Errorf("dupe_detection_system_version not matched: lhs(%s) != rhs(%s)", lhs.DupeDetectionSystemVersion, rhs.DupeDetectionSystemVersion)

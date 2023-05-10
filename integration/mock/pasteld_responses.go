@@ -622,7 +622,6 @@ func makeDDAndFpFile() []byte {
 		SN3PastelID:        imageRarenessScore.SN3PastelID,
 
 		IsOpenAPIRequest:           imageRarenessScore.IsOpenAPIRequest,
-		OpenAPISubsetID:            imageRarenessScore.OpenAPISubsetID,
 		DupeDetectionSystemVersion: imageRarenessScore.DupeDetectionSystemVersion,
 
 		IsLikelyDupe:         imageRarenessScore.IsLikelyDupe,
@@ -687,7 +686,8 @@ func storeDDAndFpFile(f []byte, h *helper.ItHelper, uri string) {
 	}
 }
 
-func storeRQIDFile(f []byte, h *helper.ItHelper, uri string) {
+// StoreRQIDFile stores a rq file
+func StoreRQIDFile(f []byte, h *helper.ItHelper, uri string) {
 	//f should be compressed dd and fp file
 	storeReq := &helper.StoreRequest{
 		Value: f,

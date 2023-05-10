@@ -27,7 +27,6 @@ func TestToCompressSignedDDAndFingerprints(t *testing.T) {
 				SN3PastelID:        "SN3PastelID",
 
 				IsOpenAPIRequest: false,
-				OpenAPISubsetID:  "",
 
 				DupeDetectionSystemVersion: "v1.0",
 
@@ -112,7 +111,6 @@ func TestGetIDFiles(t *testing.T) {
 				SN3PastelID:        "SN3PastelID",
 
 				IsOpenAPIRequest: false,
-				OpenAPISubsetID:  "",
 
 				DupeDetectionSystemVersion: "v1.0",
 
