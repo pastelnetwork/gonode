@@ -19,7 +19,6 @@ func copyFingerPrintAndScores(origin *DDAndFingerprints) *DDAndFingerprints {
 		SN2PastelID:                origin.SN2PastelID,
 		SN3PastelID:                origin.SN3PastelID,
 		IsOpenAPIRequest:           origin.IsOpenAPIRequest,
-		OpenAPISubsetID:            origin.OpenAPISubsetID,
 		DupeDetectionSystemVersion: origin.DupeDetectionSystemVersion,
 		IsLikelyDupe:               origin.IsLikelyDupe,
 		IsRareOnInternet:           origin.IsRareOnInternet,
@@ -137,15 +136,6 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 	}
 	if first.IsOpenAPIRequest != third.IsOpenAPIRequest {
 		return nil, errors.Errorf("IsOpenAPIRequest not matched: first(%t) != third(%t)", first.IsOpenAPIRequest, third.IsOpenAPIRequest)
-	}
-
-	// OpenAPISubsetID
-	if !strings.EqualFold(first.OpenAPISubsetID, second.OpenAPISubsetID) {
-		return nil, errors.Errorf("OpenAPISubsetID not matched: first(%s) != second(%s)", first.OpenAPISubsetID, second.OpenAPISubsetID)
-	}
-
-	if !strings.EqualFold(first.OpenAPISubsetID, third.OpenAPISubsetID) {
-		return nil, errors.Errorf("OpenAPISubsetID not matched: first(%s) != third(%s)", first.OpenAPISubsetID, third.OpenAPISubsetID)
 	}
 
 	// DupeDetectionSystemVersion

@@ -22,9 +22,8 @@ message RarenessScoreRequest {
     string pastel_id_of_registering_supernode_2 = 7;
     string pastel_id_of_registering_supernode_3 = 8;
     bool is_pastel_openapi_request = 9;
-    string open_api_subset_id_string = 10;
-    string open_api_group_id_string = 11;
-    string collection_name_string = 12;
+    string open_api_group_id_string = 10;
+    string collection_name_string = 11;
 }
 
 message ImageRarenessScoreReply {
@@ -36,7 +35,7 @@ message ImageRarenessScoreReply {
     string pastel_id_of_registering_supernode_2 = 6;
     string pastel_id_of_registering_supernode_3 = 7;
     bool is_pastel_openapi_request = 8;
-    string open_api_subset_id_string = 9;
+    string image_file_path = 9;
     string dupe_detection_system_version = 10;
     bool is_likely_dupe = 11;
     bool is_rare_on_internet = 12;
@@ -48,7 +47,7 @@ message ImageRarenessScoreReply {
     InternetRareness internet_rareness = 18;
     float open_nsfw_score = 19;
     AltNsfwScores alternative_nsfw_scores = 20;
-    repeated float image_fingerprint_of_candidate_image_file = 21;
+    repeated double image_fingerprint_of_candidate_image_file = 21;
     string collection_name_string = 22;
     string hash_of_candidate_image_file = 23;
     string open_api_group_id_string = 24;
@@ -60,7 +59,6 @@ message ImageRarenessScoreReply {
     float similarity_score_to_first_entry_in_collection = 30;
     float cp_probability = 31;
     float child_probability = 32;
-    string image_file_path = 33;
 }
 
 

@@ -18,7 +18,6 @@ func genfingerAndScoresFunc() *DDAndFingerprints {
 		SN3PastelID:        "SN3PastelID",
 
 		IsOpenAPIRequest: false,
-		OpenAPISubsetID:  "",
 
 		DupeDetectionSystemVersion: "v1.0",
 

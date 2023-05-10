@@ -198,7 +198,6 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			SN3PastelID:        "SN3PastelID",
 
 			IsOpenAPIRequest: false,
-			OpenAPISubsetID:  "",
 
 			DupeDetectionSystemVersion: "v1.0",
 
@@ -767,7 +766,6 @@ func TestTaskProbeImage(t *testing.T) {
 			SN3PastelID:        "SN3PastelID",
 
 			IsOpenAPIRequest: false,
-			OpenAPISubsetID:  "",
 
 			DupeDetectionSystemVersion: "v1.0",
 

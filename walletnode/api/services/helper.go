@@ -125,7 +125,6 @@ func translateDDServiceOutputFile(res *nft.DDServiceOutputFileResult, ddAndFpStr
 	res.Sn2PastelID = &ddAndFpStruct.SN2PastelID
 	res.Sn3PastelID = &ddAndFpStruct.SN3PastelID
 	res.IsOpenAPIRequest = &ddAndFpStruct.IsOpenAPIRequest
-	res.OpenAPISubsetID = &ddAndFpStruct.OpenAPISubsetID
 	res.DupeDetectionSystemVersion = &ddAndFpStruct.DupeDetectionSystemVersion
 	res.IsLikelyDupe = &ddAndFpStruct.IsLikelyDupe
 	res.IsRareOnInternet = &ddAndFpStruct.IsRareOnInternet

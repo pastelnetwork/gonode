@@ -18,8 +18,6 @@ func getDDServerResponse() ([]byte, error) {
 
 		IsOpenAPIRequest: false,
 
-		OpenAPISubsetID: "",
-
 		DupeDetectionSystemVersion: "1.0",
 		IsLikelyDupe:               false,
 		IsRareOnInternet:           true,
@@ -67,8 +65,6 @@ type ImageRarenessScoreReply struct {
 	SN3PastelID        string `json:"pastel_id_of_registering_supernode_3"`
 
 	IsOpenAPIRequest bool `json:"is_pastel_openapi_request"`
-
-	OpenAPISubsetID string `json:"open_api_subset_id_string"`
 
 	DupeDetectionSystemVersion string `json:"dupe_detection_system_version"`
 

@@ -251,9 +251,6 @@ var DDServiceOutputFileResult = Type("DDServiceOutputFileResult", func() {
 	Attribute("is_open_api_request", Boolean, func() {
 		Description("Is Open API request")
 	})
-	Attribute("open_api_subset_id", String, func() {
-		Description("Subset id of the open API")
-	})
 	Attribute("dupe_detection_system_version", String, func() {
 		Description("System version of dupe detection")
 	})
@@ -286,7 +283,7 @@ var DDServiceOutputFileResult = Type("DDServiceOutputFileResult", func() {
 	Attribute("open_nsfw_score", Float32, func() {
 		Description("internet rareness score")
 	})
-	Attribute("image_fingerprint_of_candidate_image_file", ArrayOf(Float32), func() {
+	Attribute("image_fingerprint_of_candidate_image_file", ArrayOf(Float64), func() {
 		Description("Image fingerprint of candidate image file")
 	})
 	Attribute("drawing_nsfw_score", Float32, func() {

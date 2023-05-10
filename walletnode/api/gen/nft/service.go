@@ -108,8 +108,6 @@ type DDServiceOutputFileResult struct {
 	Sn3PastelID *string
 	// Is Open API request
 	IsOpenAPIRequest *bool
-	// Subset id of the open API
-	OpenAPISubsetID *string
 	// System version of dupe detection
 	DupeDetectionSystemVersion *string
 	// Is this image likely a duplicate of another known image
@@ -131,7 +129,7 @@ type DDServiceOutputFileResult struct {
 	// internet rareness score
 	OpenNsfwScore *float32
 	// Image fingerprint of candidate image file
-	ImageFingerprintOfCandidateImageFile []float32
+	ImageFingerprintOfCandidateImageFile []float64
 	// nsfw score
 	DrawingNsfwScore *float32
 	// nsfw score
