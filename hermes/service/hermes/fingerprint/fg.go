@@ -268,7 +268,7 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 
 	if err := s.store.StoreFingerprint(ctx, &domain.DDFingerprints{
 		Sha256HashOfArtImageFile:                   ddAndFpFromTicket.HashOfCandidateImageFile,
-		ImageFingerprintVector:                     toFloat64Array(ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile),
+		ImageFingerprintVector:                     ddAndFpFromTicket.ImageFingerprintOfCandidateImageFile,
 		DatetimeFingerprintAddedToDatabase:         time.Now().Format("2006-01-02 15:04:05"),
 		PathToArtImageFile:                         ddAndFpFromTicket.ImageFilePath,
 		ImageThumbnailAsBase64:                     ddAndFpFromTicket.CandidateImageThumbnailWebpAsBase64String,

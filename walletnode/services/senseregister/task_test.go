@@ -1,7 +1,10 @@
 package senseregister
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
+	"fmt"
 	"image"
 	"image/png"
 	"os"
@@ -40,6 +43,20 @@ func newTestImageFile() (*files.File, error) {
 	imgFile.SetFormat(1)
 
 	return imgFile, nil
+}
+
+func float64SliceToBytes(floats []float64) []byte {
+	buf := new(bytes.Buffer)
+
+	for _, f := range floats {
+		err := binary.Write(buf, binary.LittleEndian, f)
+		if err != nil {
+			fmt.Println("Error converting float64 to bytes:", err)
+			return nil
+		}
+	}
+
+	return buf.Bytes()
 }
 
 func TestTaskRun(t *testing.T) {
@@ -127,8 +144,8 @@ func TestTaskRun(t *testing.T) {
 			assert.NoError(t, err)
 
 			// prepare task
-			fg := pastel.Fingerprint{0.1, 0, 2}
-			compressedFg, err := zstd.CompressLevel(nil, fg.Bytes(), 22)
+			fg := []float64{0.1, 0, 2}
+			compressedFg, err := zstd.CompressLevel(nil, float64SliceToBytes(fg), 22)
 			assert.Nil(t, err)
 			testCase.args.fingerPrint = compressedFg
 
@@ -199,7 +216,7 @@ func TestTaskRun(t *testing.T) {
 					Sexy:     0.5,
 				},
 
-				ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+				ImageFingerprintOfCandidateImageFile: []float64{1, 2, 3},
 
 				HashOfCandidateImageFile: "HashOfCandidateImageFile",
 			}

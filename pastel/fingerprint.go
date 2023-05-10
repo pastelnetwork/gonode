@@ -1,44 +1,12 @@
 package pastel
 
 import (
-	"bytes"
-	"encoding/binary"
 	"math"
 	"reflect"
 	"strings"
-	"unsafe"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )
-
-// Fingerprint uniquely identify an image
-type Fingerprint []float32
-
-func fingerprintBaseTypeSize() int {
-	return int(unsafe.Sizeof(float32(0)))
-}
-
-// FingerprintFromBytes deserialize a slice of bytes into Fingerprint
-func FingerprintFromBytes(data []byte) (Fingerprint, error) {
-	typeSize := fingerprintBaseTypeSize()
-	if len(data)%typeSize != 0 {
-		return nil, errors.Errorf("invalid data length %d, length should be multiple of sizeof(float64)", len(data))
-	}
-	fg := make([]float32, len(data)/typeSize)
-
-	for i := range fg {
-		bits := binary.LittleEndian.Uint32(data[i*typeSize : (i+1)*typeSize])
-		fg[i] = math.Float32frombits(bits)
-	}
-	return fg, nil
-}
-
-// Bytes serialize a Fingerprint into slice of byte
-func (fg Fingerprint) Bytes() []byte {
-	output := new(bytes.Buffer)
-	_ = binary.Write(output, binary.LittleEndian, fg)
-	return output.Bytes()
-}
 
 // CompareFingerPrintAndScore returns nil if two DDAndFingerprints are equal
 func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) error {
@@ -143,7 +111,7 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 	}
 
 	// ImageFingerprintOfCandidateImageFile
-	if !compareFloats(lhs.ImageFingerprintOfCandidateImageFile, rhs.ImageFingerprintOfCandidateImageFile) {
+	if !compareDoubles(lhs.ImageFingerprintOfCandidateImageFile, rhs.ImageFingerprintOfCandidateImageFile) {
 		return errors.New("image_fingerprint_of_candidate_image_file nsfw score do not match")
 	}
 
@@ -230,13 +198,29 @@ func compareFloatWithPrecision(l float32, r float32, prec float64) bool {
 	return math.Round(float64(l)*multiplier)/multiplier == math.Round(float64(r)*multiplier)/multiplier
 }
 
-func compareFloats(l []float32, r []float32) bool {
+func compareDouble(l float64, r float64) bool {
+	if compareDoublesWithPrecision(l, r, 5.0) {
+		return true
+	}
+
+	return compareDoublesWithPrecision(l, r, 3.0)
+}
+
+func compareDoublesWithPrecision(l float64, r float64, prec float64) bool {
+	if l == r {
+		return true
+	}
+	multiplier := math.Pow(10, prec)
+	return math.Round(l*multiplier)/multiplier == math.Round(r*multiplier)/multiplier
+}
+
+func compareDoubles(l []float64, r []float64) bool {
 	if len(l) != len(r) {
 		return false
 	}
 
 	for i := 0; i < len(l); i = i + 1 {
-		if !compareFloat(l[i], r[i]) {
+		if !compareDouble(l[i], r[i]) {
 			return false
 		}
 	}

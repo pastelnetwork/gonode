@@ -91,7 +91,7 @@ func TestDDClientSuccess(t *testing.T) {
 		PastelIdOfRegisteringSupernode_3:      "jXS9NIXHj8pd9mLNsP2uKgIh1b3EH2aq5dwupUF7hoaltTE8Zlf6R7Pke0cGr071kxYxqXHQmfVO5dA4jH0ejQ",
 
 		HashOfCandidateImageFile:             "hashOfCandidateImageFile",
-		ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3, 4, 5},
+		ImageFingerprintOfCandidateImageFile: []float64{1, 2, 3, 4, 5},
 
 		InternetRareness:      &pb.InternetRareness{},
 		AlternativeNsfwScores: &pb.AltNsfwScores{},

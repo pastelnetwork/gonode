@@ -48,7 +48,7 @@ func getDDServerResponse() ([]byte, error) {
 			Sexy:     0.5,
 		},
 
-		ImageFingerprintOfCandidateImageFile: []float32{3.2, 2.5, 6.7, 0.4},
+		ImageFingerprintOfCandidateImageFile: []float64{3.2, 2.5, 6.7, 0.4},
 
 		HashOfCandidateImageFile: "53a66ab645b9f56b3087760185035abe122aeb808fdad50a037acb150b5528bd",
 	}
@@ -88,7 +88,7 @@ type ImageRarenessScoreReply struct {
 
 	AlternativeNSFWScores *AltNsfwScores `json:"alternative_nsfw_scores"`
 
-	ImageFingerprintOfCandidateImageFile []float32 `json:"image_fingerprint_of_candidate_image_file"`
+	ImageFingerprintOfCandidateImageFile []float64 `json:"image_fingerprint_of_candidate_image_file"`
 
 	HashOfCandidateImageFile string `json:"hash_of_candidate_image_file"`
 }

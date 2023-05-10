@@ -10,12 +10,3 @@ func typeMapper(val string) string {
 
 	return val
 }
-
-func toFloat64Array(data []float32) []float64 {
-	ret := make([]float64, len(data))
-	for idx, value := range data {
-		ret[idx] = float64(value)
-	}
-
-	return ret
-}
