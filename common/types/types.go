@@ -30,7 +30,6 @@ type ActionRegMetadata struct {
 	BurnTxID        string
 	BlockHeight     string
 	Timestamp       string
-	OpenAPISubsetID string
 	EstimatedFee    int64
 	GroupID         string
 	CollectionTxID  string

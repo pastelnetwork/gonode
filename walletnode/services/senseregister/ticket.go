@@ -11,11 +11,7 @@ func FromStartProcessingPayload(payload *sense.StartProcessingPayload) *common.A
 		BurnTxID:              payload.BurnTxid,
 		AppPastelID:           payload.AppPastelID,
 		AppPastelIDPassphrase: payload.Key,
-		OpenAPISubsetID:       payload.OpenAPISubsetID,
-	}
-
-	if payload.OpenAPIGroupID != nil {
-		req.GroupID = *payload.OpenAPIGroupID
+		GroupID:               payload.OpenAPIGroupID,
 	}
 
 	if payload.CollectionActTxid != nil {

@@ -163,7 +163,6 @@ func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *
 		BurnTxid:        regMetadata.BurnTxID,
 		BlockHeight:     regMetadata.BlockHeight,
 		Timestamp:       regMetadata.Timestamp,
-		OpenapiSubsetId: regMetadata.OpenAPISubsetID,
 		GroupId:         regMetadata.GroupID,
 		CollectionTxid:  regMetadata.CollectionTxID,
 	}

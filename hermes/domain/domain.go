@@ -16,18 +16,16 @@ const (
 
 // DDFingerprints is dd & fp domain representation
 type DDFingerprints struct {
-	Sha256HashOfArtImageFile           string    `json:"sha256_hash_of_art_image_file,omitempty"`
-	PathToArtImageFile                 string    `json:"path_to_art_image_file,omitempty"`
-	ImageFingerprintVector             []float64 `json:"new_model_image_fingerprint_vector,omitempty"`
-	DatetimeFingerprintAddedToDatabase string    `json:"datetime_fingerprint_added_to_database,omitempty"`
-	ImageThumbnailAsBase64             string    `json:"thumbnail_of_image,omitempty"`
-	RequestType                        string    `json:"request_type,omitempty"`
-	IDString                           string    `json:"open_api_subset_id_string,omitempty"`
-
-	OpenAPIGroupIDString                       string `json:"open_api_group_id_string,omitempty"`
-	CollectionNameString                       string `json:"collection_name_string,omitempty"`
-	DoesNotImpactTheFollowingCollectionsString string `json:"does_not_impact_the_following_collection_strings,omitempty"`
-	RegTXID                                    string `json:"registration_ticket_txid"`
+	Sha256HashOfArtImageFile                   string    `json:"sha256_hash_of_art_image_file,omitempty"`
+	PathToArtImageFile                         string    `json:"path_to_art_image_file,omitempty"`
+	ImageFingerprintVector                     []float64 `json:"new_model_image_fingerprint_vector,omitempty"`
+	DatetimeFingerprintAddedToDatabase         string    `json:"datetime_fingerprint_added_to_database,omitempty"`
+	ImageThumbnailAsBase64                     string    `json:"thumbnail_of_image,omitempty"`
+	RequestType                                string    `json:"request_type,omitempty"`
+	OpenAPIGroupIDString                       string    `json:"open_api_group_id_string,omitempty"`
+	CollectionNameString                       string    `json:"collection_name_string,omitempty"`
+	DoesNotImpactTheFollowingCollectionsString string    `json:"does_not_impact_the_following_collection_strings,omitempty"`
+	RegTXID                                    string    `json:"registration_ticket_txid"`
 }
 
 // SnScore is domain representation of Sn score record

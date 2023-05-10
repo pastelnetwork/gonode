@@ -1231,17 +1231,22 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponseBody(v *nf
 		Royalty:           v.Royalty,
 		Green:             v.Green,
 		CollectionActTxid: v.CollectionActTxid,
-		OpenAPIGroupID:    v.OpenAPIGroupID,
 		Key:               *v.Key,
 	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
+	}
+	if v.OpenAPIGroupID != nil {
+		res.OpenAPIGroupID = *v.OpenAPIGroupID
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = marshalNftviewsThumbnailcoordinateViewToThumbnailcoordinateResponseBody(v.ThumbnailCoordinate)
 	}
 	if v.MakePubliclyAccessible == nil {
 		res.MakePubliclyAccessible = false
+	}
+	if v.OpenAPIGroupID == nil {
+		res.OpenAPIGroupID = "PASTEL"
 	}
 
 	return res
@@ -1298,17 +1303,22 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponse(v *nftvie
 		Royalty:           v.Royalty,
 		Green:             v.Green,
 		CollectionActTxid: v.CollectionActTxid,
-		OpenAPIGroupID:    v.OpenAPIGroupID,
 		Key:               *v.Key,
 	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
+	}
+	if v.OpenAPIGroupID != nil {
+		res.OpenAPIGroupID = *v.OpenAPIGroupID
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = marshalNftviewsThumbnailcoordinateViewToThumbnailcoordinateResponse(v.ThumbnailCoordinate)
 	}
 	if v.MakePubliclyAccessible == nil {
 		res.MakePubliclyAccessible = false
+	}
+	if v.OpenAPIGroupID == nil {
+		res.OpenAPIGroupID = "PASTEL"
 	}
 
 	return res

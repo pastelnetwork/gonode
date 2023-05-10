@@ -152,10 +152,7 @@ var StartProcessingPayload = Type("StartProcessingPayload", func() {
 	})
 	Attribute("open_api_group_id", String, func() {
 		Description("OpenAPI GroupID string")
-	})
-	Attribute("open_api_subset_id", String, func() {
-		Description("OpenAPI Subset string")
-		Default("ANY")
+		Default("PASTEL")
 	})
 	Attribute("app_pastelid", String, func() {
 		Meta("struct:field:name", "AppPastelID")
