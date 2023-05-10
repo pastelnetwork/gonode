@@ -34,8 +34,6 @@ type RegisterRequestBody struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Creator's PastelID
 	CreatorPastelID string `form:"creator_pastelid" json:"creator_pastelid" xml:"creator_pastelid"`
-	// Passphrase of the artist's PastelID
-	CreatorPastelIDPassphrase string `form:"creator_pastelid_passphrase" json:"creator_pastelid_passphrase" xml:"creator_pastelid_passphrase"`
 	// Name of the NFT creator
 	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
 	// NFT creator website URL
@@ -725,8 +723,6 @@ type NftRegisterPayloadResponseBody struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Creator's PastelID
 	CreatorPastelID *string `form:"creator_pastelid,omitempty" json:"creator_pastelid,omitempty" xml:"creator_pastelid,omitempty"`
-	// Passphrase of the artist's PastelID
-	CreatorPastelIDPassphrase *string `form:"creator_pastelid_passphrase,omitempty" json:"creator_pastelid_passphrase,omitempty" xml:"creator_pastelid_passphrase,omitempty"`
 	// Name of the NFT creator
 	CreatorName *string `form:"creator_name,omitempty" json:"creator_name,omitempty" xml:"creator_name,omitempty"`
 	// NFT creator website URL
@@ -748,6 +744,8 @@ type NftRegisterPayloadResponseBody struct {
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// OpenAPI GroupID string
 	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
+	// Passphrase of the owner's PastelID
+	Key *string `form:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
 }
 
 // ThumbnailcoordinateResponseBody is used to define fields on response body
@@ -800,8 +798,6 @@ type NftRegisterPayloadResponse struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Creator's PastelID
 	CreatorPastelID *string `form:"creator_pastelid,omitempty" json:"creator_pastelid,omitempty" xml:"creator_pastelid,omitempty"`
-	// Passphrase of the artist's PastelID
-	CreatorPastelIDPassphrase *string `form:"creator_pastelid_passphrase,omitempty" json:"creator_pastelid_passphrase,omitempty" xml:"creator_pastelid_passphrase,omitempty"`
 	// Name of the NFT creator
 	CreatorName *string `form:"creator_name,omitempty" json:"creator_name,omitempty" xml:"creator_name,omitempty"`
 	// NFT creator website URL
@@ -823,6 +819,8 @@ type NftRegisterPayloadResponse struct {
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// OpenAPI GroupID string
 	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
+	// Passphrase of the owner's PastelID
+	Key *string `form:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
 }
 
 // ThumbnailcoordinateResponse is used to define fields on response body types.
@@ -887,24 +885,23 @@ type FuzzyMatchResponseBody struct {
 // "register" endpoint of the "nft" service.
 func NewRegisterRequestBody(p *nft.RegisterPayload) *RegisterRequestBody {
 	body := &RegisterRequestBody{
-		ImageID:                   p.ImageID,
-		Name:                      p.Name,
-		Description:               p.Description,
-		Keywords:                  p.Keywords,
-		SeriesName:                p.SeriesName,
-		IssuedCopies:              p.IssuedCopies,
-		YoutubeURL:                p.YoutubeURL,
-		CreatorPastelID:           p.CreatorPastelID,
-		CreatorPastelIDPassphrase: p.CreatorPastelIDPassphrase,
-		CreatorName:               p.CreatorName,
-		CreatorWebsiteURL:         p.CreatorWebsiteURL,
-		SpendableAddress:          p.SpendableAddress,
-		MaximumFee:                p.MaximumFee,
-		Royalty:                   p.Royalty,
-		Green:                     p.Green,
-		MakePubliclyAccessible:    p.MakePubliclyAccessible,
-		CollectionActTxid:         p.CollectionActTxid,
-		OpenAPIGroupID:            p.OpenAPIGroupID,
+		ImageID:                p.ImageID,
+		Name:                   p.Name,
+		Description:            p.Description,
+		Keywords:               p.Keywords,
+		SeriesName:             p.SeriesName,
+		IssuedCopies:           p.IssuedCopies,
+		YoutubeURL:             p.YoutubeURL,
+		CreatorPastelID:        p.CreatorPastelID,
+		CreatorName:            p.CreatorName,
+		CreatorWebsiteURL:      p.CreatorWebsiteURL,
+		SpendableAddress:       p.SpendableAddress,
+		MaximumFee:             p.MaximumFee,
+		Royalty:                p.Royalty,
+		Green:                  p.Green,
+		MakePubliclyAccessible: p.MakePubliclyAccessible,
+		CollectionActTxid:      p.CollectionActTxid,
+		OpenAPIGroupID:         p.OpenAPIGroupID,
 	}
 	if p.ThumbnailCoordinate != nil {
 		body.ThumbnailCoordinate = marshalNftThumbnailcoordinateToThumbnailcoordinateRequestBody(p.ThumbnailCoordinate)
@@ -2282,14 +2279,14 @@ func ValidateNftRegisterPayloadResponseBody(body *NftRegisterPayloadResponseBody
 	if body.CreatorPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "body"))
 	}
-	if body.CreatorPastelIDPassphrase == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid_passphrase", "body"))
-	}
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
 	}
 	if body.MaximumFee == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("maximum_fee", "body"))
+	}
+	if body.Key == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("key", "body"))
 	}
 	if body.Name != nil {
 		if utf8.RuneCountInString(*body.Name) > 256 {
@@ -2472,14 +2469,14 @@ func ValidateNftRegisterPayloadResponse(body *NftRegisterPayloadResponse) (err e
 	if body.CreatorPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "body"))
 	}
-	if body.CreatorPastelIDPassphrase == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid_passphrase", "body"))
-	}
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
 	}
 	if body.MaximumFee == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("maximum_fee", "body"))
+	}
+	if body.Key == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("key", "body"))
 	}
 	if body.Name != nil {
 		if utf8.RuneCountInString(*body.Name) > 256 {

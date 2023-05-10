@@ -327,8 +327,6 @@ type NftRegisterPayload struct {
 	YoutubeURL *string
 	// Creator's PastelID
 	CreatorPastelID string
-	// Passphrase of the artist's PastelID
-	CreatorPastelIDPassphrase string
 	// Name of the NFT creator
 	CreatorName string
 	// NFT creator website URL
@@ -350,6 +348,8 @@ type NftRegisterPayload struct {
 	CollectionActTxid *string
 	// OpenAPI GroupID string
 	OpenAPIGroupID *string
+	// Passphrase of the owner's PastelID
+	Key string
 }
 
 // NftSearchPayload is the payload type of the nft service nftSearch method.
@@ -457,8 +457,6 @@ type RegisterPayload struct {
 	YoutubeURL *string
 	// Creator's PastelID
 	CreatorPastelID string
-	// Passphrase of the artist's PastelID
-	CreatorPastelIDPassphrase string
 	// Name of the NFT creator
 	CreatorName string
 	// NFT creator website URL
@@ -480,6 +478,8 @@ type RegisterPayload struct {
 	CollectionActTxid *string
 	// OpenAPI GroupID string
 	OpenAPIGroupID *string
+	// Passphrase of the owner's PastelID
+	Key string
 }
 
 // RegisterResult is the result type of the nft service register method.
@@ -878,22 +878,22 @@ func transformNftviewsNftRegisterPayloadViewToNftRegisterPayload(v *nftviews.Nft
 		return nil
 	}
 	res := &NftRegisterPayload{
-		Name:                      *v.Name,
-		Description:               v.Description,
-		Keywords:                  v.Keywords,
-		SeriesName:                v.SeriesName,
-		IssuedCopies:              v.IssuedCopies,
-		YoutubeURL:                v.YoutubeURL,
-		CreatorPastelID:           *v.CreatorPastelID,
-		CreatorPastelIDPassphrase: *v.CreatorPastelIDPassphrase,
-		CreatorName:               *v.CreatorName,
-		CreatorWebsiteURL:         v.CreatorWebsiteURL,
-		SpendableAddress:          *v.SpendableAddress,
-		MaximumFee:                *v.MaximumFee,
-		Royalty:                   v.Royalty,
-		Green:                     v.Green,
-		CollectionActTxid:         v.CollectionActTxid,
-		OpenAPIGroupID:            v.OpenAPIGroupID,
+		Name:              *v.Name,
+		Description:       v.Description,
+		Keywords:          v.Keywords,
+		SeriesName:        v.SeriesName,
+		IssuedCopies:      v.IssuedCopies,
+		YoutubeURL:        v.YoutubeURL,
+		CreatorPastelID:   *v.CreatorPastelID,
+		CreatorName:       *v.CreatorName,
+		CreatorWebsiteURL: v.CreatorWebsiteURL,
+		SpendableAddress:  *v.SpendableAddress,
+		MaximumFee:        *v.MaximumFee,
+		Royalty:           v.Royalty,
+		Green:             v.Green,
+		CollectionActTxid: v.CollectionActTxid,
+		OpenAPIGroupID:    v.OpenAPIGroupID,
+		Key:               *v.Key,
 	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
@@ -944,23 +944,23 @@ func transformNftviewsTaskStateViewToTaskState(v *nftviews.TaskStateView) *TaskS
 // *NftRegisterPayload.
 func transformNftRegisterPayloadToNftviewsNftRegisterPayloadView(v *NftRegisterPayload) *nftviews.NftRegisterPayloadView {
 	res := &nftviews.NftRegisterPayloadView{
-		Name:                      &v.Name,
-		Description:               v.Description,
-		Keywords:                  v.Keywords,
-		SeriesName:                v.SeriesName,
-		IssuedCopies:              v.IssuedCopies,
-		YoutubeURL:                v.YoutubeURL,
-		CreatorPastelID:           &v.CreatorPastelID,
-		CreatorPastelIDPassphrase: &v.CreatorPastelIDPassphrase,
-		CreatorName:               &v.CreatorName,
-		CreatorWebsiteURL:         v.CreatorWebsiteURL,
-		SpendableAddress:          &v.SpendableAddress,
-		MaximumFee:                &v.MaximumFee,
-		Royalty:                   v.Royalty,
-		Green:                     v.Green,
-		MakePubliclyAccessible:    &v.MakePubliclyAccessible,
-		CollectionActTxid:         v.CollectionActTxid,
-		OpenAPIGroupID:            v.OpenAPIGroupID,
+		Name:                   &v.Name,
+		Description:            v.Description,
+		Keywords:               v.Keywords,
+		SeriesName:             v.SeriesName,
+		IssuedCopies:           v.IssuedCopies,
+		YoutubeURL:             v.YoutubeURL,
+		CreatorPastelID:        &v.CreatorPastelID,
+		CreatorName:            &v.CreatorName,
+		CreatorWebsiteURL:      v.CreatorWebsiteURL,
+		SpendableAddress:       &v.SpendableAddress,
+		MaximumFee:             &v.MaximumFee,
+		Royalty:                v.Royalty,
+		Green:                  v.Green,
+		MakePubliclyAccessible: &v.MakePubliclyAccessible,
+		CollectionActTxid:      v.CollectionActTxid,
+		OpenAPIGroupID:         v.OpenAPIGroupID,
+		Key:                    &v.Key,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = transformThumbnailcoordinateToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
