@@ -34,8 +34,6 @@ type RegisterRequestBody struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Creator's PastelID
 	CreatorPastelID *string `form:"creator_pastelid,omitempty" json:"creator_pastelid,omitempty" xml:"creator_pastelid,omitempty"`
-	// Passphrase of the artist's PastelID
-	CreatorPastelIDPassphrase *string `form:"creator_pastelid_passphrase,omitempty" json:"creator_pastelid_passphrase,omitempty" xml:"creator_pastelid_passphrase,omitempty"`
 	// Name of the NFT creator
 	CreatorName *string `form:"creator_name,omitempty" json:"creator_name,omitempty" xml:"creator_name,omitempty"`
 	// NFT creator website URL
@@ -712,8 +710,6 @@ type NftRegisterPayloadResponseBody struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Creator's PastelID
 	CreatorPastelID string `form:"creator_pastelid" json:"creator_pastelid" xml:"creator_pastelid"`
-	// Passphrase of the artist's PastelID
-	CreatorPastelIDPassphrase string `form:"creator_pastelid_passphrase" json:"creator_pastelid_passphrase" xml:"creator_pastelid_passphrase"`
 	// Name of the NFT creator
 	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
 	// NFT creator website URL
@@ -735,6 +731,8 @@ type NftRegisterPayloadResponseBody struct {
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// OpenAPI GroupID string
 	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
+	// Passphrase of the owner's PastelID
+	Key string `form:"key" json:"key" xml:"key"`
 }
 
 // ThumbnailcoordinateResponseBody is used to define fields on response body
@@ -777,8 +775,6 @@ type NftRegisterPayloadResponse struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Creator's PastelID
 	CreatorPastelID string `form:"creator_pastelid" json:"creator_pastelid" xml:"creator_pastelid"`
-	// Passphrase of the artist's PastelID
-	CreatorPastelIDPassphrase string `form:"creator_pastelid_passphrase" json:"creator_pastelid_passphrase" xml:"creator_pastelid_passphrase"`
 	// Name of the NFT creator
 	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
 	// NFT creator website URL
@@ -800,6 +796,8 @@ type NftRegisterPayloadResponse struct {
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// OpenAPI GroupID string
 	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
+	// Passphrase of the owner's PastelID
+	Key string `form:"key" json:"key" xml:"key"`
 }
 
 // ThumbnailcoordinateResponse is used to define fields on response body types.
@@ -1352,25 +1350,24 @@ func NewDdServiceOutputFileDetailInternalServerErrorResponseBody(res *goa.Servic
 }
 
 // NewRegisterPayload builds a nft service register endpoint payload.
-func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
+func NewRegisterPayload(body *RegisterRequestBody, key string) *nft.RegisterPayload {
 	v := &nft.RegisterPayload{
-		ImageID:                   *body.ImageID,
-		Name:                      *body.Name,
-		Description:               body.Description,
-		Keywords:                  body.Keywords,
-		SeriesName:                body.SeriesName,
-		IssuedCopies:              body.IssuedCopies,
-		YoutubeURL:                body.YoutubeURL,
-		CreatorPastelID:           *body.CreatorPastelID,
-		CreatorPastelIDPassphrase: *body.CreatorPastelIDPassphrase,
-		CreatorName:               *body.CreatorName,
-		CreatorWebsiteURL:         body.CreatorWebsiteURL,
-		SpendableAddress:          *body.SpendableAddress,
-		MaximumFee:                *body.MaximumFee,
-		Royalty:                   body.Royalty,
-		Green:                     body.Green,
-		CollectionActTxid:         body.CollectionActTxid,
-		OpenAPIGroupID:            body.OpenAPIGroupID,
+		ImageID:           *body.ImageID,
+		Name:              *body.Name,
+		Description:       body.Description,
+		Keywords:          body.Keywords,
+		SeriesName:        body.SeriesName,
+		IssuedCopies:      body.IssuedCopies,
+		YoutubeURL:        body.YoutubeURL,
+		CreatorPastelID:   *body.CreatorPastelID,
+		CreatorName:       *body.CreatorName,
+		CreatorWebsiteURL: body.CreatorWebsiteURL,
+		SpendableAddress:  *body.SpendableAddress,
+		MaximumFee:        *body.MaximumFee,
+		Royalty:           body.Royalty,
+		Green:             body.Green,
+		CollectionActTxid: body.CollectionActTxid,
+		OpenAPIGroupID:    body.OpenAPIGroupID,
 	}
 	if body.MakePubliclyAccessible != nil {
 		v.MakePubliclyAccessible = *body.MakePubliclyAccessible
@@ -1381,6 +1378,7 @@ func NewRegisterPayload(body *RegisterRequestBody) *nft.RegisterPayload {
 	if body.MakePubliclyAccessible == nil {
 		v.MakePubliclyAccessible = false
 	}
+	v.Key = key
 
 	return v
 }
@@ -1492,9 +1490,6 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 	}
 	if body.CreatorPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "body"))
-	}
-	if body.CreatorPastelIDPassphrase == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid_passphrase", "body"))
 	}
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))

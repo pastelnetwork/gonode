@@ -30,6 +30,8 @@ var _ = Service("nft", func() {
 		Description("Runs a new registration process for the new NFT.")
 		Meta("swagger:summary", "Registers a new NFT")
 
+		Security(APIKeyAuth)
+
 		Payload(func() {
 			Extend(NftRegisterPayload)
 			Attribute("image_id", String, func() {
@@ -297,11 +299,6 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
-	Attribute("creator_pastelid_passphrase", String, func() {
-		Meta("struct:field:name", "CreatorPastelIDPassphrase")
-		Description("Passphrase of the artist's PastelID")
-		Example("qwerasdf1234")
-	})
 	Attribute("creator_name", String, func() {
 		Description("Name of the NFT creator")
 		MaxLength(256)
@@ -347,7 +344,6 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 		Default(false)
 
 	})
-
 	Attribute("collection_act_txid", String, func() {
 		Description("Act Collection TxID to add given ticket in collection ")
 		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
@@ -356,8 +352,12 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 	Attribute("open_api_group_id", String, func() {
 		Description("OpenAPI GroupID string")
 	})
+	APIKey("api_key", "key", String, func() {
+		Description("Passphrase of the owner's PastelID")
+		Example("Basic abcdef12345")
+	})
 
-	Required("creator_name", "name", "creator_pastelid", "creator_pastelid_passphrase", "spendable_address", "maximum_fee")
+	Required("creator_name", "name", "creator_pastelid", "spendable_address", "maximum_fee", "key")
 })
 
 // NftRegisterResult is NFT registeration result.

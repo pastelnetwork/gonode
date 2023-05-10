@@ -766,11 +766,11 @@ paths:
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                                    creator_pastelid_passphrase: qwerasdf1234
                                     creator_website_url: https://www.leonardodavinci.net
                                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                                     green: false
                                     issued_copies: 1
+                                    key: Basic abcdef12345
                                     keywords: Renaissance, sfumato, portrait
                                     make_publicly_accessible: false
                                     maximum_fee: 100
@@ -792,11 +792,11 @@ paths:
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                                    creator_pastelid_passphrase: qwerasdf1234
                                     creator_website_url: https://www.leonardodavinci.net
                                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                                     green: false
                                     issued_copies: 1
+                                    key: Basic abcdef12345
                                     keywords: Renaissance, sfumato, portrait
                                     make_publicly_accessible: false
                                     maximum_fee: 100
@@ -818,11 +818,11 @@ paths:
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                                    creator_pastelid_passphrase: qwerasdf1234
                                     creator_website_url: https://www.leonardodavinci.net
                                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                                     green: false
                                     issued_copies: 1
+                                    key: Basic abcdef12345
                                     keywords: Renaissance, sfumato, portrait
                                     make_publicly_accessible: false
                                     maximum_fee: 100
@@ -844,11 +844,11 @@ paths:
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                                    creator_pastelid_passphrase: qwerasdf1234
                                     creator_website_url: https://www.leonardodavinci.net
                                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                                     green: false
                                     issued_copies: 1
+                                    key: Basic abcdef12345
                                     keywords: Renaissance, sfumato, portrait
                                     make_publicly_accessible: false
                                     maximum_fee: 100
@@ -886,7 +886,6 @@ paths:
                             collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                             creator_name: Leonardo da Vinci
                             creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                            creator_pastelid_passphrase: qwerasdf1234
                             creator_website_url: https://www.leonardodavinci.net
                             description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                             green: false
@@ -927,6 +926,8 @@ paths:
                         application/vnd.goa.error:
                             schema:
                                 $ref: '#/components/schemas/Error'
+            security:
+                - api_key_header_Authorization: []
     /nfts/register/{taskId}:
         get:
             tags:
@@ -969,11 +970,11 @@ paths:
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                                    creator_pastelid_passphrase: qwerasdf1234
                                     creator_website_url: https://www.leonardodavinci.net
                                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                                     green: false
                                     issued_copies: 1
+                                    key: Basic abcdef12345
                                     keywords: Renaissance, sfumato, portrait
                                     make_publicly_accessible: false
                                     maximum_fee: 100
@@ -3430,10 +3431,6 @@ components:
                     pattern: ^[a-zA-Z0-9]+$
                     minLength: 86
                     maxLength: 86
-                creator_pastelid_passphrase:
-                    type: string
-                    description: Passphrase of the artist's PastelID
-                    example: qwerasdf1234
                 creator_website_url:
                     type: string
                     description: NFT creator website URL
@@ -3453,6 +3450,10 @@ components:
                     description: Number of copies issued
                     example: 1
                     maximum: 1000
+                key:
+                    type: string
+                    description: Passphrase of the owner's PastelID
+                    example: Basic abcdef12345
                 keywords:
                     type: string
                     description: Keywords
@@ -3507,11 +3508,11 @@ components:
                 collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                creator_pastelid_passphrase: qwerasdf1234
                 creator_website_url: https://www.leonardodavinci.net
                 description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                 green: false
                 issued_copies: 1
+                key: Basic abcdef12345
                 keywords: Renaissance, sfumato, portrait
                 make_publicly_accessible: false
                 maximum_fee: 100
@@ -3530,9 +3531,9 @@ components:
                 - creator_name
                 - name
                 - creator_pastelid
-                - creator_pastelid_passphrase
                 - spendable_address
                 - maximum_fee
+                - key
         NftSearchResult:
             type: object
             properties:
@@ -4045,10 +4046,6 @@ components:
                     pattern: ^[a-zA-Z0-9]+$
                     minLength: 86
                     maxLength: 86
-                creator_pastelid_passphrase:
-                    type: string
-                    description: Passphrase of the artist's PastelID
-                    example: qwerasdf1234
                 creator_website_url:
                     type: string
                     description: NFT creator website URL
@@ -4127,7 +4124,6 @@ components:
                 collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                creator_pastelid_passphrase: qwerasdf1234
                 creator_website_url: https://www.leonardodavinci.net
                 description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                 green: false
@@ -4152,7 +4148,6 @@ components:
                 - creator_name
                 - name
                 - creator_pastelid
-                - creator_pastelid_passphrase
                 - spendable_address
                 - maximum_fee
         RegisterResult:
@@ -4265,11 +4260,11 @@ components:
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                    creator_pastelid_passphrase: qwerasdf1234
                     creator_website_url: https://www.leonardodavinci.net
                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                     green: false
                     issued_copies: 1
+                    key: Basic abcdef12345
                     keywords: Renaissance, sfumato, portrait
                     make_publicly_accessible: false
                     maximum_fee: 100
@@ -4470,11 +4465,11 @@ components:
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                    creator_pastelid_passphrase: qwerasdf1234
                     creator_website_url: https://www.leonardodavinci.net
                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                     green: false
                     issued_copies: 1
+                    key: Basic abcdef12345
                     keywords: Renaissance, sfumato, portrait
                     make_publicly_accessible: false
                     maximum_fee: 100
@@ -4506,11 +4501,11 @@ components:
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                    creator_pastelid_passphrase: qwerasdf1234
                     creator_website_url: https://www.leonardodavinci.net
                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                     green: false
                     issued_copies: 1
+                    key: Basic abcdef12345
                     keywords: Renaissance, sfumato, portrait
                     make_publicly_accessible: false
                     maximum_fee: 100
@@ -4532,11 +4527,11 @@ components:
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                    creator_pastelid_passphrase: qwerasdf1234
                     creator_website_url: https://www.leonardodavinci.net
                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                     green: false
                     issued_copies: 1
+                    key: Basic abcdef12345
                     keywords: Renaissance, sfumato, portrait
                     make_publicly_accessible: false
                     maximum_fee: 100
@@ -4558,11 +4553,11 @@ components:
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                    creator_pastelid_passphrase: qwerasdf1234
                     creator_website_url: https://www.leonardodavinci.net
                     description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                     green: false
                     issued_copies: 1
+                    key: Basic abcdef12345
                     keywords: Renaissance, sfumato, portrait
                     make_publicly_accessible: false
                     maximum_fee: 100

@@ -30,20 +30,20 @@ func TestFromNftRegisterPayload(t *testing.T) {
 		"success": {
 			args: args{
 				payload: &nft.RegisterPayload{
-					Name:                      "name",
-					Description:               &des,
-					Keywords:                  &key,
-					SeriesName:                &series,
-					IssuedCopies:              &issuedCopies,
-					YoutubeURL:                &url,
-					CreatorPastelID:           "pastelid",
-					CreatorPastelIDPassphrase: "passphrase",
-					CreatorName:               "creator",
-					CreatorWebsiteURL:         &url,
-					SpendableAddress:          "spendaddr",
-					MaximumFee:                12,
-					Green:                     &green,
-					Royalty:                   &royalty,
+					Name:              "name",
+					Description:       &des,
+					Keywords:          &key,
+					SeriesName:        &series,
+					IssuedCopies:      &issuedCopies,
+					YoutubeURL:        &url,
+					CreatorPastelID:   "pastelid",
+					Key:               "passphrase",
+					CreatorName:       "creator",
+					CreatorWebsiteURL: &url,
+					SpendableAddress:  "spendaddr",
+					MaximumFee:        12,
+					Green:             &green,
+					Royalty:           &royalty,
 					ThumbnailCoordinate: &nft.Thumbnailcoordinate{
 						TopLeftX:     0,
 						TopLeftY:     0,
@@ -64,7 +64,7 @@ func TestFromNftRegisterPayload(t *testing.T) {
 			gotReq := FromNftRegisterPayload(tc.args.payload)
 			assert.Equal(t, gotReq.CreatorName, tc.args.payload.CreatorName)
 			assert.Equal(t, gotReq.CreatorPastelID, tc.args.payload.CreatorPastelID)
-			assert.Equal(t, gotReq.CreatorPastelIDPassphrase, tc.args.payload.CreatorPastelIDPassphrase)
+			assert.Equal(t, gotReq.CreatorPastelIDPassphrase, tc.args.payload.Key)
 			assert.Equal(t, gotReq.Description, tc.args.payload.Description)
 			assert.Equal(t, gotReq.Keywords, tc.args.payload.Keywords)
 			assert.Equal(t, gotReq.CreatorWebsiteURL, tc.args.payload.CreatorWebsiteURL)
@@ -132,7 +132,7 @@ func TestToNftRegisterTicket(t *testing.T) {
 			gotReq := ToNftRegisterTicket(tc.args.payload)
 			assert.Equal(t, gotReq.CreatorName, tc.args.payload.CreatorName)
 			assert.Equal(t, gotReq.CreatorPastelID, tc.args.payload.CreatorPastelID)
-			assert.Equal(t, gotReq.CreatorPastelIDPassphrase, tc.args.payload.CreatorPastelIDPassphrase)
+			assert.Equal(t, gotReq.Key, tc.args.payload.CreatorPastelIDPassphrase)
 			assert.Equal(t, gotReq.Description, tc.args.payload.Description)
 			assert.Equal(t, gotReq.Keywords, tc.args.payload.Keywords)
 			assert.Equal(t, gotReq.CreatorWebsiteURL, tc.args.payload.CreatorWebsiteURL)

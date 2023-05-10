@@ -45,6 +45,10 @@ func EncodeRegisterRequest(encoder func(*http.Request) goahttp.Encoder) func(*ht
 		if !ok {
 			return goahttp.ErrInvalidType("nft", "register", "*nft.RegisterPayload", v)
 		}
+		{
+			head := p.Key
+			req.Header.Set("Authorization", head)
+		}
 		body := NewRegisterRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
 			return goahttp.ErrEncodingError("nft", "register", err)
@@ -1206,23 +1210,23 @@ func unmarshalTaskStateResponseBodyToNftviewsTaskStateView(v *TaskStateResponseB
 // *NftRegisterPayloadResponseBody.
 func unmarshalNftRegisterPayloadResponseBodyToNftviewsNftRegisterPayloadView(v *NftRegisterPayloadResponseBody) *nftviews.NftRegisterPayloadView {
 	res := &nftviews.NftRegisterPayloadView{
-		Name:                      v.Name,
-		Description:               v.Description,
-		Keywords:                  v.Keywords,
-		SeriesName:                v.SeriesName,
-		IssuedCopies:              v.IssuedCopies,
-		YoutubeURL:                v.YoutubeURL,
-		CreatorPastelID:           v.CreatorPastelID,
-		CreatorPastelIDPassphrase: v.CreatorPastelIDPassphrase,
-		CreatorName:               v.CreatorName,
-		CreatorWebsiteURL:         v.CreatorWebsiteURL,
-		SpendableAddress:          v.SpendableAddress,
-		MaximumFee:                v.MaximumFee,
-		Royalty:                   v.Royalty,
-		Green:                     v.Green,
-		MakePubliclyAccessible:    v.MakePubliclyAccessible,
-		CollectionActTxid:         v.CollectionActTxid,
-		OpenAPIGroupID:            v.OpenAPIGroupID,
+		Name:                   v.Name,
+		Description:            v.Description,
+		Keywords:               v.Keywords,
+		SeriesName:             v.SeriesName,
+		IssuedCopies:           v.IssuedCopies,
+		YoutubeURL:             v.YoutubeURL,
+		CreatorPastelID:        v.CreatorPastelID,
+		CreatorName:            v.CreatorName,
+		CreatorWebsiteURL:      v.CreatorWebsiteURL,
+		SpendableAddress:       v.SpendableAddress,
+		MaximumFee:             v.MaximumFee,
+		Royalty:                v.Royalty,
+		Green:                  v.Green,
+		MakePubliclyAccessible: v.MakePubliclyAccessible,
+		CollectionActTxid:      v.CollectionActTxid,
+		OpenAPIGroupID:         v.OpenAPIGroupID,
+		Key:                    v.Key,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseBodyToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
@@ -1286,23 +1290,23 @@ func unmarshalTaskStateResponseToNftviewsTaskStateView(v *TaskStateResponse) *nf
 // *NftRegisterPayloadResponse.
 func unmarshalNftRegisterPayloadResponseToNftviewsNftRegisterPayloadView(v *NftRegisterPayloadResponse) *nftviews.NftRegisterPayloadView {
 	res := &nftviews.NftRegisterPayloadView{
-		Name:                      v.Name,
-		Description:               v.Description,
-		Keywords:                  v.Keywords,
-		SeriesName:                v.SeriesName,
-		IssuedCopies:              v.IssuedCopies,
-		YoutubeURL:                v.YoutubeURL,
-		CreatorPastelID:           v.CreatorPastelID,
-		CreatorPastelIDPassphrase: v.CreatorPastelIDPassphrase,
-		CreatorName:               v.CreatorName,
-		CreatorWebsiteURL:         v.CreatorWebsiteURL,
-		SpendableAddress:          v.SpendableAddress,
-		MaximumFee:                v.MaximumFee,
-		Royalty:                   v.Royalty,
-		Green:                     v.Green,
-		MakePubliclyAccessible:    v.MakePubliclyAccessible,
-		CollectionActTxid:         v.CollectionActTxid,
-		OpenAPIGroupID:            v.OpenAPIGroupID,
+		Name:                   v.Name,
+		Description:            v.Description,
+		Keywords:               v.Keywords,
+		SeriesName:             v.SeriesName,
+		IssuedCopies:           v.IssuedCopies,
+		YoutubeURL:             v.YoutubeURL,
+		CreatorPastelID:        v.CreatorPastelID,
+		CreatorName:            v.CreatorName,
+		CreatorWebsiteURL:      v.CreatorWebsiteURL,
+		SpendableAddress:       v.SpendableAddress,
+		MaximumFee:             v.MaximumFee,
+		Royalty:                v.Royalty,
+		Green:                  v.Green,
+		MakePubliclyAccessible: v.MakePubliclyAccessible,
+		CollectionActTxid:      v.CollectionActTxid,
+		OpenAPIGroupID:         v.OpenAPIGroupID,
+		Key:                    v.Key,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)

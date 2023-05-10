@@ -88,8 +88,6 @@ type NftRegisterPayloadView struct {
 	YoutubeURL *string
 	// Creator's PastelID
 	CreatorPastelID *string
-	// Passphrase of the artist's PastelID
-	CreatorPastelIDPassphrase *string
 	// Name of the NFT creator
 	CreatorName *string
 	// NFT creator website URL
@@ -111,6 +109,8 @@ type NftRegisterPayloadView struct {
 	CollectionActTxid *string
 	// OpenAPI GroupID string
 	OpenAPIGroupID *string
+	// Passphrase of the owner's PastelID
+	Key *string
 }
 
 // ThumbnailcoordinateView is a type that runs validations on a projected type.
@@ -394,14 +394,14 @@ func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) 
 	if result.CreatorPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid", "result"))
 	}
-	if result.CreatorPastelIDPassphrase == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("creator_pastelid_passphrase", "result"))
-	}
 	if result.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "result"))
 	}
 	if result.MaximumFee == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("maximum_fee", "result"))
+	}
+	if result.Key == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("key", "result"))
 	}
 	if result.Name != nil {
 		if utf8.RuneCountInString(*result.Name) > 256 {

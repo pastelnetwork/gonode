@@ -53,7 +53,23 @@ func DecodeRegisterRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if err != nil {
 			return nil, err
 		}
-		payload := NewRegisterPayload(&body)
+
+		var (
+			key string
+		)
+		key = r.Header.Get("Authorization")
+		if key == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "header"))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewRegisterPayload(&body, key)
+		if strings.Contains(payload.Key, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Key, " ", 2)[1]
+			payload.Key = cred
+		}
 
 		return payload, nil
 	}
@@ -1201,22 +1217,22 @@ func marshalNftviewsTaskStateViewToTaskStateResponseBody(v *nftviews.TaskStateVi
 // *nftviews.NftRegisterPayloadView.
 func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponseBody(v *nftviews.NftRegisterPayloadView) *NftRegisterPayloadResponseBody {
 	res := &NftRegisterPayloadResponseBody{
-		Name:                      *v.Name,
-		Description:               v.Description,
-		Keywords:                  v.Keywords,
-		SeriesName:                v.SeriesName,
-		IssuedCopies:              v.IssuedCopies,
-		YoutubeURL:                v.YoutubeURL,
-		CreatorPastelID:           *v.CreatorPastelID,
-		CreatorPastelIDPassphrase: *v.CreatorPastelIDPassphrase,
-		CreatorName:               *v.CreatorName,
-		CreatorWebsiteURL:         v.CreatorWebsiteURL,
-		SpendableAddress:          *v.SpendableAddress,
-		MaximumFee:                *v.MaximumFee,
-		Royalty:                   v.Royalty,
-		Green:                     v.Green,
-		CollectionActTxid:         v.CollectionActTxid,
-		OpenAPIGroupID:            v.OpenAPIGroupID,
+		Name:              *v.Name,
+		Description:       v.Description,
+		Keywords:          v.Keywords,
+		SeriesName:        v.SeriesName,
+		IssuedCopies:      v.IssuedCopies,
+		YoutubeURL:        v.YoutubeURL,
+		CreatorPastelID:   *v.CreatorPastelID,
+		CreatorName:       *v.CreatorName,
+		CreatorWebsiteURL: v.CreatorWebsiteURL,
+		SpendableAddress:  *v.SpendableAddress,
+		MaximumFee:        *v.MaximumFee,
+		Royalty:           v.Royalty,
+		Green:             v.Green,
+		CollectionActTxid: v.CollectionActTxid,
+		OpenAPIGroupID:    v.OpenAPIGroupID,
+		Key:               *v.Key,
 	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
@@ -1268,22 +1284,22 @@ func marshalNftviewsTaskViewToTaskResponseTiny(v *nftviews.TaskView) *TaskRespon
 // *nftviews.NftRegisterPayloadView.
 func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponse(v *nftviews.NftRegisterPayloadView) *NftRegisterPayloadResponse {
 	res := &NftRegisterPayloadResponse{
-		Name:                      *v.Name,
-		Description:               v.Description,
-		Keywords:                  v.Keywords,
-		SeriesName:                v.SeriesName,
-		IssuedCopies:              v.IssuedCopies,
-		YoutubeURL:                v.YoutubeURL,
-		CreatorPastelID:           *v.CreatorPastelID,
-		CreatorPastelIDPassphrase: *v.CreatorPastelIDPassphrase,
-		CreatorName:               *v.CreatorName,
-		CreatorWebsiteURL:         v.CreatorWebsiteURL,
-		SpendableAddress:          *v.SpendableAddress,
-		MaximumFee:                *v.MaximumFee,
-		Royalty:                   v.Royalty,
-		Green:                     v.Green,
-		CollectionActTxid:         v.CollectionActTxid,
-		OpenAPIGroupID:            v.OpenAPIGroupID,
+		Name:              *v.Name,
+		Description:       v.Description,
+		Keywords:          v.Keywords,
+		SeriesName:        v.SeriesName,
+		IssuedCopies:      v.IssuedCopies,
+		YoutubeURL:        v.YoutubeURL,
+		CreatorPastelID:   *v.CreatorPastelID,
+		CreatorName:       *v.CreatorName,
+		CreatorWebsiteURL: v.CreatorWebsiteURL,
+		SpendableAddress:  *v.SpendableAddress,
+		MaximumFee:        *v.MaximumFee,
+		Royalty:           v.Royalty,
+		Green:             v.Green,
+		CollectionActTxid: v.CollectionActTxid,
+		OpenAPIGroupID:    v.OpenAPIGroupID,
+		Key:               *v.Key,
 	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
