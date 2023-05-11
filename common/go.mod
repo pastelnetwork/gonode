@@ -10,7 +10,7 @@ replace (
 
 require (
 	github.com/DataDog/zstd v1.5.2
-	github.com/cloudflare/circl v1.2.0
+	github.com/cloudflare/circl v1.3.3
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/go-errors/errors v1.4.2
@@ -26,9 +26,9 @@ require (
 	github.com/stretchr/testify v1.7.2
 	github.com/urfave/cli/v2 v2.8.1
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
+	golang.org/x/crypto v0.3.1-0.20221117191849-2c476679df9a
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
-	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c
+	golang.org/x/sys v0.3.0
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
