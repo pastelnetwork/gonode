@@ -1,12 +1,16 @@
 package fingerprint
 
+import (
+	"strings"
+)
+
 func typeMapper(val string) string {
-	if val == "action-reg" {
+	if val == "sense" {
 		return "SENSE"
 	}
 	if val == "nft-reg" {
 		return "NFT"
 	}
 
-	return val
+	return strings.ToUpper(val)
 }
