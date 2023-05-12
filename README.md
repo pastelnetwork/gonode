@@ -2,11 +2,11 @@
 
 [![PastelNetwork](https://circleci.com/gh/pastelnetwork/gonode.svg?style=shield)](https://app.circleci.com/pipelines/github/pastelnetwork/gonode)
 
-GoNode comprises two primary applications, walletnode and supernode. They are engineered to facilitate NFT registration on the Pastel blockchain. Neither walletnode nor supernode directly interface with the blockchain. Instead, they employ Pastel's RPC API to interact with Pastel's cNode, which manages the blockchain itself.
+GoNode comprises two primary applications, `walletnode` and `supernode`. They are engineered to facilitate NFT registration on the [Pastel](https://docs.pastel.network/introduction/pastel-overview) blockchain. Neither `walletnode` nor `supernode` directly interface with the blockchain. Instead, they employ Pastel's RPC API to interact with Pastel's [cNode](https://github.com/pastelnetwork/pastel), which manages the blockchain itself.
 
 ## Getting started
-- Begin with golang and install the latest version.
-- To generate mocks, install mockery.
+- Begin with [`golang`](https://go.dev/doc/) and install the latest version.
+- To generate mocks, install [`mockery`](https://github.com/vektra/mockery).
 - For proto generation, install the protoc compiler, protoc-gen-go, and protoc-gen-go-grpc:
 
 ```
