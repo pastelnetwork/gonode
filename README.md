@@ -16,9 +16,9 @@ GoNode comprises two primary applications, `walletnode` and `supernode`. They ar
 
 ## Walletnode
 
-[`walletnode`](walletnode/README.md) operates as an API server, providing REST APIs on the client-side. The APIs enable users to search, view, and download NFTs, as well as register their own NFTs. Additionally, it allows end-users and other applications to utilize the Pastel Network's duplication detection system for images and a storage system. By default, it operates on port :8080. Configurations can be modified via walletnode.yml in the Pastel configuration directory.
+[`walletnode`](walletnode/README.md) operates as an API server, providing REST APIs on the client-side. The APIs enable users to search, view, and download NFTs, as well as register their own NFTs. Additionally, it allows end-users and other applications to utilize the Pastel Network's duplication detection system for images and a storage system. By default, it operates on port :8080. Configurations can be modified via `walletnode.yml` in the Pastel configuration directory.
 
-It offers the following Workflow APIs. The list below provides a high-level overview. For detailed API information, please refer to the swagger docs at localhost:8080/swagger.
+It offers the following Workflow APIs. The list below provides a high-level overview. For detailed API information, please refer to the swagger docs at `localhost:8080/swagger`
 
 #### NFT Register & Search
 Use this workflow to register a new NFT as an artist/creator. You'll need your PastelID registered on the network. The steps to achieve this are detailed in the Testing Section of this document.
