@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 
 	"github.com/btcsuite/btcutil/base58"
 )
@@ -31,10 +32,15 @@ type NodeList struct {
 
 	// Comparator is the id to compare to
 	Comparator []byte
+
+	Mux sync.RWMutex
 }
 
 // String returns the dump information for node list
 func (s *NodeList) String() string {
+	s.Mux.RLock()
+	defer s.Mux.RUnlock()
+
 	nodes := []string{}
 	for _, node := range s.Nodes {
 		nodes = append(nodes, node.String())
@@ -44,6 +50,9 @@ func (s *NodeList) String() string {
 
 // DelNode deletes a node from list
 func (s *NodeList) DelNode(node *Node) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+
 	for i := 0; i < s.Len(); i++ {
 		if bytes.Equal(s.Nodes[i].ID, node.ID) {
 			newList := s.Nodes[:i]
@@ -60,6 +69,9 @@ func (s *NodeList) DelNode(node *Node) {
 
 // Exists return true if the node is already there
 func (s *NodeList) Exists(node *Node) bool {
+	s.Mux.RLock()
+	defer s.Mux.RUnlock()
+
 	for _, item := range s.Nodes {
 		if bytes.Equal(item.ID, node.ID) {
 			return true
@@ -70,6 +82,9 @@ func (s *NodeList) Exists(node *Node) bool {
 
 // AddNodes appends the nodes to node list if it's not existed
 func (s *NodeList) AddNodes(nodes []*Node) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+
 	for _, node := range nodes {
 		if !s.Exists(node) {
 			s.Nodes = append(s.Nodes, node)
@@ -79,16 +94,25 @@ func (s *NodeList) AddNodes(nodes []*Node) {
 
 // Len check length
 func (s *NodeList) Len() int {
+	s.Mux.RLock()
+	defer s.Mux.RUnlock()
+
 	return len(s.Nodes)
 }
 
 // Swap swap two nodes
 func (s *NodeList) Swap(i, j int) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+
 	s.Nodes[i], s.Nodes[j] = s.Nodes[j], s.Nodes[i]
 }
 
 // Less compare two nodes
 func (s *NodeList) Less(i, j int) bool {
+	s.Mux.RLock()
+	defer s.Mux.RUnlock()
+
 	id := s.distance(s.Nodes[i].ID, s.Comparator)
 	jd := s.distance(s.Nodes[j].ID, s.Comparator)
 

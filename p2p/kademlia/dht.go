@@ -327,7 +327,6 @@ func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Mes
 func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []byte, nl *NodeList, contacted map[string]bool, haveRest bool) chan *Message {
 	// responses from remote node
 	responses := make(chan *Message, Alpha)
-	mtx := sync.Mutex{}
 
 	go func() {
 		// the nodes which are unreachable
@@ -390,9 +389,6 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 
 		// delete the node which is unreachable
 		go func() {
-			mtx.Lock()
-			defer mtx.Unlock()
-
 			for _, node := range removedNodes {
 				nl.DelNode(node)
 			}
