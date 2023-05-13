@@ -115,6 +115,7 @@ func (s *NodeList) Swap(i, j int) {
 	}
 }
 
+// Sort sorts nodes
 func (s *NodeList) Sort() {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
