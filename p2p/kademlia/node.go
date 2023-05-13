@@ -73,7 +73,7 @@ func (s *NodeList) Exists(node *Node) bool {
 	s.Mux.RLock()
 	defer s.Mux.RUnlock()
 
-	return s.Exists(node)
+	return s.exists(node)
 }
 
 func (s *NodeList) exists(node *Node) bool {
