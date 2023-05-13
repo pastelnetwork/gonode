@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sort"
 	"sync"
 	"time"
 
@@ -330,7 +329,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 
 	go func() {
 		// the nodes which are unreachable
-		removedNodes := []*Node{}
+		var removedNodes []*Node
 
 		var wg sync.WaitGroup
 
@@ -353,7 +352,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 			log.P2P().WithContext(ctx).Debugf("start work %v for node: %s", iterativeType, node.String())
 
 			wg.Add(1)
-			// send and recive message concurrently
+			// send and receive message concurrently
 			go func(receiver *Node) {
 				defer wg.Done()
 
@@ -480,7 +479,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		}
 
 		// sort the nodes for node list
-		sort.Sort(nl)
+		nl.Sort()
 
 		log.P2P().WithContext(ctx).Debugf("id: %v, iterate %d, sorted nodes: %v", base58.Encode(s.ht.self.ID), iterativeType, nl.String())
 
@@ -501,7 +500,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 				storeCount := 0
 				for i := 0; i < len(nl.Nodes); i++ {
 					logEntry := log.P2P().WithContext(ctx).WithField("node", nl.Nodes[i]).WithField("task_id", taskID)
-					// limite the count below K
+					// limit the count below K
 					if i >= K {
 						return nil, nil
 					}

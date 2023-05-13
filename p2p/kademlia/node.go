@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"sort"
 	"strings"
 	"sync"
 
@@ -41,7 +42,7 @@ func (s *NodeList) String() string {
 	s.Mux.RLock()
 	defer s.Mux.RUnlock()
 
-	nodes := []string{}
+	var nodes []string
 	for _, node := range s.Nodes {
 		nodes = append(nodes, node.String())
 	}
@@ -72,6 +73,10 @@ func (s *NodeList) Exists(node *Node) bool {
 	s.Mux.RLock()
 	defer s.Mux.RUnlock()
 
+	return s.Exists(node)
+}
+
+func (s *NodeList) exists(node *Node) bool {
 	for _, item := range s.Nodes {
 		if bytes.Equal(item.ID, node.ID) {
 			return true
@@ -86,7 +91,7 @@ func (s *NodeList) AddNodes(nodes []*Node) {
 	defer s.Mux.Unlock()
 
 	for _, node := range nodes {
-		if !s.Exists(node) {
+		if !s.exists(node) {
 			s.Nodes = append(s.Nodes, node)
 		}
 	}
@@ -105,18 +110,30 @@ func (s *NodeList) Swap(i, j int) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 
-	s.Nodes[i], s.Nodes[j] = s.Nodes[j], s.Nodes[i]
+	if i >= 0 && i < s.Len() && j >= 0 && j < s.Len() {
+		s.Nodes[i], s.Nodes[j] = s.Nodes[j], s.Nodes[i]
+	}
+}
+
+func (s *NodeList) Sort() {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+
+	sort.Sort(s)
 }
 
 // Less compare two nodes
 func (s *NodeList) Less(i, j int) bool {
-	s.Mux.RLock()
-	defer s.Mux.RUnlock()
+	//s.Mux.RLock()
+	//defer s.Mux.RUnlock()
 
-	id := s.distance(s.Nodes[i].ID, s.Comparator)
-	jd := s.distance(s.Nodes[j].ID, s.Comparator)
+	if i >= 0 && i < s.Len() && j >= 0 && j < s.Len() {
+		id := s.distance(s.Nodes[i].ID, s.Comparator)
+		jd := s.distance(s.Nodes[j].ID, s.Comparator)
 
-	return id.Cmp(jd) == -1
+		return id.Cmp(jd) == -1
+	}
+	return false
 }
 
 func (s *NodeList) distance(id1, id2 []byte) *big.Int {
