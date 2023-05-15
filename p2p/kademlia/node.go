@@ -99,17 +99,11 @@ func (s *NodeList) AddNodes(nodes []*Node) {
 
 // Len check length
 func (s *NodeList) Len() int {
-	s.Mux.RLock()
-	defer s.Mux.RUnlock()
-
 	return len(s.Nodes)
 }
 
 // Swap swap two nodes
 func (s *NodeList) Swap(i, j int) {
-	s.Mux.Lock()
-	defer s.Mux.Unlock()
-
 	if i >= 0 && i < s.Len() && j >= 0 && j < s.Len() {
 		s.Nodes[i], s.Nodes[j] = s.Nodes[j], s.Nodes[i]
 	}
@@ -125,9 +119,6 @@ func (s *NodeList) Sort() {
 
 // Less compare two nodes
 func (s *NodeList) Less(i, j int) bool {
-	//s.Mux.RLock()
-	//defer s.Mux.RUnlock()
-
 	if i >= 0 && i < s.Len() && j >= 0 && j < s.Len() {
 		id := s.distance(s.Nodes[i].ID, s.Comparator)
 		jd := s.distance(s.Nodes[j].ID, s.Comparator)
