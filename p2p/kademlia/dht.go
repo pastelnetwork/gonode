@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sort"
 	"sync"
 	"time"
 
@@ -327,11 +326,10 @@ func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Mes
 func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []byte, nl *NodeList, contacted map[string]bool, haveRest bool) chan *Message {
 	// responses from remote node
 	responses := make(chan *Message, Alpha)
-	mtx := sync.Mutex{}
 
 	go func() {
 		// the nodes which are unreachable
-		removedNodes := []*Node{}
+		var removedNodes []*Node
 
 		var wg sync.WaitGroup
 
@@ -354,7 +352,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 			log.P2P().WithContext(ctx).Debugf("start work %v for node: %s", iterativeType, node.String())
 
 			wg.Add(1)
-			// send and recive message concurrently
+			// send and receive message concurrently
 			go func(receiver *Node) {
 				defer wg.Done()
 
@@ -390,9 +388,6 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 
 		// delete the node which is unreachable
 		go func() {
-			mtx.Lock()
-			defer mtx.Unlock()
-
 			for _, node := range removedNodes {
 				nl.DelNode(node)
 			}
@@ -484,7 +479,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		}
 
 		// sort the nodes for node list
-		sort.Sort(nl)
+		nl.Sort()
 
 		log.P2P().WithContext(ctx).Debugf("id: %v, iterate %d, sorted nodes: %v", base58.Encode(s.ht.self.ID), iterativeType, nl.String())
 
@@ -505,7 +500,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 				storeCount := 0
 				for i := 0; i < len(nl.Nodes); i++ {
 					logEntry := log.P2P().WithContext(ctx).WithField("node", nl.Nodes[i]).WithField("task_id", taskID)
-					// limite the count below K
+					// limit the count below K
 					if i >= K {
 						return nil, nil
 					}

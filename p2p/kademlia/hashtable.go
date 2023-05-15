@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"math"
 	"math/big"
-	"sort"
 	"sync"
 	"time"
 )
@@ -241,7 +240,7 @@ func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Nod
 	}
 
 	// sort the node list
-	sort.Sort(nl)
+	nl.Sort()
 
 	return nl
 }

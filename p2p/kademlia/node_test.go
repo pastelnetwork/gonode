@@ -1,7 +1,5 @@
 package kademlia
 
-import "sort"
-
 func (s *testSuite) initIDWithValues(v byte) []byte {
 	id := [20]byte{}
 	for i := 0; i < 20; i++ {
@@ -28,7 +26,7 @@ func (s *testSuite) TestNodeList() {
 	nl.Nodes = []*Node{n1, n2, n3, n4}
 	nl.Comparator = comparator
 
-	sort.Sort(nl)
+	nl.Sort()
 
 	s.Equal(n1, nl.Nodes[0])
 	s.Equal(n2, nl.Nodes[1])
