@@ -51,7 +51,8 @@ func (s *service) Run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize chain reorg service")
 	}
 
-	cleanerService, err := cleaner.NewCleanupService(s.pastelClient, s.p2p)
+	cleanerServiceConfig := cleaner.NewConfig(s.config.SNHost, s.config.SNPort, s.sn)
+	cleanerService, err := cleaner.NewCleanupService(s.pastelClient, s.p2p, cleanerServiceConfig)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize chain reorg service")
 	}

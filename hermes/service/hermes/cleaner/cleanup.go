@@ -2,6 +2,7 @@ package cleaner
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/hermes/common"
 	"sort"
 	"time"
 
@@ -34,7 +35,18 @@ func (s *cleanupService) Run(ctx context.Context) error {
 
 			group, gctx := errgroup.WithContext(ctx)
 			group.Go(func() error {
-				return s.run(gctx)
+				err := s.run(gctx)
+				if err != nil {
+					if common.IsP2PConnectionCloseError(err.Error()) {
+						s.p2p, err = common.CreateNewP2PConnection(s.config.snHost, s.config.snPort, s.config.sn)
+						if err != nil {
+							log.WithContext(ctx).WithError(err).Error("unable to initialize new p2p connection for " +
+								"cleanup service")
+						}
+					}
+				}
+
+				return nil
 			})
 
 			if err := group.Wait(); err != nil {
@@ -60,11 +72,13 @@ func (s *cleanupService) run(ctx context.Context) error {
 	errReg := s.cleanupRegTickets(ctx, count)
 	if errReg != nil {
 		log.WithContext(ctx).WithError(errReg).Error("cleanup Inactive Tickets: cleanupRegTickets failure")
+		return err
 	}
 
 	actionErr := s.cleanupActionTickets(ctx, count)
 	if actionErr != nil {
 		log.WithContext(ctx).WithError(actionErr).Error("cleanup Inactive Tickets: cleanupActionTickets failure")
+		return err
 	}
 
 	return nil
@@ -111,7 +125,12 @@ func (s *cleanupService) cleanupActionTickets(ctx context.Context, count int32) 
 		actionRegTickets[i].ActionTicketData.ActionTicketData = *decTicket
 
 		actionTicket := actionRegTickets[i].ActionTicketData.ActionTicketData
-		s.cleanupActionTicketData(ctx, actionTicket)
+		err = s.cleanupActionTicketData(ctx, actionTicket)
+		if err != nil {
+			if common.IsP2PConnectionCloseError(err.Error()) {
+				return err
+			}
+		}
 
 		s.currentActionBlock = actionRegTickets[i].Height
 
@@ -126,28 +145,91 @@ func (s *cleanupService) removeRegTicketData(ctx context.Context, ticketData pas
 	// Remove RQ File IDs
 	for _, rqFileID := range ticketData.RQIDs {
 		if err := s.p2p.Delete(ctx, rqFileID); err != nil {
+			if common.IsP2PConnectionCloseError(err.Error()) {
+				return err
+			}
+
 			log.WithContext(ctx).WithError(err).Error("error deleting rqFileID")
 		}
 	}
 
 	// Remove Thumbnails
 	if err := s.p2p.Delete(ctx, base58.Encode(ticketData.Thumbnail1Hash)); err != nil {
+		if common.IsP2PConnectionCloseError(err.Error()) {
+			return err
+		}
+
 		log.WithContext(ctx).WithError(err).Error("error deleting thumbnail1 hash")
 	}
 
 	if err := s.p2p.Delete(ctx, base58.Encode(ticketData.Thumbnail2Hash)); err != nil {
+		if common.IsP2PConnectionCloseError(err.Error()) {
+			return err
+		}
+
 		log.WithContext(ctx).WithError(err).Error("error deleting thumbnail2 hash")
 	}
 
 	if err := s.p2p.Delete(ctx, base58.Encode(ticketData.PreviewHash)); err != nil {
+		if common.IsP2PConnectionCloseError(err.Error()) {
+			return err
+		}
+
 		log.WithContext(ctx).WithError(err).Error("error deleting preview thumbnail hash")
 	}
 
 	// Remove ddAndFpFileIDs
 	for _, ddFpFileID := range ticketData.DDAndFingerprintsIDs {
 		if err := s.p2p.Delete(ctx, ddFpFileID); err != nil {
+			if common.IsP2PConnectionCloseError(err.Error()) {
+				return err
+			}
+
 			log.WithContext(ctx).WithError(err).Error("error deleting ddFpFileID")
 		}
+	}
+
+	return nil
+}
+
+func (s *cleanupService) removeCascadeTicketData(ctx context.Context, rqIDs []string, dataHash []byte) error {
+	for _, rqFileID := range rqIDs {
+		if err := s.p2p.Delete(ctx, rqFileID); err != nil {
+			if common.IsP2PConnectionCloseError(err.Error()) {
+				return err
+			}
+			log.WithContext(ctx).WithError(err).Error("error deleting rqFileID")
+		}
+	}
+
+	if err := s.p2p.Delete(ctx, base58.Encode(dataHash)); err != nil {
+		if common.IsP2PConnectionCloseError(err.Error()) {
+			return err
+		}
+
+		log.WithContext(ctx).WithError(err).Error("error deleting thumbnail hash")
+	}
+
+	return nil
+}
+
+func (s *cleanupService) removeSenseTicketData(ctx context.Context, ddAndFingerprintIDs []string, dataHash []byte) error {
+	for _, ddFpFileID := range ddAndFingerprintIDs {
+		if err := s.p2p.Delete(ctx, ddFpFileID); err != nil {
+			if common.IsP2PConnectionCloseError(err.Error()) {
+				return err
+			}
+
+			log.WithContext(ctx).WithError(err).Error("error deleting ddFpFileID")
+		}
+	}
+
+	if err := s.p2p.Delete(ctx, base58.Encode(dataHash)); err != nil {
+		if common.IsP2PConnectionCloseError(err.Error()) {
+			return err
+		}
+
+		log.WithContext(ctx).WithError(err).Error("error deleting thumbnail hash")
 	}
 
 	return nil
@@ -193,7 +275,13 @@ func (s *cleanupService) cleanupRegTickets(ctx context.Context, count int32) err
 		nftRegTickets[i].RegTicketData.NFTTicketData = *decTicket
 		ticketData := nftRegTickets[i].RegTicketData.NFTTicketData.AppTicketData
 
-		s.removeRegTicketData(ctx, ticketData)
+		err = s.removeRegTicketData(ctx, ticketData)
+		if err != nil {
+			if common.IsP2PConnectionCloseError(err.Error()) {
+				return err
+			}
+		}
+
 		s.currentNFTBlock = nftRegTickets[i].Height
 
 		log.WithContext(ctx).WithField("reg_txid", nftRegTickets[i].TXID).
@@ -212,15 +300,11 @@ func (s *cleanupService) cleanupActionTicketData(ctx context.Context, actionTick
 				Warnf("Could not get sense ticket for action ticket data")
 		}
 
-		// Remove RQ File IDs
-		for _, rqFileID := range cascadeTicket.RQIDs {
-			if err := s.p2p.Delete(ctx, rqFileID); err != nil {
-				log.WithContext(ctx).WithError(err).Error("error deleting rqFileID")
+		err = s.removeCascadeTicketData(ctx, cascadeTicket.RQIDs, cascadeTicket.DataHash)
+		if err != nil {
+			if common.IsP2PConnectionCloseError(err.Error()) {
+				return err
 			}
-		}
-
-		if err := s.p2p.Delete(ctx, base58.Encode(cascadeTicket.DataHash)); err != nil {
-			log.WithContext(ctx).WithError(err).Error("error deleting thumbnail hash")
 		}
 
 	case pastel.ActionTypeSense:
@@ -230,14 +314,11 @@ func (s *cleanupService) cleanupActionTicketData(ctx context.Context, actionTick
 				Warnf("Could not get sense ticket for action ticket data")
 		}
 
-		for _, ddFpFileID := range senseTicket.DDAndFingerprintsIDs {
-			if err := s.p2p.Delete(ctx, ddFpFileID); err != nil {
-				log.WithContext(ctx).WithError(err).Error("error deleting ddFpFileID")
+		err = s.removeSenseTicketData(ctx, senseTicket.DDAndFingerprintsIDs, senseTicket.DataHash)
+		if err != nil {
+			if common.IsP2PConnectionCloseError(err.Error()) {
+				return err
 			}
-		}
-
-		if err := s.p2p.Delete(ctx, base58.Encode(senseTicket.DataHash)); err != nil {
-			log.WithContext(ctx).WithError(err).Error("error deleting thumbnail hash")
 		}
 	}
 
