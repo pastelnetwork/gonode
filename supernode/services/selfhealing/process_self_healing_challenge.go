@@ -616,7 +616,7 @@ func (task *SHTask) DownloadDDAndFingerprints(ctx context.Context, DDAndFingerpr
 		log.WithContext(ctx).WithField("file", file).Println("Got the file")
 		decompressedData, err := zstd.Decompress(nil, file)
 		if err != nil {
-			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails self healing - failed to decompress this file. ")
 			continue
 		}
 		log.WithContext(ctx).Println("Decompressed the file")

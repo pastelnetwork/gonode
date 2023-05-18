@@ -7,8 +7,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
-
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/encoding/gzip"
 )
 
 const (
@@ -29,6 +29,7 @@ func (cl *client) Connect(ctx context.Context, address string) (*clientConn, err
 		//lint:ignore SA1019 we want to ignore this for now
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
 	)
 	if err != nil {
 		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)
