@@ -1743,7 +1743,7 @@ paths:
                             example:
                                 expires_in: 2006-01-02T15:04:05Z07:00
                                 file_id: VK7mpAqZ
-                                required_preburn_amount: 100
+                                required_preburn_amount: 20
                                 total_estimated_fee: 100
                 "400":
                     description: 'BadRequest: Bad Request response.'
@@ -2061,7 +2061,7 @@ paths:
                             example:
                                 expires_in: 2006-01-02T15:04:05Z07:00
                                 image_id: VK7mpAqZ
-                                required_preburn_amount: 100
+                                required_preburn_amount: 20
                                 total_estimated_fee: 100
                 "400":
                     description: 'BadRequest: Bad Request response.'
@@ -2281,7 +2281,7 @@ components:
                     type: number
                     description: The amount that's required to be preburned
                     default: 1
-                    example: 100
+                    example: 20
                     minimum: 1e-05
                 total_estimated_fee:
                     type: number
@@ -2292,7 +2292,7 @@ components:
             example:
                 expires_in: 2006-01-02T15:04:05Z07:00
                 file_id: VK7mpAqZ
-                required_preburn_amount: 100
+                required_preburn_amount: 20
                 total_estimated_fee: 100
             required:
                 - file_id
@@ -3039,7 +3039,7 @@ components:
                     type: number
                     description: The amount that's required to be preburned
                     default: 1
-                    example: 100
+                    example: 20
                     minimum: 1e-05
                 total_estimated_fee:
                     type: number
@@ -3050,7 +3050,7 @@ components:
             example:
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
-                required_preburn_amount: 100
+                required_preburn_amount: 20
                 total_estimated_fee: 100
             required:
                 - image_id
