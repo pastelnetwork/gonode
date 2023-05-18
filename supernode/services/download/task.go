@@ -126,6 +126,11 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 			continue
 		}
 
+		if len(file) == 0 {
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails empty file received.")
+			continue
+		}
+
 		decompressedData, err := zstd.Decompress(nil, file)
 		if err != nil {
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
