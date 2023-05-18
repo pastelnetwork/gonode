@@ -7,8 +7,8 @@ import (
 const (
 	defaultNumberRQIDSFiles uint32 = 1
 
-	defaultCascadeRegTxMinConfirmations = 12
-	defaultCascadeActTxMinConfirmations = 5
+	defaultCascadeRegTxMinConfirmations = 5
+	defaultCascadeActTxMinConfirmations = 2
 	defaultWaitTxnValidInterval         = 5
 
 	defaultRQIDsMax = 50

@@ -7,9 +7,9 @@ import (
 const (
 	defaultNumberRQIDSFiles uint32 = 1
 
-	defaultNftRegTxMinConfirmations = 12
-	defaultNftActTxMinConfirmations = 5
-	defaultWaitTxnValidInterval     = 15
+	defaultNftRegTxMinConfirmations = 5
+	defaultNftActTxMinConfirmations = 2
+	defaultWaitTxnValidInterval     = 5
 
 	defaultDDAndFingerprintsMax = 50
 	defaultRQIDsMax             = 50
