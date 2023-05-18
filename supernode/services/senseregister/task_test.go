@@ -58,7 +58,7 @@ func add2NodesAnd2TicketSignatures(task *SenseRegistrationTask) *SenseRegistrati
 	return task
 }
 
-func makeEmptySenseRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface, ddClient ddclient.DDServerClient) *SenseRegistrationTask {
+func makeEmptySenseRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, _ rqnode.ClientInterface, ddClient ddclient.DDServerClient) *SenseRegistrationTask {
 	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, ddClient)
 	task := NewSenseRegistrationTask(service)
 	task.Ticket = &pastel.ActionTicket{}
