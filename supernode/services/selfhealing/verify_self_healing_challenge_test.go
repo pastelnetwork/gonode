@@ -146,8 +146,9 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, raptorQClient)
+				p2pClient)
 			task := NewSHTask(service)
+			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
 			res, err := task.VerifySelfHealingChallenge(ctx, tt.message)
 

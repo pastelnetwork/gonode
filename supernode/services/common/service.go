@@ -12,7 +12,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
 // SuperNodeServiceInterface common interface for Services
@@ -29,7 +28,6 @@ type SuperNodeService struct {
 
 	PastelClient pastel.Client
 	P2PClient    p2p.Client
-	RQClient     rqnode.ClientInterface
 }
 
 // run starts task
@@ -76,13 +74,11 @@ func NewSuperNodeService(
 	fileStorage storage.FileStorageInterface,
 	pastelClient pastel.Client,
 	p2pClient p2p.Client,
-	rqClient rqnode.ClientInterface,
 ) *SuperNodeService {
 	return &SuperNodeService{
 		Worker:       task.NewWorker(),
 		Storage:      files.NewStorage(fileStorage),
 		PastelClient: pastelClient,
 		P2PClient:    p2pClient,
-		RQClient:     rqClient,
 	}
 }

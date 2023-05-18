@@ -19,7 +19,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/pastel"
-	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/services"
 	"github.com/pastelnetwork/gonode/walletnode/configs"
@@ -168,7 +167,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.NftSearch.BridgeAddress = config.Bridge.Address
 	config.NftSearch.BridgePort = config.Bridge.Port
 
-	rqClient := rqgrpc.NewClient()
 	bridgeClient := bridgeGrpc.NewClient()
 
 	var bridge bridgeNode.DownloadDataInterface
@@ -218,7 +216,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	//userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, *nftDownload)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, nftDownload, db)
-	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload, rqClient)
+	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload)
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient)
 
 	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.

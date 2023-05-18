@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
@@ -380,7 +381,7 @@ func NewCascadeRegistrationTask(service *CascadeRegistrationService) *CascadeReg
 	task := &CascadeRegistrationTask{
 		SuperNodeTask:              common.NewSuperNodeTask(logPrefix),
 		CascadeRegistrationService: service,
-		storage: common.NewStorageHandler(service.P2PClient, service.RQClient,
+		storage: common.NewStorageHandler(service.P2PClient, rqgrpc.NewClient(),
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
 	}
 

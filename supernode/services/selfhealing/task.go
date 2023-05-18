@@ -3,6 +3,8 @@ package selfhealing
 import (
 	"context"
 	"encoding/json"
+	"sync"
+
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -10,8 +12,8 @@ import (
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
-	"sync"
 )
 
 const (
@@ -45,7 +47,7 @@ func (task *SHTask) RemoveArtifacts() {
 func NewSHTask(service *SHService) *SHTask {
 	task := &SHTask{
 		SuperNodeTask: common.NewSuperNodeTask(logPrefix),
-		StorageHandler: common.NewStorageHandler(service.P2PClient, service.RQClient,
+		StorageHandler: common.NewStorageHandler(service.P2PClient, rqgrpc.NewClient(),
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
 		SHService:           service,
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),

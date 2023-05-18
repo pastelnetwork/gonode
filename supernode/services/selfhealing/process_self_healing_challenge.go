@@ -40,7 +40,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 
 	log.WithContext(ctx).Info("establishing connection with rq service")
 	var rqConnection rqnode.Connection
-	rqConnection, err = task.RQClient.Connect(ctx, task.config.RaptorQServiceAddress)
+	rqConnection, err = task.StorageHandler.RqClient.Connect(ctx, task.config.RaptorQServiceAddress)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error establishing RQ connection")
 	}

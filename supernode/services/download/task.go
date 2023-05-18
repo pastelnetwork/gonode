@@ -17,12 +17,13 @@ import (
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 )
 
 // NftDownloadingTask is the task of registering new Nft.
 type NftDownloadingTask struct {
 	*common.SuperNodeTask
-
+	RqClient rqnode.ClientInterface
 	*NftDownloaderService
 
 	RQSymbolsDir string
@@ -378,7 +379,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, 
 	}
 
 	var rqConnection rqnode.Connection
-	rqConnection, err = task.NftDownloaderService.RQClient.Connect(ctx, task.NftDownloaderService.config.RaptorQServiceAddress)
+	rqConnection, err = task.RqClient.Connect(ctx, task.NftDownloaderService.config.RaptorQServiceAddress)
 	if err != nil {
 		task.UpdateStatus(common.StatusRQServiceConnectionFailed)
 		return file, errors.Errorf("could not connect to rqservice: %w", err)
@@ -542,5 +543,6 @@ func NewNftDownloadingTask(service *NftDownloaderService) *NftDownloadingTask {
 	return &NftDownloadingTask{
 		SuperNodeTask:        common.NewSuperNodeTask(logPrefix),
 		NftDownloaderService: service,
+		RqClient:             rqgrpc.NewClient(),
 	}
 }

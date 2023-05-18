@@ -19,7 +19,6 @@ import (
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/debug"
 	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
@@ -224,8 +223,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		config.CollectionRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
 	}
 
-	rqClient := rqgrpc.NewClient()
-
 	// prepare for dd client
 	config.DDServer.SetWorkDir(config.WorkDir)
 	ddClient := ddclient.NewDDServerClient(config.DDServer)
@@ -240,13 +237,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.SelfHealingChallenge.RqFilesDir = config.RqFilesDir
 
 	// business logic services
-	nftRegister := nftregister.NewService(&config.NftRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
-	nftDownload := download.NewService(&config.NftDownload, pastelClient, p2p, rqClient)
-	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
-	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
-	collectionRegister := collectionregister.NewService(&config.CollectionRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
-	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, rqClient, nil)
-	selfHealing := selfhealing.NewService(&config.SelfHealingChallenge, fileStorage, pastelClient, nodeClient, p2p, rqClient)
+	nftRegister := nftregister.NewService(&config.NftRegister, fileStorage, pastelClient, nodeClient, p2p, ddClient)
+	nftDownload := download.NewService(&config.NftDownload, pastelClient, p2p)
+	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, ddClient)
+	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p)
+	collectionRegister := collectionregister.NewService(&config.CollectionRegister, fileStorage, pastelClient, nodeClient, p2p)
+	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, nil)
+	selfHealing := selfhealing.NewService(&config.SelfHealingChallenge, fileStorage, pastelClient, nodeClient, p2p)
 	// // ----Userdata Services----
 	// userdataNodeClient := client.New(pastelClient, secInfo)
 	// userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)

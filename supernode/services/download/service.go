@@ -5,7 +5,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
@@ -37,9 +36,9 @@ func (service *NftDownloaderService) Task(id string) *NftDownloadingTask {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, rqClient rqnode.ClientInterface) *NftDownloaderService {
+func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client) *NftDownloaderService {
 	return &NftDownloaderService{
-		SuperNodeService: common.NewSuperNodeService(nil, pastelClient, p2pClient, rqClient),
+		SuperNodeService: common.NewSuperNodeService(nil, pastelClient, p2pClient),
 		config:           config,
 	}
 }

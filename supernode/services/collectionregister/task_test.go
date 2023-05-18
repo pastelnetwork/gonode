@@ -28,8 +28,8 @@ func add2NodesAnd2TicketSignatures(task *CollectionRegistrationTask) *Collection
 	return task
 }
 
-func makeEmptyCollectionRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface) *CollectionRegistrationTask {
-	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, rqClient)
+func makeEmptyCollectionRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, _ rqnode.ClientInterface) *CollectionRegistrationTask {
+	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient)
 	task := NewCollectionRegistrationTask(service)
 	task.Ticket = &pastel.CollectionTicket{}
 	task.ActionTicketRegMetadata = &types.ActionRegMetadata{

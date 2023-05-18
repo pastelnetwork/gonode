@@ -64,9 +64,11 @@ func add2NodesAnd2TicketSignatures(task *NftRegistrationTask) *NftRegistrationTa
 	return task
 }
 
-func makeEmptyNftRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface, ddClient ddclient.DDServerClient) *NftRegistrationTask {
-	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, rqClient, ddClient)
+func makeEmptyNftRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client,
+	ddClient ddclient.DDServerClient, rqClient rqnode.ClientInterface) *NftRegistrationTask {
+	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, ddClient)
 	task := NewNftRegistrationTask(service)
+	task.storage.RqClient = rqClient
 	task.Ticket = &pastel.NFTTicket{}
 	task.ActionTicketRegMetadata = &types.ActionRegMetadata{EstimatedFee: 100}
 
@@ -290,7 +292,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			ddmock := ddMock.NewMockClient(t)
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
 
-			task := makeEmptyNftRegTask(&Config{}, fsMock, pastelClientMock, nil, nil, nil, ddmock)
+			task := makeEmptyNftRegTask(&Config{}, fsMock, pastelClientMock, nil, nil, ddmock, nil)
 			task = add2NodesAnd2TicketSignatures(task)
 			task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID", BlockHeight: "testBlockHeight", Timestamp: "2022-03-31 16:55:28"}
 
@@ -416,7 +418,7 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, nil, rqClientMock, nil)
+			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, nil, nil, rqClientMock)
 
 			storage := files.NewStorage(fsMock)
 			task.Nft = files.NewFile(storage, "test")
@@ -527,7 +529,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, rqClientMock, nil)
+			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, nil, rqClientMock)
 
 			storage := files.NewStorage(fsMock)
 			task.Nft = files.NewFile(storage, "test")
@@ -872,7 +874,7 @@ func TestTaskProbeImage(t *testing.T) {
 					ListenOnConnect("", nil).ListenOnRegisterNft()
 			}
 
-			task := makeEmptyNftRegTask(serviceCfg, fsMock, pastelClientMock, clientMock, nil, nil, ddmock)
+			task := makeEmptyNftRegTask(serviceCfg, fsMock, pastelClientMock, clientMock, nil, ddmock, nil)
 			task = add2NodesAnd2TicketSignatures(task)
 			task = makeConnected(task, tc.args.status)
 
