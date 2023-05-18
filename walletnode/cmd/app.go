@@ -216,7 +216,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient, bridge)
 	nftDownload := download.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
 	//userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
-	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, rqClient, *nftDownload)
+	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, *nftDownload)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, nftDownload, db)
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload, rqClient)
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient)

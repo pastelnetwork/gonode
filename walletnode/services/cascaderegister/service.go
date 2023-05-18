@@ -2,6 +2,7 @@ package cascaderegister
 
 import (
 	"context"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"time"
 
 	// Package image/jpeg is not used explicitly in the code below,
@@ -118,7 +119,7 @@ func (service *CascadeRegistrationService) CalculateFee(ctx context.Context, fil
 //	NB: Because NewNftApiHandler calls AddTask, a CascadeRegisterTask will actually
 //		be instantiated instead of a generic Task.
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
-	fileStorage storage.FileStorageInterface, db storage.KeyValue, raptorqClient rqnode.ClientInterface,
+	fileStorage storage.FileStorageInterface, db storage.KeyValue,
 	downloadService download.NftDownloadingService,
 ) *CascadeRegistrationService {
 	return &CascadeRegistrationService{
@@ -127,7 +128,7 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Clie
 		nodeClient:      nodeClient,
 		ImageHandler:    mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
 		pastelHandler:   mixins.NewPastelHandler(pastelClient),
-		rqClient:        raptorqClient,
+		rqClient:        rqgrpc.NewClient(),
 		downloadHandler: downloadService,
 	}
 }
