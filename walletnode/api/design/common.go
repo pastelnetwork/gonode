@@ -51,7 +51,7 @@ var ImageUploadResult = ResultType("application/vnd.nft.upload-image", func() {
 			Description("The amount that's required to be preburned")
 			Minimum(0.00001)
 			Default(1)
-			Example(100)
+			Example(20)
 		})
 	})
 	Required("image_id", "expires_in", "total_estimated_fee")
