@@ -17,6 +17,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 )
 
 // NftRegistrationTask is the task of registering new Nft.
@@ -574,7 +575,7 @@ func NewNftRegistrationTask(service *NftRegistrationService) *NftRegistrationTas
 	task := &NftRegistrationTask{
 		SuperNodeTask:          common.NewSuperNodeTask(logPrefix),
 		NftRegistrationService: service,
-		storage: common.NewStorageHandler(service.P2PClient, service.RQClient,
+		storage: common.NewStorageHandler(service.P2PClient, rqgrpc.NewClient(),
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
 	}
 

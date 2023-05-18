@@ -191,8 +191,9 @@ func TestProcessSelfHealingTest(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, raptorQClient)
+				p2pClient)
 			task := NewSHTask(service)
+			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
 			err := task.ProcessSelfHealingChallenge(ctx, tt.message)
 

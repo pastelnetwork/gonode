@@ -6,7 +6,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
@@ -46,12 +45,10 @@ func NewService(config *Config,
 	pastelClient pastel.Client,
 	nodeClient node.ClientInterface,
 	p2pClient p2p.Client,
-	rqClient rqnode.ClientInterface,
 ) *CollectionRegistrationService {
 	return &CollectionRegistrationService{
-		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient, rqClient),
-
-		config:     config,
-		nodeClient: nodeClient,
+		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient),
+		config:           config,
+		nodeClient:       nodeClient,
 	}
 }

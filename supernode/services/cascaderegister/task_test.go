@@ -39,8 +39,9 @@ func add2NodesAnd2TicketSignatures(task *CascadeRegistrationTask) *CascadeRegist
 }
 
 func makeEmptyCascadeRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface) *CascadeRegistrationTask {
-	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, rqClient)
+	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient)
 	task := NewCascadeRegistrationTask(service)
+	task.storage.RqClient = rqClient
 	task.Ticket = &pastel.ActionTicket{}
 	task.ActionTicketRegMetadata = &types.ActionRegMetadata{
 		EstimatedFee: 100,
@@ -573,7 +574,6 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
 			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, nil, rqClientMock)
-
 			storage := files.NewStorage(fsMock)
 			task.Asset = files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)

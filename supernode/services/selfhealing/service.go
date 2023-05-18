@@ -12,7 +12,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
@@ -97,10 +96,10 @@ func (service *SHService) Task(id string) *SHTask {
 // NewService : Create a new self-healing service
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastel-client, p2p, and rqClient.
-func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client, rqClient rqnode.ClientInterface) *SHService {
+func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client) *SHService {
 	return &SHService{
 		config:           config,
-		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2p, rqClient),
+		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2p),
 		nodeClient:       nodeClient,
 		nodeID:           config.PastelID,
 		pastelHandler:    mixins.NewPastelHandler(pastelClient),

@@ -9,7 +9,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/utils"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -111,10 +110,11 @@ func (service *SCService) Task(id string) *SCTask {
 // NewService : Create a new storage challenge service
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
-func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client, rqClient rqnode.ClientInterface, challengeStatusObserver SaveChallengeState) *SCService {
+func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface,
+	p2p p2p.Client, challengeStatusObserver SaveChallengeState) *SCService {
 	return &SCService{
 		config:                        config,
-		SuperNodeService:              common.NewSuperNodeService(fileStorage, pastelClient, p2p, rqClient),
+		SuperNodeService:              common.NewSuperNodeService(fileStorage, pastelClient, p2p),
 		nodeClient:                    nodeClient,
 		storageChallengeExpiredBlocks: config.StorageChallengeExpiredBlocks,
 		// repository:                    newRepository(p2p, pastelClient, challengeStatusObserver),

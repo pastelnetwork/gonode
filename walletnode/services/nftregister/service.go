@@ -13,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
@@ -117,7 +118,7 @@ func (service *NftRegistrationService) CalculateFee(ctx context.Context, fileID 
 //
 //	are  handled in NftApiHandler, an NftRegistrationTask will actually be created via AddTask.
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface, fileStorage storage.FileStorageInterface,
-	db storage.KeyValue, downloadService *download.NftDownloadingService, raptorqClient rqnode.ClientInterface) *NftRegistrationService {
+	db storage.KeyValue, downloadService *download.NftDownloadingService) *NftRegistrationService {
 	return &NftRegistrationService{
 		Worker:          task.NewWorker(),
 		config:          config,
@@ -125,6 +126,6 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Clie
 		ImageHandler:    mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
 		pastelHandler:   mixins.NewPastelHandler(pastelClient),
 		downloadHandler: downloadService,
-		rqClient:        raptorqClient,
+		rqClient:        rqgrpc.NewClient(),
 	}
 }
