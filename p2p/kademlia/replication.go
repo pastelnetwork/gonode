@@ -53,13 +53,13 @@ func (s *DHT) updateReplicationNode(ctx context.Context, nodeID []byte, ip strin
 		info.Port = port
 		info.ID = nodeID
 
-		if err := s.store.UpdateReplicationInfo(ctx, *info); err != nil {
+		if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 			log.P2P().WithContext(ctx).WithError(err).WithField("node_id", string(nodeID)).WithField("ip", ip).Error("failed to add replication info")
 			return err
 		}
 
 	} else {
-		info := &domain.NodeReplicationInfo{
+		info := domain.NodeReplicationInfo{
 			UpdatedAt: time.Now(),
 			Active:    isActive,
 			IP:        ip,
@@ -69,7 +69,7 @@ func (s *DHT) updateReplicationNode(ctx context.Context, nodeID []byte, ip strin
 
 		s.nodeReplicationTimes[string(nodeID)] = info
 
-		if err := s.store.AddReplicationInfo(ctx, *info); err != nil {
+		if err := s.store.AddReplicationInfo(ctx, info); err != nil {
 			log.P2P().WithContext(ctx).WithError(err).WithField("node_id", string(nodeID)).WithField("ip", ip).Error("failed to add replication info")
 			return err
 		}
@@ -79,8 +79,8 @@ func (s *DHT) updateReplicationNode(ctx context.Context, nodeID []byte, ip strin
 }
 
 func (s *DHT) updateLastReplicated(ctx context.Context, nodeID []byte, timestamp time.Time) error {
-	info := s.nodeReplicationTimes[string(nodeID)]
-	if info == nil {
+	info, ok := s.nodeReplicationTimes[string(nodeID)]
+	if !ok {
 		return errors.New("node not found")
 	}
 
@@ -88,7 +88,7 @@ func (s *DHT) updateLastReplicated(ctx context.Context, nodeID []byte, timestamp
 
 	s.nodeReplicationTimes[string(nodeID)] = info
 
-	if err := s.store.UpdateReplicationInfo(ctx, *info); err != nil {
+	if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 		log.P2P().WithContext(ctx).WithError(err).WithField("node_id", string(nodeID)).Error("failed to update replication info")
 	}
 
@@ -98,6 +98,9 @@ func (s *DHT) updateLastReplicated(ctx context.Context, nodeID []byte, timestamp
 // Replicate is called periodically by the replication worker to replicate the data across the network by refreshing the buckets
 // it iterates over the node replication Info map and replicates the data to the nodes that are active
 func (s *DHT) Replicate(ctx context.Context) {
+	s.replicationMtx.Lock()
+	defer s.replicationMtx.Unlock()
+
 	log.P2P().WithContext(ctx).Info("replicating data")
 
 	for i := 0; i < B; i++ {
@@ -110,19 +113,21 @@ func (s *DHT) Replicate(ctx context.Context) {
 		}
 	}
 
-	for nodeID, info := range s.nodeReplicationTimes {
+	for nodeID, infoVar := range s.nodeReplicationTimes {
+		info := infoVar
+
 		logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", nodeID)
 		if !info.Active {
 			adjustNodeKeys := isNodeGoneAndShouldBeAdjusted(info.LastReplicatedAt, info.IsAdjusted)
 			if adjustNodeKeys {
-				if err := s.adjustNodeKeys(ctx, *info); err != nil {
+				if err := s.adjustNodeKeys(ctx, info); err != nil {
 					logEntry.WithError(err).Error("failed to adjust node keys")
 				} else {
 					info.IsAdjusted = true
 					info.UpdatedAt = time.Now()
 					s.nodeReplicationTimes[string(nodeID)] = info
 
-					if err := s.store.UpdateReplicationInfo(ctx, *info); err != nil {
+					if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 						logEntry.WithError(err).Error("failed to update replication info, set isAdjusted to true")
 					} else {
 						logEntry.Info("set isAdjusted to true")
@@ -264,50 +269,55 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-time.After(checkNodeActivityInterval): // Adjust the interval as needed
-			for nodeID, info := range s.nodeReplicationTimes {
-				// new a ping request message
-				node := &Node{
-					ID:   []byte(nodeID),
-					IP:   info.IP,
-					Port: info.Port,
-				}
+			func() {
+				s.replicationMtx.Lock()
+				defer s.replicationMtx.Unlock()
 
-				request := s.newMessage(Ping, node, nil)
-				// new a context with timeout
-				ctx, cancel := context.WithTimeout(ctx, defaultPingTime)
-				defer cancel()
-
-				// invoke the request and handle the response
-				_, err := s.network.Call(ctx, request)
-				if err != nil && info.Active {
-					log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).
-						Error("failed to ping node, setting node to inactive")
-
-					info.Active = false
-					info.UpdatedAt = time.Now()
-					s.nodeReplicationTimes[string(nodeID)] = info
-
-					if err := s.store.UpdateReplicationInfo(ctx, *info); err != nil {
-						log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update replication info, node is inactive")
+				for nodeID, info := range s.nodeReplicationTimes {
+					// new a ping request message
+					node := &Node{
+						ID:   []byte(nodeID),
+						IP:   info.IP,
+						Port: info.Port,
 					}
 
-				} else if err == nil {
-					log.P2P().WithContext(ctx).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Info("node is active")
+					request := s.newMessage(Ping, node, nil)
+					// new a context with timeout
+					ctx, cancel := context.WithTimeout(ctx, defaultPingTime)
+					defer cancel()
 
-					if !info.Active {
-						log.P2P().WithContext(ctx).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Info("node found to be active again")
+					// invoke the request and handle the response
+					_, err := s.network.Call(ctx, request)
+					if err != nil && info.Active {
+						log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).
+							Error("failed to ping node, setting node to inactive")
 
-						info.Active = true
-						info.IsAdjusted = false
+						info.Active = false
 						info.UpdatedAt = time.Now()
 						s.nodeReplicationTimes[string(nodeID)] = info
 
-						if err := s.store.UpdateReplicationInfo(ctx, *info); err != nil {
-							log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update replication info, node is active")
+						if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
+							log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update replication info, node is inactive")
+						}
+
+					} else if err == nil {
+						log.P2P().WithContext(ctx).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Info("node is active")
+
+						if !info.Active {
+							log.P2P().WithContext(ctx).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Info("node found to be active again")
+
+							info.Active = true
+							info.IsAdjusted = false
+							info.UpdatedAt = time.Now()
+							s.nodeReplicationTimes[string(nodeID)] = info
+
+							if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
+								log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update replication info, node is active")
+							}
 						}
 					}
 				}
-			}
+			}()
 		}
 	}
 }

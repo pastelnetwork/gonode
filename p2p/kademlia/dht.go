@@ -40,7 +40,8 @@ type DHT struct {
 	mtx                  sync.Mutex
 	authHelper           *AuthHelper
 	ignorelist           *BanList
-	nodeReplicationTimes map[string]*domain.NodeReplicationInfo
+	nodeReplicationTimes map[string]domain.NodeReplicationInfo
+	replicationMtx       sync.Mutex
 }
 
 // Options contains configuration options for the local node
@@ -80,9 +81,9 @@ func NewDHT(ctx context.Context, store Store, pc pastel.Client, secInfo *alts.Se
 		log.P2P().WithContext(ctx).WithError(err).Errorf("get all replicationInfo failed")
 	}
 
-	replicationMap := make(map[string]*domain.NodeReplicationInfo)
+	replicationMap := make(map[string]domain.NodeReplicationInfo)
 	for _, v := range info {
-		replicationMap[string(v.ID)] = &v
+		replicationMap[string(v.ID)] = v
 	}
 
 	s := &DHT{
@@ -93,6 +94,7 @@ func NewDHT(ctx context.Context, store Store, pc pastel.Client, secInfo *alts.Se
 		cache:                memory.NewKeyValue(),
 		ignorelist:           NewBanList(ctx),
 		nodeReplicationTimes: replicationMap,
+		replicationMtx:       sync.Mutex{},
 	}
 
 	if options.ExternalIP != "" {
