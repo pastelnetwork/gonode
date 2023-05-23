@@ -158,8 +158,7 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not JSON unmarshal. ")
 			continue
 		}
-		log.WithContext(ctx).WithField("ddfpstruct", ddAndFingerprintsStruct).Println("Returning this file in byte form, this was json unmarshallable")
-		//dataToJSONDecode is just the DDAndFingerprints file we'd like to return at this point
+
 		return dataToJSONDecode, nil
 
 	}

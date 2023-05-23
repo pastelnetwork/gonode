@@ -291,7 +291,7 @@ func (service *RegisterCascade) SendSignedActionTicket(ctx context.Context, req 
 		retErr = recErr
 	})
 
-	log.WithContext(ctx).WithField("req", req).Info("SignTicket request")
+	log.WithContext(ctx).Info("SignTicket request rcvd")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, errors.Errorf("get task from metada %w", err)
