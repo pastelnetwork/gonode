@@ -10,7 +10,6 @@ import (
 
 	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
-	"golang.org/x/crypto/sha3"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -158,8 +157,7 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not JSON unmarshal. ")
 			continue
 		}
-		log.WithContext(ctx).WithField("ddfpstruct", ddAndFingerprintsStruct).Println("Returning this file in byte form, this was json unmarshallable")
-		//dataToJSONDecode is just the DDAndFingerprints file we'd like to return at this point
+
 		return dataToJSONDecode, nil
 
 	}
@@ -371,127 +369,6 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 	})
 
 	return file, err
-}
-
-func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, rqOti []byte, dataHash []byte) ([]byte, error) {
-	var file []byte
-	var lastErr error
-	var err error
-
-	if len(rqID) == 0 {
-		task.UpdateStatus(common.StatusNftRegTicketInvalid)
-		return file, errors.Errorf("ticket has empty symbol identifier files")
-	}
-
-	var rqConnection rqnode.Connection
-	rqConnection, err = task.RqClient.Connect(ctx, task.NftDownloaderService.config.RaptorQServiceAddress)
-	if err != nil {
-		task.UpdateStatus(common.StatusRQServiceConnectionFailed)
-		return file, errors.Errorf("could not connect to rqservice: %w", err)
-	}
-	defer rqConnection.Done()
-	rqNodeConfig := &rqnode.Config{
-		RqFilesDir: task.NftDownloaderService.config.RqFilesDir,
-	}
-	rqService := rqConnection.RaptorQ(rqNodeConfig)
-
-	for _, id := range rqID {
-		var rqIDsData []byte
-		rqIDsData, err = task.P2PClient.Retrieve(ctx, id)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Retrieve compressed symbol IDs file from P2P failed")
-			lastErr = errors.Errorf("retrieve compressed symbol IDs file: %w", err)
-			task.UpdateStatus(common.StatusSymbolFileNotFound)
-			continue
-		}
-
-		if len(rqIDsData) == 0 {
-			log.WithContext(ctx).WithField("SymbolIDsFileId", id).Warn("Retrieve compressed symbol IDs file from P2P is empty")
-			lastErr = errors.New("retrieve compressed symbol IDs file empty")
-			task.UpdateStatus(common.StatusSymbolFileNotFound)
-			continue
-		}
-
-		var rqIDs []string
-		rqIDs, err = task.getRQSymbolIDs(ctx, id, rqIDsData)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Parse symbol IDs failed")
-			lastErr = errors.Errorf("parse symbol IDs: %w", err)
-			task.UpdateStatus(common.StatusSymbolFileInvalid)
-			continue
-		}
-
-		log.WithContext(ctx).Debugf("Symbol IDs: %v", rqIDs)
-
-		symbols := make(map[string][]byte)
-		for _, id := range rqIDs {
-			var symbol []byte
-			symbol, err = task.P2PClient.Retrieve(ctx, id)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("SymbolID", id).Error("Could not retrieve symbol")
-				task.UpdateStatus(common.StatusSymbolNotFound)
-				break
-			}
-
-			if len(symbol) == 0 {
-				log.WithContext(ctx).WithField("symbolID", id).Error("symbol received from symbolid is empty")
-				task.UpdateStatus(common.StatusSymbolNotFound)
-				break
-			}
-
-			// Validate that the hash of each "symbol/chunk" matches its id
-			h := sha3.Sum256(symbol)
-
-			storedID := base58.Encode(h[:])
-			if storedID != id {
-				log.WithContext(ctx).Warnf("Symbol ID mismatched, expect %v, got %v", id, storedID)
-				task.UpdateStatus(common.StatusSymbolMismatched)
-				break
-			}
-			symbols[id] = symbol
-		}
-
-		if len(symbols) != len(rqIDs) {
-			log.WithContext(ctx).WithField("SymbolIDsFileId", id).Warn("Could not retrieve all symbols")
-			lastErr = errors.New("could not retrieve all symbols from Kademlia")
-			task.UpdateStatus(common.StatusSymbolsNotEnough)
-			continue
-		}
-
-		// Restore Nft
-		var decodeInfo *rqnode.Decode
-		encodeInfo := rqnode.Encode{
-			Symbols: symbols,
-			EncoderParam: rqnode.EncoderParameters{
-				Oti: rqOti,
-			},
-		}
-
-		decodeInfo, err = rqService.Decode(ctx, &encodeInfo)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Restore file with rqserivce")
-			lastErr = errors.Errorf("restore file with rqserivce: %w", err)
-			task.UpdateStatus(common.StatusFileDecodingFailed)
-			continue
-		}
-		task.UpdateStatus(common.StatusFileDecoded)
-
-		// log.WithContext(ctx).Debugf("Restored file path: %s", decodeInfo.Path)
-		// log.WithContext(ctx).Debugf("Restored file: %s", string(restoredFile))
-		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-		fileHash := sha3.Sum256(decodeInfo.File)
-
-		if !bytes.Equal(fileHash[:], dataHash) {
-			log.WithContext(ctx).WithField("SymbolIDsFileId", id).Warn("hash file mismatched")
-			lastErr = errors.New("hash file mismatched")
-			task.UpdateStatus(common.StatusFileMismatched)
-			continue
-		}
-
-		return decodeInfo.File, nil
-	}
-
-	return file, lastErr
 }
 
 func (task *NftDownloadingTask) decodeRegTicket(nftRegTicket *pastel.RegTicket) error {

@@ -108,10 +108,14 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 	return nil
 }
 
-// Download downloads image from supernodes.
+// Download downloads the file from supernodes.
 func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string, timeout time.Duration) ([]error, error) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
+
+	// Create a cancellation context to stop the goroutines
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownloadingNode)
@@ -131,16 +135,21 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 
 			file, subErr := nftDownNode.Download(goroutineCtx, txid, timestamp, signature, ttxid, ttype)
 			if subErr != nil {
-				log.WithContext(ctx).WithField("address", someNode.String()).WithError(subErr).Error("Could not download from supernode")
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("reg-txid", txid).WithError(subErr).Error("Could not download from supernode")
 				errChan <- subErr
 			} else {
-				log.WithContext(ctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("reg-txid", txid).Info("Downloaded from supernode")
 			}
 
 			func() {
 				task.mtx.Lock()
 				defer task.mtx.Unlock()
 				task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
+
+				if index, err := task.MatchFiles(); err == nil {
+					log.WithContext(ctx).WithField("matched file index", index).Info("Found three matching files")
+					cancel()
+				}
 			}()
 		}()
 	}

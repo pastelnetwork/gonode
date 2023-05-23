@@ -263,7 +263,7 @@ func (h *RegTaskHelper) verifyTxn(ctx context.Context,
 	}
 
 	if !isTxnAmountOk {
-		return fmt.Errorf("invalid txn amount, required amount: %f", reqBurnAmount)
+		return fmt.Errorf("invalid txn amount: %v, required amount: %f", txn.Vout, reqBurnAmount)
 	}
 
 	if !isTxnAddressOk {

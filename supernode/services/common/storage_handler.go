@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"sync/atomic"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -21,6 +23,9 @@ type StorageHandler struct {
 
 	rqAddress string
 	rqDir     string
+
+	TaskID string
+	TxID   string
 }
 
 // NewStorageHandler creates instance of StorageHandler
@@ -169,11 +174,65 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	if err != nil {
 		return err
 	}
+	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
+		Info("storing raptorQ symbols in p2p")
+	g, ctx := errgroup.WithContext(ctx)
+
+	// Create a semaphore with a capacity of 3000
+	sem := make(chan struct{}, 3000)
+
+	var successCounter int32 = 0
+	var errorCounter int32 = 0
+	var errorList []error
+	var errorMutex sync.Mutex
 
 	for id, symbol := range symbols {
-		if _, err := h.P2PClient.Store(ctx, symbol); err != nil {
-			return errors.Errorf("store symbol id=%s into kademlia: %w", id, err)
-		}
+		id, symbol := id, symbol // Shadow variables for correct closure capture
+
+		// Acquire a token
+		sem <- struct{}{}
+
+		g.Go(func() error {
+			defer func() { <-sem }() // Release the token at the end of the goroutine
+
+			// Check if context has been cancelled
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
+			_, err := h.P2PClient.Store(ctx, symbol)
+			if err != nil {
+				errorMutex.Lock()
+				if errorCounter < 10 {
+					errorList = append(errorList, errors.Errorf("store symbol id=%s into kademlia: %w", id, err))
+				}
+				errorMutex.Unlock()
+				atomic.AddInt32(&errorCounter, 1)
+				return nil
+			}
+
+			atomic.AddInt32(&successCounter, 1)
+			return nil
+		})
+	}
+
+	// Wait for all goroutines to finish
+	if err := g.Wait(); err != nil {
+		// Return the error that caused the goroutine to fail
+		return err
+	}
+
+	// Calculate success rate
+	totalSymbols := len(symbols)
+	successRate := float64(successCounter) / float64(totalSymbols)
+
+	// Log the errors
+	for _, err := range errorList {
+		log.WithContext(ctx).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).WithError(err).Error("error while storing raptorQ symbols in p2p")
+	}
+
+	if successRate < 0.75 {
+		return errors.New("less than 75% symbols were stored successfully")
 	}
 
 	return nil
