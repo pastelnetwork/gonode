@@ -181,8 +181,8 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	// Create a semaphore with a capacity of 3000
 	sem := make(chan struct{}, 3000)
 
-	var successCounter int32 = 0
-	var errorCounter int32 = 0
+	var successCounter int32
+	var errorCounter int32
 	var errorList []error
 	var errorMutex sync.Mutex
 

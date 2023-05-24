@@ -280,9 +280,9 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 						err = errors.Errorf("register Action: %w", err)
 						return err
 					}
-
+					task.storage.TxID = nftRegTxid
 					// Store dd_and_fingerprints into Kademlia
-					log.WithContext(ctx).WithField("txid", nftRegTxid).Info("storing dd_and_fingerprints symbols")
+					log.WithContext(ctx).WithField("txid", nftRegTxid).Info("storing sense dd_and_fingerprints symbols")
 					if err = task.storeIDFiles(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("store id files")
 						err = errors.Errorf("store id files: %w", err)
@@ -384,6 +384,8 @@ func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, 
 func (task *SenseRegistrationTask) storeIDFiles(ctx context.Context) error {
 	ctx = context.WithValue(ctx, log.TaskIDKey, task.ID())
 	log.WithContext(ctx).WithField("task_id", task.ID()).Info("store task id in context")
+	task.storage.TaskID = task.ID()
+
 	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.ddFpFiles); err != nil {
 		return errors.Errorf("store ID files into kademlia: %w", err)
 	}

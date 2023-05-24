@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	MaxGoroutines = 5000
-	ResultBufSize = 1000 // or any other appropriate value
+	maxGoroutines = 5000
+	resultBufSize = 1000 // or any other appropriate value
 )
 
 func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rqService rqnode.RaptorQ, symbolIDs []string, rqOti []byte, dataHash []byte) (file []byte, err error) {
@@ -41,13 +41,13 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 		Symbol []byte
 		ID     string
 		Error  error
-	}, ResultBufSize)
+	}, resultBufSize)
 
 	// Create a semaphore with a maximum of 2000 tokens
 	sem := make(chan struct{}, 2000)
 
 	// Create a worker pool
-	for i := 0; i < MaxGoroutines; i++ {
+	for i := 0; i < maxGoroutines; i++ {
 		go func() {
 			for id := range taskCh {
 				// Acquire a token

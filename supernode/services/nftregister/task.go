@@ -293,7 +293,7 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 						err = errors.Errorf("register NFT: %w", err)
 						return nil
 					}
-
+					task.storage.TxID = nftRegTxid
 					// We aren't waiting because we are returned a transaction ID from registerNft.
 					//	Once we see that on the blockchain, we can proceed.
 
@@ -417,6 +417,7 @@ func (task *NftRegistrationTask) storeRaptorQSymbols(ctx context.Context) error 
 	if err != nil {
 		return errors.Errorf("read image data: %w", err)
 	}
+	task.storage.TaskID = task.ID()
 
 	return task.storage.StoreRaptorQSymbolsIntoP2P(ctx, data, task.Nft.Name())
 }
