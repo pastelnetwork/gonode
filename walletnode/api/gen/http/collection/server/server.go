@@ -64,7 +64,7 @@ func New(
 	}
 	return &Server{
 		Mounts: []*MountPoint{
-			{"RegisterCollection", "GET", "/collection/register"},
+			{"RegisterCollection", "POST", "/collection/register"},
 			{"RegisterTaskState", "GET", "/collection/{taskId}/state"},
 			{"GetTaskHistory", "GET", "/collection/{taskId}/history"},
 			{"CORS", "OPTIONS", "/collection/register"},
@@ -111,7 +111,7 @@ func MountRegisterCollectionHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/collection/register", f)
+	mux.Handle("POST", "/collection/register", f)
 }
 
 // NewRegisterCollectionHandler creates a HTTP handler which loads the HTTP
