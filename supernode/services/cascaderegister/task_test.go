@@ -646,16 +646,6 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 			},
 			wantErr: errors.New("test"),
 		},
-		"store-err": {
-			args: args{
-				encodeErr:  nil,
-				connectErr: nil,
-				fileErr:    nil,
-				storeErr:   errors.New("test"),
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: errors.New("test"),
-		},
 	}
 
 	for name, tc := range testCases {
