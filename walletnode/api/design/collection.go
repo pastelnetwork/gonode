@@ -33,7 +33,7 @@ var _ = Service("collection", func() {
 		Result(RegisterCollectionResponse)
 
 		HTTP(func() {
-			GET("/register")
+			POST("/register")
 
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)

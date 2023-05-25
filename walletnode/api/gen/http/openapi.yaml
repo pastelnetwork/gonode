@@ -78,7 +78,7 @@ paths:
             schemes:
                 - ws
     /collection/register:
-        get:
+        post:
             tags:
                 - collection
             summary: Streams state by task ID
