@@ -1,4 +1,4 @@
-module github.com/pastelnetwork/gonode/bulk-reg
+module github.com/pastelnetwork/gonode/testing/bulk-reg-cascade
 
 go 1.17
 
