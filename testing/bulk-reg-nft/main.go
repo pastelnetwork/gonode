@@ -33,16 +33,33 @@ type result struct {
 }
 
 type uploadImageResponse struct {
-	ImageID               string    `json:"image_id"`
-	ExpiresIn             time.Time `json:"expires_in"`
-	TotalEstimatedFee     int       `json:"total_estimated_fee"`
-	RequiredPreburnAmount int       `json:"required_preburn_amount"`
+	ImageID      string    `json:"image_id"`
+	ExpiresIn    time.Time `json:"expires_in"`
+	EstimatedFee int       `json:"estimated_fee"`
 }
 
 type payload struct {
-	BurnTxid               string `json:"burn_txid"`
-	AppPastelid            string `json:"app_pastelid"`
-	MakePubliclyAccessible bool   `json:"make_publicly_accessible"`
+	CreatorName            string              `json:"creator_name"`
+	CreatorPastelid        string              `json:"creator_pastelid"`
+	CreatorWebsiteUrl      string              `json:"creator_website_url"`
+	Description            string              `json:"description"`
+	ImageId                string              `json:"image_id"`
+	IssuedCopies           int                 `json:"issued_copies"`
+	Keywords               string              `json:"keywords"`
+	MaximumFee             int                 `json:"maximum_fee"`
+	Name                   string              `json:"name"`
+	SeriesName             string              `json:"series_name"`
+	SpendableAddress       string              `json:"spendable_address"`
+	ThumbnailCoordinate    ThumbnailCoordinate `json:"thumbnail_coordinate"`
+	YoutubeUrl             string              `json:"youtube_url"`
+	MakePubliclyAccessible bool                `json:"make_publicly_accessible"`
+}
+
+type ThumbnailCoordinate struct {
+	BottomRightX int `json:"bottom_right_x"`
+	BottomRightY int `json:"bottom_right_y"`
+	TopLeftX     int `json:"top_left_x"`
+	TopLeftY     int `json:"top_left_y"`
 }
 
 type startResponse struct {
@@ -50,7 +67,7 @@ type startResponse struct {
 }
 
 func doUploadImage(method, filePath, fileName string) (res uploadImageResponse, err error) {
-	url := "http://localhost:18080/openapi/sense/upload"
+	url := "http://localhost:18080/nfts/register/upload"
 
 	app := "curl"
 	arg0 := "--location"
@@ -73,27 +90,8 @@ func doUploadImage(method, filePath, fileName string) (res uploadImageResponse, 
 	return res, nil
 }
 
-func preBurnAmount(amount int) (string, error) {
-	pastelCli := "/home/btanveer/pastel/pastel-cli"
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", nil
-	}
-
-	cmd := exec.Command(pastelCli, "sendtoaddress", "tPpasteLBurnAddressXXXXXXXXXXX3wy7u", fmt.Sprint(amount))
-	cmd.Dir = homeDir
-
-	res, err := cmd.Output()
-	if err != nil {
-		return "", nil
-	}
-
-	return strings.Replace(string(res), "\n", "", 1), nil
-}
-
-func doSenseRequest(payload payload, taskID string, logger *log.Logger) (string, error) {
-	url := fmt.Sprintf("http://localhost:18080/openapi/sense/start/%s", taskID)
+func doNFTRequest(payload payload) (string, error) {
+	url := "http://localhost:18080/nfts/register"
 	method := "POST"
 
 	payloadBytes, err := json.Marshal(payload)
@@ -144,7 +142,7 @@ func doSenseRequest(payload payload, taskID string, logger *log.Logger) (string,
 }
 
 func doTaskState(taskID string, expectedValue string, logger *log.Logger) error {
-	url := fmt.Sprintf("ws://127.0.0.1:18080/openapi/sense/start/%s/state", taskID)
+	url := fmt.Sprintf("ws://127.0.0.1:18080/nfts/register/%s/state", taskID)
 
 	ctx := context.Background()
 	interrupt := make(chan os.Signal, 1)
@@ -179,7 +177,7 @@ func doTaskState(taskID string, expectedValue string, logger *log.Logger) error 
 					done <- false
 				}
 
-				logger.Printf("task_id:%s, block_count:%s  status - response: %s\n", taskID, getBlockCount(), val)
+				logger.Printf("taskID:%s, block_count:%s  status - response: %s\n", taskID, getBlockCount(), val)
 			}
 		}
 	}()
@@ -263,18 +261,31 @@ func main() {
 		}
 		logger.Printf("image uploaded:%d\n", count)
 
-		burnTxID, err := preBurnAmount(uploadImageRes.RequiredPreburnAmount)
-		if err != nil {
-			logger.Printf("Request to pre burn amount failed:%v\n", err)
-		}
-		logger.Printf("amount pre-burned:%s, request-count:%d\n", burnTxID, count)
-
-		payload := payload{
-			BurnTxid:               burnTxID,
-			AppPastelid:            "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX",
+		req := payload{
+			CreatorName:       "Jawad",
+			CreatorPastelid:   "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX",
+			CreatorWebsiteUrl: "www.testnft.net",
+			Description:       "test-" + uploadImageRes.ImageID,
+			ImageId:           uploadImageRes.ImageID,
+			IssuedCopies:      1,
+			Keywords:          "bulk-reg-nft-test" + uploadImageRes.ImageID,
+			MaximumFee:        500,
+			Name:              fileName,
+			SeriesName:        "Test Series",
+			SpendableAddress:  "tPnZqg14epVVp4c512DyDTXr44gxRdF63T3",
+			ThumbnailCoordinate: ThumbnailCoordinate{
+				BottomRightX: 640,
+				BottomRightY: 480,
+				TopLeftX:     0,
+				TopLeftY:     0,
+			},
+			YoutubeUrl:             "https://www.youtube.com/watch?v=0xl6Ufo4ZX0",
 			MakePubliclyAccessible: getPubliclyAccessible(count),
 		}
-		taskID, err := doSenseRequest(payload, uploadImageRes.ImageID, logger)
+
+		logger.Printf("payload for image-id:%s, request:%d, payload:%s", uploadImageRes.ImageID, count, req)
+
+		taskID, err := doNFTRequest(req)
 		if err != nil {
 			logger.Printf("Request to sense registration failed:%v\n", err)
 		}
@@ -305,7 +316,6 @@ func main() {
 
 		count++
 	}
-
 	wg.Wait()
 
 	totalElapsed := time.Since(start)

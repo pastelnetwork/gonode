@@ -24,7 +24,7 @@ const (
 	numRequests  = 5
 	initialDelay = 1 * time.Second
 	maxRetries   = 5
-	timeoutAfter = 60
+	timeoutAfter = 300
 )
 
 type result struct {
@@ -91,6 +91,25 @@ func preBurnAmount(amount int) (string, error) {
 	}
 
 	return strings.Replace(string(res), "\n", "", 1), nil
+}
+
+func getBlockCount() string {
+	pastelCli := "/home/btanveer/pastel/pastel-cli"
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+
+	cmd := exec.Command(pastelCli, "getblockcount")
+	cmd.Dir = homeDir
+
+	res, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+
+	return strings.Replace(string(res), "\n", "", 1)
 }
 
 func doCascadeRequest(payload payload, taskID string, logger *log.Logger) (string, error) {
@@ -180,7 +199,7 @@ func doTaskState(taskID string, expectedValue string, logger *log.Logger) error 
 					done <- false
 				}
 
-				logger.Printf("taskID:%s,  status - response: %s\n", taskID, val)
+				logger.Printf("task_id:%s, block_count:%s  status - response: %s\n", taskID, getBlockCount(), val)
 			}
 		}
 	}()
@@ -234,35 +253,43 @@ func main() {
 	files := readFiles()
 
 	count := 1
+	taskIDs := make(map[string]time.Time)
 	for fileName, filePath := range files {
+		startReq := time.Now()
+
+		uploadImageRes, err := doUploadImage("POST", filePath, fileName)
+		if err != nil {
+			logger.Printf("Request to upload image failed:%v\n", err)
+		}
+		logger.Printf("image uploaded:%d\n", count)
+
+		burnTxID, err := preBurnAmount(uploadImageRes.RequiredPreburnAmount)
+		if err != nil {
+			logger.Printf("Request to pre burn amount failed:%v\n", err)
+		}
+		logger.Printf("amount pre-burned:%s, request-count:%d\n", burnTxID, count)
+
+		payload := payload{BurnTxid: burnTxID, AppPastelid: "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX"}
+		taskID, err := doCascadeRequest(payload, uploadImageRes.FileId, logger)
+		if err != nil {
+			logger.Printf("Request to cascade registration failed:%v\n", err)
+		}
+		logger.Printf("cascade task initiated:%s, request-count:%d\n", taskID, count)
+
+		taskIDs[taskID] = startReq
+		count++
+	}
+
+	count = 1
+	for taskID, startReq := range taskIDs {
+
 		wg.Add(1)
 
-		go func(count int) {
+		go func(count int, tID string) {
 			defer wg.Done()
 
-			startReq := time.Now()
-
-			uploadImageRes, err := doUploadImage("POST", filePath, fileName)
-			if err != nil {
-				logger.Printf("Request to upload image failed:%v\n", err)
-			}
-			logger.Printf("image uploaded:%d\n", count)
-
-			burnTxID, err := preBurnAmount(uploadImageRes.RequiredPreburnAmount)
-			if err != nil {
-				logger.Printf("Request to pre burn amount failed:%v\n", err)
-			}
-			logger.Printf("amount pre-burned:%s, request-count:%d\n", burnTxID, count)
-
-			payload := payload{BurnTxid: burnTxID, AppPastelid: "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX"}
-			taskID, err := doCascadeRequest(payload, uploadImageRes.FileId, logger)
-			if err != nil {
-				logger.Printf("Request to cascade registration failed:%v\n", err)
-			}
-			logger.Printf("cascade task initiated:%s, request-count:%d\n", taskID, count)
-
-			logger.Printf("subscribing to task state:%s, request-count:%d\n", taskID, count)
-			if err = doTaskState(taskID, "Task Completed", logger); err != nil {
+			logger.Printf("subscribing to task state:%s, request-count:%d\n", tID, count)
+			if err = doTaskState(tID, "Task Completed", logger); err != nil {
 				logger.Printf("Request to task state has been failed:%v\n", err)
 			}
 
@@ -271,7 +298,7 @@ func main() {
 				Elapsed: time.Since(startReq),
 				Error:   err,
 			})
-		}(count)
+		}(count, taskID)
 
 		count++
 	}
@@ -308,4 +335,12 @@ func appendResults(mu sync.Mutex, results []result, result result) (res []result
 	results = append(results, result)
 
 	return results
+}
+
+func getPubliclyAccessible(count int) bool {
+	if count == 0 {
+		return true
+	}
+
+	return count%2 == 0
 }
