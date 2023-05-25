@@ -449,7 +449,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		responses := s.doMultiWorkers(ctx, iterativeType, target, nl, contacted, searchRest)
 		// handle the response one by one
 		for response := range responses {
-			log.P2P().WithContext(ctx).Debugf("response: %v", response.String())
+			//log.P2P().WithContext(ctx).Infof("response: %v", response.String())
 			// add the target node to the bucket
 			s.addNode(ctx, response.Sender)
 
@@ -463,13 +463,13 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 				}
 			case FindValue:
 				v, ok := response.Data.(*FindValueResponse)
-				if ok && v.Status.Result == ResultOk {
-					if v.Value != nil && len(v.Value) > 0 {
-						return v.Value, nil
-					}
+				if ok && v.Status.Result == ResultOk && len(v.Value) > 0 {
+					return v.Value, nil
+				} else if ok && v.Status.Result == ResultOk {
 					if len(v.Closest) > 0 {
 						nl.AddNodes(v.Closest)
 					}
+
 				}
 			}
 		}
@@ -496,7 +496,25 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 				}
 				return nil, nil
 			case IterateFindValue:
-				return nil, nil
+				// new a request message
+				for i := 0; i < len(nl.Nodes); i++ {
+					n := nl.Nodes[i]
+					request := &FindValueRequest{Target: target}
+					reqMsg := s.newMessage(FindValue, n, request)
+					// send the request and receive the response
+					rspMsg, err := s.network.Call(ctx, reqMsg)
+					if err != nil {
+						return nil, errors.Errorf("network call: %w", err)
+					}
+
+					v, ok := rspMsg.Data.(*FindValueResponse)
+					if ok && v.Status.Result == ResultOk && len(v.Value) > 0 {
+						return v.Value, nil
+					}
+				}
+
+				log.P2P().WithContext(ctx).WithField("target", base58.Encode(target)).Error("could not find value from network")
+
 			case IterateStore:
 				// store the value to node list
 				storeCount := 0

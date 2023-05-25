@@ -209,6 +209,11 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, 
 		task.UpdateStatus(common.StatusSymbolFileNotFound)
 	}
 
+	if len(symbolIDs) == 0 {
+		task.UpdateStatus(common.StatusSymbolFileNotFound)
+		return file, errors.Errorf("could not retrieve symbol IDs from rq metadata file")
+	}
+
 	file, err = task.restoreFileFromSymbolIDs(ctx, rqService, symbolIDs, rqOti, dataHash)
 	if err != nil {
 		return nil, fmt.Errorf("restore file from symbol IDs: %w", err)

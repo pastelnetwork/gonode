@@ -117,10 +117,10 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// Downloading in separate goroutines
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownloadingNode)
 		if !ok {
-			//TODO: use assert here
 			return nil, errors.Errorf("node %s is not NftRegisterNode", someNode.String())
 		}
 
@@ -130,31 +130,43 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			defer wg.Done()
 
 			// Create a new context with a timeout for this goroutine
-			goroutineCtx, cancel := context.WithTimeout(ctx, timeout)
-			defer cancel()
+			goroutineCtx, _ := context.WithTimeout(ctx, timeout)
 
 			file, subErr := nftDownNode.Download(goroutineCtx, txid, timestamp, signature, ttxid, ttype)
 			if subErr != nil {
 				log.WithContext(ctx).WithField("address", someNode.String()).WithField("reg-txid", txid).WithError(subErr).Error("Could not download from supernode")
 				errChan <- subErr
-			} else {
-				log.WithContext(ctx).WithField("address", someNode.String()).WithField("reg-txid", txid).Info("Downloaded from supernode")
+				return
 			}
 
-			func() {
-				task.mtx.Lock()
-				defer task.mtx.Unlock()
-				task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
+			log.WithContext(ctx).WithField("address", someNode.String()).WithField("reg-txid", txid).Info("Downloaded from supernode")
 
+			task.mtx.Lock()
+			task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
+			task.mtx.Unlock()
+		}()
+	}
+
+	// Check for matches periodically in a separate goroutine
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
 				if index, err := task.MatchFiles(); err == nil {
 					log.WithContext(ctx).WithField("matched file index", index).Info("Found three matching files")
 					cancel()
+					return
 				}
-			}()
-		}()
-	}
-	wg.Wait()
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
+	wg.Wait()
 	close(errChan)
 
 	downloadErrors := []error{}
