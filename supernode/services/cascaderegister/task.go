@@ -320,6 +320,8 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 		return "", errors.Errorf("register action ticket: %w", err)
 	}
 
+	task.storage.TxID = cascadeRegTxid
+
 	log.WithContext(ctx).WithField("txid", cascadeRegTxid).Info("storing rq symbols")
 	if err = task.storeRaptorQSymbols(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("store raptor symbols")
@@ -365,6 +367,8 @@ func (task *CascadeRegistrationTask) storeRaptorQSymbols(ctx context.Context) er
 func (task *CascadeRegistrationTask) storeIDFiles(ctx context.Context) error {
 	ctx = context.WithValue(ctx, log.TaskIDKey, task.ID())
 	log.WithContext(ctx).WithField("task_id", task.ID()).Info("store task id in context")
+
+	task.storage.TaskID = task.ID()
 	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.rqIDFiles); err != nil {
 		return errors.Errorf("store ID files into kademlia: %w", err)
 	}

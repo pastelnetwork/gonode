@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	defaultCollectionRegTxMinConfirmations = 5
+	defaultCollectionRegTxMinConfirmations = 6
 	defaultCollectionActTxMinConfirmations = 2
 	defaultWaitTxnValidInterval            = 5
 )

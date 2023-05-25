@@ -7,7 +7,7 @@ import (
 const (
 	defaultNumberRQIDSFiles uint32 = 1
 
-	defaultNftRegTxMinConfirmations = 5
+	defaultNftRegTxMinConfirmations = 6
 	defaultNftActTxMinConfirmations = 2
 	defaultWaitTxnValidInterval     = 5
 

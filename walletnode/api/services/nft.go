@@ -261,7 +261,7 @@ func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPaylo
 					return nil, nft.MakeInternalServerError(errors.New("unable to download file"))
 				}
 
-				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("NFT downloaded")
+				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("File downloaded")
 				res = &nft.DownloadResult{
 					File: task.File,
 				}

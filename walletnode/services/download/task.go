@@ -83,10 +83,10 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 		return errors.Errorf("download files from supernodes: %w: %v", err, downloadErrs)
 	}
 
-	if len(task.files) < task.service.config.NumberSuperNodes {
+	if len(task.files) < 3 {
 		log.WithContext(ctx).WithField("DownloadedNodes", len(task.files)).Info("Not enough number of downloaded files")
 		task.UpdateStatus(common.StatusErrorNotEnoughFiles)
-		return errors.Errorf("could not download enough files from %d supernodes: %v", task.service.config.NumberSuperNodes, downloadErrs)
+		return errors.Errorf("could not download enough files from %d supernodes: %v", 3, downloadErrs)
 	}
 
 	task.UpdateStatus(common.StatusDownloaded)
@@ -108,7 +108,7 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 	return nil
 }
 
-// Download downloads image from supernodes.
+// Download downloads the file from supernodes.
 func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string, timeout time.Duration) ([]error, error) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
@@ -135,13 +135,13 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 				errChan <- subErr
 			} else {
 				log.WithContext(ctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
-			}
 
-			func() {
-				task.mtx.Lock()
-				defer task.mtx.Unlock()
-				task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
-			}()
+				func() {
+					task.mtx.Lock()
+					defer task.mtx.Unlock()
+					task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
+				}()
+			}
 		}()
 	}
 	wg.Wait()
