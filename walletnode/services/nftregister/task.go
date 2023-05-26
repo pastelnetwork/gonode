@@ -282,7 +282,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	now := time.Now()
 	if task.downloadService != nil {
-		if err := common.DownloadWithRetry(ctx, task, now, now.Add(1*time.Minute)); err != nil {
+		if err := common.DownloadWithRetry(ctx, task, now, now.Add(common.RetryTime*time.Minute)); err != nil {
 			log.WithContext(ctx).WithField("reg_tx_id", task.regNFTTxid).WithError(err).Error("error validating nft ticket data")
 
 			task.StatusLog[common.FieldErrorDetail] = err.Error()

@@ -320,7 +320,7 @@ func main() {
 		totalReqTime += result.Elapsed
 	}
 
-	avgReqTime := totalReqTime / time.Duration(successes)
+	avgReqTime := totalReqTime / time.Duration(len(results))
 
 	logger.Printf("Total time for all requests: %v\n", totalElapsed.String())
 	logger.Printf("Average time per request: %v\n", avgReqTime)

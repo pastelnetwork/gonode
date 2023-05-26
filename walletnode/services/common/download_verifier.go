@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+const (
+	//RetryTime is the time WN will retry to download if it gets an error during data validation
+	RetryTime = 10
+)
+
 // DownloadVerifier represents an interface with the p2p data validation download function
 type DownloadVerifier interface {
 	Download(ctx context.Context) error
@@ -18,7 +23,7 @@ func DownloadWithRetry(ctx context.Context, fn DownloadVerifier, retryN, maxRetr
 			return err
 		}
 
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(15 * time.Second)
 		return DownloadWithRetry(ctx, fn, time.Now(), maxRetry)
 	}
 
