@@ -247,9 +247,9 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, info domain.NodeReplicationInf
 
 	if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 		return fmt.Errorf("replicate update isAdjusted failed: %v", err)
-	} else {
-		logEntry.Info("isAdjusted success")
 	}
+
+	logEntry.Info("isAdjusted success")
 
 	return nil
 }
