@@ -67,42 +67,57 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 		return errors.Errorf("sign timestamp: %w", err)
 	}
 
-	if err = task.MeshHandler.ConnectToNSuperNodes(ctx, task.service.config.NumberSuperNodes); err != nil {
-		return errors.Errorf("connect to top rank nodes: %w", err)
-	}
+	var skipNodes []string
+	var nodesDone chan struct{}
+	for {
+		addSkipNodes := func() {
+			for _, node := range task.MeshHandler.Nodes {
+				skipNodes = append(skipNodes, node.PastelID())
+			}
+		}
 
-	// supervise the connection to top rank supernodes
-	// cancel any ongoing context if the connections are broken
-	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
-	//send download requests to ALL Supernodes, number defined by mesh handler's "minNumberSuperNodes" (really just set in a config file as NumberSuperNodes)
-	//or max nodes that it was able to connect with defined by mesh handler config.UseMaxNodes
-	downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.Request.Type, tInfo.EstimatedDownloadTime)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not download files")
-		task.UpdateStatus(common.StatusErrorDownloadFailed)
-		return errors.Errorf("download files from supernodes: %w: %v", err, downloadErrs)
-	}
+		if err = task.MeshHandler.ConnectToNSuperNodes(ctx, task.service.config.NumberSuperNodes, skipNodes); err != nil {
+			return errors.Errorf("connect to top rank nodes: %w", err)
+		}
 
-	if len(task.files) < 3 {
-		log.WithContext(ctx).WithField("DownloadedNodes", len(task.files)).Info("Not enough number of downloaded files")
-		task.UpdateStatus(common.StatusErrorNotEnoughFiles)
-		return errors.Errorf("could not download enough files from %d supernodes: %v", 3, downloadErrs)
-	}
+		// supervise the connection to top rank supernodes
+		// cancel any ongoing context if the connections are broken
+		nodesDone = task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
+		//send download requests to ALL Supernodes, number defined by mesh handler's "minNumberSuperNodes" (really just set in a config file as NumberSuperNodes)
+		//or max nodes that it was able to connect with defined by mesh handler config.UseMaxNodes
+		downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.Request.Type, tInfo.EstimatedDownloadTime)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("download errors", downloadErrs).Error("Could not download files")
+			task.UpdateStatus(common.StatusErrorDownloadFailed)
+			addSkipNodes()
+			// return errors.Errorf("download files from supernodes: %w: %v", err, downloadErrs)
+		}
 
-	task.UpdateStatus(common.StatusDownloaded)
+		if len(task.files) < 3 {
+			log.WithContext(ctx).WithField("DownloadedNodes", len(task.files)).Info("Not enough number of downloaded files")
+			task.UpdateStatus(common.StatusErrorNotEnoughFiles)
+			addSkipNodes()
+			// return errors.Errorf("could not download enough files from %d supernodes: %v", 3, downloadErrs)
+		}
+
+		task.UpdateStatus(common.StatusDownloaded)
+
+		// Check files are the same
+		n, err := task.MatchFiles()
+		if err == nil {
+			// Store file to send to the caller
+			task.File = task.files[n].file
+			break
+
+		} else {
+			task.UpdateStatus(common.StatusErrorFilesNotMatch)
+			addSkipNodes()
+			// return errors.Errorf("files are different between supernodes: %w", err)
+		}
+	}
 
 	// Disconnect all nodes after finished downloading.
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-
-	// Check files are the same
-	n, err := task.MatchFiles()
-	if err != nil {
-		task.UpdateStatus(common.StatusErrorFilesNotMatch)
-		return errors.Errorf("files are different between supernodes: %w", err)
-	}
-
-	// Store file to send to the caller
-	task.File = task.files[n].file
 
 	// Wait for all connections to disconnect.
 	return nil
@@ -203,7 +218,7 @@ func NewNftDownloadTask(service *NftDownloadingService, request *NftDownloadingR
 			MinSNs:                 service.config.NumberSuperNodes,
 			PastelID:               request.PastelID,
 			Passphrase:             request.PastelIDPassphrase,
-			UseMaxNodes:            true,
+			UseMaxNodes:            false,
 		},
 	}
 

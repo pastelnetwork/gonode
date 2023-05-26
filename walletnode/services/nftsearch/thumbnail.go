@@ -45,7 +45,7 @@ func (h *ThumbnailHandler) Connect(ctx context.Context, num int, cancel context.
 	h.connMtx.Lock()
 	defer h.connMtx.Unlock()
 
-	if err := h.meshHandler.ConnectToNSuperNodes(ctx, num); err != nil {
+	if err := h.meshHandler.ConnectToNSuperNodes(ctx, num, []string{}); err != nil {
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
 
@@ -71,7 +71,8 @@ func (h *ThumbnailHandler) FetchMultiple(ctx context.Context, searchResult []*Re
 }
 
 // FetchOne fetches single thumbnails by custom request
-//  The key is base58(thumbnail_hash)
+//
+//	The key is base58(thumbnail_hash)
 func (h *ThumbnailHandler) FetchOne(ctx context.Context, txid string) ([]byte, error) {
 	data, err := h.fetch(ctx, txid, 1)
 	if err != nil {
@@ -134,7 +135,7 @@ func (h *ThumbnailHandler) fetcher(ctx context.Context, someNode *common.SuperNo
 	return nil
 }
 
-//Use numnails > 1 to fetch both thumbnails for all search result tickets in searchResult
+// Use numnails > 1 to fetch both thumbnails for all search result tickets in searchResult
 func (h *ThumbnailHandler) fetchAll(ctx context.Context, searchResult []*RegTicketSearch, resultChan *chan *RegTicketSearch) error {
 	group, _ := errgroup.WithContext(ctx)
 
