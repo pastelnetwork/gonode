@@ -44,7 +44,7 @@ func (h *DDFPHandler) Connect(ctx context.Context, num int, cancel context.Cance
 	h.connMtx.Lock()
 	defer h.connMtx.Unlock()
 
-	if err := h.meshHandler.ConnectToNSuperNodes(ctx, num); err != nil {
+	if err := h.meshHandler.ConnectToNSuperNodes(ctx, num, []string{}); err != nil {
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
 
