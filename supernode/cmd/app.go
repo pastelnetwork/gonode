@@ -7,9 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"net/http"
-	_ "net/http/pprof"
-
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -259,11 +256,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// Debug service
 	debugSerivce := debug.NewService(config.DebugService, p2p, storageChallenger)
-
-	// run profiler
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
 
 	// server
 	grpc := server.New(config.Server,
