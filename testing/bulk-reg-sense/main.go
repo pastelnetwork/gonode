@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -74,7 +75,10 @@ func doUploadImage(method, filePath, fileName string) (res uploadImageResponse, 
 }
 
 func preBurnAmount(amount int) (string, error) {
-	pastelCli := "/home/btanveer/pastel/pastel-cli"
+	pastelCli, err := getPastelCliPath()
+	if err != nil {
+		return "", err
+	}
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -199,7 +203,10 @@ func doTaskState(taskID string, expectedValue string, logger *log.Logger) error 
 }
 
 func getBlockCount() string {
-	pastelCli := "/home/btanveer/pastel/pastel-cli"
+	pastelCli, err := getPastelCliPath()
+	if err != nil {
+		return ""
+	}
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -232,6 +239,41 @@ func readFiles() map[string]string {
 	}
 
 	return filesInfo
+}
+
+func getPastelCliPath() (path string, err error) {
+	//create command
+	findCmd := exec.Command("find", ".", "-print")
+	grepCmd := exec.Command("grep", "-x", "./pastel/pastel-cli")
+
+	findCmd.Dir, err = os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	//make a pipe and set the input and output to reader and writer
+	reader, writer := io.Pipe()
+	var buf bytes.Buffer
+
+	findCmd.Stdout = writer
+	grepCmd.Stdin = reader
+
+	//cache the output of "grep" to memory
+	grepCmd.Stdout = &buf
+
+	//starting the commands
+	findCmd.Start()
+	grepCmd.Start()
+
+	//waiting for commands to complete and close the reader & writer
+	findCmd.Wait()
+	writer.Close()
+
+	grepCmd.Wait()
+	reader.Close()
+
+	pathWithEscapeCharacter := buf.String()
+	return strings.Replace(pathWithEscapeCharacter, "\n", "", 1), nil
 }
 
 func main() {
