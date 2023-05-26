@@ -186,8 +186,8 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	var errorList []error
 	var errorMutex sync.Mutex
 
-	for id, symbol := range symbols {
-		id, symbol := id, symbol // Shadow variables for correct closure capture
+	for id := range symbols {
+		id, symbol := id, symbols[id] // Shadow variables for correct closure capture
 
 		// Acquire a token
 		sem <- struct{}{}

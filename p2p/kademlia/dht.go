@@ -497,7 +497,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 				return nil, nil
 			case IterateFindValue:
 				// new a request message
-				for i := 0; i < len(nl.Nodes); i++ {
+				/*for i := 0; i < len(nl.Nodes); i++ {
 					n := nl.Nodes[i]
 					request := &FindValueRequest{Target: target}
 					reqMsg := s.newMessage(FindValue, n, request)
@@ -513,7 +513,8 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					}
 				}
 
-				log.P2P().WithContext(ctx).WithField("target", base58.Encode(target)).Error("could not find value from network")
+				log.P2P().WithContext(ctx).WithField("target", base58.Encode(target)).Error("could not find value from network")*/
+				return nil, nil
 
 			case IterateStore:
 				// store the value to node list
