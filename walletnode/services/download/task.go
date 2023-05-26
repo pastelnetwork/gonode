@@ -131,10 +131,10 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 
 			file, subErr := nftDownNode.Download(goroutineCtx, txid, timestamp, signature, ttxid, ttype)
 			if subErr != nil {
-				log.WithContext(ctx).WithField("address", someNode.String()).WithError(subErr).Error("Could not download from supernode")
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).WithError(subErr).Error("Could not download from supernode")
 				errChan <- subErr
 			} else {
-				log.WithContext(ctx).WithField("address", someNode.String()).Info("Downloaded from supernode")
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).Info("Downloaded from supernode")
 
 				func() {
 					task.mtx.Lock()
@@ -158,22 +158,22 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 
 // MatchFiles matches files. It loops through the files to find a file that matches any other two in the list
 func (task *NftDownloadingTask) MatchFiles() (int, error) {
-	for a, fileA := range task.files {
+	for i := 0; i < len(task.files); i++ {
 		matches := 0
-		log.Debugf("file of node %s - content: %q", fileA.pastelID, fileA.file)
+		log.Debugf("file of node %s - content: %q", task.files[i].pastelID, task.files[i].file)
 
-		for b, fileB := range task.files {
-			if a == b {
+		for j := 0; j < len(task.files); j++ {
+			if i == j {
 				continue
 			}
 
-			if bytes.Equal(fileA.file, fileB.file) {
+			if bytes.Equal(task.files[i].file, task.files[j].file) {
 				matches++
 			}
 		}
 
 		if matches >= 2 {
-			return a, nil
+			return i, nil
 		}
 	}
 

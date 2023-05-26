@@ -73,12 +73,12 @@ func (h *RQHandler) GenRQIdentifiersFiles(ctx context.Context, file *files.File,
 	}
 
 	var rqIDsFilesCount uint32
-	for _, rawSymbolIDFile := range encodeInfo.SymbolIDFiles {
-		if len(rawSymbolIDFile.SymbolIdentifiers) == 0 {
-			return errors.Errorf("empty symbol identifiers - rawFile : %s", rawSymbolIDFile)
+	for i := range encodeInfo.SymbolIDFiles {
+		if len(encodeInfo.SymbolIDFiles[i].SymbolIdentifiers) == 0 {
+			return errors.Errorf("empty symbol identifiers - rawFile : %s", encodeInfo.SymbolIDFiles[i])
 		}
 
-		err := h.generateRQIDs(ctx, rawSymbolIDFile, callerPastelID, callerPassphrase)
+		err := h.generateRQIDs(ctx, encodeInfo.SymbolIDFiles[i], callerPastelID, callerPassphrase)
 		if err != nil {
 			return errors.Errorf("create RQIDs file :%w", err)
 		}
