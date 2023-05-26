@@ -174,12 +174,15 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	if err != nil {
 		return err
 	}
+
 	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
 		Info("storing raptorQ symbols in p2p")
+
 	g, ctx := errgroup.WithContext(ctx)
 
-	// Create a semaphore with a capacity of 3000
-	sem := make(chan struct{}, 3000)
+	// Create a semaphore with a capacity of 2000
+	sem := make(chan struct{}, 2000)
+	defer close(sem) // close the semaphore channel after all routines finished
 
 	var successCounter int32
 	var errorCounter int32
@@ -196,23 +199,24 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 			defer func() { <-sem }() // Release the token at the end of the goroutine
 
 			// Check if context has been cancelled
-			if ctx.Err() != nil {
+			select {
+			case <-ctx.Done():
 				return ctx.Err()
-			}
-
-			_, err := h.P2PClient.Store(ctx, symbol)
-			if err != nil {
-				errorMutex.Lock()
-				if errorCounter < 10 {
-					errorList = append(errorList, errors.Errorf("store symbol id=%s into kademlia: %w", id, err))
+			default:
+				_, err := h.P2PClient.Store(ctx, symbol)
+				if err != nil {
+					errorMutex.Lock()
+					if errorCounter < 10 {
+						errorList = append(errorList, errors.Errorf("store symbol id=%s into kademlia: %w", id, err))
+					}
+					errorMutex.Unlock()
+					atomic.AddInt32(&errorCounter, 1)
+					return nil
 				}
-				errorMutex.Unlock()
-				atomic.AddInt32(&errorCounter, 1)
+
+				atomic.AddInt32(&successCounter, 1)
 				return nil
 			}
-
-			atomic.AddInt32(&successCounter, 1)
-			return nil
 		})
 	}
 
@@ -226,7 +230,8 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	totalSymbols := len(symbols)
 	successRate := float64(successCounter) / float64(totalSymbols)
 
-	// Log the errors
+	// Log the errors but limit to the top 10
+	errorList = errorList[:min(10, len(errorList))]
 	for _, err := range errorList {
 		log.WithContext(ctx).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).WithError(err).Error("error while storing raptorQ symbols in p2p")
 	}
@@ -237,3 +242,13 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 
 	return nil
 }
+
+// Helper function to get minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// ... rest of your code
