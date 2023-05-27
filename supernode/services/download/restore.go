@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	maxGoroutines = 5000
+	maxGoroutines = 2000
 	resultBufSize = 1000 // or any other appropriate value
 )
 
