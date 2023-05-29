@@ -162,6 +162,10 @@ func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
 					}
 					log.WithContext(ctx).Info("cascade action registered successfully")
 
+					if err := task.NetworkHandler.CloseSNsConnections(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("close SNs connections")
+					}
+
 					return nil
 				}
 			}
@@ -322,18 +326,18 @@ func (task *CascadeRegistrationTask) registerAction(ctx context.Context) (string
 
 	task.storage.TxID = cascadeRegTxid
 
-	log.WithContext(ctx).WithField("txid", cascadeRegTxid).Info("storing rq symbols")
-	if err = task.storeRaptorQSymbols(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("store raptor symbols")
-		err = errors.Errorf("store raptor symbols: %w", err)
-		return "", err
-	}
-
 	// Store dd_and_fingerprints into Kademlia
 	log.WithContext(ctx).WithField("txid", cascadeRegTxid).Info("storing id files")
 	if err = task.storeIDFiles(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("store id files")
 		err = errors.Errorf("store id files: %w", err)
+		return "", err
+	}
+
+	log.WithContext(ctx).WithField("txid", cascadeRegTxid).Info("storing rq symbols")
+	if err = task.storeRaptorQSymbols(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("store raptor symbols")
+		err = errors.Errorf("store raptor symbols: %w", err)
 		return "", err
 	}
 

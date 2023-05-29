@@ -54,7 +54,11 @@ func (h *RQHandler) GenRQIdentifiersFiles(ctx context.Context, file *files.File,
 	if err != nil {
 		return errors.Errorf("connect to raptorQ: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.WithContext(ctx).WithError(err).Error("error closing rq-connection")
+		}
+	}()
 
 	content, err := file.Bytes()
 	if err != nil {

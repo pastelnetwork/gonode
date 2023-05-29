@@ -210,7 +210,10 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Info("Closing SNs connections")
 
 	// don't need SNs anymore
-	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error closing SNs connections")
+	}
 
 	log.WithContext(ctx).Infof("Waiting Confirmations for Cascade Reg Ticket - Ticket txid: %s", task.regCascadeTxid)
 

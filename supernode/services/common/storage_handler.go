@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
+
+	"github.com/cenkalti/backoff"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -71,8 +74,8 @@ func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]b
 	}
 
 	log.WithContext(gctx).WithField("task_id", taskID).Info("task_id in storeList after gctx")
-	for _, data := range list {
-		data := data
+	for i := 0; i < len(list); i++ {
+		data := list[i]
 		group.Go(func() (err error) {
 			if _, err := h.StoreBytesIntoP2P(gctx, data); err != nil {
 				return errors.Errorf("store data into p2p: %w", err)
@@ -92,11 +95,27 @@ func (h *StorageHandler) GenerateRaptorQSymbols(ctx context.Context, data []byte
 		return nil, errors.Errorf("RQ Server is not initialized")
 	}
 
-	conn, err := h.RqClient.Connect(ctx, h.rqAddress)
-	if err != nil {
-		return nil, errors.Errorf("connect to raptorq service: %w", err)
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 2 * time.Minute
+	b.InitialInterval = 200 * time.Millisecond
+
+	var conn rqnode.Connection
+	if err := backoff.Retry(backoff.Operation(func() error {
+		var err error
+		conn, err = h.RqClient.Connect(ctx, h.rqAddress)
+		if err != nil {
+			return errors.Errorf("connect to raptorq service: %w", err)
+		}
+
+		return nil
+	}), b); err != nil {
+		return nil, fmt.Errorf("retry connect to raptorq service: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.WithContext(ctx).WithError(err).Error("error closing rq-connection")
+		}
+	}()
 
 	rqService := conn.RaptorQ(&rqnode.Config{
 		RqFilesDir: h.rqDir,
@@ -119,11 +138,27 @@ func (h *StorageHandler) GetRaptorQEncodeInfo(ctx context.Context,
 		return nil, errors.Errorf("RQ Server is not initialized")
 	}
 
-	conn, err := h.RqClient.Connect(ctx, h.rqAddress)
-	if err != nil {
-		return nil, errors.Errorf("connect to raptorq service: %w", err)
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 2 * time.Minute
+	b.InitialInterval = 200 * time.Millisecond
+
+	var conn rqnode.Connection
+	if err := backoff.Retry(backoff.Operation(func() error {
+		var err error
+		conn, err = h.RqClient.Connect(ctx, h.rqAddress)
+		if err != nil {
+			return errors.Errorf("connect to raptorq service: %w", err)
+		}
+
+		return nil
+	}), b); err != nil {
+		return nil, fmt.Errorf("retry connect to raptorq service: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.WithContext(ctx).WithError(err).Error("error closing rq-connection")
+		}
+	}()
 
 	rqService := conn.RaptorQ(&rqnode.Config{
 		RqFilesDir: h.rqDir,

@@ -218,3 +218,25 @@ func (h *NetworkHandler) PastelNodeByExtKey(ctx context.Context, nodeID string) 
 
 	return nil, errors.Errorf("node %q not found", nodeID)
 }
+
+// CloseSNsConnections closes all connections to supernodes
+func (h *NetworkHandler) CloseSNsConnections(ctx context.Context) error {
+	for _, node := range h.Accepted {
+		if node.ConnectionInterface != nil {
+			if err := node.Close(); err != nil {
+				log.WithContext(ctx).WithError(err).Errorf("close connection to node %s", node.ID)
+			}
+		} else {
+			log.WithContext(ctx).Errorf("node %s has no connection", node.ID)
+		}
+
+	}
+
+	if h.ConnectedTo != nil {
+		if err := h.ConnectedTo.Close(); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("close connection to node %s", h.ConnectedTo.ID)
+		}
+	}
+
+	return nil
+}

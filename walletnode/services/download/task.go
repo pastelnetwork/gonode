@@ -59,25 +59,36 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 		}
 	}
 
-	// Sign current-timestamp with PastelID passed in request
-	timestamp := time.Now().Format(time.RFC3339)
-	signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, pastel.SignAlgorithmED448)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
-		return errors.Errorf("sign timestamp: %w", err)
-	}
-
 	var skipNodes []string
 	var nodesDone chan struct{}
 	for {
-		addSkipNodes := func() {
+		addSkipNodes := func(goodNodes []string) {
 			for _, node := range task.MeshHandler.Nodes {
-				skipNodes = append(skipNodes, node.PastelID())
+				isGoodNode := false
+				for _, goodNode := range goodNodes {
+					if node.PastelID() == goodNode {
+						isGoodNode = true
+						break
+					}
+				}
+
+				if !isGoodNode {
+					skipNodes = append(skipNodes, node.PastelID())
+				}
 			}
 		}
 
+		// Sign current-timestamp with PastelID passed in request
+		timestamp := time.Now().Format(time.RFC3339)
+		signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, pastel.SignAlgorithmED448)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
+			return errors.Errorf("sign timestamp: %w", err)
+		}
+
 		if err = task.MeshHandler.ConnectToNSuperNodes(ctx, task.service.config.NumberSuperNodes, skipNodes); err != nil {
-			return errors.Errorf("connect to top rank nodes: %w", err)
+			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not connect to supernodes")
+			addSkipNodes([]string{})
 		}
 
 		// supervise the connection to top rank supernodes
@@ -85,25 +96,17 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 		nodesDone = task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
 		//send download requests to ALL Supernodes, number defined by mesh handler's "minNumberSuperNodes" (really just set in a config file as NumberSuperNodes)
 		//or max nodes that it was able to connect with defined by mesh handler config.UseMaxNodes
-		downloadErrs, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.Request.Type, tInfo.EstimatedDownloadTime)
+		downloadErrs, goodNodes, err := task.Download(ctx, task.Request.Txid, timestamp, string(signature), ttxid, task.Request.Type, tInfo.EstimatedDownloadTime)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("download errors", downloadErrs).Error("Could not download files")
 			task.UpdateStatus(common.StatusErrorDownloadFailed)
-			addSkipNodes()
+			addSkipNodes(goodNodes)
 			// return errors.Errorf("download files from supernodes: %w: %v", err, downloadErrs)
 		}
 
-		if len(task.files) < 3 {
-			log.WithContext(ctx).WithField("DownloadedNodes", len(task.files)).Info("Not enough number of downloaded files")
-			task.UpdateStatus(common.StatusErrorNotEnoughFiles)
-			addSkipNodes()
-			// return errors.Errorf("could not download enough files from %d supernodes: %v", 3, downloadErrs)
-		}
-
 		task.UpdateStatus(common.StatusDownloaded)
-
 		// Check files are the same
-		n, err := task.MatchFiles()
+		n, goodNodes, err := task.MatchFiles()
 		if err == nil {
 			// Store file to send to the caller
 			task.File = task.files[n].file
@@ -111,7 +114,7 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 
 		} else {
 			task.UpdateStatus(common.StatusErrorFilesNotMatch)
-			addSkipNodes()
+			addSkipNodes(goodNodes)
 			// return errors.Errorf("files are different between supernodes: %w", err)
 		}
 	}
@@ -124,15 +127,16 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 }
 
 // Download downloads the file from supernodes.
-func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string, timeout time.Duration) ([]error, error) {
+func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string, timeout time.Duration) ([]error, []string, error) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
+	var goodNodes []string
 
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownloadingNode)
 		if !ok {
 			//TODO: use assert here
-			return nil, errors.Errorf("node %s is not NftRegisterNode", someNode.String())
+			return nil, goodNodes, errors.Errorf("node %s is not NftRegisterNode", someNode.String())
 		}
 
 		someNode := someNode
@@ -154,6 +158,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 				func() {
 					task.mtx.Lock()
 					defer task.mtx.Unlock()
+					goodNodes = append(goodNodes, someNode.PastelID())
 					task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
 				}()
 			}
@@ -168,11 +173,21 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		downloadErrors = append(downloadErrors, subErr)
 	}
 
-	return downloadErrors, nil
+	return downloadErrors, goodNodes, nil
 }
 
 // MatchFiles matches files. It loops through the files to find a file that matches any other two in the list
-func (task *NftDownloadingTask) MatchFiles() (int, error) {
+func (task *NftDownloadingTask) MatchFiles() (int, []string, error) {
+	var goodNodes []string
+
+	if len(task.files) < 3 {
+		for _, file := range task.files {
+			goodNodes = append(goodNodes, file.pastelID)
+		}
+
+		return 0, goodNodes, errors.Errorf("number of files is less than 3, no. of files - %d", len(task.files))
+	}
+
 	for i := 0; i < len(task.files); i++ {
 		matches := 0
 		log.Debugf("file of node %s - content: %q", task.files[i].pastelID, task.files[i].file)
@@ -183,16 +198,19 @@ func (task *NftDownloadingTask) MatchFiles() (int, error) {
 			}
 
 			if bytes.Equal(task.files[i].file, task.files[j].file) {
+				goodNodes = append(goodNodes, task.files[i].pastelID)
+				goodNodes = append(goodNodes, task.files[j].pastelID)
+
 				matches++
 			}
 		}
 
 		if matches >= 2 {
-			return i, nil
+			return i, goodNodes, nil
 		}
 	}
 
-	return 0, errors.Errorf("unable to find three matching files, no. of files - %d", len(task.files))
+	return 0, goodNodes, errors.Errorf("unable to find three matching files, no. of files - %d", len(task.files))
 }
 
 // Error returns task err
