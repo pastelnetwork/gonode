@@ -260,6 +260,8 @@ func (task *SCTask) SendProcessStorageChallenge(ctx context.Context, challengeMe
 		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendProcessStorageChallenge").Warn(err.Error())
 		return err
 	}
+	defer nodeClientConn.Close()
+
 	storageChallengeIF := nodeClientConn.StorageChallenge()
 	//Calls the ProcessStorageChallenge method on the connected supernode over GRPC.
 	return storageChallengeIF.ProcessStorageChallenge(ctx, challengeMessage)
