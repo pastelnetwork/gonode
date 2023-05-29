@@ -95,7 +95,7 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 			// rqClientMock.ListenOnConnect(tt.args.connectErr)
 
 			clientMock := sctest.NewMockClient(t)
-			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().ListenOnProcessStorageChallengeFunc(nil)
+			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().ListenOnProcessStorageChallengeFunc(nil).ConnectionInterface.On("Close").Return(nil)
 
 			fsMock := storageMock.NewMockFileStorage()
 			// storage := files.NewStorage(fsMock)
@@ -210,7 +210,8 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 			// rqClientMock.ListenOnConnect(tt.args.connectErr)
 
 			clientMock := sctest.NewMockClient(t)
-			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().ListenOnVerifyStorageChallengeFunc(&pb.StorageChallengeData{ChallengeStatus: pb.StorageChallengeData_Status_SUCCEEDED}, nil)
+			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().
+				ListenOnVerifyStorageChallengeFunc(&pb.StorageChallengeData{ChallengeStatus: pb.StorageChallengeData_Status_SUCCEEDED}, nil).ConnectionInterface.On("Close").Return(nil)
 
 			fsMock := storageMock.NewMockFileStorage()
 			// storage := files.NewStorage(fsMock)
@@ -386,7 +387,8 @@ func TestVerifyStorageChallenge(t *testing.T) {
 			// rqClientMock.ListenOnConnect(tt.args.connectErr)
 
 			clientMock := sctest.NewMockClient(t)
-			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().ListenOnVerifyStorageChallengeFunc(&pb.StorageChallengeData{ChallengeStatus: pb.StorageChallengeData_Status_SUCCEEDED}, nil)
+			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().
+				ListenOnVerifyStorageChallengeFunc(&pb.StorageChallengeData{ChallengeStatus: pb.StorageChallengeData_Status_SUCCEEDED}, nil).ConnectionInterface.On("Close").Return(nil)
 
 			fsMock := storageMock.NewMockFileStorage()
 			// storage := files.NewStorage(fsMock)

@@ -214,6 +214,8 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 			log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Connection failed to establish with node: %s", processingSupernodeAddr))
 			continue
 		}
+		defer nodeClientConn.Close()
+
 		storageChallengeIF := nodeClientConn.StorageChallenge()
 		log.WithContext(ctx).Info(fmt.Sprintf("connection established with node:%s", nodeToConnectTo))
 
@@ -279,6 +281,8 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Connection failed to establish with node: %s", processingSupernodeAddr))
 	}
+	defer nodeClientConn.Close()
+
 	selfHealingChallengeIF := nodeClientConn.SelfHealingChallenge()
 	log.WithContext(ctx).Info(fmt.Sprintf("connection established with node:%s", processingSupernodeAddr))
 
