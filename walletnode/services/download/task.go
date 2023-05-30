@@ -61,7 +61,9 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 
 	var skipNodes []string
 	var nodesDone chan struct{}
+	tries := 0
 	for {
+
 		addSkipNodes := func(goodNodes []string) {
 			for _, node := range task.MeshHandler.Nodes {
 				isGoodNode := false
@@ -78,17 +80,23 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 			}
 		}
 
+		tries++
+		if tries > 6 {
+			return errors.Errorf("task failed after too many tries")
+		}
+
 		// Sign current-timestamp with PastelID passed in request
 		timestamp := time.Now().Format(time.RFC3339)
 		signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, pastel.SignAlgorithmED448)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
-			return errors.Errorf("sign timestamp: %w", err)
+			continue
 		}
 
 		if err = task.MeshHandler.ConnectToNSuperNodes(ctx, task.service.config.NumberSuperNodes, skipNodes); err != nil {
 			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).Error("Could not connect to supernodes")
 			addSkipNodes([]string{})
+			continue
 		}
 
 		// supervise the connection to top rank supernodes
@@ -101,22 +109,21 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("download errors", downloadErrs).Error("Could not download files")
 			task.UpdateStatus(common.StatusErrorDownloadFailed)
 			addSkipNodes(goodNodes)
-			// return errors.Errorf("download files from supernodes: %w: %v", err, downloadErrs)
+			continue
 		}
 
 		task.UpdateStatus(common.StatusDownloaded)
 		// Check files are the same
 		n, goodNodes, err := task.MatchFiles()
-		if err == nil {
-			// Store file to send to the caller
-			task.File = task.files[n].file
-			break
-
-		} else {
+		if err != nil {
 			task.UpdateStatus(common.StatusErrorFilesNotMatch)
 			addSkipNodes(goodNodes)
-			// return errors.Errorf("files are different between supernodes: %w", err)
+			continue
 		}
+
+		// Store file to send to the caller
+		task.File = task.files[n].file
+		break
 	}
 
 	// Disconnect all nodes after finished downloading.

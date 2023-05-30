@@ -375,6 +375,15 @@ func (s *Network) serve(ctx context.Context) {
 
 // Call sends the request to target and receive the response
 func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) {
+	if request.Receiver != nil && request.Receiver.Port == 50052 {
+		log.P2P().WithContext(ctx).Error("invalid port")
+		return nil, errors.New("invalid port")
+	}
+	if request.Sender != nil && request.Sender.Port == 50052 {
+		log.P2P().WithContext(ctx).Error("invalid port")
+		return nil, errors.New("invalid port")
+	}
+
 	var conn net.Conn
 	var rawConn net.Conn
 	var err error

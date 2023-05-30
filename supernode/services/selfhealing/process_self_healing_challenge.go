@@ -44,7 +44,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error establishing RQ connection")
 	}
-	defer rqConnection.Done()
+	defer rqConnection.Close()
 
 	rqNodeConfig := &rqnode.Config{
 		RqFilesDir: task.config.RqFilesDir,
@@ -558,6 +558,8 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 			log.WithContext(ctx).WithError(err).Error(fmt.Sprintf("Connection failed to establish with node: %s", processingSupernodeAddr))
 			continue
 		}
+		defer nodeClientConn.Close()
+
 		selfHealingChallengeIF := nodeClientConn.SelfHealingChallenge()
 		log.WithContext(ctx).Info(fmt.Sprintf("connection established with node:%s", nodeToConnectTo))
 
