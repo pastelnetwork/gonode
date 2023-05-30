@@ -93,7 +93,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 	}
 	log.WithContext(ctx).Infof("Current block is %d", blockNum)
 
-	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes)
+	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes, []string{})
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
 		return 0, "", errors.Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
@@ -110,9 +110,9 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 }
 
 // ConnectToNSuperNodes sets single simple connection to N SNs
-func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int) error {
+func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int, skipNodes []string) error {
 
-	connectedNodes, err := m.findNValidTopSuperNodes(ctx, n)
+	connectedNodes, err := m.findNValidTopSuperNodes(ctx, n, skipNodes)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int) error {
 }
 
 // ConnectToTopRankNodes - find N supernodes and create mesh of 3 nodes
-func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (SuperNodeList, error) {
+func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNodes []string) (SuperNodeList, error) {
 
 	// Retrieve supernodes with the highest ranks.
 	candidatesNodes, err := m.getTopNodes(ctx)
@@ -145,7 +145,7 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int) (Super
 	log.WithContext(ctx).Infof("Found %d Supernodes", len(candidatesNodes))
 
 	// Connect to top nodes to find 3SN and validate their info
-	foundNodes, err := m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n, m.HashCheckMaxRetries)
+	foundNodes, err := m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n, m.HashCheckMaxRetries, skipNodes)
 	if err != nil {
 		m.task.UpdateStatus(StatusErrorFindRespondingSNs)
 		log.WithContext(ctx).WithError(err).Errorf("unable to validate MN")
@@ -237,7 +237,7 @@ func (m *MeshHandler) getTopNodes(ctx context.Context) (SuperNodeList, error) {
 	return nodes, nil
 }
 
-func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candidatesNodes SuperNodeList, n int, maxRetries int) (SuperNodeList, error) {
+func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candidatesNodes SuperNodeList, n int, maxRetries int, skipNodes []string) (SuperNodeList, error) {
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
 		PassPhrase: m.passphrase,
@@ -245,18 +245,18 @@ func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candid
 	}
 
 	if m.checkDDDatabaseHashes {
-		return m.connectToAndValidateSuperNodesWithHashCheck(ctx, candidatesNodes, n, maxRetries, secInfo)
+		return m.connectToAndValidateSuperNodesWithHashCheck(ctx, candidatesNodes, n, maxRetries, secInfo, skipNodes)
 	}
 
-	return m.connectToAndValidateSuperNodesWithoutHashCheck(ctx, candidatesNodes, n, secInfo)
+	return m.connectToAndValidateSuperNodesWithoutHashCheck(ctx, candidatesNodes, n, secInfo, skipNodes)
 }
 
-func (m *MeshHandler) connectToAndValidateSuperNodesWithHashCheck(ctx context.Context, candidatesNodes SuperNodeList, n int, maxRetries int, secInfo *alts.SecInfo) (SuperNodeList, error) {
+func (m *MeshHandler) connectToAndValidateSuperNodesWithHashCheck(ctx context.Context, candidatesNodes SuperNodeList, n int, maxRetries int, secInfo *alts.SecInfo, skipNodes []string) (SuperNodeList, error) {
 	combinations := combinations(candidatesNodes)
 
 	for retryCount := 0; retryCount < maxRetries; retryCount++ {
 		for _, set := range combinations {
-			nodes := m.connectToNodes(ctx, set, n, secInfo)
+			nodes := m.connectToNodes(ctx, set, n, secInfo, skipNodes)
 
 			if len(nodes) != n {
 				continue
@@ -281,8 +281,8 @@ func (m *MeshHandler) connectToAndValidateSuperNodesWithHashCheck(ctx context.Co
 	return nil, errors.Errorf("nodes not found, could not match database hash after %d attempts", maxRetries)
 }
 
-func (m *MeshHandler) connectToAndValidateSuperNodesWithoutHashCheck(ctx context.Context, candidatesNodes SuperNodeList, n int, secInfo *alts.SecInfo) (SuperNodeList, error) {
-	nodes := m.connectToNodes(ctx, candidatesNodes, n, secInfo)
+func (m *MeshHandler) connectToAndValidateSuperNodesWithoutHashCheck(ctx context.Context, candidatesNodes SuperNodeList, n int, secInfo *alts.SecInfo, skipNodes []string) (SuperNodeList, error) {
+	nodes := m.connectToNodes(ctx, candidatesNodes, n, secInfo, skipNodes)
 
 	if len(nodes) < n {
 		log.WithContext(ctx).Errorf("Failed to validate enough Supernodes - only found %d good", n)
@@ -292,10 +292,21 @@ func (m *MeshHandler) connectToAndValidateSuperNodesWithoutHashCheck(ctx context
 	return nodes, nil
 }
 
-func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNodeList, n int, secInfo *alts.SecInfo) SuperNodeList {
+func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNodeList, n int, secInfo *alts.SecInfo, skipNodes []string) SuperNodeList {
 	nodes := SuperNodeList{}
 
 	for _, someNode := range nodesToConnect {
+		skip := false
+		for i := 0; i < len(skipNodes); i++ {
+			if skipNodes[i] == someNode.PastelID() {
+				skip = true
+				break
+			}
+		}
+		if skip {
+			continue
+		}
+
 		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 			continue
@@ -517,6 +528,11 @@ func (m *MeshHandler) disconnectFromNode(ctx context.Context, someNode *SuperNod
 				"addr":     someNode.String(),
 			}).WithError(err).Errorf("close supernode connection failed: SN - %s", someNode.String())
 		}
+	} else {
+		log.WithContext(ctx).WithFields(log.Fields{
+			"pastelId": someNode.PastelID(),
+			"addr":     someNode.String(),
+		}).Errorf("close supernode connection failed: SN - %s", someNode.String())
 	}
 	return err
 }

@@ -72,7 +72,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 	if err != nil {
 		log.WithContext(ctx).Error("Error establishing RQ connection")
 	}
-	defer rqConnection.Done()
+	defer rqConnection.Close()
 
 	rqNodeConfig := &rqnode.Config{
 		RqFilesDir: task.config.RqFilesDir,

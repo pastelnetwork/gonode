@@ -320,7 +320,7 @@ func TestMatchFiles(t *testing.T) {
 			task := NewNftDownloadTask(service, &NftDownloadingRequest{})
 			task.files = testCase.files
 
-			n, err := task.MatchFiles()
+			n, _, err := task.MatchFiles()
 			if testCase.wantErr == nil {
 				assert.Nil(t, err)
 				assert.Equal(t, testCase.wantN, n)

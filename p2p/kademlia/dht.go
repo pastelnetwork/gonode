@@ -536,7 +536,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					response, err := s.sendStoreData(ctx, n, request)
 					if err != nil {
 						// update the blacklist
-						s.ignorelist.IncrementCount(n)
+						//s.ignorelist.IncrementCount(n)
 
 						logEntry.WithError(err).Error("send store data failed")
 					} else if response.Status.Result != ResultOk {
@@ -560,7 +560,25 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 func (s *DHT) sendStoreData(ctx context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
 	// new a request message
 	reqMsg := s.newMessage(StoreData, n, request)
-	// send the request and receive the response
+
+	/*b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 5 * time.Second
+	b.InitialInterval = 200 * time.Millisecond
+
+	var rspMsg *Message
+	if err := backoff.Retry(backoff.Operation(func() error {
+		var err error
+		// send the request and receive the response
+		rspMsg, err = s.network.Call(ctx, reqMsg)
+		if err != nil {
+			return errors.Errorf("network call: %w", err)
+		}
+
+		return nil
+	}), b); err != nil {
+		return nil, fmt.Errorf("retry send store data failed: %w", err)
+	}*/
+
 	rspMsg, err := s.network.Call(ctx, reqMsg)
 	if err != nil {
 		return nil, errors.Errorf("network call: %w", err)

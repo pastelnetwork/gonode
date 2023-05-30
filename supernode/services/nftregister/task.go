@@ -304,6 +304,13 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 					// }
 
 					// Step 19
+
+					if err = task.storeIDFiles(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("store id files")
+						err = errors.Errorf("store id files: %w", err)
+						return nil
+					}
+
 					if err = task.storeRaptorQSymbols(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("store raptor symbols")
 						err = errors.Errorf("store raptor symbols: %w", err)
@@ -313,13 +320,6 @@ func (task *NftRegistrationTask) ActivateAndStoreNft(_ context.Context) (string,
 					if err = task.storeThumbnails(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("store thumbnails")
 						err = errors.Errorf("store thumbnails: %w", err)
-						return nil
-					}
-
-					//This includes adding fingerprints to the dd-service fingerprint sqlite database
-					if err = task.storeIDFiles(ctx); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("store id files")
-						err = errors.Errorf("store id files: %w", err)
 						return nil
 					}
 
