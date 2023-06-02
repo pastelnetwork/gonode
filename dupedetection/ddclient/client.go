@@ -29,11 +29,12 @@ func (cl *client) Connect(ctx context.Context, address string) (*clientConn, err
 		//lint:ignore SA1019 we want to ignore this for now
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name), grpc.MaxCallRecvMsgSize(10000000)),
 	)
 	if err != nil {
 		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)
 	}
+
 	log.DD().WithContext(ctx).Debugf("Connected to %s", address)
 
 	conn := newClientConn(id, grpcConn)

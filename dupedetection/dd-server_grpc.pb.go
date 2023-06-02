@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DupeDetectionServerClient interface {
 	ImageRarenessScore(ctx context.Context, in *RarenessScoreRequest, opts ...grpc.CallOption) (*ImageRarenessScoreReply, error)
+	GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error)
 }
 
 type dupeDetectionServerClient struct {
@@ -42,11 +43,21 @@ func (c *dupeDetectionServerClient) ImageRarenessScore(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *dupeDetectionServerClient) GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error) {
+	out := new(GetStatusResponse)
+	err := c.cc.Invoke(ctx, "/dupedetection.DupeDetectionServer/GetStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DupeDetectionServerServer is the server API for DupeDetectionServer service.
 // All implementations must embed UnimplementedDupeDetectionServerServer
 // for forward compatibility
 type DupeDetectionServerServer interface {
 	ImageRarenessScore(context.Context, *RarenessScoreRequest) (*ImageRarenessScoreReply, error)
+	GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error)
 	mustEmbedUnimplementedDupeDetectionServerServer()
 }
 
@@ -56,6 +67,9 @@ type UnimplementedDupeDetectionServerServer struct {
 
 func (UnimplementedDupeDetectionServerServer) ImageRarenessScore(context.Context, *RarenessScoreRequest) (*ImageRarenessScoreReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImageRarenessScore not implemented")
+}
+func (UnimplementedDupeDetectionServerServer) GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
 }
 func (UnimplementedDupeDetectionServerServer) mustEmbedUnimplementedDupeDetectionServerServer() {}
 
@@ -88,6 +102,24 @@ func _DupeDetectionServer_ImageRarenessScore_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DupeDetectionServer_GetStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DupeDetectionServerServer).GetStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dupedetection.DupeDetectionServer/GetStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DupeDetectionServerServer).GetStatus(ctx, req.(*GetStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DupeDetectionServer_ServiceDesc is the grpc.ServiceDesc for DupeDetectionServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +130,10 @@ var DupeDetectionServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImageRarenessScore",
 			Handler:    _DupeDetectionServer_ImageRarenessScore_Handler,
+		},
+		{
+			MethodName: "GetStatus",
+			Handler:    _DupeDetectionServer_GetStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
