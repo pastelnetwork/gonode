@@ -10,6 +10,7 @@ package dupedetection;
 
 service DupeDetectionServer {
     rpc ImageRarenessScore(RarenessScoreRequest) returns(ImageRarenessScoreReply);
+    rpc GetStatus(GetStatusRequest) returns(GetStatusResponse);
 }
 
 message RarenessScoreRequest {
@@ -78,3 +79,29 @@ message AltNsfwScores {
     float sexy = 5;
 }
 
+message GetStatusRequest {}
+
+message TaskCount {
+    int32 max_concurrent = 1;
+    int32 executing = 2;
+    int32 waiting_in_queue = 3;
+    int32 succeeded = 4;
+    int32 failed = 5;
+    int32 cancelled = 6;
+}
+
+message TaskMetrics {
+    float average_task_wait_time_secs = 1;
+    float max_task_wait_time_secs = 2;
+    float average_task_execution_time_secs = 3;
+    int64 average_task_virtual_memory_usage_bytes = 4;
+    int64 average_task_rss_memory_usage_bytes = 5;
+    int64 peak_task_rss_memory_usage_bytes = 6;
+    int64 peak_task_vms_memory_usage_bytes = 7;
+}
+
+message GetStatusResponse {
+    string version = 1;
+    TaskCount task_count = 2;
+    TaskMetrics task_metrics = 3;
+}

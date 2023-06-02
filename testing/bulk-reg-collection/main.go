@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"io"
 	"io/ioutil"
 	"log"
@@ -18,6 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 )
@@ -26,7 +27,7 @@ const (
 	initialDelay = 1 * time.Second
 	maxRetries   = 5
 	timeoutAfter = 300
-	NoOfRequests = 1
+	NoOfRequests = 10
 )
 
 type collectionRegPayload struct {
@@ -52,7 +53,7 @@ type result struct {
 }
 
 func doCollectionRegRequest(payload collectionRegPayload) (string, error) {
-	url := "http://localhost:18080/collection/register"
+	url := "http://localhost:8080/collection/register"
 	method := "POST"
 
 	payloadBytes, err := json.Marshal(payload)
@@ -103,7 +104,7 @@ func doCollectionRegRequest(payload collectionRegPayload) (string, error) {
 }
 
 func doTaskState(taskID string, expectedValue string, logger *log.Logger) error {
-	url := fmt.Sprintf("ws://127.0.0.1:18080/collection/%s/state", taskID)
+	url := fmt.Sprintf("ws://127.0.0.1:8080/collection/%s/state", taskID)
 
 	ctx := context.Background()
 	interrupt := make(chan os.Signal, 1)
@@ -203,16 +204,16 @@ func main() {
 		req := collectionRegPayload{
 			CollectionName:                                 uuid.NewString(),
 			ItemType:                                       getItemType(count),
-			ListOfPastelidsOfAuthorizedContributors:        []string{"jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX"},
+			ListOfPastelidsOfAuthorizedContributors:        []string{"jXYjBDCtQk6c77DxTFVM28Cwuy6JkRGgbrhvES9paHZQEyg4ocD4a7GBs9XBk9na3fs7zcmcgZv77ugU4aoU8d"},
 			MaxCollectionEntries:                           5,
 			NoOfDaysToFinalizeCollection:                   rand.Intn(7) + 1,
 			MaxPermittedOpenNsfwScore:                      rand.Float64(),
 			MinimumSimilarityScoreToFirstEntryInCollection: rand.Float64(),
-			SpendableAddress:                               "tPTB7xgbKvgMtat7LhZY2wNtgn19FtGaQSB",
-			AppPastelid:                                    "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX",
+			SpendableAddress:                               "tPc3RnVmDgVaPaZZ3qBJ8BqBcSm79oE6vVT",
+			AppPastelid:                                    "jXYjBDCtQk6c77DxTFVM28Cwuy6JkRGgbrhvES9paHZQEyg4ocD4a7GBs9XBk9na3fs7zcmcgZv77ugU4aoU8d",
 		}
 
-		logger.Printf("payload for collection-name:%s, request:%d, payload:%s", req.CollectionName, count, req)
+		logger.Printf("payload for collection-name:%s, request:%d, payload: %v", req.CollectionName, count, req)
 
 		taskID, err := doCollectionRegRequest(req)
 		if err != nil {
