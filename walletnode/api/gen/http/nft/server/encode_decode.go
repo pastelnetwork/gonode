@@ -1382,3 +1382,39 @@ func marshalNftFuzzyMatchToFuzzyMatchResponseBody(v *nft.FuzzyMatch) *FuzzyMatch
 
 	return res
 }
+
+// marshalNftInternetRarenessToInternetRarenessResponseBody builds a value of
+// type *InternetRarenessResponseBody from a value of type
+// *nft.InternetRareness.
+func marshalNftInternetRarenessToInternetRarenessResponseBody(v *nft.InternetRareness) *InternetRarenessResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &InternetRarenessResponseBody{
+		RareOnInternetSummaryTableAsJSONCompressedB64:    v.RareOnInternetSummaryTableAsJSONCompressedB64,
+		RareOnInternetGraphJSONCompressedB64:             v.RareOnInternetGraphJSONCompressedB64,
+		AlternativeRareOnInternetDictAsJSONCompressedB64: v.AlternativeRareOnInternetDictAsJSONCompressedB64,
+		MinNumberOfExactMatchesInPage:                    v.MinNumberOfExactMatchesInPage,
+		EarliestAvailableDateOfInternetResults:           v.EarliestAvailableDateOfInternetResults,
+	}
+
+	return res
+}
+
+// marshalNftAlternativeNSFWScoresToAlternativeNSFWScoresResponseBody builds a
+// value of type *AlternativeNSFWScoresResponseBody from a value of type
+// *nft.AlternativeNSFWScores.
+func marshalNftAlternativeNSFWScoresToAlternativeNSFWScoresResponseBody(v *nft.AlternativeNSFWScores) *AlternativeNSFWScoresResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &AlternativeNSFWScoresResponseBody{
+		Drawings: v.Drawings,
+		Hentai:   v.Hentai,
+		Sexy:     v.Sexy,
+		Porn:     v.Porn,
+		Neutral:  v.Neutral,
+	}
+
+	return res
+}

@@ -204,27 +204,25 @@ type DownloadResponseBody struct {
 // DdServiceOutputFileDetailResponseBody is the type of the "nft" service
 // "ddServiceOutputFileDetail" endpoint HTTP response body.
 type DdServiceOutputFileDetailResponseBody struct {
-	// version
-	Version *int `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
-	// Storage fee %
-	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
-	// Block Height When request submitted
-	BlockHeight *string `form:"block_height,omitempty" json:"block_height,omitempty" xml:"block_height,omitempty"`
-	// Timestamp of request when submitted
-	TimestampOfRequest *string `form:"timestamp_of_request,omitempty" json:"timestamp_of_request,omitempty" xml:"timestamp_of_request,omitempty"`
-	// Pastel id of the submitter
-	SubmitterPastelID *string `form:"submitter_pastel_id,omitempty" json:"submitter_pastel_id,omitempty" xml:"submitter_pastel_id,omitempty"`
-	// Pastel id of SN1
-	Sn1PastelID *string `form:"sn1_pastel_id,omitempty" json:"sn1_pastel_id,omitempty" xml:"sn1_pastel_id,omitempty"`
-	// Pastel id of SN2
-	Sn2PastelID *string `form:"sn2_pastel_id,omitempty" json:"sn2_pastel_id,omitempty" xml:"sn2_pastel_id,omitempty"`
-	// Pastel id of SN3
-	Sn3PastelID *string `form:"sn3_pastel_id,omitempty" json:"sn3_pastel_id,omitempty" xml:"sn3_pastel_id,omitempty"`
-	// Is Open API request
-	IsOpenAPIRequest *bool `form:"is_open_api_request,omitempty" json:"is_open_api_request,omitempty" xml:"is_open_api_request,omitempty"`
-	// System version of dupe detection
+	// block hash when request submitted
+	PastelBlockHashWhenRequestSubmitted *string `form:"pastel_block_hash_when_request_submitted,omitempty" json:"pastel_block_hash_when_request_submitted,omitempty" xml:"pastel_block_hash_when_request_submitted,omitempty"`
+	// block Height when request submitted
+	PastelBlockHeightWhenRequestSubmitted *string `form:"pastel_block_height_when_request_submitted,omitempty" json:"pastel_block_height_when_request_submitted,omitempty" xml:"pastel_block_height_when_request_submitted,omitempty"`
+	// timestamp of request when submitted
+	UtcTimestampWhenRequestSubmitted *string `form:"utc_timestamp_when_request_submitted,omitempty" json:"utc_timestamp_when_request_submitted,omitempty" xml:"utc_timestamp_when_request_submitted,omitempty"`
+	// pastel id of the submitter
+	PastelIDOfSubmitter *string `form:"pastel_id_of_submitter,omitempty" json:"pastel_id_of_submitter,omitempty" xml:"pastel_id_of_submitter,omitempty"`
+	// pastel id of registering SN1
+	PastelIDOfRegisteringSupernode1 *string `form:"pastel_id_of_registering_supernode_1,omitempty" json:"pastel_id_of_registering_supernode_1,omitempty" xml:"pastel_id_of_registering_supernode_1,omitempty"`
+	// pastel id of registering SN2
+	PastelIDOfRegisteringSupernode2 *string `form:"pastel_id_of_registering_supernode_2,omitempty" json:"pastel_id_of_registering_supernode_2,omitempty" xml:"pastel_id_of_registering_supernode_2,omitempty"`
+	// pastel id of registering SN3
+	PastelIDOfRegisteringSupernode3 *string `form:"pastel_id_of_registering_supernode_3,omitempty" json:"pastel_id_of_registering_supernode_3,omitempty" xml:"pastel_id_of_registering_supernode_3,omitempty"`
+	// is pastel open API request
+	IsPastelOpenapiRequest *bool `form:"is_pastel_openapi_request,omitempty" json:"is_pastel_openapi_request,omitempty" xml:"is_pastel_openapi_request,omitempty"`
+	// system version of dupe detection
 	DupeDetectionSystemVersion *string `form:"dupe_detection_system_version,omitempty" json:"dupe_detection_system_version,omitempty" xml:"dupe_detection_system_version,omitempty"`
-	// Is this image likely a duplicate of another known image
+	// is this nft likely a duplicate
 	IsLikelyDupe *bool `form:"is_likely_dupe,omitempty" json:"is_likely_dupe,omitempty" xml:"is_likely_dupe,omitempty"`
 	// is this nft rare on the internet
 	IsRareOnInternet *bool `form:"is_rare_on_internet,omitempty" json:"is_rare_on_internet,omitempty" xml:"is_rare_on_internet,omitempty"`
@@ -236,64 +234,64 @@ type DdServiceOutputFileDetailResponseBody struct {
 	PctOfTop10MostSimilarWithDupeProbAbove33pct *float32 `form:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct,omitempty" json:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct,omitempty" xml:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct,omitempty"`
 	// PCT of top 10 most similar with dupe probe above 50 PCT
 	PctOfTop10MostSimilarWithDupeProbAbove50pct *float32 `form:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct,omitempty" json:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct,omitempty" xml:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct,omitempty"`
-	// Rareness scores table json compressed b64 encoded
+	// rareness scores table json compressed b64
 	RarenessScoresTableJSONCompressedB64 *string `form:"rareness_scores_table_json_compressed_b64,omitempty" json:"rareness_scores_table_json_compressed_b64,omitempty" xml:"rareness_scores_table_json_compressed_b64,omitempty"`
-	// internet rareness score
-	InternetRarenessScore *float32 `form:"internet_rareness_score,omitempty" json:"internet_rareness_score,omitempty" xml:"internet_rareness_score,omitempty"`
-	// internet rareness score
+	// open nsfw score
 	OpenNsfwScore *float32 `form:"open_nsfw_score,omitempty" json:"open_nsfw_score,omitempty" xml:"open_nsfw_score,omitempty"`
 	// Image fingerprint of candidate image file
 	ImageFingerprintOfCandidateImageFile []float64 `form:"image_fingerprint_of_candidate_image_file,omitempty" json:"image_fingerprint_of_candidate_image_file,omitempty" xml:"image_fingerprint_of_candidate_image_file,omitempty"`
-	// nsfw score
-	DrawingNsfwScore *float32 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
-	// nsfw score
-	NeutralNsfwScore *float32 `form:"neutral_nsfw_score,omitempty" json:"neutral_nsfw_score,omitempty" xml:"neutral_nsfw_score,omitempty"`
-	// nsfw score
-	SexyNsfwScore *float32 `form:"sexy_nsfw_score,omitempty" json:"sexy_nsfw_score,omitempty" xml:"sexy_nsfw_score,omitempty"`
-	// nsfw score
-	PornNsfwScore *float32 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
-	// nsfw score
-	HentaiNsfwScore *float32 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
-	// Preview Image
-	PreviewThumbnail []byte `form:"preview_thumbnail,omitempty" json:"preview_thumbnail,omitempty" xml:"preview_thumbnail,omitempty"`
-	// Base64 Compressed JSON Table of Rare On Internet Summary
-	RareOnInternetSummaryTableJSONB64 *string `form:"rare_on_internet_summary_table_json_b64,omitempty" json:"rare_on_internet_summary_table_json_b64,omitempty" xml:"rare_on_internet_summary_table_json_b64,omitempty"`
-	// Base64 Compressed JSON of Rare On Internet Graph
-	RareOnInternetGraphJSONB64 *string `form:"rare_on_internet_graph_json_b64,omitempty" json:"rare_on_internet_graph_json_b64,omitempty" xml:"rare_on_internet_graph_json_b64,omitempty"`
-	// Base64 Compressed Json of Alternative Rare On Internet Dict
-	AltRareOnInternetDictJSONB64 *string `form:"alt_rare_on_internet_dict_json_b64,omitempty" json:"alt_rare_on_internet_dict_json_b64,omitempty" xml:"alt_rare_on_internet_dict_json_b64,omitempty"`
-	// Minimum Number of Exact Matches on Page
-	MinNumExactMatchesOnPage *uint32 `form:"min_num_exact_matches_on_page,omitempty" json:"min_num_exact_matches_on_page,omitempty" xml:"min_num_exact_matches_on_page,omitempty"`
-	// Earliest Available Date of Internet Results
-	EarliestDateOfResults *string `form:"earliest_date_of_results,omitempty" json:"earliest_date_of_results,omitempty" xml:"earliest_date_of_results,omitempty"`
-	// Thumbnail_1 image
-	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
-	// Thumbnail_2 image
-	Thumbnail2 []byte `form:"thumbnail_2,omitempty" json:"thumbnail_2,omitempty" xml:"thumbnail_2,omitempty"`
-	// txid
-	Txid string `form:"txid" json:"txid" xml:"txid"`
-	// Name of the NFT
-	Title string `form:"title" json:"title" xml:"title"`
-	// Description of the NFT
-	Description string `form:"description" json:"description" xml:"description"`
-	// Keywords
-	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
-	// Series name
-	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
-	// Number of copies
-	Copies int `form:"copies" json:"copies" xml:"copies"`
-	// NFT creation video youtube URL
-	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
-	// Artist's PastelID
-	CreatorPastelID string `form:"creator_pastelid" json:"creator_pastelid" xml:"creator_pastelid"`
-	// Name of the artist
+	// hash of candidate image file
+	HashOfCandidateImageFile *string `form:"hash_of_candidate_image_file,omitempty" json:"hash_of_candidate_image_file,omitempty" xml:"hash_of_candidate_image_file,omitempty"`
+	// name of the collection
+	CollectionNameString *string `form:"collection_name_string,omitempty" json:"collection_name_string,omitempty" xml:"collection_name_string,omitempty"`
+	// open api group id string
+	OpenAPIGroupIDString *string `form:"open_api_group_id_string,omitempty" json:"open_api_group_id_string,omitempty" xml:"open_api_group_id_string,omitempty"`
+	// rareness score of the group
+	GroupRarenessScore *float32 `form:"group_rareness_score,omitempty" json:"group_rareness_score,omitempty" xml:"group_rareness_score,omitempty"`
+	// candidate image thumbnail as base64 string
+	CandidateImageThumbnailWebpAsBase64String *string `form:"candidate_image_thumbnail_webp_as_base64_string,omitempty" json:"candidate_image_thumbnail_webp_as_base64_string,omitempty" xml:"candidate_image_thumbnail_webp_as_base64_string,omitempty"`
+	// does not impact collection strings
+	DoesNotImpactTheFollowingCollectionStrings *string `form:"does_not_impact_the_following_collection_strings,omitempty" json:"does_not_impact_the_following_collection_strings,omitempty" xml:"does_not_impact_the_following_collection_strings,omitempty"`
+	// similarity score to first entry in collection
+	SimilarityScoreToFirstEntryInCollection *float32 `form:"similarity_score_to_first_entry_in_collection,omitempty" json:"similarity_score_to_first_entry_in_collection,omitempty" xml:"similarity_score_to_first_entry_in_collection,omitempty"`
+	// probability of CP
+	CpProbability *float32 `form:"cp_probability,omitempty" json:"cp_probability,omitempty" xml:"cp_probability,omitempty"`
+	// child probability
+	ChildProbability *float32 `form:"child_probability,omitempty" json:"child_probability,omitempty" xml:"child_probability,omitempty"`
+	// file path of the image
+	ImageFilePath *string `form:"image_file_path,omitempty" json:"image_file_path,omitempty" xml:"image_file_path,omitempty"`
+	// internet rareness
+	InternetRareness *InternetRarenessResponseBody `form:"internet_rareness,omitempty" json:"internet_rareness,omitempty" xml:"internet_rareness,omitempty"`
+	// alternative NSFW scores
+	AlternativeNsfwScores *AlternativeNSFWScoresResponseBody `form:"alternative_nsfw_scores,omitempty" json:"alternative_nsfw_scores,omitempty" xml:"alternative_nsfw_scores,omitempty"`
+	// name of the creator
 	CreatorName string `form:"creator_name" json:"creator_name" xml:"creator_name"`
-	// Artist website URL
-	CreatorWebsiteURL *string `form:"creator_website_url,omitempty" json:"creator_website_url,omitempty" xml:"creator_website_url,omitempty"`
-	// NSFW Average score
-	NsfwScore *float32 `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
-	// Average pastel rareness score
-	RarenessScore *float32 `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
+	// website of creator
+	CreatorWebsite string `form:"creator_website" json:"creator_website" xml:"creator_website"`
+	// written statement of creator
+	CreatorWrittenStatement string `form:"creator_written_statement" json:"creator_written_statement" xml:"creator_written_statement"`
+	// title of NFT
+	NftTitle string `form:"nft_title" json:"nft_title" xml:"nft_title"`
+	// series name of NFT
+	NftSeriesName string `form:"nft_series_name" json:"nft_series_name" xml:"nft_series_name"`
+	// nft creation video youtube url
+	NftCreationVideoYoutubeURL string `form:"nft_creation_video_youtube_url" json:"nft_creation_video_youtube_url" xml:"nft_creation_video_youtube_url"`
+	// keywords for NFT
+	NftKeywordSet string `form:"nft_keyword_set" json:"nft_keyword_set" xml:"nft_keyword_set"`
+	// total copies of NFT
+	TotalCopies int `form:"total_copies" json:"total_copies" xml:"total_copies"`
+	// preview hash of NFT
+	PreviewHash []byte `form:"preview_hash" json:"preview_hash" xml:"preview_hash"`
+	// thumbnail1 hash of NFT
+	Thumbnail1Hash []byte `form:"thumbnail1_hash" json:"thumbnail1_hash" xml:"thumbnail1_hash"`
+	// thumbnail2 hash of NFT
+	Thumbnail2Hash []byte `form:"thumbnail2_hash" json:"thumbnail2_hash" xml:"thumbnail2_hash"`
+	// original file size in bytes
+	OriginalFileSizeInBytes int `form:"original_file_size_in_bytes" json:"original_file_size_in_bytes" xml:"original_file_size_in_bytes"`
+	// type of the file
+	FileType string `form:"file_type" json:"file_type" xml:"file_type"`
+	// max permitted open NSFW score
+	MaxPermittedOpenNsfwScore float64 `form:"max_permitted_open_nsfw_score" json:"max_permitted_open_nsfw_score" xml:"max_permitted_open_nsfw_score"`
 }
 
 // RegisterBadRequestResponseBody is the type of the "nft" service "register"
@@ -856,6 +854,35 @@ type FuzzyMatchResponseBody struct {
 	Score *int `form:"score,omitempty" json:"score,omitempty" xml:"score,omitempty"`
 }
 
+// InternetRarenessResponseBody is used to define fields on response body types.
+type InternetRarenessResponseBody struct {
+	// Base64 Compressed JSON Table of Rare On Internet Summary
+	RareOnInternetSummaryTableAsJSONCompressedB64 *string `form:"rare_on_internet_summary_table_as_json_compressed_b64,omitempty" json:"rare_on_internet_summary_table_as_json_compressed_b64,omitempty" xml:"rare_on_internet_summary_table_as_json_compressed_b64,omitempty"`
+	// Base64 Compressed JSON of Rare On Internet Graph
+	RareOnInternetGraphJSONCompressedB64 *string `form:"rare_on_internet_graph_json_compressed_b64,omitempty" json:"rare_on_internet_graph_json_compressed_b64,omitempty" xml:"rare_on_internet_graph_json_compressed_b64,omitempty"`
+	// Base64 Compressed Json of Alternative Rare On Internet Dict
+	AlternativeRareOnInternetDictAsJSONCompressedB64 *string `form:"alternative_rare_on_internet_dict_as_json_compressed_b64,omitempty" json:"alternative_rare_on_internet_dict_as_json_compressed_b64,omitempty" xml:"alternative_rare_on_internet_dict_as_json_compressed_b64,omitempty"`
+	// Minimum Number of Exact Matches on Page
+	MinNumberOfExactMatchesInPage *uint32 `form:"min_number_of_exact_matches_in_page,omitempty" json:"min_number_of_exact_matches_in_page,omitempty" xml:"min_number_of_exact_matches_in_page,omitempty"`
+	// Earliest Available Date of Internet Results
+	EarliestAvailableDateOfInternetResults *string `form:"earliest_available_date_of_internet_results,omitempty" json:"earliest_available_date_of_internet_results,omitempty" xml:"earliest_available_date_of_internet_results,omitempty"`
+}
+
+// AlternativeNSFWScoresResponseBody is used to define fields on response body
+// types.
+type AlternativeNSFWScoresResponseBody struct {
+	// drawings nsfw score
+	Drawings *float32 `form:"drawings,omitempty" json:"drawings,omitempty" xml:"drawings,omitempty"`
+	// hentai nsfw score
+	Hentai *float32 `form:"hentai,omitempty" json:"hentai,omitempty" xml:"hentai,omitempty"`
+	// sexy nsfw score
+	Sexy *float32 `form:"sexy,omitempty" json:"sexy,omitempty" xml:"sexy,omitempty"`
+	// porn nsfw score
+	Porn *float32 `form:"porn,omitempty" json:"porn,omitempty" xml:"porn,omitempty"`
+	// neutral nsfw score
+	Neutral *float32 `form:"neutral,omitempty" json:"neutral,omitempty" xml:"neutral,omitempty"`
+}
+
 // ThumbnailcoordinateRequestBody is used to define fields on request body
 // types.
 type ThumbnailcoordinateRequestBody struct {
@@ -1009,56 +1036,59 @@ func NewDownloadResponseBody(res *nft.DownloadResult) *DownloadResponseBody {
 // the result of the "ddServiceOutputFileDetail" endpoint of the "nft" service.
 func NewDdServiceOutputFileDetailResponseBody(res *nft.DDServiceOutputFileResult) *DdServiceOutputFileDetailResponseBody {
 	body := &DdServiceOutputFileDetailResponseBody{
-		Version:                    res.Version,
-		StorageFee:                 res.StorageFee,
-		BlockHeight:                res.BlockHeight,
-		TimestampOfRequest:         res.TimestampOfRequest,
-		SubmitterPastelID:          res.SubmitterPastelID,
-		Sn1PastelID:                res.Sn1PastelID,
-		Sn2PastelID:                res.Sn2PastelID,
-		Sn3PastelID:                res.Sn3PastelID,
-		IsOpenAPIRequest:           res.IsOpenAPIRequest,
-		DupeDetectionSystemVersion: res.DupeDetectionSystemVersion,
-		IsLikelyDupe:               res.IsLikelyDupe,
-		IsRareOnInternet:           res.IsRareOnInternet,
-		OverallRarenessScore:       res.OverallRarenessScore,
+		PastelBlockHashWhenRequestSubmitted:         res.PastelBlockHashWhenRequestSubmitted,
+		PastelBlockHeightWhenRequestSubmitted:       res.PastelBlockHeightWhenRequestSubmitted,
+		UtcTimestampWhenRequestSubmitted:            res.UtcTimestampWhenRequestSubmitted,
+		PastelIDOfSubmitter:                         res.PastelIDOfSubmitter,
+		PastelIDOfRegisteringSupernode1:             res.PastelIDOfRegisteringSupernode1,
+		PastelIDOfRegisteringSupernode2:             res.PastelIDOfRegisteringSupernode2,
+		PastelIDOfRegisteringSupernode3:             res.PastelIDOfRegisteringSupernode3,
+		IsPastelOpenapiRequest:                      res.IsPastelOpenapiRequest,
+		DupeDetectionSystemVersion:                  res.DupeDetectionSystemVersion,
+		IsLikelyDupe:                                res.IsLikelyDupe,
+		IsRareOnInternet:                            res.IsRareOnInternet,
+		OverallRarenessScore:                        res.OverallRarenessScore,
 		PctOfTop10MostSimilarWithDupeProbAbove25pct: res.PctOfTop10MostSimilarWithDupeProbAbove25pct,
 		PctOfTop10MostSimilarWithDupeProbAbove33pct: res.PctOfTop10MostSimilarWithDupeProbAbove33pct,
 		PctOfTop10MostSimilarWithDupeProbAbove50pct: res.PctOfTop10MostSimilarWithDupeProbAbove50pct,
 		RarenessScoresTableJSONCompressedB64:        res.RarenessScoresTableJSONCompressedB64,
-		InternetRarenessScore:                       res.InternetRarenessScore,
 		OpenNsfwScore:                               res.OpenNsfwScore,
-		DrawingNsfwScore:                            res.DrawingNsfwScore,
-		NeutralNsfwScore:                            res.NeutralNsfwScore,
-		SexyNsfwScore:                               res.SexyNsfwScore,
-		PornNsfwScore:                               res.PornNsfwScore,
-		HentaiNsfwScore:                             res.HentaiNsfwScore,
-		PreviewThumbnail:                            res.PreviewThumbnail,
-		RareOnInternetSummaryTableJSONB64:           res.RareOnInternetSummaryTableJSONB64,
-		RareOnInternetGraphJSONB64:                  res.RareOnInternetGraphJSONB64,
-		AltRareOnInternetDictJSONB64:                res.AltRareOnInternetDictJSONB64,
-		MinNumExactMatchesOnPage:                    res.MinNumExactMatchesOnPage,
-		EarliestDateOfResults:                       res.EarliestDateOfResults,
-		Thumbnail1:                                  res.Thumbnail1,
-		Thumbnail2:                                  res.Thumbnail2,
-		Txid:                                        res.Txid,
-		Title:                                       res.Title,
-		Description:                                 res.Description,
-		Keywords:                                    res.Keywords,
-		SeriesName:                                  res.SeriesName,
-		Copies:                                      res.Copies,
-		YoutubeURL:                                  res.YoutubeURL,
-		CreatorPastelID:                             res.CreatorPastelID,
+		HashOfCandidateImageFile:                    res.HashOfCandidateImageFile,
+		CollectionNameString:                        res.CollectionNameString,
+		OpenAPIGroupIDString:                        res.OpenAPIGroupIDString,
+		GroupRarenessScore:                          res.GroupRarenessScore,
+		CandidateImageThumbnailWebpAsBase64String:   res.CandidateImageThumbnailWebpAsBase64String,
+		DoesNotImpactTheFollowingCollectionStrings:  res.DoesNotImpactTheFollowingCollectionStrings,
+		SimilarityScoreToFirstEntryInCollection:     res.SimilarityScoreToFirstEntryInCollection,
+		CpProbability:                               res.CpProbability,
+		ChildProbability:                            res.ChildProbability,
+		ImageFilePath:                               res.ImageFilePath,
 		CreatorName:                                 res.CreatorName,
-		CreatorWebsiteURL:                           res.CreatorWebsiteURL,
-		NsfwScore:                                   res.NsfwScore,
-		RarenessScore:                               res.RarenessScore,
+		CreatorWebsite:                              res.CreatorWebsite,
+		CreatorWrittenStatement:                     res.CreatorWrittenStatement,
+		NftTitle:                                    res.NftTitle,
+		NftSeriesName:                               res.NftSeriesName,
+		NftCreationVideoYoutubeURL:                  res.NftCreationVideoYoutubeURL,
+		NftKeywordSet:                               res.NftKeywordSet,
+		TotalCopies:                                 res.TotalCopies,
+		PreviewHash:                                 res.PreviewHash,
+		Thumbnail1Hash:                              res.Thumbnail1Hash,
+		Thumbnail2Hash:                              res.Thumbnail2Hash,
+		OriginalFileSizeInBytes:                     res.OriginalFileSizeInBytes,
+		FileType:                                    res.FileType,
+		MaxPermittedOpenNsfwScore:                   res.MaxPermittedOpenNsfwScore,
 	}
 	if res.ImageFingerprintOfCandidateImageFile != nil {
 		body.ImageFingerprintOfCandidateImageFile = make([]float64, len(res.ImageFingerprintOfCandidateImageFile))
 		for i, val := range res.ImageFingerprintOfCandidateImageFile {
 			body.ImageFingerprintOfCandidateImageFile[i] = val
 		}
+	}
+	if res.InternetRareness != nil {
+		body.InternetRareness = marshalNftInternetRarenessToInternetRarenessResponseBody(res.InternetRareness)
+	}
+	if res.AlternativeNsfwScores != nil {
+		body.AlternativeNsfwScores = marshalNftAlternativeNSFWScoresToAlternativeNSFWScoresResponseBody(res.AlternativeNsfwScores)
 	}
 	return body
 }

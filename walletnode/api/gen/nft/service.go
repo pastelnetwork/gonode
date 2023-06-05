@@ -87,30 +87,41 @@ type NftSearchClientStream interface {
 	Recv() (*NftSearchResult, error)
 }
 
+type AlternativeNSFWScores struct {
+	// drawings nsfw score
+	Drawings *float32
+	// hentai nsfw score
+	Hentai *float32
+	// sexy nsfw score
+	Sexy *float32
+	// porn nsfw score
+	Porn *float32
+	// neutral nsfw score
+	Neutral *float32
+}
+
 // DDServiceOutputFileResult is the result type of the nft service
 // ddServiceOutputFileDetail method.
 type DDServiceOutputFileResult struct {
-	// version
-	Version *int
-	// Storage fee %
-	StorageFee *int
-	// Block Height When request submitted
-	BlockHeight *string
-	// Timestamp of request when submitted
-	TimestampOfRequest *string
-	// Pastel id of the submitter
-	SubmitterPastelID *string
-	// Pastel id of SN1
-	Sn1PastelID *string
-	// Pastel id of SN2
-	Sn2PastelID *string
-	// Pastel id of SN3
-	Sn3PastelID *string
-	// Is Open API request
-	IsOpenAPIRequest *bool
-	// System version of dupe detection
+	// block hash when request submitted
+	PastelBlockHashWhenRequestSubmitted *string
+	// block Height when request submitted
+	PastelBlockHeightWhenRequestSubmitted *string
+	// timestamp of request when submitted
+	UtcTimestampWhenRequestSubmitted *string
+	// pastel id of the submitter
+	PastelIDOfSubmitter *string
+	// pastel id of registering SN1
+	PastelIDOfRegisteringSupernode1 *string
+	// pastel id of registering SN2
+	PastelIDOfRegisteringSupernode2 *string
+	// pastel id of registering SN3
+	PastelIDOfRegisteringSupernode3 *string
+	// is pastel open API request
+	IsPastelOpenapiRequest *bool
+	// system version of dupe detection
 	DupeDetectionSystemVersion *string
-	// Is this image likely a duplicate of another known image
+	// is this nft likely a duplicate
 	IsLikelyDupe *bool
 	// is this nft rare on the internet
 	IsRareOnInternet *bool
@@ -122,64 +133,64 @@ type DDServiceOutputFileResult struct {
 	PctOfTop10MostSimilarWithDupeProbAbove33pct *float32
 	// PCT of top 10 most similar with dupe probe above 50 PCT
 	PctOfTop10MostSimilarWithDupeProbAbove50pct *float32
-	// Rareness scores table json compressed b64 encoded
+	// rareness scores table json compressed b64
 	RarenessScoresTableJSONCompressedB64 *string
-	// internet rareness score
-	InternetRarenessScore *float32
-	// internet rareness score
+	// open nsfw score
 	OpenNsfwScore *float32
 	// Image fingerprint of candidate image file
 	ImageFingerprintOfCandidateImageFile []float64
-	// nsfw score
-	DrawingNsfwScore *float32
-	// nsfw score
-	NeutralNsfwScore *float32
-	// nsfw score
-	SexyNsfwScore *float32
-	// nsfw score
-	PornNsfwScore *float32
-	// nsfw score
-	HentaiNsfwScore *float32
-	// Preview Image
-	PreviewThumbnail []byte
-	// Base64 Compressed JSON Table of Rare On Internet Summary
-	RareOnInternetSummaryTableJSONB64 *string
-	// Base64 Compressed JSON of Rare On Internet Graph
-	RareOnInternetGraphJSONB64 *string
-	// Base64 Compressed Json of Alternative Rare On Internet Dict
-	AltRareOnInternetDictJSONB64 *string
-	// Minimum Number of Exact Matches on Page
-	MinNumExactMatchesOnPage *uint32
-	// Earliest Available Date of Internet Results
-	EarliestDateOfResults *string
-	// Thumbnail_1 image
-	Thumbnail1 []byte
-	// Thumbnail_2 image
-	Thumbnail2 []byte
-	// txid
-	Txid string
-	// Name of the NFT
-	Title string
-	// Description of the NFT
-	Description string
-	// Keywords
-	Keywords *string
-	// Series name
-	SeriesName *string
-	// Number of copies
-	Copies int
-	// NFT creation video youtube URL
-	YoutubeURL *string
-	// Artist's PastelID
-	CreatorPastelID string
-	// Name of the artist
+	// hash of candidate image file
+	HashOfCandidateImageFile *string
+	// name of the collection
+	CollectionNameString *string
+	// open api group id string
+	OpenAPIGroupIDString *string
+	// rareness score of the group
+	GroupRarenessScore *float32
+	// candidate image thumbnail as base64 string
+	CandidateImageThumbnailWebpAsBase64String *string
+	// does not impact collection strings
+	DoesNotImpactTheFollowingCollectionStrings *string
+	// similarity score to first entry in collection
+	SimilarityScoreToFirstEntryInCollection *float32
+	// probability of CP
+	CpProbability *float32
+	// child probability
+	ChildProbability *float32
+	// file path of the image
+	ImageFilePath *string
+	// internet rareness
+	InternetRareness *InternetRareness
+	// alternative NSFW scores
+	AlternativeNsfwScores *AlternativeNSFWScores
+	// name of the creator
 	CreatorName string
-	// Artist website URL
-	CreatorWebsiteURL *string
-	// NSFW Average score
-	NsfwScore *float32
-	// Average pastel rareness score
-	RarenessScore *float32
+	// website of creator
+	CreatorWebsite string
+	// written statement of creator
+	CreatorWrittenStatement string
+	// title of NFT
+	NftTitle string
+	// series name of NFT
+	NftSeriesName string
+	// nft creation video youtube url
+	NftCreationVideoYoutubeURL string
+	// keywords for NFT
+	NftKeywordSet string
+	// total copies of NFT
+	TotalCopies int
+	// preview hash of NFT
+	PreviewHash []byte
+	// thumbnail1 hash of NFT
+	Thumbnail1Hash []byte
+	// thumbnail2 hash of NFT
+	Thumbnail2Hash []byte
+	// original file size in bytes
+	OriginalFileSizeInBytes int
+	// type of the file
+	FileType string
+	// max permitted open NSFW score
+	MaxPermittedOpenNsfwScore float64
 }
 
 type Details struct {
@@ -231,6 +242,19 @@ type ImageRes struct {
 	ExpiresIn string
 	// Estimated fee
 	EstimatedFee float64
+}
+
+type InternetRareness struct {
+	// Base64 Compressed JSON Table of Rare On Internet Summary
+	RareOnInternetSummaryTableAsJSONCompressedB64 *string
+	// Base64 Compressed JSON of Rare On Internet Graph
+	RareOnInternetGraphJSONCompressedB64 *string
+	// Base64 Compressed Json of Alternative Rare On Internet Dict
+	AlternativeRareOnInternetDictAsJSONCompressedB64 *string
+	// Minimum Number of Exact Matches on Page
+	MinNumberOfExactMatchesInPage *uint32
+	// Earliest Available Date of Internet Results
+	EarliestAvailableDateOfInternetResults *string
 }
 
 // NftDetail is the result type of the nft service nftGet method.

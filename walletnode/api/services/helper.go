@@ -94,37 +94,33 @@ func toNftDetail(ticket *pastel.RegTicket) *nft.NftDetail {
 func translateNftSummary(res *nft.DDServiceOutputFileResult, ticket *pastel.RegTicket) *nft.DDServiceOutputFileResult {
 	ticketData := ticket.RegTicketData.NFTTicketData.AppTicketData
 
-	res.Txid = ticket.TXID
-	res.Title = ticketData.NFTTitle
-	res.Copies = ticket.RegTicketData.NFTTicketData.Copies
 	res.CreatorName = ticketData.CreatorName
-	res.YoutubeURL = &ticketData.NFTCreationVideoYoutubeURL
-	res.CreatorPastelID = ticket.RegTicketData.NFTTicketData.Author
-	res.Description = ticketData.CreatorWrittenStatement
-
-	if ticketData.CreatorWebsite != "" {
-		res.CreatorWebsiteURL = &ticketData.CreatorWebsite
-	}
-
-	if ticketData.NFTKeywordSet != "" {
-		res.Keywords = &ticketData.NFTKeywordSet
-	}
-
-	if ticketData.NFTSeriesName != "" {
-		res.SeriesName = &ticketData.NFTSeriesName
-	}
+	res.CreatorWebsite = ticketData.CreatorWebsite
+	res.CreatorWrittenStatement = ticketData.CreatorWrittenStatement
+	res.NftTitle = ticketData.NFTTitle
+	res.NftSeriesName = ticketData.NFTSeriesName
+	res.NftCreationVideoYoutubeURL = ticketData.NFTCreationVideoYoutubeURL
+	res.NftKeywordSet = ticketData.NFTKeywordSet
+	res.TotalCopies = ticketData.TotalCopies
+	res.PreviewHash = ticketData.PreviewHash
+	res.Thumbnail1Hash = ticketData.Thumbnail1Hash
+	res.Thumbnail2Hash = ticketData.Thumbnail2Hash
+	res.OriginalFileSizeInBytes = ticketData.OriginalFileSizeInBytes
+	res.FileType = ticketData.FileType
+	res.MaxPermittedOpenNsfwScore = ticketData.MaxPermittedOpenNSFWScore
 
 	return res
 }
 
 func translateDDServiceOutputFile(res *nft.DDServiceOutputFileResult, ddAndFpStruct *pastel.DDAndFingerprints) *nft.DDServiceOutputFileResult {
-	res.BlockHeight = &ddAndFpStruct.BlockHeight
-	res.TimestampOfRequest = &ddAndFpStruct.TimestampOfRequest
-	res.SubmitterPastelID = &ddAndFpStruct.SubmitterPastelID
-	res.Sn1PastelID = &ddAndFpStruct.SN1PastelID
-	res.Sn2PastelID = &ddAndFpStruct.SN2PastelID
-	res.Sn3PastelID = &ddAndFpStruct.SN3PastelID
-	res.IsOpenAPIRequest = &ddAndFpStruct.IsOpenAPIRequest
+	res.PastelBlockHashWhenRequestSubmitted = &ddAndFpStruct.BlockHash
+	res.PastelBlockHeightWhenRequestSubmitted = &ddAndFpStruct.BlockHeight
+	res.UtcTimestampWhenRequestSubmitted = &ddAndFpStruct.TimestampOfRequest
+	res.PastelIDOfSubmitter = &ddAndFpStruct.SubmitterPastelID
+	res.PastelIDOfRegisteringSupernode1 = &ddAndFpStruct.SN1PastelID
+	res.PastelIDOfRegisteringSupernode2 = &ddAndFpStruct.SN2PastelID
+	res.PastelIDOfRegisteringSupernode3 = &ddAndFpStruct.SN3PastelID
+	res.IsPastelOpenapiRequest = &ddAndFpStruct.IsOpenAPIRequest
 	res.DupeDetectionSystemVersion = &ddAndFpStruct.DupeDetectionSystemVersion
 	res.IsLikelyDupe = &ddAndFpStruct.IsLikelyDupe
 	res.IsRareOnInternet = &ddAndFpStruct.IsRareOnInternet
@@ -133,21 +129,32 @@ func translateDDServiceOutputFile(res *nft.DDServiceOutputFileResult, ddAndFpStr
 	res.PctOfTop10MostSimilarWithDupeProbAbove33pct = &ddAndFpStruct.PctOfTop10MostSimilarWithDupeProbAbove33pct
 	res.PctOfTop10MostSimilarWithDupeProbAbove50pct = &ddAndFpStruct.PctOfTop10MostSimilarWithDupeProbAbove50pct
 	res.RarenessScoresTableJSONCompressedB64 = &ddAndFpStruct.RarenessScoresTableJSONCompressedB64
-	res.NsfwScore = &ddAndFpStruct.OpenNSFWScore
-
-	//Internet Rareness
-	res.RareOnInternetSummaryTableJSONB64 = &ddAndFpStruct.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64
-	res.RareOnInternetGraphJSONB64 = &ddAndFpStruct.InternetRareness.RareOnInternetGraphJSONCompressedB64
-	res.AltRareOnInternetDictJSONB64 = &ddAndFpStruct.InternetRareness.AlternativeRareOnInternetDictAsJSONCompressedB64
-	res.MinNumExactMatchesOnPage = &ddAndFpStruct.InternetRareness.MinNumberOfExactMatchesInPage
-	res.EarliestDateOfResults = &ddAndFpStruct.InternetRareness.EarliestAvailableDateOfInternetResults
-
-	//Alternative NSFW Scores
-	res.HentaiNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Hentai
-	res.PornNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Porn
-	res.SexyNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Sexy
-	res.DrawingNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Drawings
-	res.NeutralNsfwScore = &ddAndFpStruct.AlternativeNSFWScores.Neutral
+	res.OpenNsfwScore = &ddAndFpStruct.OpenNSFWScore
+	res.ImageFingerprintOfCandidateImageFile = ddAndFpStruct.ImageFingerprintOfCandidateImageFile
+	res.HashOfCandidateImageFile = &ddAndFpStruct.HashOfCandidateImageFile
+	res.RarenessScoresTableJSONCompressedB64 = &ddAndFpStruct.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64
+	res.CollectionNameString = &ddAndFpStruct.CollectionNameString
+	res.OpenAPIGroupIDString = &ddAndFpStruct.OpenAPIGroupIDString
+	res.GroupRarenessScore = &ddAndFpStruct.GroupRarenessScore
+	res.CandidateImageThumbnailWebpAsBase64String = &ddAndFpStruct.CandidateImageThumbnailWebpAsBase64String
+	res.DoesNotImpactTheFollowingCollectionStrings = &ddAndFpStruct.DoesNotImpactTheFollowingCollectionStrings
+	res.SimilarityScoreToFirstEntryInCollection = &ddAndFpStruct.SimilarityScoreToFirstEntryInCollection
+	res.CpProbability = &ddAndFpStruct.CPProbability
+	res.ChildProbability = &ddAndFpStruct.ChildProbability
+	res.ImageFilePath = &ddAndFpStruct.ImageFilePath
+	res.InternetRareness = &nft.InternetRareness{
+		RareOnInternetSummaryTableAsJSONCompressedB64:    &ddAndFpStruct.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64,
+		RareOnInternetGraphJSONCompressedB64:             &ddAndFpStruct.InternetRareness.RareOnInternetGraphJSONCompressedB64,
+		AlternativeRareOnInternetDictAsJSONCompressedB64: &ddAndFpStruct.InternetRareness.AlternativeRareOnInternetDictAsJSONCompressedB64,
+		MinNumberOfExactMatchesInPage:                    &ddAndFpStruct.InternetRareness.MinNumberOfExactMatchesInPage,
+		EarliestAvailableDateOfInternetResults:           &ddAndFpStruct.InternetRareness.EarliestAvailableDateOfInternetResults,
+	}
+	res.AlternativeNsfwScores = &nft.AlternativeNSFWScores{
+		Drawings: &ddAndFpStruct.AlternativeNSFWScores.Drawings,
+		Sexy:     &ddAndFpStruct.AlternativeNSFWScores.Sexy,
+		Porn:     &ddAndFpStruct.AlternativeNSFWScores.Porn,
+		Hentai:   &ddAndFpStruct.AlternativeNSFWScores.Neutral,
+	}
 
 	return res
 }
