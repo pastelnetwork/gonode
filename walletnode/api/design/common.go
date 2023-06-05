@@ -220,39 +220,32 @@ var DownloadResult = Type("DownloadResult", func() {
 var DDServiceOutputFileResult = Type("DDServiceOutputFileResult", func() {
 	Description("Complete details of dd service output file result")
 
-	Extend(NftSummary)
-
-	Attribute("version", Int, func() {
-		Description("version")
-		Example(1)
+	Attribute("pastel_block_hash_when_request_submitted", String, func() {
+		Description("block hash when request submitted")
 	})
-	Attribute("storage_fee", Int, func() {
-		Description("Storage fee %")
-		Example(100)
+	Attribute("pastel_block_height_when_request_submitted", String, func() {
+		Description("block Height when request submitted")
 	})
-	Attribute("block_height", String, func() {
-		Description("Block Height When request submitted")
+	Attribute("utc_timestamp_when_request_submitted", String, func() {
+		Description("timestamp of request when submitted")
 	})
-	Attribute("timestamp_of_request", String, func() {
-		Description("Timestamp of request when submitted")
+	Attribute("pastel_id_of_submitter", String, func() {
+		Description("pastel id of the submitter")
 	})
-	Attribute("submitter_pastel_id", String, func() {
-		Description("Pastel id of the submitter")
+	Attribute("pastel_id_of_registering_supernode_1", String, func() {
+		Description("pastel id of registering SN1")
 	})
-	Attribute("sn1_pastel_id", String, func() {
-		Description("Pastel id of SN1")
+	Attribute("pastel_id_of_registering_supernode_2", String, func() {
+		Description("pastel id of registering SN2")
 	})
-	Attribute("sn2_pastel_id", String, func() {
-		Description("Pastel id of SN2")
+	Attribute("pastel_id_of_registering_supernode_3", String, func() {
+		Description("pastel id of registering SN3")
 	})
-	Attribute("sn3_pastel_id", String, func() {
-		Description("Pastel id of SN3")
-	})
-	Attribute("is_open_api_request", Boolean, func() {
-		Description("Is Open API request")
+	Attribute("is_pastel_openapi_request", Boolean, func() {
+		Description("is pastel open API request")
 	})
 	Attribute("dupe_detection_system_version", String, func() {
-		Description("System version of dupe detection")
+		Description("system version of dupe detection")
 	})
 	Attribute("is_likely_dupe", Boolean, func() {
 		Description("is this nft likely a duplicate")
@@ -277,46 +270,132 @@ var DDServiceOutputFileResult = Type("DDServiceOutputFileResult", func() {
 	Attribute("rareness_scores_table_json_compressed_b64", String, func() {
 		Description("Rareness scores table json compressed b64 encoded")
 	})
-	Attribute("internet_rareness_score", Float32, func() {
-		Description("internet rareness score")
-	})
 	Attribute("open_nsfw_score", Float32, func() {
-		Description("internet rareness score")
+		Description("open nsfw score")
 	})
 	Attribute("image_fingerprint_of_candidate_image_file", ArrayOf(Float64), func() {
 		Description("Image fingerprint of candidate image file")
 	})
-	Attribute("drawing_nsfw_score", Float32, func() {
-		Description("nsfw score")
+	Attribute("hash_of_candidate_image_file", String, func() {
+		Description("hash of candidate image file")
 	})
-	Attribute("neutral_nsfw_score", Float32, func() {
-		Description("nsfw score")
+	Attribute("rareness_scores_table_json_compressed_b64", String, func() {
+		Description("rareness scores table json compressed b64")
 	})
-	Attribute("sexy_nsfw_score", Float32, func() {
-		Description("nsfw score")
+	Attribute("collection_name_string", String, func() {
+		Description("name of the collection")
 	})
-	Attribute("porn_nsfw_score", Float32, func() {
-		Description("nsfw score")
+	Attribute("open_api_group_id_string", String, func() {
+		Description("open api group id string")
 	})
-	Attribute("hentai_nsfw_score", Float32, func() {
-		Description("nsfw score")
+	Attribute("group_rareness_score", Float32, func() {
+		Description("rareness score of the group")
 	})
-	Attribute("preview_thumbnail", Bytes, func() {
-		Description("Preview Image")
+	Attribute("candidate_image_thumbnail_webp_as_base64_string", String, func() {
+		Description("candidate image thumbnail as base64 string")
 	})
-	Attribute("rare_on_internet_summary_table_json_b64", String, func() {
+	Attribute("does_not_impact_the_following_collection_strings", String, func() {
+		Description("does not impact collection strings")
+	})
+	Attribute("similarity_score_to_first_entry_in_collection", Float32, func() {
+		Description("similarity score to first entry in collection")
+	})
+	Attribute("cp_probability", Float32, func() {
+		Description("probability of CP")
+	})
+	Attribute("child_probability", Float32, func() {
+		Description("child probability")
+	})
+	Attribute("image_file_path", String, func() {
+		Description("file path of the image")
+	})
+	Attribute("internet_rareness", InternetRareness, func() {
+		Description("internet rareness")
+	})
+	Attribute("alternative_nsfw_scores", AlternativeNSFWScores, func() {
+		Description("alternative NSFW scores")
+	})
+	Attribute("creator_name", String, func() {
+		Description("name of the creator")
+	})
+	Attribute("creator_website", String, func() {
+		Description("website of creator")
+	})
+	Attribute("creator_written_statement", String, func() {
+		Description("written statement of creator")
+	})
+	Attribute("nft_title", String, func() {
+		Description("title of NFT")
+	})
+	Attribute("nft_series_name", String, func() {
+		Description("series name of NFT")
+	})
+	Attribute("nft_creation_video_youtube_url", String, func() {
+		Description("nft creation video youtube url")
+	})
+	Attribute("nft_keyword_set", String, func() {
+		Description("keywords for NFT")
+	})
+	Attribute("total_copies", Int, func() {
+		Description("total copies of NFT")
+	})
+	Attribute("preview_hash", Bytes, func() {
+		Description("preview hash of NFT")
+	})
+	Attribute("thumbnail1_hash", Bytes, func() {
+		Description("thumbnail1 hash of NFT")
+	})
+	Attribute("thumbnail2_hash", Bytes, func() {
+		Description("thumbnail2 hash of NFT")
+	})
+	Attribute("original_file_size_in_bytes", Int, func() {
+		Description("original file size in bytes")
+	})
+	Attribute("file_type", String, func() {
+		Description("type of the file")
+	})
+	Attribute("max_permitted_open_nsfw_score", Float64, func() {
+		Description("max permitted open NSFW score")
+	})
+	Required("creator_name", "creator_website", "creator_written_statement", "nft_title", "nft_series_name",
+		"nft_creation_video_youtube_url", "nft_keyword_set", "total_copies", "preview_hash", "thumbnail1_hash", "thumbnail2_hash",
+		"original_file_size_in_bytes", "file_type", "max_permitted_open_nsfw_score")
+})
+
+//InternetRareness is the InternetRareness Response Type
+var InternetRareness = Type("InternetRareness", func() {
+	Attribute("rare_on_internet_summary_table_as_json_compressed_b64", String, func() {
 		Description("Base64 Compressed JSON Table of Rare On Internet Summary")
 	})
-	Attribute("rare_on_internet_graph_json_b64", String, func() {
+	Attribute("rare_on_internet_graph_json_compressed_b64", String, func() {
 		Description("Base64 Compressed JSON of Rare On Internet Graph")
 	})
-	Attribute("alt_rare_on_internet_dict_json_b64", String, func() {
+	Attribute("alternative_rare_on_internet_dict_as_json_compressed_b64", String, func() {
 		Description("Base64 Compressed Json of Alternative Rare On Internet Dict")
 	})
-	Attribute("min_num_exact_matches_on_page", UInt32, func() {
+	Attribute("min_number_of_exact_matches_in_page", UInt32, func() {
 		Description("Minimum Number of Exact Matches on Page")
 	})
-	Attribute("earliest_date_of_results", String, func() {
+	Attribute("earliest_available_date_of_internet_results", String, func() {
 		Description("Earliest Available Date of Internet Results")
+	})
+})
+
+//AlternativeNSFWScores is the AlternativeNSFWScores Response Type
+var AlternativeNSFWScores = Type("AlternativeNSFWScores", func() {
+	Attribute("drawings", Float32, func() {
+		Description("drawings nsfw score")
+	})
+	Attribute("hentai", Float32, func() {
+		Description("hentai nsfw score")
+	})
+	Attribute("sexy", Float32, func() {
+		Description("sexy nsfw score")
+	})
+	Attribute("porn", Float32, func() {
+		Description("porn nsfw score")
+	})
+	Attribute("neutral", Float32, func() {
+		Description("neutral nsfw score")
 	})
 })
