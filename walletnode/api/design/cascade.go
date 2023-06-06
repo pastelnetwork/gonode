@@ -107,16 +107,26 @@ var _ = Service("cascade", func() {
 		Security(APIKeyAuth)
 
 		Payload(DownloadPayload)
-		Result(DownloadResult)
-
+		//Result(DownloadResult)
+		Result(Bytes)
 		HTTP(func() {
 			GET("/download")
+			//SkipResponseBodyEncodeDecode()
+
 			Param("txid")
 			Param("pid")
+
 			// Header("key:Authorization") // Provide the key in Authorization header (default)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
-			Response(StatusOK)
+			Response(StatusOK, func() {
+				ContentType("application/octet-stream")
+				/*Header("Content-Disposition", func() {
+					Description("The file name of the downloaded file")
+					Example("cascade_artifact.zip")
+					Default("attachment; filename=file")
+				})*/
+			})
 		})
 	})
 })

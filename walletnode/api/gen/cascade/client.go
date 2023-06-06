@@ -76,11 +76,11 @@ func (c *Client) GetTaskHistory(ctx context.Context, p *GetTaskHistoryPayload) (
 }
 
 // Download calls the "download" endpoint of the "cascade" service.
-func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res *DownloadResult, err error) {
+func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res []byte, err error) {
 	var ires interface{}
 	ires, err = c.DownloadEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*DownloadResult), nil
+	return ires.([]byte), nil
 }

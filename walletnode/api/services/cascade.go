@@ -146,7 +146,7 @@ func (service *CascadeAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 }
 
 // Download registered NFT
-func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) (res *cascade.DownloadResult, err error) {
+func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) ([]byte, error) {
 	log.Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
 	taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade)
@@ -181,12 +181,14 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 					return nil, cascade.MakeInternalServerError(errors.New("unable to download file"))
 				}
 
-				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("File downloaded")
-				res = &cascade.DownloadResult{
-					File: task.File,
+				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).Info("File downloaded")
+
+				if err := utils.B64Decode(task.File); err != nil {
+					lo
+					return nil, cascade.MakeInternalServerError(err)
 				}
 
-				return res, nil
+				return task.File, nil
 			}
 		}
 	}

@@ -84,8 +84,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	// remove file after use
 	defer os.Remove(inputPath)
 
-	// Create a context with timeout
-	reqCtx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	reqCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
 	res, err := client.ImageRarenessScore(reqCtx, &req)

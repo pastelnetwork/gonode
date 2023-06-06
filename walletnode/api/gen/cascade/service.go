@@ -26,7 +26,7 @@ type Service interface {
 	// Gets the history of the task's states.
 	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res []*TaskHistory, err error)
 	// Download cascade Artifact.
-	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
+	Download(context.Context, *DownloadPayload) (res []byte, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -88,12 +88,6 @@ type DownloadPayload struct {
 	Pid string
 	// Passphrase of the owner's PastelID
 	Key string
-}
-
-// DownloadResult is the result type of the cascade service download method.
-type DownloadResult struct {
-	// File downloaded
-	File []byte
 }
 
 // GetTaskHistoryPayload is the payload type of the cascade service

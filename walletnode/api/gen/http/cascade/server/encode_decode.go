@@ -363,9 +363,10 @@ func EncodeGetTaskHistoryError(encoder func(context.Context, http.ResponseWriter
 // cascade download endpoint.
 func EncodeDownloadResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res, _ := v.(*cascade.DownloadResult)
+		res, _ := v.([]byte)
+		ctx = context.WithValue(ctx, goahttp.ContentTypeKey, "application/octet-stream")
 		enc := encoder(ctx, w)
-		body := NewDownloadResponseBody(res)
+		body := res
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}

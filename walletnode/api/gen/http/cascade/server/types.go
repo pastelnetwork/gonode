@@ -68,13 +68,6 @@ type RegisterTaskStateResponseBody struct {
 // "getTaskHistory" endpoint HTTP response body.
 type GetTaskHistoryResponseBody []*TaskHistoryResponse
 
-// DownloadResponseBody is the type of the "cascade" service "download"
-// endpoint HTTP response body.
-type DownloadResponseBody struct {
-	// File downloaded
-	File []byte `form:"file" json:"file" xml:"file"`
-}
-
 // UploadAssetBadRequestResponseBody is the type of the "cascade" service
 // "uploadAsset" endpoint HTTP response body for the "BadRequest" error.
 type UploadAssetBadRequestResponseBody struct {
@@ -321,15 +314,6 @@ func NewGetTaskHistoryResponseBody(res []*cascade.TaskHistory) GetTaskHistoryRes
 	body := make([]*TaskHistoryResponse, len(res))
 	for i, val := range res {
 		body[i] = marshalCascadeTaskHistoryToTaskHistoryResponse(val)
-	}
-	return body
-}
-
-// NewDownloadResponseBody builds the HTTP response body from the result of the
-// "download" endpoint of the "cascade" service.
-func NewDownloadResponseBody(res *cascade.DownloadResult) *DownloadResponseBody {
-	body := &DownloadResponseBody{
-		File: res.File,
 	}
 	return body
 }
