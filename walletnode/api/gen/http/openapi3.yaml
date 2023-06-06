@@ -1588,76 +1588,12 @@ paths:
                 "200":
                     description: OK response.
                     content:
-                        application/octet-stream:
+                        application/json:
                             schema:
                                 type: string
-                                example:
-                                    - 76
-                                    - 97
-                                    - 98
-                                    - 111
-                                    - 114
-                                    - 117
-                                    - 109
-                                    - 32
-                                    - 113
-                                    - 117
-                                    - 111
-                                    - 115
-                                    - 32
-                                    - 118
-                                    - 101
-                                    - 108
-                                    - 32
-                                    - 105
-                                    - 110
-                                    - 32
-                                    - 99
-                                    - 111
-                                    - 114
-                                    - 114
-                                    - 117
-                                    - 112
-                                    - 116
-                                    - 105
-                                    - 46
+                                example: Laborum quos vel in corrupti.
                                 format: binary
-                            example:
-                                - 78
-                                - 111
-                                - 110
-                                - 32
-                                - 105
-                                - 115
-                                - 116
-                                - 101
-                                - 32
-                                - 114
-                                - 101
-                                - 112
-                                - 101
-                                - 108
-                                - 108
-                                - 97
-                                - 116
-                                - 32
-                                - 100
-                                - 111
-                                - 108
-                                - 111
-                                - 114
-                                - 101
-                                - 115
-                                - 32
-                                - 117
-                                - 116
-                                - 32
-                                - 99
-                                - 117
-                                - 108
-                                - 112
-                                - 97
-                                - 46
+                            example: Non iste repellat dolores ut culpa.
                 "404":
                     description: 'NotFound: Not Found response.'
                     content:

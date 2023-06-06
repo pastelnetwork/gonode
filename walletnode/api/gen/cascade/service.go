@@ -26,7 +26,7 @@ type Service interface {
 	// Gets the history of the task's states.
 	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res []*TaskHistory, err error)
 	// Download cascade Artifact.
-	Download(context.Context, *DownloadPayload) (res []byte, err error)
+	Download(context.Context, *DownloadPayload) (res interface{}, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.

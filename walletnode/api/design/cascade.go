@@ -108,7 +108,7 @@ var _ = Service("cascade", func() {
 
 		Payload(DownloadPayload)
 		//Result(DownloadResult)
-		Result(Bytes)
+		Result(Any)
 		HTTP(func() {
 			GET("/download")
 			//SkipResponseBodyEncodeDecode()
@@ -119,14 +119,7 @@ var _ = Service("cascade", func() {
 			// Header("key:Authorization") // Provide the key in Authorization header (default)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
-			Response(StatusOK, func() {
-				ContentType("application/octet-stream")
-				/*Header("Content-Disposition", func() {
-					Description("The file name of the downloaded file")
-					Example("cascade_artifact.zip")
-					Default("attachment; filename=file")
-				})*/
-			})
+			Response(StatusOK)
 		})
 	})
 })

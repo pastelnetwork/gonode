@@ -713,8 +713,6 @@ paths:
             summary: Downloads cascade artifact
             description: Download cascade Artifact.
             operationId: cascade#download
-            produces:
-                - application/octet-stream
             parameters:
                 - name: txid
                   in: query
@@ -741,7 +739,7 @@ paths:
                     description: OK response.
                     schema:
                         type: string
-                        format: byte
+                        format: binary
                 "404":
                     description: Not Found response.
                     schema:

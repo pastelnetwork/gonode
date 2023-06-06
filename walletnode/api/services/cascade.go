@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -146,7 +147,7 @@ func (service *CascadeAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 }
 
 // Download registered NFT
-func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) ([]byte, error) {
+func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) (interface{}, error) {
 	log.Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
 	taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade)
@@ -183,12 +184,15 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 
 				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).Info("File downloaded")
 
-				if err := utils.B64Decode(task.File); err != nil {
-					lo
-					return nil, cascade.MakeInternalServerError(err)
-				}
+				return func(ctx context.Context, w http.ResponseWriter) error {
+					// Set the correct headers
+					w.Header().Set("Content-Type", "image/png")
+					w.Header().Set("Content-Disposition", "attachment; filename=file.png")
 
-				return task.File, nil
+					// Write the data to the response
+					_, err := w.Write(task.File)
+					return err
+				}, nil
 			}
 		}
 	}

@@ -528,7 +528,7 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body []byte
+				body interface{}
 				err  error
 			)
 			err = decoder(resp).Decode(&body)

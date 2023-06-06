@@ -62,6 +62,10 @@ func (server *Server) Run(ctx context.Context) error {
 	mux.Handle("/", handler)
 	mux.Handle("/swagger/swagger.json", handler)
 
+	// Serve static files from the "static" directory at the "/static/" path
+	fs := http.FileServer(http.Dir("static"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+
 	if server.config.Swagger {
 		mux.Handle("/swagger/", http.FileServer(http.FS(docs.SwaggerContent)))
 	}
