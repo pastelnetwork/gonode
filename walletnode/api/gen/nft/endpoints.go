@@ -26,6 +26,7 @@ type Endpoints struct {
 	NftGet                    goa.Endpoint
 	Download                  goa.Endpoint
 	DdServiceOutputFileDetail goa.Endpoint
+	DdServiceOutputFile       goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -62,6 +63,7 @@ func NewEndpoints(s Service) *Endpoints {
 		NftGet:                    NewNftGetEndpoint(s, a.APIKeyAuth),
 		Download:                  NewDownloadEndpoint(s, a.APIKeyAuth),
 		DdServiceOutputFileDetail: NewDdServiceOutputFileDetailEndpoint(s, a.APIKeyAuth),
+		DdServiceOutputFile:       NewDdServiceOutputFileEndpoint(s, a.APIKeyAuth),
 	}
 }
 
@@ -77,6 +79,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.NftGet = m(e.NftGet)
 	e.Download = m(e.Download)
 	e.DdServiceOutputFileDetail = m(e.DdServiceOutputFileDetail)
+	e.DdServiceOutputFile = m(e.DdServiceOutputFile)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -225,5 +228,24 @@ func NewDdServiceOutputFileDetailEndpoint(s Service, authAPIKeyFn security.AuthA
 			return nil, err
 		}
 		return s.DdServiceOutputFileDetail(ctx, p)
+	}
+}
+
+// NewDdServiceOutputFileEndpoint returns an endpoint function that calls the
+// method "ddServiceOutputFile" of service "nft".
+func NewDdServiceOutputFileEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*DownloadPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.DdServiceOutputFile(ctx, p)
 	}
 }

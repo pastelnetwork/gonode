@@ -25,10 +25,11 @@ type Client struct {
 	NftGetEndpoint                    goa.Endpoint
 	DownloadEndpoint                  goa.Endpoint
 	DdServiceOutputFileDetailEndpoint goa.Endpoint
+	DdServiceOutputFileEndpoint       goa.Endpoint
 }
 
 // NewClient initializes a "nft" service client given the endpoints.
-func NewClient(register, registerTaskState, getTaskHistory, registerTask, registerTasks, uploadImage, nftSearch, nftGet, download, ddServiceOutputFileDetail goa.Endpoint) *Client {
+func NewClient(register, registerTaskState, getTaskHistory, registerTask, registerTasks, uploadImage, nftSearch, nftGet, download, ddServiceOutputFileDetail, ddServiceOutputFile goa.Endpoint) *Client {
 	return &Client{
 		RegisterEndpoint:                  register,
 		RegisterTaskStateEndpoint:         registerTaskState,
@@ -40,6 +41,7 @@ func NewClient(register, registerTaskState, getTaskHistory, registerTask, regist
 		NftGetEndpoint:                    nftGet,
 		DownloadEndpoint:                  download,
 		DdServiceOutputFileDetailEndpoint: ddServiceOutputFileDetail,
+		DdServiceOutputFileEndpoint:       ddServiceOutputFile,
 	}
 }
 
@@ -143,4 +145,15 @@ func (c *Client) DdServiceOutputFileDetail(ctx context.Context, p *DownloadPaylo
 		return
 	}
 	return ires.(*DDServiceOutputFileResult), nil
+}
+
+// DdServiceOutputFile calls the "ddServiceOutputFile" endpoint of the "nft"
+// service.
+func (c *Client) DdServiceOutputFile(ctx context.Context, p *DownloadPayload) (res *DDFPResultFile, err error) {
+	var ires interface{}
+	ires, err = c.DdServiceOutputFileEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*DDFPResultFile), nil
 }

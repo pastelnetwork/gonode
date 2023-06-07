@@ -158,3 +158,186 @@ func translateDDServiceOutputFile(res *nft.DDServiceOutputFileResult, ddAndFpStr
 
 	return res
 }
+
+func toNFTDDServiceFile(ticketData pastel.AppTicket, ddAndFpStruct *pastel.DDAndFingerprints) *DDServiceOutputFileResult {
+	res := &DDServiceOutputFileResult{}
+	res.PastelBlockHashWhenRequestSubmitted = &ddAndFpStruct.BlockHash
+	res.PastelBlockHeightWhenRequestSubmitted = &ddAndFpStruct.BlockHeight
+	res.UtcTimestampWhenRequestSubmitted = &ddAndFpStruct.TimestampOfRequest
+	res.PastelIDOfSubmitter = &ddAndFpStruct.SubmitterPastelID
+	res.PastelIDOfRegisteringSupernode1 = &ddAndFpStruct.SN1PastelID
+	res.PastelIDOfRegisteringSupernode2 = &ddAndFpStruct.SN2PastelID
+	res.PastelIDOfRegisteringSupernode3 = &ddAndFpStruct.SN3PastelID
+	res.IsPastelOpenapiRequest = &ddAndFpStruct.IsOpenAPIRequest
+	res.DupeDetectionSystemVersion = &ddAndFpStruct.DupeDetectionSystemVersion
+	res.IsLikelyDupe = &ddAndFpStruct.IsLikelyDupe
+	res.IsRareOnInternet = &ddAndFpStruct.IsRareOnInternet
+	res.OverallRarenessScore = &ddAndFpStruct.OverallRarenessScore
+	res.PctOfTop10MostSimilarWithDupeProbAbove25pct = &ddAndFpStruct.PctOfTop10MostSimilarWithDupeProbAbove25pct
+	res.PctOfTop10MostSimilarWithDupeProbAbove33pct = &ddAndFpStruct.PctOfTop10MostSimilarWithDupeProbAbove33pct
+	res.PctOfTop10MostSimilarWithDupeProbAbove50pct = &ddAndFpStruct.PctOfTop10MostSimilarWithDupeProbAbove50pct
+	res.RarenessScoresTableJSONCompressedB64 = &ddAndFpStruct.RarenessScoresTableJSONCompressedB64
+	res.OpenNsfwScore = &ddAndFpStruct.OpenNSFWScore
+	res.ImageFingerprintOfCandidateImageFile = ddAndFpStruct.ImageFingerprintOfCandidateImageFile
+	res.HashOfCandidateImageFile = &ddAndFpStruct.HashOfCandidateImageFile
+	res.RarenessScoresTableJSONCompressedB64 = &ddAndFpStruct.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64
+	res.CollectionNameString = &ddAndFpStruct.CollectionNameString
+	res.OpenAPIGroupIDString = &ddAndFpStruct.OpenAPIGroupIDString
+	res.GroupRarenessScore = &ddAndFpStruct.GroupRarenessScore
+	res.CandidateImageThumbnailWebpAsBase64String = &ddAndFpStruct.CandidateImageThumbnailWebpAsBase64String
+	res.DoesNotImpactTheFollowingCollectionStrings = &ddAndFpStruct.DoesNotImpactTheFollowingCollectionStrings
+	res.SimilarityScoreToFirstEntryInCollection = &ddAndFpStruct.SimilarityScoreToFirstEntryInCollection
+	res.CpProbability = &ddAndFpStruct.CPProbability
+	res.ChildProbability = &ddAndFpStruct.ChildProbability
+	res.ImageFilePath = &ddAndFpStruct.ImageFilePath
+	res.InternetRareness = &InternetRareness{
+		RareOnInternetSummaryTableAsJSONCompressedB64:    &ddAndFpStruct.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64,
+		RareOnInternetGraphJSONCompressedB64:             &ddAndFpStruct.InternetRareness.RareOnInternetGraphJSONCompressedB64,
+		AlternativeRareOnInternetDictAsJSONCompressedB64: &ddAndFpStruct.InternetRareness.AlternativeRareOnInternetDictAsJSONCompressedB64,
+		MinNumberOfExactMatchesInPage:                    &ddAndFpStruct.InternetRareness.MinNumberOfExactMatchesInPage,
+		EarliestAvailableDateOfInternetResults:           &ddAndFpStruct.InternetRareness.EarliestAvailableDateOfInternetResults,
+	}
+	res.AlternativeNsfwScores = &AlternativeNSFWScores{
+		Drawings: &ddAndFpStruct.AlternativeNSFWScores.Drawings,
+		Sexy:     &ddAndFpStruct.AlternativeNSFWScores.Sexy,
+		Porn:     &ddAndFpStruct.AlternativeNSFWScores.Porn,
+		Hentai:   &ddAndFpStruct.AlternativeNSFWScores.Neutral,
+	}
+
+	res.CreatorName = ticketData.CreatorName
+	res.CreatorWebsite = ticketData.CreatorWebsite
+	res.CreatorWrittenStatement = ticketData.CreatorWrittenStatement
+	res.NftTitle = ticketData.NFTTitle
+	res.NftSeriesName = ticketData.NFTSeriesName
+	res.NftCreationVideoYoutubeURL = ticketData.NFTCreationVideoYoutubeURL
+	res.NftKeywordSet = ticketData.NFTKeywordSet
+	res.TotalCopies = ticketData.TotalCopies
+	res.PreviewHash = ticketData.PreviewHash
+	res.Thumbnail1Hash = ticketData.Thumbnail1Hash
+	res.Thumbnail2Hash = ticketData.Thumbnail2Hash
+	res.OriginalFileSizeInBytes = ticketData.OriginalFileSizeInBytes
+	res.FileType = ticketData.FileType
+	res.MaxPermittedOpenNsfwScore = ticketData.MaxPermittedOpenNSFWScore
+
+	return res
+}
+
+// DDServiceOutputFileResult represents DD Service Output File for NFT
+type DDServiceOutputFileResult struct {
+	// block hash when request submitted
+	PastelBlockHashWhenRequestSubmitted *string `json:"pastel_block_hash_when_request_submitted"`
+	// block Height when request submitted
+	PastelBlockHeightWhenRequestSubmitted *string `json:"pastel_block_height_when_request_submitted"`
+	// timestamp of request when submitted
+	UtcTimestampWhenRequestSubmitted *string `json:"utc_timestamp_when_request_submitted"`
+	// pastel id of the submitter
+	PastelIDOfSubmitter *string `json:"pastel_id_of_submitter"`
+	// pastel id of registering SN1
+	PastelIDOfRegisteringSupernode1 *string `json:"pastel_id_of_registering_supernode_1"`
+	// pastel id of registering SN2
+	PastelIDOfRegisteringSupernode2 *string `json:"pastel_id_of_registering_supernode_2"`
+	// pastel id of registering SN3
+	PastelIDOfRegisteringSupernode3 *string `json:"pastel_id_of_registering_supernode_3"`
+	// is pastel open API request
+	IsPastelOpenapiRequest *bool `json:"is_pastel_openapi_request"`
+	// system version of dupe detection
+	DupeDetectionSystemVersion *string `json:"dupe_detection_system_version"`
+	// is this nft likely a duplicate
+	IsLikelyDupe *bool `json:"is_likely_dupe"`
+	// is this nft rare on the internet
+	IsRareOnInternet *bool `json:"is_rare_on_internet"`
+	// pastel rareness score
+	OverallRarenessScore *float32 `json:"overall_rareness_score"`
+	// PCT of top 10 most similar with dupe probe above 25 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove25pct *float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_25_pct"`
+	// PCT of top 10 most similar with dupe probe above 33 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove33pct *float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_33_pct"`
+	// PCT of top 10 most similar with dupe probe above 50 PCT
+	PctOfTop10MostSimilarWithDupeProbAbove50pct *float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_50_pct"`
+	// rareness scores table json compressed b64
+	RarenessScoresTableJSONCompressedB64 *string `json:"rareness_scores_table_json_compressed_b_64"`
+	// open nsfw score
+	OpenNsfwScore *float32 `json:"open_nsfw_score"`
+	// Image fingerprint of candidate image file
+	ImageFingerprintOfCandidateImageFile []float64 `json:"image_fingerprint_of_candidate_image_file"`
+	// hash of candidate image file
+	HashOfCandidateImageFile *string `json:"hash_of_candidate_image_file"`
+	// name of the collection
+	CollectionNameString *string `json:"collection_name_string"`
+	// open api group id string
+	OpenAPIGroupIDString *string `json:"open_api_group_id_string"`
+	// rareness score of the group
+	GroupRarenessScore *float32 `json:"group_rareness_score"`
+	// candidate image thumbnail as base64 string
+	CandidateImageThumbnailWebpAsBase64String *string `json:"candidate_image_thumbnail_webp_as_base_64_string"`
+	// does not impact collection strings
+	DoesNotImpactTheFollowingCollectionStrings *string `json:"does_not_impact_the_following_collection_strings"`
+	// similarity score to first entry in collection
+	SimilarityScoreToFirstEntryInCollection *float32 `json:"similarity_score_to_first_entry_in_collection"`
+	// probability of CP
+	CpProbability *float32 `json:"cp_probability"`
+	// child probability
+	ChildProbability *float32 `json:"child_probability"`
+	// file path of the image
+	ImageFilePath *string
+	// internet rareness
+	InternetRareness *InternetRareness
+	// alternative NSFW scores
+	AlternativeNsfwScores *AlternativeNSFWScores
+	// name of the creator
+	CreatorName string `json:"creator_name"`
+	// website of creator
+	CreatorWebsite string `json:"creator_website"`
+	// written statement of creator
+	CreatorWrittenStatement string `json:"creator_written_statement"`
+	// title of NFT
+	NftTitle string `json:"nft_title"`
+	// series name of NFT
+	NftSeriesName string `json:"nft_series_name"`
+	// nft creation video youtube url
+	NftCreationVideoYoutubeURL string `json:"nft_creation_video_youtube_url"`
+	// keywords for NFT
+	NftKeywordSet string `json:"nft_keyword_set"`
+	// total copies of NFT
+	TotalCopies int `json:"total_copies"`
+	// preview hash of NFT
+	PreviewHash []byte `json:"preview_hash"`
+	// thumbnail1 hash of NFT
+	Thumbnail1Hash []byte `json:"thumbnail_1_hash"`
+	// thumbnail2 hash of NFT
+	Thumbnail2Hash []byte `json:"thumbnail_2_hash"`
+	// original file size in bytes
+	OriginalFileSizeInBytes int `json:"original_file_size_in_bytes"`
+	// type of the file
+	FileType string `json:"file_type"`
+	// max permitted open NSFW score
+	MaxPermittedOpenNsfwScore float64 `json:"max_permitted_open_nsfw_score"`
+}
+
+// InternetRareness represents the internet_rareness from DD FP File
+type InternetRareness struct {
+	// Base64 Compressed JSON Table of Rare On Internet Summary
+	RareOnInternetSummaryTableAsJSONCompressedB64 *string `json:"rare_on_internet_summary_table_as_json_compressed_b_64"`
+	// Base64 Compressed JSON of Rare On Internet Graph
+	RareOnInternetGraphJSONCompressedB64 *string `json:"rare_on_internet_graph_json_compressed_b_64"`
+	// Base64 Compressed Json of Alternative Rare On Internet Dict
+	AlternativeRareOnInternetDictAsJSONCompressedB64 *string `json:"alternative_rare_on_internet_dict_as_json_compressed_b_64"`
+	// Minimum Number of Exact Matches on Page
+	MinNumberOfExactMatchesInPage *uint32 `json:"min_number_of_exact_matches_in_page"`
+	// Earliest Available Date of Internet Results
+	EarliestAvailableDateOfInternetResults *string `json:"earliest_available_date_of_internet_results"`
+}
+
+// AlternativeNSFWScores represents the struct from DD & FP file
+type AlternativeNSFWScores struct {
+	// drawings nsfw score
+	Drawings *float32 `json:"drawings"`
+	// hentai nsfw score
+	Hentai *float32 `json:"hentai"`
+	// sexy nsfw score
+	Sexy *float32 `json:"sexy"`
+	// porn nsfw score
+	Porn *float32 `json:"porn"`
+	// neutral nsfw score
+	Neutral *float32 `json:"neutral"`
+}

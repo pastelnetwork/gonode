@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -369,6 +370,38 @@ func (service *NftAPIHandler) DdServiceOutputFileDetail(ctx context.Context, p *
 
 	res = translateDDServiceOutputFile(res, ddAndFpStruct)
 
+	return res, nil
+}
+
+// DdServiceOutputFile returns Dupe detection output file
+func (service *NftAPIHandler) DdServiceOutputFile(ctx context.Context, p *nft.DownloadPayload) (res *nft.DDFPResultFile, err error) {
+	ticket, err := service.search.RegTicket(ctx, p.Txid)
+	if err != nil {
+		log.WithError(err).Error("error retrieving ticket")
+		return nil, nft.MakeBadRequest(err)
+	}
+
+	ddAndFpData, err := service.search.GetDDAndFP(ctx, ticket, p.Pid, p.Key)
+	if err != nil {
+		log.WithError(err).Error("error retrieving DD&FP")
+		return nil, nft.MakeInternalServerError(err)
+	}
+	ddAndFpStruct := &pastel.DDAndFingerprints{}
+	json.Unmarshal(ddAndFpData, ddAndFpStruct)
+
+	DDFPFileDetails := toNFTDDServiceFile(ticket.RegTicketData.NFTTicketData.AppTicketData, ddAndFpStruct)
+
+	fileBytes, err := json.Marshal(DDFPFileDetails)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting file details to bytes")
+	}
+
+	// Convert json data to base64
+	base64Data := base64.StdEncoding.EncodeToString(fileBytes)
+
+	res = &nft.DDFPResultFile{
+		File: base64Data,
+	}
 	return res, nil
 }
 

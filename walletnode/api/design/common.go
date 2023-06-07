@@ -216,6 +216,15 @@ var DownloadResult = Type("DownloadResult", func() {
 	Required("file")
 })
 
+// DDFPResultFile is NFT DDFP file result.
+var DDFPResultFile = Type("DDFPResultFile", func() {
+	Description("Asset download response")
+	Attribute("file", String, func() {
+		Description("File downloaded")
+	})
+	Required("file")
+})
+
 // DDServiceOutputFileResult is DD service output file result details.
 var DDServiceOutputFileResult = Type("DDServiceOutputFileResult", func() {
 	Description("Complete details of dd service output file result")
@@ -362,7 +371,7 @@ var DDServiceOutputFileResult = Type("DDServiceOutputFileResult", func() {
 		"original_file_size_in_bytes", "file_type", "max_permitted_open_nsfw_score")
 })
 
-//InternetRareness is the InternetRareness Response Type
+// InternetRareness is the InternetRareness Response Type
 var InternetRareness = Type("InternetRareness", func() {
 	Attribute("rare_on_internet_summary_table_as_json_compressed_b64", String, func() {
 		Description("Base64 Compressed JSON Table of Rare On Internet Summary")
@@ -381,7 +390,7 @@ var InternetRareness = Type("InternetRareness", func() {
 	})
 })
 
-//AlternativeNSFWScores is the AlternativeNSFWScores Response Type
+// AlternativeNSFWScores is the AlternativeNSFWScores Response Type
 var AlternativeNSFWScores = Type("AlternativeNSFWScores", func() {
 	Attribute("drawings", Float32, func() {
 		Description("drawings nsfw score")
