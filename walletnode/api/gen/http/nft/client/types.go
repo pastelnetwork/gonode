@@ -294,6 +294,13 @@ type DdServiceOutputFileDetailResponseBody struct {
 	MaxPermittedOpenNsfwScore *float64 `form:"max_permitted_open_nsfw_score,omitempty" json:"max_permitted_open_nsfw_score,omitempty" xml:"max_permitted_open_nsfw_score,omitempty"`
 }
 
+// DdServiceOutputFileResponseBody is the type of the "nft" service
+// "ddServiceOutputFile" endpoint HTTP response body.
+type DdServiceOutputFileResponseBody struct {
+	// File downloaded
+	File *string `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+}
+
 // RegisterBadRequestResponseBody is the type of the "nft" service "register"
 // endpoint HTTP response body for the "BadRequest" error.
 type RegisterBadRequestResponseBody struct {
@@ -646,6 +653,43 @@ type DdServiceOutputFileDetailNotFoundResponseBody struct {
 // "nft" service "ddServiceOutputFileDetail" endpoint HTTP response body for
 // the "InternalServerError" error.
 type DdServiceOutputFileDetailInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DdServiceOutputFileNotFoundResponseBody is the type of the "nft" service
+// "ddServiceOutputFile" endpoint HTTP response body for the "NotFound" error.
+type DdServiceOutputFileNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DdServiceOutputFileInternalServerErrorResponseBody is the type of the "nft"
+// service "ddServiceOutputFile" endpoint HTTP response body for the
+// "InternalServerError" error.
+type DdServiceOutputFileInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -1455,6 +1499,46 @@ func NewDdServiceOutputFileDetailInternalServerError(body *DdServiceOutputFileDe
 	return v
 }
 
+// NewDdServiceOutputFileDDFPResultFileOK builds a "nft" service
+// "ddServiceOutputFile" endpoint result from a HTTP "OK" response.
+func NewDdServiceOutputFileDDFPResultFileOK(body *DdServiceOutputFileResponseBody) *nft.DDFPResultFile {
+	v := &nft.DDFPResultFile{
+		File: *body.File,
+	}
+
+	return v
+}
+
+// NewDdServiceOutputFileNotFound builds a nft service ddServiceOutputFile
+// endpoint NotFound error.
+func NewDdServiceOutputFileNotFound(body *DdServiceOutputFileNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewDdServiceOutputFileInternalServerError builds a nft service
+// ddServiceOutputFile endpoint InternalServerError error.
+func NewDdServiceOutputFileInternalServerError(body *DdServiceOutputFileInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // ValidateRegisterTaskStateResponseBody runs the validations defined on
 // RegisterTaskStateResponseBody
 func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) (err error) {
@@ -1725,6 +1809,15 @@ func ValidateDdServiceOutputFileDetailResponseBody(body *DdServiceOutputFileDeta
 	}
 	if body.MaxPermittedOpenNsfwScore == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("max_permitted_open_nsfw_score", "body"))
+	}
+	return
+}
+
+// ValidateDdServiceOutputFileResponseBody runs the validations defined on
+// DdServiceOutputFileResponseBody
+func ValidateDdServiceOutputFileResponseBody(body *DdServiceOutputFileResponseBody) (err error) {
+	if body.File == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
 	}
 	return
 }
@@ -2189,6 +2282,54 @@ func ValidateDdServiceOutputFileDetailNotFoundResponseBody(body *DdServiceOutput
 // validations defined on
 // ddServiceOutputFileDetail_InternalServerError_response_body
 func ValidateDdServiceOutputFileDetailInternalServerErrorResponseBody(body *DdServiceOutputFileDetailInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDdServiceOutputFileNotFoundResponseBody runs the validations defined
+// on ddServiceOutputFile_NotFound_response_body
+func ValidateDdServiceOutputFileNotFoundResponseBody(body *DdServiceOutputFileNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDdServiceOutputFileInternalServerErrorResponseBody runs the
+// validations defined on ddServiceOutputFile_InternalServerError_response_body
+func ValidateDdServiceOutputFileInternalServerErrorResponseBody(body *DdServiceOutputFileInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

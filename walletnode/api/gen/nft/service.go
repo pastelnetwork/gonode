@@ -37,6 +37,8 @@ type Service interface {
 	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
 	// Duplication detection output file details
 	DdServiceOutputFileDetail(context.Context, *DownloadPayload) (res *DDServiceOutputFileResult, err error)
+	// Duplication detection output file
+	DdServiceOutputFile(context.Context, *DownloadPayload) (res *DDFPResultFile, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -53,7 +55,7 @@ const ServiceName = "nft"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [10]string{"register", "registerTaskState", "getTaskHistory", "registerTask", "registerTasks", "uploadImage", "nftSearch", "nftGet", "download", "ddServiceOutputFileDetail"}
+var MethodNames = [11]string{"register", "registerTaskState", "getTaskHistory", "registerTask", "registerTasks", "uploadImage", "nftSearch", "nftGet", "download", "ddServiceOutputFileDetail", "ddServiceOutputFile"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -98,6 +100,13 @@ type AlternativeNSFWScores struct {
 	Porn *float32
 	// neutral nsfw score
 	Neutral *float32
+}
+
+// DDFPResultFile is the result type of the nft service ddServiceOutputFile
+// method.
+type DDFPResultFile struct {
+	// File downloaded
+	File string
 }
 
 // DDServiceOutputFileResult is the result type of the nft service

@@ -294,6 +294,13 @@ type DdServiceOutputFileDetailResponseBody struct {
 	MaxPermittedOpenNsfwScore float64 `form:"max_permitted_open_nsfw_score" json:"max_permitted_open_nsfw_score" xml:"max_permitted_open_nsfw_score"`
 }
 
+// DdServiceOutputFileResponseBody is the type of the "nft" service
+// "ddServiceOutputFile" endpoint HTTP response body.
+type DdServiceOutputFileResponseBody struct {
+	// File downloaded
+	File string `form:"file" json:"file" xml:"file"`
+}
+
 // RegisterBadRequestResponseBody is the type of the "nft" service "register"
 // endpoint HTTP response body for the "BadRequest" error.
 type RegisterBadRequestResponseBody struct {
@@ -646,6 +653,43 @@ type DdServiceOutputFileDetailNotFoundResponseBody struct {
 // "nft" service "ddServiceOutputFileDetail" endpoint HTTP response body for
 // the "InternalServerError" error.
 type DdServiceOutputFileDetailInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DdServiceOutputFileNotFoundResponseBody is the type of the "nft" service
+// "ddServiceOutputFile" endpoint HTTP response body for the "NotFound" error.
+type DdServiceOutputFileNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DdServiceOutputFileInternalServerErrorResponseBody is the type of the "nft"
+// service "ddServiceOutputFile" endpoint HTTP response body for the
+// "InternalServerError" error.
+type DdServiceOutputFileInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -1093,6 +1137,15 @@ func NewDdServiceOutputFileDetailResponseBody(res *nft.DDServiceOutputFileResult
 	return body
 }
 
+// NewDdServiceOutputFileResponseBody builds the HTTP response body from the
+// result of the "ddServiceOutputFile" endpoint of the "nft" service.
+func NewDdServiceOutputFileResponseBody(res *nft.DDFPResultFile) *DdServiceOutputFileResponseBody {
+	body := &DdServiceOutputFileResponseBody{
+		File: res.File,
+	}
+	return body
+}
+
 // NewRegisterBadRequestResponseBody builds the HTTP response body from the
 // result of the "register" endpoint of the "nft" service.
 func NewRegisterBadRequestResponseBody(res *goa.ServiceError) *RegisterBadRequestResponseBody {
@@ -1376,6 +1429,35 @@ func NewDdServiceOutputFileDetailInternalServerErrorResponseBody(res *goa.Servic
 	return body
 }
 
+// NewDdServiceOutputFileNotFoundResponseBody builds the HTTP response body
+// from the result of the "ddServiceOutputFile" endpoint of the "nft" service.
+func NewDdServiceOutputFileNotFoundResponseBody(res *goa.ServiceError) *DdServiceOutputFileNotFoundResponseBody {
+	body := &DdServiceOutputFileNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewDdServiceOutputFileInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "ddServiceOutputFile" endpoint of the
+// "nft" service.
+func NewDdServiceOutputFileInternalServerErrorResponseBody(res *goa.ServiceError) *DdServiceOutputFileInternalServerErrorResponseBody {
+	body := &DdServiceOutputFileInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewRegisterPayload builds a nft service register endpoint payload.
 func NewRegisterPayload(body *RegisterRequestBody, key string) *nft.RegisterPayload {
 	v := &nft.RegisterPayload{
@@ -1500,6 +1582,17 @@ func NewDownloadPayload(txid string, pid string, key string) *nft.DownloadPayloa
 // NewDdServiceOutputFileDetailDownloadPayload builds a nft service
 // ddServiceOutputFileDetail endpoint payload.
 func NewDdServiceOutputFileDetailDownloadPayload(txid string, pid string, key string) *nft.DownloadPayload {
+	v := &nft.DownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
+
+	return v
+}
+
+// NewDdServiceOutputFileDownloadPayload builds a nft service
+// ddServiceOutputFile endpoint payload.
+func NewDdServiceOutputFileDownloadPayload(txid string, pid string, key string) *nft.DownloadPayload {
 	v := &nft.DownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid
