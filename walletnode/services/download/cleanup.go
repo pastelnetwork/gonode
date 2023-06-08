@@ -15,11 +15,13 @@ const (
 	defaultCheckInterval = 1 * time.Minute
 )
 
+// CleanupService cleans up the static dir periodically.
 type CleanupService struct {
 	fileTTL time.Duration
 	fileDir string
 }
 
+// Run runs the cleanup service.
 func (service *CleanupService) Run(ctx context.Context) error {
 	for {
 		select {
@@ -67,6 +69,7 @@ func (service *CleanupService) cleanup(ctx context.Context) (int, error) {
 	return count, nil
 }
 
+// NewCleanupService returns a new CleanupService instance.
 func NewCleanupService(fileDir string) *CleanupService {
 	return &CleanupService{
 		fileTTL: defaultFileTTL,

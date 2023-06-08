@@ -2,6 +2,7 @@ package services
 
 import "context"
 
+// Config represents a config for the common service.
 type Config struct {
 	StaticFilesDir string `mapstructure:"static_files_dir" json:"static_files_dir,omitempty"`
 }

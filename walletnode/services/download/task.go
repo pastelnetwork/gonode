@@ -273,9 +273,9 @@ func (task *NftDownloadingTask) MatchFiles() (int, []string, error) {
 
 		if matches >= 2 {
 			return i, badNodes, nil
-		} else {
-			badNodes = append(badNodes, task.files[i].pastelID)
 		}
+
+		badNodes = append(badNodes, task.files[i].pastelID)
 	}
 
 	return 0, badNodes, errors.Errorf("unable to find three matching files, no. of files - %d", len(task.files))
