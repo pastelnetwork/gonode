@@ -107,8 +107,8 @@ var _ = Service("cascade", func() {
 		Security(APIKeyAuth)
 
 		Payload(DownloadPayload)
-		//Result(DownloadResult)
-		Result(Any)
+		Result(FileDownloadResult)
+
 		HTTP(func() {
 			GET("/download")
 			//SkipResponseBodyEncodeDecode()

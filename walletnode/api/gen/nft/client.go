@@ -127,13 +127,13 @@ func (c *Client) NftGet(ctx context.Context, p *NftGetPayload) (res *NftDetail, 
 }
 
 // Download calls the "download" endpoint of the "nft" service.
-func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res *DownloadResult, err error) {
+func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res *FileDownloadResult, err error) {
 	var ires interface{}
 	ires, err = c.DownloadEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*DownloadResult), nil
+	return ires.(*FileDownloadResult), nil
 }
 
 // DdServiceOutputFileDetail calls the "ddServiceOutputFileDetail" endpoint of

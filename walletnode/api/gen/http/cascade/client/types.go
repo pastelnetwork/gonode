@@ -66,6 +66,13 @@ type RegisterTaskStateResponseBody struct {
 // "getTaskHistory" endpoint HTTP response body.
 type GetTaskHistoryResponseBody []*TaskHistoryResponse
 
+// DownloadResponseBody is the type of the "cascade" service "download"
+// endpoint HTTP response body.
+type DownloadResponseBody struct {
+	// File path
+	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
+}
+
 // UploadAssetBadRequestResponseBody is the type of the "cascade" service
 // "uploadAsset" endpoint HTTP response body for the "BadRequest" error.
 type UploadAssetBadRequestResponseBody struct {
@@ -462,6 +469,16 @@ func NewGetTaskHistoryInternalServerError(body *GetTaskHistoryInternalServerErro
 	return v
 }
 
+// NewDownloadFileDownloadResultOK builds a "cascade" service "download"
+// endpoint result from a HTTP "OK" response.
+func NewDownloadFileDownloadResultOK(body *DownloadResponseBody) *cascade.FileDownloadResult {
+	v := &cascade.FileDownloadResult{
+		FileID: *body.FileID,
+	}
+
+	return v
+}
+
 // NewDownloadNotFound builds a cascade service download endpoint NotFound
 // error.
 func NewDownloadNotFound(body *DownloadNotFoundResponseBody) *goa.ServiceError {
@@ -505,6 +522,15 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Validating Burn Txn" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Preburn Registration Fee" || *body.Status == "Downloaded" || *body.Status == "Request Accepted" || *body.Status == "Request Registered" || *body.Status == "Request Activated" || *body.Status == "Error Setting up mesh of supernodes" || *body.Status == "Error Sending Reg Metadata" || *body.Status == "Error Uploading Image" || *body.Status == "Error Converting Image to Bytes" || *body.Status == "Error Encoding Image" || *body.Status == "Error Creating Ticket" || *body.Status == "Error Signing Ticket" || *body.Status == "Error Uploading Ticket" || *body.Status == "Error Activating Ticket" || *body.Status == "Error Probing Image" || *body.Status == "Error Generating DD and Fingerprint IDs" || *body.Status == "Error comparing suitable storage fee with task request maximum fee" || *body.Status == "Error balance not sufficient" || *body.Status == "Error getting hash of the image" || *body.Status == "Error sending signed ticket to SNs" || *body.Status == "Error checking balance" || *body.Status == "Error burning reg fee to get reg ticket id" || *body.Status == "Error validating reg ticket txn id" || *body.Status == "Error validating activate ticket txn id" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Signatures Dont Match" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Error File Don't Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Find Responding SNs" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Error Invalid Burn TxID" || *body.Status == "Task Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Validating Burn Txn", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Preburn Registration Fee", "Downloaded", "Request Accepted", "Request Registered", "Request Activated", "Error Setting up mesh of supernodes", "Error Sending Reg Metadata", "Error Uploading Image", "Error Converting Image to Bytes", "Error Encoding Image", "Error Creating Ticket", "Error Signing Ticket", "Error Uploading Ticket", "Error Activating Ticket", "Error Probing Image", "Error Generating DD and Fingerprint IDs", "Error comparing suitable storage fee with task request maximum fee", "Error balance not sufficient", "Error getting hash of the image", "Error sending signed ticket to SNs", "Error checking balance", "Error burning reg fee to get reg ticket id", "Error validating reg ticket txn id", "Error validating activate ticket txn id", "Error Insufficient Fee", "Error Signatures Dont Match", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Error File Don't Match", "Error Not Enough SuperNode", "Error Find Responding SNs", "Error Not Enough Downloaded Filed", "Error Download Failed", "Error Invalid Burn TxID", "Task Failed", "Task Rejected", "Task Completed"}))
 		}
+	}
+	return
+}
+
+// ValidateDownloadResponseBody runs the validations defined on
+// DownloadResponseBody
+func ValidateDownloadResponseBody(body *DownloadResponseBody) (err error) {
+	if body.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "body"))
 	}
 	return
 }

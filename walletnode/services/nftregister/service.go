@@ -85,6 +85,7 @@ func (service *NftRegistrationService) AddTask(p *nft.RegisterPayload) (string, 
 		return "", errors.Errorf("get image data: %v", err)
 	}
 	request.Image = file
+	request.FileName = string(filename)
 
 	task := NewNFTRegistrationTask(service, request)
 	service.Worker.AddTask(task)

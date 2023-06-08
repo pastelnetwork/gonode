@@ -2,8 +2,9 @@ package cascaderegister
 
 import (
 	"context"
-	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"time"
+
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 
 	// Package image/jpeg is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows

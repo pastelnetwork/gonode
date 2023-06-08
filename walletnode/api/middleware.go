@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pastelnetwork/gonode/pastel"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
@@ -68,6 +70,33 @@ func logFrom(req *http.Request) string {
 		return f
 	}
 	return ip
+}
+
+// AuthMiddleware handles authentication for the API.
+func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// get 'pid' query parameter
+		pid := r.URL.Query().Get("pid")
+		if pid == "" {
+			http.Error(w, "Bad Request - Missing 'pid' parameter from query", http.StatusBadRequest)
+			return
+		}
+
+		// get the Authorization header
+		token := r.Header.Get("Authorization")
+		// if token is empty
+		if token == "" {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		if _, err := s.pastelClient.Sign(context.Background(), []byte("sign"), pid, token, pastel.SignAlgorithmED448); err != nil {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 // ErrorHandler returns a function that writes and logs the given error.

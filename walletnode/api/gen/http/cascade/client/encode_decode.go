@@ -528,14 +528,19 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body interface{}
+				body DownloadResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("cascade", "download", err)
 			}
-			return body, nil
+			err = ValidateDownloadResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "download", err)
+			}
+			res := NewDownloadFileDownloadResultOK(&body)
+			return res, nil
 		case http.StatusNotFound:
 			var (
 				body DownloadNotFoundResponseBody

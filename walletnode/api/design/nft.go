@@ -205,7 +205,7 @@ var _ = Service("nft", func() {
 		Security(APIKeyAuth)
 
 		Payload(DownloadPayload)
-		Result(DownloadResult)
+		Result(FileDownloadResult)
 
 		HTTP(func() {
 			GET("/download")

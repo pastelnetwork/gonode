@@ -19,6 +19,7 @@ const (
 type NftDownloadingService struct {
 	*task.Worker
 
+	cleanup       *CleanupService
 	config        *Config
 	nodeClient    node.ClientInterface
 	pastelHandler *mixins.PastelHandler
@@ -31,6 +32,11 @@ func (service *NftDownloadingService) Run(ctx context.Context) error {
 	group.Go(func() error {
 		return service.Worker.Run(ctx)
 	})
+
+	group.Go(func() error {
+		return service.cleanup.Run(ctx)
+	})
+
 	return group.Wait()
 }
 
@@ -68,5 +74,6 @@ func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClien
 		config:        config,
 		nodeClient:    nodeClient,
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
+		cleanup:       NewCleanupService(config.StaticDir),
 	}
 }

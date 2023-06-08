@@ -207,6 +207,15 @@ var DownloadPayload = Type("DownloadPayload", func() {
 	Required("txid", "pid", "key")
 })
 
+// FileDownloadResult is Asset download result.
+var FileDownloadResult = Type("FileDownloadResult", func() {
+	Description("Asset download response")
+	Attribute("file_id", String, func() {
+		Description("File path")
+	})
+	Required("file_id")
+})
+
 // DownloadResult is Asset download result.
 var DownloadResult = Type("DownloadResult", func() {
 	Description("Asset download response")

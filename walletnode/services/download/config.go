@@ -7,6 +7,7 @@ import (
 // Config contains settings of the registering nft.
 type Config struct {
 	common.Config `mapstructure:",squash" json:"-"`
+	StaticDir     string `mapstructure:"static_dir" json:"static_dir"`
 }
 
 // NewConfig returns a new Config instance.

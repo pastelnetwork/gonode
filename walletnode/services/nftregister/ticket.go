@@ -26,6 +26,7 @@ type NftRegistrationRequest struct {
 	MakePubliclyAccessible    bool                      `json:"make_publicly_accessible"`
 	CollectionTxID            string                    `json:"collection_txid"`
 	OpenAPIGroupID            string                    `json:"open_api_group_id"`
+	FileName                  string                    `json:"file_name"`
 }
 
 // FromNftRegisterPayload converts from one to another

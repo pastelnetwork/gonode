@@ -36,8 +36,8 @@ func (service *Swagger) Mount(_ context.Context, mux goahttp.Muxer) goahttp.Serv
 }
 
 // NewSwagger returns the swagger Swagger implementation.
-func NewSwagger() *Swagger {
+func NewSwagger(config *Config) *Swagger {
 	return &Swagger{
-		Common: NewCommon(),
+		Common: NewCommon(config),
 	}
 }

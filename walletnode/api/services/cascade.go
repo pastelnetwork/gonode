@@ -3,7 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
-	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -147,9 +148,9 @@ func (service *CascadeAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 }
 
 // Download registered NFT
-func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) (interface{}, error) {
-	log.Info("Start downloading")
-	defer log.WithContext(ctx).Info("Finished downloading")
+func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) (*cascade.FileDownloadResult, error) {
+	log.WithContext(ctx).WithField("txid", p.Txid).Info("Start downloading")
+	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
 	taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade)
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
@@ -182,16 +183,15 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 					return nil, cascade.MakeInternalServerError(errors.New("unable to download file"))
 				}
 
-				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).Info("File downloaded")
+				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).WithField("txid", p.Txid).Info("File downloaded")
 
-				return func(ctx context.Context, w http.ResponseWriter) error {
-					// Set the correct headers
-					w.Header().Set("Content-Type", "image/png")
-					w.Header().Set("Content-Disposition", "attachment; filename=file.png")
+				err := os.WriteFile(filepath.Join(service.config.StaticFilesDir, task.Filename), task.File, 0644)
+				if err != nil {
+					return nil, cascade.MakeInternalServerError(errors.New("unable to write file"))
+				}
 
-					// Write the data to the response
-					_, err := w.Write(task.File)
-					return err
+				return &cascade.FileDownloadResult{
+					FileID: task.Filename,
 				}, nil
 			}
 		}
@@ -232,9 +232,9 @@ func (service *CascadeAPIHandler) GetTaskHistory(ctx context.Context, p *cascade
 }
 
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.
-func NewCascadeAPIHandler(register *cascaderegister.CascadeRegistrationService, download *download.NftDownloadingService) *CascadeAPIHandler {
+func NewCascadeAPIHandler(config *Config, register *cascaderegister.CascadeRegistrationService, download *download.NftDownloadingService) *CascadeAPIHandler {
 	return &CascadeAPIHandler{
-		Common:   NewCommon(),
+		Common:   NewCommon(config),
 		register: register,
 		download: download,
 	}

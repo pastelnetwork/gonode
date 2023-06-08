@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -227,9 +229,9 @@ func (service *NftAPIHandler) RegisterTasks(_ context.Context) (res nft.TaskColl
 }
 
 // Download registered NFT
-func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPayload) (res *nft.DownloadResult, err error) {
-	log.Info("Start downloading")
-	defer log.Info("Finished downloading")
+func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPayload) (res *nft.FileDownloadResult, err error) {
+	log.WithContext(ctx).WithField("txid", p.Txid).Info("Start downloading")
+	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
 	taskID := service.download.AddTask(p, "")
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
@@ -262,12 +264,16 @@ func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPaylo
 					return nil, nft.MakeInternalServerError(errors.New("unable to download file"))
 				}
 
-				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("File downloaded")
-				res = &nft.DownloadResult{
-					File: task.File,
+				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).WithField("txid", p.Txid).Info("File downloaded")
+
+				err := os.WriteFile(filepath.Join(service.config.StaticFilesDir, task.Filename), task.File, 0644)
+				if err != nil {
+					return nil, nft.MakeInternalServerError(errors.New("unable to write file"))
 				}
 
-				return res, nil
+				return &nft.FileDownloadResult{
+					FileID: task.Filename,
+				}, nil
 			}
 		}
 	}
@@ -406,9 +412,9 @@ func (service *NftAPIHandler) DdServiceOutputFile(ctx context.Context, p *nft.Do
 }
 
 // NewNftAPIHandler returns the nft NftAPIHandler implementation.
-func NewNftAPIHandler(register *nftregister.NftRegistrationService, search *nftsearch.NftSearchingService, download *download.NftDownloadingService) *NftAPIHandler {
+func NewNftAPIHandler(config *Config, register *nftregister.NftRegistrationService, search *nftsearch.NftSearchingService, download *download.NftDownloadingService) *NftAPIHandler {
 	return &NftAPIHandler{
-		Common:   NewCommon(),
+		Common:   NewCommon(config),
 		register: register,
 		search:   search,
 		download: download,

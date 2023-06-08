@@ -13,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/docs"
 
 	goahttp "goa.design/goa/v3/http"
@@ -33,6 +34,7 @@ type service interface {
 type Server struct {
 	config          *Config
 	shutdownTimeout time.Duration
+	pastelClient    pastel.Client
 	services        []service
 }
 
@@ -63,8 +65,8 @@ func (server *Server) Run(ctx context.Context) error {
 	mux.Handle("/swagger/swagger.json", handler)
 
 	// Serve static files from the "static" directory at the "/static/" path
-	fs := http.FileServer(http.Dir("static"))
-	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+	fs := http.FileServer(http.Dir(server.config.StaticFilesDir))
+	mux.Handle("/files/", server.AuthMiddleware(http.StripPrefix("/files/", fs)))
 
 	if server.config.Swagger {
 		mux.Handle("/swagger/", http.FileServer(http.FS(docs.SwaggerContent)))
@@ -103,8 +105,9 @@ func (server *Server) Run(ctx context.Context) error {
 }
 
 // NewAPIServer returns a new Server instance.
-func NewAPIServer(config *Config, services ...service) *Server {
+func NewAPIServer(config *Config, pastelClient pastel.Client, services ...service) *Server {
 	return &Server{
+		pastelClient:    pastelClient,
 		config:          config,
 		shutdownTimeout: defaultShutdownTimeout,
 		services:        services,
