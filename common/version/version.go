@@ -8,7 +8,7 @@ package version
 // For more info, see: http://stackoverflow.com/a/11355611/483528
 
 var (
-	version = "latest-05/06/23-02:05PM"
+	version = "latest"
 )
 
 // Version composes a version of the package
