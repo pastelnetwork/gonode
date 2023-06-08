@@ -336,7 +336,7 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 
 	task.FingerprintsHandler.Clear()
 
-	reqCtx, cancel := context.WithTimeout(ctx, 15*time.Minute)
+	reqCtx, cancel := context.WithTimeout(ctx, 16*time.Minute)
 	defer cancel()
 	group, gctx := errgroup.WithContext(reqCtx)
 	for _, someNode := range task.MeshHandler.Nodes {
