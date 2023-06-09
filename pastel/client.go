@@ -795,6 +795,28 @@ func (client *client) GetRawMempool(ctx context.Context) ([]string, error) {
 	return transactionIDs, nil
 }
 
+// GetInactiveActionTickets retrieve the inactive action tickets
+func (client *client) GetInactiveActionTickets(ctx context.Context) (ActTickets, error) {
+	tickets := ActTickets{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "act", "inactive"); err != nil {
+		return nil, errors.Errorf("failed to get act tickets: %w", err)
+	}
+
+	return tickets, nil
+}
+
+// GetInactiveNFTTickets retrieve the inactive NFT tickets
+func (client *client) GetInactiveNFTTickets(ctx context.Context) (RegTickets, error) {
+	tickets := RegTickets{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "nft", "inactive"); err != nil {
+		return nil, errors.Errorf("failed to get act tickets: %w", err)
+	}
+
+	return tickets, nil
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }

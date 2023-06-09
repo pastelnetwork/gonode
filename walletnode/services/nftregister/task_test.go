@@ -261,7 +261,9 @@ func TestTaskRun(t *testing.T) {
 				ListenOnRegisterNFTTicket("nft-act-txid", nil).
 				ListenOnVerify(true, nil).ListenOnGetBalance(100, nil).
 				ListenOnRegisterActTicket("txid-act", nil).
-				ListenOnGetRawMempoolMethod([]string{}, nil)
+				ListenOnGetRawMempoolMethod([]string{}, nil).
+				ListenOnGetInactiveActionTickets(pastel.ActTickets{}, nil).
+				ListenOnGetInactiveNFTTickets(pastel.RegTickets{}, nil)
 
 			rqClientMock := rqMock.NewMockClient(t)
 			rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)
