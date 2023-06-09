@@ -2,8 +2,15 @@ package services
 
 import "context"
 
+// Config represents a config for the common service.
+type Config struct {
+	StaticFilesDir string `mapstructure:"static_files_dir" json:"static_files_dir,omitempty"`
+}
+
 // Common represents common service.
-type Common struct{}
+type Common struct {
+	config *Config
+}
 
 // Run starts serving for operations that must be performed throughout the entire operation of the service.
 func (service *Common) Run(_ context.Context) error {
@@ -11,6 +18,8 @@ func (service *Common) Run(_ context.Context) error {
 }
 
 // NewCommon returns a new Common instance.
-func NewCommon() *Common {
-	return &Common{}
+func NewCommon(config *Config) *Common {
+	return &Common{
+		config: config,
+	}
 }

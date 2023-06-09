@@ -180,8 +180,8 @@ func (service *SenseAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *sec
 
 // Download registered NFT
 func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadPayload) (res *sense.DownloadResult, err error) {
-	log.Info("Start downloading")
-	defer log.Info("Finished downloading")
+	log.WithContext(ctx).WithField("txid", p.Txid).Info("Start downloading")
+	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
 	taskID := service.download.AddTask(&nft.DownloadPayload{Txid: p.Txid, Pid: p.Pid, Key: p.Key}, pastel.ActionTypeSense)
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
@@ -214,7 +214,7 @@ func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadP
 					return nil, sense.MakeInternalServerError(errors.New("unable to download file"))
 				}
 
-				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("Sense Output file downloaded")
+				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).WithField("txid", p.Txid).Info("Sense output file downloaded")
 				res = &sense.DownloadResult{
 					File: task.File,
 				}
@@ -226,9 +226,9 @@ func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadP
 }
 
 // NewSenseAPIHandler returns the swagger OpenAPI implementation.
-func NewSenseAPIHandler(register *senseregister.SenseRegistrationService, download *download.NftDownloadingService) *SenseAPIHandler {
+func NewSenseAPIHandler(config *Config, register *senseregister.SenseRegistrationService, download *download.NftDownloadingService) *SenseAPIHandler {
 	return &SenseAPIHandler{
-		Common:   NewCommon(),
+		Common:   NewCommon(config),
 		register: register,
 		download: download,
 	}

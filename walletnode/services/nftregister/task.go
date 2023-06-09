@@ -673,6 +673,7 @@ func (task *NftRegistrationTask) createNftTicket(_ context.Context) (err error) 
 			Thumbnail1Hash:             task.ImageHandler.MediumThumbnailHash,
 			Thumbnail2Hash:             task.ImageHandler.SmallThumbnailHash,
 			DataHash:                   task.dataHash,
+			FileName:                   task.Request.FileName,
 			DDAndFingerprintsIc:        task.FingerprintsHandler.DDAndFingerprintsIc,
 			DDAndFingerprintsMax:       task.service.config.DDAndFingerprintsMax,
 			DDAndFingerprintsIDs:       task.FingerprintsHandler.DDAndFingerprintsIDs,
@@ -847,6 +848,7 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 		NodeMaker:     &RegisterNftNodeMaker{},
 		PastelHandler: service.pastelHandler,
 		NodeClient:    service.nodeClient,
+		LogRequestID:  task.ID(),
 		Configs: &common.MeshHandlerConfig{
 			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
 			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,

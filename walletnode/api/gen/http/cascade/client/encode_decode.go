@@ -539,7 +539,7 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 			if err != nil {
 				return nil, goahttp.ErrValidationError("cascade", "download", err)
 			}
-			res := NewDownloadResultOK(&body)
+			res := NewDownloadFileDownloadResultOK(&body)
 			return res, nil
 		case http.StatusNotFound:
 			var (

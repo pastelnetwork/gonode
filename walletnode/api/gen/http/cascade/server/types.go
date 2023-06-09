@@ -71,8 +71,8 @@ type GetTaskHistoryResponseBody []*TaskHistoryResponse
 // DownloadResponseBody is the type of the "cascade" service "download"
 // endpoint HTTP response body.
 type DownloadResponseBody struct {
-	// File downloaded
-	File []byte `form:"file" json:"file" xml:"file"`
+	// File path
+	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
 }
 
 // UploadAssetBadRequestResponseBody is the type of the "cascade" service
@@ -327,9 +327,9 @@ func NewGetTaskHistoryResponseBody(res []*cascade.TaskHistory) GetTaskHistoryRes
 
 // NewDownloadResponseBody builds the HTTP response body from the result of the
 // "download" endpoint of the "cascade" service.
-func NewDownloadResponseBody(res *cascade.DownloadResult) *DownloadResponseBody {
+func NewDownloadResponseBody(res *cascade.FileDownloadResult) *DownloadResponseBody {
 	body := &DownloadResponseBody{
-		File: res.File,
+		FileID: res.FileID,
 	}
 	return body
 }

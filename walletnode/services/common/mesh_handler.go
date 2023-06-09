@@ -39,6 +39,7 @@ type MeshHandler struct {
 	UseMaxNodes           bool
 	checkDDDatabaseHashes bool
 	HashCheckMaxRetries   int
+	logRequestID          string
 }
 
 // MeshHandlerOpts set of options to pass to NewMeshHandler
@@ -48,6 +49,7 @@ type MeshHandlerOpts struct {
 	NodeMaker     node.RealNodeMaker
 	PastelHandler *mixins.PastelHandler
 	Configs       *MeshHandlerConfig
+	LogRequestID  string
 }
 
 // MeshHandlerConfig config subset used by MeshHandler
@@ -79,6 +81,7 @@ func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 		UseMaxNodes:            opts.Configs.UseMaxNodes,
 		checkDDDatabaseHashes:  opts.Configs.CheckDDDatabaseHashes,
 		HashCheckMaxRetries:    opts.Configs.HashCheckMaxRetries,
+		logRequestID:           opts.LogRequestID,
 	}
 }
 
@@ -101,7 +104,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 
 	meshedNodes, err := m.setMesh(ctx, connectedNodes, m.minNumberSuperNodes)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("failed setting up Mesh of %d SNs from %d SNs", m.minNumberSuperNodes, len(connectedNodes))
+		log.WithContext(ctx).WithError(err).WithField("req-id", m.logRequestID).Errorf("failed setting up Mesh of %d SNs from %d SNs", m.minNumberSuperNodes, len(connectedNodes))
 		return 0, "", errors.Errorf("failed setting up Mesh of %d SNs from %d SNs", m.minNumberSuperNodes, len(connectedNodes))
 	}
 	m.Nodes = meshedNodes
@@ -133,13 +136,13 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 	// Retrieve supernodes with the highest ranks.
 	candidatesNodes, err := m.getTopNodes(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Could not get top masternodes")
+		log.WithContext(ctx).WithError(err).WithField("req-id", m.logRequestID).Errorf("Could not get top masternodes")
 		return nil, errors.Errorf("call masternode top: %w", err)
 	}
 
 	if len(candidatesNodes) < n {
 		m.task.UpdateStatus(StatusErrorNotEnoughSuperNode)
-		log.WithContext(ctx).WithError(err).Errorf("unable to find enough Supernodes: %d", n)
+		log.WithContext(ctx).WithError(err).WithField("req-id", m.logRequestID).Errorf("unable to find enough Supernodes: %d", n)
 		return nil, fmt.Errorf("unable to find enough Supernodes: %d", n)
 	}
 	log.WithContext(ctx).Infof("Found %d Supernodes", len(candidatesNodes))
@@ -151,7 +154,7 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 		log.WithContext(ctx).WithError(err).Errorf("unable to validate MN")
 		return nil, errors.Errorf("validate MNs info: %v", err)
 	}
-	log.WithContext(ctx).Infof("Found %d valid Supernodes", len(foundNodes))
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Found %d valid Supernodes", len(foundNodes))
 	return foundNodes, nil
 }
 
@@ -162,7 +165,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList
 	var err error
 
 	var meshedNodes SuperNodeList
-	log.WithContext(ctx).Info("connected nodes: ", candidatesNodes)
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).Info("connected nodes: ", candidatesNodes)
 	for primaryRank := range candidatesNodes {
 		meshedNodes, err = m.connectToPrimarySecondary(ctx, candidatesNodes, primaryRank)
 		if err != nil {
@@ -182,7 +185,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList
 	}
 	if len(meshedNodes) < n {
 		// close connected connections
-		log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of %d nodes. Disconnecting any still connected", n)
+		log.WithContext(ctx).WithError(err).WithField("req-id", m.logRequestID).Warnf("Could not create a mesh of %d nodes. Disconnecting any still connected", n)
 		m.disconnectNodes(ctx, meshedNodes)
 		return nil, errors.Errorf("Could not create a mesh of %d nodes: %w", n, errs)
 	}
@@ -269,7 +272,7 @@ func (m *MeshHandler) connectToAndValidateSuperNodesWithHashCheck(ctx context.Co
 			return nodes, nil
 		}
 
-		log.WithContext(ctx).Infof("Could not match database hash, retrying in 30s... (attempt %d/%d)", retryCount+1, maxRetries)
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Could not match database hash, retrying in 30s... (attempt %d/%d)", retryCount+1, maxRetries)
 
 		select {
 		case <-ctx.Done():
@@ -285,7 +288,7 @@ func (m *MeshHandler) connectToAndValidateSuperNodesWithoutHashCheck(ctx context
 	nodes := m.connectToNodes(ctx, candidatesNodes, n, secInfo, skipNodes)
 
 	if len(nodes) < n {
-		log.WithContext(ctx).Errorf("Failed to validate enough Supernodes - only found %d good", n)
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).Errorf("Failed to validate enough Supernodes - only found %d good", n)
 		return nil, errors.Errorf("validate %d Supernodes from pastel network", n)
 	}
 
@@ -308,7 +311,7 @@ func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNo
 		}
 
 		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 			continue
 		}
 
@@ -324,18 +327,18 @@ func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNo
 // matchDatabaseHash matches database hashes
 func (m *MeshHandler) matchDatabaseHash(ctx context.Context, nodesList SuperNodeList) error {
 
-	log.WithContext(ctx).Infof("Matching database hash for nodes %d", len(nodesList))
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Matching database hash for nodes %d", len(nodesList))
 	hashes := make(map[string]string)
 	matcher := ""
 	// Connect to top nodes to find 3SN and validate their info
 	for i, someNode := range nodesList {
 		hash, err := someNode.GetDupeDetectionDBHash(ctx)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("failed to get dd database hash - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get dd database hash - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 			return fmt.Errorf("failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
 		}
 
-		log.WithContext(ctx).WithField("node", someNode.Address()).WithField("hash", hash).Info("DD Database hash for node received")
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("node", someNode.Address()).WithField("hash", hash).Info("DD Database hash for node received")
 		hashes[someNode.Address()] = hash
 
 		if i == 0 {
@@ -345,7 +348,7 @@ func (m *MeshHandler) matchDatabaseHash(ctx context.Context, nodesList SuperNode
 
 	for key, val := range hashes {
 		if val != matcher {
-			log.WithContext(ctx).Errorf("database hash mismatch for node %s", key)
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).Errorf("database hash mismatch for node %s", key)
 			return fmt.Errorf("database hash mismatch for node %s", key)
 		}
 	}

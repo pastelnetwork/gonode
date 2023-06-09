@@ -29,6 +29,9 @@ func NewPastelHandler(pastelClient pastel.Client) *PastelHandler {
 type TicketInfo struct {
 	IsTicketPublic        bool
 	EstimatedDownloadTime time.Duration
+	Filename              string
+	FileType              string
+	DataHash              []byte
 }
 
 // VerifySignature verifies the signature of the data
@@ -239,7 +242,11 @@ func (pt *PastelHandler) GetTicketInfo(ctx context.Context, txid, ttype string) 
 			return info, err
 		}
 
+		info.DataHash = cTicket.DataHash
 		info.IsTicketPublic = cTicket.MakePubliclyAccessible
+		info.Filename = cTicket.FileName
+		info.FileType = cTicket.FileType
+
 		est := getEstimatedDownloadSizeOnBytes(cTicket.OriginalFileSizeInBytes)
 		if est > defaultDownloadTimeout {
 			info.EstimatedDownloadTime = est
@@ -249,6 +256,10 @@ func (pt *PastelHandler) GetTicketInfo(ctx context.Context, txid, ttype string) 
 		regTicket, err := pt.RegTicket(ctx, txid)
 		if err == nil {
 			info.IsTicketPublic = regTicket.RegTicketData.NFTTicketData.AppTicketData.MakePubliclyAccessible
+			info.Filename = regTicket.RegTicketData.NFTTicketData.AppTicketData.FileName
+			info.FileType = regTicket.RegTicketData.NFTTicketData.AppTicketData.FileType
+			info.DataHash = regTicket.RegTicketData.NFTTicketData.AppTicketData.DataHash
+
 			est := getEstimatedDownloadSizeOnBytes(regTicket.RegTicketData.NFTTicketData.AppTicketData.OriginalFileSizeInBytes)
 			if est > defaultDownloadTimeout {
 				info.EstimatedDownloadTime = est

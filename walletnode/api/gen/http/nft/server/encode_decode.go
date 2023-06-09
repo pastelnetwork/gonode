@@ -943,7 +943,7 @@ func EncodeNftGetError(encoder func(context.Context, http.ResponseWriter) goahtt
 // download endpoint.
 func EncodeDownloadResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res, _ := v.(*nft.DownloadResult)
+		res, _ := v.(*nft.FileDownloadResult)
 		enc := encoder(ctx, w)
 		body := NewDownloadResponseBody(res)
 		w.WriteHeader(http.StatusOK)

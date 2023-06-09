@@ -150,6 +150,7 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
+
 		var cancel context.CancelFunc
 		_, cancel = context.WithCancel(ctx)
 		defer cancel()

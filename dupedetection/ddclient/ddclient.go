@@ -84,8 +84,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	// remove file after use
 	defer os.Remove(inputPath)
 
-	// Create a context with timeout
-	reqCtx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	reqCtx, cancel := context.WithTimeout(ctx, 15*time.Minute)
 	defer cancel()
 
 	res, err := client.ImageRarenessScore(reqCtx, &req)
@@ -178,39 +177,43 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 			return nil, errors.Errorf("dd server request cancelled because context done: %w", ctx.Err())
 		case <-time.After(15 * time.Second):
 			// Create a context with timeout
-			reqCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			reqCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 			defer cancel()
 			stats, err := client.GetStatus(reqCtx, &pb.GetStatusRequest{})
 			if err != nil {
 				return nil, errors.Errorf("get status: %w", err)
 			}
 
-			if stats == nil {
-				return nil, errors.Errorf("stats is nil")
-			}
+			if stats != nil {
+				log.WithContext(ctx).Info("dd-client stats is not nil, proceeding with health endpoint")
+				taskCount := stats.GetTaskCount()
+				if taskCount == nil {
+					log.WithContext(ctx).Error("task count is nil")
+					return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2,
+						supernode3, openAPIRequest, groupID, collectionName)
+				}
 
-			taskCount := stats.GetTaskCount()
-			if taskCount == nil {
-				log.WithContext(ctx).Error("task count is nil")
-				return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2,
-					supernode3, openAPIRequest, groupID, collectionName)
-			}
+				log.WithContext(ctx).WithField("executing", taskCount.GetExecuting()).WithField("waiting", taskCount.GetWaitingInQueue()).WithField("max-concurrent", taskCount.GetMaxConcurrent()).
+					WithField("succeeded", taskCount.GetSucceeded()).WithField("failed", taskCount.GetFailed()).WithField("cancelled", taskCount.GetCancelled()).
+					Info("dd-server task stats")
 
-			log.WithContext(ctx).WithField("executing", taskCount.GetExecuting()).WithField("waiting", taskCount.GetWaitingInQueue()).WithField("max-concurrent", taskCount.GetMaxConcurrent()).
-				WithField("succeeded", taskCount.GetSucceeded()).WithField("failed", taskCount.GetFailed()).WithField("cancelled", taskCount.GetCancelled()).
-				Info("dd-server task stats")
+				taskMetrics := stats.GetTaskMetrics()
+				if taskMetrics != nil {
+					log.WithContext(ctx).WithField("avg-execution-time", taskMetrics.GetAverageTaskExecutionTimeSecs()).WithField("avg-queue-time", taskMetrics.GetAverageTaskWaitTimeSecs()).
+						WithField("avg-vr-memory", taskMetrics.GetAverageTaskVirtualMemoryUsageBytes()).WithField("avg-rss-memory", taskMetrics.GetAverageTaskRssMemoryUsageBytes()).
+						WithField("max-rss-memory", taskMetrics.GetPeakTaskRssMemoryUsageBytes()).WithField("max-vr-memory", taskMetrics.GetPeakTaskVmsMemoryUsageBytes()).
+						WithField("max-task-wait-time", taskMetrics.GetMaxTaskWaitTimeSecs()).Info("dd-server task metrics")
+				}
 
-			taskMetrics := stats.GetTaskMetrics()
-			if taskMetrics != nil {
-				log.WithContext(ctx).WithField("avg-execution-time", taskMetrics.GetAverageTaskExecutionTimeSecs()).WithField("avg-queue-time", taskMetrics.GetAverageTaskWaitTimeSecs()).
-					WithField("avg-vr-memory", taskMetrics.GetAverageTaskVirtualMemoryUsageBytes()).WithField("avg-rss-memory", taskMetrics.GetAverageTaskRssMemoryUsageBytes()).
-					WithField("max-rss-memory", taskMetrics.GetPeakTaskRssMemoryUsageBytes()).WithField("max-vr-memory", taskMetrics.GetPeakTaskVmsMemoryUsageBytes()).
-					WithField("max-task-wait-time", taskMetrics.GetMaxTaskWaitTimeSecs()).Info("dd-server task metrics")
-			}
-
-			if taskCount.GetWaitingInQueue() >= 2 {
-				continue
+				if taskCount.GetWaitingInQueue() >= 2 {
+					continue
+				} else {
+					return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2,
+						supernode3, openAPIRequest, groupID, collectionName)
+				}
 			} else {
+				log.WithContext(ctx).Info("dd-client stats is nil, proceeding without health endpoint")
+
 				return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2,
 					supernode3, openAPIRequest, groupID, collectionName)
 			}

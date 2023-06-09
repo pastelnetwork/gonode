@@ -336,7 +336,9 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 
 	task.FingerprintsHandler.Clear()
 
-	group, gctx := errgroup.WithContext(ctx)
+	reqCtx, cancel := context.WithTimeout(ctx, 16*time.Minute)
+	defer cancel()
+	group, gctx := errgroup.WithContext(reqCtx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {
@@ -580,6 +582,7 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 		NodeMaker:     &RegisterSenseNodeMaker{},
 		PastelHandler: service.pastelHandler,
 		NodeClient:    service.nodeClient,
+		LogRequestID:  task.ID(),
 		Configs: &common.MeshHandlerConfig{
 			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
 			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,

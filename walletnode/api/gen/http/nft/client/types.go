@@ -197,8 +197,8 @@ type NftGetResponseBody struct {
 // DownloadResponseBody is the type of the "nft" service "download" endpoint
 // HTTP response body.
 type DownloadResponseBody struct {
-	// File downloaded
-	File []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+	// File path
+	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
 }
 
 // DdServiceOutputFileDetailResponseBody is the type of the "nft" service
@@ -1367,11 +1367,11 @@ func NewNftGetInternalServerError(body *NftGetInternalServerErrorResponseBody) *
 	return v
 }
 
-// NewDownloadResultOK builds a "nft" service "download" endpoint result from a
-// HTTP "OK" response.
-func NewDownloadResultOK(body *DownloadResponseBody) *nft.DownloadResult {
-	v := &nft.DownloadResult{
-		File: body.File,
+// NewDownloadFileDownloadResultOK builds a "nft" service "download" endpoint
+// result from a HTTP "OK" response.
+func NewDownloadFileDownloadResultOK(body *DownloadResponseBody) *nft.FileDownloadResult {
+	v := &nft.FileDownloadResult{
+		FileID: *body.FileID,
 	}
 
 	return v
@@ -1759,8 +1759,8 @@ func ValidateNftGetResponseBody(body *NftGetResponseBody) (err error) {
 // ValidateDownloadResponseBody runs the validations defined on
 // DownloadResponseBody
 func ValidateDownloadResponseBody(body *DownloadResponseBody) (err error) {
-	if body.File == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+	if body.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "body"))
 	}
 	return
 }

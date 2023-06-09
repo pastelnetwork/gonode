@@ -496,6 +496,7 @@ func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common
 		NodeMaker:     &RegisterCascadeNodeMaker{},
 		PastelHandler: service.pastelHandler,
 		NodeClient:    service.nodeClient,
+		LogRequestID:  task.ID(),
 		Configs: &common.MeshHandlerConfig{
 			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
 			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,

@@ -197,8 +197,8 @@ type NftGetResponseBody struct {
 // DownloadResponseBody is the type of the "nft" service "download" endpoint
 // HTTP response body.
 type DownloadResponseBody struct {
-	// File downloaded
-	File []byte `form:"file" json:"file" xml:"file"`
+	// File path
+	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
 }
 
 // DdServiceOutputFileDetailResponseBody is the type of the "nft" service
@@ -1069,9 +1069,9 @@ func NewNftGetResponseBody(res *nft.NftDetail) *NftGetResponseBody {
 
 // NewDownloadResponseBody builds the HTTP response body from the result of the
 // "download" endpoint of the "nft" service.
-func NewDownloadResponseBody(res *nft.DownloadResult) *DownloadResponseBody {
+func NewDownloadResponseBody(res *nft.FileDownloadResult) *DownloadResponseBody {
 	body := &DownloadResponseBody{
-		File: res.File,
+		FileID: res.FileID,
 	}
 	return body
 }

@@ -34,7 +34,7 @@ type Service interface {
 	// Gets the NFT detail
 	NftGet(context.Context, *NftGetPayload) (res *NftDetail, err error)
 	// Download registered NFT.
-	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
+	Download(context.Context, *DownloadPayload) (res *FileDownloadResult, err error)
 	// Duplication detection output file details
 	DdServiceOutputFileDetail(context.Context, *DownloadPayload) (res *DDServiceOutputFileResult, err error)
 	// Duplication detection output file
@@ -219,10 +219,10 @@ type DownloadPayload struct {
 	Key string
 }
 
-// DownloadResult is the result type of the nft service download method.
-type DownloadResult struct {
-	// File downloaded
-	File []byte
+// FileDownloadResult is the result type of the nft service download method.
+type FileDownloadResult struct {
+	// File path
+	FileID string
 }
 
 type FuzzyMatch struct {

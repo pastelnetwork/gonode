@@ -69,8 +69,8 @@ type GetTaskHistoryResponseBody []*TaskHistoryResponse
 // DownloadResponseBody is the type of the "cascade" service "download"
 // endpoint HTTP response body.
 type DownloadResponseBody struct {
-	// File downloaded
-	File []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+	// File path
+	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
 }
 
 // UploadAssetBadRequestResponseBody is the type of the "cascade" service
@@ -469,11 +469,11 @@ func NewGetTaskHistoryInternalServerError(body *GetTaskHistoryInternalServerErro
 	return v
 }
 
-// NewDownloadResultOK builds a "cascade" service "download" endpoint result
-// from a HTTP "OK" response.
-func NewDownloadResultOK(body *DownloadResponseBody) *cascade.DownloadResult {
-	v := &cascade.DownloadResult{
-		File: body.File,
+// NewDownloadFileDownloadResultOK builds a "cascade" service "download"
+// endpoint result from a HTTP "OK" response.
+func NewDownloadFileDownloadResultOK(body *DownloadResponseBody) *cascade.FileDownloadResult {
+	v := &cascade.FileDownloadResult{
+		FileID: *body.FileID,
 	}
 
 	return v
@@ -529,8 +529,8 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 // ValidateDownloadResponseBody runs the validations defined on
 // DownloadResponseBody
 func ValidateDownloadResponseBody(body *DownloadResponseBody) (err error) {
-	if body.File == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+	if body.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "body"))
 	}
 	return
 }

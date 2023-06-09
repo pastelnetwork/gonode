@@ -32,9 +32,10 @@ import (
 )
 
 const (
-	appName    = "walletnode"
-	appUsage   = "WalletNode" // TODO: Write a clear description.
-	rqFilesDir = "rqfiles"
+	appName        = "walletnode"
+	appUsage       = "WalletNode" // TODO: Write a clear description.
+	rqFilesDir     = "rqfiles"
+	staticFilesDir = "files"
 )
 
 var (
@@ -44,6 +45,7 @@ var (
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
+	defaultStaticFilesDir   = filepath.Join(defaultPath, staticFilesDir)
 )
 
 // NewApp configures our app by parsing command line flags, config files, and setting up logging and temporary directories
@@ -151,6 +153,14 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
+	if _, err := os.Stat(defaultStaticFilesDir); os.IsNotExist(err) {
+		// directory does not exist, create it
+		errDir := os.MkdirAll(defaultStaticFilesDir, 0755)
+		if errDir != nil {
+			log.Fatal(err)
+		}
+	}
+
 	// pastelClient reads in the json-formatted hostname, port, username, and password and
 	//  connects over gRPC to cNode for access to Blockchain, Masternodes, Tickets, and PastelID databases
 	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
@@ -208,6 +218,15 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		config.CollectionRegister.CollectionActTxMinConfirmations = config.ActTxMinConfirmations
 	}
 
+	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.
+	//  Since the API Server has access to the services, this is what finally exposes useful methods like
+	//  "NftGet" and "Download".
+	apiSrcvConf := &services.Config{
+		StaticFilesDir: defaultStaticFilesDir,
+	}
+	config.API.StaticFilesDir = defaultStaticFilesDir
+	config.NftDownload.StaticDir = defaultStaticFilesDir
+
 	// These services connect the different clients and configs together to provide tasking and handling for
 	//  the required functionality.  These services aren't started with these declarations, they will be run
 	//	later through the API Server.
@@ -219,16 +238,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload)
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient)
 
-	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.
-	//  Since the API Server has access to the services, this is what finally exposes useful methods like
-	//  "NftGet" and "Download".
-	server := api.NewAPIServer(config.API,
-		services.NewNftAPIHandler(nftRegister, nftSearch, nftDownload),
+	server := api.NewAPIServer(config.API, pastelClient,
+		services.NewNftAPIHandler(apiSrcvConf, nftRegister, nftSearch, nftDownload),
 		// services.NewUserdataAPIHandler(userdataProcess),
-		services.NewSenseAPIHandler(senseRegister, nftDownload),
-		services.NewCascadeAPIHandler(cascadeRegister, nftDownload),
-		services.NewCollectionAPIIHandler(collectionRegister),
-		services.NewSwagger(),
+		services.NewSenseAPIHandler(apiSrcvConf, senseRegister, nftDownload),
+		services.NewCascadeAPIHandler(apiSrcvConf, cascadeRegister, nftDownload),
+		services.NewCollectionAPIIHandler(apiSrcvConf, collectionRegister),
+		services.NewSwagger(apiSrcvConf),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)

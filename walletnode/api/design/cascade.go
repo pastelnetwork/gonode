@@ -107,12 +107,15 @@ var _ = Service("cascade", func() {
 		Security(APIKeyAuth)
 
 		Payload(DownloadPayload)
-		Result(DownloadResult)
+		Result(FileDownloadResult)
 
 		HTTP(func() {
 			GET("/download")
+			//SkipResponseBodyEncodeDecode()
+
 			Param("txid")
 			Param("pid")
+
 			// Header("key:Authorization") // Provide the key in Authorization header (default)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)

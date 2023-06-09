@@ -2,8 +2,9 @@ package services
 
 import (
 	"context"
-	"goa.design/goa/v3/security"
 	"time"
+
+	"goa.design/goa/v3/security"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -141,9 +142,9 @@ func (service *CollectionAPIHandler) APIKeyAuth(ctx context.Context, _ string, _
 }
 
 // NewCollectionAPIIHandler returns the swagger OpenAPI implementation.
-func NewCollectionAPIIHandler(register *collectionregister.CollectionRegistrationService) *CollectionAPIHandler {
+func NewCollectionAPIIHandler(config *Config, register *collectionregister.CollectionRegistrationService) *CollectionAPIHandler {
 	return &CollectionAPIHandler{
-		Common:   NewCommon(),
+		Common:   NewCommon(config),
 		register: register,
 	}
 }
