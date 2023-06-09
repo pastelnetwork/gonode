@@ -30,8 +30,8 @@ func (cl *client) Connect(ctx context.Context, address string) (*clientConn, err
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(15000000)),
-		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(15000000)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(35000000)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(35000000)),
 	)
 	if err != nil {
 		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)

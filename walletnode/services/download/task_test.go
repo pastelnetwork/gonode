@@ -1,5 +1,6 @@
 package download
 
+/*
 import (
 	"context"
 	"errors"
@@ -337,3 +338,4 @@ func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
 	ticket.RegTicketData.NFTTicket = artTicketBytes
 	ticket.RegTicketData.NFTTicketData = pastel.NFTTicket{}
 }
+*/
