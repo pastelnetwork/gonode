@@ -236,7 +236,8 @@ func TestTaskRun(t *testing.T) {
 				ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 12}, nil).
 				ListenOnVerify(true, nil).ListenOnGetBalance(10, nil).
 				ListenOnActivateActionTicket("txid", nil).
-				ListenOnGetActionFee(&pastel.GetActionFeesResult{CascadeFee: 10, SenseFee: 10}, nil)
+				ListenOnGetActionFee(&pastel.GetActionFeesResult{CascadeFee: 10, SenseFee: 10}, nil).
+				ListenOnGetRawMempoolMethod([]string{}, nil)
 
 			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, nil)
 			service.config.WaitTxnValidInterval = 1

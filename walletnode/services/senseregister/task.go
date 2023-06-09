@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -115,6 +116,30 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	log.WithContext(ctx).Info("action metadata has been sent")
 
+	// calculate hash of data
+	imgBytes, err := task.Request.Image.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
+		return errors.Errorf("convert image to byte stream %w", err)
+	}
+	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting bytes to hash")
+
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorEncodingImage)
+		return errors.Errorf("hash encoded image: %w", err)
+	}
+
+	task.UpdateStatus(common.StatusValidateDuplicateTickets)
+	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
+	if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
+		log.WithContext(ctx).WithError(err)
+		return errors.Errorf("Error checking duplicate ticket")
+	}
+	log.WithContext(ctx).Info("no duplicate tickets have been found")
+
 	task.UpdateStatus(common.StatusValidateBurnTxn)
 
 	// probe image for average rareness, nsfw and seen score - populate FingerprintsHandler with results
@@ -136,22 +161,6 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 
 	log.WithContext(ctx).Info("fingerprints have been generated")
-
-	// calculate hash of data
-	imgBytes, err := task.Request.Image.Bytes()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
-		return errors.Errorf("convert image to byte stream %w", err)
-	}
-	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error converting bytes to hash")
-
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorEncodingImage)
-		return errors.Errorf("hash encoded image: %w", err)
-	}
 
 	fee, err := task.service.pastelHandler.GetEstimatedSenseFee(ctx, utils.GetFileSizeInMB(imgBytes))
 	if err != nil {

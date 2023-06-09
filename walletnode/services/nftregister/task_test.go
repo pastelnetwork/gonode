@@ -260,7 +260,8 @@ func TestTaskRun(t *testing.T) {
 				ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 12}, nil).
 				ListenOnRegisterNFTTicket("nft-act-txid", nil).
 				ListenOnVerify(true, nil).ListenOnGetBalance(100, nil).
-				ListenOnRegisterActTicket("txid-act", nil)
+				ListenOnRegisterActTicket("txid-act", nil).
+				ListenOnGetRawMempoolMethod([]string{}, nil)
 
 			rqClientMock := rqMock.NewMockClient(t)
 			rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)
