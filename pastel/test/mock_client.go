@@ -108,6 +108,8 @@ const (
 	CollectionActTicketMethod = "CollectionActTicket"
 	//ActivateCollectionTicketMethod represents ActivateCollectionTicketMethod
 	ActivateCollectionTicketMethod = "ActivateCollectionTicket"
+	//GetRawMempoolMethod represents GetRawMempoolMethod
+	GetRawMempoolMethod = "GetRawMempool"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -420,5 +422,11 @@ func (client *Client) AssertVerifyCall(expectedCalls int, arguments ...interface
 // ListenOnActionActivationTicketsFromBlockHeight listening ActionActivationTicketsFromBlockHeight call and returns values from args
 func (client *Client) ListenOnActionActivationTicketsFromBlockHeight(tix pastel.ActTickets, err error) *Client {
 	client.On("ActionActivationTicketsFromBlockHeight", mock.Anything, mock.Anything).Return(tix, err)
+	return client
+}
+
+// ListenOnGetRawMempoolMethod listening GetRawMempoolMethod call and returns values from args
+func (client *Client) ListenOnGetRawMempoolMethod(txIDs []string, err error) *Client {
+	client.On(GetRawMempoolMethod, mock.Anything).Return(txIDs, err)
 	return client
 }

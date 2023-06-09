@@ -11,6 +11,7 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
+	"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -198,6 +199,14 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("get image hash: %w", err)
 	}
 	log.WithContext(ctx).Info("data hash has been generated")
+
+	task.UpdateStatus(common.StatusValidateDuplicateTickets)
+	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
+	if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
+		log.WithContext(ctx).WithError(err)
+		return errors.Errorf("Error checking duplicate ticket")
+	}
+	log.WithContext(ctx).Info("no duplicate tickets have been found")
 
 	// upload image (from task.NftImageHandler) and thumbnail coordinates to supernode(s)
 	// SN will return back: hashes, previews, thumbnails,

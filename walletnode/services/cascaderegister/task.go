@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -95,6 +96,33 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 	log.WithContext(ctx).Info("image has been uploaded")
 
+	// calculate hash of data
+	nftBytes, err := task.Request.Image.Bytes()
+	task.originalFileSizeInBytes = len(nftBytes)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
+		return errors.Errorf("convert image to byte stream %w", err)
+	}
+	//Detect the file type
+	task.fileType = mimetype.Detect(nftBytes).String()
+
+	if task.dataHash, err = utils.Sha3256hash(nftBytes); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("error creating hash")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorEncodingImage)
+		return errors.Errorf("hash encoded image: %w", err)
+	}
+
+	task.UpdateStatus(common.StatusValidateDuplicateTickets)
+	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
+	if err := dtc.CheckDuplicateCascadeTickets(ctx, task.dataHash); err != nil {
+		log.WithContext(ctx).WithError(err)
+		return errors.Errorf("Error checking duplicate ticket")
+	}
+	log.WithContext(ctx).Info("no duplicate tickets have been found")
+
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Generating RaptorQ symbols' identifiers ",
 		StatusString:  "",
@@ -111,26 +139,6 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
 	log.WithContext(ctx).Info("rq-ids have been generated")
-
-	// calculate hash of data
-	nftBytes, err := task.Request.Image.Bytes()
-	task.originalFileSizeInBytes = len(nftBytes)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
-		return errors.Errorf("convert image to byte stream %w", err)
-	}
-
-	//Detect the file type
-	task.fileType = mimetype.Detect(nftBytes).String()
-
-	if task.dataHash, err = utils.Sha3256hash(nftBytes); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("error creating hash")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorEncodingImage)
-		return errors.Errorf("hash encoded image: %w", err)
-	}
 
 	fileDataInMb := utils.GetFileSizeInMB(nftBytes)
 	fee, err := task.service.pastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)

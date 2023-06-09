@@ -785,6 +785,16 @@ func (client *client) MasterNodesExtra(ctx context.Context) (MasterNodes, error)
 	return masterNodes, nil
 }
 
+// GetRawMempool returns the list of in-progress transaction ids
+func (client *client) GetRawMempool(ctx context.Context) ([]string, error) {
+	var transactionIDs []string
+	if err := client.callFor(ctx, &transactionIDs, "getrawmempool", "false"); err != nil {
+		return nil, errors.Errorf("failed to call getrawmempool: %w", err)
+	}
+
+	return transactionIDs, nil
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }

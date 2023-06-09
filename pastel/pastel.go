@@ -213,6 +213,10 @@ type Client interface {
 	// Command `tickets find act <reg-ticket-txid>`
 	FindActByRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error)
 
+	//GetRawMempool returns the list of in-progress transaction ids
+	//Command `getrawmempool false`
+	GetRawMempool(ctx context.Context) ([]string, error)
+
 	// BurnAddress ...
 	BurnAddress() string
 }
