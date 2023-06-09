@@ -45,6 +45,11 @@ func (task *DupTicketsDetector) CheckDuplicateCascadeTickets(ctx context.Context
 		return err
 	}
 
+	if err := task.checkInactiveCascadeTickets(ctx, dataHash); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error checking inactive duplicate tickets for cascade")
+		return err
+	}
+
 	return nil
 }
 
@@ -52,6 +57,11 @@ func (task *DupTicketsDetector) CheckDuplicateCascadeTickets(ctx context.Context
 func (task *DupTicketsDetector) CheckDuplicateSenseOrNFTTickets(ctx context.Context, dataHash []byte) error {
 	if err := task.checkMempoolForInProgressSenseOrNFTTickets(ctx, dataHash); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error checking mempool for duplicate sense or NFT tickets")
+		return err
+	}
+
+	if err := task.checkInactiveNFTOrSenseTickets(ctx, dataHash); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error checking inactive duplicate tickets for sense and NFT")
 		return err
 	}
 
@@ -143,6 +153,149 @@ func (task *DupTicketsDetector) checkMempoolForInProgressSenseOrNFTTickets(ctx c
 					Error("duplicate NFT ticket registration is already in progress")
 
 				return ErrDuplicateRegistration
+			}
+		}
+	}
+
+	return nil
+}
+
+// checkInactiveCascadeTickets checks the duplicate inactive cascade tickets
+func (task *DupTicketsDetector) checkInactiveCascadeTickets(ctx context.Context, dataHash []byte) error {
+	inactiveActionTickets, err := task.pastelClient.GetInactiveActionTickets(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving inactive action tickets")
+		return errors.Errorf("error retrieving inactive action tickets")
+	}
+
+	if len(inactiveActionTickets) == 0 {
+		log.WithContext(ctx).Info("no inactive action tickets found")
+		return nil
+	}
+
+	for _, ticket := range inactiveActionTickets {
+		cascadeTicket, err := task.getCascadeTicket(ctx, ticket.ActTicketData.RegTXID)
+		if err != nil {
+			log.WithContext(ctx).WithField("transaction_id", ticket.ActTicketData.RegTXID).WithError(err)
+			continue
+		}
+
+		currentBlockCount, err := task.pastelClient.GetBlockCount(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to get block count")
+			continue
+		}
+
+		blockCountWhenTicketCreated := ticket.ActTicketData.CreatorHeight
+		DiffBWCurrentAndCreatorBlockHeight := currentBlockCount - int32(blockCountWhenTicketCreated)
+
+		if cascadeTicket != nil {
+			if bytes.Equal(cascadeTicket.DataHash, dataHash) {
+				log.WithContext(ctx).
+					Info("data hash matched with inactive cascade ticket, checking the block threshold")
+
+				if DiffBWCurrentAndCreatorBlockHeight < BlocksThresholdForDuplicateTicket {
+					log.WithContext(ctx).Info("duplicate inactive ticket found in less then 10000 blocks")
+					return errors.Errorf("duplicate inactive ticket found in less then 10000 blocks")
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (task *DupTicketsDetector) checkInactiveNFTOrSenseTickets(ctx context.Context, dataHash []byte) error {
+	if err := task.checkInactiveSenseTickets(ctx, dataHash); err != nil {
+		log.WithContext(ctx).WithError(err)
+		return err
+	}
+
+	if err := task.checkInactiveNFTTickets(ctx, dataHash); err != nil {
+		log.WithContext(ctx).WithError(err)
+		return err
+	}
+
+	return nil
+}
+
+// checkInactiveSenseTickets checks the duplicate inactive sense tickets
+func (task *DupTicketsDetector) checkInactiveSenseTickets(ctx context.Context, dataHash []byte) error {
+	inactiveActionTickets, err := task.pastelClient.GetInactiveActionTickets(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving inactive action tickets")
+		return errors.Errorf("error retrieving inactive action tickets")
+	}
+
+	if len(inactiveActionTickets) == 0 {
+		log.WithContext(ctx).Info("no inactive action tickets found")
+		return nil
+	}
+
+	for _, ticket := range inactiveActionTickets {
+		senseTicket, err := task.getSenseTicket(ctx, ticket.ActTicketData.RegTXID)
+		if err != nil {
+			log.WithContext(ctx).WithField("transaction_id", ticket.ActTicketData.RegTXID).WithError(err)
+			continue
+		}
+
+		currentBlockCount, err := task.pastelClient.GetBlockCount(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to get block count")
+			continue
+		}
+		blockCountWhenTicketCreated := ticket.ActTicketData.CreatorHeight
+		DiffBWCurrentAndCreatorBlockHeight := currentBlockCount - int32(blockCountWhenTicketCreated)
+
+		if bytes.Equal(senseTicket.DataHash, dataHash) {
+
+			log.WithContext(ctx).Info("data hash matched with inactive sense ticket, checking the block threshold")
+
+			if DiffBWCurrentAndCreatorBlockHeight < BlocksThresholdForDuplicateTicket {
+				log.WithContext(ctx).Info("duplicate inactive sense ticket found in less then 10000 blocks")
+				return errors.Errorf("duplicate inactive sense ticket found in less then 10000 blocks")
+			}
+		}
+	}
+
+	return nil
+}
+
+// checkInactiveNFTTickets checks the duplicate inactive NFT tickets
+func (task *DupTicketsDetector) checkInactiveNFTTickets(ctx context.Context, dataHash []byte) error {
+	inactiveNFTTickets, err := task.pastelClient.GetInactiveNFTTickets(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving inactive action tickets")
+		return errors.Errorf("error retrieving action tickets")
+	}
+
+	if len(inactiveNFTTickets) == 0 {
+		log.WithContext(ctx).Info("no inactive action tickets found")
+		return nil
+	}
+
+	for _, ticket := range inactiveNFTTickets {
+		nftTicket, err := task.getNFTTicket(ctx, ticket.TXID)
+		if err != nil {
+			log.WithContext(ctx).WithField("transaction_id", ticket.TXID).WithError(err)
+			continue
+		}
+
+		currentBlockCount, err := task.pastelClient.GetBlockCount(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to get block count")
+			continue
+		}
+		blockCountWhenTicketCreated := nftTicket.BlockNum
+		DiffBWCurrentAndCreatorBlockHeight := currentBlockCount - int32(blockCountWhenTicketCreated)
+
+		if bytes.Equal(nftTicket.AppTicketData.DataHash, dataHash) {
+
+			log.WithContext(ctx).Info("data hash matched with inactive NFT ticket, checking the block threshold")
+
+			if DiffBWCurrentAndCreatorBlockHeight < BlocksThresholdForDuplicateTicket {
+				log.WithContext(ctx).Info("duplicate inactive ticket found in less then 10000 blocks")
+				return errors.Errorf("duplicate inactive ticket found in less then 10000 blocks")
 			}
 		}
 	}

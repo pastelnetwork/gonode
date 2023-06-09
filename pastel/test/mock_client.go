@@ -110,6 +110,10 @@ const (
 	ActivateCollectionTicketMethod = "ActivateCollectionTicket"
 	//GetRawMempoolMethod represents GetRawMempoolMethod
 	GetRawMempoolMethod = "GetRawMempool"
+	//GetInactiveActionTicketsMethod represents GetInactiveActionTickets
+	GetInactiveActionTicketsMethod = "GetInactiveActionTickets"
+	//GetInactiveNFTTicketsMethod represents GetInactiveNFTTicketsMethod
+	GetInactiveNFTTicketsMethod = "GetInactiveNFTTickets"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -428,5 +432,17 @@ func (client *Client) ListenOnActionActivationTicketsFromBlockHeight(tix pastel.
 // ListenOnGetRawMempoolMethod listening GetRawMempoolMethod call and returns values from args
 func (client *Client) ListenOnGetRawMempoolMethod(txIDs []string, err error) *Client {
 	client.On(GetRawMempoolMethod, mock.Anything).Return(txIDs, err)
+	return client
+}
+
+// ListenOnGetInactiveActionTickets listening ListenOnGetInactiveActionTickets call and returns values from args
+func (client *Client) ListenOnGetInactiveActionTickets(tickets pastel.ActTickets, err error) *Client {
+	client.On(GetInactiveActionTicketsMethod, mock.Anything).Return(tickets, err)
+	return client
+}
+
+// ListenOnGetInactiveNFTTickets listening ListenOnGetInactiveNFTTickets call and returns values from args
+func (client *Client) ListenOnGetInactiveNFTTickets(tickets pastel.RegTickets, err error) *Client {
+	client.On(GetInactiveNFTTicketsMethod, mock.Anything).Return(tickets, err)
 	return client
 }

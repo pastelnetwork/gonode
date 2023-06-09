@@ -217,6 +217,14 @@ type Client interface {
 	//Command `getrawmempool false`
 	GetRawMempool(ctx context.Context) ([]string, error)
 
+	//GetInactiveActionTickets returns inactive action tickets
+	//Command `tickets list act inactive`
+	GetInactiveActionTickets(ctx context.Context) (ActTickets, error)
+
+	//GetInactiveNFTTickets returns inactive NFT tickets
+	//Command `tickets list nft inactive`
+	GetInactiveNFTTickets(ctx context.Context) (RegTickets, error)
+
 	// BurnAddress ...
 	BurnAddress() string
 }
