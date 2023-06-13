@@ -249,13 +249,13 @@ type DDServiceOutputFileResult struct {
 	// pastel rareness score
 	OverallRarenessScore *float32 `json:"overall_rareness_score"`
 	// PCT of top 10 most similar with dupe probe above 25 PCT
-	PctOfTop10MostSimilarWithDupeProbAbove25pct *float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_25_pct"`
+	PctOfTop10MostSimilarWithDupeProbAbove25pct *float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct"`
 	// PCT of top 10 most similar with dupe probe above 33 PCT
-	PctOfTop10MostSimilarWithDupeProbAbove33pct *float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_33_pct"`
+	PctOfTop10MostSimilarWithDupeProbAbove33pct *float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct"`
 	// PCT of top 10 most similar with dupe probe above 50 PCT
-	PctOfTop10MostSimilarWithDupeProbAbove50pct *float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_50_pct"`
+	PctOfTop10MostSimilarWithDupeProbAbove50pct *float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct"`
 	// rareness scores table json compressed b64
-	RarenessScoresTableJSONCompressedB64 *string `json:"rareness_scores_table_json_compressed_b_64"`
+	RarenessScoresTableJSONCompressedB64 *string `json:"rareness_scores_table_json_compressed_b64"`
 	// open nsfw score
 	OpenNsfwScore *float32 `json:"open_nsfw_score"`
 	// Image fingerprint of candidate image file
@@ -269,9 +269,13 @@ type DDServiceOutputFileResult struct {
 	// rareness score of the group
 	GroupRarenessScore *float32 `json:"group_rareness_score"`
 	// candidate image thumbnail as base64 string
-	CandidateImageThumbnailWebpAsBase64String *string `json:"candidate_image_thumbnail_webp_as_base_64_string"`
+	CandidateImageThumbnailWebpAsBase64String *string `json:"candidate_image_thumbnail_webp_as_base64_string"`
 	// does not impact collection strings
 	DoesNotImpactTheFollowingCollectionStrings *string `json:"does_not_impact_the_following_collection_strings"`
+	//is invalid sense request
+	IsInvalidSenseRequest *bool `json:"is_invalid_sense_request"`
+	//invalid sense request reason
+	InvalidSenseRequestReason *string `json:"invalid_sense_request_reason"`
 	// similarity score to first entry in collection
 	SimilarityScoreToFirstEntryInCollection *float32 `json:"similarity_score_to_first_entry_in_collection"`
 	// probability of CP
@@ -279,11 +283,11 @@ type DDServiceOutputFileResult struct {
 	// child probability
 	ChildProbability *float32 `json:"child_probability"`
 	// file path of the image
-	ImageFilePath *string
+	ImageFilePath *string `json:"image_file_path"`
 	// internet rareness
-	InternetRareness *InternetRareness
+	InternetRareness *InternetRareness `json:"internet_rareness"`
 	// alternative NSFW scores
-	AlternativeNsfwScores *AlternativeNSFWScores
+	AlternativeNsfwScores *AlternativeNSFWScores `json:"alternative_nsfw_scores"`
 	// name of the creator
 	CreatorName string `json:"creator_name"`
 	// website of creator
@@ -317,11 +321,11 @@ type DDServiceOutputFileResult struct {
 // InternetRareness represents the internet_rareness from DD FP File
 type InternetRareness struct {
 	// Base64 Compressed JSON Table of Rare On Internet Summary
-	RareOnInternetSummaryTableAsJSONCompressedB64 *string `json:"rare_on_internet_summary_table_as_json_compressed_b_64"`
+	RareOnInternetSummaryTableAsJSONCompressedB64 *string `json:"rare_on_internet_summary_table_as_json_compressed_b64"`
 	// Base64 Compressed JSON of Rare On Internet Graph
-	RareOnInternetGraphJSONCompressedB64 *string `json:"rare_on_internet_graph_json_compressed_b_64"`
+	RareOnInternetGraphJSONCompressedB64 *string `json:"rare_on_internet_graph_json_compressed_b64"`
 	// Base64 Compressed Json of Alternative Rare On Internet Dict
-	AlternativeRareOnInternetDictAsJSONCompressedB64 *string `json:"alternative_rare_on_internet_dict_as_json_compressed_b_64"`
+	AlternativeRareOnInternetDictAsJSONCompressedB64 *string `json:"alternative_rare_on_internet_dict_as_json_compressed_b64"`
 	// Minimum Number of Exact Matches on Page
 	MinNumberOfExactMatchesInPage *uint32 `json:"min_number_of_exact_matches_in_page"`
 	// Earliest Available Date of Internet Results
