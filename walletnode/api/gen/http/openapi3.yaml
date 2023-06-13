@@ -4272,6 +4272,7 @@ components:
                     enum:
                         - Task Started
                         - Connected
+                        - Validating Duplicate Reg Tickets
                         - Validating Burn Txn
                         - Image Probed
                         - Image And Thumbnail Uploaded
@@ -4477,6 +4478,7 @@ components:
                     enum:
                         - Task Started
                         - Connected
+                        - Validating Duplicate Reg Tickets
                         - Validating Burn Txn
                         - Image Probed
                         - Image And Thumbnail Uploaded
@@ -4657,6 +4659,7 @@ components:
                     enum:
                         - Task Started
                         - Connected
+                        - Validating Duplicate Reg Tickets
                         - Validating Burn Txn
                         - Image Probed
                         - Image And Thumbnail Uploaded
