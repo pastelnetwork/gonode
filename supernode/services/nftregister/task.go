@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/storage/ddstore"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -403,6 +404,13 @@ func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error
 		Label:       task.burnTXID,
 		Fee:         task.registrationFee,
 	}
+
+	dtc := duplicate.NewDupTicketsDetector(task.PastelClient)
+	if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.Ticket.AppTicketData.DataHash); err != nil {
+		log.WithContext(ctx).WithError(err)
+		return "", errors.Errorf("Error checking duplicate ticket")
+	}
+	log.WithContext(ctx).Info("no duplicate tickets have been found")
 
 	nftRegTxid, err := task.PastelClient.RegisterNFTTicket(ctx, req)
 	if err != nil {

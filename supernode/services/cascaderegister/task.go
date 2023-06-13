@@ -3,7 +3,6 @@ package cascaderegister
 import (
 	"context"
 	"encoding/hex"
-
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
