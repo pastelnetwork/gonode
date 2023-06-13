@@ -34,23 +34,7 @@ func NewDupTicketsDetector(client pastel.Client) *DupTicketsDetector {
 
 // DetectDuplicates represents an interface that checks mempool and inactive transactions for duplicate tickets
 type DetectDuplicates interface {
-	CheckDuplicateCascadeTickets(ctx context.Context, dataHash []byte) error
 	CheckDuplicateSenseOrNFTTickets(ctx context.Context, dataHash []byte) error
-}
-
-// CheckDuplicateCascadeTickets checks for duplicate cascade tickets in mempool and inactive transactions list
-func (task *DupTicketsDetector) CheckDuplicateCascadeTickets(ctx context.Context, dataHash []byte) error {
-	if err := task.checkMempoolForInProgressCascadeTickets(ctx, dataHash); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error checking mempool for duplicate cascade tickets")
-		return err
-	}
-
-	if err := task.checkInactiveCascadeTickets(ctx, dataHash); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error checking inactive duplicate tickets for cascade")
-		return err
-	}
-
-	return nil
 }
 
 // CheckDuplicateSenseOrNFTTickets checks duplicate sense or NFT tickets in mempool and inactive transactions list
@@ -63,43 +47,6 @@ func (task *DupTicketsDetector) CheckDuplicateSenseOrNFTTickets(ctx context.Cont
 	if err := task.checkInactiveNFTOrSenseTickets(ctx, dataHash); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error checking inactive duplicate tickets for sense and NFT")
 		return err
-	}
-
-	return nil
-}
-
-// checkMempoolForInProgressCascadeTickets checks the duplicate cascade transactions in mempool
-func (task *DupTicketsDetector) checkMempoolForInProgressCascadeTickets(ctx context.Context, dataHash []byte) error {
-	transactionIDs, err := task.pastelClient.GetRawMempool(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error calling raw mem pool api")
-		return err
-	}
-
-	if len(transactionIDs) == 0 {
-		log.WithContext(ctx).Info("no in-progress transactions in mempool list")
-		return nil
-	}
-
-	for _, txID := range transactionIDs {
-		cascadeTicket, err := task.getCascadeTicket(ctx, txID)
-		if err != nil {
-			log.WithContext(ctx).
-				WithError(err).
-				WithField("transaction_id", txID).
-				Info("failed to retrieve cascade reg ticket")
-			continue
-		}
-
-		if cascadeTicket != nil {
-			if bytes.Equal(cascadeTicket.DataHash, dataHash) {
-				log.WithContext(ctx).
-					WithField("transaction_id", txID).
-					Error("duplicate ticket registration is already in progress")
-
-				return ErrDuplicateRegistration
-			}
-		}
 	}
 
 	return nil
@@ -153,51 +100,6 @@ func (task *DupTicketsDetector) checkMempoolForInProgressSenseOrNFTTickets(ctx c
 					Error("duplicate NFT ticket registration is already in progress")
 
 				return ErrDuplicateRegistration
-			}
-		}
-	}
-
-	return nil
-}
-
-// checkInactiveCascadeTickets checks the duplicate inactive cascade tickets
-func (task *DupTicketsDetector) checkInactiveCascadeTickets(ctx context.Context, dataHash []byte) error {
-	inactiveActionTickets, err := task.pastelClient.GetInactiveActionTickets(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error retrieving inactive action tickets")
-		return errors.Errorf("error retrieving inactive action tickets")
-	}
-
-	if len(inactiveActionTickets) == 0 {
-		log.WithContext(ctx).Info("no inactive action tickets found")
-		return nil
-	}
-
-	for _, ticket := range inactiveActionTickets {
-		cascadeTicket, err := task.getCascadeTicket(ctx, ticket.ActTicketData.RegTXID)
-		if err != nil {
-			log.WithContext(ctx).WithField("transaction_id", ticket.ActTicketData.RegTXID).WithError(err)
-			continue
-		}
-
-		currentBlockCount, err := task.pastelClient.GetBlockCount(ctx)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("unable to get block count")
-			continue
-		}
-
-		blockCountWhenTicketCreated := ticket.ActTicketData.CreatorHeight
-		DiffBWCurrentAndCreatorBlockHeight := currentBlockCount - int32(blockCountWhenTicketCreated)
-
-		if cascadeTicket != nil {
-			if bytes.Equal(cascadeTicket.DataHash, dataHash) {
-				log.WithContext(ctx).
-					Info("data hash matched with inactive cascade ticket, checking the block threshold")
-
-				if DiffBWCurrentAndCreatorBlockHeight < BlocksThresholdForDuplicateTicket {
-					log.WithContext(ctx).Info("duplicate inactive ticket found in less then 10000 blocks")
-					return errors.Errorf("duplicate inactive ticket found in less then 10000 blocks")
-				}
 			}
 		}
 	}
@@ -301,35 +203,6 @@ func (task *DupTicketsDetector) checkInactiveNFTTickets(ctx context.Context, dat
 	}
 
 	return nil
-}
-
-func (task *DupTicketsDetector) getCascadeTicket(ctx context.Context, txID string) (*pastel.APICascadeTicket, error) {
-	regTicket, err := task.pastelClient.ActionRegTicket(ctx, txID)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Info("not valid transactionID for cascade reg ticket")
-		return nil, err
-	}
-
-	if regTicket.ActionTicketData.ActionType != pastel.ActionTypeCascade {
-		log.WithContext(ctx).Info("not valid cascade ticket")
-		return nil, fmt.Errorf("not valid cascade ticket")
-	}
-
-	decTicket, err := pastel.DecodeActionTicket(regTicket.ActionTicketData.ActionTicket)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to decode reg cascade ticket")
-		return nil, fmt.Errorf("failed to decode reg cascade ticket")
-	}
-
-	regTicket.ActionTicketData.ActionTicketData = *decTicket
-
-	cascadeTicket, err := regTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to typecast cascade ticket")
-		return nil, fmt.Errorf("failed to typecast cascade ticket: %w", err)
-	}
-
-	return cascadeTicket, nil
 }
 
 func (task *DupTicketsDetector) getSenseTicket(ctx context.Context, txID string) (*pastel.APISenseTicket, error) {

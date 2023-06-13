@@ -170,7 +170,10 @@ func TestTaskRegisterArt(t *testing.T) {
 			t.Parallel()
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnRegisterNFTTicket(tc.args.regRetID, tc.args.regErr)
+			pastelClientMock.ListenOnGetRawMempoolMethod([]string{}, nil).
+				ListenOnGetInactiveActionTickets(pastel.ActTickets{}, nil).
+				ListenOnGetInactiveNFTTickets(pastel.RegTickets{}, nil).
+				ListenOnRegisterNFTTicket(tc.args.regRetID, tc.args.regErr)
 
 			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
 			task = add2NodesAnd2TicketSignatures(task)

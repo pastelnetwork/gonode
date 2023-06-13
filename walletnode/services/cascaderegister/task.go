@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gabriel-vasile/mimetype"
-	"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -114,14 +113,6 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 		task.UpdateStatus(common.StatusErrorEncodingImage)
 		return errors.Errorf("hash encoded image: %w", err)
 	}
-
-	task.UpdateStatus(common.StatusValidateDuplicateTickets)
-	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
-	if err := dtc.CheckDuplicateCascadeTickets(ctx, task.dataHash); err != nil {
-		log.WithContext(ctx).WithError(err)
-		return errors.Errorf("Error checking duplicate ticket")
-	}
-	log.WithContext(ctx).Info("no duplicate tickets have been found")
 
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Generating RaptorQ symbols' identifiers ",

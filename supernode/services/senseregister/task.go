@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/ddstore"
@@ -273,6 +274,13 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 						err = errors.Errorf("peers' signature mismatched: %w", err)
 						return nil
 					}
+
+					dtc := duplicate.NewDupTicketsDetector(task.PastelClient)
+					if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
+						log.WithContext(ctx).WithError(err)
+						return errors.Errorf("Error checking duplicate ticket")
+					}
+					log.WithContext(ctx).Info("no duplicate tickets have been found")
 
 					nftRegTxid, err = task.registerAction(ctx)
 					if err != nil {
