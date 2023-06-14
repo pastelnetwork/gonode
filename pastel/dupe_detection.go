@@ -27,7 +27,7 @@ type DDAndFingerprints struct {
 	DupeDetectionSystemVersion                  string  `json:"dupe_detection_system_version"`
 	IsLikelyDupe                                bool    `json:"is_likely_dupe"`
 	IsRareOnInternet                            bool    `json:"is_rare_on_internet"`
-	OverallRarenessScore                        float32 `json:"overall_rareness_score "`
+	OverallRarenessScore                        float32 `json:"overall_rareness_score"`
 	PctOfTop10MostSimilarWithDupeProbAbove25pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_25pct"`
 	PctOfTop10MostSimilarWithDupeProbAbove33pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_33pct"`
 	PctOfTop10MostSimilarWithDupeProbAbove50pct float32 `json:"pct_of_top_10_most_similar_with_dupe_prob_above_50pct"`
