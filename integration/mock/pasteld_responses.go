@@ -39,25 +39,7 @@ var masterNodeExtraResp = `{
 		"extP2P": "snserver-4:14445",
 		"extKey": "jXYegY26dJ1auzTj5xy1LSUHy3vEn91pMjQrMwAb97nVzH1859xBzbdiU1RsAhJiQ6Z8VbJwQeH5pwGbFAAaHc",
 		"extCfg": ""
-	},
-	"t2734441a24ecfe8a699e62f3711311100c53cb534f40e6c885948515e410522-1": {
-		"extAddress": "snserver-5:14444",
-		"extP2P": "snserver-5:14445",
-		"extKey": "jXa7Ypp5fueoTboLYxAbH2ebaGLiQBRDF2u2PFAMYYGRjSMsEzn5sgSgyAy5xYpEfcMUqaUY6xZ8Qcxnn1pWAf",
-		"extCfg": ""
-	},
-	"s2734441a24ecfe8a699e62f3711311100c53cb534f40e6c885948515e410524-1": {
-		"extAddress": "snserver-6:14444",
-		"extP2P": "snserver-6:14445",
-		"extKey": "jXXQD8CjECcKknAUf5NHcCua8aqHhbq4vP5EyE6kCDvD6EWpnbjaUe8VH9ZVpvj8n85hkMtDZyPqrwJXPwYUBi",
-		"extCfg": ""
-	},
-	"s2734441a24ecfe8a699e62f3711311100c53cb534f40e6c885948515e410524-1": {
-		"extAddress": "snserver-7:14444",
-		"extP2P": "snserver-7:14445",
-		"extKey": "jXYqgELnZQUSC2D5ZKPzVxaJwDLKC2NAzTzvEkR5EXU3od7xDJH9JgsMWvU6FoYQaBVP489A1y7qw756m8Er1S",
-		"extCfg": ""
-	},
+	  }
   }`
 var masterNodesTopResp = `{
 	"158978": [
@@ -111,45 +93,6 @@ var masterNodesTopResp = `{
 		"extAddress": "snserver-4:14444",
 		"extP2P": "snserver-4:14445",
 		"extKey": "jXYegY26dJ1auzTj5xy1LSUHy3vEn91pMjQrMwAb97nVzH1859xBzbdiU1RsAhJiQ6Z8VbJwQeH5pwGbFAAaHc",
-		"extCfg": ""
-	  },
-	  {
-		"rank": "5",
-		"IP:port": "snserver-5:19933",
-		"protocol": 170008,
-		"outpoint": "t2734441a24ecfe8a699e62f3711311100c53cb534f40e6c885948515e410522-1",
-		"payee": "vPo1skbEb46hq9WWjKyamLhoc1pSmDoa6xo",
-		"lastseen": 0,
-		"activeseconds": -1640641036,
-		"extAddress": "snserver-5:14444",
-		"extP2P": "snserver-5:14445",
-		"extKey": "jXa7Ypp5fueoTboLYxAbH2ebaGLiQBRDF2u2PFAMYYGRjSMsEzn5sgSgyAy5xYpEfcMUqaUY6xZ8Qcxnn1pWAf",
-		"extCfg": ""
-	  },
-	  {
-		"rank": "6",
-		"IP:port": "snserver-6:19933",
-		"protocol": 170008,
-		"outpoint": "a2734441a24ecfe8a699e62f3711311100c53cb534f40e6c885948515e410521-1",
-		"payee": "sPo1skbEb46hq9WWjKyamLhoc1pSmDoa6xo",
-		"lastseen": 0,
-		"activeseconds": -1640641036,
-		"extAddress": "snserver-6:14444",
-		"extP2P": "snserver-6:14445",
-		"extKey": "jXXQD8CjECcKknAUf5NHcCua8aqHhbq4vP5EyE6kCDvD6EWpnbjaUe8VH9ZVpvj8n85hkMtDZyPqrwJXPwYUBi",
-		"extCfg": ""
-	  },
-	  {
-		"rank": "7",
-		"IP:port": "snserver-7:19933",
-		"protocol": 170008,
-		"outpoint": "s2734441a24ecfe8a699e62f3711311100c53cb534f40e6c885948515e410524-1",
-		"payee": "uPo1skbEb46hq9WWjKyamLhoc1pSmDoa6xo",
-		"lastseen": 0,
-		"activeseconds": -1640641036,
-		"extAddress": "snserver-7:14444",
-		"extP2P": "snserver-7:14445",
-		"extKey": "jXYqgELnZQUSC2D5ZKPzVxaJwDLKC2NAzTzvEkR5EXU3od7xDJH9JgsMWvU6FoYQaBVP489A1y7qw756m8Er1S",
 		"extCfg": ""
 	  }
 	]

@@ -216,7 +216,7 @@ func (s *DHT) Bootstrap(ctx context.Context, bootstrapIPs string) error {
 
 				if len(response.Sender.ID) != len(s.ht.self.ID) {
 					log.P2P().WithContext(ctx).WithField("sender-id", string(response.Sender.ID)).
-						WithField("self-id", string(s.ht.self.ID)).Error("self ID && sender ID len don't match")
+						WithField("self-id", string(s.ht.self.ID)).Warn("self ID && sender ID len don't match")
 
 					continue
 				}
