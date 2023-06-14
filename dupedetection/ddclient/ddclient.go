@@ -4,6 +4,7 @@ package ddclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -92,6 +93,17 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		return nil, errors.Errorf("Error calling image rareness score: %w", err)
 	}
 
+	bytes, _ := json.Marshal(res)
+	sizeInKBObj := float64(len(bytes)) / 1024
+
+	log.WithContext(ctx).WithField("size", sizeInKBObj).Infof("Size of the object: %.2f KB", sizeInKBObj)
+
+	sizeInKB := len(res.RarenessScoresTableJsonCompressedB64) / 1024
+	if sizeInKB < 50 {
+		log.WithContext(ctx).WithField("size", sizeInKB).Info("Size of the rareness object")
+		//return nil, errors.Errorf("Error calling image rareness score - response rcvd had very low size: obj: %.2f  rareness: %.2f", sizeInKBObj, sizeInKB)
+	}
+
 	output := &pastel.DDAndFingerprints{
 		BlockHash:   res.PastelBlockHashWhenRequestSubmitted,
 		BlockHeight: res.PastelBlockHeightWhenRequestSubmitted,
@@ -150,7 +162,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		ChildProbability:                           res.ChildProbability,
 	}
 
-	log.WithContext(ctx).WithField("Rareness Score Response", output).Info("Image rareness score response from dd-server")
+	//log.WithContext(ctx).WithField("Rareness Score Response", output).Info("Image rareness score response from dd-server")
 
 	return output, output.Validate()
 }
