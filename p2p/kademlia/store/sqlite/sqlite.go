@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
-
 	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/common/log"
@@ -77,12 +75,6 @@ func NewStore(ctx context.Context, dataDir string, replicate time.Duration, repu
 		}
 	}
 
-	if !s.checkReplicateStore() {
-		if err = s.migrateReplication(); err != nil {
-			return nil, fmt.Errorf("cannot create table(s) in sqlite database: %w", err)
-		}
-	}
-
 	return s, nil
 }
 
@@ -91,16 +83,6 @@ func (s *Store) checkStore() bool {
 	defer s.rwMtx.RUnlock()
 
 	query := `SELECT name FROM sqlite_master WHERE type='table' AND name='data'`
-	var name string
-	err := s.db.Get(&name, query)
-	return err == nil
-}
-
-func (s *Store) checkReplicateStore() bool {
-	s.rwMtx.RLock()
-	defer s.rwMtx.RUnlock()
-
-	query := `SELECT name FROM sqlite_master WHERE type='table' AND name='replication_info'`
 	var name string
 	err := s.db.Get(&name, query)
 	return err == nil
@@ -122,53 +104,7 @@ func (s *Store) migrate() error {
 	if _, err := s.db.Exec(query); err != nil {
 		return fmt.Errorf("failed to create table 'data': %w", err)
 	}
-
 	return nil
-}
-
-func (s *Store) migrateReplication() error {
-	replicateQuery := `
-    CREATE TABLE IF NOT EXISTS replication_info(
-        id TEXT PRIMARY KEY,
-        ip TEXT NOT NULL,
-		port INTEGER NOT NULL,
-        is_active BOOL DEFAULT FALSE,
-		is_adjusted BOOL DEFAULT FALSE,
-        lastReplicatedAt DATETIME,
-		createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-    `
-
-	if _, err := s.db.Exec(replicateQuery); err != nil {
-		return fmt.Errorf("failed to create table 'replication_info': %w", err)
-	}
-
-	return nil
-}
-
-type nodeReplicationInfo struct {
-	LastReplicated *time.Time `db:"lastReplicatedAt"`
-	UpdatedAt      time.Time  `db:"updatedAt"`
-	CreatedAt      time.Time  `db:"createdAt"`
-	Active         bool       `db:"is_active"`
-	Adjusted       bool       `db:"is_adjusted"`
-	IP             string     `db:"ip"`
-	Port           int        `db:"port"`
-	ID             string     `db:"id"`
-}
-
-func (n *nodeReplicationInfo) toDomain() domain.NodeReplicationInfo {
-	return domain.NodeReplicationInfo{
-		LastReplicatedAt: n.LastReplicated,
-		UpdatedAt:        n.UpdatedAt,
-		CreatedAt:        n.CreatedAt,
-		Active:           n.Active,
-		IsAdjusted:       n.Adjusted,
-		IP:               n.IP,
-		Port:             n.Port,
-		ID:               []byte(n.ID),
-	}
 }
 
 // Store will store a key/value pair for the local node
@@ -253,13 +189,16 @@ func (s *Store) UpdateKeyReplication(_ context.Context, key []byte) error {
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time) [][]byte {
+func (s *Store) GetKeysForReplication(ctx context.Context) [][]byte {
 	s.rwMtx.RLock()
 	defer s.rwMtx.RUnlock()
 
+	now := time.Now().UTC()
+	after := now.Add(-s.replicateInterval).UTC()
+
 	var keys [][]byte
-	if err := s.db.Select(&keys, `SELECT key FROM data WHERE createdAt > ?`, from); err != nil {
-		log.P2P().WithError(err).WithContext(ctx).Errorf("failed to get records for replication older than %s", from)
+	if err := s.db.Select(&keys, `SELECT key FROM data WHERE updatedAt > ? and replicatedAt is NULL`, after); err != nil {
+		log.P2P().WithContext(ctx).Errorf("failed to get records for replication older than %s: %v", after, err)
 		return nil
 	}
 	log.P2P().WithContext(ctx).WithField("keyslength", len(keys)).Debugf("Replication keys found: %+v", keys)
@@ -337,42 +276,4 @@ func (s *Store) DeleteAll(_ context.Context /*, type RecordType*/) error {
 		return fmt.Errorf("failed to delete ALL records")
 	}
 	return nil
-}
-
-// GetAllReplicationInfo returns all records in replication table
-func (s *Store) GetAllReplicationInfo(_ context.Context) ([]domain.NodeReplicationInfo, error) {
-	r := []nodeReplicationInfo{}
-	err := s.db.Select(&r, "SELECT * FROM replication_info")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get replication info %w", err)
-	}
-
-	list := []domain.NodeReplicationInfo{}
-	for _, v := range r {
-		list = append(list, v.toDomain())
-	}
-
-	return list, nil
-}
-
-// UpdateReplicationInfo updates replication info
-func (s *Store) UpdateReplicationInfo(_ context.Context, rep domain.NodeReplicationInfo) error {
-	_, err := s.db.Exec(`UPDATE replication_info SET ip = ?, is_active = ?, is_adjusted = ?, lastReplicatedAt = ?, updatedAt =?, port = ? WHERE id = ?`,
-		rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, string(rep.ID))
-	if err != nil {
-		return fmt.Errorf("failed to update replicated records: %v", err)
-	}
-
-	return err
-}
-
-// AddReplicationInfo adds replication info
-func (s *Store) AddReplicationInfo(_ context.Context, rep domain.NodeReplicationInfo) error {
-	_, err := s.db.Exec(`INSERT INTO replication_info(id, ip, is_active, is_adjusted, lastReplicatedAt, updatedAt, port) values(?, ?, ?, ?, ?, ?, ?)`,
-		string(rep.ID), rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port)
-	if err != nil {
-		return fmt.Errorf("failed to update replicate record: %v", err)
-	}
-
-	return err
 }

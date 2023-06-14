@@ -262,7 +262,7 @@ func (*HashTable) bucketIndex(id1 []byte, id2 []byte) int {
 		}
 	}
 
-	// only happen during bootstrap ping
+	// only happen during bootstrapping
 	return 0
 }
 
