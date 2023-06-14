@@ -66,7 +66,7 @@ func (server *Server) Run(ctx context.Context) error {
 
 	// Serve static files from the "static" directory at the "/static/" path
 	fs := http.FileServer(http.Dir(server.config.StaticFilesDir))
-	mux.Handle("/files/", server.AuthMiddleware(http.StripPrefix("/files/", fs)))
+	mux.Handle("/files/", http.StripPrefix("/files/", fs))
 
 	if server.config.Swagger {
 		mux.Handle("/swagger/", http.FileServer(http.FS(docs.SwaggerContent)))

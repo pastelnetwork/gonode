@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	defaultSenseRegTxMinConfirmations = 5
+	defaultSenseRegTxMinConfirmations = 6
 	defaultSenseActTxMinConfirmations = 2
 	defaultWaitTxnValidInterval       = 5
 
