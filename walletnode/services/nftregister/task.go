@@ -566,13 +566,13 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 			}
 
 			if hashExists {
-				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Error("image already registered")
+				log.WithContext(gctx).WithField("node", nftRegNode).Error("image already registered")
 				return errors.Errorf("remote node %s: image already registered", someNode.String())
 			}
 
 			someNode.SetRemoteState(stateOk)
 			if !stateOk {
-				log.WithContext(ctx).WithError(err).WithField("node", nftRegNode).Error("probe image failed:")
+				log.WithContext(ctx).WithField("node", nftRegNode).Error("probe image failed:")
 				return errors.Errorf("remote node %s: indicated processing error:%w", someNode.String(), err)
 			}
 			// Step 5.1
