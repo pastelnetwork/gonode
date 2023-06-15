@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultConnectTimeout = 300 * time.Second
+	defaultConnectTimeout = 1200 * time.Second
 )
 
 type client struct{}
@@ -30,14 +30,15 @@ func (cl *client) Connect(ctx context.Context, address string) (*clientConn, err
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(35000000)),
-		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(35000000)),
-	)
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(35000000),
+			grpc.MaxCallSendMsgSize(35000000),
+		))
 	if err != nil {
 		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)
 	}
 
-	log.DD().WithContext(ctx).Infof("Connected to %s with max send & recv size 15 MB", address)
+	log.DD().WithContext(ctx).Infof("Connected to %s with max send & recv size 35 MB", address)
 
 	conn := newClientConn(id, grpcConn)
 	go func() {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"time"
 )
 
 var (
@@ -16,6 +17,11 @@ var (
 	ErrEmptyPreviewHash = errors.Errorf("empty preview or thumbnail hashes")
 	// ErrEmptyRaptorQSymbols error when empty RaptorQ symbols identifiers
 	ErrEmptyRaptorQSymbols = errors.Errorf("empty RaptorQ symbols identifiers")
+)
+
+const (
+	//ProbeImageSNCallTimeout sets the timeout for probeImage call to SN from WN
+	ProbeImageSNCallTimeout = 25 * time.Minute
 )
 
 // InIntRange checks value in the range

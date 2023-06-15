@@ -69,7 +69,7 @@ func (task *DupTicketsDetector) checkMempoolForInProgressSenseOrNFTTickets(ctx c
 		senseTicket, err := task.getSenseTicket(ctx, txID)
 		if err != nil {
 			log.WithContext(ctx).WithField("transaction_id", txID).
-				Info("not valid TxID for NFT reg ticket")
+				Info("not valid TxID for sense reg ticket")
 		}
 
 		if senseTicket != nil {
@@ -207,8 +207,7 @@ func (task *DupTicketsDetector) checkInactiveNFTTickets(ctx context.Context, dat
 func (task *DupTicketsDetector) getSenseTicket(ctx context.Context, txID string) (*pastel.APISenseTicket, error) {
 	regTicket, err := task.pastelClient.ActionRegTicket(ctx, txID)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Info("not valid transactionID for sense reg ticket")
-		return nil, err
+		return nil, fmt.Errorf("not valid TxID for sense reg ticket")
 	}
 
 	if regTicket.ActionTicketData.ActionType != pastel.ActionTypeSense {
@@ -233,8 +232,7 @@ func (task *DupTicketsDetector) getSenseTicket(ctx context.Context, txID string)
 func (task *DupTicketsDetector) getNFTTicket(ctx context.Context, txID string) (*pastel.NFTTicket, error) {
 	regTicket, err := task.pastelClient.RegTicket(ctx, txID)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Info("not valid transactionID for NFT reg ticket")
-		return nil, err
+		return nil, fmt.Errorf("not valid TxID for nft reg ticket")
 	}
 
 	decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
