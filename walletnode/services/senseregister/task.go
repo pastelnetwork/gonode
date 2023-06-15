@@ -136,7 +136,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
 	if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
 		log.WithContext(ctx).WithError(err)
-		return errors.Errorf("Error checking duplicate ticket")
+		return errors.Errorf("Error duplicate ticket")
 	}
 	log.WithContext(ctx).Info("no duplicate tickets have been found")
 
@@ -364,13 +364,13 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 			}
 
 			if hashExists {
-				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("image already registered")
+				log.WithContext(gctx).WithField("node", senseRegNode).Error("image already registered")
 				return errors.Errorf("remote node %s: image already registered: %s", someNode.String(), errString)
 			}
 
 			someNode.SetRemoteState(stateOk)
 			if !stateOk {
-				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("probe image failed")
+				log.WithContext(gctx).WithField("node", senseRegNode).Error("probe image failed")
 				return errors.Errorf("remote node %s: indicated processing error:%s", someNode.String(), errString)
 			}
 
