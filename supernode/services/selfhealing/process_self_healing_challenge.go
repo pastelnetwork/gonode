@@ -532,7 +532,7 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 	var (
 		countOfFailures  int
 		wg               sync.WaitGroup
-		responseMessages []pb.SelfHealingData
+		responseMessages []*pb.SelfHealingData
 	)
 	err = nil
 	// iterate through supernodes, connecting and sending the message
@@ -584,9 +584,8 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 	}
 
 	//Counting the number of challenges being failed by verifying nodes.
-	var responseMessage pb.SelfHealingData
-	for _, responseMessage = range responseMessages {
-		if responseMessage.ChallengeStatus == pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE {
+	for i := 0; i < len(responseMessages); i++ {
+		if responseMessages[i].ChallengeStatus == pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE {
 			countOfFailures++
 		}
 	}
@@ -599,10 +598,10 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 	return nil
 }
 
-func (task *SHTask) appendResponses(responseMessages []pb.SelfHealingData, message *pb.SelfHealingData) []pb.SelfHealingData {
+func (task *SHTask) appendResponses(responseMessages []*pb.SelfHealingData, message *pb.SelfHealingData) []*pb.SelfHealingData {
 	task.responseMessageMu.Lock()
 	defer task.responseMessageMu.Unlock()
-	responseMessages = append(responseMessages, *message)
+	responseMessages = append(responseMessages, message)
 
 	return responseMessages
 }

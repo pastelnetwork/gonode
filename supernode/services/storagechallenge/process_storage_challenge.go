@@ -163,7 +163,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	var (
 		countOfFailures  int
 		wg               sync.WaitGroup
-		responseMessages []pb.StorageChallengeData
+		responseMessages []*pb.StorageChallengeData
 	)
 	err = nil
 
@@ -237,7 +237,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 				return
 			}
 
-			responseMessages = append(responseMessages, *res)
+			responseMessages = append(responseMessages, res)
 			log.WithContext(ctx).WithField("challenge_id", res.ChallengeId).
 				Info("response has been received from verifying node")
 		}()
@@ -247,10 +247,8 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		log.WithContext(ctx).Println("After calling storage process on " + challengeMessage.ChallengeId + " no nodes returned an error code in verification")
 	}
 
-	// trigger self healing checking process if count of faliures is not less than threshold
-	var responseMessage pb.StorageChallengeData
-	for _, responseMessage = range responseMessages {
-		if responseMessage.ChallengeStatus == pb.StorageChallengeData_Status_FAILED_INCORRECT_RESPONSE {
+	for i := 0; i < len(responseMessages); i++ {
+		if responseMessages[i].ChallengeStatus == pb.StorageChallengeData_Status_FAILED_INCORRECT_RESPONSE {
 			countOfFailures++
 		}
 	}
@@ -326,10 +324,16 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 			log.WithContext(ctx).WithError(err).Error("Error sending self-healing challenge for processing")
 		}
 
+		// ugly hack
+		challengeID := "TBD"
+		if len(responseMessages) > 0 {
+			challengeID = responseMessages[0].ChallengeId
+		}
+
 		if store != nil {
 			log.WithContext(ctx).Println("Storing failed challenge to DB for self healing inspection")
 			failedChallenge := types.SelfHealingChallenge{
-				ChallengeID:     responseMessage.ChallengeId,
+				ChallengeID:     challengeID,
 				MerkleRoot:      challengeMessage.MerklerootWhenChallengeSent,
 				FileHash:        challengeMessage.ChallengeFile.FileHashToChallenge,
 				ChallengingNode: task.nodeID,
