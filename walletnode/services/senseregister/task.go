@@ -448,7 +448,10 @@ func (task *SenseRegistrationTask) uploadSignedTicket(ctx context.Context) error
 	}
 	ddFpFile := task.FingerprintsHandler.DDAndFpFile
 
-	group, gctx := errgroup.WithContext(ctx)
+	reqCtx, cancel := context.WithTimeout(ctx, 40*time.Minute)
+	defer cancel()
+
+	group, gctx := errgroup.WithContext(reqCtx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {
