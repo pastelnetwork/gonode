@@ -21,7 +21,7 @@ var (
 
 const (
 	//ProbeImageSNCallTimeout sets the timeout for probeImage call to SN from WN
-	ProbeImageSNCallTimeout = 25 * time.Minute
+	ProbeImageSNCallTimeout = 30 * time.Minute
 )
 
 // InIntRange checks value in the range

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/ddstore"
@@ -239,7 +238,7 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 		}
 
 		// sign the ticket if not primary node
-		log.WithContext(ctx).Debugf("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
+		log.WithContext(ctx).Infof("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
 		if err = task.signAndSendSenseTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("sign and send Sense ticket")
 			err = errors.Errorf("signed and send NFT ticket")
@@ -257,17 +256,17 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 	var nftRegTxid string
 	if task.NetworkHandler.ConnectedTo == nil {
 		<-task.NewAction(func(ctx context.Context) error {
-			log.WithContext(ctx).Debug("waiting for signature from peers")
+			log.WithContext(ctx).Info("waiting for signature from peers")
 			for {
 				select {
 				case <-ctx.Done():
 					err = ctx.Err()
 					if err != nil {
-						log.WithContext(ctx).Debug("waiting for signature from peers cancelled or timeout")
+						log.WithContext(ctx).Info("waiting for signature from peers cancelled or timeout")
 					}
 					return nil
 				case <-task.AllSignaturesReceivedChn:
-					log.WithContext(ctx).Debug("all signature received so start validation")
+					log.WithContext(ctx).Info("all signature received so start validation")
 
 					if err = task.VerifyPeersTicketSignature(ctx, task.Ticket); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("peers' signature mismatched")
@@ -275,11 +274,11 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 						return nil
 					}
 
-					dtc := duplicate.NewDupTicketsDetector(task.PastelClient)
+					/*dtc := duplicate.NewDupTicketsDetector(task.PastelClient)
 					if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
 						log.WithContext(ctx).WithError(err)
 						return errors.Errorf("Error checking duplicate ticket")
-					}
+					}*/
 					log.WithContext(ctx).Info("no duplicate tickets have been found")
 
 					nftRegTxid, err = task.registerAction(ctx)
@@ -333,7 +332,7 @@ func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, i
 	}
 
 	if !isPrimary {
-		log.WithContext(ctx).Debug("send signed sense ticket to primary node")
+		log.WithContext(ctx).Info("send signed sense ticket to primary node")
 
 		senseNode, ok := task.NetworkHandler.ConnectedTo.SuperNodePeerAPIInterface.(*SenseRegistrationNode)
 		if !ok {
@@ -348,7 +347,7 @@ func (task *SenseRegistrationTask) signAndSendSenseTicket(ctx context.Context, i
 }
 
 func (task *SenseRegistrationTask) registerAction(ctx context.Context) (string, error) {
-	log.WithContext(ctx).Debug("all signature received so start validation")
+	log.WithContext(ctx).Info("all signature received so start validation")
 
 	//ticketID := fmt.Sprintf("%s.%d.%s", task.Ticket.Caller, task.Ticket.BlockNum, hex.EncodeToString(task.dataHash))
 

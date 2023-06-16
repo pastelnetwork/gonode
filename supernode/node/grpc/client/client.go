@@ -40,11 +40,13 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 			//lint:ignore SA1019 we want to ignore this for now
 			grpc.WithInsecure(),
 			grpc.WithBlock(),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(35000000), grpc.MaxCallSendMsgSize(35000000)),
 		)
 	} else {
 		grpcConn, err = grpc.DialContext(ctx, address,
 			grpc.WithTransportCredentials(altsTCClient),
 			grpc.WithBlock(),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(35000000), grpc.MaxCallSendMsgSize(35000000)),
 		)
 	}
 

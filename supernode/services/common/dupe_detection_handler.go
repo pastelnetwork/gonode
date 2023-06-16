@@ -117,7 +117,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		// 	pastel_id_of_registeringSupernode3 + ' ' + \
 		// 	isPastelOpenapiRequest + ' ' + \
 		//
-		log.WithContext(ctx).Debug("asking dd server to process image")
+		log.WithContext(ctx).Info("asking dd server to process image")
 		compressed, err = h.GenFingerprintsData(ctx, file, blockHash, blockHeight, timestamp, creatorPastelID, registeringSupernode1,
 			registeringSupernode2, registeringSupernode3, h.isOpenAPI, h.groupID, h.collectionName)
 		if err != nil {

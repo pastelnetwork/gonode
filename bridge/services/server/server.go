@@ -80,6 +80,8 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 	grpcServer := grpc.NewServer(
 		middleware.UnaryInterceptor(),
 		middleware.StreamInterceptor(),
+		grpc.MaxSendMsgSize(35000000),
+		grpc.MaxRecvMsgSize(35000000),
 	)
 
 	for _, service := range server.services {
