@@ -35,12 +35,14 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 			//lint:ignore SA1019 we want to ignore this for now
 			grpc.WithInsecure(),
 			grpc.WithBlock(),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(35000000), grpc.MaxCallSendMsgSize(35000000)),
 		)
 
 	} else {
 		grpcConn, err = grpc.DialContext(ctx, address,
 			grpc.WithTransportCredentials(altsTCClient),
 			grpc.WithBlock(),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(35000000), grpc.MaxCallSendMsgSize(35000000)),
 		)
 	}
 
@@ -58,8 +60,9 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 }
 
 // NewClient will wrap the input client in the SecClient interface, providing Signing and Verification
-//	functionality.  By wrapping the return in ClientInterface, the resulting client will be able to call
-//  nft registration, userdata, and sense stream functions.
+//
+//		functionality.  By wrapping the return in ClientInterface, the resulting client will be able to call
+//	 nft registration, userdata, and sense stream functions.
 func NewClient(secClient alts.SecClient) node.ClientInterface {
 	return &client{
 		secClient: secClient,

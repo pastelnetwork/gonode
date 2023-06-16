@@ -16,6 +16,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/dupedetection"
 	"github.com/pastelnetwork/gonode/pastel"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -85,10 +86,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	// remove file after use
 	defer os.Remove(inputPath)
 
-	reqCtx, cancel := context.WithTimeout(ctx, 15*time.Minute)
-	defer cancel()
-
-	res, err := client.ImageRarenessScore(reqCtx, &req)
+	res, err := client.ImageRarenessScore(ctx, &req, grpc.MaxCallRecvMsgSize(35000000))
 	if err != nil {
 		return nil, errors.Errorf("Error calling image rareness score: %w", err)
 	}
@@ -183,7 +181,39 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 	defer conn.Close()
 	client := pb.NewDupeDetectionServerClient(conn)
 
-	for {
+	reqCtx, cancel := context.WithTimeout(ctx, 20*time.Minute)
+	defer cancel()
+
+	stats, err := client.GetStatus(reqCtx, &pb.GetStatusRequest{})
+	if err != nil {
+		return nil, errors.Errorf("get status: %w", err)
+	} else if stats == nil {
+		return nil, errors.Errorf("get status: stats is nil")
+	}
+
+	log.WithContext(reqCtx).Info("dd-client stats is not nil, proceeding with health endpoint - updated")
+	taskCount := stats.GetTaskCount()
+	if taskCount == nil {
+		log.WithContext(reqCtx).Error("task count is nil")
+	} else {
+		log.WithContext(reqCtx).WithField("executing", taskCount.GetExecuting()).WithField("waiting", taskCount.GetWaitingInQueue()).WithField("max-concurrent", taskCount.GetMaxConcurrent()).
+			WithField("succeeded", taskCount.GetSucceeded()).WithField("failed", taskCount.GetFailed()).WithField("cancelled", taskCount.GetCancelled()).
+			Info("dd-server task stats")
+	}
+
+	taskMetrics := stats.GetTaskMetrics()
+	if taskMetrics != nil {
+		log.WithContext(reqCtx).WithField("avg-execution-time", taskMetrics.GetAverageTaskExecutionTimeSecs()).WithField("avg-queue-time", taskMetrics.GetAverageTaskWaitTimeSecs()).
+			WithField("avg-vr-memory", taskMetrics.GetAverageTaskVirtualMemoryUsageBytes()).WithField("avg-rss-memory", taskMetrics.GetAverageTaskRssMemoryUsageBytes()).
+			WithField("max-rss-memory", taskMetrics.GetPeakTaskRssMemoryUsageBytes()).WithField("max-vr-memory", taskMetrics.GetPeakTaskVmsMemoryUsageBytes()).
+			WithField("max-task-wait-time", taskMetrics.GetMaxTaskWaitTimeSecs()).Info("dd-server task metrics")
+	}
+
+	log.WithContext(reqCtx).Info("calling image rareness score now")
+	return ddClient.callImageRarenessScore(reqCtx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2,
+		supernode3, openAPIRequest, groupID, collectionName)
+
+	/*for {
 		select {
 		case <-ctx.Done():
 			return nil, errors.Errorf("dd server request cancelled because context done: %w", ctx.Err())
@@ -231,8 +261,8 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 			}
 		case <-time.After(15 * time.Minute):
 			return nil, errors.Errorf("dd-server request cancelled because of timeout")
-		}
-	}
+		}*
+	}*/
 }
 
 func (ddClient *ddServerClientImpl) contextWithLogPrefix(ctx context.Context) context.Context {

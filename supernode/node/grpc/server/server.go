@@ -86,10 +86,12 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 
 	var grpcServer *grpc.Server
 	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
-		grpcServer = grpc.NewServer(middleware.UnaryInterceptor(), middleware.StreamInterceptor())
+		grpcServer = grpc.NewServer(middleware.UnaryInterceptor(), middleware.StreamInterceptor(), grpc.MaxSendMsgSize(35000000),
+			grpc.MaxRecvMsgSize(35000000))
 	} else {
 		grpcServer = grpc.NewServer(middleware.UnaryInterceptor(), middleware.StreamInterceptor(),
-			middleware.AltsCredential(server.secClient, server.secInfo))
+			middleware.AltsCredential(server.secClient, server.secInfo), grpc.MaxSendMsgSize(35000000),
+			grpc.MaxRecvMsgSize(35000000))
 	}
 
 	for _, service := range server.services {
