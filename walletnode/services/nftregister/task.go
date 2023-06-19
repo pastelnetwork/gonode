@@ -136,6 +136,13 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
 	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
+	defer func(err error) {
+		if err != nil {
+			if err := task.MeshHandler.CloseSNsConnections(ctx, nodesDone); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
+			}
+		}
+	}(err)
 
 	log.WithContext(ctx).Info("uploading data to supernodes")
 

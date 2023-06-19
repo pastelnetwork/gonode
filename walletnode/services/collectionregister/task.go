@@ -76,7 +76,13 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
 	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
-	log.WithContext(ctx).Info("uploading data to supernodes")
+	defer func(err error) {
+		if err != nil {
+			if err := task.MeshHandler.CloseSNsConnections(ctx, nodesDone); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
+			}
+		}
+	}(err)
 
 	if err := task.createCollectionTicket(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error creating collection ticket")
