@@ -231,7 +231,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 
 			log.WithContext(ctx).Debug("DDAndFingerprints combined and compressed")
 			return nil
-		case <-time.After(600 * time.Second):
+		case <-time.After(25 * time.Minute):
 			log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers timeout")
 			err = errors.New("waiting for DDAndFingerprints timeout")
 			return err

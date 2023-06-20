@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/duplicate"
+	//"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -140,11 +140,11 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 
 	task.UpdateStatus(common.StatusValidateDuplicateTickets)
-	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
+/*	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
 	if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
 		log.WithContext(ctx).WithError(err)
 		return errors.Errorf("Error duplicate ticket")
-	}
+	}*/
 	log.WithContext(ctx).Info("no duplicate tickets have been found")
 
 	task.UpdateStatus(common.StatusValidateBurnTxn)
@@ -352,9 +352,7 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 
 	task.FingerprintsHandler.Clear()
 
-	reqCtx, cancel := context.WithTimeout(ctx, 40*time.Minute)
-	defer cancel()
-	group, gctx := errgroup.WithContext(reqCtx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
 		if !ok {

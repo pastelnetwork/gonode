@@ -138,6 +138,50 @@ func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
 	return nil
 }
 
+/*
+// StoreBatch will store a batch of values with their SHA256 hash as the key
+func (s *Store) StoreBatch(_ context.Context, values [][]byte) error {
+	s.rwMtx.Lock()
+	defer s.rwMtx.Unlock()
+
+	// Begin a new transaction
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return fmt.Errorf("cannot begin transaction: %w", err)
+	}
+
+	// Prepare insert statement
+	stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data) values(:key, :data) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`)
+	if err != nil {
+		return fmt.Errorf("cannot prepare statement: %w", err)
+	}
+
+	// For each value, calculate its hash and insert into DB
+	now := time.Now().UTC()
+	for i :=0, i<len(values); i++{
+		// Compute the SHA256 hash
+		h := sha256.New()
+		h.Write(values[])
+		hashed := utils.Sha3256hash(values[i])
+
+		hkey := hex.EncodeToString(hashed)
+		r := Record{Key: hkey, Data: values[i], UpdatedAt: now}
+
+		// Execute the insert statement
+		_, err := stmt.Exec(r)
+		if err != nil {
+			return fmt.Errorf("cannot insert or update record with key %s: %w", hkey, err)
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("cannot commit transaction: %w", err)
+	}
+
+	return nil
+}
+*/
 // Retrieve will return the local key/value if it exists
 func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	s.rwMtx.RLock()
