@@ -179,7 +179,6 @@ func toNFTDDServiceFile(ticketData pastel.AppTicket, ddAndFpStruct *pastel.DDAnd
 	res.OpenNsfwScore = &ddAndFpStruct.OpenNSFWScore
 	res.ImageFingerprintOfCandidateImageFile = ddAndFpStruct.ImageFingerprintOfCandidateImageFile
 	res.HashOfCandidateImageFile = &ddAndFpStruct.HashOfCandidateImageFile
-	res.RarenessScoresTableJSONCompressedB64 = &ddAndFpStruct.InternetRareness.RareOnInternetSummaryTableAsJSONCompressedB64
 	res.CollectionNameString = &ddAndFpStruct.CollectionNameString
 	res.OpenAPIGroupIDString = &ddAndFpStruct.OpenAPIGroupIDString
 	res.GroupRarenessScore = &ddAndFpStruct.GroupRarenessScore
