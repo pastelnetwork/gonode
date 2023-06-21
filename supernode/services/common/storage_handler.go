@@ -4,13 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff"
 
-	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -57,6 +54,8 @@ func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte) (st
 	return h.P2PClient.Store(ctx, data)
 }
 
+/*
+
 // StoreListOfBytesIntoP2P stores into P2P array of bytes arrays
 func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]byte) error {
 	val := ctx.Value(log.TaskIDKey)
@@ -86,6 +85,19 @@ func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]b
 	}
 
 	return group.Wait()
+}
+*/
+
+// StoreBatch stores into P2P array of bytes arrays
+func (h *StorageHandler) StoreBatch(ctx context.Context, list [][]byte) error {
+	val := ctx.Value(log.TaskIDKey)
+	taskID := ""
+	if val != nil {
+		taskID = fmt.Sprintf("%v", val)
+	}
+	log.WithContext(ctx).WithField("task_id", taskID).Info("task_id in storeList")
+
+	return h.P2PClient.StoreBatch(ctx, list)
 }
 
 // GenerateRaptorQSymbols calls RQ service to produce RQ Symbols
@@ -213,7 +225,21 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
 		Info("storing raptorQ symbols in p2p")
 
-	g, ctx := errgroup.WithContext(ctx)
+	result := make([][]byte, 0, len(symbols))
+	for _, value := range symbols {
+		result = append(result, value)
+	}
+
+	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
+		Info("begin batch store raptorQ symbols in p2p")
+	if err := h.P2PClient.StoreBatch(ctx, result); err != nil {
+		return fmt.Errorf("store batch raptorq symbols in p2p: %w", err)
+	}
+
+	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
+		Info("done batch stored raptorQ symbols in p2p")
+
+	/*g, ctx := errgroup.WithContext(ctx)
 
 	// Create a semaphore with a capacity of 2000
 	sem := make(chan struct{}, 2000)
@@ -274,16 +300,15 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	if successRate < 0.75 {
 		return errors.New("less than 75% symbols were stored successfully")
 	}
+	*/
 
 	return nil
 }
 
-// Helper function to get minimum of two integers
+/* Helper function to get minimum of two integers
 func min(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
-}
-
-// ... rest of your code
+}*/

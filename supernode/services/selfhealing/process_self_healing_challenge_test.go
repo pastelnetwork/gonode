@@ -139,7 +139,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 					ConnectionInterface.On("Close").Return(nil)
 				raptorQClient.RaptorQ.On(rqmock.EncodeMethod, mock.Anything, mock.Anything).Return(&encodeResp, nil)
 
-				p2pClient.ListenOnStore("", nil)
+				p2pClient.ListenOnStore("", nil).On("StoreBatch", mock.Anything, mock.Anything).Return(nil)
 				raptorQClient.ListenOnClose(nil)
 
 			},

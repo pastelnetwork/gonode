@@ -221,12 +221,12 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err).Error("Error storing symbols to P2P")
 			return err
 		}
-	} else {
+	} /* else {
 		if err := task.StorageHandler.StoreListOfBytesIntoP2P(ctx, task.IDFiles); err != nil {
 			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err).Error("Error storing id files to P2P")
 			return err
 		}
-	}
+	}*/
 
 	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("Self-healing completed")
 
@@ -638,7 +638,6 @@ func (task *SHTask) DownloadDDAndFingerprints(ctx context.Context, DDAndFingerpr
 		task.SNsSignatures = append(task.SNsSignatures, decompressedData[thirdIndexOfSeparator+1:fourthIndexOfSeparator])
 
 		dataToBase64Decode := decompressedData[:firstIndexOfSeparator]
-		log.WithContext(ctx).WithField("first index of separator", firstIndexOfSeparator).WithField("decompd data", string(decompressedData)).WithField("datatobase64decode", string(dataToBase64Decode)).Println("About to base64 decode file")
 		dataToJSONDecode, err := utils.B64Decode(dataToBase64Decode)
 		if err != nil {
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not base64 decode. ")

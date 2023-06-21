@@ -32,4 +32,7 @@ type Store interface {
 
 	// UpdateKeyReplication updates the replication status of the key
 	UpdateKeyReplication(ctx context.Context, key []byte) error
+
+	// StoreBatch stores a batch of key/value pairs for the local node with the replication
+	StoreBatch(_ context.Context, values [][]byte) error
 }

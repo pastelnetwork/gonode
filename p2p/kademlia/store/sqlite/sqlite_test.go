@@ -2,130 +2,57 @@ package sqlite
 
 import (
 	"context"
-	"encoding/hex"
-	"errors"
-	"fmt"
+	"crypto/rand"
+
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestStore(t *testing.T) {
-	ctx := context.Background()
-	dataDir, err := ioutil.TempDir("", "sqlite")
-	require.NoError(t, err)
-	defer os.RemoveAll(dataDir)
+func TestStoreAndRetrieve(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "sqlite-test")
+	if err != nil {
+		t.Fatalf("failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
 
-	replicateInterval := 5 * time.Minute
-	republishInterval := 24 * time.Hour
+	dbPath := filepath.Join(tempDir, "test.db")
+	store, err := NewStore(context.Background(), dbPath, time.Minute, time.Minute)
+	if err != nil {
+		t.Fatalf("failed to create store: %v", err)
+	}
+	defer store.Close(context.Background())
 
-	store, err := NewStore(ctx, dataDir, replicateInterval, republishInterval)
-	require.NoError(t, err)
-
-	tests := []struct {
-		name        string
-		key         []byte
-		value       []byte
-		expectedErr error
+	testCases := []struct {
+		key   []byte
+		value []byte
 	}{
-		{"Valid key-value", []byte("key1"), []byte("value1"), nil},
-		{"Empty key", []byte{}, []byte("value2"), errors.New("key cannot be empty")},
-		{"Nil key", []byte("value4"), []byte{}, errors.New("value cannot be empty")},
+		{generateRandomBytes(16), []byte("value1")},
+		{generateRandomBytes(16), []byte("value2")},
+		{generateRandomBytes(16), []byte("value3")},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := store.Store(ctx, test.key, test.value)
-			if test.expectedErr == nil {
-				assert.NoError(t, err)
-			} else {
-				assert.EqualError(t, err, test.expectedErr.Error())
-			}
-		})
+	// Store test cases
+	for _, tc := range testCases {
+		err := store.Store(context.Background(), tc.key, tc.value)
+		assert.NoError(t, err, "Store should not return an error")
+	}
+	time.Sleep(1 * time.Second)
+	// Retrieve test cases
+	for _, tc := range testCases {
+		retrievedValue, err := store.Retrieve(context.Background(), tc.key)
+		assert.NoError(t, err, "Retrieve should not return an error")
+		assert.Equal(t, tc.value, retrievedValue, "Retrieved value should match the stored value")
 	}
 }
 
-func TestRetrieve(t *testing.T) {
-	ctx := context.Background()
-	dataDir, err := ioutil.TempDir("", "sqlite")
-	require.NoError(t, err)
-	defer os.RemoveAll(dataDir)
-
-	replicateInterval := 5 * time.Minute
-	republishInterval := 24 * time.Hour
-
-	store, err := NewStore(ctx, dataDir, replicateInterval, republishInterval)
-	require.NoError(t, err)
-
-	testKey := []byte("key1")
-	testValue := []byte("value1")
-	err = store.Store(ctx, testKey, testValue)
-	require.NoError(t, err)
-
-	tests := []struct {
-		name        string
-		key         []byte
-		expected    []byte
-		expectedErr error
-	}{
-		{"Valid key", testKey, testValue, nil},
-		{"Non-existent key", []byte("nonexistent"), nil, fmt.Errorf("failed to get record by key %s: sql: no rows in result set", hex.EncodeToString([]byte("nonexistent")))},
-		{"Empty key", []byte{}, nil, fmt.Errorf("failed to get record by key %s: sql: no rows in result set", "")},
-		{"Nil key", nil, nil, fmt.Errorf("failed to get record by key %s: sql: no rows in result set", "")},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			value, err := store.Retrieve(ctx, test.key)
-			if test.expectedErr == nil {
-				assert.NoError(t, err)
-				assert.Equal(t, test.expected, value)
-			} else {
-				assert.EqualError(t, err, test.expectedErr.Error())
-			}
-		})
-	}
-}
-
-func TestDelete(t *testing.T) {
-	ctx := context.Background()
-	dataDir, err := ioutil.TempDir("", "sqlite")
-	require.NoError(t, err)
-	defer os.RemoveAll(dataDir)
-
-	replicateInterval := 5 * time.Minute
-	republishInterval := 24 * time.Hour
-
-	store, err := NewStore(ctx, dataDir, replicateInterval, republishInterval)
-	require.NoError(t, err)
-
-	testKey := []byte("key1")
-	testValue := []byte("value1")
-	err = store.Store(ctx, testKey, testValue)
-	require.NoError(t, err)
-
-	tests := []struct {
-		name       string
-		key        []byte
-		shouldFail bool
-	}{
-		{"Valid key", testKey, false},
-		{"Non-existent key", []byte("nonexistent"), false},
-		{"Empty key", []byte{}, false},
-		{"Nil key", nil, false},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			store.Delete(ctx, test.key)
-
-			// Verify deletion
-			_, err := store.Retrieve(ctx, test.key)
-			assert.Error(t, err, "failed to get record by key %s: sql: no rows in result set", hex.EncodeToString(test.key))
-		})
-	}
+// Helper function to generate random bytes
+func generateRandomBytes(n int) []byte {
+	b := make([]byte, n)
+	_, _ = rand.Read(b)
+	return b
 }

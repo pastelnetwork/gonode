@@ -19,6 +19,7 @@ replace (
 require (
 	github.com/DataDog/zstd v1.5.2
 	github.com/btcsuite/btcutil v1.0.2
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/google/gofuzz v1.2.0
 	github.com/gorilla/mux v1.8.0
@@ -39,7 +40,6 @@ require (
 
 require (
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
-	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
