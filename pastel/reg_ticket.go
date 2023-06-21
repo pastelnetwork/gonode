@@ -106,14 +106,15 @@ type GetRegisterNFTFeeRequest struct {
 }
 
 type internalNFTTicket struct {
-	Version   int     `json:"nft_ticket_version"`
-	Author    string  `json:"author"`
-	BlockNum  int     `json:"blocknum"`
-	BlockHash string  `json:"block_hash"`
-	Copies    int     `json:"copies"`
-	Royalty   float64 `json:"royalty"`
-	Green     bool    `json:"green"`
-	AppTicket string  `json:"app_ticket"`
+	Version        int     `json:"nft_ticket_version"`
+	Author         string  `json:"author"`
+	BlockNum       int     `json:"blocknum"`
+	BlockHash      string  `json:"block_hash"`
+	Copies         int     `json:"copies"`
+	Royalty        float64 `json:"royalty"`
+	Green          bool    `json:"green"`
+	CollectionTxID string  `json:"collection_txid"`
+	AppTicket      string  `json:"app_ticket"`
 }
 
 // EncodeNFTTicket encodes  NFTTicket into byte array
@@ -127,14 +128,15 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 
 	// NFTTicket is Pastel Art Request
 	nftTicket := internalNFTTicket{
-		Version:   ticket.Version,
-		Author:    ticket.Author,
-		BlockNum:  ticket.BlockNum,
-		BlockHash: ticket.BlockHash,
-		Copies:    ticket.Copies,
-		Royalty:   ticket.Royalty,
-		Green:     ticket.Green,
-		AppTicket: appTicket,
+		Version:        ticket.Version,
+		Author:         ticket.Author,
+		BlockNum:       ticket.BlockNum,
+		BlockHash:      ticket.BlockHash,
+		Copies:         ticket.Copies,
+		Royalty:        ticket.Royalty,
+		Green:          ticket.Green,
+		CollectionTxID: ticket.CollectionTxID,
+		AppTicket:      appTicket,
 	}
 
 	b, err := json.Marshal(nftTicket)
@@ -168,14 +170,15 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 	}
 
 	return &NFTTicket{
-		Version:       res.Version,
-		Author:        res.Author,
-		BlockNum:      res.BlockNum,
-		BlockHash:     res.BlockHash,
-		Copies:        res.Copies,
-		Royalty:       res.Royalty,
-		Green:         res.Green,
-		AppTicketData: appTicket,
+		Version:        res.Version,
+		Author:         res.Author,
+		BlockNum:       res.BlockNum,
+		BlockHash:      res.BlockHash,
+		Copies:         res.Copies,
+		Royalty:        res.Royalty,
+		Green:          res.Green,
+		CollectionTxID: res.CollectionTxID,
+		AppTicketData:  appTicket,
 	}, nil
 }
 
