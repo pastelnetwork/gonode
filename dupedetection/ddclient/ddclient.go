@@ -205,7 +205,7 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 		taskCount := stats.GetTaskCount()
 		if taskCount == nil {
 			return nil, errors.New("task count is nil")
-		} 
+		}
 
 		log.WithContext(reqCtx).WithField("executing", taskCount.GetExecuting()).WithField("waiting", taskCount.GetWaitingInQueue()).WithField("max-concurrent", taskCount.GetMaxConcurrent()).
 			WithField("succeeded", taskCount.GetSucceeded()).WithField("failed", taskCount.GetFailed()).WithField("cancelled", taskCount.GetCancelled()).
@@ -227,7 +227,6 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 	return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2,
 		supernode3, openAPIRequest, groupID, collectionName)
 }
-
 
 func (ddClient *ddServerClientImpl) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, logPrefix)

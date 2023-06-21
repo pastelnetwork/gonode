@@ -185,7 +185,7 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 
 				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).WithField("txid", p.Txid).Info("File downloaded")
 
-				err := os.WriteFile(filepath.Join(service.config.StaticFilesDir, task.Filename), task.File, 0644)
+				err := os.WriteFile(filepath.Join(service.config.StaticFilesDir, p.Txid, task.Filename), task.File, 0644)
 				if err != nil {
 					return nil, cascade.MakeInternalServerError(errors.New("unable to write file"))
 				}

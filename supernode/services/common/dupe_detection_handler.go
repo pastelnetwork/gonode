@@ -175,7 +175,7 @@ func (h *DupeDetectionHandler) ProbeImage(_ context.Context, file *files.File, b
 		select {
 		case <-ctx.Done():
 			err = ctx.Err()
-			log.WithContext(ctx).WithError(err).Error("ctx.Done()")
+			log.WithContext(ctx).WithError(err).Error("ctx.Done() error from gen fingerprints data")
 			if err != nil {
 				log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers context cancelled")
 			}

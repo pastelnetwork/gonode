@@ -240,13 +240,71 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 		return "", fmt.Errorf("retry store data to local storage: %v", err)
 	}
 
-	// iterative store the data
-	if _, err := s.iterate(ctx, IterateStore, key, data); err != nil {
-		log.WithContext(ctx).WithError(err).Error("iterate data store failure")
-		return "", fmt.Errorf("iterative store data: %v", err)
+	return retKey, nil
+}
+
+// StoreBatch will store a batch of values with their SHA256 hash as the key
+// StoreBatch will store a batch of values with their SHA256 hash as the key
+func (s *DHT) StoreBatch(ctx context.Context, values [][]byte) error {
+	if err := s.store.StoreBatch(ctx, values); err != nil {
+		return fmt.Errorf("store batch: %v", err)
 	}
 
-	return retKey, nil
+	log.WithContext(ctx).Info("store batch done")
+
+	// Define a maximum number of goroutines
+	const maxGoroutines = 1000
+	const minSuccessRate = 0.6
+
+	// Create a worker pool and results slice
+	workers := make(chan struct{}, maxGoroutines)
+	results := make([]error, len(values))
+
+	// Create wait group
+	var wg sync.WaitGroup
+	wg.Add(len(values))
+
+	// Launch the workers
+	for i := 0; i < len(values); i++ {
+		go func(i int, value []byte) {
+			// Acquire a slot from the workers channel
+			workers <- struct{}{}
+
+			// Perform the operation and save the result
+			key := s.hashKey(value)
+			_, err := s.iterate(ctx, IterateStore, key, value)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("iterate data batch store failure")
+			}
+			results[i] = err
+
+			// Release the slot when the goroutine finishes
+			<-workers
+
+			wg.Done()
+		}(i, values[i]) // pass a copy of the index and value to the goroutine
+	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+
+	// Count successes and failures
+	var successCount int
+	for i := 0; i < len(results); i++ {
+		if results[i] == nil {
+			successCount++
+		}
+	}
+
+	log.WithContext(ctx).WithField("success", successCount).WithField("total", len(values)).Info("store batch network results")
+
+	// Check if successful requests are less than the minimum success rate
+	successRate := float64(successCount) / float64(len(values))
+	if successRate < minSuccessRate {
+		return fmt.Errorf("less than %.2f%% of requests were successful", minSuccessRate*100)
+	}
+
+	return nil
 }
 
 // Retrieve data from the networking using key. Key is the base58 encoded
