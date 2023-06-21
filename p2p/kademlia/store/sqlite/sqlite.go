@@ -180,8 +180,8 @@ func (s *Store) StoreBatch(_ context.Context, values [][]byte) error {
 	}
 
 	return nil
-}
-*/
+}*/
+
 // Retrieve will return the local key/value if it exists
 func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	s.rwMtx.RLock()
