@@ -14,6 +14,9 @@ type Client interface {
 	// - the base58 encoded identifier will be returned
 	Store(ctx context.Context, data []byte) (string, error)
 
+	// StoreBatch will store a batch of values with their SHA256 hash as the key
+	StoreBatch(ctx context.Context, values [][]byte) error
+
 	// Delete a key, value
 	Delete(ctx context.Context, key string) error
 

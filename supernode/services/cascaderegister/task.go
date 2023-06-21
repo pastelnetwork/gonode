@@ -3,6 +3,7 @@ package cascaderegister
 import (
 	"context"
 	"encoding/hex"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -372,7 +373,7 @@ func (task *CascadeRegistrationTask) storeIDFiles(ctx context.Context) error {
 	log.WithContext(ctx).WithField("task_id", task.ID()).Info("store task id in context")
 
 	task.storage.TaskID = task.ID()
-	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.rqIDFiles); err != nil {
+	if err := task.storage.StoreBatch(ctx, task.rqIDFiles); err != nil {
 		return errors.Errorf("store ID files into kademlia: %w", err)
 	}
 	return nil

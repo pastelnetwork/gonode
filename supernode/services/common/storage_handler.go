@@ -57,6 +57,8 @@ func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte) (st
 	return h.P2PClient.Store(ctx, data)
 }
 
+/*
+
 // StoreListOfBytesIntoP2P stores into P2P array of bytes arrays
 func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]byte) error {
 	val := ctx.Value(log.TaskIDKey)
@@ -86,6 +88,19 @@ func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]b
 	}
 
 	return group.Wait()
+}
+*/
+
+// StoreBatch stores into P2P array of bytes arrays
+func (h *StorageHandler) StoreBatch(ctx context.Context, list [][]byte) error {
+	val := ctx.Value(log.TaskIDKey)
+	taskID := ""
+	if val != nil {
+		taskID = fmt.Sprintf("%v", val)
+	}
+	log.WithContext(ctx).WithField("task_id", taskID).Info("task_id in storeList")
+
+	return h.P2PClient.StoreBatch(ctx, list)
 }
 
 // GenerateRaptorQSymbols calls RQ service to produce RQ Symbols
