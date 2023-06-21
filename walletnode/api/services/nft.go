@@ -389,17 +389,26 @@ func (service *NftAPIHandler) DdServiceOutputFile(ctx context.Context, p *nft.Do
 
 	ddAndFpData, err := service.search.GetDDAndFP(ctx, ticket, p.Pid, p.Key)
 	if err != nil {
-		log.WithError(err).Error("error retrieving DD&FP")
+		log.WithError(err).Error("error retrieving DD&FP file")
 		return nil, nft.MakeInternalServerError(err)
 	}
+	if len(ddAndFpData) == 0 {
+		log.WithContext(ctx).WithError(err).Error("request canceled: file is empty")
+		return nil, fmt.Errorf("unable to download DD FP file")
+	}
+
 	ddAndFpStruct := &pastel.DDAndFingerprints{}
-	json.Unmarshal(ddAndFpData, ddAndFpStruct)
+	if err := json.Unmarshal(ddAndFpData, ddAndFpStruct); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error un-marshaling DD&FP data")
+		return nil, fmt.Errorf("unable to un-marshaling DD&FP data")
+	}
 
 	DDFPFileDetails := toNFTDDServiceFile(ticket.RegTicketData.NFTTicketData.AppTicketData, ddAndFpStruct)
 
 	fileBytes, err := json.Marshal(DDFPFileDetails)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error converting file details to bytes")
+		return nil, err
 	}
 
 	// Convert json data to base64
