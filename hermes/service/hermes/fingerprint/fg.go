@@ -14,6 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/hermes/common"
 	"github.com/pastelnetwork/gonode/hermes/domain"
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -38,7 +39,18 @@ func (s *fingerprintService) Run(ctx context.Context) error {
 
 			group, gctx := errgroup.WithContext(ctx)
 			group.Go(func() error {
-				return s.run(gctx)
+				err := s.run(gctx)
+				if err != nil {
+					if common.IsP2PConnectionCloseError(err.Error()) {
+						s.p2p, err = common.CreateNewP2PConnection(s.config.snHost, s.config.snPort, s.config.sn)
+						if err != nil {
+							log.WithContext(ctx).WithError(err).Error("unable to initialize new p2p connection for " +
+								"fingerprint service")
+						}
+					}
+				}
+
+				return nil
 			})
 
 			if err := group.Wait(); err != nil {
@@ -116,9 +128,9 @@ func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 			}
 		} else if !p2pRunning {
 			log.WithContext(ctx).WithField("txid", regTicket.TXID).
-				Info("P2P service is not running, so we can't get the fingerprint for this file hash, stopping this run of the task")
+				Info("P2P service is not running, so we can't get the fingerprint for this file hash, trying to establish a new connection")
 
-			break
+			return errors.New(common.P2PConnectionCloseError)
 		}
 	}
 
@@ -182,10 +194,10 @@ func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 				lastKnownGoodHeight = actTickets[i].Height
 			}
 		} else if !p2pRunning {
-			log.WithContext(ctx).WithField("act-txid", actTickets[i].TXID).WithField("reg-txid", actTickets[i].ActTicketData.RegTXID).
-				Info("P2P service is not running, so we can't get the fingerprint for this file hash, stopping this run of the task")
+			log.WithContext(ctx).WithField("txid", regTicket.TXID).
+				Info("P2P service is not running, so we can't get the fingerprint for this file hash, trying to establish a new connection")
 
-			break
+			return errors.New(common.P2PConnectionCloseError)
 		}
 	}
 	//loop through action tickets and store newly found nft reg tickets
@@ -218,7 +230,7 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 		}
 
 		logMsg.WithField("id", id).Error("Failed to get dd and fp file from ticket")
-		if strings.Contains(err.Error(), "p2p service is not running") {
+		if common.IsP2PServiceNotRunningError(err.Error()) || common.IsP2PConnectionCloseError(err.Error()) {
 			p2pServiceRunning = false
 			break
 		}
