@@ -11,7 +11,10 @@ import (
 )
 
 const (
-	p2pConnectionCloseError = "grpc: the client connection is closing"
+	//P2PConnectionCloseError represents the p2p connection close error
+	P2PConnectionCloseError = "grpc: the client connection is closing"
+	//P2PServiceNotRunningError represents the p2p service not running error
+	P2PServiceNotRunningError = "p2p service is not running"
 )
 
 // CreateNewP2PConnection creates a new p2p connection using sn host and port
@@ -33,5 +36,10 @@ func CreateNewP2PConnection(host string, port int, sn node.SNClientInterface) (n
 
 // IsP2PConnectionCloseError checks if the passed errString is of gRPC connection closing
 func IsP2PConnectionCloseError(errString string) bool {
-	return strings.Contains(errString, p2pConnectionCloseError)
+	return strings.Contains(errString, P2PConnectionCloseError)
+}
+
+// IsP2PServiceNotRunningError checks if the passed errString is of p2p not running
+func IsP2PServiceNotRunningError(errString string) bool {
+	return strings.Contains(errString, P2PServiceNotRunningError)
 }

@@ -41,7 +41,8 @@ func (s *service) Run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize restart pasteld service")
 	}
 
-	fingerprintService, err := fingerprint.NewFingerprintService(s.store, s.pastelClient, s.p2p)
+	fingerprintServiceConfig := fingerprint.NewConfig(s.config.SNHost, s.config.SNPort, s.sn)
+	fingerprintService, err := fingerprint.NewFingerprintService(s.store, s.pastelClient, s.p2p, fingerprintServiceConfig)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize fingerprint service")
 	}
