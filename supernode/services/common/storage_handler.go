@@ -4,13 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff"
 
-	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -228,7 +225,21 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
 		Info("storing raptorQ symbols in p2p")
 
-	g, ctx := errgroup.WithContext(ctx)
+	result := make([][]byte, 0, len(symbols))
+	for _, value := range symbols {
+		result = append(result, value)
+	}
+
+	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
+		Info("begin batch store raptorQ symbols in p2p")
+	if err := h.P2PClient.StoreBatch(ctx, result); err != nil {
+		return fmt.Errorf("store batch raptorq symbols in p2p: %w", err)
+	}
+
+	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
+		Info("done batch stored raptorQ symbols in p2p")
+
+	/*g, ctx := errgroup.WithContext(ctx)
 
 	// Create a semaphore with a capacity of 2000
 	sem := make(chan struct{}, 2000)
@@ -289,6 +300,7 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	if successRate < 0.75 {
 		return errors.New("less than 75% symbols were stored successfully")
 	}
+	*/
 
 	return nil
 }

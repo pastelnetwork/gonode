@@ -221,12 +221,12 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err).Error("Error storing symbols to P2P")
 			return err
 		}
-	} else {
+	} /* else {
 		if err := task.StorageHandler.StoreListOfBytesIntoP2P(ctx, task.IDFiles); err != nil {
 			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err).Error("Error storing id files to P2P")
 			return err
 		}
-	}
+	}*/
 
 	log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).Info("Self-healing completed")
 
