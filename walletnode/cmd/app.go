@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
 
 	bridgeNode "github.com/pastelnetwork/gonode/bridge/node"
 	bridgeGrpc "github.com/pastelnetwork/gonode/bridge/node/grpc"
@@ -238,11 +239,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload)
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient)
 
-	server := api.NewAPIServer(config.API, pastelClient,
+	fileMappings := &sync.Map{}
+	server := api.NewAPIServer(config.API, fileMappings, pastelClient,
 		services.NewNftAPIHandler(apiSrcvConf, nftRegister, nftSearch, nftDownload),
 		// services.NewUserdataAPIHandler(userdataProcess),
 		services.NewSenseAPIHandler(apiSrcvConf, senseRegister, nftDownload),
-		services.NewCascadeAPIHandler(apiSrcvConf, cascadeRegister, nftDownload),
+		services.NewCascadeAPIHandler(apiSrcvConf, fileMappings, cascadeRegister, nftDownload),
 		services.NewCollectionAPIIHandler(apiSrcvConf, collectionRegister),
 		services.NewSwagger(apiSrcvConf),
 	)

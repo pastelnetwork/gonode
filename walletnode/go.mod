@@ -17,7 +17,6 @@ require (
 	github.com/DataDog/zstd v1.5.2
 	github.com/gabriel-vasile/mimetype v1.4.1
 	github.com/google/uuid v1.3.0
-	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/pastelnetwork/gonode/bridge v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/common v0.0.0-20220615180506-00d063d0abf2

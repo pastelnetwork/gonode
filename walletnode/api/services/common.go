@@ -1,6 +1,13 @@
 package services
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"time"
+	"math/rand"
+)
+
+var randIDGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // Config represents a config for the common service.
 type Config struct {
@@ -22,4 +29,11 @@ func NewCommon(config *Config) *Common {
 	return &Common{
 		config: config,
 	}
+}
+
+func randIDFunc() string {
+
+	// Generate a random 6-digit ID
+	uniqueID := randIDGen.Intn(1000000)
+	return fmt.Sprintf("%06d", uniqueID)
 }
