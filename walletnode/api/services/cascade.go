@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -27,8 +28,9 @@ import (
 // CascadeAPIHandler - CascadeAPIHandler service
 type CascadeAPIHandler struct {
 	*Common
-	register *cascaderegister.CascadeRegistrationService
-	download *download.NftDownloadingService
+	register     *cascaderegister.CascadeRegistrationService
+	download     *download.NftDownloadingService
+	fileMappings *sync.Map // maps unique ID to file path
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
@@ -185,13 +187,26 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 
 				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).WithField("txid", p.Txid).Info("File downloaded")
 
-				err := os.WriteFile(filepath.Join(service.config.StaticFilesDir, task.Filename), task.File, 0644)
+				// Create directory with p.Txid
+				folderPath := filepath.Join(service.config.StaticFilesDir, p.Txid)
+				if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+					err = os.MkdirAll(folderPath, os.ModePerm)
+					if err != nil {
+						return nil, err
+					}
+				}
+
+				// Generate a unique ID and map it to the saved file's path
+				uniqueID := randIDFunc()
+				filePath := filepath.Join(folderPath, task.Filename)
+				err := os.WriteFile(filePath, task.File, 0644)
 				if err != nil {
 					return nil, cascade.MakeInternalServerError(errors.New("unable to write file"))
 				}
+				service.fileMappings.Store(uniqueID, filePath)
 
 				return &cascade.FileDownloadResult{
-					FileID: task.Filename,
+					FileID: uniqueID,
 				}, nil
 			}
 		}
@@ -232,10 +247,11 @@ func (service *CascadeAPIHandler) GetTaskHistory(ctx context.Context, p *cascade
 }
 
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.
-func NewCascadeAPIHandler(config *Config, register *cascaderegister.CascadeRegistrationService, download *download.NftDownloadingService) *CascadeAPIHandler {
+func NewCascadeAPIHandler(config *Config, filesMap *sync.Map, register *cascaderegister.CascadeRegistrationService, download *download.NftDownloadingService) *CascadeAPIHandler {
 	return &CascadeAPIHandler{
-		Common:   NewCommon(config),
-		register: register,
-		download: download,
+		Common:       NewCommon(config),
+		register:     register,
+		download:     download,
+		fileMappings: filesMap,
 	}
 }

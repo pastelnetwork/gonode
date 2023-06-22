@@ -4,11 +4,16 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"path/filepath"
+	"strings"
+	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -36,6 +41,7 @@ type Server struct {
 	shutdownTimeout time.Duration
 	pastelClient    pastel.Client
 	services        []service
+	fileMappings    *sync.Map // maps unique ID to file path
 }
 
 // Run starts listening for the requests.
@@ -65,8 +71,40 @@ func (server *Server) Run(ctx context.Context) error {
 	mux.Handle("/swagger/swagger.json", handler)
 
 	// Serve static files from the "static" directory at the "/static/" path
-	fs := http.FileServer(http.Dir(server.config.StaticFilesDir))
-	mux.Handle("/files/", http.StripPrefix("/files/", fs))
+	mux.Handle("/files/", http.StripPrefix("/files/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Extract unique ID from request
+		uniqueID := filepath.Base(r.URL.Path)
+
+		// Look up file path
+		value, ok := server.fileMappings.Load(uniqueID)
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+
+		filePath, ok := value.(string)
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+
+		// Extract txid from the file path
+		parts := strings.Split(filePath, "/")
+		if len(parts) < 2 {
+			http.NotFound(w, r)
+			return
+		}
+
+		txid := parts[len(parts)-2]
+
+		// Set the original filename in the response headers
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, parts[len(parts)-1]))
+
+		// Serve the file from the txid directory
+		filePath = filepath.Join(server.config.StaticFilesDir, txid, filepath.Base(filePath))
+		http.ServeFile(w, r, filePath)
+
+	})))
 
 	if server.config.Swagger {
 		mux.Handle("/swagger/", http.FileServer(http.FS(docs.SwaggerContent)))
@@ -105,11 +143,14 @@ func (server *Server) Run(ctx context.Context) error {
 }
 
 // NewAPIServer returns a new Server instance.
-func NewAPIServer(config *Config, pastelClient pastel.Client, services ...service) *Server {
-	return &Server{
+func NewAPIServer(config *Config, filesMap *sync.Map, pastelClient pastel.Client, services ...service) *Server {
+	server := &Server{
 		pastelClient:    pastelClient,
 		config:          config,
 		shutdownTimeout: defaultShutdownTimeout,
 		services:        services,
+		fileMappings:    filesMap,
 	}
+
+	return server
 }

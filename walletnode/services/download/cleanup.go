@@ -49,20 +49,29 @@ func (service *CleanupService) cleanup(ctx context.Context) (int, error) {
 	cutoffTime := time.Now().Add(-service.fileTTL)
 
 	for _, f := range files {
-		// Skip if it's a directory
-		if f.IsDir() {
-			continue
-		}
+		fullPath := filepath.Join(service.fileDir, f.Name())
 
-		// If the file's modification time is before one hour ago
-		if f.ModTime().Before(cutoffTime) {
-			fullPath := filepath.Join(service.fileDir, f.Name())
-			err := os.Remove(fullPath)
-			if err != nil {
-				log.WithContext(ctx).WithField("cutoff time", cutoffTime).WithError(err).Error("cleanup file error")
-				continue
+		// Check if it's a directory
+		if f.IsDir() {
+			// Remove the directory and its contents if the modification time is before one hour ago
+			if f.ModTime().Before(cutoffTime) {
+				err := os.RemoveAll(fullPath)
+				if err != nil {
+					log.WithContext(ctx).WithField("cutoff time", cutoffTime).WithError(err).Error("cleanup directory error")
+					continue
+				}
+				count++
 			}
-			count++
+		} else {
+			// Remove the file if the modification time is before one hour ago
+			if f.ModTime().Before(cutoffTime) {
+				err := os.Remove(fullPath)
+				if err != nil {
+					log.WithContext(ctx).WithField("cutoff time", cutoffTime).WithError(err).Error("cleanup file error")
+					continue
+				}
+				count++
+			}
 		}
 	}
 
