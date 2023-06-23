@@ -34,13 +34,14 @@ type Store struct {
 
 // Record is a data record
 type Record struct {
-	Key           string
-	Data          []byte
-	IsOriginal    bool
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	ReplicatedAt  time.Time
-	RepublishedAt time.Time
+	Key           string    `db:"key"`
+	Data          []byte    `db:"data"`
+	DataType      string    `db:"data_type"`
+	IsOriginal    bool      `db:"is_original"`
+	CreatedAt     time.Time `db:"createdAt"`
+	UpdatedAt     time.Time `db:"updatedAt"`
+	ReplicatedAt  time.Time `db:"replicatedAt"`
+	RepublishedAt time.Time `db:"republishedAt"`
 }
 
 // NewStore returns a new store
@@ -94,6 +95,7 @@ func (s *Store) migrate() error {
         key TEXT PRIMARY KEY,
         data BLOB NOT NULL,
         is_original BOOL DEFAULT FALSE,
+        data_type TEXT DEFAULT "",
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         replicatedAt DATETIME,
@@ -108,7 +110,7 @@ func (s *Store) migrate() error {
 }
 
 // Store will store a key/value pair for the local node
-func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
+func (s *Store) Store(_ context.Context, key []byte, value []byte, dataType string) error {
 	s.rwMtx.Lock()
 	defer s.rwMtx.Unlock()
 
@@ -123,8 +125,8 @@ func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
 	hkey := hex.EncodeToString(key)
 
 	now := time.Now().UTC()
-	r := Record{Key: hkey, Data: value, UpdatedAt: now}
-	res, err := s.db.NamedExec(`INSERT INTO data(key, data) values(:key, :data) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
+	r := Record{Key: hkey, Data: value, DataType: dataType, UpdatedAt: now}
+	res, err := s.db.NamedExec(`INSERT INTO data(key, data, data_type) values(:key , :data , :data_type) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedAt`, r)
 	if err != nil {
 		return fmt.Errorf("cannot insert or update record with key %s: %w", hkey, err)
 	}
@@ -195,6 +197,21 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to get record by key %s: %w", hkey, err)
 	}
 	return r.Data, nil
+}
+
+// RetrieveObject will return the local object if it exists
+func (s *Store) RetrieveObject(_ context.Context, key []byte) (Record, error) {
+	s.rwMtx.RLock()
+	defer s.rwMtx.RUnlock()
+
+	hkey := hex.EncodeToString(key)
+
+	r := Record{}
+	err := s.db.Get(&r, `SELECT data,data_type FROM data WHERE key = ?`, hkey)
+	if err != nil {
+		return r, fmt.Errorf("failed to get record by key %s: %w", hkey, err)
+	}
+	return r, nil
 }
 
 // Delete a key/value pair from the Store

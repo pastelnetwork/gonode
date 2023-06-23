@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"os"
 	"strings"
 	"sync"
@@ -222,7 +223,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 			return err
 		}
 	} else {
-		if err := task.StorageHandler.StoreListOfBytesIntoP2P(ctx, task.IDFiles); err != nil {
+		if err := task.StorageHandler.StoreListOfBytesIntoP2P(ctx, task.IDFiles, common.RQIDFileDataType); err != nil {
 			log.WithContext(ctx).WithField("failed_challenge_id", challengeMessage.ChallengeId).WithError(err).Error("Error storing id files to P2P")
 			return err
 		}

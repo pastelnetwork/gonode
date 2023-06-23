@@ -39,7 +39,7 @@ func TestStore(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := store.Store(ctx, test.key, test.value)
+			err := store.Store(ctx, test.key, test.value, "")
 			if test.expectedErr == nil {
 				assert.NoError(t, err)
 			} else {
@@ -63,7 +63,7 @@ func TestRetrieve(t *testing.T) {
 
 	testKey := []byte("key1")
 	testValue := []byte("value1")
-	err = store.Store(ctx, testKey, testValue)
+	err = store.Store(ctx, testKey, testValue, "")
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -91,6 +91,45 @@ func TestRetrieve(t *testing.T) {
 	}
 }
 
+func TestRetrieveWithDataType(t *testing.T) {
+	ctx := context.Background()
+	dataDir, err := ioutil.TempDir("", "sqlite")
+	require.NoError(t, err)
+	defer os.RemoveAll(dataDir)
+
+	replicateInterval := 5 * time.Minute
+	republishInterval := 24 * time.Hour
+
+	store, err := NewStore(ctx, dataDir, replicateInterval, republishInterval)
+	require.NoError(t, err)
+
+	testKey := []byte("key1")
+	testValue := []byte("value1")
+	err = store.Store(ctx, testKey, testValue, "test-data-type")
+	require.NoError(t, err)
+
+	tests := []struct {
+		name        string
+		key         []byte
+		expected    string
+		expectedErr error
+	}{
+		{"Valid data type", testKey, "test-data-type", nil},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			value, err := store.RetrieveObject(ctx, test.key)
+			if test.expectedErr == nil {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expected, value.DataType)
+			} else {
+				assert.EqualError(t, err, test.expectedErr.Error())
+			}
+		})
+	}
+}
+
 func TestDelete(t *testing.T) {
 	ctx := context.Background()
 	dataDir, err := ioutil.TempDir("", "sqlite")
@@ -105,7 +144,7 @@ func TestDelete(t *testing.T) {
 
 	testKey := []byte("key1")
 	testValue := []byte("value1")
-	err = store.Store(ctx, testKey, testValue)
+	err = store.Store(ctx, testKey, testValue, "")
 	require.NoError(t, err)
 
 	tests := []struct {

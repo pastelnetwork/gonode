@@ -102,14 +102,14 @@ func (s *p2p) run(ctx context.Context) error {
 }
 
 // Store store data into the kademlia network
-func (s *p2p) Store(ctx context.Context, data []byte) (string, error) {
+func (s *p2p) Store(ctx context.Context, data []byte, dataType string) (string, error) {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if !s.running {
 		return "", errors.New("p2p service is not running")
 	}
 
-	return s.dht.Store(ctx, data)
+	return s.dht.Store(ctx, data, dataType)
 }
 
 // Retrieve retrive the data from the kademlia network

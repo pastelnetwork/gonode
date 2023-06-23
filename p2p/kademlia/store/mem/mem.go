@@ -3,6 +3,7 @@ package mem
 import (
 	"context"
 	"errors"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 	"sync"
 	"time"
 )
@@ -39,7 +40,7 @@ func (s *Store) UpdateKeyReplication(_ context.Context, _ []byte) error {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
+func (s *Store) Store(_ context.Context, key []byte, value []byte, _ string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -60,6 +61,19 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	}
 
 	return value, nil
+}
+
+// RetrieveObject will return the local key/value if it exists
+func (s *Store) RetrieveObject(_ context.Context, key []byte) (sqlite.Record, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	value, ok := s.data[string(key)]
+	if !ok {
+		return sqlite.Record{}, errors.New("not found")
+	}
+
+	return sqlite.Record{Data: value}, nil
 }
 
 // Delete a key/value pair from the Store

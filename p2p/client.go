@@ -12,7 +12,7 @@ type Client interface {
 	Retrieve(ctx context.Context, key string, localOnly ...bool) ([]byte, error)
 	// Store store data to the network, which will trigger the iterative store message
 	// - the base58 encoded identifier will be returned
-	Store(ctx context.Context, data []byte) (string, error)
+	Store(ctx context.Context, data []byte, dataType string) (string, error)
 
 	// Delete a key, value
 	Delete(ctx context.Context, key string) error

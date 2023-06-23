@@ -19,6 +19,17 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
+const (
+	//RQSymbolDataType represents the p2p data type for rq symbols
+	RQSymbolDataType = "rq-symbol"
+	//RQIDFileDataType represents the p2p data type for rq file
+	RQIDFileDataType = "rq-file"
+	//DDFPIDFileDataType represents the p2p data type for DD and FP ID file
+	DDFPIDFileDataType = "dd-fp-file"
+	//ThumbnailFileDataType represents the p2p data type for nft thumbnail
+	ThumbnailFileDataType = "nft-thumbnail-file"
+)
+
 // StorageHandler provides common logic for RQ and P2P operations
 type StorageHandler struct {
 	P2PClient p2p.Client
@@ -49,16 +60,16 @@ func (h *StorageHandler) StoreFileIntoP2P(ctx context.Context, file *files.File)
 	if err != nil {
 		return "", errors.Errorf("store file %s into p2p", file.Name())
 	}
-	return h.StoreBytesIntoP2P(ctx, data)
+	return h.StoreBytesIntoP2P(ctx, data, ThumbnailFileDataType)
 }
 
 // StoreBytesIntoP2P into P2P actual data
-func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte) (string, error) {
-	return h.P2PClient.Store(ctx, data)
+func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte, dataType string) (string, error) {
+	return h.P2PClient.Store(ctx, data, dataType)
 }
 
 // StoreListOfBytesIntoP2P stores into P2P array of bytes arrays
-func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]byte) error {
+func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]byte, dataType string) error {
 	val := ctx.Value(log.TaskIDKey)
 	taskID := ""
 	if val != nil {
@@ -77,7 +88,7 @@ func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]b
 	for i := 0; i < len(list); i++ {
 		data := list[i]
 		group.Go(func() (err error) {
-			if _, err := h.StoreBytesIntoP2P(gctx, data); err != nil {
+			if _, err := h.StoreBytesIntoP2P(gctx, data, dataType); err != nil {
 				return errors.Errorf("store data into p2p: %w", err)
 			}
 
@@ -238,7 +249,7 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				_, err := h.P2PClient.Store(ctx, symbol)
+				_, err := h.P2PClient.Store(ctx, symbol, RQSymbolDataType)
 				if err != nil {
 					errorMutex.Lock()
 					if errorCounter < 10 {

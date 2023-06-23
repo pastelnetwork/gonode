@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/storage/ddstore"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -405,12 +404,12 @@ func (task *NftRegistrationTask) registerNft(ctx context.Context) (string, error
 		Fee:         task.registrationFee,
 	}
 
-	dtc := duplicate.NewDupTicketsDetector(task.PastelClient)
-	if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.Ticket.AppTicketData.DataHash); err != nil {
-		log.WithContext(ctx).WithError(err)
-		return "", errors.Errorf("Error checking duplicate ticket")
-	}
-	log.WithContext(ctx).Info("no duplicate tickets have been found")
+	//dtc := duplicate.NewDupTicketsDetector(task.PastelClient)
+	//if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.Ticket.AppTicketData.DataHash); err != nil {
+	//	log.WithContext(ctx).WithError(err)
+	//	return "", errors.Errorf("Error checking duplicate ticket")
+	//}
+	//log.WithContext(ctx).Info("no duplicate tickets have been found")
 
 	nftRegTxid, err := task.PastelClient.RegisterNFTTicket(ctx, req)
 	if err != nil {
@@ -448,10 +447,10 @@ func (task *NftRegistrationTask) storeThumbnails(ctx context.Context) error {
 // Step 19
 func (task *NftRegistrationTask) storeIDFiles(ctx context.Context) error {
 	ctx = context.WithValue(ctx, log.TaskIDKey, task.ID())
-	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.ddFpFiles); err != nil {
+	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.ddFpFiles, common.DDFPIDFileDataType); err != nil {
 		return errors.Errorf("store ddAndFp files into kademlia: %w", err)
 	}
-	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.rqIDFiles); err != nil {
+	if err := task.storage.StoreListOfBytesIntoP2P(ctx, task.rqIDFiles, common.RQIDFileDataType); err != nil {
 		return errors.Errorf("store rqIDFiles files into kademlia: %w", err)
 	}
 

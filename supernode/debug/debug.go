@@ -241,7 +241,7 @@ func (service *Service) p2pStore(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	key, err := service.p2pClient.Store(ctx, storeRequest.Value)
+	key, err := service.p2pClient.Store(ctx, storeRequest.Value, "")
 	if err != nil {
 		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

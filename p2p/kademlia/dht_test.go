@@ -316,7 +316,7 @@ func (ts *testSuite) TestStoreAndRetrieveWithMemStore() {
 	}
 	defer dht.Stop(ts.ctx)
 
-	key, err := dht.Store(ts.ctx, ts.Value)
+	key, err := dht.Store(ts.ctx, ts.Value, "test-data-type")
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
@@ -329,7 +329,7 @@ func (ts *testSuite) TestStoreAndRetrieveWithMemStore() {
 }
 
 func (ts *testSuite) TestStoreAndRetrieve() {
-	key, err := ts.main.Store(ts.ctx, ts.Value)
+	key, err := ts.main.Store(ts.ctx, ts.Value, "")
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
@@ -342,7 +342,7 @@ func (ts *testSuite) TestStoreAndRetrieve() {
 }
 
 func (ts *testSuite) TestStoreWithMain() {
-	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
+	encodedKey, err := ts.main.Store(ts.ctx, ts.Value, "")
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
@@ -370,7 +370,7 @@ func (ts *testSuite) TestStoreWithTwoNodes() {
 	defer dht.Stop(ts.ctx)
 
 	// store the key and value by main node
-	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
+	encodedKey, err := ts.main.Store(ts.ctx, ts.Value, "")
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
@@ -434,7 +434,7 @@ func (ts *testSuite) TestStoreWith10Nodes() {
 	key := base58.Encode(ts.main.hashKey(value))
 
 	// store the key and value by main node
-	encodedKey, err := ts.main.Store(ts.ctx, value)
+	encodedKey, err := ts.main.Store(ts.ctx, value, "")
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
@@ -476,7 +476,7 @@ func (ts *testSuite) TestIterativeFindValue() {
 	}
 
 	// store the key/value
-	key, err := ts.main.Store(ts.ctx, ts.Value)
+	key, err := ts.main.Store(ts.ctx, ts.Value, "")
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}

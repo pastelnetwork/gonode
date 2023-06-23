@@ -84,7 +84,8 @@ type FindValueResponse struct {
 
 // StoreDataRequest defines the request data for store data
 type StoreDataRequest struct {
-	Data []byte
+	Data     []byte
+	DataType string
 }
 
 // StoreDataResponse defines the response data for store data
