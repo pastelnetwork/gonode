@@ -140,10 +140,20 @@ func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
 }
 
 // StoreBatch will store a batch of values with their SHA256 hash as the key
-func (s *Store) StoreBatch(_ context.Context, values [][]byte) error {
-	s.rwMtx.Lock()
-	defer s.rwMtx.Unlock()
+func (s *Store) StoreBatch(ctx context.Context, values [][]byte) error {
+	val := ctx.Value(log.TaskIDKey)
+	taskID := ""
+	if val != nil {
+		taskID = fmt.Sprintf("%v", val)
+	}
 
+	s.rwMtx.Lock()
+	defer func() {
+		s.rwMtx.Unlock()
+		log.WithContext(ctx).WithField("task_id", taskID).Info("Storing batch values done")
+	}()
+
+	log.WithContext(ctx).WithField("task_id", taskID).Info("Storing batch values begin")
 	// Begin a new transaction
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -170,8 +180,10 @@ func (s *Store) StoreBatch(_ context.Context, values [][]byte) error {
 		hkey := hex.EncodeToString(hashed)
 		r := Record{Key: hkey, Data: values[i], UpdatedAt: now}
 
+		ectx, ecancel := context.WithTimeout(ctx, 5*time.Second)
+		defer ecancel()
 		// Execute the insert statement
-		_, err = stmt.Exec(r)
+		_, err = stmt.ExecContext(ectx, r)
 		if err != nil {
 			return fmt.Errorf("cannot insert or update record with key %s: %w", hkey, err)
 		}

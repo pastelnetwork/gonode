@@ -215,7 +215,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 
 				errChan <- subErr
 			} else {
-				log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).Info("Downloaded from supernode")
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).WithField("len", len(file)).Info("Downloaded from supernode")
 
 				func() {
 					task.mtx.Lock()

@@ -333,17 +333,19 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 		return nil, fmt.Errorf("invalid key: %v", key)
 	}
 
+	log.WithContext(ctx).WithField("key", key).Info("begin local data retrieval")
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil && len(value) > 0 {
 		return value, nil
 	}
+	log.WithContext(ctx).WithField("key", key).WithField("len", len(value)).Info("finish local data retrieval")
 
 	// if local only option is set, do not search just return error
 	if len(localOnly) > 0 && localOnly[0] {
 		return nil, fmt.Errorf("local-only failed to get properly: " + err.Error())
 	}
-	log.WithContext(ctx).WithField("key", key).Debug("Not found locally, searching in other nodes")
+	log.WithContext(ctx).WithField("key", key).Info("Not found locally, searching in other nodes")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
@@ -352,6 +354,8 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	}
 	if len(peerValue) > 0 {
 		log.WithContext(ctx).WithField("key", key).WithField("data len", len(peerValue)).Info("Not found locally, retrieved from other nodes")
+	} else {
+		log.WithContext(ctx).WithField("key", key).Info("Not found locally, not found in other nodes")
 	}
 
 	return peerValue, nil
@@ -489,6 +493,8 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		taskID = fmt.Sprintf("%v", val)
 	}
 
+	sKey := base58.Encode(target)
+
 	igList := s.ignorelist.ToNodeList()
 	// find the closest contacts for the target node from local route tables
 	nl := s.ht.closestContacts(Alpha, target, igList)
@@ -499,14 +505,14 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	if nl.Len() == 0 {
 		return nil, nil
 	}
-	log.P2P().WithContext(ctx).Infof("type: %v, target: %v, nodes: %v", iterativeType, base58.Encode(target), nl.String())
+	log.P2P().WithContext(ctx).WithField("task_id", taskID).Infof("type: %v, target: %v, nodes: %v", iterativeType, sKey, nl.String())
 
 	// keep the closer node
 	closestNode := nl.Nodes[0]
 	// if it's a find node, reset the refresh timer
 	if iterativeType == IterateFindNode {
 		bucket := s.ht.bucketIndex(target, s.ht.self.ID)
-		log.P2P().WithContext(ctx).Debugf("bucket for target: %v", base58.Encode(target))
+		log.P2P().WithContext(ctx).Debugf("bucket for target: %v", sKey)
 
 		// reset the refresh time for the bucket
 		s.ht.resetRefreshTime(bucket)
@@ -522,10 +528,12 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	var contacted = make(map[string]bool)
 
 	// Set a timeout for the iteration process
-	timeout := time.After(30 * time.Second) // Adjust the timeout duration as needed
+	timeout := time.After(10 * time.Second) // Adjust the timeout duration as needed
 
 	// Set a maximum number of iterations to prevent indefinite looping
 	maxIterations := 100 // Adjust the maximum iterations as needed
+
+	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("begin iteration")
 
 	for i := 0; i < maxIterations; i++ {
 		select {
@@ -641,8 +649,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 			}
 		}
 	}
-
-	log.P2P().WithContext(ctx).Debug("maximum iterations reached without finding the desired result")
+	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("finish iteration without results")
 	return nil, nil
 }
 

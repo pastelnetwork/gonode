@@ -155,8 +155,9 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 	return decodeInfo.File, nil
 }
 
-func (task *NftDownloadingTask) getSymbolIDsFromMetadataFile(ctx context.Context, id string) (symbolIDs []string, err error) {
+func (task *NftDownloadingTask) getSymbolIDsFromMetadataFile(ctx context.Context, id string, txid string) (symbolIDs []string, err error) {
 	var rqIDsData []byte
+	log.WithContext(ctx).WithField("id", id).WithField("txid", txid).Info("Retrieving symbol IDs from metadata file")
 	rqIDsData, err = task.P2PClient.Retrieve(ctx, id)
 	if err != nil {
 		return symbolIDs, fmt.Errorf("retrieve rq metadatafile: %w", err)
@@ -168,12 +169,12 @@ func (task *NftDownloadingTask) getSymbolIDsFromMetadataFile(ctx context.Context
 
 	symbolIDs, err = task.getRQSymbolIDs(ctx, id, rqIDsData)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Parse symbol IDs failed")
+		log.WithContext(ctx).WithError(err).WithField("txid", txid).WithField("SymbolIDsFileId", id).Warn("Parse symbol IDs failed")
 		task.UpdateStatus(common.StatusSymbolFileInvalid)
 		return symbolIDs, fmt.Errorf("parse symbol IDs: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("len-symbol-IDs", len(symbolIDs)).Info("Symbol IDs retrieved")
+	log.WithContext(ctx).WithField("len-symbol-IDs", len(symbolIDs)).WithField("txid", txid).Info("Symbol IDs retrieved")
 
 	return symbolIDs, nil
 }
@@ -203,7 +204,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, 
 	log.WithContext(ctx).WithField("txid", txid).Info("rq client connected, get symbol IDs from metadata file")
 	var symbolIDs []string
 	for _, id := range rqID {
-		symbolIDs, err = task.getSymbolIDsFromMetadataFile(ctx, id)
+		symbolIDs, err = task.getSymbolIDsFromMetadataFile(ctx, id, txid)
 		if err == nil && len(symbolIDs) > 0 {
 			break
 		}
@@ -217,6 +218,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, 
 		return file, errors.Errorf("could not retrieve symbol IDs from rq metadata file")
 	}
 
+	log.WithContext(ctx).WithField("txid", txid).Info("symbol IDs retrieved, restore file from symbol IDs")
 	file, err = task.restoreFileFromSymbolIDs(ctx, rqService, symbolIDs, rqOti, dataHash, txid)
 	if err != nil {
 		return nil, fmt.Errorf("restore file from symbol IDs: %w", err)
