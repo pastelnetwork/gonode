@@ -305,12 +305,10 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	return nil
 }
 
-// Helper function to get minimum of two integers
+/* Helper function to get minimum of two integers
 func min(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
-}
-
-// ... rest of your code
+}*/

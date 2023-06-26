@@ -244,7 +244,6 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 }
 
 // StoreBatch will store a batch of values with their SHA256 hash as the key
-// StoreBatch will store a batch of values with their SHA256 hash as the key
 func (s *DHT) StoreBatch(ctx context.Context, values [][]byte) error {
 	val := ctx.Value(log.TaskIDKey)
 	taskID := ""

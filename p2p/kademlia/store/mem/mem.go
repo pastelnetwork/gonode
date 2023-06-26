@@ -94,6 +94,7 @@ func (s *Store) DeleteAll(_ context.Context /*, type RecordType*/) error {
 	return nil
 }
 
+// StoreBatch stores a batch of key/value pairs for the local node with the given
 func (s *Store) StoreBatch(_ context.Context, values [][]byte) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()

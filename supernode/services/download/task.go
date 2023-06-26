@@ -262,6 +262,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 	var file []byte
 
 	<-task.NewAction(func(ctx context.Context) error {
+		log.WithContext(ctx).WithField("txid", txid).WithField("ttype", ttype).Info("Downloading File request received")
 		// Validate timestamp is not older than 10 minutes
 		now := time.Now()
 		lastTenMinutes := now.Add(time.Duration(-10) * time.Minute)
@@ -274,6 +275,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		task.ttype = ttype
 
 		if ttype == pastel.ActionTypeSense {
+			log.WithContext(ctx).WithField("txid", txid).Info("sense file download begin")
 			data, err := task.DownloadDDAndFingerprints(ctx, txid)
 			if err != nil {
 				err = errors.Errorf("downloa dd & fingerprints file: %w", err)
@@ -284,10 +286,12 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			file = data
 
 			if len(file) == 0 {
+				log.WithContext(ctx).WithField("txid", txid).Info("sense file nil downloaded")
 				err = errors.New("nil restored file")
 				task.UpdateStatus(common.StatusFileEmpty)
 			}
 
+			log.WithContext(ctx).WithField("txid", txid).Info("sense file downloaded successfully")
 			return nil
 		}
 
@@ -299,6 +303,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			return nil
 		}
 
+		log.WithContext(ctx).WithField("txid", txid).Info("file download check owner")
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
 			// by calling command `tickets list trade available`
@@ -349,22 +354,26 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			}
 		}
 
+		log.WithContext(ctx).WithField("txid", txid).Info("file download begin")
 		// Get symbol identifiers files from Kademlia by using rq_ids - from Art Registration ticket
 		// Get the list of "symbols/chunks" from Kademlia by using symbol identifiers from file
 		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_oti)
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-		file, err = task.restoreFile(ctx, info.rqIDs, info.rqOti, info.dataHash)
+		file, err = task.restoreFile(ctx, info.rqIDs, info.rqOti, info.dataHash, txid)
 		if err != nil {
+			log.WithContext(ctx).WithField("txid", txid).Error("restore file failed")
 			err = errors.Errorf("restore file: %w", err)
 			task.UpdateStatus(common.StatusFileRestoreFailed)
 			return nil
 		}
 
 		if len(file) == 0 {
+			log.WithContext(ctx).WithField("txid", txid).Error("nil file downloaded")
 			err = errors.New("nil restored file")
 			task.UpdateStatus(common.StatusFileEmpty)
 		}
 
+		log.WithContext(ctx).WithField("txid", txid).Info("file downloaded successfully")
 		return nil
 	})
 

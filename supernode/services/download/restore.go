@@ -18,7 +18,8 @@ const (
 	resultBufSize = 1000 // or any other appropriate value
 )
 
-func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rqService rqnode.RaptorQ, symbolIDs []string, rqOti []byte, dataHash []byte) (file []byte, err error) {
+func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rqService rqnode.RaptorQ, symbolIDs []string, rqOti []byte,
+	dataHash []byte, txid string) (file []byte, err error) {
 	totalSymbols := len(symbolIDs)
 	requiredSymbols := totalSymbols / 5 // 20% of total symbols
 
@@ -132,6 +133,7 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 		},
 	}
 
+	log.WithContext(ctx).WithField("txid", txid).Info("Symbols restored successfully")
 	decodeInfo, err = rqService.Decode(ctx, &encodeInfo)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Warn("Restore file with rqserivce")
@@ -176,7 +178,7 @@ func (task *NftDownloadingTask) getSymbolIDsFromMetadataFile(ctx context.Context
 	return symbolIDs, nil
 }
 
-func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, rqOti []byte, dataHash []byte) ([]byte, error) {
+func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, rqOti []byte, dataHash []byte, txid string) ([]byte, error) {
 	var file []byte
 	var lastErr error
 	var err error
@@ -198,6 +200,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, 
 	}
 	rqService := rqConnection.RaptorQ(rqNodeConfig)
 
+	log.WithContext(ctx).WithField("txid", txid).Info("rq client connected, get symbol IDs from metadata file")
 	var symbolIDs []string
 	for _, id := range rqID {
 		symbolIDs, err = task.getSymbolIDsFromMetadataFile(ctx, id)
@@ -214,7 +217,7 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, 
 		return file, errors.Errorf("could not retrieve symbol IDs from rq metadata file")
 	}
 
-	file, err = task.restoreFileFromSymbolIDs(ctx, rqService, symbolIDs, rqOti, dataHash)
+	file, err = task.restoreFileFromSymbolIDs(ctx, rqService, symbolIDs, rqOti, dataHash, txid)
 	if err != nil {
 		return nil, fmt.Errorf("restore file from symbol IDs: %w", err)
 	}
