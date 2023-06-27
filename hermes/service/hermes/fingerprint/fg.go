@@ -229,14 +229,14 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 			break
 		}
 
-		logMsg.WithField("id", id).Error("Failed to get dd and fp file from ticket")
+		logMsg.WithField("id", id).WithError(err).Error("Failed to get dd and fp file from ticket")
 		if common.IsP2PServiceNotRunningError(err.Error()) || common.IsP2PConnectionCloseError(err.Error()) {
 			p2pServiceRunning = false
 			break
 		}
 
 		//probably too verbose even for debug.
-		logMsg.WithField("id", id).
+		logMsg.WithField("id", id).WithError(err).
 			Error("Could not get the fingerprint for this file hash")
 	}
 
@@ -302,7 +302,7 @@ func (s *fingerprintService) tryToGetFingerprintFileFromHash(ctx context.Context
 	rawFile, err := s.p2p.Retrieve(ctx, hash)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("retrieve err")
-		return nil, errors.Errorf("Error finding dd and fp file: %w", err)
+		return nil, errors.Errorf("Error finding dd and fp file from hash: %w - %s", err, hash)
 	}
 
 	decData, err := zstd.Decompress(nil, rawFile)

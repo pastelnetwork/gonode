@@ -146,7 +146,8 @@ func (s *DHT) StartReplication(ctx context.Context) error {
 	for {
 		select {
 		case <-time.After(defaultUpdateTime):
-			s.Replicate(ctx)
+			log.P2P().WithContext(ctx).Info("replication worker not running")
+			//s.Replicate(ctx)
 		case <-ctx.Done():
 			log.P2P().WithContext(ctx).Error("closing replication worker")
 			return nil
@@ -411,7 +412,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 
 	go func() {
 		// the nodes which are unreachable
-		var removedNodes []*Node
+		//var removedNodes []*Node
 
 		var wg sync.WaitGroup
 
@@ -456,7 +457,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 				if err != nil {
 					log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
 					// node is unreachable, remove the node
-					removedNodes = append(removedNodes, receiver)
+					//removedNodes = append(removedNodes, receiver)
 					return
 				}
 
@@ -469,11 +470,11 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 		wg.Wait()
 
 		// delete the node which is unreachable
-		go func() {
+		/*go func() {
 			for _, node := range removedNodes {
 				nl.DelNode(node)
 			}
-		}()
+		}()*/
 
 		// close the message channel
 		close(responses)
@@ -561,19 +562,26 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					}
 				case FindValue:
 					v, ok := response.Data.(*FindValueResponse)
-					if ok && v.Status.Result == ResultOk && len(v.Value) > 0 {
-						return v.Value, nil
-					} else if ok && v.Status.Result == ResultOk {
-						if len(v.Closest) > 0 {
+					if !ok {
+						log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Error("invalid find value response")
+					}
+
+					if v.Status.Result == ResultOk {
+						if len(v.Value) > 0 {
+							log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithField("resp", len(v.Value)).Info("iterate found value from network")
+							return v.Value, nil
+						} else if len(v.Closest) > 0 {
 							nl.AddNodes(v.Closest)
 						}
+					} else {
+						log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithError(errors.New(v.Status.ErrMsg)).Info("iterate could not found value from node")
 					}
 				}
 			}
 
 			// Stop search if no more nodes to contact
 			if !searchRest && len(nl.Nodes) == 0 {
-				log.P2P().WithContext(ctx).Debugf("search stopped")
+				log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("search stopped")
 				return nil, nil
 			}
 
@@ -593,6 +601,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					}
 					return nil, nil
 				case IterateFindValue:
+					log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Error("attempt to find value from remaining network")
 					// Attempt to find the value from the remaining nodes
 					for _, n := range nl.Nodes {
 						request := &FindValueRequest{Target: target}
@@ -609,7 +618,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 						}
 					}
 
-					log.P2P().WithContext(ctx).WithField("target", base58.Encode(target)).Error("could not find value from network")
+					log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Error("could not find value from remaining network")
 					return nil, nil
 
 				case IterateStore:
