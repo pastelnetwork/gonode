@@ -140,14 +140,22 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 
 	task.UpdateStatus(common.StatusValidateDuplicateTickets)
-/*	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
-	if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
-		log.WithContext(ctx).WithError(err)
-		return errors.Errorf("Error duplicate ticket")
-	}*/
+	/*	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
+		if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
+			log.WithContext(ctx).WithError(err)
+			return errors.Errorf("Error duplicate ticket")
+		}*/
 	log.WithContext(ctx).Info("no duplicate tickets have been found")
 
 	task.UpdateStatus(common.StatusValidateBurnTxn)
+	newCtx := log.ContextWithPrefix(context.Background(), "sense")
+	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.Request.BurnTxID, 3,
+		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
+
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
+		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
+	}
+	task.UpdateStatus(common.StatusBurnTxnValidated)
 
 	// probe image for average rareness, nsfw and seen score - populate FingerprintsHandler with results
 	if err := task.ProbeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
@@ -245,7 +253,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Infof("Waiting Confirmations for Sense Reg Ticket - Ticket txid: %s", task.regSenseTxid)
 
 	// new context because the old context already cancelled
-	newCtx := log.ContextWithPrefix(context.Background(), "sense")
+	newCtx = log.ContextWithPrefix(context.Background(), "sense")
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)

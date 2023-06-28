@@ -553,11 +553,8 @@ func (task *NftRegistrationTask) probeImage(ctx context.Context, file *files.Fil
 	log.WithContext(ctx).WithField("filename", fileName).Debug("probe image")
 
 	task.FingerprintsHandler.Clear()
-
-	reqCtx, cancel := context.WithTimeout(ctx, common.ProbeImageSNCallTimeout)
-	defer cancel()
 	// Send image to supernodes for probing.
-	group, gctx := errgroup.WithContext(reqCtx)
+	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
