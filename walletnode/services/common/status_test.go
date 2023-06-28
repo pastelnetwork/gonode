@@ -19,6 +19,7 @@ func TestStatusNames(t *testing.T) {
 				StatusConnected,
 				StatusValidateDuplicateTickets,
 				StatusValidateBurnTxn,
+				StatusBurnTxnValidated,
 				// Sense and NFT reg
 				StatusImageProbed,
 				StatusImageAndThumbnailUploaded,

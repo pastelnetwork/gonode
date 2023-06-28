@@ -7,6 +7,7 @@ const (
 
 	StatusValidateDuplicateTickets
 	StatusValidateBurnTxn
+	StatusBurnTxnValidated
 
 	// Sense and NFT reg
 	StatusImageProbed
@@ -67,6 +68,7 @@ var statusNames = map[Status]string{
 	StatusTaskStarted:              "Task Started",
 	StatusConnected:                "Connected",
 	StatusValidateBurnTxn:          "Validating Burn Txn",
+	StatusBurnTxnValidated:         "Burn Txn Validated",
 	StatusValidateDuplicateTickets: "Validating Duplicate Reg Tickets",
 
 	// Sense and NFT reg
