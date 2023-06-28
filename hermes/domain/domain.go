@@ -26,6 +26,7 @@ type DDFingerprints struct {
 	CollectionNameString                       string    `json:"collection_name_string,omitempty"`
 	DoesNotImpactTheFollowingCollectionsString string    `json:"does_not_impact_the_following_collection_strings,omitempty"`
 	RegTXID                                    string    `json:"registration_ticket_txid"`
+	TxIDTimestamp                              int64     `json:"txid_timestamp"`
 }
 
 // SnScore is domain representation of Sn score record

@@ -120,8 +120,13 @@ func (s *fingerprintService) parseSenseTickets(ctx context.Context) error {
 		log.WithContext(ctx).WithField("act-txid", senseActTickets[i].TXID).WithField("reg-txid", regTicket.TXID).WithField("height", senseActTickets[i].Height).
 			Info("Found valid sense activation ticket")
 
+		rawTxn, err := s.pastelClient.GetRawTransactionVerbose1(ctx, regTicket.TXID)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to get raw transaction")
+		}
+
 		stored, p2pRunning := s.fetchDDFpFileAndStoreFingerprints(ctx, regTicket.ActionTicketData.ActionType, "", senseActTickets[i].TXID,
-			regTicket.TXID, senseTicket.DDAndFingerprintsIDs)
+			regTicket.TXID, senseTicket.DDAndFingerprintsIDs, rawTxn.Time)
 		if stored {
 			if senseActTickets[i].Height > lastKnownGoodHeight {
 				lastKnownGoodHeight = senseActTickets[i].Height
@@ -187,8 +192,13 @@ func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 		}
 		regTicket.RegTicketData.NFTTicketData = *decTicket
 
+		rawTxn, err := s.pastelClient.GetRawTransactionVerbose1(ctx, regTicket.TXID)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to get raw transaction")
+		}
+
 		stored, p2pRunning := s.fetchDDFpFileAndStoreFingerprints(ctx, regTicket.RegTicketData.Type, regTicket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName,
-			actTickets[i].TXID, regTicket.TXID, regTicket.RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs)
+			actTickets[i].TXID, regTicket.TXID, regTicket.RegTicketData.NFTTicketData.AppTicketData.DDAndFingerprintsIDs, rawTxn.Time)
 		if stored {
 			if actTickets[i].Height > lastKnownGoodHeight {
 				lastKnownGoodHeight = actTickets[i].Height
@@ -211,7 +221,7 @@ func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 	return nil
 }
 
-func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Context, tType string, series string, actTXID string, regTXID string, ddFpIDs []string) (stored bool, p2pRunning bool) {
+func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Context, tType string, series string, actTXID string, regTXID string, ddFpIDs []string, txIDTime int64) (stored bool, p2pRunning bool) {
 	ddAndFpFromTicket := &pastel.DDAndFingerprints{}
 	var err error
 	//Get the dd and fp file from the ticket
@@ -288,7 +298,8 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 		OpenAPIGroupIDString:                       groupID,
 		CollectionNameString:                       ddAndFpFromTicket.CollectionNameString,
 		DoesNotImpactTheFollowingCollectionsString: ddAndFpFromTicket.DoesNotImpactTheFollowingCollectionStrings,
-		RegTXID: regTXID,
+		RegTXID:       regTXID,
+		TxIDTimestamp: txIDTime,
 	}); err != nil {
 		logMsg.WithError(err).Error("Failed to store fingerprint")
 		return false, true

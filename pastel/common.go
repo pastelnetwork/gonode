@@ -114,6 +114,7 @@ type GetRawTransactionVerbose1Result struct {
 	Txid          string          `json:"txid"`
 	Confirmations int64           `json:"confirmations"`
 	Vout          []VoutTxnResult `json:"vout"`
+	Time          int64           `json:"time"`
 }
 
 // VoutTxnResult is detail of txn

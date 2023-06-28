@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	createFgTableStatement                       = `CREATE TABLE IF NOT EXISTS image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text PRIMARY KEY, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text,open_api_group_id_string text,collection_name_string text, registration_ticket_txid text)`
+	createFgTableStatement                       = `CREATE TABLE IF NOT EXISTS image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text PRIMARY KEY, path_to_art_image_file text, new_model_image_fingerprint_vector array, datetime_fingerprint_added_to_database text, thumbnail_of_image text, request_type text,open_api_group_id_string text,collection_name_string text, registration_ticket_txid text, txid_timestamp integer)`
 	getLatestFingerprintStatement                = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
 	getFingerprintFromHashStatement              = `SELECT * FROM image_hash_to_image_fingerprint_table WHERE sha256_hash_of_art_image_file = ?`
 	getFingerprintFromTxidStatement              = `SELECT * FROM image_hash_to_image_fingerprint_table WHERE registration_ticket_txid = ?`
@@ -34,6 +34,7 @@ type fingerprints struct {
 	OpenAPIGroupIDString               sql.NullString `db:"open_api_group_id_string"`
 	CollectionNameString               sql.NullString `db:"collection_name_string"`
 	RegistrationTicketTXID             sql.NullString `db:"registration_ticket_txid"`
+	TxIDTimestamp                      int64          `db:"txid_timestamp"`
 }
 
 func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
@@ -53,6 +54,7 @@ func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
 		OpenAPIGroupIDString:               r.OpenAPIGroupIDString.String,
 		CollectionNameString:               r.CollectionNameString.String,
 		RegTXID:                            r.RegistrationTicketTXID.String,
+		TxIDTimestamp:                      r.TxIDTimestamp,
 	}, nil
 
 }
@@ -85,8 +87,10 @@ func (s *SQLiteStore) StoreFingerprint(ctx context.Context, input *domain.DDFing
 
 	_, err = tx.Exec(`INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file,
 		 path_to_art_image_file, new_model_image_fingerprint_vector, datetime_fingerprint_added_to_database,
-		  thumbnail_of_image, request_type, open_api_group_id_string,collection_name_string, registration_ticket_txid) VALUES(?,?,?,?,?,?,?,?,?)`, input.Sha256HashOfArtImageFile,
-		input.PathToArtImageFile, fp, input.DatetimeFingerprintAddedToDatabase, input.ImageThumbnailAsBase64, input.RequestType, input.OpenAPIGroupIDString, input.CollectionNameString, input.RegTXID)
+		 thumbnail_of_image, request_type, open_api_group_id_string,collection_name_string, registration_ticket_txid,
+         txid_timestamp) VALUES(?,?,?,?,?,?,?,?,?,?)`, input.Sha256HashOfArtImageFile,
+		input.PathToArtImageFile, fp, input.DatetimeFingerprintAddedToDatabase, input.ImageThumbnailAsBase64,
+		input.RequestType, input.OpenAPIGroupIDString, input.CollectionNameString, input.RegTXID, input.TxIDTimestamp)
 	if err != nil {
 		tx.Rollback()
 		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
