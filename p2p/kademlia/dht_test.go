@@ -291,6 +291,7 @@ func (ts *testSuite) TestStartDHTNode() {
 }
 
 func (ts *testSuite) TestRetrieveWithNil() {
+	time.Sleep(1 * time.Second)
 	value, err := ts.main.Retrieve(ts.ctx, string(ts.Key))
 	if err != nil {
 		ts.T().Fatalf("dht retrive: %v", err)
@@ -321,6 +322,7 @@ func (ts *testSuite) TestStoreAndRetrieveWithMemStore() {
 		ts.T().Fatalf("dht store: %v", err)
 	}
 
+	time.Sleep(1 * time.Second)
 	value, err := dht.Retrieve(ts.ctx, key)
 	if err != nil {
 		ts.T().Fatalf("dht retrieve: %v", err)
@@ -334,6 +336,7 @@ func (ts *testSuite) TestStoreAndRetrieve() {
 		ts.T().Fatalf("dht store: %v", err)
 	}
 
+	time.Sleep(1 * time.Second)
 	value, err := ts.main.Retrieve(ts.ctx, key)
 	if err != nil {
 		ts.T().Fatalf("dht retrieve: %v", err)
@@ -382,6 +385,7 @@ func (ts *testSuite) TestStoreWithTwoNodes() {
 
 // verify the value stored for distributed hash table
 func (ts *testSuite) verifyValue(key []byte, value []byte, dhts ...*DHT) {
+	time.Sleep(1 * time.Second)
 	for _, dht := range dhts {
 		data, err := dht.store.Retrieve(ts.ctx, key)
 		if err != nil {
