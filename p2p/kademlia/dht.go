@@ -201,6 +201,11 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 		return "", fmt.Errorf("retry store data to local storage: %v", err)
 	}
 
+	if _, err := s.iterate(ctx, IterateStore, key, data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("iterate data store failure")
+		return "", fmt.Errorf("iterative store data: %v", err)
+	}
+
 	return retKey, nil
 }
 

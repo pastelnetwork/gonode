@@ -23,9 +23,8 @@ import (
 var (
 	checkpointInterval = 5 * time.Second // Checkpoint interval in seconds
 	//dbLock             sync.Mutex
-	replicateInterval = 10 * time.Minute
-	dbName            = "data001.sqlite3"
-	dbFilePath        = ""
+	dbName     = "data001.sqlite3"
+	dbFilePath = ""
 )
 
 // Job represents the job to be run
@@ -62,7 +61,7 @@ type Record struct {
 }
 
 // NewStore returns a new store
-func NewStore(ctx context.Context, dataDir string, replicate time.Duration, _ time.Duration) (*Store, error) {
+func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Duration) (*Store, error) {
 	worker := &Worker{
 		JobQueue: make(chan Job, 500),
 		quit:     make(chan bool),
@@ -109,7 +108,6 @@ func NewStore(ctx context.Context, dataDir string, replicate time.Duration, _ ti
 	}
 
 	s.db = db
-	replicateInterval = replicate
 	dbFilePath = dbFile
 
 	go s.start(ctx)

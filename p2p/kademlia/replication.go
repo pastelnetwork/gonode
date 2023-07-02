@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/btcsuite/btcutil/base58"
-
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
@@ -15,7 +13,7 @@ import (
 var (
 	// defaultReplicationTime is the default time for replication - in case lastReplicated is nil
 	// it will be used as the lastReplicated time
-	defaultReplicationTime = time.Hour * 24 * 730 // 2 year
+	defaultReplicationTime = time.Hour * 12 // 12 hrs
 
 	// defaultReplicationInterval is the default interval for replication.
 	defaultReplicationInterval = time.Minute * 5
@@ -142,6 +140,11 @@ func (s *DHT) Replicate(ctx context.Context) {
 		from := time.Now().Add(-defaultReplicationTime)
 		if info.LastReplicatedAt != nil {
 			from = *info.LastReplicatedAt
+
+			// TODO: REMOVE THIS BEFORE RELEASE
+			if time.Since(from) > defaultReplicationTime {
+				from = time.Now().Add(-defaultReplicationTime)
+			}
 		}
 
 		logEntry.WithField("from", from.String()).Info("replication from")
@@ -154,16 +157,17 @@ func (s *DHT) Replicate(ctx context.Context) {
 			continue
 		}
 
+		replicatedCount := 0
 		for _, key := range replicationKeys {
 			ignores := s.ignorelist.ToNodeList()
-			nodeList := s.ht.closestContacts(6, key, ignores)
+			nodeList := s.ht.closestContacts(Alpha, key, ignores)
 
 			n := &Node{ID: []byte(nodeID), IP: info.IP, Port: info.Port}
 			if !nodeList.Exists(n) {
 				// the node is not supposed to hold this key as its not in 6 closest contacts
 				continue
 			}
-			logEntry.WithField("key", base58.Encode(key)).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
+			logEntry.WithField("key", key).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
 
 			value, err := s.store.Retrieve(ctx, key)
 			if err != nil {
@@ -176,6 +180,7 @@ func (s *DHT) Replicate(ctx context.Context) {
 				response, err := s.sendStoreData(ctx, n, request)
 				if err != nil {
 					logEntry.WithError(err).Error("replicate store data failed")
+					replicatedCount++
 				} else if response.Status.Result != ResultOk {
 					logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply replicate store data failed")
 				} else {
@@ -186,6 +191,9 @@ func (s *DHT) Replicate(ctx context.Context) {
 
 		if err := s.updateLastReplicated(ctx, []byte(nodeID), now); err != nil {
 			logEntry.Error("replicate update lastReplicated failed")
+		} else {
+			logEntry.WithField("node", info.IP).WithField("expected-rep-keys", len(replicationKeys)).
+				WithField("keys-replicated", replicatedCount).Info("replicate update lastReplicated success")
 		}
 
 	}
@@ -216,7 +224,7 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, info domain.NodeReplicationInf
 		}
 
 		// get closest contacts to the key
-		nodeList := s.ht.closestContacts(6, key, updatedIgnored)
+		nodeList := s.ht.closestContacts(Alpha, key, updatedIgnored)
 
 		// check if the node that is gone was supposed to hold the key
 		n := &Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
@@ -224,7 +232,7 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, info domain.NodeReplicationInf
 			// the node is not supposed to hold this key as its not in 6 closest contacts
 			continue
 		}
-		logEntry.WithField("key", base58.Encode(key)).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
+		logEntry.WithField("key", key).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
 
 		// get the value
 		value, err := s.store.Retrieve(ctx, key)
