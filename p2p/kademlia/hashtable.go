@@ -20,7 +20,7 @@ const (
 
 const (
 	// Alpha - a small number representing the degree of parallelism in network calls
-	Alpha = 6
+	Alpha = 10
 
 	// B - the size in bits of the keys used to identify nodes and store and
 	// retrieve data; in basic Kademlia this is 256, the length of a SHA3-256

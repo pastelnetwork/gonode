@@ -17,6 +17,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -154,7 +155,8 @@ func (ts *testSuite) SetupSuite() {
 	// init key and value for one data
 	ts.Value = make([]byte, 50*1024)
 	rand.Read(ts.Value)
-	ts.Key = base58.Encode(dht.hashKey(ts.Value))
+	val, _ := utils.Sha3256hash(ts.Value)
+	ts.Key = base58.Encode(val)
 }
 
 // run before each test in the suite
@@ -385,7 +387,7 @@ func (ts *testSuite) TestStoreWithTwoNodes() {
 
 // verify the value stored for distributed hash table
 func (ts *testSuite) verifyValue(key []byte, value []byte, dhts ...*DHT) {
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	for _, dht := range dhts {
 		data, err := dht.store.Retrieve(ts.ctx, key)
 		if err != nil {
@@ -435,7 +437,8 @@ func (ts *testSuite) TestStoreWith10Nodes() {
 	// init key and value for one data
 	value := make([]byte, 50*1024)
 	rand.Read(value)
-	key := base58.Encode(ts.main.hashKey(value))
+	val, _ := utils.Sha3256hash(value)
+	key := base58.Encode(val)
 
 	// store the key and value by main node
 	encodedKey, err := ts.main.Store(ts.ctx, value)
@@ -589,7 +592,7 @@ func (ts *testSuite) TestAddNodeForAppend() {
 }
 
 func (ts *testSuite) TestHashKey() {
-	key := ts.main.hashKey(ts.Value)
+	key, _ := utils.Sha3256hash(ts.Value)
 	ts.Equal(B/8, len(key))
 }
 

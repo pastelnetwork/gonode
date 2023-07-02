@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"go.uber.org/ratelimit"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -18,7 +20,7 @@ import (
 )
 
 const (
-	defaultConnDeadline   = 60 * time.Minute
+	defaultConnDeadline   = 30 * time.Second
 	defaultConnRate       = 1000
 	defaultMaxPayloadSize = 16 * 1024 * 1024 // 16MB
 )
@@ -205,11 +207,9 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	s.dht.addNode(ctx, message.Sender)
 
 	// format the key
-	key := s.dht.hashKey(request.Data)
-
-	// store the data to local storage
-	if err := s.dht.store.Store(ctx, key, request.Data); err != nil {
-		err = errors.Errorf("store the data: %w", err)
+	key, err := utils.Sha3256hash(request.Data)
+	if err != nil {
+		err = errors.Errorf("store data - key hash: %w", err)
 		response := &StoreDataResponse{
 			Status: ResponseStatus{
 				Result: ResultFailed,
@@ -218,6 +218,26 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 		}
 		resMsg := s.dht.newMessage(StoreData, message.Sender, response)
 		return s.encodeMesage(resMsg)
+	}
+
+	value, err := s.dht.store.Retrieve(ctx, key)
+	if err == nil && len(value) > 0 {
+		log.WithContext(ctx).WithField("key", key).Info("data already exists")
+	} else {
+
+		// store the data to local storage
+		if err := s.dht.store.Store(ctx, key, request.Data); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("store network data request failed")
+			err = errors.Errorf("store the data: %w", err)
+			response := &StoreDataResponse{
+				Status: ResponseStatus{
+					Result: ResultFailed,
+					ErrMsg: err.Error(),
+				},
+			}
+			resMsg := s.dht.newMessage(StoreData, message.Sender, response)
+			return s.encodeMesage(resMsg)
+		}
 	}
 
 	response := &StoreDataResponse{
