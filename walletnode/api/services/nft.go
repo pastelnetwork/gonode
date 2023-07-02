@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/pastel"
@@ -39,11 +40,12 @@ const (
 // NftAPIHandler represents services for nfts endpoints.
 type NftAPIHandler struct {
 	*Common
-	register *nftregister.NftRegistrationService
-	search   *nftsearch.NftSearchingService
-	download *download.NftDownloadingService
-	db       storage.KeyValue
-	imageTTL time.Duration
+	register     *nftregister.NftRegistrationService
+	search       *nftsearch.NftSearchingService
+	download     *download.NftDownloadingService
+	db           storage.KeyValue
+	imageTTL     time.Duration
+	fileMappings *sync.Map // maps unique ID to file path
 }
 
 // APIKeyAuth implements the authorization logic for the APIKey security scheme.
@@ -266,13 +268,25 @@ func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPaylo
 
 				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).WithField("txid", p.Txid).Info("File downloaded")
 
-				err := os.WriteFile(filepath.Join(service.config.StaticFilesDir, task.Filename), task.File, 0644)
-				if err != nil {
-					return nil, nft.MakeInternalServerError(errors.New("unable to write file"))
+				// Create directory with p.Txid
+				folderPath := filepath.Join(service.config.StaticFilesDir, p.Txid)
+				if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+					err = os.MkdirAll(folderPath, os.ModePerm)
+					if err != nil {
+						return nil, err
+					}
 				}
 
+				// Generate a unique ID and map it to the saved file's path
+				uniqueID := randIDFunc()
+				filePath := filepath.Join(folderPath, task.Filename)
+				err := os.WriteFile(filePath, task.File, 0644)
+				if err != nil {
+					return nil, cascade.MakeInternalServerError(errors.New("unable to write file"))
+				}
+				service.fileMappings.Store(uniqueID, filePath)
 				return &nft.FileDownloadResult{
-					FileID: task.Filename,
+					FileID: uniqueID,
 				}, nil
 			}
 		}
@@ -421,13 +435,14 @@ func (service *NftAPIHandler) DdServiceOutputFile(ctx context.Context, p *nft.Do
 }
 
 // NewNftAPIHandler returns the nft NftAPIHandler implementation.
-func NewNftAPIHandler(config *Config, register *nftregister.NftRegistrationService, search *nftsearch.NftSearchingService, download *download.NftDownloadingService) *NftAPIHandler {
+func NewNftAPIHandler(config *Config, filesMap *sync.Map, register *nftregister.NftRegistrationService, search *nftsearch.NftSearchingService, download *download.NftDownloadingService) *NftAPIHandler {
 	return &NftAPIHandler{
-		Common:   NewCommon(config),
-		register: register,
-		search:   search,
-		download: download,
-		db:       memory.NewKeyValue(),
-		imageTTL: defaultImageTTL,
+		Common:       NewCommon(config),
+		register:     register,
+		search:       search,
+		download:     download,
+		db:           memory.NewKeyValue(),
+		imageTTL:     defaultImageTTL,
+		fileMappings: filesMap,
 	}
 }

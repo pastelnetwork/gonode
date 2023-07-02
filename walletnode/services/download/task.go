@@ -201,7 +201,11 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			defer cancel()
 
 			file, subErr := nftDownNode.Download(goroutineCtx, txid, timestamp, signature, ttxid, ttype)
-			if subErr != nil {
+			if subErr != nil || len(file) == 0 {
+				if subErr == nil {
+					subErr = errors.New("empty file")
+				}
+
 				if !strings.Contains(subErr.Error(), "context canceled") {
 					log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).WithError(subErr).Error("Could not download from supernode")
 
@@ -215,7 +219,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 
 				errChan <- subErr
 			} else {
-				log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).Info("Downloaded from supernode")
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).WithField("len", len(file)).Info("Downloaded from supernode")
 
 				func() {
 					task.mtx.Lock()

@@ -15,6 +15,7 @@ import (
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/tj/assert"
 
@@ -667,7 +668,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 				ListenOnEncode(tc.args.encodeResp, tc.args.encodeErr)
 
 			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr)
+			p2pClient.ListenOnStore("", tc.args.storeErr).On("StoreBatch", mock.Anything, mock.Anything).Return(tc.args.storeErr)
 
 			fsMock := storageMock.NewMockFileStorage()
 			fileMock := storageMock.NewMockFile()

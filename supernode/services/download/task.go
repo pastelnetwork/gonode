@@ -96,14 +96,17 @@ func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid stri
 
 // DownloadDDAndFingerprints gets dd and fp file from ticket based on id and returns the file.
 func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, txid string) ([]byte, error) {
-	log.WithContext(ctx).WithField("txid", txid).Println("Getting dd and fingerprints for txid")
+	log.WithContext(ctx).WithField("txid", txid).Info("Getting dd and fingerprints for txid")
 	var err error
 	if err = task.RequiredStatus(common.StatusTaskStarted); err != nil {
 		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
 		return nil, errors.Errorf("wrong status: %w", err)
 	}
 
-	info := task.getTicketInfo(ctx, txid)
+	info, err := task.getTicketInfo(ctx, txid)
+	if err != nil {
+		return nil, errors.Errorf("Could not get ticket info: %w", err)
+	}
 
 	DDAndFingerprintsIDs := info.ddAndFpIDs
 	log.WithContext(ctx).WithField("ddandfpids", info.ddAndFpIDs).Info("Found dd and fp ids")
@@ -144,7 +147,6 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 			continue
 		}
 		dataToBase64Decode := decompressedData[:firstIndexOfSeparator]
-		log.WithContext(ctx).WithField("first index of separator", firstIndexOfSeparator).WithField("decompd data", string(decompressedData)).WithField("datatobase64decode", string(dataToBase64Decode)).Println("About to base64 decode file")
 		dataToJSONDecode, err := utils.B64Decode(dataToBase64Decode)
 		if err != nil {
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not base64 decode. ")
@@ -184,31 +186,33 @@ type restoreInfo struct {
 	isPublic   bool
 }
 
-func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) (info restoreInfo) {
+func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) (info restoreInfo, err error) {
 
 	switch task.ttype {
 	case pastel.ActionTypeCascade, pastel.ActionTypeSense:
 		ticket, err := task.PastelClient.ActionRegTicket(ctx, txid)
 		if err != nil {
-			err = errors.Errorf("could not get action registered ticket: %w, txid: %s", err, txid)
 			task.UpdateStatus(common.StatusNftRegGettingFailed)
-			return
+			return info, errors.Errorf("could not get action registered ticket: %w, txid: %s", err, txid)
 		}
 
 		actionTicket, err := pastel.DecodeActionTicket([]byte(ticket.ActionTicketData.ActionTicket))
 		if err != nil {
-			err = errors.Errorf("cloud not decode action ticket: %w", err)
 			task.UpdateStatus(common.StatusNftRegDecodingFailed)
-			return
+			return info, errors.Errorf("cloud not decode action ticket: %w", err)
 		}
 		ticket.ActionTicketData.ActionTicketData = *actionTicket
 
 		if task.ttype == pastel.ActionTypeCascade {
+			if ticket.ActionTicketData.ActionTicketData.ActionType != pastel.ActionTypeCascade {
+				return info, errors.Errorf("ticket type mismatch - ticket is not cascade but %s: %w, txid: %s",
+					ticket.ActionTicketData.ActionTicketData.ActionType, err, txid)
+			}
+
 			cTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
 			if err != nil {
-				err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
 				task.UpdateStatus(common.StatusNftRegDecodingFailed)
-				return
+				return info, errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
 			}
 
 			info.pastelID = ticket.ActionTicketData.ActionTicketData.Caller
@@ -217,11 +221,15 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) 
 			info.dataHash = cTicket.DataHash
 			info.isPublic = cTicket.MakePubliclyAccessible
 		} else {
+			if ticket.ActionTicketData.ActionTicketData.ActionType != pastel.ActionTypeSense {
+				return info, errors.Errorf("ticket type mismatch - ticket is not sense but %s: %w, txid: %s",
+					ticket.ActionTicketData.ActionTicketData.ActionType, err, txid)
+			}
+
 			sTicket, err := ticket.ActionTicketData.ActionTicketData.APISenseTicket()
 			if err != nil {
-				err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
 				task.UpdateStatus(common.StatusNftRegDecodingFailed)
-				return
+				return info, errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
 			}
 			info.ddAndFpIDs = sTicket.DDAndFingerprintsIDs
 			info.dataHash = sTicket.DataHash
@@ -229,16 +237,15 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) 
 	default:
 		nftRegTicket, err := task.PastelClient.RegTicket(ctx, txid)
 		if err != nil {
-			err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
 			task.UpdateStatus(common.StatusNftRegGettingFailed)
-			return
+			return info, errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
 		}
 
 		// Decode Art Request
 		err = task.decodeRegTicket(&nftRegTicket)
 		if err != nil {
 			task.UpdateStatus(common.StatusNftRegDecodingFailed)
-			return
+			return info, errors.Errorf("could not decode registered ticket: %w, txid: %s", err, txid)
 		}
 		info.pastelID = nftRegTicket.RegTicketData.NFTTicketData.Author
 		info.rqIDs = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs
@@ -248,7 +255,7 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) 
 		info.isPublic = nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.MakePubliclyAccessible
 	}
 
-	return info
+	return info, nil
 }
 
 // Download downloads image and return the image.
@@ -262,6 +269,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 	var file []byte
 
 	<-task.NewAction(func(ctx context.Context) error {
+		log.WithContext(ctx).WithField("txid", txid).WithField("ttype", ttype).Info("Downloading File request received")
 		// Validate timestamp is not older than 10 minutes
 		now := time.Now()
 		lastTenMinutes := now.Add(time.Duration(-10) * time.Minute)
@@ -274,6 +282,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		task.ttype = ttype
 
 		if ttype == pastel.ActionTypeSense {
+			log.WithContext(ctx).WithField("txid", txid).Info("sense file download begin")
 			data, err := task.DownloadDDAndFingerprints(ctx, txid)
 			if err != nil {
 				err = errors.Errorf("downloa dd & fingerprints file: %w", err)
@@ -284,14 +293,20 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			file = data
 
 			if len(file) == 0 {
+				log.WithContext(ctx).WithField("txid", txid).Info("sense file nil downloaded")
 				err = errors.New("nil restored file")
 				task.UpdateStatus(common.StatusFileEmpty)
 			}
 
+			log.WithContext(ctx).WithField("txid", txid).Info("sense file downloaded successfully")
 			return nil
 		}
 
-		info := task.getTicketInfo(ctx, txid)
+		info, err := task.getTicketInfo(ctx, txid)
+		if err != nil {
+			return errors.Errorf("Could not get ticket info: %w", err)
+		}
+
 		pastelID := info.pastelID
 		if info.pastelID == "" {
 			// err in retrieval
@@ -299,6 +314,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			return nil
 		}
 
+		log.WithContext(ctx).WithField("txid", txid).Info("file download check owner")
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
 			// by calling command `tickets list trade available`
@@ -349,22 +365,26 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			}
 		}
 
+		log.WithContext(ctx).WithField("txid", txid).Info("file download begin")
 		// Get symbol identifiers files from Kademlia by using rq_ids - from Art Registration ticket
 		// Get the list of "symbols/chunks" from Kademlia by using symbol identifiers from file
 		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_oti)
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-		file, err = task.restoreFile(ctx, info.rqIDs, info.rqOti, info.dataHash)
+		file, err = task.restoreFile(ctx, info.rqIDs, info.rqOti, info.dataHash, txid)
 		if err != nil {
+			log.WithContext(ctx).WithField("txid", txid).Error("restore file failed")
 			err = errors.Errorf("restore file: %w", err)
 			task.UpdateStatus(common.StatusFileRestoreFailed)
 			return nil
 		}
 
 		if len(file) == 0 {
+			log.WithContext(ctx).WithField("txid", txid).Error("nil file downloaded")
 			err = errors.New("nil restored file")
 			task.UpdateStatus(common.StatusFileEmpty)
 		}
 
+		log.WithContext(ctx).WithField("txid", txid).Info("file downloaded successfully")
 		return nil
 	})
 

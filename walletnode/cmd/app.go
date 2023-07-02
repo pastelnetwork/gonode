@@ -241,7 +241,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	fileMappings := &sync.Map{}
 	server := api.NewAPIServer(config.API, fileMappings, pastelClient,
-		services.NewNftAPIHandler(apiSrcvConf, nftRegister, nftSearch, nftDownload),
+		services.NewNftAPIHandler(apiSrcvConf, fileMappings, nftRegister, nftSearch, nftDownload),
 		// services.NewUserdataAPIHandler(userdataProcess),
 		services.NewSenseAPIHandler(apiSrcvConf, senseRegister, nftDownload),
 		services.NewCascadeAPIHandler(apiSrcvConf, fileMappings, cascadeRegister, nftDownload),
