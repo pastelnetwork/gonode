@@ -241,17 +241,42 @@ func StringInSlice(list []string, str string) bool {
 	return false
 }
 
-// CheckInternetConnectivity checks if the device is connected to the internet
-func CheckInternetConnectivity() bool {
-	// Set a timeout duration for the internet connectivity check
-	timeout := time.Second * 5
-
-	// Create a TCP connection to a common DNS server (e.g., Google's Public DNS server)
-	conn, err := net.DialTimeout("tcp", "www.google.com:80", timeout)
+func hasActiveNetworkInterface() bool {
+	ifaces, err := net.Interfaces()
 	if err != nil {
+		fmt.Println(err.Error())
 		return false
 	}
-	defer conn.Close()
 
-	return true
+	for _, i := range ifaces {
+		if i.Flags&net.FlagUp != 0 && i.Flags&net.FlagLoopback == 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func hasInternetConnectivity() bool {
+	hosts := []string{"google.com:80", "microsoft.com:80", "amazon.com:80", "8.8.8.8:53", "1.1.1.1:53"}
+	timeout := 1 * time.Second
+
+	for _, host := range hosts {
+		conn, err := net.DialTimeout("tcp", host, timeout)
+		if err == nil {
+			defer conn.Close()
+			return true
+		}
+	}
+
+	return false
+}
+
+// CheckInternetConnectivity checks if the device is connected to the internet
+func CheckInternetConnectivity() bool {
+	if hasActiveNetworkInterface() {
+		return hasInternetConnectivity()
+	}
+
+	return false
 }

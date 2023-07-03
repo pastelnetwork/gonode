@@ -623,7 +623,7 @@ func (s *Store) AddReplicationInfo(_ context.Context, rep domain.NodeReplication
 	_, err := s.db.Exec(`INSERT INTO replication_info(id, ip, is_active, is_adjusted, lastReplicatedAt, updatedAt, port) values(?, ?, ?, ?, ?, ?, ?)`,
 		string(rep.ID), rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port)
 	if err != nil {
-		return fmt.Errorf("failed to update replicate record: %v", err)
+		return fmt.Errorf("failed to insert replicate record: %v", err)
 	}
 
 	return err

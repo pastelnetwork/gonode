@@ -209,7 +209,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 
 	value, err := s.dht.store.Retrieve(ctx, key)
 	if err == nil && len(value) > 0 {
-		log.WithContext(ctx).WithField("key", key).Info("data already exists")
+		log.WithContext(ctx).WithField("key", string(key)).Info("data already exists")
 	} else {
 		// store the data to local storage
 		if err := s.dht.store.Store(ctx, key, request.Data); err != nil {

@@ -177,6 +177,7 @@ func (ts *testSuite) TearDownTest() {
 
 	// reset the store
 	_ = ts.main.store.DeleteAll(ts.ctx)
+	time.Sleep(1 * time.Second)
 }
 
 func (ts *testSuite) TearDownSuite() {
