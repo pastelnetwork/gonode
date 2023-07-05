@@ -10,22 +10,22 @@ x-default: &default
   <<: *network
 
 services:
-  wn:
-    <<: *default
-    container_name: walletnode-1
-    hostname: walletnode-1
-    image: gonode-wn-service:0.1
-    environment:
-      - INTEGRATION_TEST_ENV=true
-    build:
-      context: ../..
-      dockerfile: ./integration/infra/wn.it.Dockerfile
-    command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/wn.yml --pastel-config-file=/configs/p0.conf"
-    ports:
-      - 18089:8089
-      - 15005:50051
-    volumes:
-      - ~/.pastel/rqfiles:/root/.pastel/rqfiles
+  # wn:
+  #   <<: *default
+  #   container_name: walletnode-1
+  #   hostname: walletnode-1
+  #   image: gonode-wn-service:0.1
+  #   environment:
+  #     - INTEGRATION_TEST_ENV=true
+  #   build:
+  #     context: ../..
+  #     dockerfile: ./integration/infra/wn.it.Dockerfile
+  #   command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/wn.yml --pastel-config-file=/configs/p0.conf"
+  #   ports:
+  #     - 18089:8089
+  #     - 15005:50051
+  #   volumes:
+  #     - ~/.pastel/rqfiles:/root/.pastel/rqfiles
   sn1:
     <<: *default
     container_name: snserver-1
@@ -39,6 +39,8 @@ services:
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn1.yml --pastel-config-file=/configs/p1.conf"
     ports:
       - 19090:9090
+    volumes:
+      - /home/mrrobot/integration/sn1:/root/.pastel/supernode/p2p-data
   sn2:
     <<: *default
     container_name: snserver-2
@@ -51,6 +53,8 @@ services:
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn2.yml --pastel-config-file=/configs/p2.conf"
     ports:
       - 19091:9090
+    volumes:
+      - /home/mrrobot/integration/sn2:/root/.pastel/supernode/p2p-data
   sn3:
     <<: *default
     container_name: snserver-3
@@ -63,6 +67,8 @@ services:
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn3.yml --pastel-config-file=/configs/p3.conf"
     ports:
       - 19092:9090
+    volumes:
+      - /home/mrrobot/integration/sn3:/root/.pastel/supernode/p2p-data
   sn4:
     <<: *default
     container_name: snserver-4
@@ -75,6 +81,8 @@ services:
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn4.yml --pastel-config-file=/configs/p4.conf"
     ports:
       - 19093:9090
+    volumes:
+      - /home/mrrobot/integration/sn4:/root/.pastel/supernode/p2p-data
   sn5:
     <<: *default
     container_name: snserver-5
@@ -84,11 +92,11 @@ services:
       - INTEGRATION_TEST_ENV=true
     depends_on:
       - sn1
-      - sn2
-      - sn3
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn4.yml --pastel-config-file=/configs/p5.conf"
     ports:
       - 19094:9090
+    volumes:
+      - /home/mrrobot/integration/sn5:/root/.pastel/supernode/p2p-data
   sn6:
     <<: *default
     container_name: snserver-6
@@ -98,11 +106,11 @@ services:
       - INTEGRATION_TEST_ENV=true
     depends_on:
       - sn1
-      - sn2
-      - sn3
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn4.yml --pastel-config-file=/configs/p6.conf"
     ports:
       - 19095:9090
+    volumes:
+      - /home/mrrobot/integration/sn6:/root/.pastel/supernode/p2p-data
   sn7:
     <<: *default
     container_name: snserver-7
@@ -112,52 +120,52 @@ services:
       - INTEGRATION_TEST_ENV=true
     depends_on:
       - sn1
-      - sn2
-      - sn3
     command: sh -c "/app/pastelup start rq-service && /app/app --config-file=/configs/sn7.yml --pastel-config-file=/configs/p7.conf"
     ports:
       - 19096:9090
-  dd-server-1:
-    <<: *default
-    container_name: dd-server-1
-    hostname: dd-server-1
-    image: gonode-dd-server:0.1 
-    build:
-      context: ../..
-      dockerfile: ./integration/infra/dd.it.Dockerfile
-    command: sh -c "/app/app"
-    ports:
-      - 51052:51052
-  dd-server-4:
-    <<: *default
-    container_name: dd-server-4
-    logging:
-      driver: none
-    hostname: dd-server-4
-    image: gonode-dd-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 54052:51052
-  dd-server-2:
-    <<: *default
-    container_name: dd-server-2
-    hostname: dd-server-2
-    logging:
-      driver: none
-    image: gonode-dd-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 52052:51052
-  dd-server-3:
-    <<: *default
-    container_name: dd-server-3
-    logging:
-      driver: none
-    hostname: dd-server-3
-    image: gonode-dd-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 53052:51052
+    volumes:
+      - /home/mrrobot/integration/sn7:/root/.pastel/supernode/p2p-data
+  # dd-server-1:
+  #   <<: *default
+  #   container_name: dd-server-1
+  #   hostname: dd-server-1
+  #   image: gonode-dd-server:0.1 
+  #   build:
+  #     context: ../..
+  #     dockerfile: ./integration/infra/dd.it.Dockerfile
+  #   command: sh -c "/app/app"
+  #   ports:
+  #     - 51052:51052
+  # dd-server-4:
+  #   <<: *default
+  #   container_name: dd-server-4
+  #   logging:
+  #     driver: none
+  #   hostname: dd-server-4
+  #   image: gonode-dd-server:0.1
+  #   command: sh -c "/app/app"
+  #   ports:
+  #     - 54052:51052
+  # dd-server-2:
+  #   <<: *default
+  #   container_name: dd-server-2
+  #   hostname: dd-server-2
+  #   logging:
+  #     driver: none
+  #   image: gonode-dd-server:0.1
+  #   command: sh -c "/app/app"
+  #   ports:
+  #     - 52052:51052
+  # dd-server-3:
+  #   <<: *default
+  #   container_name: dd-server-3
+  #   logging:
+  #     driver: none
+  #   hostname: dd-server-3
+  #   image: gonode-dd-server:0.1
+  #   command: sh -c "/app/app"
+  #   ports:
+  #     - 53052:51052
   #rq-server-0:
   #  <<: *default
   #  container_name: rq-server-0
@@ -166,36 +174,36 @@ services:
   #  ports:
   #    - 49051:50051
   #  command: sh -c "./pastelup start rq-service && tail -f /root/.pastel/rqservice.log"
-  dd-server-5:
-    <<: *default
-    container_name: dd-server-5
-    logging:
-      driver: none
-    hostname: dd-server-5
-    image: gonode-dd-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 55052:51052
-  dd-server-6:
-    <<: *default
-    container_name: dd-server-6
-    logging:
-      driver: none
-    hostname: dd-server-6
-    image: gonode-dd-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 56052:51052
-  dd-server-7:
-    <<: *default
-    container_name: dd-server-7
-    logging:
-      driver: none
-    hostname: dd-server-7
-    image: gonode-dd-server:0.1
-    command: sh -c "/app/app"
-    ports:
-      - 57052:51052
+  # dd-server-5:
+  #   <<: *default
+  #   container_name: dd-server-5
+  #   logging:
+  #     driver: none
+  #   hostname: dd-server-5
+  #   image: gonode-dd-server:0.1
+  #   command: sh -c "/app/app"
+  #   ports:
+  #     - 55052:51052
+  # dd-server-6:
+  #   <<: *default
+  #   container_name: dd-server-6
+  #   logging:
+  #     driver: none
+  #   hostname: dd-server-6
+  #   image: gonode-dd-server:0.1
+  #   command: sh -c "/app/app"
+  #   ports:
+  #     - 56052:51052
+  # dd-server-7:
+  #   <<: *default
+  #   container_name: dd-server-7
+  #   logging:
+  #     driver: none
+  #   hostname: dd-server-7
+  #   image: gonode-dd-server:0.1
+  #   command: sh -c "/app/app"
+  #   ports:
+  #     - 57052:51052
   pasteld-1:
     <<: *default
     container_name: pasteld-1
@@ -215,6 +223,8 @@ services:
     container_name: pasteld-0
     hostname: pasteld-0
     image: gonode-pasteld:0.1
+    logging:
+      driver: none
     command: sh -c "/app/app"
     ports:
       - 29930:29932

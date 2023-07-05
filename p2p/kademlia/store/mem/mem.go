@@ -5,6 +5,8 @@ import (
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 )
 
 // Store is a simple in-memory key/value store used for unit testing
@@ -19,7 +21,7 @@ type Store struct {
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(_ context.Context) [][]byte {
+func (s *Store) GetKeysForReplication(_ context.Context, _ time.Time) [][]byte {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -111,4 +113,19 @@ func NewStore() *Store {
 		replications:      make(map[string]time.Time),
 		replicateInterval: time.Second * 3600,
 	}
+}
+
+// GetAllReplicationInfo returns all records in replication table
+func (s *Store) GetAllReplicationInfo(_ context.Context) ([]domain.NodeReplicationInfo, error) {
+	return nil, nil
+}
+
+// UpdateReplicationInfo updates replication info
+func (s *Store) UpdateReplicationInfo(_ context.Context, _ domain.NodeReplicationInfo) error {
+	return nil
+}
+
+// AddReplicationInfo adds replication info
+func (s *Store) AddReplicationInfo(_ context.Context, _ domain.NodeReplicationInfo) error {
+	return nil
 }

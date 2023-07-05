@@ -5,6 +5,7 @@ go 1.17
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/pastel => ../pastel
+	github.com/pastelnetwork/gonode/utils => ../utils
 )
 
 require (

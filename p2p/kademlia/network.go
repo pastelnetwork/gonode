@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	defaultConnDeadline   = 60 * time.Minute
+	defaultConnDeadline   = 30 * time.Second
 	defaultConnRate       = 1000
 	defaultMaxPayloadSize = 16 * 1024 * 1024 // 16MB
 )
@@ -207,17 +207,22 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	// format the key
 	key := s.dht.hashKey(request.Data)
 
-	// store the data to local storage
-	if err := s.dht.store.Store(ctx, key, request.Data); err != nil {
-		err = errors.Errorf("store the data: %w", err)
-		response := &StoreDataResponse{
-			Status: ResponseStatus{
-				Result: ResultFailed,
-				ErrMsg: err.Error(),
-			},
+	value, err := s.dht.store.Retrieve(ctx, key)
+	if err == nil && len(value) > 0 {
+		log.WithContext(ctx).WithField("key", string(key)).Info("data already exists")
+	} else {
+		// store the data to local storage
+		if err := s.dht.store.Store(ctx, key, request.Data); err != nil {
+			err = errors.Errorf("store the data: %w", err)
+			response := &StoreDataResponse{
+				Status: ResponseStatus{
+					Result: ResultFailed,
+					ErrMsg: err.Error(),
+				},
+			}
+			resMsg := s.dht.newMessage(StoreData, message.Sender, response)
+			return s.encodeMesage(resMsg)
 		}
-		resMsg := s.dht.newMessage(StoreData, message.Sender, response)
-		return s.encodeMesage(resMsg)
 	}
 
 	response := &StoreDataResponse{

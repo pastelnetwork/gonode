@@ -2,6 +2,9 @@ package kademlia
 
 import (
 	"context"
+	"time"
+
+	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 )
 
 // Store is the interface for implementing the storage mechanism for the DHT
@@ -16,7 +19,7 @@ type Store interface {
 	Delete(ctx context.Context, key []byte)
 
 	// KeysForReplication returns the keys of all data to be replicated across the network
-	GetKeysForReplication(ctx context.Context) [][]byte
+	GetKeysForReplication(ctx context.Context, from time.Time) [][]byte
 
 	// Stats returns stats of store
 	Stats(ctx context.Context) (map[string]interface{}, error)
@@ -34,5 +37,13 @@ type Store interface {
 	UpdateKeyReplication(ctx context.Context, key []byte) error
 
 	// StoreBatch stores a batch of key/value pairs for the local node with the replication
-	StoreBatch(_ context.Context, values [][]byte) error
+	StoreBatch(ctx context.Context, values [][]byte) error
+	// GetAllReplicationInfo returns all records in replication table
+	GetAllReplicationInfo(ctx context.Context) ([]domain.NodeReplicationInfo, error)
+
+	// UpdateReplicationInfo updates replication info
+	UpdateReplicationInfo(ctx context.Context, rep domain.NodeReplicationInfo) error
+
+	// AddReplicationInfo adds replication info
+	AddReplicationInfo(ctx context.Context, rep domain.NodeReplicationInfo) error
 }

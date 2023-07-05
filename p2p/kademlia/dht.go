@@ -15,6 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
 )
@@ -24,22 +25,23 @@ var (
 	defaultNetworkPort = 4445
 	defaultRefreshTime = time.Second * 3600
 	defaultPingTime    = time.Second * 10
-	defaultUpdateTime  = time.Minute * 10
 )
 
 // DHT represents the state of the local node in the distributed hash table
 type DHT struct {
-	ht           *HashTable       // the hashtable for routing
-	options      *Options         // the options of DHT
-	network      *Network         // the network of DHT
-	store        Store            // the storage of DHT
-	done         chan struct{}    // distributed hash table is done
-	cache        storage.KeyValue // store bad bootstrap addresses
-	pastelClient pastel.Client
-	externalIP   string
-	mtx          sync.Mutex
-	authHelper   *AuthHelper
-	ignorelist   *BanList
+	ht                   *HashTable       // the hashtable for routing
+	options              *Options         // the options of DHT
+	network              *Network         // the network of DHT
+	store                Store            // the storage of DHT
+	done                 chan struct{}    // distributed hash table is done
+	cache                storage.KeyValue // store bad bootstrap addresses
+	pastelClient         pastel.Client
+	externalIP           string
+	mtx                  sync.Mutex
+	authHelper           *AuthHelper
+	ignorelist           *BanList
+	nodeReplicationTimes map[string]domain.NodeReplicationInfo
+	replicationMtx       sync.Mutex
 }
 
 // Options contains configuration options for the local node
@@ -74,14 +76,25 @@ func NewDHT(ctx context.Context, store Store, pc pastel.Client, secInfo *alts.Se
 	if options.Port <= 0 {
 		options.Port = defaultNetworkPort
 	}
+	info, err := store.GetAllReplicationInfo(ctx)
+	if err != nil {
+		log.P2P().WithContext(ctx).WithError(err).Errorf("get all replicationInfo failed")
+	}
+
+	replicationMap := make(map[string]domain.NodeReplicationInfo)
+	for _, v := range info {
+		replicationMap[string(v.ID)] = v
+	}
 
 	s := &DHT{
-		store:        store,
-		options:      options,
-		pastelClient: pc,
-		done:         make(chan struct{}),
-		cache:        memory.NewKeyValue(),
-		ignorelist:   NewBanList(ctx),
+		store:                store,
+		options:              options,
+		pastelClient:         pc,
+		done:                 make(chan struct{}),
+		cache:                memory.NewKeyValue(),
+		ignorelist:           NewBanList(ctx),
+		nodeReplicationTimes: replicationMap,
+		replicationMtx:       sync.Mutex{},
 	}
 
 	if options.ExternalIP != "" {
@@ -139,59 +152,6 @@ func (s *DHT) getExternalIP() (string, error) {
 	return externalIP, nil
 }
 
-// StartReplication starts replication
-func (s *DHT) StartReplication(ctx context.Context) error {
-	log.P2P().WithContext(ctx).Info("replication worker started")
-
-	for {
-		select {
-		case <-time.After(defaultUpdateTime):
-			log.P2P().WithContext(ctx).Info("replication worker not running")
-			//s.Replicate(ctx)
-		case <-ctx.Done():
-			log.P2P().WithContext(ctx).Error("closing replication worker")
-			return nil
-		}
-	}
-}
-
-// Replicate replicates the data
-func (s *DHT) Replicate(ctx context.Context) {
-	for i := 0; i < B; i++ {
-		if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
-			// refresh the bucket by iterative find node
-			id := s.ht.randomIDFromBucket(K)
-			if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
-				log.P2P().WithContext(ctx).WithError(err).Error("replicate iterate find node failed")
-			}
-		}
-	}
-
-	// replication
-	replicationKeys := s.store.GetKeysForReplication(ctx)
-	log.P2P().WithContext(ctx).WithField("repkey", len(replicationKeys)).Info("replication keys")
-	for _, key := range replicationKeys {
-		value, err := s.store.Retrieve(ctx, key)
-		if err != nil {
-			log.P2P().WithContext(ctx).WithError(err).Error("replicate store retrieve failed")
-			continue
-		}
-
-		if value != nil {
-			// iterate store the value
-			if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
-				log.P2P().WithContext(ctx).WithError(err).Error("replicate iterate store data failed")
-			} else {
-				if err := s.store.UpdateKeyReplication(ctx, key); err != nil {
-					log.P2P().WithContext(ctx).WithError(err).Error("replicate update key replication failed")
-				}
-			}
-		}
-	}
-
-	log.P2P().WithContext(ctx).Info("Replication done")
-}
-
 // Start the distributed hash table
 func (s *DHT) Start(ctx context.Context) error {
 	// start the network
@@ -199,7 +159,7 @@ func (s *DHT) Start(ctx context.Context) error {
 		return fmt.Errorf("start network: %v", err)
 	}
 
-	go s.StartReplication(ctx)
+	go s.StartReplicationWorker(ctx)
 
 	return nil
 }
@@ -239,6 +199,11 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	if err := s.retryStore(ctx, key, data); err != nil {
 		log.WithContext(ctx).WithError(err).Error("local data store failure after retries")
 		return "", fmt.Errorf("retry store data to local storage: %v", err)
+	}
+
+	if _, err := s.iterate(ctx, IterateStore, key, data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("iterate data store failure")
+		return "", fmt.Errorf("iterative store data: %v", err)
 	}
 
 	return retKey, nil
@@ -712,6 +677,12 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	if s.ht.hasBucketNode(index, node.ID) {
 		s.ht.refreshNode(node.ID)
 		return nil
+	}
+
+	if err := s.updateReplicationNode(ctx, node.ID, node.IP, node.Port, true); err != nil {
+		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("node-ip", node.IP).WithError(err).Error("update replication node failed")
+	} else {
+		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("node-ip", node.IP).Info("adding new node")
 	}
 
 	s.ht.mutex.Lock()

@@ -160,8 +160,8 @@ func (s *BanList) schedulePurge(ctx context.Context) {
 
 // ToNodeList returns the list of nodes
 func (s *BanList) ToNodeList() []*Node {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
+	s.mtx.RLock()
+	defer s.mtx.RUnlock()
 
 	ret := make([]*Node, 0)
 
