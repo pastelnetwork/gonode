@@ -312,8 +312,6 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 			})
 
 			task.UpdateStatus(common.StatusTaskRejected)
-			task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-
 			return errors.Errorf("error validating nft ticket data")
 		}
 	}
