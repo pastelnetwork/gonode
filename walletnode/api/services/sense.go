@@ -84,7 +84,7 @@ func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.Upload
 }
 
 // StartProcessing - Starts a processing image task
-func (service *SenseAPIHandler) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
+func (service *SenseAPIHandler) StartProcessing(ctx context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		log.WithError(err).Error("unable to add task")
@@ -95,7 +95,14 @@ func (service *SenseAPIHandler) StartProcessing(_ context.Context, p *sense.Star
 		TaskID: taskID,
 	}
 
-	log.Infof("task has been added: %s", taskID)
+	fileName, err := service.register.ImageHandler.FileDb.Get(p.ImageID)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to get file data")
+	}
+
+	log.WithField("task_id", taskID).WithField("file_id", p.ImageID).WithField("file_name", string(fileName)).
+		Info("task has been added")
+
 	return res, nil
 }
 
