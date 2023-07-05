@@ -137,7 +137,6 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	newCtx := log.ContextWithPrefix(context.Background(), "Collection")
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.collectionTXID, int64(task.service.config.CollectionRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
-		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations")
 		return errors.Errorf("wait reg-collection ticket valid: %w", err)
@@ -158,7 +157,6 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorActivatingTicket)
-		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("active collection ticket: %w", err)
 	}
 	task.StatusLog[common.FieldActivateTicketTxnID] = activateTxID
@@ -176,7 +174,6 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations for activation")
-		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 		return errors.Errorf("wait activate txid valid: %w", err)
 	}
 	task.UpdateStatus(common.StatusTicketActivated)
