@@ -1,20 +1,14 @@
 orbs:
-  go: circleci/go@1.5.0
+  #  go: circleci/go@1.5.0
   aws-cli: circleci/aws-cli@2.0.3
   aws-s3: circleci/aws-s3@3.0.0
 version: 2.1
 
 defaults: &defaults
-  parameters:
-    version:
-      type: string
-      default: "latest"
-  docker:
-    - image: "circleci/golang:<< parameters.version >>"
+  machine:
+    image: ubuntu-2204:current
   environment:
     GO111MODULE: "on"
-    GOPATH: "/home/circleci/project/.go"
-    PATH: "/home/circleci/.local/bin:/home/circleci/bin:/home/circleci/project/.go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 commands:
   test:
@@ -32,7 +26,7 @@ commands:
           working_directory: ~/project/<< parameters.package >>
           command: |
             ls
-           # diff -u <(echo -n) <(gofmt -d -e .)
+            # diff -u <(echo -n) <(gofmt -d -e .)
       - run:
           name: "<< parameters.package >>: Run go vet"
           working_directory: ~/project/<< parameters.package >>
@@ -110,19 +104,19 @@ commands:
       - run:
           name: "<< parameters.moduleSubDir >> << parameters.package >>: xgo build for << parameters.targets >>"
           command: |
-            export WORKING_DIR=~/project/build/github.com/pastelnetwork/gonode
+            export WORKING_DIR=~/project
             export MACOS_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-darwin-10.14-amd64
             export WINDOWS_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-windows-4.0-amd64.exe
             export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-linux-amd64
-            export APP_VERSION=$(git describe --tag)
-            export APP_LDFLAGS="-X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
-            GOPATH= xgo -go latest --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> -ldflags "$APP_LDFLAGS"  ./
-
-            mkdir -p << parameters.outputDirectory >>
-            docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
             
-            ls -R ./<< parameters.outputDirectory >>
-            cd ./<< parameters.outputDirectory >>
+            cd ~/project/<< parameters.moduleSubDir >>
+            ls -lt 
+            
+            export CIRCLE_TAG=$(git describe --tag)
+            export APP_LDFLAGS="-X github.com/pastelnetwork/gonode/common/version.version=$CIRCLE_TAG" 
+            
+            xgo -go go-1.20.3 --targets=<< parameters.targets >> -ldflags "$APP_LDFLAGS"  ./...
+
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
               echo "Create sha256 checksum of linux/amd64 build"
               sha256sum "$LINUX_ARTIFACT" > "$LINUX_ARTIFACT.sha256"
@@ -135,7 +129,8 @@ commands:
               echo "Create sha256 checksum of windows/amd64 build"
               sha256sum "$WINDOWS_ARTIFACT" > "$WINDOWS_ARTIFACT.sha256"
             fi
-            ls -R ./*
+            
+            cd ~/project
   release:
     parameters:
       buildContainerName:
@@ -202,8 +197,8 @@ commands:
           arguments: |
             --acl public-read \
             --cache-control "max-age=86400"
-      - run: aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths /beta/gonode/\* 
-     
+      - run: aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths /beta/gonode/\*
+
   github-upload-all-os:
     parameters:
       working_directory:
@@ -269,6 +264,21 @@ commands:
             make check
             sudo make install
             sudo /sbin/ldconfig -v
+  install_golang:
+    steps:
+      - run:
+          name: Install Go
+          command: |
+            cd ..
+            wget https://golang.org/dl/go1.20.3.linux-amd64.tar.gz
+            sudo rm -r /usr/local/go
+            sudo tar -C /usr/local -xzf go1.20.3.linux-amd64.tar.gz
+            echo 'export PATH=$PATH:/usr/local/go/bin:~/go/bin' >> ~/.bashrc
+            echo 'export CGO_ENABLED=1' >> ~/.bashrc
+            echo "export GOPATH=\"$HOME/go\"" >> ~/.bashrc
+            echo 'export GOROOT="/usr/local/go"' >> ~/.bashrc
+            source ~/.bashrc
+            go version           
 
 jobs:
   prepare_workspace:
@@ -279,6 +289,7 @@ jobs:
           name: Detect not merged code
           command: |
             ./scripts/merge_master.sh
+      - install_golang
       - run:
           name: Print the go version
           command: |
@@ -299,11 +310,11 @@ jobs:
       - run:
           name: Install mockery
           command: |
-            go get -u github.com/vektra/mockery/cmd/mockery
+            go install github.com/vektra/mockery/v2@v2.21.4
       - run:
           name: Install xgo
           command: |
-            go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
+            go install -v src.techknowlogick.com/xgo@v1.7.0+1.19.5
       - run:
           name: "Go generate"
           working_directory: ~/project/
@@ -403,14 +414,12 @@ jobs:
       - install_tensorflow
       - test:
           package: "hermes"
-# Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
+  # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
     <<: *defaults
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 20.10.2
-          docker_layer_caching: true
+      - install_golang
       - run:
           name: Install github-release
           command: |
@@ -418,9 +427,7 @@ jobs:
       - run:
           name: Install xgo
           command: |
-            go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
-      - create-sources-container:
-          containerName: "sourcesContainer"
+            go install -v src.techknowlogick.com/xgo@v1.7.0+1.19.5
       - release:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
@@ -453,12 +460,14 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - setup_remote_docker:
-          version: 20.10.2
-          docker_layer_caching: true
       - create-sources-container:
           containerName: "sourcesContainer"
+      - install_golang
       - install_tensorflow
+      - run:
+          name: Install xgo
+          command: |
+            go install -v src.techknowlogick.com/xgo@v1.7.0+1.19.5
       - build:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
