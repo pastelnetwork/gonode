@@ -34,7 +34,7 @@ type fingerprints struct {
 	OpenAPIGroupIDString               sql.NullString `db:"open_api_group_id_string"`
 	CollectionNameString               sql.NullString `db:"collection_name_string"`
 	RegistrationTicketTXID             sql.NullString `db:"registration_ticket_txid"`
-	TxIDTimestamp                      int64          `db:"txid_timestamp"`
+	TxIDTimestamp                      sql.NullInt64  `db:"txid_timestamp"`
 }
 
 func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
@@ -54,7 +54,7 @@ func (r *fingerprints) toDomain() (*domain.DDFingerprints, error) {
 		OpenAPIGroupIDString:               r.OpenAPIGroupIDString.String,
 		CollectionNameString:               r.CollectionNameString.String,
 		RegTXID:                            r.RegistrationTicketTXID.String,
-		TxIDTimestamp:                      r.TxIDTimestamp,
+		TxIDTimestamp:                      r.TxIDTimestamp.Int64,
 	}, nil
 
 }
