@@ -244,7 +244,6 @@ func StringInSlice(list []string, str string) bool {
 func hasActiveNetworkInterface() bool {
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		fmt.Println(err.Error())
 		return false
 	}
 

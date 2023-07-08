@@ -36,6 +36,7 @@ type Job struct {
 	ReplicatedAt time.Time
 	TaskID       string
 	ReqID        string
+	DataType     int
 }
 
 // Worker represents the worker that executes the job
@@ -54,6 +55,7 @@ type Store struct {
 type Record struct {
 	Key          string
 	Data         []byte
+	Datatype     int
 	IsOriginal   bool
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
@@ -99,6 +101,10 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 		}
 	}
 
+	if err := s.ensureDatatypeColumn(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create datatype column in p2p database")
+	}
+
 	_, err = db.Exec(`PRAGMA journal_mode=WAL;
 	PRAGMA synchronous=NORMAL;
 	PRAGMA cache_size=-20000;
@@ -129,6 +135,39 @@ func (s *Store) checkReplicateStore() bool {
 	var name string
 	err := s.db.Get(&name, query)
 	return err == nil
+}
+
+func (s *Store) ensureDatatypeColumn() error {
+	rows, err := s.db.Query("PRAGMA table_info(data)")
+	if err != nil {
+		return fmt.Errorf("failed to fetch table 'data' info: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, dtype string
+		var dflt_value *string
+		err = rows.Scan(&cid, &name, &dtype, &notnull, &dflt_value, &pk)
+		if err != nil {
+			return fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		if name == "datatype" {
+			return nil
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error during iteration: %w", err)
+	}
+
+	_, err = s.db.Exec(`ALTER TABLE data ADD COLUMN datatype INT DEFAULT 0`)
+	if err != nil {
+		return fmt.Errorf("failed to add column 'datatype' to table 'data': %w", err)
+	}
+
+	return nil
 }
 
 func (s *Store) migrate() error {
@@ -257,12 +296,13 @@ func (w *Worker) Stop() {
 }
 
 // Store function creates a new job and pushes it into the JobQueue
-func (s *Store) Store(ctx context.Context, key []byte, value []byte) error {
+func (s *Store) Store(ctx context.Context, key []byte, value []byte, datatype int) error {
 
 	job := Job{
-		JobType: "Insert",
-		Key:     key,
-		Value:   value,
+		JobType:  "Insert",
+		Key:      key,
+		Value:    value,
+		DataType: datatype,
 	}
 
 	if val := ctx.Value(log.TaskIDKey); val != nil {
@@ -282,10 +322,11 @@ func (s *Store) Store(ctx context.Context, key []byte, value []byte) error {
 }
 
 // StoreBatch stores a batch of key/value pairs for the local node with the replication
-func (s *Store) StoreBatch(ctx context.Context, values [][]byte) error {
+func (s *Store) StoreBatch(ctx context.Context, values [][]byte, datatype int) error {
 	job := Job{
-		JobType: "BatchInsert",
-		Values:  values,
+		JobType:  "BatchInsert",
+		Values:   values,
+		DataType: datatype,
 	}
 
 	if val := ctx.Value(log.TaskIDKey); val != nil {
@@ -358,6 +399,19 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	return r.Data, nil
 }
 
+// RetrieveWithType will return the local key/value if it exists
+func (s *Store) RetrieveWithType(_ context.Context, key []byte) ([]byte, int, error) {
+	hkey := hex.EncodeToString(key)
+
+	r := Record{}
+	err := s.db.Get(&r, `SELECT data,datatype FROM data WHERE key = ?`, hkey)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get record with type by key %s: %w", hkey, err)
+	}
+
+	return r.Data, r.Datatype, nil
+}
+
 // Checkpoint method for the store
 func (s *Store) checkpoint() error {
 	//dbLock.Lock()
@@ -374,14 +428,14 @@ func (s *Store) checkpoint() error {
 func (s *Store) performJob(j Job) error {
 	switch j.JobType {
 	case "Insert":
-		err := s.storeRecord(j.Key, j.Value)
+		err := s.storeRecord(j.Key, j.Value, j.DataType)
 		if err != nil {
 			log.WithError(err).WithField("taskID", j.TaskID).WithField("id", j.ReqID).Error("failed to store record")
 			return fmt.Errorf("failed to store record: %w", err)
 		}
 
 	case "BatchInsert":
-		err := s.storeBatchRecord(j.Values)
+		err := s.storeBatchRecord(j.Values, j.DataType)
 		if err != nil {
 			log.WithError(err).WithField("taskID", j.TaskID).WithField("id", j.ReqID).Error("failed to store batch records")
 			return fmt.Errorf("failed to store batch record: %w", err)
@@ -406,14 +460,14 @@ func (s *Store) performJob(j Job) error {
 }
 
 // storeRecord will store a key/value pair for the local node
-func (s *Store) storeRecord(key []byte, value []byte) error {
+func (s *Store) storeRecord(key []byte, value []byte, typ int) error {
 
 	operation := func() error {
 		hkey := hex.EncodeToString(key)
 
 		now := time.Now().UTC()
-		r := Record{Key: hkey, Data: value, UpdatedAt: now}
-		res, err := s.db.NamedExec(`INSERT INTO data(key, data) values(:key, :data) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
+		r := Record{Key: hkey, Data: value, UpdatedAt: now, Datatype: typ}
+		res, err := s.db.NamedExec(`INSERT INTO data(key, data, datatype) values(:key, :data, :datatype) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
 		if err != nil {
 			return fmt.Errorf("cannot insert or update record with key %s: %w", hkey, err)
 		}
@@ -439,7 +493,7 @@ func (s *Store) storeRecord(key []byte, value []byte) error {
 }
 
 // storeBatchRecord will store a batch of values with their SHA256 hash as the key
-func (s *Store) storeBatchRecord(values [][]byte) error {
+func (s *Store) storeBatchRecord(values [][]byte, typ int) error {
 	operation := func() error {
 		tx, err := s.db.Beginx()
 		if err != nil {
@@ -447,7 +501,7 @@ func (s *Store) storeBatchRecord(values [][]byte) error {
 		}
 
 		// Prepare insert statement
-		stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data) values(:key, :data) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`)
+		stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data, datatype) values(:key, :data, :datatype) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`)
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("cannot prepare statement: %w", err)
@@ -466,7 +520,7 @@ func (s *Store) storeBatchRecord(values [][]byte) error {
 			}
 
 			hkey := hex.EncodeToString(hashed)
-			r := Record{Key: hkey, Data: values[i], UpdatedAt: now}
+			r := Record{Key: hkey, Data: values[i], UpdatedAt: now, Datatype: typ}
 
 			// Execute the insert statement
 			_, err = stmt.Exec(r)
@@ -526,13 +580,24 @@ func (s *Store) updateKeyReplication(key []byte, replicatedAt time.Time) error {
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time) (keys [][]byte) {
+func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time) (retkeys [][]byte) {
+	var keys []string
 	if err := s.db.Select(&keys, `SELECT key FROM data WHERE createdAt > ?`, from); err != nil {
 		log.P2P().WithError(err).WithContext(ctx).Errorf("failed to get records for replication older than %s", from)
 		return nil
 	}
 
-	return keys
+	for i := 0; i < len(keys); i++ {
+		str, err := hex.DecodeString(keys[i])
+		if err != nil {
+			log.WithContext(ctx).WithField("key", keys[i]).Error("replicate failed to hex decode key")
+			continue
+		}
+
+		retkeys = append(retkeys, str)
+	}
+
+	return retkeys
 }
 
 func (s *Store) deleteAll() error {

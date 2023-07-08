@@ -432,13 +432,13 @@ func (task *NftRegistrationTask) storeRaptorQSymbols(ctx context.Context) error 
 
 // Step 19
 func (task *NftRegistrationTask) storeThumbnails(ctx context.Context) error {
-	if _, err := task.storage.StoreFileIntoP2P(ctx, task.PreviewThumbnail); err != nil {
+	if _, err := task.storage.StoreFileIntoP2P(ctx, task.PreviewThumbnail, common.P2PPreviewThumbnail); err != nil {
 		return errors.Errorf("store preview thumbnail into kademlia: %w", err)
 	}
-	if _, err := task.storage.StoreFileIntoP2P(ctx, task.MediumThumbnail); err != nil {
+	if _, err := task.storage.StoreFileIntoP2P(ctx, task.MediumThumbnail, common.P2PMediumThumbnail); err != nil {
 		return errors.Errorf("store medium thumbnail into kademlia: %w", err)
 	}
-	if _, err := task.storage.StoreFileIntoP2P(ctx, task.SmallThumbnail); err != nil {
+	if _, err := task.storage.StoreFileIntoP2P(ctx, task.SmallThumbnail, common.P2PSmallThumbnail); err != nil {
 		return errors.Errorf("store small thumbnail into kademlia: %w", err)
 	}
 
@@ -448,10 +448,10 @@ func (task *NftRegistrationTask) storeThumbnails(ctx context.Context) error {
 // Step 19
 func (task *NftRegistrationTask) storeIDFiles(ctx context.Context) error {
 	ctx = context.WithValue(ctx, log.TaskIDKey, task.ID())
-	if err := task.storage.StoreBatch(ctx, task.ddFpFiles); err != nil {
+	if err := task.storage.StoreBatch(ctx, task.ddFpFiles, common.P2PDataDDMetadata); err != nil {
 		return errors.Errorf("store ddAndFp files into kademlia: %w", err)
 	}
-	if err := task.storage.StoreBatch(ctx, task.rqIDFiles); err != nil {
+	if err := task.storage.StoreBatch(ctx, task.rqIDFiles, common.P2PDataCascadeMetadata); err != nil {
 		return errors.Errorf("store rqIDFiles files into kademlia: %w", err)
 	}
 

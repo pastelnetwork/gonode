@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 var (
 	// defaultReplicationTime is the default time for replication - in case lastReplicated is nil
 	// it will be used as the lastReplicated time
-	defaultReplicationTime = time.Hour * 12 // 12 hrs
+	defaultReplicationTime = time.Hour * 24 * 30 * 6 // 6 months
 
 	// defaultReplicationInterval is the default interval for replication.
 	defaultReplicationInterval = time.Minute * 5
@@ -106,7 +107,7 @@ func (s *DHT) Replicate(ctx context.Context) {
 		if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
 			// refresh the bucket by iterative find node
 			id := s.ht.randomIDFromBucket(K)
-			if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
+			if _, err := s.iterate(ctx, IterateFindNode, id, nil, 0); err != nil {
 				log.P2P().WithContext(ctx).WithError(err).Error("replicate iterate find node failed")
 			}
 		}
@@ -143,9 +144,9 @@ func (s *DHT) Replicate(ctx context.Context) {
 			from = *info.LastReplicatedAt
 
 			// TODO: REMOVE THIS BEFORE RELEASE
-			if time.Since(from) > defaultReplicationTime {
-				from = time.Now().Add(-defaultReplicationTime)
-			}
+			//if time.Since(from) > defaultReplicationTime {
+			//	from = time.Now().Add(-defaultReplicationTime)
+			//}
 		}
 
 		logEntry.WithField("from", from.String()).Info("replication from")
@@ -168,23 +169,23 @@ func (s *DHT) Replicate(ctx context.Context) {
 				// the node is not supposed to hold this key as its not in 6 closest contacts
 				continue
 			}
-			logEntry.WithField("key", key).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
+			logEntry.WithField("key", hex.EncodeToString(key)).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
 
-			value, err := s.store.Retrieve(ctx, key)
+			value, typ, err := s.store.RetrieveWithType(ctx, key)
 			if err != nil {
 				log.P2P().WithContext(ctx).WithError(err).Error("replicate store retrieve failed")
 				continue
 			}
 
 			if value != nil {
-				request := &StoreDataRequest{Data: value}
+				request := &StoreDataRequest{Data: value, Type: typ}
 				response, err := s.sendStoreData(ctx, n, request)
 				if err != nil {
 					logEntry.WithError(err).Error("replicate store data failed")
-					replicatedCount++
 				} else if response.Status.Result != ResultOk {
 					logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply replicate store data failed")
 				} else {
+					replicatedCount++
 					logEntry.Info("replicate store data success")
 				}
 			}
@@ -233,10 +234,10 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, info domain.NodeReplicationInf
 			// the node is not supposed to hold this key as its not in 6 closest contacts
 			continue
 		}
-		logEntry.WithField("key", key).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
+		logEntry.WithField("key", hex.EncodeToString(key)).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
 
 		// get the value
-		value, err := s.store.Retrieve(ctx, key)
+		value, typ, err := s.store.RetrieveWithType(ctx, key)
 		if err != nil {
 			log.P2P().WithContext(ctx).WithError(err).Error("replicate store retrieve failed")
 			continue
@@ -245,7 +246,7 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, info domain.NodeReplicationInf
 		key := s.hashKey(value)
 
 		// iterative store the data
-		if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
+		if _, err := s.iterate(ctx, IterateStore, key, value, typ); err != nil {
 			log.WithContext(ctx).WithError(err).Error("replicate iterate data store failure")
 			continue
 		}

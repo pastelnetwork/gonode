@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net"
@@ -209,10 +210,10 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 
 	value, err := s.dht.store.Retrieve(ctx, key)
 	if err == nil && len(value) > 0 {
-		log.WithContext(ctx).WithField("key", string(key)).Info("data already exists")
+		log.WithContext(ctx).WithField("key", hex.EncodeToString(key)).Info("data already exists")
 	} else {
 		// store the data to local storage
-		if err := s.dht.store.Store(ctx, key, request.Data); err != nil {
+		if err := s.dht.store.Store(ctx, key, request.Data, request.Type); err != nil {
 			err = errors.Errorf("store the data: %w", err)
 			response := &StoreDataResponse{
 				Status: ResponseStatus{

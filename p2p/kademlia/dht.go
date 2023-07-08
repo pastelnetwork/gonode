@@ -3,9 +3,12 @@ package kademlia
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"sync"
 	"time"
+
+	"sync/atomic"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/cenkalti/backoff"
@@ -26,6 +29,8 @@ var (
 	defaultRefreshTime = time.Second * 3600
 	defaultPingTime    = time.Second * 10
 )
+
+const MAX_ITERATIONS = 5
 
 // DHT represents the state of the local node in the distributed hash table
 type DHT struct {
@@ -180,28 +185,28 @@ func (s *DHT) hashKey(data []byte) []byte {
 	return sha[:]
 }
 
-func (s *DHT) retryStore(ctx context.Context, key []byte, data []byte) error {
+func (s *DHT) retryStore(ctx context.Context, key []byte, data []byte, typ int) error {
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 1 * time.Minute
 	b.InitialInterval = 200 * time.Millisecond
 
 	return backoff.Retry(backoff.Operation(func() error {
-		return s.store.Store(ctx, key, data)
+		return s.store.Store(ctx, key, data, typ)
 	}), b)
 }
 
 // Store the data into the network
-func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
+func (s *DHT) Store(ctx context.Context, data []byte, typ int) (string, error) {
 	key := s.hashKey(data)
 
 	retKey := base58.Encode(key)
 	// store the key to local storage
-	if err := s.retryStore(ctx, key, data); err != nil {
+	if err := s.retryStore(ctx, key, data, typ); err != nil {
 		log.WithContext(ctx).WithError(err).Error("local data store failure after retries")
 		return "", fmt.Errorf("retry store data to local storage: %v", err)
 	}
 
-	if _, err := s.iterate(ctx, IterateStore, key, data); err != nil {
+	if _, err := s.iterate(ctx, IterateStore, key, data, typ); err != nil {
 		log.WithContext(ctx).WithError(err).Error("iterate data store failure")
 		return "", fmt.Errorf("iterative store data: %v", err)
 	}
@@ -210,83 +215,56 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 }
 
 // StoreBatch will store a batch of values with their SHA256 hash as the key
-func (s *DHT) StoreBatch(ctx context.Context, values [][]byte) error {
+func (s *DHT) StoreBatch(ctx context.Context, values [][]byte, typ int) error {
+	var (
+		counter int32 = 0
+	)
+
 	val := ctx.Value(log.TaskIDKey)
 	taskID := ""
 	if val != nil {
 		taskID = fmt.Sprintf("%v", val)
 	}
 
-	log.WithContext(ctx).WithField("taskID", taskID).Info("store db batch begin")
-	if err := s.store.StoreBatch(ctx, values); err != nil {
+	log.WithContext(ctx).WithField("taskID", taskID).WithField("records", len(values)).Info("store db batch begin")
+	if err := s.store.StoreBatch(ctx, values, typ); err != nil {
 		return fmt.Errorf("store batch: %v", err)
 	}
-
-	log.WithContext(ctx).WithField("taskID", taskID).Info("store db batch done")
-
-	// Define a maximum number of goroutines
-	/*const maxGoroutines = 1000
-	const minSuccessRate = 0.6
-
-	// Create a worker pool and results slice
-	workers := make(chan struct{}, maxGoroutines)
-	results := make([]error, len(values))
-
-	// Create wait group
-	var wg sync.WaitGroup
-	wg.Add(len(values))
+	log.WithContext(ctx).WithField("taskID", taskID).Info("store db batch done,store network batch begin")
 
 	// Launch the workers
-	for i := 0; i < len(values); i++ {
-		go func(i int, value []byte) {
-			// Acquire a slot from the workers channel
-			workers <- struct{}{}
 
-			// Perform the operation and save the result
-			key := s.hashKey(value)
-			_, err := s.iterate(ctx, IterateStore, key, value)
+	var wg sync.WaitGroup
+
+	for i := 0; i < len(values); i++ {
+		// Wait until we have a free spot
+		for {
+			if atomic.LoadInt32(&counter) < 2000 {
+				break
+			}
+			// Sleep for a bit to prevent 100% CPU usage
+			time.Sleep(1 * time.Second)
+		}
+
+		wg.Add(1)
+		go func(val []byte, typ int) {
+			// Increment the counter
+			atomic.AddInt32(&counter, 1)
+
+			key := s.hashKey(val)
+			_, err := s.iterate(ctx, IterateStore, key, val, typ)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("iterate data batch store failure")
 			}
-			results[i] = err
 
-			// Release the slot when the goroutine finishes
-			<-workers
-
+			// Decrement the counter when done
+			atomic.AddInt32(&counter, -1)
 			wg.Done()
-		}(i, values[i]) // pass a copy of the index and value to the goroutine
+		}(values[i], typ)
 	}
-
-	// Wait for all goroutines to finish
 	wg.Wait()
 
-	// Count successes and failures
-	var successCount int
-	for i := 0; i < len(results); i++ {
-		if results[i] == nil {
-			successCount++
-		}
-	}
-
-	log.WithContext(ctx).WithField("success", successCount).WithField("total", len(values)).Info("store batch network results")
-
-	// Check if successful requests are less than the minimum success rate
-	successRate := float64(successCount) / float64(len(values))
-	if successRate < minSuccessRate {
-		return fmt.Errorf("less than %.2f%% of requests were successful", minSuccessRate*100)
-	}
-	*/
-
-	log.WithContext(ctx).WithField("taskID", taskID).Info("store network batch begin")
-	// Launch the workers
-	for i := 0; i < len(values); i++ {
-		key := s.hashKey(values[i])
-		_, err := s.iterate(ctx, IterateStore, key, values[i])
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("iterate data batch store failure")
-		}
-	}
-	log.WithContext(ctx).WithField("taskID", taskID).Info("store network batch done")
+	log.WithContext(ctx).WithField("taskID", taskID).Info("store network batch workers done")
 
 	return nil
 }
@@ -304,8 +282,11 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil && len(value) > 0 {
 		return value, nil
+	} else if err != nil {
+		log.WithContext(ctx).WithField("key", key).WithError(err).WithField("len", len(value)).Info("key not found in local")
+	} else {
+		log.WithContext(ctx).WithField("key", key).WithField("len", len(value)).Info("finish local data retrieval with zero-len key")
 	}
-	log.WithContext(ctx).WithField("key", key).WithField("len", len(value)).Info("finish local data retrieval")
 
 	// if local only option is set, do not search just return error
 	if len(localOnly) > 0 && localOnly[0] {
@@ -314,7 +295,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	log.WithContext(ctx).WithField("key", key).Info("Not found locally, searching in other nodes")
 
 	// if not found locally, iterative find value from kademlia network
-	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
+	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil, 0)
 	if err != nil {
 		return nil, errors.Errorf("retrieve from peer: %w", err)
 	}
@@ -452,14 +433,18 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 // - IterativeStore - used to store new information in the kademlia network
 // - IterativeFindNode - used to bootstrap the network
 // - IterativeFindValue - used to find a value among the network given a key
-func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, data []byte) ([]byte, error) {
+func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, data []byte, typ int) ([]byte, error) {
+	if iterativeType == IterateFindValue {
+		return s.iterateFindValue(ctx, iterativeType, target, data)
+	}
+
 	val := ctx.Value(log.TaskIDKey)
 	taskID := ""
 	if val != nil {
 		taskID = fmt.Sprintf("%v", val)
 	}
 
-	sKey := base58.Encode(target)
+	sKey := hex.EncodeToString(target)
 
 	igList := s.ignorelist.ToNodeList()
 	// find the closest contacts for the target node from local route tables
@@ -539,7 +524,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 							nl.AddNodes(v.Closest)
 						}
 					} else {
-						log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithError(errors.New(v.Status.ErrMsg)).Info("iterate could not found value from node")
+						log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithError(errors.New(v.Status.ErrMsg)).Info("iterate could not find value from node")
 					}
 				}
 			}
@@ -602,7 +587,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 							continue
 						}
 
-						request := &StoreDataRequest{Data: data}
+						request := &StoreDataRequest{Data: data, Type: typ}
 						response, err := s.sendStoreData(ctx, n, request)
 						if err != nil {
 							logEntry.WithError(err).Error("send store data failed")
@@ -627,27 +612,96 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	return nil, nil
 }
 
+func (s *DHT) handleResponses(ctx context.Context, responses <-chan *Message, nl *NodeList, iterativeType int, target []byte, contacted map[string]bool) (*NodeList, []byte) {
+	for response := range responses {
+		s.addNode(ctx, response.Sender)
+		if response.MessageType == FindNode || response.MessageType == StoreData {
+			v, ok := response.Data.(*FindNodeResponse)
+			if ok && v.Status.Result == ResultOk && len(v.Closest) > 0 {
+				nl.AddNodes(v.Closest)
+			}
+		} else if response.MessageType == FindValue {
+			v, ok := response.Data.(*FindValueResponse)
+			if ok && v.Status.Result == ResultOk {
+				if len(v.Value) > 0 {
+					log.P2P().WithContext(ctx).Info("iterate found value from network")
+					return nl, v.Value
+				} else if len(v.Closest) > 0 {
+					nl.AddNodes(v.Closest)
+				}
+			}
+		}
+	}
+
+	return nl, nil
+}
+
+func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []byte, data []byte) ([]byte, error) {
+	// If task_id is available, use it for logging - This helps with debugging
+	val := ctx.Value(log.TaskIDKey)
+	taskID := ""
+	if val != nil {
+		taskID = fmt.Sprintf("%v", val)
+	}
+
+	// for logging, helps with debugging
+	sKey := hex.EncodeToString(target)
+
+	// the nodes which are unreachable right now are stored in 'ignore list'- we want to avoid hitting them repeatedly
+	igList := s.ignorelist.ToNodeList()
+
+	// nl will have the closest nodes to the target value, it will ignore the nodes in igList
+	nl := s.ht.closestContacts(Alpha, target, igList)
+	if len(igList) > 0 {
+		log.P2P().WithContext(ctx).WithField("nodes", nl.String()).WithField("ignored", s.ignorelist.String()).Info("closest contacts")
+	}
+
+	// if no nodes are found, return - this is a corner case and should not happen in practice
+	if nl.Len() == 0 {
+		return nil, nil
+	}
+
+	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("nl", nl.Len()).Infof("begin type: %v, target: %v, nodes: %v", iterativeType, sKey, nl.String())
+
+	searchRest := false
+	// keep track of contacted nodes so that we don't hit them again
+	contacted := make(map[string]bool)
+	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("begin iteration")
+
+	var closestNode *Node
+	var iterationCount int
+	for iterationCount = 0; iterationCount < MAX_ITERATIONS; iterationCount++ {
+		if nl.Len() == 0 {
+			log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithField("iteration count", iterationCount).Error("nodes list length is 0")
+			return nil, nil
+		}
+
+		// if the closest node is the same as the last iteration  and we don't want to search rest of nodes, we are done
+		if !searchRest && (closestNode != nil && bytes.Equal(nl.Nodes[0].ID, closestNode.ID)) {
+			log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithField("iteration count", iterationCount).Info("closest node is the same as the last iteration")
+			return nil, nil
+		}
+
+		closestNode = nl.Nodes[0]
+		responses := s.doMultiWorkers(ctx, iterativeType, target, nl, contacted, searchRest)
+		var value []byte
+		nl, value = s.handleResponses(ctx, responses, nl, iterativeType, target, contacted)
+		if len(value) > 0 {
+			return value, nil
+		}
+
+		nl.Sort()
+
+		log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Infof("iteration: %v, nodes: %v", iterationCount, nl.Len())
+	}
+
+	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("finished iterations without results")
+	return nil, nil
+}
+
 func (s *DHT) sendStoreData(ctx context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
 	// new a request message
 	reqMsg := s.newMessage(StoreData, n, request)
-
-	/*b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 5 * time.Second
-	b.InitialInterval = 200 * time.Millisecond
-
-	var rspMsg *Message
-	if err := backoff.Retry(backoff.Operation(func() error {
-		var err error
-		// send the request and receive the response
-		rspMsg, err = s.network.Call(ctx, reqMsg)
-		if err != nil {
-			return errors.Errorf("network call: %w", err)
-		}
-
-		return nil
-	}), b); err != nil {
-		return nil, fmt.Errorf("retry send store data failed: %w", err)
-	}*/
 
 	rspMsg, err := s.network.Call(ctx, reqMsg)
 	if err != nil {
@@ -745,7 +799,7 @@ func (s *DHT) LocalStore(ctx context.Context, key string, data []byte) (string, 
 	}
 
 	// store the key to local storage
-	if err := s.retryStore(ctx, decoded, data); err != nil {
+	if err := s.retryStore(ctx, decoded, data, 0); err != nil {
 		log.WithContext(ctx).WithError(err).Error("local data store failure after retries")
 		return "", fmt.Errorf("retry store data to local storage: %v", err)
 	}

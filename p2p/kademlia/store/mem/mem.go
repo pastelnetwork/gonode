@@ -41,7 +41,7 @@ func (s *Store) UpdateKeyReplication(_ context.Context, _ []byte) error {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
+func (s *Store) Store(_ context.Context, key []byte, value []byte, _ int) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -97,7 +97,7 @@ func (s *Store) DeleteAll(_ context.Context /*, type RecordType*/) error {
 }
 
 // StoreBatch stores a batch of key/value pairs for the local node with the given
-func (s *Store) StoreBatch(_ context.Context, values [][]byte) error {
+func (s *Store) StoreBatch(_ context.Context, values [][]byte, _ int) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	for _, value := range values {

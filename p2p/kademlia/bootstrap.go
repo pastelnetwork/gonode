@@ -233,7 +233,7 @@ func (s *DHT) Bootstrap(ctx context.Context, bootstrapIPs string) error {
 	// if it has nodes in local route tables
 	if s.ht.totalCount() > 0 {
 		// iterative find node from the nodes
-		if _, err := s.iterate(ctx, IterateFindNode, s.ht.self.ID, nil); err != nil {
+		if _, err := s.iterate(ctx, IterateFindNode, s.ht.self.ID, nil, 0); err != nil {
 			log.P2P().WithContext(ctx).WithError(err).Error("iterative find node failed")
 			return err
 		}
