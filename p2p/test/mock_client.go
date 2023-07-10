@@ -55,9 +55,9 @@ func (client *Client) AssertRetrieveCall(expectedCalls int, arguments ...interfa
 }
 */
 
-//  ListenOnStore listening  Store and returns id and error from args
+// ListenOnStore listening  Store and returns id and error from args
 func (client *Client) ListenOnStore(id string, err error) *Client {
-	client.On(StoreMethod, mock.Anything, mock.Anything).Return(id, err)
+	client.On(StoreMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 	return client
 }
 

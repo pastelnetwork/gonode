@@ -517,7 +517,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 				ListenOnEncode(tc.args.encodeResp, tc.args.encodeErr)
 
 			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr).On("StoreBatch", mock.Anything, mock.Anything).Return(tc.args.storeErr)
+			p2pClient.ListenOnStore("", tc.args.storeErr).On("StoreBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.args.storeErr)
 
 			fsMock := storageMock.NewMockFileStorage()
 			fileMock := storageMock.NewMockFile()
@@ -574,7 +574,7 @@ func TestTaskStoreThumbnails(t *testing.T) {
 			t.Parallel()
 
 			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr).On("StoreBatch", mock.Anything, mock.Anything).Return(tc.args.storeErr)
+			p2pClient.ListenOnStore("", tc.args.storeErr).On("StoreBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.args.storeErr)
 
 			fsMock := storageMock.NewMockFileStorage()
 			fileMock := storageMock.NewMockFile()

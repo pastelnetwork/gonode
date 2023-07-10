@@ -77,9 +77,9 @@ func (service *SCService) Run(ctx context.Context) error {
 
 			if service.CheckNextBlockAvailable(ctx) && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
 				newCtx := log.ContextWithPrefix(context.Background(), "storage-challenge")
-				task := service.NewSCTask()
-				task.GenerateStorageChallenges(newCtx)
-				log.WithContext(ctx).Info("Would normally generate a storage challenge")
+				//task := service.NewSCTask()
+				//task.GenerateStorageChallenges(newCtx)
+				log.WithContext(newCtx).Info("Would normally generate a storage challenge")
 			}
 		case <-ctx.Done():
 			log.Println("Context done being called in generatestoragechallenge loop in service.go")

@@ -37,6 +37,7 @@ type Job struct {
 	TaskID       string
 	ReqID        string
 	DataType     int
+	IsOriginal   bool
 }
 
 // Worker represents the worker that executes the job
@@ -56,7 +57,7 @@ type Record struct {
 	Key          string
 	Data         []byte
 	Datatype     int
-	IsOriginal   bool
+	Isoriginal   bool
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	ReplicatedAt time.Time
@@ -296,13 +297,14 @@ func (w *Worker) Stop() {
 }
 
 // Store function creates a new job and pushes it into the JobQueue
-func (s *Store) Store(ctx context.Context, key []byte, value []byte, datatype int) error {
+func (s *Store) Store(ctx context.Context, key []byte, value []byte, datatype int, isOriginal bool) error {
 
 	job := Job{
-		JobType:  "Insert",
-		Key:      key,
-		Value:    value,
-		DataType: datatype,
+		JobType:    "Insert",
+		Key:        key,
+		Value:      value,
+		DataType:   datatype,
+		IsOriginal: isOriginal,
 	}
 
 	if val := ctx.Value(log.TaskIDKey); val != nil {
@@ -322,11 +324,12 @@ func (s *Store) Store(ctx context.Context, key []byte, value []byte, datatype in
 }
 
 // StoreBatch stores a batch of key/value pairs for the local node with the replication
-func (s *Store) StoreBatch(ctx context.Context, values [][]byte, datatype int) error {
+func (s *Store) StoreBatch(ctx context.Context, values [][]byte, datatype int, isOriginal bool) error {
 	job := Job{
-		JobType:  "BatchInsert",
-		Values:   values,
-		DataType: datatype,
+		JobType:    "BatchInsert",
+		Values:     values,
+		DataType:   datatype,
+		IsOriginal: isOriginal,
 	}
 
 	if val := ctx.Value(log.TaskIDKey); val != nil {
@@ -428,14 +431,14 @@ func (s *Store) checkpoint() error {
 func (s *Store) performJob(j Job) error {
 	switch j.JobType {
 	case "Insert":
-		err := s.storeRecord(j.Key, j.Value, j.DataType)
+		err := s.storeRecord(j.Key, j.Value, j.DataType, j.IsOriginal)
 		if err != nil {
 			log.WithError(err).WithField("taskID", j.TaskID).WithField("id", j.ReqID).Error("failed to store record")
 			return fmt.Errorf("failed to store record: %w", err)
 		}
 
 	case "BatchInsert":
-		err := s.storeBatchRecord(j.Values, j.DataType)
+		err := s.storeBatchRecord(j.Values, j.DataType, j.IsOriginal)
 		if err != nil {
 			log.WithError(err).WithField("taskID", j.TaskID).WithField("id", j.ReqID).Error("failed to store batch records")
 			return fmt.Errorf("failed to store batch record: %w", err)
@@ -460,14 +463,14 @@ func (s *Store) performJob(j Job) error {
 }
 
 // storeRecord will store a key/value pair for the local node
-func (s *Store) storeRecord(key []byte, value []byte, typ int) error {
+func (s *Store) storeRecord(key []byte, value []byte, typ int, isOriginal bool) error {
 
 	operation := func() error {
 		hkey := hex.EncodeToString(key)
 
 		now := time.Now().UTC()
-		r := Record{Key: hkey, Data: value, UpdatedAt: now, Datatype: typ}
-		res, err := s.db.NamedExec(`INSERT INTO data(key, data, datatype) values(:key, :data, :datatype) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
+		r := Record{Key: hkey, Data: value, UpdatedAt: now, Datatype: typ, Isoriginal: isOriginal}
+		res, err := s.db.NamedExec(`INSERT INTO data(key, data, datatype, is_original) values(:key, :data, :datatype, :isoriginal) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
 		if err != nil {
 			return fmt.Errorf("cannot insert or update record with key %s: %w", hkey, err)
 		}
@@ -493,7 +496,7 @@ func (s *Store) storeRecord(key []byte, value []byte, typ int) error {
 }
 
 // storeBatchRecord will store a batch of values with their SHA256 hash as the key
-func (s *Store) storeBatchRecord(values [][]byte, typ int) error {
+func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) error {
 	operation := func() error {
 		tx, err := s.db.Beginx()
 		if err != nil {
@@ -501,7 +504,7 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int) error {
 		}
 
 		// Prepare insert statement
-		stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data, datatype) values(:key, :data, :datatype) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`)
+		stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data, datatype, is_original) values(:key, :data, :datatype, :isoriginal) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`)
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("cannot prepare statement: %w", err)
@@ -520,7 +523,7 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int) error {
 			}
 
 			hkey := hex.EncodeToString(hashed)
-			r := Record{Key: hkey, Data: values[i], UpdatedAt: now, Datatype: typ}
+			r := Record{Key: hkey, Data: values[i], UpdatedAt: now, Datatype: typ, Isoriginal: isOriginal}
 
 			// Execute the insert statement
 			_, err = stmt.Exec(r)

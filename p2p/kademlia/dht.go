@@ -191,7 +191,7 @@ func (s *DHT) retryStore(ctx context.Context, key []byte, data []byte, typ int) 
 	b.InitialInterval = 200 * time.Millisecond
 
 	return backoff.Retry(backoff.Operation(func() error {
-		return s.store.Store(ctx, key, data, typ)
+		return s.store.Store(ctx, key, data, typ, true)
 	}), b)
 }
 
@@ -227,7 +227,7 @@ func (s *DHT) StoreBatch(ctx context.Context, values [][]byte, typ int) error {
 	}
 
 	log.WithContext(ctx).WithField("taskID", taskID).WithField("records", len(values)).Info("store db batch begin")
-	if err := s.store.StoreBatch(ctx, values, typ); err != nil {
+	if err := s.store.StoreBatch(ctx, values, typ, true); err != nil {
 		return fmt.Errorf("store batch: %v", err)
 	}
 	log.WithContext(ctx).WithField("taskID", taskID).Info("store db batch done,store network batch begin")
@@ -277,7 +277,6 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 		return nil, fmt.Errorf("invalid key: %v", key)
 	}
 
-	log.WithContext(ctx).WithField("key", key).Info("begin local data retrieval")
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil && len(value) > 0 {
@@ -285,7 +284,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	} else if err != nil {
 		log.WithContext(ctx).WithField("key", key).WithError(err).WithField("len", len(value)).Info("key not found in local")
 	} else {
-		log.WithContext(ctx).WithField("key", key).WithField("len", len(value)).Info("finish local data retrieval with zero-len key")
+		log.WithContext(ctx).WithField("key", key).WithField("len", len(value)).Info("finish local data retrieval with zero-len value")
 	}
 
 	// if local only option is set, do not search just return error
@@ -736,7 +735,7 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	if err := s.updateReplicationNode(ctx, node.ID, node.IP, node.Port, true); err != nil {
 		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("node-ip", node.IP).WithError(err).Error("update replication node failed")
 	} else {
-		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("node-ip", node.IP).Info("adding new node")
+		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("port", node.Port).WithField("node-ip", node.IP).Info("adding new node")
 	}
 
 	s.ht.mutex.Lock()
