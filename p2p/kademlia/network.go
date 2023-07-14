@@ -42,13 +42,13 @@ type Network struct {
 }
 
 // NewNetwork returns a network service
-func NewNetwork(dht *DHT, self *Node, secureHelper credentials.TransportCredentials, authHelper *AuthHelper) (*Network, error) {
+func NewNetwork(ctx context.Context, dht *DHT, self *Node, secureHelper credentials.TransportCredentials, authHelper *AuthHelper) (*Network, error) {
 	s := &Network{
 		dht:          dht,
 		self:         self,
 		done:         make(chan struct{}),
 		secureHelper: secureHelper,
-		connPool:     NewConnPool(),
+		connPool:     NewConnPool(ctx),
 		authHelper:   authHelper,
 	}
 	// init the rate limiter

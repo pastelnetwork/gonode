@@ -22,7 +22,7 @@ type Store interface {
 	Delete(ctx context.Context, key []byte)
 
 	// KeysForReplication returns the keys of all data to be replicated across the network
-	GetKeysForReplication(ctx context.Context, from time.Time) [][]byte
+	GetKeysForReplication(ctx context.Context, from time.Time, to time.Time) [][]byte
 
 	// Stats returns stats of store
 	Stats(ctx context.Context) (map[string]interface{}, error)
@@ -49,4 +49,10 @@ type Store interface {
 
 	// AddReplicationInfo adds replication info
 	AddReplicationInfo(ctx context.Context, rep domain.NodeReplicationInfo) error
+
+	//  GetOwnCreatedAt ...
+	GetOwnCreatedAt(ctx context.Context) (time.Time, error)
+
+	// GetKeysAfterTimestamp ...
+	GetKeysAfterTimestamp(ctx context.Context, timestamp time.Time) (retkeys [][]byte, retTime time.Time, err error)
 }

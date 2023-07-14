@@ -37,7 +37,8 @@ func (s *DHT) StartReplicationWorker(ctx context.Context) error {
 	for {
 		select {
 		case <-time.After(defaultReplicationInterval):
-			s.Replicate(ctx)
+			//s.Replicate(ctx)
+			log.P2P().WithContext(ctx).Error("no running replication worker")
 		case <-ctx.Done():
 			log.P2P().WithContext(ctx).Error("closing replication worker")
 			return nil
@@ -101,6 +102,12 @@ func (s *DHT) Replicate(ctx context.Context) {
 	s.replicationMtx.Lock()
 	defer s.replicationMtx.Unlock()
 
+	historicStart, err := s.store.GetOwnCreatedAt(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to get own createdAt")
+		historicStart = time.Now().Add(-24 * time.Hour * 180)
+	}
+
 	log.P2P().WithContext(ctx).Info("replicating data")
 
 	for i := 0; i < B; i++ {
@@ -116,11 +123,11 @@ func (s *DHT) Replicate(ctx context.Context) {
 	for nodeID, infoVar := range s.nodeReplicationTimes {
 		info := infoVar
 
-		logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", nodeID)
+		logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", string(nodeID))
 		if !info.Active {
 			adjustNodeKeys := isNodeGoneAndShouldBeAdjusted(info.LastReplicatedAt, info.IsAdjusted)
 			if adjustNodeKeys {
-				if err := s.adjustNodeKeys(ctx, info); err != nil {
+				if err := s.adjustNodeKeys(ctx, infoVar.CreatedAt, info); err != nil {
 					logEntry.WithError(err).Error("failed to adjust node keys")
 				} else {
 					info.IsAdjusted = true
@@ -139,25 +146,30 @@ func (s *DHT) Replicate(ctx context.Context) {
 			continue
 		}
 
-		from := time.Now().Add(-defaultReplicationTime)
+		from := historicStart
 		if info.LastReplicatedAt != nil {
 			from = *info.LastReplicatedAt
-
-			// TODO: REMOVE THIS BEFORE RELEASE
-			//if time.Since(from) > defaultReplicationTime {
-			//	from = time.Now().Add(-defaultReplicationTime)
-			//}
 		}
 
-		logEntry.WithField("from", from.String()).Info("replication from")
-		replicationKeys := s.store.GetKeysForReplication(ctx, from)
-		now := time.Now()
-		logEntry = logEntry.WithField("len-rep-keys", len(replicationKeys))
-		logEntry.Info("replication keys")
+		to := from.Add(30 * time.Minute)
+		if to.After(time.Now()) {
+			to = time.Now().Add(-1 * time.Minute)
+		}
+
+		logEntry.WithField("from", from.String()).WithField("to", to.String()).Info("replication from")
+		replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
+
+		logEntry.WithField("len-rep-keys", len(replicationKeys)).Info("count of replication keys to be checked")
 
 		if len(replicationKeys) == 0 {
-			continue
+			replicationKeys, to, err = s.store.GetKeysAfterTimestamp(ctx, from)
+			if err != nil {
+				logEntry.WithField("after", from.String()).WithError(err).Error("no rep keys found after")
+				continue
+			}
 		}
+
+		logEntry.WithField("len-rep-keys", len(replicationKeys)).Info("updated count of replication keys to be checked")
 
 		replicatedCount := 0
 		for _, key := range replicationKeys {
@@ -173,28 +185,30 @@ func (s *DHT) Replicate(ctx context.Context) {
 
 			value, typ, err := s.store.RetrieveWithType(ctx, key)
 			if err != nil {
-				log.P2P().WithContext(ctx).WithError(err).Error("replicate store retrieve failed")
+				logEntry.WithField("key", hex.EncodeToString(key)).WithError(err).Error("replicate store retrieve failed")
+				continue
+			} else if value == nil {
+				logEntry.WithField("key", hex.EncodeToString(key)).WithError(err).Error("replicate store retrieve val is nil")
 				continue
 			}
 
-			if value != nil {
-				request := &StoreDataRequest{Data: value, Type: typ}
-				response, err := s.sendStoreData(ctx, n, request)
-				if err != nil {
-					logEntry.WithError(err).Error("replicate store data failed")
-				} else if response.Status.Result != ResultOk {
-					logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply replicate store data failed")
-				} else {
-					replicatedCount++
-					logEntry.Info("replicate store data success")
-				}
+			logEntry.WithField("key", hex.EncodeToString(key)).Info("value found, sending store req")
+			request := &StoreDataRequest{Data: value, Type: typ}
+			response, err := s.sendStoreData(ctx, n, request)
+			if err != nil {
+				logEntry.WithError(err).Error("replicate store data failed")
+			} else if response.Status.Result != ResultOk {
+				logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply replicate store data failed")
+			} else {
+				replicatedCount++
+				logEntry.Info("replicate store data success")
 			}
 		}
 
-		if err := s.updateLastReplicated(ctx, []byte(nodeID), now); err != nil {
+		if err := s.updateLastReplicated(ctx, []byte(nodeID), to); err != nil {
 			logEntry.Error("replicate update lastReplicated failed")
 		} else {
-			logEntry.WithField("node", info.IP).WithField("expected-rep-keys", len(replicationKeys)).
+			logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("expected-rep-keys", len(replicationKeys)).
 				WithField("keys-replicated", replicatedCount).Info("replicate update lastReplicated success")
 		}
 
@@ -203,15 +217,13 @@ func (s *DHT) Replicate(ctx context.Context) {
 	log.P2P().WithContext(ctx).Info("Replication done")
 }
 
-func (s *DHT) adjustNodeKeys(ctx context.Context, info domain.NodeReplicationInfo) error {
-	logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", info.ID)
-
-	from := time.Now().Add(-defaultReplicationTime)
+func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.NodeReplicationInfo) error {
+	logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", string(info.ID))
 	logEntry.WithField("from", from.String()).Info("adjusting node keys")
 
-	replicationKeys := s.store.GetKeysForReplication(ctx, from)
+	replicationKeys := s.store.GetKeysForReplication(ctx, from, time.Now())
 	logEntry = logEntry.WithField("len-rep-keys", len(replicationKeys))
-	logEntry.Info("replication keys")
+	logEntry.Info("replication keys to be adjusted")
 
 	for _, key := range replicationKeys {
 

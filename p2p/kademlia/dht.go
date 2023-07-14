@@ -127,7 +127,7 @@ func NewDHT(ctx context.Context, store Store, pc pastel.Client, secInfo *alts.Se
 	*/
 
 	// new network service for dht
-	network, err := NewNetwork(s, ht.self, nil, s.authHelper)
+	network, err := NewNetwork(ctx, s, ht.self, nil, s.authHelper)
 	if err != nil {
 		return nil, fmt.Errorf("new network: %v", err)
 	}
@@ -277,21 +277,22 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 		return nil, fmt.Errorf("invalid key: %v", key)
 	}
 
+	dbKey := hex.EncodeToString(decoded)
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil && len(value) > 0 {
 		return value, nil
 	} else if err != nil {
-		log.WithContext(ctx).WithField("key", key).WithError(err).WithField("len", len(value)).Info("key not found in local")
+		log.WithContext(ctx).WithField("key", dbKey).WithError(err).WithField("len", len(value)).Info("key not found in local")
 	} else {
-		log.WithContext(ctx).WithField("key", key).WithField("len", len(value)).Info("finish local data retrieval with zero-len value")
+		log.WithContext(ctx).WithField("key", dbKey).WithField("len", len(value)).Info("finish local data retrieval with zero-len value")
 	}
 
 	// if local only option is set, do not search just return error
 	if len(localOnly) > 0 && localOnly[0] {
 		return nil, fmt.Errorf("local-only failed to get properly: " + err.Error())
 	}
-	log.WithContext(ctx).WithField("key", key).Info("Not found locally, searching in other nodes")
+	log.WithContext(ctx).WithField("key", dbKey).Info("Not found locally, searching in other nodes")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil, 0)
@@ -299,9 +300,9 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 		return nil, errors.Errorf("retrieve from peer: %w", err)
 	}
 	if len(peerValue) > 0 {
-		log.WithContext(ctx).WithField("key", key).WithField("data len", len(peerValue)).Info("Not found locally, retrieved from other nodes")
+		log.WithContext(ctx).WithField("key", dbKey).WithField("data len", len(peerValue)).Info("Not found locally, retrieved from other nodes")
 	} else {
-		log.WithContext(ctx).WithField("key", key).Info("Not found locally, not found in other nodes")
+		log.WithContext(ctx).WithField("key", dbKey).Info("Not found locally, not found in other nodes")
 	}
 
 	return peerValue, nil
@@ -660,8 +661,6 @@ func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []
 		return nil, nil
 	}
 
-	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("nl", nl.Len()).Infof("begin type: %v, target: %v, nodes: %v", iterativeType, sKey, nl.String())
-
 	searchRest := false
 	// keep track of contacted nodes so that we don't hit them again
 	contacted := make(map[string]bool)
@@ -670,6 +669,8 @@ func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []
 	var closestNode *Node
 	var iterationCount int
 	for iterationCount = 0; iterationCount < MAX_ITERATIONS; iterationCount++ {
+		log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("nl", nl.Len()).Infof("begin find value - target: %v , nodes: %v", sKey, nl.String())
+
 		if nl.Len() == 0 {
 			log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithField("iteration count", iterationCount).Error("nodes list length is 0")
 			return nil, nil

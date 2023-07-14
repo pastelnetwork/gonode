@@ -26,17 +26,27 @@ type ConnPool struct {
 }
 
 // NewConnPool return a connection pool
-func NewConnPool() *ConnPool {
-	return &ConnPool{
+func NewConnPool(ctx context.Context) *ConnPool {
+	pool := &ConnPool{
 		capacity: defaultCapacity,
 		conns:    map[string]*connectionItem{},
 	}
+
+	pool.StartConnEviction(ctx)
+
+	return pool
 }
 
 // Add a connection to pool
 func (pool *ConnPool) Add(addr string, conn net.Conn) {
 	pool.mtx.Lock()
 	defer pool.mtx.Unlock()
+
+	// if connection already in pool
+	if item, ok := pool.conns[addr]; ok {
+		// close the old connection
+		_ = item.conn.Close()
+	}
 
 	// if connection not in pool
 	if _, ok := pool.conns[addr]; !ok {
@@ -193,4 +203,32 @@ func (conn *connWrapper) SetWriteDeadline(t time.Time) error {
 	conn.mtx.Lock()
 	defer conn.mtx.Unlock()
 	return conn.rawConn.SetWriteDeadline(t)
+}
+
+// StartConnEviction starts a goroutine that periodically evicts idle connections.
+func (pool *ConnPool) StartConnEviction(ctx context.Context) {
+	go func() {
+		ticker := time.NewTicker(time.Minute) // adjust as necessary
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				pool.mtx.Lock()
+
+				for addr, item := range pool.conns {
+					if time.Since(item.lastAccess) > defaultConnDeadline {
+						_ = item.conn.Close()
+						delete(pool.conns, addr)
+					}
+				}
+
+				pool.mtx.Unlock()
+
+			case <-ctx.Done():
+				// Stop the goroutine when the context is cancelled
+				return
+			}
+		}
+	}()
 }

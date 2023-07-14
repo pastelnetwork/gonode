@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -469,8 +470,8 @@ func (s *Store) storeRecord(key []byte, value []byte, typ int, isOriginal bool) 
 		hkey := hex.EncodeToString(key)
 
 		now := time.Now().UTC()
-		r := Record{Key: hkey, Data: value, UpdatedAt: now, Datatype: typ, Isoriginal: isOriginal}
-		res, err := s.db.NamedExec(`INSERT INTO data(key, data, datatype, is_original) values(:key, :data, :datatype, :isoriginal) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
+		r := Record{Key: hkey, Data: value, UpdatedAt: now, Datatype: typ, Isoriginal: isOriginal, CreatedAt: now}
+		res, err := s.db.NamedExec(`INSERT INTO data(key, data, datatype, is_original, createdAt, updatedAt) values(:key, :data, :datatype, :isoriginal, :createdat, :updatedat) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
 		if err != nil {
 			return fmt.Errorf("cannot insert or update record with key %s: %w", hkey, err)
 		}
@@ -504,7 +505,7 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 		}
 
 		// Prepare insert statement
-		stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data, datatype, is_original) values(:key, :data, :datatype, :isoriginal) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`)
+		stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data, datatype, is_original, createdAt, updatedAt) values(:key, :data, :datatype, :isoriginal, :createdat, :updatedat) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`)
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("cannot prepare statement: %w", err)
@@ -523,7 +524,7 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 			}
 
 			hkey := hex.EncodeToString(hashed)
-			r := Record{Key: hkey, Data: values[i], UpdatedAt: now, Datatype: typ, Isoriginal: isOriginal}
+			r := Record{Key: hkey, Data: values[i], CreatedAt: now, UpdatedAt: now, Datatype: typ, Isoriginal: isOriginal}
 
 			// Execute the insert statement
 			_, err = stmt.Exec(r)
@@ -583,9 +584,9 @@ func (s *Store) updateKeyReplication(key []byte, replicatedAt time.Time) error {
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time) (retkeys [][]byte) {
+func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time, to time.Time) (retkeys [][]byte) {
 	var keys []string
-	if err := s.db.Select(&keys, `SELECT key FROM data WHERE createdAt > ?`, from); err != nil {
+	if err := s.db.Select(&keys, `SELECT key FROM data WHERE createdAt > ? and createdAt < ?`, from, to); err != nil {
 		log.P2P().WithError(err).WithContext(ctx).Errorf("failed to get records for replication older than %s", from)
 		return nil
 	}
@@ -695,4 +696,69 @@ func (s *Store) AddReplicationInfo(_ context.Context, rep domain.NodeReplication
 	}
 
 	return err
+}
+
+func (s *Store) GetOwnCreatedAt(ctx context.Context) (time.Time, error) {
+	var createdAtString string
+	query := `SELECT MIN(createdAt) FROM data`
+
+	err := s.db.Get(&createdAtString, query)
+	if err != nil {
+		log.P2P().WithContext(ctx).WithError(err).Errorf("failed to get own createdAt")
+		return time.Time{}, fmt.Errorf("failed to get own createdAt: %w", err)
+	}
+
+	created, err := time.Parse(time.RFC3339Nano, createdAtString)
+	if err != nil {
+		created, err = time.Parse("2006-01-02 15:04:05", createdAtString)
+		if err != nil {
+			log.P2P().WithContext(ctx).WithError(err).Errorf("failed to parse createdAt")
+			return time.Time{}, fmt.Errorf("failed to parse createdAt: %w", err)
+		}
+	}
+
+	return created, nil
+}
+
+// GetKeysAfterTimestamp fetches all keys along with the latest createdAt timestamp after a specific timestamp.
+func (s *Store) GetKeysAfterTimestamp(ctx context.Context, timestamp time.Time) (retkeys [][]byte, retTime time.Time, err error) {
+	type KeyCreatedAt struct {
+		Key       string    `db:"key"`
+		CreatedAt time.Time `db:"createdAt"`
+	}
+
+	var keyCreatedAt []KeyCreatedAt
+
+	query := `
+		SELECT key, createdAt
+		FROM data
+		WHERE createdAt > ?
+		ORDER BY createdAt DESC
+		LIMIT 100
+	`
+
+	if err := s.db.Select(&keyCreatedAt, query, timestamp); err != nil {
+		if err == sql.ErrNoRows {
+			// Return empty records if there are no rows after the timestamp
+			return retkeys, time.Now(), nil
+		}
+		log.P2P().WithError(err).WithContext(ctx).Errorf("failed to fetch keys and latest createdAt after timestamp")
+		return nil, retTime, fmt.Errorf("failed to fetch keys and latest createdAt after timestamp: %w", err)
+	}
+
+	for i := 0; i < len(keyCreatedAt); i++ {
+		str, err := hex.DecodeString(keyCreatedAt[i].Key)
+		if err != nil {
+			log.WithContext(ctx).WithField("key", keyCreatedAt[i].Key).Error("replicate failed to hex decode key")
+			continue
+		}
+
+		retkeys = append(retkeys, str)
+	}
+
+	if len(keyCreatedAt) > 0 {
+		retTime = keyCreatedAt[0].CreatedAt
+	}
+
+	return retkeys, retTime, nil
 }
