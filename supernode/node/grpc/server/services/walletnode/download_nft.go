@@ -60,6 +60,7 @@ func (service *DownloadNft) Download(m *pb.DownloadRequest, stream pb.DownloadNf
 		if err := stream.Send(res); err != nil {
 			return errors.Errorf("send image data: %w", err)
 		}
+
 	}
 
 	return nil

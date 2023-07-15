@@ -21,7 +21,7 @@ type Store struct {
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(_ context.Context, _ time.Time) [][]byte {
+func (s *Store) GetKeysForReplication(_ context.Context, _ time.Time, _ time.Time) [][]byte {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -107,7 +107,7 @@ func (s *Store) StoreBatch(_ context.Context, values [][]byte, _ int, _ bool) er
 }
 
 // RetrieveWithType will return the local key/value if it exists
-func (s *Store) RetrieveWithType(_ context.Context, key []byte) ([]byte, int, error) {
+func (s *Store) RetrieveWithType(_ context.Context, _ []byte) ([]byte, int, error) {
 	return []byte{}, 0, nil
 }
 
@@ -132,5 +132,22 @@ func (s *Store) UpdateReplicationInfo(_ context.Context, _ domain.NodeReplicatio
 
 // AddReplicationInfo adds replication info
 func (s *Store) AddReplicationInfo(_ context.Context, _ domain.NodeReplicationInfo) error {
+	return nil
+}
+
+// GetKeysAfterTimestamp should return the keys of all data to be
+// replicated across the network. Typically all data should be
+// replicated every tReplicate seconds.
+func (s *Store) GetKeysAfterTimestamp(_ context.Context, _ time.Time) (retkeys [][]byte, retTime time.Time, err error) {
+	return retkeys, retTime, nil
+}
+
+// GetOwnCreatedAt ...
+func (s *Store) GetOwnCreatedAt(_ context.Context) (t time.Time, err error) {
+	return t, nil
+}
+
+// StoreBatchRepKeys ...
+func (s *Store) StoreBatchRepKeys(_ [][]byte, _ string, _ string, _ int) error {
 	return nil
 }

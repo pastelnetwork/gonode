@@ -33,7 +33,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 				},
 				{
 					client:       test.NewMockClient(t),
-					numberOfCall: 0,
+					numberOfCall: 1,
 					activated:    true,
 				},
 			},

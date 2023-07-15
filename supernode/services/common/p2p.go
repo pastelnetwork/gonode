@@ -1,8 +1,9 @@
 package common
 
 const (
-	// UnknownDataType	unknown data type
-	UnknownDataType = iota // 0
+	// UnknownDataType ...
+	UnknownDataType = iota // 1
+
 	// P2PDataRaptorQSymbol rq symbol
 	P2PDataRaptorQSymbol // 1
 	// P2PDataCascadeMetadata cascade ID file

@@ -19,6 +19,8 @@ const (
 	FindNode
 	// FindValue iterative find value in kademlia network
 	FindValue
+	// Replicate is replicate data request towards a network node
+	Replicate
 )
 
 func init() {
@@ -29,6 +31,8 @@ func init() {
 	gob.Register(&FindValueResponse{})
 	gob.Register(&StoreDataRequest{})
 	gob.Register(&StoreDataResponse{})
+	gob.Register(&ReplicateDataRequest{})
+	gob.Register(&ReplicateDataResponse{})
 }
 
 // Message structure for kademlia network
@@ -52,6 +56,16 @@ const (
 	// ResultFailed meas request got failed
 	ResultFailed ResultType = 1
 )
+
+// ReplicateDataRequest ...
+type ReplicateDataRequest struct {
+	Keys []byte
+}
+
+// ReplicateDataResponse ...
+type ReplicateDataResponse struct {
+	Status ResponseStatus
+}
 
 // ResponseStatus defines the result of request
 type ResponseStatus struct {

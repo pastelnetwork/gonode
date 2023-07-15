@@ -55,4 +55,7 @@ type Store interface {
 
 	// GetKeysAfterTimestamp ...
 	GetKeysAfterTimestamp(ctx context.Context, timestamp time.Time) (retkeys [][]byte, retTime time.Time, err error)
+
+	// StoreBatchRepKeys ...
+	StoreBatchRepKeys(values [][]byte, id string, ip string, port int) error
 }

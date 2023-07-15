@@ -64,6 +64,25 @@ type Record struct {
 	ReplicatedAt time.Time
 }
 
+type repKeys struct {
+	Key       string    `db:"key"`
+	UpdatedAt time.Time `db:"updatedAt"`
+	IP        string    `db:"ip"`
+	Port      int       `db:"port"`
+	ID        string    `db:"id"`
+}
+
+type nodeReplicationInfo struct {
+	LastReplicated *time.Time `db:"lastReplicatedAt"`
+	UpdatedAt      time.Time  `db:"updatedAt"`
+	CreatedAt      time.Time  `db:"createdAt"`
+	Active         bool       `db:"is_active"`
+	Adjusted       bool       `db:"is_adjusted"`
+	IP             string     `db:"ip"`
+	Port           int        `db:"port"`
+	ID             string     `db:"id"`
+}
+
 // NewStore returns a new store
 func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Duration) (*Store, error) {
 	worker := &Worker{
@@ -99,6 +118,12 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 
 	if !s.checkReplicateStore() {
 		if err = s.migrateReplication(); err != nil {
+			return nil, fmt.Errorf("cannot create table(s) in sqlite database: %w", err)
+		}
+	}
+
+	if !s.checkReplicateKeysStore() {
+		if err = s.migrateRepKeys(); err != nil {
 			return nil, fmt.Errorf("cannot create table(s) in sqlite database: %w", err)
 		}
 	}
@@ -139,6 +164,13 @@ func (s *Store) checkReplicateStore() bool {
 	return err == nil
 }
 
+func (s *Store) checkReplicateKeysStore() bool {
+	query := `SELECT name FROM sqlite_master WHERE type='table' AND name='replication_keys'`
+	var name string
+	err := s.db.Get(&name, query)
+	return err == nil
+}
+
 func (s *Store) ensureDatatypeColumn() error {
 	rows, err := s.db.Query("PRAGMA table_info(data)")
 	if err != nil {
@@ -149,8 +181,8 @@ func (s *Store) ensureDatatypeColumn() error {
 	for rows.Next() {
 		var cid, notnull, pk int
 		var name, dtype string
-		var dflt_value *string
-		err = rows.Scan(&cid, &name, &dtype, &notnull, &dflt_value, &pk)
+		var dfltValue *string
+		err = rows.Scan(&cid, &name, &dtype, &notnull, &dfltValue, &pk)
 		if err != nil {
 			return fmt.Errorf("failed to scan row: %w", err)
 		}
@@ -213,6 +245,24 @@ func (s *Store) migrateReplication() error {
 	return nil
 }
 
+func (s *Store) migrateRepKeys() error {
+	replicateQuery := `
+    CREATE TABLE IF NOT EXISTS replication_keys(
+        key TEXT PRIMARY KEY,
+		id TEXT NOT NULL,
+        ip TEXT NOT NULL,
+		port INTEGER NOT NULL,
+		updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    );
+    `
+
+	if _, err := s.db.Exec(replicateQuery); err != nil {
+		return fmt.Errorf("failed to create table 'replication_keys': %w", err)
+	}
+
+	return nil
+}
+
 func (s *Store) startCheckpointWorker(ctx context.Context) {
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 1 * time.Minute
@@ -246,17 +296,6 @@ func (s *Store) startCheckpointWorker(ctx context.Context) {
 		default:
 		}
 	}
-}
-
-type nodeReplicationInfo struct {
-	LastReplicated *time.Time `db:"lastReplicatedAt"`
-	UpdatedAt      time.Time  `db:"updatedAt"`
-	CreatedAt      time.Time  `db:"createdAt"`
-	Active         bool       `db:"is_active"`
-	Adjusted       bool       `db:"is_adjusted"`
-	IP             string     `db:"ip"`
-	Port           int        `db:"port"`
-	ID             string     `db:"id"`
 }
 
 func (n *nodeReplicationInfo) toDomain() domain.NodeReplicationInfo {
@@ -507,9 +546,12 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 		// Prepare insert statement
 		stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data, datatype, is_original, createdAt, updatedAt) values(:key, :data, :datatype, :isoriginal, :createdat, :updatedat) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`)
 		if err != nil {
-			tx.Rollback()
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				return fmt.Errorf("statement preparation failed, rollback failed: %v, original error: %w", rollbackErr, err)
+			}
 			return fmt.Errorf("cannot prepare statement: %w", err)
 		}
+		defer stmt.Close()
 
 		// For each value, calculate its hash and insert into DB
 		now := time.Now().UTC()
@@ -549,6 +591,59 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 	err := backoff.Retry(operation, b)
 	if err != nil {
 		return fmt.Errorf("error storing data: %w", err)
+	}
+
+	return nil
+}
+
+// StoreBatchRepKeys will store a batch of values with their SHA256 hash as the key
+func (s *Store) StoreBatchRepKeys(values [][]byte, id string, ip string, port int) error {
+	operation := func() error {
+		tx, err := s.db.Beginx()
+		if err != nil {
+			return fmt.Errorf("cannot begin transaction: %w", err)
+		}
+
+		// Prepare insert statement
+		stmt, err := tx.PrepareNamed(`INSERT INTO replication_keys(key, id, ip, port, updatedAt) values(:key, :id, :ip, :port, :updatedat) ON CONFLICT(key) DO UPDATE SET id=:id,ip=:ip,port=:port,updatedAt=:updatedat`)
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				return fmt.Errorf("statement preparation failed, rollback failed: %v, original error: %w", rollbackErr, err)
+			}
+			return fmt.Errorf("cannot prepare statement: %w", err)
+
+		}
+		defer stmt.Close()
+
+		// For each value, calculate its hash and insert into DB
+		now := time.Now().UTC()
+		for i := 0; i < len(values); i++ {
+			hkey := hex.EncodeToString(values[i])
+			r := repKeys{Key: hkey, UpdatedAt: now, ID: id, IP: ip, Port: port}
+
+			// Execute the insert statement
+			_, err = stmt.Exec(r)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("cannot insert or update replication key record with key %s: %w", hkey, err)
+			}
+		}
+
+		// Commit the transaction
+		if err := tx.Commit(); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("cannot commit transaction replication key update: %w", err)
+		}
+
+		return nil
+	}
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 10 * time.Second
+
+	err := backoff.Retry(operation, b)
+	if err != nil {
+		return fmt.Errorf("error storing rep keys record data: %w", err)
 	}
 
 	return nil
@@ -698,6 +793,7 @@ func (s *Store) AddReplicationInfo(_ context.Context, rep domain.NodeReplication
 	return err
 }
 
+// GetOwnCreatedAt func
 func (s *Store) GetOwnCreatedAt(ctx context.Context) (time.Time, error) {
 	var createdAtString string
 	query := `SELECT MIN(createdAt) FROM data`

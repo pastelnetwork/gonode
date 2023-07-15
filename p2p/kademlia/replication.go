@@ -1,11 +1,15 @@
 package kademlia
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"time"
 
+	"encoding/gob"
+
+	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -120,6 +124,7 @@ func (s *DHT) Replicate(ctx context.Context) {
 		}
 	}
 
+	to := time.Now()
 	for nodeID, infoVar := range s.nodeReplicationTimes {
 		info := infoVar
 
@@ -151,67 +156,53 @@ func (s *DHT) Replicate(ctx context.Context) {
 			from = *info.LastReplicatedAt
 		}
 
-		to := from.Add(30 * time.Minute)
-		if to.After(time.Now()) {
-			to = time.Now().Add(-1 * time.Minute)
-		}
-
-		logEntry.WithField("from", from.String()).WithField("to", to.String()).Info("replication from")
 		replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
-
 		logEntry.WithField("len-rep-keys", len(replicationKeys)).Info("count of replication keys to be checked")
 
-		if len(replicationKeys) == 0 {
-			replicationKeys, to, err = s.store.GetKeysAfterTimestamp(ctx, from)
-			if err != nil {
-				logEntry.WithField("after", from.String()).WithError(err).Error("no rep keys found after")
-				continue
-			}
-		}
-
-		logEntry.WithField("len-rep-keys", len(replicationKeys)).Info("updated count of replication keys to be checked")
-
-		replicatedCount := 0
-		for _, key := range replicationKeys {
+		// Preallocate a slice with a capacity equal to the number of keys.
+		closestContactKeys := make([][]byte, 0, len(replicationKeys))
+		for i := 0; i < len(replicationKeys); i++ {
+			key := replicationKeys[i]
 			ignores := s.ignorelist.ToNodeList()
 			nodeList := s.ht.closestContacts(Alpha, key, ignores)
 
 			n := &Node{ID: []byte(nodeID), IP: info.IP, Port: info.Port}
-			if !nodeList.Exists(n) {
-				// the node is not supposed to hold this key as its not in 6 closest contacts
+			if nodeList.Exists(n) {
+				// the node is supposed to hold this key as it's in the 6 closest contacts
+				closestContactKeys = append(closestContactKeys, key)
+			}
+		}
+		logEntry.WithField("len-rep-keys", len(closestContactKeys)).Info("closest contact keys count")
+
+		if len(closestContactKeys) > 0 {
+			data, err := compressKeys(closestContactKeys)
+			if err != nil {
+				logEntry.WithField("len-rep-keys", len(closestContactKeys)).WithError(err).Error("unable to compress keys - replication failed")
 				continue
 			}
-			logEntry.WithField("key", hex.EncodeToString(key)).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
 
-			value, typ, err := s.store.RetrieveWithType(ctx, key)
-			if err != nil {
-				logEntry.WithField("key", hex.EncodeToString(key)).WithError(err).Error("replicate store retrieve failed")
-				continue
-			} else if value == nil {
-				logEntry.WithField("key", hex.EncodeToString(key)).WithError(err).Error("replicate store retrieve val is nil")
-				continue
+			// TODO: Check if data size is bigger than 32 MB
+			request := &ReplicateDataRequest{
+				Keys: data,
 			}
 
-			logEntry.WithField("key", hex.EncodeToString(key)).Info("value found, sending store req")
-			request := &StoreDataRequest{Data: value, Type: typ}
-			response, err := s.sendStoreData(ctx, n, request)
+			n := &Node{ID: []byte(nodeID), IP: info.IP, Port: info.Port}
+			response, err := s.sendReplicateData(ctx, n, request)
 			if err != nil {
-				logEntry.WithError(err).Error("replicate store data failed")
+				logEntry.WithError(err).Error("send replicate data failed")
+				continue
 			} else if response.Status.Result != ResultOk {
-				logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply replicate store data failed")
+				logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply replicate data failed")
+				continue
+			}
+
+			// Now closestContactKeys contains all the keys that are in the closest contacts.
+			if err := s.updateLastReplicated(ctx, []byte(nodeID), to); err != nil {
+				logEntry.Error("replicate update lastReplicated failed")
 			} else {
-				replicatedCount++
-				logEntry.Info("replicate store data success")
+				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("expected-rep-keys", len(closestContactKeys)).Info("replicate update lastReplicated success")
 			}
 		}
-
-		if err := s.updateLastReplicated(ctx, []byte(nodeID), to); err != nil {
-			logEntry.Error("replicate update lastReplicated failed")
-		} else {
-			logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("expected-rep-keys", len(replicationKeys)).
-				WithField("keys-replicated", replicatedCount).Info("replicate update lastReplicated success")
-		}
-
 	}
 
 	log.P2P().WithContext(ctx).Info("Replication done")
@@ -246,7 +237,7 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 			// the node is not supposed to hold this key as its not in 6 closest contacts
 			continue
 		}
-		logEntry.WithField("key", hex.EncodeToString(key)).WithField("ip", info.IP).Info("this key is supposed to be hold by this node")
+		logEntry.WithField("key", hex.EncodeToString(key)).WithField("ip", info.IP).Info("adjust: this key is supposed to be hold by this node")
 
 		// get the value
 		value, typ, err := s.store.RetrieveWithType(ctx, key)
@@ -355,4 +346,36 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 			}()
 		}
 	}
+}
+
+func compressKeys(keys [][]byte) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+
+	if err := enc.Encode(keys); err != nil {
+		return nil, fmt.Errorf("encode error: %w", err)
+	}
+
+	compressed, err := zstd.CompressLevel(nil, buf.Bytes(), 22)
+	if err != nil {
+		return nil, fmt.Errorf("compression error: %w", err)
+	}
+
+	return compressed, nil
+}
+
+func decompressKeys(data []byte) ([][]byte, error) {
+	decompressed, err := zstd.Decompress(nil, data)
+	if err != nil {
+		return nil, fmt.Errorf("decompression error: %w", err)
+	}
+
+	dec := gob.NewDecoder(bytes.NewReader(decompressed))
+
+	var keys [][]byte
+	if err := dec.Decode(&keys); err != nil {
+		return nil, fmt.Errorf("decode error: %w", err)
+	}
+
+	return keys, nil
 }

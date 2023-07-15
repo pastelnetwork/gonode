@@ -21,7 +21,7 @@ import (
 const (
 	defaultConnDeadline   = 30 * time.Second
 	defaultConnRate       = 1000
-	defaultMaxPayloadSize = 16 * 1024 * 1024 // 16MB
+	defaultMaxPayloadSize = 32 * 1024 * 1024 // 32MB
 )
 
 // Network for distributed hash table
@@ -237,6 +237,68 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	return s.encodeMesage(resMsg)
 }
 
+func (s *Network) handleReplicate(ctx context.Context, message *Message) ([]byte, error) {
+	request, ok := message.Data.(*ReplicateDataRequest)
+	if !ok {
+		err := errors.New("invalid ReplicateDataRequest")
+
+		response := &ReplicateDataResponse{
+			Status: ResponseStatus{
+				Result: ResultFailed,
+				ErrMsg: err.Error(),
+			},
+		}
+		resMsg := s.dht.newMessage(Replicate, message.Sender, response)
+		return s.encodeMesage(resMsg)
+	}
+
+	log.P2P().WithContext(ctx).Debugf("handle replicate data: %v", message.String())
+
+	if err := s.handleReplicateRequest(ctx, request, message.Sender.ID, message.Sender.IP, message.Sender.Port); err != nil {
+		response := &ReplicateDataResponse{
+			Status: ResponseStatus{
+				Result: ResultFailed,
+				ErrMsg: err.Error(),
+			},
+		}
+		resMsg := s.dht.newMessage(Replicate, message.Sender, response)
+		return s.encodeMesage(resMsg)
+	}
+
+	response := &ReplicateDataResponse{
+		Status: ResponseStatus{
+			Result: ResultOk,
+		},
+	}
+
+	// new a response message
+	resMsg := s.dht.newMessage(Replicate, message.Sender, response)
+	return s.encodeMesage(resMsg)
+}
+
+func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateDataRequest, id []byte, ip string, port int) error {
+	keys, err := decompressKeys(req.Keys)
+	if err != nil {
+		return fmt.Errorf("unable to decode keys: %w", err)
+	}
+
+	var keysToStore [][]byte
+	for i := 0; i < len(keys); i++ {
+		value, err := s.dht.store.Retrieve(ctx, keys[i])
+		if err == nil && len(value) > 0 {
+			log.WithContext(ctx).WithField("key", hex.EncodeToString(keys[i])).Info("data already exists")
+		} else {
+			keysToStore = append(keysToStore, keys[i])
+		}
+	}
+
+	if err := s.dht.store.StoreBatchRepKeys(keysToStore, string(id), ip, port); err != nil {
+		return fmt.Errorf("unable to store batch replication keys: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Network) handlePing(_ context.Context, message *Message) ([]byte, error) {
 	// new a response message
 	resMsg := s.dht.newMessage(Ping, message.Sender, nil)
@@ -320,6 +382,14 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			encoded, err := s.handleStoreData(ctx, request)
 			if err != nil {
 				log.P2P().WithContext(ctx).WithError(err).Error("handle store data request failed")
+				return
+			}
+			response = encoded
+		case Replicate:
+			// handle the request for replicate request
+			encoded, err := s.handleReplicate(ctx, request)
+			if err != nil {
+				log.P2P().WithContext(ctx).WithError(err).Error("handle replicate request failed")
 				return
 			}
 			response = encoded

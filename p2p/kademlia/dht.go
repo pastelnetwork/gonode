@@ -30,7 +30,7 @@ var (
 	defaultPingTime    = time.Second * 10
 )
 
-const MAX_ITERATIONS = 5
+const maxIterations = 5
 
 // DHT represents the state of the local node in the distributed hash table
 type DHT struct {
@@ -217,7 +217,7 @@ func (s *DHT) Store(ctx context.Context, data []byte, typ int) (string, error) {
 // StoreBatch will store a batch of values with their SHA256 hash as the key
 func (s *DHT) StoreBatch(ctx context.Context, values [][]byte, typ int) error {
 	var (
-		counter int32 = 0
+		counter int32
 	)
 
 	val := ctx.Value(log.TaskIDKey)
@@ -435,7 +435,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 // - IterativeFindValue - used to find a value among the network given a key
 func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, data []byte, typ int) ([]byte, error) {
 	if iterativeType == IterateFindValue {
-		return s.iterateFindValue(ctx, iterativeType, target, data)
+		return s.iterateFindValue(ctx, iterativeType, target)
 	}
 
 	val := ctx.Value(log.TaskIDKey)
@@ -612,7 +612,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	return nil, nil
 }
 
-func (s *DHT) handleResponses(ctx context.Context, responses <-chan *Message, nl *NodeList, iterativeType int, target []byte, contacted map[string]bool) (*NodeList, []byte) {
+func (s *DHT) handleResponses(ctx context.Context, responses <-chan *Message, nl *NodeList) (*NodeList, []byte) {
 	for response := range responses {
 		s.addNode(ctx, response.Sender)
 		if response.MessageType == FindNode || response.MessageType == StoreData {
@@ -636,7 +636,7 @@ func (s *DHT) handleResponses(ctx context.Context, responses <-chan *Message, nl
 	return nl, nil
 }
 
-func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []byte, data []byte) ([]byte, error) {
+func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []byte) ([]byte, error) {
 	// If task_id is available, use it for logging - This helps with debugging
 	val := ctx.Value(log.TaskIDKey)
 	taskID := ""
@@ -668,7 +668,7 @@ func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []
 
 	var closestNode *Node
 	var iterationCount int
-	for iterationCount = 0; iterationCount < MAX_ITERATIONS; iterationCount++ {
+	for iterationCount = 0; iterationCount < maxIterations; iterationCount++ {
 		log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("nl", nl.Len()).Infof("begin find value - target: %v , nodes: %v", sKey, nl.String())
 
 		if nl.Len() == 0 {
@@ -685,7 +685,7 @@ func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []
 		closestNode = nl.Nodes[0]
 		responses := s.doMultiWorkers(ctx, iterativeType, target, nl, contacted, searchRest)
 		var value []byte
-		nl, value = s.handleResponses(ctx, responses, nl, iterativeType, target, contacted)
+		nl, value = s.handleResponses(ctx, responses, nl)
 		if len(value) > 0 {
 			return value, nil
 		}
@@ -697,6 +697,23 @@ func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []
 
 	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("finished iterations without results")
 	return nil, nil
+}
+
+func (s *DHT) sendReplicateData(ctx context.Context, n *Node, request *ReplicateDataRequest) (*ReplicateDataResponse, error) {
+	// new a request message
+	reqMsg := s.newMessage(Replicate, n, request)
+
+	rspMsg, err := s.network.Call(ctx, reqMsg)
+	if err != nil {
+		return nil, errors.Errorf("replicate network call: %w", err)
+	}
+
+	response, ok := rspMsg.Data.(*ReplicateDataResponse)
+	if !ok {
+		return nil, errors.New("invalid ReplicateDataResponse")
+	}
+
+	return response, nil
 }
 
 func (s *DHT) sendStoreData(ctx context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
