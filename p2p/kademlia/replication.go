@@ -3,7 +3,6 @@ package kademlia
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -17,10 +16,6 @@ import (
 )
 
 var (
-	// defaultReplicationTime is the default time for replication - in case lastReplicated is nil
-	// it will be used as the lastReplicated time
-	defaultReplicationTime = time.Hour * 24 * 30 * 6 // 6 months
-
 	// defaultReplicationInterval is the default interval for replication.
 	defaultReplicationInterval = time.Minute * 5
 
@@ -216,6 +211,7 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 	logEntry = logEntry.WithField("len-rep-keys", len(replicationKeys))
 	logEntry.Info("replication keys to be adjusted")
 
+	/*storeMap := make(map[string][]Node)
 	for _, key := range replicationKeys {
 
 		// prepare ignored nodes list but remove the node we are adjusting
@@ -239,22 +235,9 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 		}
 		logEntry.WithField("key", hex.EncodeToString(key)).WithField("ip", info.IP).Info("adjust: this key is supposed to be hold by this node")
 
-		// get the value
-		value, typ, err := s.store.RetrieveWithType(ctx, key)
-		if err != nil {
-			log.P2P().WithContext(ctx).WithError(err).Error("replicate store retrieve failed")
-			continue
-		}
-
-		key := s.hashKey(value)
-
-		// iterative store the data
-		if _, err := s.iterate(ctx, IterateStore, key, value, typ); err != nil {
-			log.WithContext(ctx).WithError(err).Error("replicate iterate data store failure")
-			continue
-		}
+		storeMap[hex.EncodeToString(key)] = append(storeMap[hex.EncodeToString(key)], n)
 	}
-
+	*/
 	info.IsAdjusted = true
 	info.UpdatedAt = time.Now()
 
