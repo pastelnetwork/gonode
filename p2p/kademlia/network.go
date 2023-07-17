@@ -292,9 +292,12 @@ func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateData
 		}
 	}
 
-	if err := s.dht.store.StoreBatchRepKeys(keysToStore, string(id), ip, port); err != nil {
-		return fmt.Errorf("unable to store batch replication keys: %w", err)
+	if len(keysToStore) > 0 {
+		if err := s.dht.store.StoreBatchRepKeys(keysToStore, string(id), ip, port); err != nil {
+			return fmt.Errorf("unable to store batch replication keys: %w", err)
+		}
 	}
+	log.WithContext(ctx).WithField("keys", len(keysToStore)).Info("store batch replication keys count")
 
 	return nil
 }

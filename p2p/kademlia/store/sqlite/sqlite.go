@@ -630,10 +630,13 @@ func (s *Store) GetOwnCreatedAt(ctx context.Context) (time.Time, error) {
 
 	created, err := time.Parse(time.RFC3339Nano, createdAtString)
 	if err != nil {
-		created, err = time.Parse("2006-01-02 15:04:05", createdAtString)
+		created, err = time.Parse(time.RFC3339, createdAtString)
 		if err != nil {
-			log.P2P().WithContext(ctx).WithError(err).Errorf("failed to parse createdAt")
-			return time.Time{}, fmt.Errorf("failed to parse createdAt: %w", err)
+			created, err = time.Parse("2006-01-02 15:04:05", createdAtString)
+			if err != nil {
+				log.P2P().WithContext(ctx).WithError(err).Errorf("failed to parse createdAt")
+				return time.Time{}, fmt.Errorf("failed to parse createdAt: %w", err)
+			}
 		}
 	}
 
