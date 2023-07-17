@@ -37,12 +37,12 @@ func (s *DHT) StartReplicationWorker(ctx context.Context) error {
 	log.P2P().WithContext(ctx).Info("replication worker started")
 
 	go s.checkNodeActivity(ctx)
+	go s.StartFetchAndStoreWorker(ctx)
 
 	for {
 		select {
 		case <-time.After(defaultReplicationInterval):
 			s.Replicate(ctx)
-			log.P2P().WithContext(ctx).Error("no running replication worker")
 		case <-ctx.Done():
 			log.P2P().WithContext(ctx).Error("closing replication worker")
 			return nil
@@ -173,6 +173,9 @@ func (s *DHT) Replicate(ctx context.Context) {
 
 		replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
 		logEntry.WithField("len-rep-keys", len(replicationKeys)).Info("count of replication keys to be checked")
+		if len(replicationKeys) == 0 {
+			continue
+		}
 
 		// Preallocate a slice with a capacity equal to the number of keys.
 		closestContactKeys := make([][]byte, 0, len(replicationKeys))
@@ -389,6 +392,11 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("get all keys error: %w", err)
 	}
+	log.WithContext(ctx).WithField("count", len(keys)).Info("got keys from local store")
+
+	if len(keys) == 0 {
+		return nil
+	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(keys))        // Add count of all keys before spawning goroutines
@@ -399,38 +407,41 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 
 		go func(info domain.ToRepKey) {
 			defer wg.Done()
+			cctx, ccancel := context.WithTimeout(ctx, 1*time.Minute)
+			defer ccancel()
+
 			sKey := hex.EncodeToString(info.Key)
 			n := Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
-			value, err := s.GetValueFromNode(ctx, info.Key, &n)
+			value, err := s.GetValueFromNode(cctx, info.Key, &n)
 			if err != nil {
-				log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & store key failed")
-				value, err = s.iterateFindValue(ctx, IterateFindValue, info.Key)
+				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & store key failed")
+				value, err = s.iterateFindValue(cctx, IterateFindValue, info.Key)
 				if err != nil {
-					log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed")
+					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed")
 					return
 				}
-				log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
+				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
 			}
 
-			if err := s.store.Store(ctx, info.Key, value, 0, false); err != nil {
-				log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & local store key failed")
+			if err := s.store.Store(cctx, info.Key, value, 0, false); err != nil {
+				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & local store key failed")
 				return
 			}
 
 			if err := s.store.DeleteRepKey(info.Key); err != nil {
-				log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("delete key from todo list failed")
+				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("delete key from todo list failed")
 				return
 			}
 
 			atomic.AddInt32(&successCounter, 1) // Increment the counter atomically
 
-			log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).Info("fetch & store key success")
+			log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("fetch & store key success")
 		}(key)
 	}
 
 	wg.Wait()
 
-	log.WithContext(ctx).Infof("Successfully fetched & stored %d keys", atomic.LoadInt32(&successCounter)) // Log the final count
+	log.WithContext(ctx).WithField("todo-keys", len(keys)).WithField("successfully-added-keys", atomic.LoadInt32(&successCounter)).Infof("Successfully fetched & stored keys") // Log the final count
 
 	return nil
 }

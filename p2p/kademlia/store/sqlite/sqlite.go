@@ -3,10 +3,12 @@ package sqlite
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
@@ -619,23 +621,33 @@ func (s *Store) Close(ctx context.Context) {
 
 // GetOwnCreatedAt func
 func (s *Store) GetOwnCreatedAt(ctx context.Context) (time.Time, error) {
-	var createdAtString string
+	var createdAtStr sql.NullString
 	query := `SELECT MIN(createdAt) FROM data`
 
-	err := s.db.Get(&createdAtString, query)
+	err := s.db.Get(&createdAtStr, query)
 	if err != nil {
 		log.P2P().WithContext(ctx).WithError(err).Errorf("failed to get own createdAt")
 		return time.Time{}, fmt.Errorf("failed to get own createdAt: %w", err)
 	}
 
-	created, err := time.Parse(time.RFC3339Nano, createdAtString)
+	createdAtString := createdAtStr.String
+	if createdAtString == "" {
+		return time.Now(), nil
+	}
+
+	createdAtString = strings.Split(createdAtString, "+")[0]
+
+	created, err := time.Parse("2006-01-02 15:04:05.999999999", createdAtString)
 	if err != nil {
-		created, err = time.Parse(time.RFC3339, createdAtString)
+		created, err = time.Parse(time.RFC3339Nano, createdAtString)
 		if err != nil {
-			created, err = time.Parse("2006-01-02 15:04:05", createdAtString)
+			created, err = time.Parse(time.RFC3339, createdAtString)
 			if err != nil {
-				log.P2P().WithContext(ctx).WithError(err).Errorf("failed to parse createdAt")
-				return time.Time{}, fmt.Errorf("failed to parse createdAt: %w", err)
+				created, err = time.Parse("2006-01-02 15:04:05", createdAtString)
+				if err != nil {
+					log.P2P().WithContext(ctx).WithError(err).Errorf("failed to parse createdAt")
+					return time.Time{}, fmt.Errorf("failed to parse createdAt: %w", err)
+				}
 			}
 		}
 	}

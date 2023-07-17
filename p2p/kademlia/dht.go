@@ -359,7 +359,10 @@ func (s *DHT) GetValueFromNode(ctx context.Context, target []byte, n *Node) ([]b
 
 	request := s.newMessage(messageType, n, data)
 	// send the request and receive the response
-	response, err := s.network.Call(ctx, request)
+	cctx, ccancel := context.WithTimeout(ctx, time.Second*5)
+	defer ccancel()
+
+	response, err := s.network.Call(cctx, request)
 	if err != nil {
 		log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
 		return nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)

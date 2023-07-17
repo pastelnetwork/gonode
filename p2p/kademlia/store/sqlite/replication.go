@@ -90,18 +90,17 @@ func (s *Store) checkReplicateKeysStore() bool {
 // GetAllToDoRepKeys returns all keys that need to be replicated
 func (s *Store) GetAllToDoRepKeys() (retKeys domain.ToRepKeys, err error) {
 	var keys []repKeys
-	if err := s.db.Select(&keys, "SELECT * FROM replication_keys"); err != nil {
+	if err := s.db.Select(&keys, "SELECT * FROM replication_keys LIMIT 500"); err != nil {
 		return nil, fmt.Errorf("error reading all keys from database: %w", err)
 	}
 
-	retKeys = make(domain.ToRepKeys, len(keys))
+	retKeys = make(domain.ToRepKeys, 0, len(keys))
 
 	for _, key := range keys {
 		domainKey, err := key.toDomain()
 		if err != nil {
 			return nil, fmt.Errorf("error converting key to domain: %w", err)
 		}
-
 		retKeys = append(retKeys, domainKey)
 	}
 
