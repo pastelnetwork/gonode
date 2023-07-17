@@ -41,17 +41,17 @@ func NewStorageHandler(p2p p2p.Client, rq rqnode.ClientInterface,
 }
 
 // StoreFileIntoP2P stores file into P2P
-func (h *StorageHandler) StoreFileIntoP2P(ctx context.Context, file *files.File) (string, error) {
+func (h *StorageHandler) StoreFileIntoP2P(ctx context.Context, file *files.File, typ int) (string, error) {
 	data, err := file.Bytes()
 	if err != nil {
 		return "", errors.Errorf("store file %s into p2p", file.Name())
 	}
-	return h.StoreBytesIntoP2P(ctx, data)
+	return h.StoreBytesIntoP2P(ctx, data, typ)
 }
 
 // StoreBytesIntoP2P into P2P actual data
-func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte) (string, error) {
-	return h.P2PClient.Store(ctx, data)
+func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte, typ int) (string, error) {
+	return h.P2PClient.Store(ctx, data, typ)
 }
 
 /*
@@ -89,7 +89,7 @@ func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]b
 */
 
 // StoreBatch stores into P2P array of bytes arrays
-func (h *StorageHandler) StoreBatch(ctx context.Context, list [][]byte) error {
+func (h *StorageHandler) StoreBatch(ctx context.Context, list [][]byte, typ int) error {
 	val := ctx.Value(log.TaskIDKey)
 	taskID := ""
 	if val != nil {
@@ -97,7 +97,7 @@ func (h *StorageHandler) StoreBatch(ctx context.Context, list [][]byte) error {
 	}
 	log.WithContext(ctx).WithField("task_id", taskID).Info("task_id in storeList")
 
-	return h.P2PClient.StoreBatch(ctx, list)
+	return h.P2PClient.StoreBatch(ctx, list, typ)
 }
 
 // GenerateRaptorQSymbols calls RQ service to produce RQ Symbols
@@ -232,7 +232,7 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 
 	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
 		Info("begin batch store raptorQ symbols in p2p")
-	if err := h.P2PClient.StoreBatch(ctx, result); err != nil {
+	if err := h.P2PClient.StoreBatch(ctx, result, P2PDataRaptorQSymbol); err != nil {
 		return fmt.Errorf("store batch raptorq symbols in p2p: %w", err)
 	}
 

@@ -21,7 +21,7 @@ type Store struct {
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(_ context.Context, _ time.Time) [][]byte {
+func (s *Store) GetKeysForReplication(_ context.Context, _ time.Time, _ time.Time) [][]byte {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -41,7 +41,7 @@ func (s *Store) UpdateKeyReplication(_ context.Context, _ []byte) error {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
+func (s *Store) Store(_ context.Context, key []byte, value []byte, _ int, _ bool) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -97,13 +97,18 @@ func (s *Store) DeleteAll(_ context.Context /*, type RecordType*/) error {
 }
 
 // StoreBatch stores a batch of key/value pairs for the local node with the given
-func (s *Store) StoreBatch(_ context.Context, values [][]byte) error {
+func (s *Store) StoreBatch(_ context.Context, values [][]byte, _ int, _ bool) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	for _, value := range values {
 		s.data[string(value)] = value
 	}
 	return nil
+}
+
+// RetrieveWithType will return the local key/value if it exists
+func (s *Store) RetrieveWithType(_ context.Context, _ []byte) ([]byte, int, error) {
+	return []byte{}, 0, nil
 }
 
 // NewStore returns a new memory store
@@ -127,5 +132,32 @@ func (s *Store) UpdateReplicationInfo(_ context.Context, _ domain.NodeReplicatio
 
 // AddReplicationInfo adds replication info
 func (s *Store) AddReplicationInfo(_ context.Context, _ domain.NodeReplicationInfo) error {
+	return nil
+}
+
+// GetKeysAfterTimestamp should return the keys of all data to be
+// replicated across the network. Typically all data should be
+// replicated every tReplicate seconds.
+func (s *Store) GetKeysAfterTimestamp(_ context.Context, _ time.Time) (retkeys [][]byte, retTime time.Time, err error) {
+	return retkeys, retTime, nil
+}
+
+// GetOwnCreatedAt ...
+func (s *Store) GetOwnCreatedAt(_ context.Context) (t time.Time, err error) {
+	return t, nil
+}
+
+// StoreBatchRepKeys ...
+func (s *Store) StoreBatchRepKeys(_ [][]byte, _ string, _ string, _ int) error {
+	return nil
+}
+
+// GetAllToDoRepKeys gets all keys that need to be replicated
+func (s *Store) GetAllToDoRepKeys() (retKeys domain.ToRepKeys, err error) {
+	return retKeys, nil
+}
+
+// DeleteRepKey deletes a key from the replication table
+func (s *Store) DeleteRepKey(_ []byte) error {
 	return nil
 }

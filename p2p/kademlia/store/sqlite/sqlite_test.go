@@ -38,10 +38,10 @@ func TestStoreAndRetrieve(t *testing.T) {
 
 	// Store test cases
 	for _, tc := range testCases {
-		err := store.Store(context.Background(), tc.key, tc.value)
+		err := store.Store(context.Background(), tc.key, tc.value, 0, true)
 		assert.NoError(t, err, "Store should not return an error")
 	}
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	// Retrieve test cases
 	for _, tc := range testCases {
 		retrievedValue, err := store.Retrieve(context.Background(), tc.key)

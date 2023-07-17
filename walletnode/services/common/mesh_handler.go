@@ -515,13 +515,15 @@ func (m *MeshHandler) disconnectNodes(ctx context.Context, nodes SuperNodeList) 
 	}
 }
 
-func (m *MeshHandler) disconnectFromNode(ctx context.Context, someNode *SuperNodeClient, onlyIfInactive bool) error {
+func (m *MeshHandler) disconnectFromNode(ctx context.Context, someNode *SuperNodeClient, _ bool) error {
 	someNode.RLock()
 	defer someNode.RUnlock()
 
-	if onlyIfInactive && someNode.IsActive() {
-		return nil
-	}
+	/*
+		if onlyIfInactive && someNode.IsActive() {
+			fmt.Println("closing connection now: ", someNode.String())
+			return nil
+		}*/
 
 	var err error
 	if someNode.ConnectionInterface != nil {

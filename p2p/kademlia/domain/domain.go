@@ -13,3 +13,15 @@ type NodeReplicationInfo struct {
 	ID               []byte     `json:"id"`
 	IsAdjusted       bool       `json:"is_adjusted"`
 }
+
+// ToRepKeys is the list for replication keys that need to be replicated
+type ToRepKeys []ToRepKey
+
+// ToRepKey is the struct for replication keys that need to be replicated
+type ToRepKey struct {
+	Key       []byte    `json:"key"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	IP        string    `json:"ip"`
+	Port      int       `json:"port"`
+	ID        string    `json:"id"`
+}

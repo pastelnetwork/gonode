@@ -134,3 +134,12 @@ func (s *NodeList) distance(id1, id2 []byte) *big.Int {
 
 	return new(big.Int).Xor(o1, o2)
 }
+
+// AddFirst adds a node to the first position of the list.
+func (s *NodeList) AddFirst(node *Node) {
+	s.Mux.Lock()         // lock for writing
+	defer s.Mux.Unlock() // ensure the lock is released no matter what
+
+	// Prepend the node to the slice
+	s.Nodes = append([]*Node{node}, s.Nodes...)
+}

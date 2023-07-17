@@ -202,7 +202,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 			case <-time.After(interval):
 				txResult, err := h.PastelHandler.PastelClient.GetRawTransactionVerbose1(ctx, txid)
 				if err != nil {
-					log.WithContext(ctx).WithError(err).Warn("GetRawTransactionVerbose1 err")
+					log.WithContext(ctx).WithError(err).WithField("txid", txid).Warn("GetRawTransactionVerbose1 err")
 				} else {
 					if txResult.Confirmations >= minConfirmation {
 						if verifyBurnAmt {

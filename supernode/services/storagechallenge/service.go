@@ -77,9 +77,9 @@ func (service *SCService) Run(ctx context.Context) error {
 
 			if service.CheckNextBlockAvailable(ctx) && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
 				newCtx := log.ContextWithPrefix(context.Background(), "storage-challenge")
-				task := service.NewSCTask()
-				task.GenerateStorageChallenges(newCtx)
-				log.WithContext(ctx).Info("Would normally generate a storage challenge")
+				//task := service.NewSCTask()
+				//task.GenerateStorageChallenges(newCtx)
+				log.WithContext(newCtx).Info("Would normally generate a storage challenge")
 			}
 		case <-ctx.Done():
 			log.Println("Context done being called in generatestoragechallenge loop in service.go")
@@ -203,7 +203,7 @@ func (service *SCService) GetSymbolFileByKey(ctx context.Context, key string, ge
 
 // StoreSymbolFile : Wrapper for p2p file storage service - stores a file in kademlia based on its key
 func (service *SCService) StoreSymbolFile(ctx context.Context, data []byte) (key string, err error) {
-	return service.P2PClient.Store(ctx, data)
+	return service.P2PClient.Store(ctx, data, common.P2PDataRaptorQSymbol)
 }
 
 // RemoveSymbolFileByKey : Wrapper for p2p file storage service - removes a file from kademlia based on its key

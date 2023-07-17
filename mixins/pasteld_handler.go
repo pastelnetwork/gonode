@@ -163,6 +163,7 @@ func (pt *PastelHandler) WaitTxidValid(ctx context.Context, txID string, expecte
 
 				result, err := pt.PastelClient.GetRawTransactionVerbose1(subCtx, txID)
 				if err != nil {
+					log.WithContext(ctx).WithField("txid", txID).Warn("failed to get txn in mixins")
 					return errors.Errorf("get transaction: %w", err)
 				}
 

@@ -393,7 +393,7 @@ func (task *SenseRegistrationTask) storeIDFiles(ctx context.Context) error {
 	log.WithContext(ctx).WithField("task_id", task.ID()).Info("store task id in context")
 	task.storage.TaskID = task.ID()
 
-	if err := task.storage.StoreBatch(ctx, task.ddFpFiles); err != nil {
+	if err := task.storage.StoreBatch(ctx, task.ddFpFiles, common.P2PDataDDMetadata); err != nil {
 		return errors.Errorf("store ID files into kademlia: %w", err)
 	}
 
