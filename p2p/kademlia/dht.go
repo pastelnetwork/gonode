@@ -352,6 +352,7 @@ func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Mes
 	}
 }
 
+// GetValuesFromNode get values from node
 func (s *DHT) GetValueFromNode(ctx context.Context, target []byte, n *Node) ([]byte, error) {
 	messageType := FindValue
 	data := &FindValueRequest{Target: target}

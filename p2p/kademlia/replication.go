@@ -408,9 +408,8 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 				if err != nil {
 					log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed")
 					return
-				} else {
-					log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
 				}
+				log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
 			}
 
 			if err := s.store.Store(ctx, info.Key, value, 0, false); err != nil {
