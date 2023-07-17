@@ -352,6 +352,26 @@ func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Mes
 	}
 }
 
+func (s *DHT) GetValueFromNode(ctx context.Context, target []byte, n *Node) ([]byte, error) {
+	messageType := FindValue
+	data := &FindValueRequest{Target: target}
+
+	request := s.newMessage(messageType, n, data)
+	// send the request and receive the response
+	response, err := s.network.Call(ctx, request)
+	if err != nil {
+		log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
+		return nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)
+	}
+
+	v, ok := response.Data.(*FindValueResponse)
+	if ok && v.Status.Result == ResultOk && len(v.Value) > 0 {
+		return v.Value, nil
+	}
+
+	return nil, fmt.Errorf("claim to have value but not found - %s - node: %s", response.String(), n.String())
+}
+
 func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []byte, nl *NodeList, contacted map[string]bool, haveRest bool) chan *Message {
 	// responses from remote node
 	responses := make(chan *Message, Alpha)

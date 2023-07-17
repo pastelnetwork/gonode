@@ -151,3 +151,13 @@ func (s *Store) GetOwnCreatedAt(_ context.Context) (t time.Time, err error) {
 func (s *Store) StoreBatchRepKeys(_ [][]byte, _ string, _ string, _ int) error {
 	return nil
 }
+
+// GetAllToDoRepKeys gets all keys that need to be replicated
+func (s *Store) GetAllToDoRepKeys() (retKeys domain.ToRepKeys, err error) {
+	return retKeys, nil
+}
+
+// DeleteRepKey deletes a key from the replication table
+func (s *Store) DeleteRepKey(_ []byte) error {
+	return nil
+}

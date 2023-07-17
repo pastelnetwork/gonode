@@ -53,9 +53,12 @@ type Store interface {
 	//  GetOwnCreatedAt ...
 	GetOwnCreatedAt(ctx context.Context) (time.Time, error)
 
-	// GetKeysAfterTimestamp ...
-	GetKeysAfterTimestamp(ctx context.Context, timestamp time.Time) (retkeys [][]byte, retTime time.Time, err error)
-
 	// StoreBatchRepKeys ...
 	StoreBatchRepKeys(values [][]byte, id string, ip string, port int) error
+
+	// GetAllToDoRepKeys gets all keys that need to be replicated
+	GetAllToDoRepKeys() (retKeys domain.ToRepKeys, err error)
+
+	// DeleteRepKey deletes a key from the replication table
+	DeleteRepKey(key []byte) error
 }

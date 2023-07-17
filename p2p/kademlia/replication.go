@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"encoding/gob"
+	"encoding/hex"
 
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -25,6 +28,8 @@ var (
 
 	// check for active & inactive nodes after this interval
 	checkNodeActivityInterval = time.Minute * 3
+
+	defaultFetchAndStoreInterval = time.Minute * 5
 )
 
 // StartReplicationWorker starts replication
@@ -36,10 +41,25 @@ func (s *DHT) StartReplicationWorker(ctx context.Context) error {
 	for {
 		select {
 		case <-time.After(defaultReplicationInterval):
-			//s.Replicate(ctx)
+			s.Replicate(ctx)
 			log.P2P().WithContext(ctx).Error("no running replication worker")
 		case <-ctx.Done():
 			log.P2P().WithContext(ctx).Error("closing replication worker")
+			return nil
+		}
+	}
+}
+
+// StartFetchAndStoreWorker starts replication
+func (s *DHT) StartFetchAndStoreWorker(ctx context.Context) error {
+	log.P2P().WithContext(ctx).Info("fetch and store worker started")
+
+	for {
+		select {
+		case <-time.After(defaultFetchAndStoreInterval):
+			s.FetchAndStore(ctx)
+		case <-ctx.Done():
+			log.P2P().WithContext(ctx).Error("closing fetch & store worker")
 			return nil
 		}
 	}
@@ -361,4 +381,57 @@ func decompressKeys(data []byte) ([][]byte, error) {
 	}
 
 	return keys, nil
+}
+
+// FetchAndStore fetches all keys from the local TODO replicate list, fetches value from respective nodes and stores them in the local store
+func (s *DHT) FetchAndStore(ctx context.Context) error {
+	keys, err := s.store.GetAllToDoRepKeys()
+	if err != nil {
+		return fmt.Errorf("get all keys error: %w", err)
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(keys))        // Add count of all keys before spawning goroutines
+	var successCounter int32 // Create a counter for successful operations
+
+	for i := 0; i < len(keys); i++ {
+		key := keys[i]
+
+		go func(info domain.ToRepKey) {
+			defer wg.Done()
+			sKey := hex.EncodeToString(info.Key)
+			n := Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
+			value, err := s.GetValueFromNode(ctx, info.Key, &n)
+			if err != nil {
+				log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & store key failed")
+				value, err = s.iterateFindValue(ctx, IterateFindValue, info.Key)
+				if err != nil {
+					log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed")
+					return
+				} else {
+					log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
+				}
+			}
+
+			if err := s.store.Store(ctx, info.Key, value, 0, false); err != nil {
+				log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & local store key failed")
+				return
+			}
+
+			if err := s.store.DeleteRepKey(info.Key); err != nil {
+				log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("delete key from todo list failed")
+				return
+			}
+
+			atomic.AddInt32(&successCounter, 1) // Increment the counter atomically
+
+			log.WithContext(ctx).WithField("key", sKey).WithField("ip", info.IP).Info("fetch & store key success")
+		}(key)
+	}
+
+	wg.Wait()
+
+	log.WithContext(ctx).Infof("Successfully fetched & stored %d keys", atomic.LoadInt32(&successCounter)) // Log the final count
+
+	return nil
 }

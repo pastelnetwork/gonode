@@ -3,7 +3,6 @@ package sqlite
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -62,14 +61,6 @@ type Record struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	ReplicatedAt time.Time
-}
-
-type repKeys struct {
-	Key       string    `db:"key"`
-	UpdatedAt time.Time `db:"updatedAt"`
-	IP        string    `db:"ip"`
-	Port      int       `db:"port"`
-	ID        string    `db:"id"`
 }
 
 type nodeReplicationInfo struct {
@@ -157,20 +148,6 @@ func (s *Store) checkStore() bool {
 	return err == nil
 }
 
-func (s *Store) checkReplicateStore() bool {
-	query := `SELECT name FROM sqlite_master WHERE type='table' AND name='replication_info'`
-	var name string
-	err := s.db.Get(&name, query)
-	return err == nil
-}
-
-func (s *Store) checkReplicateKeysStore() bool {
-	query := `SELECT name FROM sqlite_master WHERE type='table' AND name='replication_keys'`
-	var name string
-	err := s.db.Get(&name, query)
-	return err == nil
-}
-
 func (s *Store) ensureDatatypeColumn() error {
 	rows, err := s.db.Query("PRAGMA table_info(data)")
 	if err != nil {
@@ -219,45 +196,6 @@ func (s *Store) migrate() error {
 
 	if _, err := s.db.Exec(query); err != nil {
 		return fmt.Errorf("failed to create table 'data': %w", err)
-	}
-
-	return nil
-}
-
-func (s *Store) migrateReplication() error {
-	replicateQuery := `
-    CREATE TABLE IF NOT EXISTS replication_info(
-        id TEXT PRIMARY KEY,
-        ip TEXT NOT NULL,
-		port INTEGER NOT NULL,
-        is_active BOOL DEFAULT FALSE,
-		is_adjusted BOOL DEFAULT FALSE,
-        lastReplicatedAt DATETIME,
-		createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-    `
-
-	if _, err := s.db.Exec(replicateQuery); err != nil {
-		return fmt.Errorf("failed to create table 'replication_info': %w", err)
-	}
-
-	return nil
-}
-
-func (s *Store) migrateRepKeys() error {
-	replicateQuery := `
-    CREATE TABLE IF NOT EXISTS replication_keys(
-        key TEXT PRIMARY KEY,
-		id TEXT NOT NULL,
-        ip TEXT NOT NULL,
-		port INTEGER NOT NULL,
-		updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    );
-    `
-
-	if _, err := s.db.Exec(replicateQuery); err != nil {
-		return fmt.Errorf("failed to create table 'replication_keys': %w", err)
 	}
 
 	return nil
@@ -596,59 +534,6 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 	return nil
 }
 
-// StoreBatchRepKeys will store a batch of values with their SHA256 hash as the key
-func (s *Store) StoreBatchRepKeys(values [][]byte, id string, ip string, port int) error {
-	operation := func() error {
-		tx, err := s.db.Beginx()
-		if err != nil {
-			return fmt.Errorf("cannot begin transaction: %w", err)
-		}
-
-		// Prepare insert statement
-		stmt, err := tx.PrepareNamed(`INSERT INTO replication_keys(key, id, ip, port, updatedAt) values(:key, :id, :ip, :port, :updatedat) ON CONFLICT(key) DO UPDATE SET id=:id,ip=:ip,port=:port,updatedAt=:updatedat`)
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				return fmt.Errorf("statement preparation failed, rollback failed: %v, original error: %w", rollbackErr, err)
-			}
-			return fmt.Errorf("cannot prepare statement: %w", err)
-
-		}
-		defer stmt.Close()
-
-		// For each value, calculate its hash and insert into DB
-		now := time.Now().UTC()
-		for i := 0; i < len(values); i++ {
-			hkey := hex.EncodeToString(values[i])
-			r := repKeys{Key: hkey, UpdatedAt: now, ID: id, IP: ip, Port: port}
-
-			// Execute the insert statement
-			_, err = stmt.Exec(r)
-			if err != nil {
-				tx.Rollback()
-				return fmt.Errorf("cannot insert or update replication key record with key %s: %w", hkey, err)
-			}
-		}
-
-		// Commit the transaction
-		if err := tx.Commit(); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("cannot commit transaction replication key update: %w", err)
-		}
-
-		return nil
-	}
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 10 * time.Second
-
-	err := backoff.Retry(operation, b)
-	if err != nil {
-		return fmt.Errorf("error storing rep keys record data: %w", err)
-	}
-
-	return nil
-}
-
 // deleteRecord a key/value pair from the Store
 func (s *Store) deleteRecord(key []byte) {
 	hkey := hex.EncodeToString(key)
@@ -674,29 +559,6 @@ func (s *Store) updateKeyReplication(key []byte, replicatedAt time.Time) error {
 	}
 
 	return err
-}
-
-// GetKeysForReplication should return the keys of all data to be
-// replicated across the network. Typically all data should be
-// replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time, to time.Time) (retkeys [][]byte) {
-	var keys []string
-	if err := s.db.Select(&keys, `SELECT key FROM data WHERE createdAt > ? and createdAt < ?`, from, to); err != nil {
-		log.P2P().WithError(err).WithContext(ctx).Errorf("failed to get records for replication older than %s", from)
-		return nil
-	}
-
-	for i := 0; i < len(keys); i++ {
-		str, err := hex.DecodeString(keys[i])
-		if err != nil {
-			log.WithContext(ctx).WithField("key", keys[i]).Error("replicate failed to hex decode key")
-			continue
-		}
-
-		retkeys = append(retkeys, str)
-	}
-
-	return retkeys
 }
 
 func (s *Store) deleteAll() error {
@@ -755,44 +617,6 @@ func (s *Store) Close(ctx context.Context) {
 	}
 }
 
-// GetAllReplicationInfo returns all records in replication table
-func (s *Store) GetAllReplicationInfo(_ context.Context) ([]domain.NodeReplicationInfo, error) {
-	r := []nodeReplicationInfo{}
-	err := s.db.Select(&r, "SELECT * FROM replication_info")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get replication info %w", err)
-	}
-
-	list := []domain.NodeReplicationInfo{}
-	for _, v := range r {
-		list = append(list, v.toDomain())
-	}
-
-	return list, nil
-}
-
-// UpdateReplicationInfo updates replication info
-func (s *Store) UpdateReplicationInfo(_ context.Context, rep domain.NodeReplicationInfo) error {
-	_, err := s.db.Exec(`UPDATE replication_info SET ip = ?, is_active = ?, is_adjusted = ?, lastReplicatedAt = ?, updatedAt =?, port = ? WHERE id = ?`,
-		rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, string(rep.ID))
-	if err != nil {
-		return fmt.Errorf("failed to update replicated records: %v", err)
-	}
-
-	return err
-}
-
-// AddReplicationInfo adds replication info
-func (s *Store) AddReplicationInfo(_ context.Context, rep domain.NodeReplicationInfo) error {
-	_, err := s.db.Exec(`INSERT INTO replication_info(id, ip, is_active, is_adjusted, lastReplicatedAt, updatedAt, port) values(?, ?, ?, ?, ?, ?, ?)`,
-		string(rep.ID), rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port)
-	if err != nil {
-		return fmt.Errorf("failed to insert replicate record: %v", err)
-	}
-
-	return err
-}
-
 // GetOwnCreatedAt func
 func (s *Store) GetOwnCreatedAt(ctx context.Context) (time.Time, error) {
 	var createdAtString string
@@ -814,47 +638,4 @@ func (s *Store) GetOwnCreatedAt(ctx context.Context) (time.Time, error) {
 	}
 
 	return created, nil
-}
-
-// GetKeysAfterTimestamp fetches all keys along with the latest createdAt timestamp after a specific timestamp.
-func (s *Store) GetKeysAfterTimestamp(ctx context.Context, timestamp time.Time) (retkeys [][]byte, retTime time.Time, err error) {
-	type KeyCreatedAt struct {
-		Key       string    `db:"key"`
-		CreatedAt time.Time `db:"createdAt"`
-	}
-
-	var keyCreatedAt []KeyCreatedAt
-
-	query := `
-		SELECT key, createdAt
-		FROM data
-		WHERE createdAt > ?
-		ORDER BY createdAt DESC
-		LIMIT 100
-	`
-
-	if err := s.db.Select(&keyCreatedAt, query, timestamp); err != nil {
-		if err == sql.ErrNoRows {
-			// Return empty records if there are no rows after the timestamp
-			return retkeys, time.Now(), nil
-		}
-		log.P2P().WithError(err).WithContext(ctx).Errorf("failed to fetch keys and latest createdAt after timestamp")
-		return nil, retTime, fmt.Errorf("failed to fetch keys and latest createdAt after timestamp: %w", err)
-	}
-
-	for i := 0; i < len(keyCreatedAt); i++ {
-		str, err := hex.DecodeString(keyCreatedAt[i].Key)
-		if err != nil {
-			log.WithContext(ctx).WithField("key", keyCreatedAt[i].Key).Error("replicate failed to hex decode key")
-			continue
-		}
-
-		retkeys = append(retkeys, str)
-	}
-
-	if len(keyCreatedAt) > 0 {
-		retTime = keyCreatedAt[0].CreatedAt
-	}
-
-	return retkeys, retTime, nil
 }
