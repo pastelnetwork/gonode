@@ -19,7 +19,7 @@ func (cmd *Command) AddSubcommands(commands ...*Command) {
 // AddFlags adds flags
 func (cmd *Command) AddFlags(flags ...*Flag) {
 	for _, flag := range flags {
-		cmd.Flags = append(cmd.Flags, flag)
+		cmd.Flags = append(cmd.Flags, flag.Flag)
 	}
 }
 

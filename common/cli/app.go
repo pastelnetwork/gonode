@@ -25,7 +25,7 @@ func (app *App) AddCommands(commands ...*Command) {
 // AddFlags adds flags
 func (app *App) AddFlags(flags ...*Flag) {
 	for _, flag := range flags {
-		app.Flags = append(app.Flags, flag)
+		app.Flags = append(app.Flags, flag.Flag)
 	}
 }
 
