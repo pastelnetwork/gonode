@@ -90,7 +90,7 @@ func (s *Store) checkReplicateKeysStore() bool {
 // GetAllToDoRepKeys returns all keys that need to be replicated
 func (s *Store) GetAllToDoRepKeys() (retKeys domain.ToRepKeys, err error) {
 	var keys []repKeys
-	if err := s.db.Select(&keys, "SELECT * FROM replication_keys LIMIT 500"); err != nil {
+	if err := s.db.Select(&keys, "SELECT * FROM replication_keys LIMIT 5000"); err != nil {
 		return nil, fmt.Errorf("error reading all keys from database: %w", err)
 	}
 
