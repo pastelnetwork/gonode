@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -20,7 +19,7 @@ import (
 
 var (
 	// defaultReplicationInterval is the default interval for replication.
-	defaultReplicationInterval = time.Minute * 5
+	defaultReplicationInterval = time.Minute * 15
 
 	// nodeShowUpDeadline is the time after which the node will considered to be permeant offline
 	// we'll adjust the keys once the node is permeant offline
@@ -72,6 +71,8 @@ func (s *DHT) updateReplicationNode(ctx context.Context, nodeID []byte, ip strin
 		info.IP = ip
 		info.Port = port
 		info.ID = nodeID
+
+		s.nodeReplicationTimes[string(nodeID)] = info
 
 		if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 			log.P2P().WithContext(ctx).WithError(err).WithField("node_id", string(nodeID)).WithField("ip", ip).Error("failed to add replication info")
@@ -398,16 +399,16 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 		return nil
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(keys))        // Add count of all keys before spawning goroutines
+	//wg := sync.WaitGroup{}
+	//wg.Add(len(keys))        // Add count of all keys before spawning goroutines
 	var successCounter int32 // Create a counter for successful operations
 
 	for i := 0; i < len(keys); i++ {
 		key := keys[i]
 
-		go func(info domain.ToRepKey) {
-			defer wg.Done()
-			cctx, ccancel := context.WithTimeout(ctx, 1*time.Minute)
+		func(info domain.ToRepKey) {
+			//defer wg.Done()
+			cctx, ccancel := context.WithTimeout(ctx, 30*time.Second)
 			defer ccancel()
 
 			sKey := hex.EncodeToString(info.Key)
@@ -419,8 +420,12 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 				if err != nil {
 					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed")
 					return
+				} else if len(value) == 0 {
+					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed 0 val")
 				}
+
 				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
+				time.Sleep(100 * time.Millisecond)
 			}
 
 			if err := s.store.Store(cctx, info.Key, value, 0, false); err != nil {
@@ -439,7 +444,7 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 		}(key)
 	}
 
-	wg.Wait()
+	//wg.Wait()
 
 	log.WithContext(ctx).WithField("todo-keys", len(keys)).WithField("successfully-added-keys", atomic.LoadInt32(&successCounter)).Infof("Successfully fetched & stored keys") // Log the final count
 
