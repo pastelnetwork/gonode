@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
 	"github.com/stretchr/testify/mock"
 )
@@ -75,6 +76,9 @@ const (
 
 	// GetDupeDetectionDBHashMethod  is method name for GetDupeDetectionDBHash
 	GetDupeDetectionDBHashMethod = "GetDupeDetectionDBHash"
+
+	// GetDDServerStatsMethod  is method name for GetDDServerStats
+	GetDDServerStatsMethod = "GetDDServerStats"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -127,6 +131,18 @@ func (client *Client) ListenOnRegisterGetDupeDetectionDBHash(hash string, err er
 // ListenOnSenseGetDupeDetectionDBHash listening GetDupeDetectionDBHash call
 func (client *Client) ListenOnSenseGetDupeDetectionDBHash(hash string, err error) *Client {
 	client.RegisterSenseInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
+	return client
+}
+
+// ListenOnNFTGetDDServerStats listening GetDDServerStats call from nft reg interface
+func (client *Client) ListenOnNFTGetDDServerStats(reply *pb.DDServerStatsReply, err error) *Client {
+	client.RegisterNftInterface.On(GetDDServerStatsMethod, mock.Anything).Return(reply, err)
+	return client
+}
+
+// ListenOnSenseGetDDServerStats listening GetDDServerStats call from sense reg interface
+func (client *Client) ListenOnSenseGetDDServerStats(reply *pb.DDServerStatsReply, err error) *Client {
+	client.RegisterSenseInterface.On(GetDDServerStatsMethod, mock.Anything).Return(reply, err)
 	return client
 }
 

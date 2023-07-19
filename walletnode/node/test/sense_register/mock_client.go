@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
 	"github.com/stretchr/testify/mock"
 )
@@ -50,6 +51,9 @@ const (
 
 	// GetDupeDetectionDBHashMethod  is method name for GetDupeDetectionDBHash
 	GetDupeDetectionDBHashMethod = "GetDupeDetectionDBHash"
+
+	// GetDDServerStatsMethod  is method name for GetDDServerStats
+	GetDDServerStatsMethod = "GetDDServerStats"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -86,6 +90,12 @@ func (client *Client) ListenOnSendSignedTicket(id string, err error) *Client {
 // ListenOnGetDupeDetectionDBHash listening GetDupeDetectionDBHash call
 func (client *Client) ListenOnGetDupeDetectionDBHash(hash string, err error) *Client {
 	client.RegisterSenseInterface.On(GetDupeDetectionDBHashMethod, mock.Anything, mock.Anything).Return(hash, err)
+	return client
+}
+
+// ListenOnGetDDServerStats listening GetDDServerStats call
+func (client *Client) ListenOnGetDDServerStats(reply *pb.DDServerStatsReply, err error) *Client {
+	client.RegisterSenseInterface.On(GetDDServerStatsMethod, mock.Anything).Return(reply, err)
 	return client
 }
 

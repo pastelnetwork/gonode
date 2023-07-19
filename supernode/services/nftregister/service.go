@@ -3,6 +3,7 @@ package nftregister
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/dupedetection"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/ddstore"
@@ -60,6 +61,11 @@ func (service *NftRegistrationService) GetDupeDetectionDatabaseHash(ctx context.
 	}
 
 	return hash, nil
+}
+
+// GetDupeDetectionServerStats returns the stats of the dupe detection server.
+func (service *NftRegistrationService) GetDupeDetectionServerStats(ctx context.Context) (dupedetection.DDServerStats, error) {
+	return service.ddClient.GetStats(ctx)
 }
 
 // NewService returns a new Service instance.

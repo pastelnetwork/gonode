@@ -116,6 +116,20 @@ func (service *registerNft) GetDupeDetectionDBHash(ctx context.Context) (hash st
 	return resp.Hash, nil
 }
 
+// GetDDServerStats implements node.RegisterNft.GetDDServerStats
+func (service *registerNft) GetDDServerStats(ctx context.Context) (stats *pb.DDServerStatsReply, err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	req := &pb.DDServerStatsRequest{}
+	resp, err := service.client.GetDDServerStats(ctx, req)
+	if err != nil {
+		return nil, errors.Errorf("WN request to SN for dd-server stats: %w", err)
+	}
+
+	return resp, nil
+}
+
 // ConnectTo implements node.RegisterNft.ConnectTo()
 func (service *registerNft) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)

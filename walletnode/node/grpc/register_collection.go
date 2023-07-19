@@ -157,6 +157,12 @@ func (service *registerCollection) GetDupeDetectionDBHash(_ context.Context) (ha
 	return "not implemented", nil
 }
 
+// GetDDServerStats implements node.RegisterNft.GetDDServerStats
+func (service *registerCollection) GetDDServerStats(_ context.Context) (stats *pb.DDServerStatsReply, err error) {
+	//not implemented
+	return stats, nil
+}
+
 func (service *registerCollection) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }

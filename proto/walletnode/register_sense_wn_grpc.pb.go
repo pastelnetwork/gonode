@@ -42,6 +42,8 @@ type RegisterSenseClient interface {
 	SendActionAct(ctx context.Context, in *SendActionActRequest, opts ...grpc.CallOption) (*SendActionActReply, error)
 	// GetDDDatabaseHash returns hash of dupe detection database hash
 	GetDDDatabaseHash(ctx context.Context, in *GetDBHashRequest, opts ...grpc.CallOption) (*DBHashReply, error)
+	// GetDDServerStats returns stats of dupe detection server
+	GetDDServerStats(ctx context.Context, in *DDServerStatsRequest, opts ...grpc.CallOption) (*DDServerStatsReply, error)
 }
 
 type registerSenseClient struct {
@@ -180,6 +182,15 @@ func (c *registerSenseClient) GetDDDatabaseHash(ctx context.Context, in *GetDBHa
 	return out, nil
 }
 
+func (c *registerSenseClient) GetDDServerStats(ctx context.Context, in *DDServerStatsRequest, opts ...grpc.CallOption) (*DDServerStatsReply, error) {
+	out := new(DDServerStatsReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterSense/GetDDServerStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterSenseServer is the server API for RegisterSense service.
 // All implementations must embed UnimplementedRegisterSenseServer
 // for forward compatibility
@@ -204,6 +215,8 @@ type RegisterSenseServer interface {
 	SendActionAct(context.Context, *SendActionActRequest) (*SendActionActReply, error)
 	// GetDDDatabaseHash returns hash of dupe detection database hash
 	GetDDDatabaseHash(context.Context, *GetDBHashRequest) (*DBHashReply, error)
+	// GetDDServerStats returns stats of dupe detection server
+	GetDDServerStats(context.Context, *DDServerStatsRequest) (*DDServerStatsReply, error)
 	mustEmbedUnimplementedRegisterSenseServer()
 }
 
@@ -237,6 +250,9 @@ func (UnimplementedRegisterSenseServer) SendActionAct(context.Context, *SendActi
 }
 func (UnimplementedRegisterSenseServer) GetDDDatabaseHash(context.Context, *GetDBHashRequest) (*DBHashReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDDDatabaseHash not implemented")
+}
+func (UnimplementedRegisterSenseServer) GetDDServerStats(context.Context, *DDServerStatsRequest) (*DDServerStatsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDDServerStats not implemented")
 }
 func (UnimplementedRegisterSenseServer) mustEmbedUnimplementedRegisterSenseServer() {}
 
@@ -429,6 +445,24 @@ func _RegisterSense_GetDDDatabaseHash_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterSense_GetDDServerStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DDServerStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterSenseServer).GetDDServerStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterSense/GetDDServerStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterSenseServer).GetDDServerStats(ctx, req.(*DDServerStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterSense_ServiceDesc is the grpc.ServiceDesc for RegisterSense service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -463,6 +497,10 @@ var RegisterSense_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDDDatabaseHash",
 			Handler:    _RegisterSense_GetDDDatabaseHash_Handler,
+		},
+		{
+			MethodName: "GetDDServerStats",
+			Handler:    _RegisterSense_GetDDServerStats_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

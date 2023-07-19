@@ -2,14 +2,12 @@ package grpc
 
 import (
 	"context"
-
-	"github.com/pastelnetwork/gonode/common/storage/files"
-
 	"fmt"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
@@ -111,6 +109,20 @@ func (service *registerSense) GetDupeDetectionDBHash(ctx context.Context) (hash 
 	}
 
 	return resp.Hash, nil
+}
+
+// GetDDServerStats implements node.RegisterNft.GetDDServerStats
+func (service *registerSense) GetDDServerStats(ctx context.Context) (stats *pb.DDServerStatsReply, err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	req := &pb.DDServerStatsRequest{}
+	resp, err := service.client.GetDDServerStats(ctx, req)
+	if err != nil {
+		return stats, errors.Errorf("WN request to SN for dd-server stats: %w", err)
+	}
+
+	return resp, nil
 }
 
 // ConnectTo implements node.RegisterNft.ConnectTo()

@@ -40,6 +40,9 @@ service RegisterNft {
 
     // GetDDDatabaseHash returns hash of dupe detection database hash
     rpc GetDDDatabaseHash(GetDBHashRequest) returns (DBHashReply);
+
+  // GetDDServerStats returns stats of dupe detection server
+  rpc GetDDServerStats(DDServerStatsRequest) returns (DDServerStatsReply);
 }
 
 message SendSignedNFTTicketRequest {

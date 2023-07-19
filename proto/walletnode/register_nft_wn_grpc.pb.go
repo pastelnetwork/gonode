@@ -46,6 +46,8 @@ type RegisterNftClient interface {
 	UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterNft_UploadImageClient, error)
 	// GetDDDatabaseHash returns hash of dupe detection database hash
 	GetDDDatabaseHash(ctx context.Context, in *GetDBHashRequest, opts ...grpc.CallOption) (*DBHashReply, error)
+	// GetDDServerStats returns stats of dupe detection server
+	GetDDServerStats(ctx context.Context, in *DDServerStatsRequest, opts ...grpc.CallOption) (*DDServerStatsReply, error)
 }
 
 type registerNftClient struct {
@@ -227,6 +229,15 @@ func (c *registerNftClient) GetDDDatabaseHash(ctx context.Context, in *GetDBHash
 	return out, nil
 }
 
+func (c *registerNftClient) GetDDServerStats(ctx context.Context, in *DDServerStatsRequest, opts ...grpc.CallOption) (*DDServerStatsReply, error) {
+	out := new(DDServerStatsReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterNft/GetDDServerStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterNftServer is the server API for RegisterNft service.
 // All implementations must embed UnimplementedRegisterNftServer
 // for forward compatibility
@@ -255,6 +266,8 @@ type RegisterNftServer interface {
 	UploadImage(RegisterNft_UploadImageServer) error
 	// GetDDDatabaseHash returns hash of dupe detection database hash
 	GetDDDatabaseHash(context.Context, *GetDBHashRequest) (*DBHashReply, error)
+	// GetDDServerStats returns stats of dupe detection server
+	GetDDServerStats(context.Context, *DDServerStatsRequest) (*DDServerStatsReply, error)
 	mustEmbedUnimplementedRegisterNftServer()
 }
 
@@ -294,6 +307,9 @@ func (UnimplementedRegisterNftServer) UploadImage(RegisterNft_UploadImageServer)
 }
 func (UnimplementedRegisterNftServer) GetDDDatabaseHash(context.Context, *GetDBHashRequest) (*DBHashReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDDDatabaseHash not implemented")
+}
+func (UnimplementedRegisterNftServer) GetDDServerStats(context.Context, *DDServerStatsRequest) (*DDServerStatsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDDServerStats not implemented")
 }
 func (UnimplementedRegisterNftServer) mustEmbedUnimplementedRegisterNftServer() {}
 
@@ -530,6 +546,24 @@ func _RegisterNft_GetDDDatabaseHash_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterNft_GetDDServerStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DDServerStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterNftServer).GetDDServerStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterNft/GetDDServerStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterNftServer).GetDDServerStats(ctx, req.(*DDServerStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterNft_ServiceDesc is the grpc.ServiceDesc for RegisterNft service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -568,6 +602,10 @@ var RegisterNft_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDDDatabaseHash",
 			Handler:    _RegisterNft_GetDDDatabaseHash_Handler,
+		},
+		{
+			MethodName: "GetDDServerStats",
+			Handler:    _RegisterNft_GetDDServerStats_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

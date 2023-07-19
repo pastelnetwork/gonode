@@ -125,6 +125,11 @@ func (service *downloadNft) GetDupeDetectionDBHash(_ context.Context) (hash stri
 	return "not implemented", nil
 }
 
+// GetDDServerStats implements node.RegisterNft.GetDDServerStats
+func (service *downloadNft) GetDDServerStats(_ context.Context) (stats *pb.DDServerStatsReply, err error) {
+	return stats, nil
+}
+
 ///<---
 
 func newDownloadNft(conn *clientConn) node.DownloadNftInterface {
