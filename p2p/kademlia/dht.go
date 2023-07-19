@@ -776,8 +776,6 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 
 	if err := s.updateReplicationNode(ctx, node.ID, node.IP, node.Port, true); err != nil {
 		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("node-ip", node.IP).WithError(err).Error("update replication node failed")
-	} else {
-		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("port", node.Port).WithField("node-ip", node.IP).Info("adding new node")
 	}
 
 	s.ht.mutex.Lock()

@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sync"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 
 var (
 	// defaultReplicationInterval is the default interval for replication.
-	defaultReplicationInterval = time.Minute * 5
+	defaultReplicationInterval = time.Minute * 15
 
 	// nodeShowUpDeadline is the time after which the node will considered to be permeant offline
 	// we'll adjust the keys once the node is permeant offline
@@ -72,6 +73,8 @@ func (s *DHT) updateReplicationNode(ctx context.Context, nodeID []byte, ip strin
 		info.IP = ip
 		info.Port = port
 		info.ID = nodeID
+
+		s.nodeReplicationTimes[string(nodeID)] = info
 
 		if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 			log.P2P().WithContext(ctx).WithError(err).WithField("node_id", string(nodeID)).WithField("ip", ip).Error("failed to add replication info")
@@ -227,26 +230,25 @@ func (s *DHT) Replicate(ctx context.Context) {
 }
 
 func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.NodeReplicationInfo) error {
-	logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", string(info.ID))
+	logEntry := log.P2P().WithContext(ctx).WithField("adjust-rep-ip", info.IP).WithField("adjust-rep-id", string(info.ID))
 	logEntry.WithField("from", from.String()).Info("adjusting node keys")
 
 	replicationKeys := s.store.GetKeysForReplication(ctx, from, time.Now())
-	logEntry = logEntry.WithField("len-rep-keys", len(replicationKeys))
+	logEntry = logEntry.WithField("adjust-rep-keys", len(replicationKeys))
 	logEntry.Info("replication keys to be adjusted")
 
-	/*storeMap := make(map[string][]Node)
-	for _, key := range replicationKeys {
-
-		// prepare ignored nodes list but remove the node we are adjusting
-		// because we want to find if this node was supposed to hold this key
-		ignores := s.ignorelist.ToNodeList()
-		var updatedIgnored []*Node
-		for _, ignore := range ignores {
-			if string(ignore.ID) != string(info.ID) {
-				updatedIgnored = append(updatedIgnored, ignore)
-			}
+	// prepare ignored nodes list but remove the node we are adjusting
+	// because we want to find if this node was supposed to hold this key
+	ignores := s.ignorelist.ToNodeList()
+	var updatedIgnored []*Node
+	for _, ignore := range ignores {
+		if !bytes.Equal(ignore.ID, info.ID) {
+			updatedIgnored = append(updatedIgnored, ignore)
 		}
+	}
 
+	nodeKeysMap := make(map[string][]string)
+	for _, key := range replicationKeys {
 		// get closest contacts to the key
 		nodeList := s.ht.closestContacts(Alpha, key, updatedIgnored)
 
@@ -256,11 +258,78 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 			// the node is not supposed to hold this key as its not in 6 closest contacts
 			continue
 		}
-		logEntry.WithField("key", hex.EncodeToString(key)).WithField("ip", info.IP).Info("adjust: this key is supposed to be hold by this node")
+		logEntry.WithField("key", hex.EncodeToString(key)).WithField("ip", info.IP).Info("adjust: this key is supposed to be held by this node")
 
-		storeMap[hex.EncodeToString(key)] = append(storeMap[hex.EncodeToString(key)], n)
+		// If the node is supposed to hold the key, we map the node's info to the key
+		nodeInfo := generateKeyFromNode(n)
+		// convert key to string representation
+		keyString := hex.EncodeToString(key)
+
+		// append the key to the list of keys that the node is supposed to have
+		nodeKeysMap[nodeInfo] = append(nodeKeysMap[nodeInfo], keyString)
 	}
-	*/
+
+	// iterate over the map and send the keys to the node
+	// Loop over the map
+	successCount := 0
+	failureCount := 0
+
+	for nodeInfoKey, keys := range nodeKeysMap {
+		// Retrieve the node object from the key
+		node, err := getNodeFromKey(nodeInfoKey)
+		if err != nil {
+			logEntry.WithError(err).Error("Failed to parse node info from key")
+			return fmt.Errorf("failed to parse node info from key: %w", err)
+		}
+
+		// Convert the hexadecimal string keys back to byte slices
+		byteKeys := make([][]byte, len(keys))
+		for i, key := range keys {
+			byteKey, err := hex.DecodeString(key)
+			if err != nil {
+				logEntry.WithError(err).Errorf("Failed to decode key: %s", key)
+				return fmt.Errorf("failed to decode key: %s: %w", key, err)
+			}
+			byteKeys[i] = byteKey
+		}
+
+		data, err := compressKeys(byteKeys)
+		if err != nil {
+			logEntry.WithField("adjust-rep-keys", len(byteKeys)).WithError(err).Error("unable to compress keys - adjust keys failed")
+			return fmt.Errorf("unable to compress keys - adjust keys failed: %w", err)
+		}
+
+		// TODO: Check if data size is bigger than 32 MB
+		request := &ReplicateDataRequest{
+			Keys: data,
+		}
+		response, err := s.sendReplicateData(ctx, node, request)
+		if err != nil {
+			logEntry.WithError(err).Error("send adjust replicate data failed")
+			failureCount++
+			continue
+		} else if response.Status.Result != ResultOk {
+			logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply adjust replicate data failed")
+			failureCount++
+			continue
+		} else {
+			successCount++
+		}
+	}
+
+	totalCount := successCount + failureCount
+
+	if totalCount > 0 { // Prevent division by zero
+		successRate := float64(successCount) / float64(totalCount) * 100
+
+		if successRate < 75 {
+			// Success rate is less than 75%
+			return fmt.Errorf("adjust keys success rate is less than 75%%: %v", successRate)
+		}
+	} else {
+		return fmt.Errorf("adjust keys totalCount is 0")
+	}
+
 	info.IsAdjusted = true
 	info.UpdatedAt = time.Now()
 
@@ -398,16 +467,16 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 		return nil
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(keys))        // Add count of all keys before spawning goroutines
+	//wg := sync.WaitGroup{}
+	//wg.Add(len(keys))        // Add count of all keys before spawning goroutines
 	var successCounter int32 // Create a counter for successful operations
 
 	for i := 0; i < len(keys); i++ {
 		key := keys[i]
 
-		go func(info domain.ToRepKey) {
-			defer wg.Done()
-			cctx, ccancel := context.WithTimeout(ctx, 1*time.Minute)
+		func(info domain.ToRepKey) {
+			//defer wg.Done()
+			cctx, ccancel := context.WithTimeout(ctx, 30*time.Second)
 			defer ccancel()
 
 			sKey := hex.EncodeToString(info.Key)
@@ -419,8 +488,12 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 				if err != nil {
 					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed")
 					return
+				} else if len(value) == 0 {
+					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed 0 val")
 				}
+
 				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
+				time.Sleep(100 * time.Millisecond)
 			}
 
 			if err := s.store.Store(cctx, info.Key, value, 0, false); err != nil {
@@ -439,9 +512,34 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 		}(key)
 	}
 
-	wg.Wait()
+	//wg.Wait()
 
 	log.WithContext(ctx).WithField("todo-keys", len(keys)).WithField("successfully-added-keys", atomic.LoadInt32(&successCounter)).Infof("Successfully fetched & stored keys") // Log the final count
 
 	return nil
+}
+
+// Function to generate a key from a node object.
+func generateKeyFromNode(node *Node) string {
+	return string(node.ID) + ":" + node.IP + ":" + fmt.Sprint(node.Port)
+}
+
+// Function to retrieve a node object from a key.
+func getNodeFromKey(key string) (*Node, error) {
+	parts := strings.Split(key, ":")
+
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid key")
+	}
+
+	id := []byte(parts[0])
+	ip := parts[1]
+
+	// strconv.Atoi returns an int and an error, which we need to handle.
+	port, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return nil, fmt.Errorf("invalid port: %w", err)
+	}
+
+	return &Node{ID: id, IP: ip, Port: port}, nil
 }
