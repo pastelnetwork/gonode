@@ -14,6 +14,7 @@ import (
 
 	"github.com/DataDog/zstd"
 	"github.com/google/uuid"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -187,6 +188,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnSessID(testCase.args.primarySessID).
 				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 				ListenOnRegisterGetDupeDetectionDBHash("", nil).
+				ListenOnNFTGetDDServerStats(&pb.DDServerStatsReply{WaitingInQueue: 1}, nil).
 				ListenOnDone().
 				ListenOnUploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
 				ListenOnSendSignedTicket(1, nil).

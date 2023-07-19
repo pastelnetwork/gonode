@@ -131,6 +131,25 @@ func (service *RegisterNft) GetDDDatabaseHash(ctx context.Context, _ *pb.GetDBHa
 	return resp, nil
 }
 
+// GetDDServerStats implements walletnode.RegisterNFTServer.GetDDServerStats()
+func (service *RegisterNft) GetDDServerStats(ctx context.Context, _ *pb.DDServerStatsRequest) (*pb.DDServerStatsReply, error) {
+	log.WithContext(ctx).Info("request for dd-server stats has been received")
+
+	resp, err := service.GetDupeDetectionServerStats(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving dd-server stats from SN gRPC call")
+	}
+
+	stats := &pb.DDServerStatsReply{
+		MaxConcurrent:  resp.MaxConcurrent,
+		WaitingInQueue: resp.WaitingInQueue,
+		Executing:      resp.Executing,
+	}
+
+	log.WithContext(ctx).WithField("stats", stats).Info("DD server stats returned")
+	return stats, nil
+}
+
 // ConnectTo implements walletnode.RegisterNftServer.ConnectTo()
 func (service *RegisterNft) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")

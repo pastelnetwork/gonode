@@ -11,11 +11,11 @@ package node
 
 import (
 	"context"
-
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
@@ -57,6 +57,8 @@ type SuperNodeAPIInterface interface {
 	MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error
 	// GetDupeDetectionDBHash requests hash of dd database
 	GetDupeDetectionDBHash(ctx context.Context) (hash string, err error)
+	// GetDDServerStats requests stats of dd server
+	GetDDServerStats(ctx context.Context) (stats *pb.DDServerStatsReply, err error)
 }
 
 // RealNodeMaker interface to make concrete node types

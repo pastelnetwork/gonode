@@ -18,6 +18,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/stretchr/testify/assert"
@@ -157,6 +158,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnSessID(testCase.args.primarySessID).
 				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 				ListenOnSenseGetDupeDetectionDBHash("", nil).
+				ListenOnSenseGetDDServerStats(&pb.DDServerStatsReply{WaitingInQueue: 1}, nil).
 				ListenOnDone().
 				//ListenOnSendSignedTicket(100, nil).
 				ListenOnClose(nil).ListenOnSendActionAct(nil)

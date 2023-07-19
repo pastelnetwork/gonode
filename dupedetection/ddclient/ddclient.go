@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pastelnetwork/gonode/common/dupedetection"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/dupedetection"
@@ -28,6 +29,9 @@ type DDServerClient interface {
 	// ImageRarenessScore returns rareness score of image
 	ImageRarenessScore(ctx context.Context, img []byte, format string, blockHash string, blockHeight string, timestamp string, pastelID string,
 		supernode1 string, supernode2 string, supernode3 string, openAPIRequest bool, groupID string, collectionName string) (*pastel.DDAndFingerprints, error)
+
+	//GetStats returns the stats from dd-server
+	GetStats(ctx context.Context) (dupedetection.DDServerStats, error)
 }
 
 type ddServerClientImpl struct {
@@ -226,6 +230,38 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 	log.WithContext(ctx).Info("calling image rareness score now")
 	return ddClient.callImageRarenessScore(ctx, client, img, format, blockHash, blockHeight, timestamp, pastelID, supernode1, supernode2,
 		supernode3, openAPIRequest, groupID, collectionName)
+}
+
+// GetStats return the stats from the dd-server
+func (ddClient ddServerClientImpl) GetStats(ctx context.Context) (stats dupedetection.DDServerStats, err error) {
+	ctx = ddClient.contextWithLogPrefix(ctx)
+
+	baseClient := NewClient()
+	ddServerAddress := fmt.Sprint(ddClient.config.Host, ":", ddClient.config.Port)
+	conn, err := baseClient.Connect(ctx, ddServerAddress)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Info("unable to connect to dd-server")
+		return stats, errors.Errorf("connect to dd-server  %w", err)
+	}
+
+	defer conn.Close()
+	client := pb.NewDupeDetectionServerClient(conn)
+	log.WithContext(ctx).Info("connection established, sending request to dd-server for stats from SN")
+
+	resp, err := client.GetStatus(ctx, &pb.GetStatusRequest{})
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Info("error getting stats from sn - dd-server")
+		return stats, errors.Errorf("error getting dd server stats from the dd-server")
+	}
+	log.WithContext(ctx).WithField("stats", resp).Info("stats received")
+
+	stats = dupedetection.DDServerStats{
+		MaxConcurrent:  resp.TaskCount.MaxConcurrent,
+		Executing:      resp.TaskCount.Executing,
+		WaitingInQueue: resp.TaskCount.WaitingInQueue,
+	}
+
+	return stats, nil
 }
 
 func (ddClient *ddServerClientImpl) contextWithLogPrefix(ctx context.Context) context.Context {

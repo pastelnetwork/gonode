@@ -82,3 +82,11 @@ message GetDBHashRequest {}
 message DBHashReply {
     string hash = 1;
 }
+
+message DDServerStatsRequest {}
+
+message DDServerStatsReply {
+    int32 max_concurrent = 1;
+    int32 executing = 2;
+    int32 waiting_in_queue = 3;
+}

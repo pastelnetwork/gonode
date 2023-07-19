@@ -18,6 +18,11 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
+const (
+	//DDServerPendingRequestsThreshold is the threshold for DD-server pending requests
+	DDServerPendingRequestsThreshold = 2
+)
+
 // MeshHandler provides networking functionality, including mesh
 type MeshHandler struct {
 	task          *WalletNodeTask
@@ -269,6 +274,10 @@ func (m *MeshHandler) connectToAndValidateSuperNodesWithHashCheck(ctx context.Co
 				continue
 			}
 
+			if err := m.CheckDDServerRequestsInWaitingQueue(ctx, nodes); err != nil {
+				continue
+			}
+
 			return nodes, nil
 		}
 
@@ -354,6 +363,34 @@ func (m *MeshHandler) matchDatabaseHash(ctx context.Context, nodesList SuperNode
 	}
 
 	log.WithContext(ctx).Infof("DD Database hashes matched")
+
+	return nil
+}
+
+// CheckDDServerRequestsInWaitingQueue checks the no of requests waiting in queue for DD server to process
+func (m *MeshHandler) CheckDDServerRequestsInWaitingQueue(ctx context.Context, nodesList SuperNodeList) error {
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("checking dd-server no of requests waiting in a list of %d nodes ", len(nodesList))
+	pendingRequests := make(map[string]int32)
+	// Connect to top nodes to find 3SN and validate their info
+	for _, someNode := range nodesList {
+		stats, err := someNode.GetDDServerStats(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get dd server stats - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			return fmt.Errorf("failed to get dd server stats - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
+		}
+
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("node", someNode.Address()).WithField("stats", stats).Info("DD-server stats for node has been received")
+		pendingRequests[someNode.Address()] = stats.WaitingInQueue
+	}
+
+	for key, val := range pendingRequests {
+		if val > DDServerPendingRequestsThreshold {
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).Errorf("pending requests in queue exceeds the threshold for node %s", key)
+			return fmt.Errorf("pending requests in queue exceeds the threshold for node %s", key)
+		}
+	}
+
+	log.WithContext(ctx).Infof("pending requests for DD-server does not exceed than threshold, proceeding forward")
 
 	return nil
 }
