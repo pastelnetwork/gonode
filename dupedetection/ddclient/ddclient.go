@@ -256,9 +256,9 @@ func (ddClient ddServerClientImpl) GetStats(ctx context.Context) (stats dupedete
 	log.WithContext(ctx).WithField("stats", resp).Info("stats received")
 
 	stats = dupedetection.DDServerStats{
-		MaxConcurrent:  resp.TaskCount.MaxConcurrent,
-		Executing:      resp.TaskCount.Executing,
-		WaitingInQueue: resp.TaskCount.WaitingInQueue,
+		MaxConcurrent:  resp.TaskCount.GetMaxConcurrent(),
+		Executing:      resp.TaskCount.GetExecuting(),
+		WaitingInQueue: resp.TaskCount.GetWaitingInQueue(),
 	}
 
 	return stats, nil

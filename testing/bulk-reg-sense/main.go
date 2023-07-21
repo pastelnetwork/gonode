@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -37,7 +38,7 @@ type uploadImageResponse struct {
 	ImageID               string    `json:"image_id"`
 	ExpiresIn             time.Time `json:"expires_in"`
 	TotalEstimatedFee     int       `json:"total_estimated_fee"`
-	RequiredPreburnAmount int       `json:"required_preburn_amount"`
+	RequiredPreburnAmount float64   `json:"required_preburn_amount"`
 }
 
 type payload struct {
@@ -71,10 +72,12 @@ func doUploadImage(method, filePath, fileName string) (res uploadImageResponse, 
 		return res, nil
 	}
 
+	res.RequiredPreburnAmount = math.Round(float64(res.TotalEstimatedFee)*0.2*10) / 10
+
 	return res, nil
 }
 
-func preBurnAmount(amount int) (string, error) {
+func preBurnAmount(amount float64) (string, error) {
 	pastelCli, err := getPastelCliPath()
 	if err != nil {
 		return "", err
