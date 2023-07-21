@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	numRequests  = 5
-	initialDelay = 1 * time.Second
-	maxRetries   = 5
-	timeoutAfter = 300
+	initialDelay           = 1 * time.Second
+	maxRetries             = 5
+	timeoutAfter           = 300
+	preBurnedFeePercentage = 0.2
 )
 
 type result struct {
@@ -73,7 +73,7 @@ func doUploadImage(method, filePath, fileName string) (res uploadImageResponse, 
 		return res, nil
 	}
 
-	res.RequiredPreburnAmount = math.Round(res.RequiredPreburnAmount*10) / 10
+	res.RequiredPreburnAmount = math.Round(float64(res.TotalEstimatedFee)*preBurnedFeePercentage*10) / 10
 
 	return res, nil
 }
