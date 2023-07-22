@@ -574,7 +574,7 @@ func (m *MeshHandler) disconnectFromNode(ctx context.Context, someNode *SuperNod
 		log.WithContext(ctx).WithFields(log.Fields{
 			"pastelId": someNode.PastelID(),
 			"addr":     someNode.String(),
-		}).Errorf("close supernode connection failed: SN - %s", someNode.String())
+		}).Infof("supernode connection is closed already: SN - %s", someNode.String())
 	}
 	return err
 }
