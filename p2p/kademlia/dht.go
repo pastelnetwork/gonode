@@ -768,6 +768,8 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	// the bucket index for the node
 	index := s.ht.bucketIndex(s.ht.self.ID, node.ID)
 
+	s.ht.mutex.Lock()
+	defer s.ht.mutex.Unlock()
 	// 1. if the node is existed, refresh the node to the end of bucket
 	if s.ht.hasBucketNode(index, node.ID) {
 		s.ht.refreshNode(node.ID)
@@ -777,9 +779,6 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	if err := s.updateReplicationNode(ctx, node.ID, node.IP, node.Port, true); err != nil {
 		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("node-ip", node.IP).WithError(err).Error("update replication node failed")
 	}
-
-	s.ht.mutex.Lock()
-	defer s.ht.mutex.Unlock()
 
 	// 2. if the bucket is full, ping the first node
 	bucket := s.ht.routeTable[index]

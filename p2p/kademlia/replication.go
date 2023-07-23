@@ -235,7 +235,7 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 
 	replicationKeys := s.store.GetKeysForReplication(ctx, from, time.Now())
 	logEntry = logEntry.WithField("adjust-rep-keys", len(replicationKeys))
-	logEntry.Info("replication keys to be adjusted")
+	logEntry.Info("replication keys to be checked for adjusting")
 
 	// prepare ignored nodes list but remove the node we are adjusting
 	// because we want to find if this node was supposed to hold this key
@@ -275,6 +275,7 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 	failureCount := 0
 
 	for nodeInfoKey, keys := range nodeKeysMap {
+		logEntry.WithField("adjust-to-node", nodeInfoKey).WithField("to-adjust-keys-len", len(keys)).Info("replication keys to be checked for adjusting")
 		// Retrieve the node object from the key
 		node, err := getNodeFromKey(nodeInfoKey)
 		if err != nil {

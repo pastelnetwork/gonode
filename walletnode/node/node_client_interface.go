@@ -11,6 +11,7 @@ package node
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -126,6 +127,7 @@ type DownloadNftInterface interface {
 	Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string) ([]byte, error)
 	DownloadThumbnail(ctx context.Context, txid string, numNails int) (files map[int][]byte, err error)
 	DownloadDDAndFingerprints(ctx context.Context, txid string) (file []byte, err error)
+	Close() error
 }
 
 // ProcessUserdataInterface contains methods for processing userdata.

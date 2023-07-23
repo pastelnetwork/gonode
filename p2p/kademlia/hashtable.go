@@ -87,9 +87,6 @@ func (ht *HashTable) resetRefreshTime(bucket int) {
 
 // refreshNode makes the node to the end
 func (ht *HashTable) refreshNode(id []byte) {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
-
 	// bucket index of the node
 	index := ht.bucketIndex(ht.self.ID, id)
 	// point to the bucket
@@ -164,9 +161,6 @@ func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
 
 // hasBucketNode check if the node id is existed in the bucket
 func (ht *HashTable) hasBucketNode(bucket int, id []byte) bool {
-	ht.mutex.RLock()
-	defer ht.mutex.RUnlock()
-
 	for _, node := range ht.routeTable[bucket] {
 		if bytes.Equal(node.ID, id) {
 			return true
