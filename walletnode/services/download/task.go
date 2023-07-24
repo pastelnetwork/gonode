@@ -317,11 +317,7 @@ func (task *NftDownloadingTask) close(ctx context.Context) error {
 		})
 	}
 
-	if err := g.Wait(); err != nil {
-		return err
-	}
-
-	return nil
+	return g.Wait()
 }
 
 // NewNftDownloadTask returns a new Task instance.

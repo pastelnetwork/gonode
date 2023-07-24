@@ -64,7 +64,33 @@ func (h *DDFPHandler) CloseAll(ctx context.Context) error {
 	h.connMtx.Lock()
 	defer h.connMtx.Unlock()
 
-	return h.meshHandler.CloseSNsConnections(ctx, h.nodesDone)
+	g, ctx := errgroup.WithContext(ctx)
+
+	for _, someNode := range h.meshHandler.Nodes {
+		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftSearchingNode)
+		if !ok {
+			log.WithContext(ctx).WithField("address", someNode.String()).Error("node is not NftSearchingNod")
+			continue
+		}
+
+		someNode := someNode
+		g.Go(func() error {
+			if err := nftDownNode.Close(); err != nil {
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("message", err.Error()).Info("Connection already closed")
+			} else {
+				log.WithContext(ctx).WithField("address", someNode.String()).Info("Connection closed")
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Could not close all connections")
+	}
+
+	_ = h.meshHandler.CloseSNsConnections(ctx, h.nodesDone)
+
+	return nil
 }
 
 // set one fetcher for each connected SN
