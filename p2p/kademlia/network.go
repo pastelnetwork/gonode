@@ -405,9 +405,7 @@ func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateData
 	var keysToStore [][]byte
 	for i := 0; i < len(keys); i++ {
 		value, err := s.dht.store.Retrieve(ctx, keys[i])
-		if err == nil && len(value) > 0 {
-			log.WithContext(ctx).WithField("key", hex.EncodeToString(keys[i])).Info("data already exists")
-		} else {
+		if err != nil || len(value) == 0 {
 			keysToStore = append(keysToStore, keys[i])
 		}
 	}
@@ -416,8 +414,9 @@ func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateData
 		if err := s.dht.store.StoreBatchRepKeys(keysToStore, string(id), ip, port); err != nil {
 			return fmt.Errorf("unable to store batch replication keys: %w", err)
 		}
+
+		log.WithContext(ctx).WithField("keys", len(keysToStore)).Info("store batch replication keys count")
 	}
-	log.WithContext(ctx).WithField("keys", len(keysToStore)).Info("store batch replication keys count")
 
 	return nil
 }

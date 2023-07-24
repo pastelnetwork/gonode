@@ -11,6 +11,18 @@ import (
 	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 )
 
+type nodeReplicationInfo struct {
+	LastReplicated *time.Time `db:"lastReplicatedAt"`
+	UpdatedAt      time.Time  `db:"updatedAt"`
+	CreatedAt      time.Time  `db:"createdAt"`
+	Active         bool       `db:"is_active"`
+	Adjusted       bool       `db:"is_adjusted"`
+	IP             string     `db:"ip"`
+	Port           int        `db:"port"`
+	ID             string     `db:"id"`
+	LastSeen       time.Time  `db:"last_seen"`
+}
+
 type repKeys struct {
 	Key       string    `db:"key"`
 	UpdatedAt time.Time `db:"updatedAt"`
@@ -78,6 +90,39 @@ func (s *Store) checkReplicateStore() bool {
 	var name string
 	err := s.db.Get(&name, query)
 	return err == nil
+}
+
+func (s *Store) ensureLastSeenColumn() error {
+	rows, err := s.db.Query("PRAGMA table_info(replication_info)")
+	if err != nil {
+		return fmt.Errorf("failed to fetch table 'replication_info' info: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, dtype string
+		var dfltValue *string
+		err = rows.Scan(&cid, &name, &dtype, &notnull, &dfltValue, &pk)
+		if err != nil {
+			return fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		if name == "last_seen" {
+			return nil
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error during iteration: %w", err)
+	}
+
+	_, err = s.db.Exec(`ALTER TABLE data ADD COLUMN last_seen DATETIME DEFAULT CURRENT_TIMESTAMP`)
+	if err != nil {
+		return fmt.Errorf("failed to add column 'last_seen' to table 'data': %w", err)
+	}
+
+	return nil
 }
 
 func (s *Store) checkReplicateKeysStore() bool {
@@ -230,10 +275,20 @@ func (s *Store) UpdateReplicationInfo(_ context.Context, rep domain.NodeReplicat
 
 // AddReplicationInfo adds replication info
 func (s *Store) AddReplicationInfo(_ context.Context, rep domain.NodeReplicationInfo) error {
-	_, err := s.db.Exec(`INSERT INTO replication_info(id, ip, is_active, is_adjusted, lastReplicatedAt, updatedAt, port) values(?, ?, ?, ?, ?, ?, ?)`,
-		string(rep.ID), rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port)
+	_, err := s.db.Exec(`INSERT INTO replication_info(id, ip, is_active, is_adjusted, lastReplicatedAt, updatedAt, port, last_seen) values(?, ?, ?, ?, ?, ?, ?, ?)`,
+		string(rep.ID), rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, time.Now())
 	if err != nil {
 		return fmt.Errorf("failed to insert replicate record: %v", err)
+	}
+
+	return err
+}
+
+// UpdateLastSeen updates last seen
+func (s *Store) UpdateLastSeen(_ context.Context, id string) error {
+	_, err := s.db.Exec(`UPDATE replication_info SET last_seen = ? WHERE id = ?`, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("failed to update last_seen of node: %s: - err: %v", id, err)
 	}
 
 	return err

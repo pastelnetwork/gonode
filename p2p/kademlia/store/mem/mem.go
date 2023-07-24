@@ -161,3 +161,8 @@ func (s *Store) GetAllToDoRepKeys() (retKeys domain.ToRepKeys, err error) {
 func (s *Store) DeleteRepKey(_ []byte) error {
 	return nil
 }
+
+// UpdateLastSeen updates the last seen time of a node
+func (s *Store) UpdateLastSeen(_ context.Context, _ string) error {
+	return nil
+}

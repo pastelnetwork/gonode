@@ -302,3 +302,58 @@ func hasBit(n byte, pos uint) bool {
 	val := n & (1 << pos)
 	return (val > 0)
 }
+
+// closestContactsWithInlcudingNode returns the closest contacts of target
+func (ht *HashTable) closestContactsWithInlcudingNode(num int, target []byte, ignoredNodes []*Node, includeNode *Node) *NodeList {
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
+	// find the bucket index in local route tables
+	index := ht.bucketIndex(ht.self.ID, target)
+	indexList := []int{index}
+	i := index - 1
+	j := index + 1
+	for len(indexList) < B {
+		if j < B {
+			indexList = append(indexList, j)
+		}
+		if i >= 0 {
+			indexList = append(indexList, i)
+		}
+		i--
+		j++
+	}
+
+	nl := &NodeList{}
+
+	// select alpha contacts and add them to the node list
+	for len(indexList) > 0 {
+		index, indexList = indexList[0], indexList[1:]
+		for i := 0; i < len(ht.routeTable[index]); i++ {
+			node := ht.routeTable[index][i]
+
+			ignored := false
+			for j := 0; j < len(ignoredNodes); j++ {
+				if bytes.Equal(node.ID, ignoredNodes[j].ID) {
+					ignored = true
+				}
+			}
+			if !ignored {
+				// add the node to list
+				nl.AddNodes([]*Node{node})
+			}
+		}
+	}
+
+	// Add the included node (if any) to the list
+	if includeNode != nil {
+		nl.AddNodes([]*Node{includeNode})
+	}
+
+	// sort the node list
+	nl.Sort()
+
+	nl.TopN(num)
+
+	return nl
+}

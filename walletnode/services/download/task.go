@@ -310,6 +310,8 @@ func (task *NftDownloadingTask) close(ctx context.Context) error {
 		g.Go(func() error {
 			if err := nftDownNode.Close(); err != nil {
 				log.WithContext(ctx).WithField("address", someNode.String()).WithField("message", err.Error()).Info("Connection already closed")
+			} else {
+				log.WithContext(ctx).WithField("address", someNode.String()).Info("Connection closed")
 			}
 			return nil
 		})

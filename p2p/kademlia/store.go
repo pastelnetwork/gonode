@@ -61,4 +61,7 @@ type Store interface {
 
 	// DeleteRepKey deletes a key from the replication table
 	DeleteRepKey(key []byte) error
+
+	// UpdateLastSeen updates the last seen time of a node
+	UpdateLastSeen(ctx context.Context, id string) error
 }
