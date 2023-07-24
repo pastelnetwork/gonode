@@ -20,7 +20,7 @@ type nodeReplicationInfo struct {
 	IP             string     `db:"ip"`
 	Port           int        `db:"port"`
 	ID             string     `db:"id"`
-	LastSeen       time.Time  `db:"last_seen"`
+	LastSeen       *time.Time `db:"last_seen"`
 }
 
 type repKeys struct {
@@ -117,7 +117,7 @@ func (s *Store) ensureLastSeenColumn() error {
 		return fmt.Errorf("error during iteration: %w", err)
 	}
 
-	_, err = s.db.Exec(`ALTER TABLE data ADD COLUMN last_seen DATETIME DEFAULT CURRENT_TIMESTAMP`)
+	_, err = s.db.Exec(`ALTER TABLE replication_info ADD COLUMN last_seen DATETIME DEFAULT NULL`)
 	if err != nil {
 		return fmt.Errorf("failed to add column 'last_seen' to table 'data': %w", err)
 	}

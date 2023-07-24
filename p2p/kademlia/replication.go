@@ -350,8 +350,13 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 	return nil
 }
 
-func isNodeGoneAndShouldBeAdjusted(lastSeen time.Time, isAlreadyAdjusted bool) bool {
-	return time.Since(lastSeen) > nodeShowUpDeadline && !isAlreadyAdjusted
+func isNodeGoneAndShouldBeAdjusted(lastSeen *time.Time, isAlreadyAdjusted bool) bool {
+	if lastSeen == nil {
+		log.Info("lastSeen is nil - aborting node adjustment")
+		return false
+	}
+
+	return time.Since(*lastSeen) > nodeShowUpDeadline && !isAlreadyAdjusted
 }
 
 // checkNodeActivity keeps track of active nodes - the idea here is to ping nodes periodically and mark them as inactive if they don't respond
@@ -421,7 +426,8 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 							}
 
 							upInfo := s.nodeReplicationTimes[string(nodeID)]
-							upInfo.LastSeen = time.Now()
+							now := time.Now()
+							upInfo.LastSeen = &now
 							s.nodeReplicationTimes[string(nodeID)] = upInfo
 
 							if err := s.store.UpdateLastSeen(ctx, string(nodeID)); err != nil {

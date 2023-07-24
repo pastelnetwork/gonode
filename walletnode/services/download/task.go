@@ -80,6 +80,14 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 
 	var skipNodes []string
 	var nodesDone chan struct{}
+
+	defer func() {
+		task.close(ctx)
+
+		// Disconnect all nodes after finished downloading.
+		_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+	}()
+
 	tries := 0
 	for {
 
@@ -163,11 +171,6 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 
 		break
 	}
-
-	task.close(ctx)
-
-	// Disconnect all nodes after finished downloading.
-	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	// Wait for all connections to disconnect.
 	return nil
@@ -310,9 +313,8 @@ func (task *NftDownloadingTask) close(ctx context.Context) error {
 		g.Go(func() error {
 			if err := nftDownNode.Close(); err != nil {
 				log.WithContext(ctx).WithField("address", someNode.String()).WithField("message", err.Error()).Info("Connection already closed")
-			} else {
-				log.WithContext(ctx).WithField("address", someNode.String()).Info("Connection closed")
 			}
+
 			return nil
 		})
 	}
