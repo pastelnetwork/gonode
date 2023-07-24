@@ -87,7 +87,6 @@ func (service *downloadNft) DownloadDDAndFingerprints(ctx context.Context, txid 
 	}
 
 	res, err := service.client.DownloadDDAndFingerprints(ctx, in)
-
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +117,10 @@ func (service *downloadNft) AcceptedNodes(_ context.Context) (pastelIDs []string
 }
 func (service *downloadNft) ConnectTo(_ context.Context, _ types.MeshedSuperNode) error {
 	return nil
+}
+
+func (service *downloadNft) Close() error {
+	return service.conn.Close()
 }
 
 // GetDupeDetectionDBHash implements node.RegisterNft.GetDupeDetectionDBHash

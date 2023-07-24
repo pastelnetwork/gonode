@@ -148,7 +148,7 @@ func (s *DHT) Replicate(ctx context.Context) {
 
 		logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", string(nodeID))
 		if !info.Active {
-			adjustNodeKeys := isNodeGoneAndShouldBeAdjusted(info.LastReplicatedAt, info.IsAdjusted)
+			adjustNodeKeys := isNodeGoneAndShouldBeAdjusted(info.LastSeen, info.IsAdjusted)
 			if adjustNodeKeys {
 				if err := s.adjustNodeKeys(ctx, infoVar.CreatedAt, info); err != nil {
 					logEntry.WithError(err).Error("failed to adjust node keys")
@@ -230,12 +230,11 @@ func (s *DHT) Replicate(ctx context.Context) {
 }
 
 func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.NodeReplicationInfo) error {
-	logEntry := log.P2P().WithContext(ctx).WithField("adjust-rep-ip", info.IP).WithField("adjust-rep-id", string(info.ID))
-	logEntry.WithField("from", from.String()).Info("adjusting node keys")
-
 	replicationKeys := s.store.GetKeysForReplication(ctx, from, time.Now())
-	logEntry = logEntry.WithField("adjust-rep-keys", len(replicationKeys))
-	logEntry.Info("replication keys to be adjusted")
+	logEntry := log.P2P().WithContext(ctx).WithField("offline-node-ip", info.IP).WithField("offline-node-id", string(info.ID)).
+		WithField("total-rep-keys", len(replicationKeys))
+
+	logEntry.WithField("from", from.String()).Info("begin adjusting node keys process for offline node")
 
 	// prepare ignored nodes list but remove the node we are adjusting
 	// because we want to find if this node was supposed to hold this key
@@ -249,24 +248,32 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 
 	nodeKeysMap := make(map[string][]string)
 	for _, key := range replicationKeys {
+
+		offNode := &Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
+
 		// get closest contacts to the key
-		nodeList := s.ht.closestContacts(Alpha, key, updatedIgnored)
+		nodeList := s.ht.closestContactsWithInlcudingNode(Alpha, key, updatedIgnored, offNode)
 
 		// check if the node that is gone was supposed to hold the key
-		n := &Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
-		if !nodeList.Exists(n) {
+		if !nodeList.Exists(offNode) {
 			// the node is not supposed to hold this key as its not in 6 closest contacts
 			continue
 		}
-		logEntry.WithField("key", hex.EncodeToString(key)).WithField("ip", info.IP).Info("adjust: this key is supposed to be held by this node")
 
-		// If the node is supposed to hold the key, we map the node's info to the key
-		nodeInfo := generateKeyFromNode(n)
-		// convert key to string representation
-		keyString := hex.EncodeToString(key)
+		for i := 0; i < len(nodeList.Nodes); i++ {
+			if nodeList.Nodes[i].IP == info.IP {
+				continue // because we do not want to send request to the server that's already offline
+			}
 
-		// append the key to the list of keys that the node is supposed to have
-		nodeKeysMap[nodeInfo] = append(nodeKeysMap[nodeInfo], keyString)
+			// If the node is supposed to hold the key, we map the node's info to the key
+			nodeInfo := generateKeyFromNode(nodeList.Nodes[i])
+			// convert key to string representation
+			keyString := hex.EncodeToString(key)
+
+			// append the key to the list of keys that the node is supposed to have
+			nodeKeysMap[nodeInfo] = append(nodeKeysMap[nodeInfo], keyString)
+
+		}
 	}
 
 	// iterate over the map and send the keys to the node
@@ -275,6 +282,7 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 	failureCount := 0
 
 	for nodeInfoKey, keys := range nodeKeysMap {
+		logEntry.WithField("adjust-to-node", nodeInfoKey).WithField("to-adjust-keys-len", len(keys)).Info("sending adjusted replication keys to node")
 		// Retrieve the node object from the key
 		node, err := getNodeFromKey(nodeInfoKey)
 		if err != nil {
@@ -337,17 +345,13 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 		return fmt.Errorf("replicate update isAdjusted failed: %v", err)
 	}
 
-	logEntry.Info("isAdjusted success")
+	logEntry.Info("offline node was successfully adjusted")
 
 	return nil
 }
 
-func isNodeGoneAndShouldBeAdjusted(lastReplicated *time.Time, isAlreadyAdjusted bool) bool {
-	if lastReplicated == nil {
-		return false
-	}
-
-	return time.Since(*lastReplicated) > nodeShowUpDeadline && !isAlreadyAdjusted
+func isNodeGoneAndShouldBeAdjusted(lastSeen time.Time, isAlreadyAdjusted bool) bool {
+	return time.Since(lastSeen) > nodeShowUpDeadline && !isAlreadyAdjusted
 }
 
 // checkNodeActivity keeps track of active nodes - the idea here is to ping nodes periodically and mark them as inactive if they don't respond
@@ -414,6 +418,14 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 								if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 									log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update replication info, node is active")
 								}
+							}
+
+							upInfo := s.nodeReplicationTimes[string(nodeID)]
+							upInfo.LastSeen = time.Now()
+							s.nodeReplicationTimes[string(nodeID)] = upInfo
+
+							if err := s.store.UpdateLastSeen(ctx, string(nodeID)); err != nil {
+								log.WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update last seen")
 							}
 						}
 					}

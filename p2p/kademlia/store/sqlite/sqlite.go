@@ -65,17 +65,6 @@ type Record struct {
 	ReplicatedAt time.Time
 }
 
-type nodeReplicationInfo struct {
-	LastReplicated *time.Time `db:"lastReplicatedAt"`
-	UpdatedAt      time.Time  `db:"updatedAt"`
-	CreatedAt      time.Time  `db:"createdAt"`
-	Active         bool       `db:"is_active"`
-	Adjusted       bool       `db:"is_adjusted"`
-	IP             string     `db:"ip"`
-	Port           int        `db:"port"`
-	ID             string     `db:"id"`
-}
-
 // NewStore returns a new store
 func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Duration) (*Store, error) {
 	worker := &Worker{
@@ -122,6 +111,10 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	}
 
 	if err := s.ensureDatatypeColumn(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create datatype column in p2p database")
+	}
+
+	if err := s.ensureLastSeenColumn(); err != nil {
 		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create datatype column in p2p database")
 	}
 
@@ -248,6 +241,7 @@ func (n *nodeReplicationInfo) toDomain() domain.NodeReplicationInfo {
 		IP:               n.IP,
 		Port:             n.Port,
 		ID:               []byte(n.ID),
+		LastSeen:         n.LastSeen,
 	}
 }
 

@@ -15,6 +15,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"golang.org/x/sync/errgroup"
 )
 
 type downFile struct {
@@ -163,6 +164,8 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 		break
 	}
 
+	task.close(ctx)
+
 	// Disconnect all nodes after finished downloading.
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
@@ -291,6 +294,30 @@ func (task *NftDownloadingTask) Error() error {
 }
 
 func (task *NftDownloadingTask) removeArtifacts() {
+}
+
+func (task *NftDownloadingTask) close(ctx context.Context) error {
+	g, ctx := errgroup.WithContext(ctx)
+
+	for _, someNode := range task.MeshHandler.Nodes {
+		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownloadingNode)
+		if !ok {
+			log.WithContext(ctx).WithField("address", someNode.String()).Error("node is not NftDownloadingNode")
+			continue
+		}
+
+		someNode := someNode
+		g.Go(func() error {
+			if err := nftDownNode.Close(); err != nil {
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("message", err.Error()).Info("Connection already closed")
+			} else {
+				log.WithContext(ctx).WithField("address", someNode.String()).Info("Connection closed")
+			}
+			return nil
+		})
+	}
+
+	return g.Wait()
 }
 
 // NewNftDownloadTask returns a new Task instance.

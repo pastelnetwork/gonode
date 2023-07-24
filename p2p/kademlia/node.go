@@ -143,3 +143,13 @@ func (s *NodeList) AddFirst(node *Node) {
 	// Prepend the node to the slice
 	s.Nodes = append([]*Node{node}, s.Nodes...)
 }
+
+// TopN keeps top N nodes
+func (s *NodeList) TopN(n int) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+
+	if s.Len() > n {
+		s.Nodes = s.Nodes[:n]
+	}
+}

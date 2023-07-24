@@ -99,7 +99,37 @@ func (s *Network) encodeMesage(mesage *Message) ([]byte, error) {
 	return encoded, nil
 }
 
-func (s *Network) handleFindNode(ctx context.Context, message *Message) ([]byte, error) {
+func (s *Network) handleFindNode(ctx context.Context, message *Message) (res []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Log the error or handle it as you see fit
+			log.WithContext(ctx).Errorf("HandleFindNode Recovered from panic: %v", r)
+
+			// Convert panic to error
+			switch t := r.(type) {
+			case string:
+				err = errors.New(t)
+			case error:
+				err = t
+			default:
+				err = errors.New("unknown error")
+			}
+
+			// Create an error response
+			response := &FindNodeResponse{
+				Status: ResponseStatus{
+					Result: ResultFailed,
+					ErrMsg: err.Error(),
+				},
+			}
+
+			// Create a new response message
+			resMsg := s.dht.newMessage(FindNode, message.Sender, response)
+
+			res, _ = s.encodeMesage(resMsg) // Assuming that encoding cannot fail
+		}
+	}()
+
 	request, ok := message.Data.(*FindNodeRequest)
 	if !ok {
 		err := errors.New("invalid FindNodeRequest")
@@ -132,7 +162,38 @@ func (s *Network) handleFindNode(ctx context.Context, message *Message) ([]byte,
 	return s.encodeMesage(resMsg)
 }
 
-func (s *Network) handleFindValue(ctx context.Context, message *Message) ([]byte, error) {
+func (s *Network) handleFindValue(ctx context.Context, message *Message) (res []byte, err error) {
+	// Add a defer function to recover from panic
+	defer func() {
+		if r := recover(); r != nil {
+			// Log the error or handle it as you see fit
+			log.WithContext(ctx).Errorf("HandleFindValue Recovered from panic: %v", r)
+
+			// Convert panic to error
+			switch t := r.(type) {
+			case string:
+				err = errors.New(t)
+			case error:
+				err = t
+			default:
+				err = errors.New("unknown error")
+			}
+
+			// Create an error response
+			response := &FindValueResponse{
+				Status: ResponseStatus{
+					Result: ResultFailed,
+					ErrMsg: err.Error(),
+				},
+			}
+
+			// Create a new response message
+			resMsg := s.dht.newMessage(FindValue, message.Sender, response)
+
+			res, _ = s.encodeMesage(resMsg) // Assuming that encoding cannot fail
+		}
+	}()
+
 	request, ok := message.Data.(*FindValueRequest)
 	if !ok {
 		err := errors.New("invalid FindValueRequest")
@@ -185,7 +246,36 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) ([]byte
 	return s.encodeMesage(resMsg)
 }
 
-func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte, error) {
+func (s *Network) handleStoreData(ctx context.Context, message *Message) (res []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Log the error or handle it as you see fit
+			log.WithContext(ctx).Errorf("HandleStoreData Recovered from panic: %v", r)
+
+			// Convert panic to error
+			switch t := r.(type) {
+			case string:
+				err = errors.New(t)
+			case error:
+				err = t
+			default:
+				err = errors.New("unknown error")
+			}
+
+			// Create an error response
+			response := &StoreDataResponse{
+				Status: ResponseStatus{
+					Result: ResultFailed,
+					ErrMsg: err.Error(),
+				},
+			}
+			// Create a new response message
+			resMsg := s.dht.newMessage(StoreData, message.Sender, response)
+
+			res, _ = s.encodeMesage(resMsg) // Assuming that encoding cannot fail
+		}
+	}()
+
 	request, ok := message.Data.(*StoreDataRequest)
 	if !ok {
 		err := errors.New("invalid StoreDataRequest")
@@ -237,7 +327,37 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	return s.encodeMesage(resMsg)
 }
 
-func (s *Network) handleReplicate(ctx context.Context, message *Message) ([]byte, error) {
+func (s *Network) handleReplicate(ctx context.Context, message *Message) (res []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Log the error or handle it as you see fit
+			log.WithContext(ctx).Errorf("HandleReplicate Recovered from panic: %v", r)
+
+			// Convert panic to error
+			switch t := r.(type) {
+			case string:
+				err = errors.New(t)
+			case error:
+				err = t
+			default:
+				err = errors.New("unknown error")
+			}
+
+			// Create an error response
+			response := &ReplicateDataResponse{
+				Status: ResponseStatus{
+					Result: ResultFailed,
+					ErrMsg: err.Error(),
+				},
+			}
+
+			// Create a new response message
+			resMsg := s.dht.newMessage(Replicate, message.Sender, response)
+
+			res, _ = s.encodeMesage(resMsg) // Assuming that encoding cannot fail
+		}
+	}()
+
 	request, ok := message.Data.(*ReplicateDataRequest)
 	if !ok {
 		err := errors.New("invalid ReplicateDataRequest")
@@ -285,9 +405,7 @@ func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateData
 	var keysToStore [][]byte
 	for i := 0; i < len(keys); i++ {
 		value, err := s.dht.store.Retrieve(ctx, keys[i])
-		if err == nil && len(value) > 0 {
-			log.WithContext(ctx).WithField("key", hex.EncodeToString(keys[i])).Info("data already exists")
-		} else {
+		if err != nil || len(value) == 0 {
 			keysToStore = append(keysToStore, keys[i])
 		}
 	}
@@ -296,8 +414,9 @@ func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateData
 		if err := s.dht.store.StoreBatchRepKeys(keysToStore, string(id), ip, port); err != nil {
 			return fmt.Errorf("unable to store batch replication keys: %w", err)
 		}
+
+		log.WithContext(ctx).WithField("keys", len(keysToStore)).Info("store batch replication keys count")
 	}
-	log.WithContext(ctx).WithField("keys", len(keysToStore)).Info("store batch replication keys count")
 
 	return nil
 }

@@ -506,8 +506,9 @@ func (m *MeshHandler) CloseSNsConnections(ctx context.Context, nodesDone chan st
 		}
 	}
 	if !ok {
-		return errors.New("errors while disconnecting from some SNs")
+		log.WithContext(ctx).Debug("failed to close connections to ALL supernodes")
 	}
+
 	return nil
 }
 
