@@ -12,7 +12,7 @@ type NodeReplicationInfo struct {
 	Port             int        `json:"port"`
 	ID               []byte     `json:"id"`
 	IsAdjusted       bool       `json:"is_adjusted"`
-	LastSeen         time.Time  `json:"last_seen"`
+	LastSeen         *time.Time `json:"last_seen"`
 }
 
 // ToRepKeys is the list for replication keys that need to be replicated

@@ -113,12 +113,19 @@ func (service *NftSearchingService) GetDDAndFP(ctx context.Context, regTicket *p
 	if err := nftGetSearchTask.ddAndFP.Connect(ctx, 1, cancel); err != nil {
 		return nil, errors.Errorf("connect and setup fetchers: %w", err)
 	}
+
+	defer func() {
+		if err := nftGetSearchTask.ddAndFP.CloseAll(ctx); err != nil {
+			log.WithContext(ctx).WithError(err).Error("close dd&fp fetchers")
+		}
+	}()
+
 	data, err = nftGetSearchTask.ddAndFP.Fetch(ctx, regTicket.TXID)
 	if err != nil {
 		return nil, errors.Errorf("nftsearch get dd and fp fetchone error: %w", err)
 	}
 
-	return data, nftGetSearchTask.ddAndFP.CloseAll(ctx)
+	return data, nil
 }
 
 // RegTicket pull NFT registration ticket from cNode & decodes base64 encoded fields
@@ -139,7 +146,8 @@ func (service *NftSearchingService) RegTicket(ctx context.Context, RegTXID strin
 }
 
 // NewNftSearchService returns a new NFT Search Service instance.
-// 	NB: Because NewNftApiHandler calls AddTask, an NftSearchTask will actually
+//
+//	NB: Because NewNftApiHandler calls AddTask, an NftSearchTask will actually
 //		be instantiated instead of a generic Task.
 func NewNftSearchService(config *Config, pastelClient pastel.Client,
 	nodeClient node.ClientInterface, bridgeClient bridgeNode.DownloadDataInterface) *NftSearchingService {
