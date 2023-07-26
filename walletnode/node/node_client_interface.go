@@ -60,6 +60,8 @@ type SuperNodeAPIInterface interface {
 	GetDupeDetectionDBHash(ctx context.Context) (hash string, err error)
 	// GetDDServerStats requests stats of dd server
 	GetDDServerStats(ctx context.Context) (stats *pb.DDServerStatsReply, err error)
+
+	GetTopMNs(ctx context.Context) (stats *pb.GetTopMNsReply, err error)
 }
 
 // RealNodeMaker interface to make concrete node types

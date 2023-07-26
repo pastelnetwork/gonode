@@ -33,6 +33,9 @@ service RegisterCascade {
 
   // SendActionAc informs to SN that walletnode activated action_reg
   rpc SendActionAct(SendActionActRequest) returns (SendActionActReply);
+
+  //GetTopMNs return top MNs list from the SN
+  rpc GetTopMNs(GetTopMNsRequest) returns (GetTopMNsReply);
 }
 
 message SendSignedCascadeTicketRequest {

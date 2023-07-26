@@ -34,6 +34,8 @@ type RegisterCollectionClient interface {
 	MeshNodes(ctx context.Context, in *MeshNodesRequest, opts ...grpc.CallOption) (*MeshNodesReply, error)
 	// SendCollectionTicketForSignature sends a collection-ticket to be signed by the supernode.
 	SendCollectionTicketForSignature(ctx context.Context, in *SendCollectionTicketForSignatureRequest, opts ...grpc.CallOption) (*SendCollectionTicketForSignatureResponse, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error)
 }
 
 type registerCollectionClient struct {
@@ -111,6 +113,15 @@ func (c *registerCollectionClient) SendCollectionTicketForSignature(ctx context.
 	return out, nil
 }
 
+func (c *registerCollectionClient) GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error) {
+	out := new(GetTopMNsReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterCollection/GetTopMNs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterCollectionServer is the server API for RegisterCollection service.
 // All implementations must embed UnimplementedRegisterCollectionServer
 // for forward compatibility
@@ -127,6 +138,8 @@ type RegisterCollectionServer interface {
 	MeshNodes(context.Context, *MeshNodesRequest) (*MeshNodesReply, error)
 	// SendCollectionTicketForSignature sends a collection-ticket to be signed by the supernode.
 	SendCollectionTicketForSignature(context.Context, *SendCollectionTicketForSignatureRequest) (*SendCollectionTicketForSignatureResponse, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error)
 	mustEmbedUnimplementedRegisterCollectionServer()
 }
 
@@ -148,6 +161,9 @@ func (UnimplementedRegisterCollectionServer) MeshNodes(context.Context, *MeshNod
 }
 func (UnimplementedRegisterCollectionServer) SendCollectionTicketForSignature(context.Context, *SendCollectionTicketForSignatureRequest) (*SendCollectionTicketForSignatureResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendCollectionTicketForSignature not implemented")
+}
+func (UnimplementedRegisterCollectionServer) GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTopMNs not implemented")
 }
 func (UnimplementedRegisterCollectionServer) mustEmbedUnimplementedRegisterCollectionServer() {}
 
@@ -260,6 +276,24 @@ func _RegisterCollection_SendCollectionTicketForSignature_Handler(srv interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterCollection_GetTopMNs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTopMNsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterCollectionServer).GetTopMNs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterCollection/GetTopMNs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterCollectionServer).GetTopMNs(ctx, req.(*GetTopMNsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterCollection_ServiceDesc is the grpc.ServiceDesc for RegisterCollection service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -282,6 +316,10 @@ var RegisterCollection_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendCollectionTicketForSignature",
 			Handler:    _RegisterCollection_SendCollectionTicketForSignature_Handler,
+		},
+		{
+			MethodName: "GetTopMNs",
+			Handler:    _RegisterCollection_GetTopMNs_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

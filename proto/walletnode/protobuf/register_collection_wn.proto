@@ -24,6 +24,9 @@ service RegisterCollection {
 
   // SendCollectionTicketForSignature sends a collection-ticket to be signed by the supernode.
   rpc SendCollectionTicketForSignature(SendCollectionTicketForSignatureRequest) returns (SendCollectionTicketForSignatureResponse);
+
+  //GetTopMNs return top MNs list from the SN
+  rpc GetTopMNs(GetTopMNsRequest) returns (GetTopMNsReply);
 }
 
 message SendCollectionTicketForSignatureRequest {

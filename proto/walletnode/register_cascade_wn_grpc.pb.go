@@ -40,6 +40,8 @@ type RegisterCascadeClient interface {
 	SendSignedActionTicket(ctx context.Context, in *SendSignedCascadeTicketRequest, opts ...grpc.CallOption) (*SendSignedActionTicketReply, error)
 	// SendActionAc informs to SN that walletnode activated action_reg
 	SendActionAct(ctx context.Context, in *SendActionActRequest, opts ...grpc.CallOption) (*SendActionActReply, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error)
 }
 
 type registerCascadeClient struct {
@@ -169,6 +171,15 @@ func (c *registerCascadeClient) SendActionAct(ctx context.Context, in *SendActio
 	return out, nil
 }
 
+func (c *registerCascadeClient) GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error) {
+	out := new(GetTopMNsReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterCascade/GetTopMNs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterCascadeServer is the server API for RegisterCascade service.
 // All implementations must embed UnimplementedRegisterCascadeServer
 // for forward compatibility
@@ -191,6 +202,8 @@ type RegisterCascadeServer interface {
 	SendSignedActionTicket(context.Context, *SendSignedCascadeTicketRequest) (*SendSignedActionTicketReply, error)
 	// SendActionAc informs to SN that walletnode activated action_reg
 	SendActionAct(context.Context, *SendActionActRequest) (*SendActionActReply, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error)
 	mustEmbedUnimplementedRegisterCascadeServer()
 }
 
@@ -221,6 +234,9 @@ func (UnimplementedRegisterCascadeServer) SendSignedActionTicket(context.Context
 }
 func (UnimplementedRegisterCascadeServer) SendActionAct(context.Context, *SendActionActRequest) (*SendActionActReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendActionAct not implemented")
+}
+func (UnimplementedRegisterCascadeServer) GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTopMNs not implemented")
 }
 func (UnimplementedRegisterCascadeServer) mustEmbedUnimplementedRegisterCascadeServer() {}
 
@@ -395,6 +411,24 @@ func _RegisterCascade_SendActionAct_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterCascade_GetTopMNs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTopMNsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterCascadeServer).GetTopMNs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterCascade/GetTopMNs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterCascadeServer).GetTopMNs(ctx, req.(*GetTopMNsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterCascade_ServiceDesc is the grpc.ServiceDesc for RegisterCascade service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -425,6 +459,10 @@ var RegisterCascade_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendActionAct",
 			Handler:    _RegisterCascade_SendActionAct_Handler,
+		},
+		{
+			MethodName: "GetTopMNs",
+			Handler:    _RegisterCascade_GetTopMNs_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

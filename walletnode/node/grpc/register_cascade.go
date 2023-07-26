@@ -258,6 +258,20 @@ func (service *registerCascade) GetDDServerStats(_ context.Context) (stats *pb.D
 	return stats, nil
 }
 
+// GetTopMNs implements node.RegisterCascade.GetTopMNs
+func (service *registerCascade) GetTopMNs(ctx context.Context) (mnList *pb.GetTopMNsReply, err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	req := &pb.GetTopMNsRequest{}
+	resp, err := service.client.GetTopMNs(ctx, req)
+	if err != nil {
+		return nil, errors.Errorf("WN request to SN for mn-top list: %w", err)
+	}
+
+	return resp, nil
+}
+
 func (service *registerCascade) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }

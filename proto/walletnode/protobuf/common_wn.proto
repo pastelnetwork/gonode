@@ -90,3 +90,9 @@ message DDServerStatsReply {
     int32 executing = 2;
     int32 waiting_in_queue = 3;
 }
+
+message GetTopMNsRequest {}
+
+message GetTopMNsReply {
+    repeated string mn_top_list = 1;
+}

@@ -48,6 +48,8 @@ type RegisterNftClient interface {
 	GetDDDatabaseHash(ctx context.Context, in *GetDBHashRequest, opts ...grpc.CallOption) (*DBHashReply, error)
 	// GetDDServerStats returns stats of dupe detection server
 	GetDDServerStats(ctx context.Context, in *DDServerStatsRequest, opts ...grpc.CallOption) (*DDServerStatsReply, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error)
 }
 
 type registerNftClient struct {
@@ -238,6 +240,15 @@ func (c *registerNftClient) GetDDServerStats(ctx context.Context, in *DDServerSt
 	return out, nil
 }
 
+func (c *registerNftClient) GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error) {
+	out := new(GetTopMNsReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterNft/GetTopMNs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterNftServer is the server API for RegisterNft service.
 // All implementations must embed UnimplementedRegisterNftServer
 // for forward compatibility
@@ -268,6 +279,8 @@ type RegisterNftServer interface {
 	GetDDDatabaseHash(context.Context, *GetDBHashRequest) (*DBHashReply, error)
 	// GetDDServerStats returns stats of dupe detection server
 	GetDDServerStats(context.Context, *DDServerStatsRequest) (*DDServerStatsReply, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error)
 	mustEmbedUnimplementedRegisterNftServer()
 }
 
@@ -310,6 +323,9 @@ func (UnimplementedRegisterNftServer) GetDDDatabaseHash(context.Context, *GetDBH
 }
 func (UnimplementedRegisterNftServer) GetDDServerStats(context.Context, *DDServerStatsRequest) (*DDServerStatsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDDServerStats not implemented")
+}
+func (UnimplementedRegisterNftServer) GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTopMNs not implemented")
 }
 func (UnimplementedRegisterNftServer) mustEmbedUnimplementedRegisterNftServer() {}
 
@@ -564,6 +580,24 @@ func _RegisterNft_GetDDServerStats_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterNft_GetTopMNs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTopMNsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterNftServer).GetTopMNs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterNft/GetTopMNs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterNftServer).GetTopMNs(ctx, req.(*GetTopMNsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterNft_ServiceDesc is the grpc.ServiceDesc for RegisterNft service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -606,6 +640,10 @@ var RegisterNft_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDDServerStats",
 			Handler:    _RegisterNft_GetDDServerStats_Handler,
+		},
+		{
+			MethodName: "GetTopMNs",
+			Handler:    _RegisterNft_GetTopMNs_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

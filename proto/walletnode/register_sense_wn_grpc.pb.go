@@ -44,6 +44,8 @@ type RegisterSenseClient interface {
 	GetDDDatabaseHash(ctx context.Context, in *GetDBHashRequest, opts ...grpc.CallOption) (*DBHashReply, error)
 	// GetDDServerStats returns stats of dupe detection server
 	GetDDServerStats(ctx context.Context, in *DDServerStatsRequest, opts ...grpc.CallOption) (*DDServerStatsReply, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error)
 }
 
 type registerSenseClient struct {
@@ -191,6 +193,15 @@ func (c *registerSenseClient) GetDDServerStats(ctx context.Context, in *DDServer
 	return out, nil
 }
 
+func (c *registerSenseClient) GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error) {
+	out := new(GetTopMNsReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterSense/GetTopMNs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterSenseServer is the server API for RegisterSense service.
 // All implementations must embed UnimplementedRegisterSenseServer
 // for forward compatibility
@@ -217,6 +228,8 @@ type RegisterSenseServer interface {
 	GetDDDatabaseHash(context.Context, *GetDBHashRequest) (*DBHashReply, error)
 	// GetDDServerStats returns stats of dupe detection server
 	GetDDServerStats(context.Context, *DDServerStatsRequest) (*DDServerStatsReply, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error)
 	mustEmbedUnimplementedRegisterSenseServer()
 }
 
@@ -253,6 +266,9 @@ func (UnimplementedRegisterSenseServer) GetDDDatabaseHash(context.Context, *GetD
 }
 func (UnimplementedRegisterSenseServer) GetDDServerStats(context.Context, *DDServerStatsRequest) (*DDServerStatsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDDServerStats not implemented")
+}
+func (UnimplementedRegisterSenseServer) GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTopMNs not implemented")
 }
 func (UnimplementedRegisterSenseServer) mustEmbedUnimplementedRegisterSenseServer() {}
 
@@ -463,6 +479,24 @@ func _RegisterSense_GetDDServerStats_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterSense_GetTopMNs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTopMNsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterSenseServer).GetTopMNs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterSense/GetTopMNs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterSenseServer).GetTopMNs(ctx, req.(*GetTopMNsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterSense_ServiceDesc is the grpc.ServiceDesc for RegisterSense service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -501,6 +535,10 @@ var RegisterSense_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDDServerStats",
 			Handler:    _RegisterSense_GetDDServerStats_Handler,
+		},
+		{
+			MethodName: "GetTopMNs",
+			Handler:    _RegisterSense_GetTopMNs_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
