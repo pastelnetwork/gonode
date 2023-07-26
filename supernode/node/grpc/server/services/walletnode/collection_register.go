@@ -181,6 +181,28 @@ func (service *RegisterCollection) SendCollectionTicketForSignature(ctx context.
 	return &rsp, nil
 }
 
+// GetTopMNs implements walletnode.RegisterCollectionServer.GetTopMNs()
+func (service *RegisterCollection) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
+	log.WithContext(ctx).Info("request for mn-top list has been received")
+
+	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+	}
+
+	var mnList []string
+	for _, mn := range mnTopList {
+		mnList = append(mnList, mn.ExtKey)
+	}
+
+	resp := &pb.GetTopMNsReply{
+		MnTopList: mnList,
+	}
+
+	log.WithContext(ctx).WithField("mn-list", mnList).Info("top mn-list has been returned")
+	return resp, nil
+}
+
 // NewRegisterCollection returns a new RegisterCollection instance.
 func NewRegisterCollection(service *collectionregister.CollectionRegistrationService) *RegisterCollection {
 	return &RegisterCollection{
