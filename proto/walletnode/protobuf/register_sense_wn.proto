@@ -39,6 +39,9 @@ service RegisterSense {
 
     // GetDDServerStats returns stats of dupe detection server
     rpc GetDDServerStats(DDServerStatsRequest) returns (DDServerStatsReply);
+
+    //GetTopMNs return top MNs list from the SN
+    rpc GetTopMNs(GetTopMNsRequest) returns (GetTopMNsReply);
 }
 
 message SendSignedSenseTicketRequest {
