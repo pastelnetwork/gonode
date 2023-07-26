@@ -335,6 +335,28 @@ func (service *RegisterCascade) SendActionAct(ctx context.Context, req *pb.SendA
 	return &pb.SendActionActReply{}, err
 }
 
+// GetTopMNs implements walletnode.RegisterCascadeServer.GetTopMNs()
+func (service *RegisterCascade) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
+	log.WithContext(ctx).Info("request for mn-top list has been received")
+
+	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+	}
+
+	var mnList []string
+	for _, mn := range mnTopList {
+		mnList = append(mnList, mn.ExtKey)
+	}
+
+	resp := &pb.GetTopMNsReply{
+		MnTopList: mnList,
+	}
+
+	log.WithContext(ctx).WithField("mn-list", mnList).Info("top mn-list has been returned")
+	return resp, nil
+}
+
 // Desc returns a description of the service.
 func (service *RegisterCascade) Desc() *grpc.ServiceDesc {
 	return &pb.RegisterCascade_ServiceDesc

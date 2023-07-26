@@ -150,6 +150,28 @@ func (service *RegisterNft) GetDDServerStats(ctx context.Context, _ *pb.DDServer
 	return stats, nil
 }
 
+// GetTopMNs implements walletnode.RegisterNFTServer.GetTopMNs()
+func (service *RegisterNft) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
+	log.WithContext(ctx).Info("request for mn-top list has been received")
+
+	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+	}
+
+	var mnList []string
+	for _, mn := range mnTopList {
+		mnList = append(mnList, mn.ExtKey)
+	}
+
+	resp := &pb.GetTopMNsReply{
+		MnTopList: mnList,
+	}
+
+	log.WithContext(ctx).WithField("mn-list", mnList).Info("top mn-list has been returned")
+	return resp, nil
+}
+
 // ConnectTo implements walletnode.RegisterNftServer.ConnectTo()
 func (service *RegisterNft) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
