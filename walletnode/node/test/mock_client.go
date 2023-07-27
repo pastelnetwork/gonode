@@ -79,6 +79,9 @@ const (
 
 	// GetDDServerStatsMethod  is method name for GetDDServerStats
 	GetDDServerStatsMethod = "GetDDServerStats"
+
+	// GetTopMNsMethod represent GetTopMNs name method
+	GetTopMNsMethod = "GetTopMNs"
 )
 
 // Client implementing node.Client mock for testing purpose

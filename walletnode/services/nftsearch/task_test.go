@@ -3,6 +3,8 @@ package nftsearch
 import (
 	"encoding/json"
 	"fmt"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/mixins"
@@ -200,12 +202,14 @@ func TestRunTask(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 
+			TopMNs := &pb.GetTopMNsReply{}
 			nodes := pastel.MasterNodes{}
 			for i := 0; i < 10; i++ {
 				nodes = append(nodes, pastel.MasterNode{
 					ExtKey:     "key",
 					ExtAddress: "127.0.0.1:14445",
 				})
+				TopMNs.MnTopList = append(TopMNs.MnTopList, "127.0.0.1:14445")
 			}
 
 			pastelClientMock.ListenOnActTickets(testCase.args.actTickets, testCase.args.actTicketsErr)
@@ -215,6 +219,7 @@ func TestRunTask(t *testing.T) {
 			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterNft().
 				ListenOnClose(nil).ListenOnDownloadNft().ListenOnDownloadThumbnail(map[int][]byte{}, nil).ListenOnDownloadDDAndFP(ddAndFpMarshalled, nil)
 			nodeClientMock.ConnectionInterface.On("DownloadNft").Return(nodeClientMock.DownloadNftInterface)
+			nodeClientMock.DownloadNftInterface.On("GetTopMNs", mock.Anything, mock.Anything).Return(TopMNs, nil)
 
 			doneCh := make(<-chan struct{})
 			nodeClientMock.ConnectionInterface.On("Done").Return(doneCh)

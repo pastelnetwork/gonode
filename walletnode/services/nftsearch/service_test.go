@@ -3,6 +3,8 @@ package nftsearch
 import (
 	"context"
 	"fmt"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/mixins"
@@ -116,8 +118,10 @@ func TestGetThumbnail(t *testing.T) {
 	}
 
 	nodes := pastel.MasterNodes{}
+	TopMNs := &pb.GetTopMNsReply{}
 	for i := 0; i < 10; i++ {
 		nodes = append(nodes, pastel.MasterNode{ExtKey: "key", ExtAddress: "127.0.0.1:14445"})
+		TopMNs.MnTopList = append(TopMNs.MnTopList, "127.0.0.1:14445")
 	}
 
 	type args struct {
@@ -155,6 +159,7 @@ func TestGetThumbnail(t *testing.T) {
 			nodeClientMock := nodeMock.NewMockClient(t)
 			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadNft().ListenOnDownloadThumbnail(testCase.want, nil).ListenOnClose(nil)
 			nodeClientMock.ConnectionInterface.On("DownloadNft").Return(nodeClientMock.DownloadNftInterface)
+			nodeClientMock.DownloadNftInterface.On("GetTopMNs", mock.Anything, mock.Anything).Return(TopMNs, nil)
 			doneCh := make(<-chan struct{})
 			nodeClientMock.ConnectionInterface.On("Done").Return(doneCh)
 

@@ -77,6 +77,7 @@ func TestTaskRun(t *testing.T) {
 		ctx               context.Context
 		networkFee        float64
 		masterNodes       pastel.MasterNodes
+		getTopMNsReply    *pb.GetTopMNsReply
 		primarySessID     string
 		pastelIDS         []string
 		fingerPrint       []byte
@@ -108,11 +109,12 @@ func TestTaskRun(t *testing.T) {
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
 				},
-				primarySessID: "sesid1",
-				pastelIDS:     []string{"2", "3"},
-				fingerPrint:   []byte("match"),
-				signature:     []byte("sign"),
-				returnErr:     nil,
+				getTopMNsReply: &pb.GetTopMNsReply{MnTopList: []string{"127.0.0.1:4444", "127.0.0.1:4446", "127.0.0.1:4447"}},
+				primarySessID:  "sesid1",
+				pastelIDS:      []string{"2", "3"},
+				fingerPrint:    []byte("match"),
+				signature:      []byte("sign"),
+				returnErr:      nil,
 				encodeInfoReturns: &rqnode.EncodeInfo{
 					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
 						"test-file": {
@@ -145,6 +147,7 @@ func TestTaskRun(t *testing.T) {
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
 				},
+
 				primarySessID: "sesid1",
 				pastelIDS:     []string{"2", "3"},
 				fingerPrint:   []byte("match"),
@@ -197,6 +200,7 @@ func TestTaskRun(t *testing.T) {
 			nodeClient.ConnectionInterface.On("RegisterNft").Return(nodeClient.RegisterNftInterface)
 			nodeClient.RegisterNftInterface.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Return("100", nil)
 
+			nodeClient.RegisterNftInterface.On("GetTopMNs", mock.Anything, mock.Anything).Return(testCase.args.getTopMNsReply, nil)
 			nodeClient.RegisterNftInterface.On("MeshNodes", mock.Anything, mock.Anything).Return(nil)
 
 			ddData := &pastel.DDAndFingerprints{

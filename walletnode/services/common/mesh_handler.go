@@ -1,9 +1,15 @@
 package common
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
+	"net"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -139,21 +145,26 @@ func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int, skipNodes
 func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNodes []string) (SuperNodeList, error) {
 
 	// Retrieve supernodes with the highest ranks.
-	candidatesNodes, err := m.getTopNodes(ctx)
+	WNTopNodes, err := m.getTopNodes(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("req-id", m.logRequestID).Errorf("Could not get top masternodes")
 		return nil, errors.Errorf("call masternode top: %w", err)
 	}
 
-	if len(candidatesNodes) < n {
+	if len(WNTopNodes) < n {
 		m.task.UpdateStatus(StatusErrorNotEnoughSuperNode)
 		log.WithContext(ctx).WithError(err).WithField("req-id", m.logRequestID).Errorf("unable to find enough Supernodes: %d", n)
 		return nil, fmt.Errorf("unable to find enough Supernodes: %d", n)
 	}
-	log.WithContext(ctx).Infof("Found %d Supernodes", len(candidatesNodes))
+	log.WithContext(ctx).Infof("Found %d Supernodes", len(WNTopNodes))
+
+	candidateNodes, err := m.GetCandidateNodes(ctx, WNTopNodes)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error getting candidate nodes")
+	}
 
 	// Connect to top nodes to find 3SN and validate their info
-	foundNodes, err := m.connectToAndValidateSuperNodes(ctx, candidatesNodes, n, m.HashCheckMaxRetries, skipNodes)
+	foundNodes, err := m.connectToAndValidateSuperNodes(ctx, candidateNodes, n, m.HashCheckMaxRetries, skipNodes)
 	if err != nil {
 		m.task.UpdateStatus(StatusErrorFindRespondingSNs)
 		log.WithContext(ctx).WithError(err).Errorf("unable to validate MN")
@@ -493,6 +504,68 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 	return meshedNodes, nil
 }
 
+// GetCandidateNodes getTopNodes from SNs and select candidateNodes that agrees with WN Top Nodes List
+func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList SuperNodeList) (candidateNodes SuperNodeList, err error) {
+	secInfo := &alts.SecInfo{
+		PastelID:   m.callersPastelID,
+		PassPhrase: m.passphrase,
+		Algorithm:  pastel.SignAlgorithmED448,
+	}
+
+	WNTopNodesHash, err := getWNTopNodesHash(WNTopNodesList)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving hash for WN top nodes")
+	}
+
+	log.WithContext(ctx).Info("getting candidate nodes")
+	for _, someNode := range WNTopNodesList {
+		logger := log.WithContext(ctx).WithField("address", someNode.Address())
+
+		snTopNodesList, err := m.GetTopMNsListFromSN(ctx, *someNode, secInfo)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list from SN")
+			continue
+		}
+
+		SNTopNodesHash, err := sortIPsAndGenerateHash(snTopNodesList)
+		if err != nil {
+			logger.WithError(err).Error("error calculating hash for top mns")
+			continue
+		}
+
+		if WNTopNodesHash == SNTopNodesHash {
+			logger.Info("SN agrees with WN top mns list")
+			candidateNodes = append(candidateNodes, someNode)
+		}
+	}
+
+	return candidateNodes, nil
+}
+
+// GetTopMNsListFromSN retrieves the MN top list from the given SN
+func (m MeshHandler) GetTopMNsListFromSN(ctx context.Context, someNode SuperNodeClient, secInfo *alts.SecInfo) ([]string, error) {
+	logger := log.WithContext(ctx).WithField("address", someNode.Address())
+
+	if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+		return nil, err
+	}
+
+	defer func() {
+		if err := someNode.Close(); err != nil {
+			log.WithContext(ctx).WithError(err).Info("WN-SN to get top-mns connection closed already")
+		}
+	}()
+
+	resp, err := someNode.GetTopMNs(ctx)
+	if err != nil {
+		logger.WithError(err).Error("error getting top mns through gRPC call")
+		return nil, err
+	}
+
+	return resp.MnTopList, nil
+}
+
 // CloseSNsConnections closes connections to all nodes
 func (m *MeshHandler) CloseSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
 	close(nodesDone)
@@ -605,6 +678,55 @@ func combinations(candidatesNodes SuperNodeList) []SuperNodeList {
 	}
 
 	return result
+}
+
+func getWNTopNodesHash(WNTopNodesList SuperNodeList) (string, error) {
+	var WNTopNodesIPs []string
+	for _, node := range WNTopNodesList {
+		WNTopNodesIPs = append(WNTopNodesIPs, node.Address())
+	}
+
+	WNTopNodesHash, err := sortIPsAndGenerateHash(WNTopNodesIPs)
+	if err != nil {
+		return "", err
+	}
+
+	return WNTopNodesHash, nil
+}
+
+func sortIPsAndGenerateHash(ips []string) (string, error) {
+	realIPs := make([]net.IP, 0, len(ips))
+
+	for _, ip := range ips {
+		host, _, err := net.SplitHostPort(ip)
+		if err != nil {
+			return "", err
+		}
+
+		realIPs = append(realIPs, net.ParseIP(host))
+	}
+
+	sort.Slice(realIPs, func(i, j int) bool {
+		return bytes.Compare(realIPs[i], realIPs[j]) < 0
+	})
+
+	sortedIPs := make([]string, 0, len(realIPs))
+	for _, ip := range realIPs {
+		sortedIPs = append(sortedIPs, ip.String())
+	}
+
+	// Concatenate the sorted IPs into a single string
+	concatenated := strings.Join(sortedIPs, "")
+
+	// Create a new hash
+	h := sha256.New()
+
+	// Write the concatenated string into the hash
+	h.Write([]byte(concatenated))
+
+	// Compute the final hash and print it
+	hashed := h.Sum(nil)
+	return hex.EncodeToString(hashed), nil
 }
 
 // NewMeshHandlerSimple returns new MeshHandlerSimple
