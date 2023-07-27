@@ -160,7 +160,7 @@ func (service *RegisterSense) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequ
 
 	var mnList []string
 	for _, mn := range mnTopList {
-		mnList = append(mnList, mn.ExtKey)
+		mnList = append(mnList, mn.ExtAddress)
 	}
 
 	resp := &pb.GetTopMNsReply{

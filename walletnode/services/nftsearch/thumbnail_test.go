@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/mixins"
@@ -16,10 +18,11 @@ import (
 )
 
 func TestConnect(t *testing.T) {
-	t.Parallel()
 	nodes := pastel.MasterNodes{}
+	TopMNs := &pb.GetTopMNsReply{}
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, pastel.MasterNode{ExtAddress: fmt.Sprint(i), ExtKey: "key"})
+		nodes = append(nodes, pastel.MasterNode{ExtAddress: fmt.Sprintf("%s:%d", fmt.Sprint(i), 14445), ExtKey: "key"})
+		TopMNs.MnTopList = append(TopMNs.MnTopList, fmt.Sprintf("%s:%d", fmt.Sprint(i), 14445))
 	}
 
 	tests := map[string]struct {
@@ -45,13 +48,21 @@ func TestConnect(t *testing.T) {
 			if tc.nodeErr == nil {
 				nodeClientMock.ListenOnConnect("", nil)
 			} else {
-				nodeClientMock.ListenOnConnect("0", nil)
-				nodeClientMock.ListenOnConnect("1", nil)
-				nodeClientMock.ListenOnConnect("2", nil)
-				nodeClientMock.ListenOnConnect("3", tc.nodeErr)
+				nodeClientMock.ListenOnConnect("0:14445", nil)
+				nodeClientMock.ListenOnConnect("1:14445", nil)
+				nodeClientMock.ListenOnConnect("2:14445", nil)
+				nodeClientMock.ListenOnConnect("3:14445", tc.nodeErr)
+				nodeClientMock.ListenOnConnect("4:14445", nil)
+				nodeClientMock.ListenOnConnect("5:14445", nil)
+				nodeClientMock.ListenOnConnect("6:14445", nil)
+				nodeClientMock.ListenOnConnect("7:14445", nil)
+				nodeClientMock.ListenOnConnect("8:14445", nil)
+				nodeClientMock.ListenOnConnect("9:14445", nil)
+				nodeClientMock.ListenOnConnect("10:14445", nil)
 			}
 			nodeClientMock.ListenOnClose(nil).ListenOnDownloadNft()
 			nodeClientMock.ConnectionInterface.On("DownloadNft").Return(nodeClientMock.DownloadNftInterface)
+			nodeClientMock.DownloadNftInterface.On("GetTopMNs", mock.Anything, mock.Anything).Return(TopMNs, nil)
 			doneCh := make(<-chan struct{})
 			nodeClientMock.ConnectionInterface.On("Done").Return(doneCh)
 
@@ -83,8 +94,10 @@ func TestConnect(t *testing.T) {
 func TestFetchOne(t *testing.T) {
 	t.Parallel()
 	nodes := pastel.MasterNodes{}
+	TopMNs := &pb.GetTopMNsReply{}
 	for i := 0; i < 10; i++ {
 		nodes = append(nodes, pastel.MasterNode{ExtKey: "key", ExtAddress: "127.0.0.1:14445"})
+		TopMNs.MnTopList = append(TopMNs.MnTopList, "127.0.0.1:14445")
 	}
 
 	tests := map[string]struct {
@@ -108,6 +121,7 @@ func TestFetchOne(t *testing.T) {
 			nodeClientMock := nodeMock.NewMockClient(t)
 			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadNft().ListenOnDownloadThumbnail(tc.want, nil).ListenOnClose(nil)
 			nodeClientMock.ConnectionInterface.On("DownloadNft").Return(nodeClientMock.DownloadNftInterface)
+			nodeClientMock.DownloadNftInterface.On("GetTopMNs", mock.Anything, mock.Anything).Return(TopMNs, nil)
 			doneCh := make(<-chan struct{})
 			nodeClientMock.ConnectionInterface.On("Done").Return(doneCh)
 

@@ -2,6 +2,7 @@ package collectionregister
 
 import (
 	"context"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"testing"
 	"time"
 
@@ -27,14 +28,15 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	type args struct {
-		taskID        string
-		ctx           context.Context
-		networkFee    float64
-		masterNodes   pastel.MasterNodes
-		primarySessID string
-		pastelIDS     []string
-		signature     []byte
-		returnErr     error
+		taskID         string
+		ctx            context.Context
+		networkFee     float64
+		masterNodes    pastel.MasterNodes
+		getTopMNsReply *pb.GetTopMNsReply
+		primarySessID  string
+		pastelIDS      []string
+		signature      []byte
+		returnErr      error
 	}
 
 	tests := map[string]struct {
@@ -59,10 +61,11 @@ func TestTaskRun(t *testing.T) {
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
 				},
-				primarySessID: "sesid1",
-				pastelIDS:     []string{"2", "3"},
-				signature:     []byte("sign"),
-				returnErr:     nil,
+				getTopMNsReply: &pb.GetTopMNsReply{MnTopList: []string{"127.0.0.1:4444", "127.0.0.1:4446", "127.0.0.1:4447"}},
+				primarySessID:  "sesid1",
+				pastelIDS:      []string{"2", "3"},
+				signature:      []byte("sign"),
+				returnErr:      nil,
 			},
 		},
 
@@ -119,6 +122,7 @@ func TestTaskRun(t *testing.T) {
 				Return("", nil).Times(1)
 
 			nodeClient.ConnectionInterface.On("RegisterCollection").Return(nodeClient.RegisterCollectionInterface)
+			nodeClient.RegisterCollectionInterface.On("GetTopMNs", mock.Anything, mock.Anything).Return(testCase.args.getTopMNsReply, nil)
 			nodeClient.RegisterCollectionInterface.On("MeshNodes", mock.Anything, mock.Anything).Return(nil)
 
 			pastelClientMock := pastelMock.NewMockClient(t)

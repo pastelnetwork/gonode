@@ -346,7 +346,7 @@ func (service *RegisterCascade) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRe
 
 	var mnList []string
 	for _, mn := range mnTopList {
-		mnList = append(mnList, mn.ExtKey)
+		mnList = append(mnList, mn.ExtAddress)
 	}
 
 	resp := &pb.GetTopMNsReply{

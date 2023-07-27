@@ -174,6 +174,7 @@ func TestTaskRun(t *testing.T) {
 
 			nodeClient.ConnectionInterface.On("RegisterSense").Return(nodeClient.RegisterSenseInterface)
 			nodeClient.RegisterSenseInterface.On("MeshNodes", mock.Anything, mock.Anything).Return(nil)
+			nodeClient.RegisterSenseInterface.On("GetTopMNs", mock.Anything, mock.Anything).Return(&pb.GetTopMNsReply{}, nil)
 
 			ddData := &pastel.DDAndFingerprints{
 				BlockHash:   "BlockHash",
