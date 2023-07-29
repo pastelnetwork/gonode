@@ -9,9 +9,11 @@ replace (
 )
 
 require (
+	github.com/DataDog/zstd v1.5.2
 	github.com/anacrolix/utp v0.1.0
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3
@@ -25,7 +27,6 @@ require (
 )
 
 require (
-	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/anacrolix/envpprof v1.2.1 // indirect
 	github.com/anacrolix/missinggo v1.3.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect

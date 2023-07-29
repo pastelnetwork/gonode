@@ -362,7 +362,7 @@ func (s *DHT) GetValueFromNode(ctx context.Context, target []byte, n *Node) ([]b
 	cctx, ccancel := context.WithTimeout(ctx, time.Second*5)
 	defer ccancel()
 
-	response, err := s.network.Call(cctx, request)
+	response, err := s.network.Call(cctx, request, false)
 	if err != nil {
 		log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
 		return nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)
@@ -423,7 +423,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 				// new a request message
 				request := s.newMessage(messageType, receiver, data)
 				// send the request and receive the response
-				response, err := s.network.Call(ctx, request)
+				response, err := s.network.Call(ctx, request, false)
 				if err != nil {
 					log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
 					// node is unreachable, remove the node
@@ -581,7 +581,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 						request := &FindValueRequest{Target: target}
 						reqMsg := s.newMessage(FindValue, n, request)
 						// Send the request and receive the response
-						rspMsg, err := s.network.Call(ctx, reqMsg)
+						rspMsg, err := s.network.Call(ctx, reqMsg, false)
 						if err != nil {
 							return nil, errors.Errorf("network call: %w", err)
 						}
@@ -727,7 +727,7 @@ func (s *DHT) sendReplicateData(ctx context.Context, n *Node, request *Replicate
 	// new a request message
 	reqMsg := s.newMessage(Replicate, n, request)
 
-	rspMsg, err := s.network.Call(ctx, reqMsg)
+	rspMsg, err := s.network.Call(ctx, reqMsg, true)
 	if err != nil {
 		return nil, errors.Errorf("replicate network call: %w", err)
 	}
@@ -744,7 +744,7 @@ func (s *DHT) sendStoreData(ctx context.Context, n *Node, request *StoreDataRequ
 	// new a request message
 	reqMsg := s.newMessage(StoreData, n, request)
 
-	rspMsg, err := s.network.Call(ctx, reqMsg)
+	rspMsg, err := s.network.Call(ctx, reqMsg, false)
 	if err != nil {
 		return nil, errors.Errorf("network call: %w", err)
 	}
@@ -792,7 +792,7 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 		defer cancel()
 
 		// invoke the request and handle the response
-		response, err := s.network.Call(ctx, request)
+		response, err := s.network.Call(ctx, request, false)
 		if err != nil {
 			// the node is down, remove the node from bucket
 			bucket = append(bucket, node)

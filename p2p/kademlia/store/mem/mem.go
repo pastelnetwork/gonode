@@ -166,3 +166,8 @@ func (s *Store) DeleteRepKey(_ []byte) error {
 func (s *Store) UpdateLastSeen(_ context.Context, _ string) error {
 	return nil
 }
+
+// RetrieveBatchNotExist retrieves a batch of keys that do not exist
+func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchSize int) ([][]byte, error) {
+	return nil, nil
+}

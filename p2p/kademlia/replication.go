@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 
 	"github.com/DataDog/zstd"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -31,6 +32,8 @@ var (
 	checkNodeActivityInterval = time.Minute * 3
 
 	defaultFetchAndStoreInterval = time.Minute * 5
+
+	maxBackOff = 45 * time.Second
 )
 
 // StartReplicationWorker starts replication
@@ -185,9 +188,9 @@ func (s *DHT) Replicate(ctx context.Context) {
 		for i := 0; i < len(replicationKeys); i++ {
 			key := replicationKeys[i]
 			ignores := s.ignorelist.ToNodeList()
-			nodeList := s.ht.closestContacts(Alpha, key, ignores)
-
 			n := &Node{ID: []byte(nodeID), IP: info.IP, Port: info.Port}
+			nodeList := s.ht.closestContactsWithInlcudingNode(Alpha, key, ignores, n)
+
 			if nodeList.Exists(n) {
 				// the node is supposed to hold this key as it's in the 6 closest contacts
 				closestContactKeys = append(closestContactKeys, key)
@@ -208,12 +211,27 @@ func (s *DHT) Replicate(ctx context.Context) {
 			}
 
 			n := &Node{ID: []byte(nodeID), IP: info.IP, Port: info.Port}
-			response, err := s.sendReplicateData(ctx, n, request)
+
+			b := backoff.NewExponentialBackOff()
+			b.MaxElapsedTime = maxBackOff
+
+			err = backoff.RetryNotify(func() error {
+				response, err := s.sendReplicateData(ctx, n, request)
+				if err != nil {
+					return err
+				}
+
+				if response.Status.Result != ResultOk {
+					return errors.New(response.Status.ErrMsg)
+				}
+
+				return nil
+			}, b, func(err error, duration time.Duration) {
+				logEntry.WithError(err).WithField("duration", duration).Error("retrying send replicate data")
+			})
+
 			if err != nil {
-				logEntry.WithError(err).Error("send replicate data failed")
-				continue
-			} else if response.Status.Result != ResultOk {
-				logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply replicate data failed")
+				logEntry.WithError(err).Error("send replicate data failed after retries")
 				continue
 			}
 
@@ -311,17 +329,29 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 		request := &ReplicateDataRequest{
 			Keys: data,
 		}
-		response, err := s.sendReplicateData(ctx, node, request)
-		if err != nil {
-			logEntry.WithError(err).Error("send adjust replicate data failed")
-			failureCount++
-			continue
-		} else if response.Status.Result != ResultOk {
-			logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply adjust replicate data failed")
-			failureCount++
-			continue
-		} else {
+
+		b := backoff.NewExponentialBackOff()
+		b.MaxElapsedTime = maxBackOff
+
+		err = backoff.RetryNotify(func() error {
+			response, err := s.sendReplicateData(ctx, node, request)
+			if err != nil {
+				return err
+			}
+
+			if response.Status.Result != ResultOk {
+				return errors.New(response.Status.ErrMsg)
+			}
+
 			successCount++
+			return nil
+		}, b, func(err error, duration time.Duration) {
+			logEntry.WithError(err).WithField("duration", duration).Error("retrying send replicate data")
+		})
+
+		if err != nil {
+			logEntry.WithError(err).Error("send replicate data failed after retries")
+			failureCount++
 		}
 	}
 
@@ -387,7 +417,7 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 						defer cancel()
 
 						// invoke the request and handle the response
-						_, err := s.network.Call(ctx, request)
+						_, err := s.network.Call(ctx, request, false)
 						if err != nil && info.Active {
 							log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).
 								Error("failed to ping node, setting node to inactive")
@@ -499,7 +529,18 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 
 			sKey := hex.EncodeToString(info.Key)
 			n := Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
-			value, err := s.GetValueFromNode(cctx, info.Key, &n)
+
+			b := backoff.WithMaxRetries(backoff.NewConstantBackOff(1*time.Second), 5)
+			var value []byte // replace with the actual type of "value"
+			err := backoff.Retry(func() error {
+				val, err := s.GetValueFromNode(cctx, info.Key, &n)
+				if err != nil {
+					return err
+				}
+				value = val
+				return nil
+			}, b)
+
 			if err != nil {
 				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & store key failed")
 				value, err = s.iterateFindValue(cctx, IterateFindValue, info.Key)
