@@ -13,7 +13,7 @@ import (
 	"encoding/hex"
 
 	"github.com/DataDog/zstd"
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"

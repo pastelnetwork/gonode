@@ -13,7 +13,6 @@ require (
 	github.com/anacrolix/utp v0.1.0
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3
