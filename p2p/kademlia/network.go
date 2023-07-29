@@ -409,8 +409,8 @@ func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateData
 		return fmt.Errorf("unable to retrieve batch replication keys: %w", err)
 	}
 
+	log.WithContext(ctx).WithField("keys", len(keysToStore)).WithField("from-ip", ip).Info("store batch replication keys to be stored")
 	if len(keysToStore) > 0 {
-		log.WithContext(ctx).WithField("keys", len(keysToStore)).WithField("from-ip", ip).Info("store batch replication keys to be stored")
 		if err := s.dht.store.StoreBatchRepKeys(keysToStore, string(id), ip, port); err != nil {
 			return fmt.Errorf("unable to store batch replication keys: %w", err)
 		}
