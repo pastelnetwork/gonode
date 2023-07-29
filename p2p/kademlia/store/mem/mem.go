@@ -168,6 +168,6 @@ func (s *Store) UpdateLastSeen(_ context.Context, _ string) error {
 }
 
 // RetrieveBatchNotExist retrieves a batch of keys that do not exist
-func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchSize int) ([][]byte, error) {
+func (s *Store) RetrieveBatchNotExist(_ context.Context, _ [][]byte, _ int) ([][]byte, error) {
 	return nil, nil
 }
