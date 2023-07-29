@@ -401,21 +401,21 @@ func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateData
 	if err != nil {
 		return fmt.Errorf("unable to decode keys: %w", err)
 	}
+	log.WithContext(ctx).WithField("keys", len(keys)).WithField("from-ip", ip).Info("store batch replication request received")
 
-	var keysToStore [][]byte
-	for i := 0; i < len(keys); i++ {
-		value, err := s.dht.store.Retrieve(ctx, keys[i])
-		if err != nil || len(value) == 0 {
-			keysToStore = append(keysToStore, keys[i])
-		}
+	keysToStore, err := s.dht.store.RetrieveBatchNotExist(ctx, keys, 5000)
+	if err != nil {
+		log.WithContext(ctx).WithField("keys", len(keys)).WithField("from-ip", ip).Errorf("unable to retrieve batch replication keys: %v", err)
+		return fmt.Errorf("unable to retrieve batch replication keys: %w", err)
 	}
 
 	if len(keysToStore) > 0 {
+		log.WithContext(ctx).WithField("keys", len(keysToStore)).WithField("from-ip", ip).Info("store batch replication keys to be stored")
 		if err := s.dht.store.StoreBatchRepKeys(keysToStore, string(id), ip, port); err != nil {
 			return fmt.Errorf("unable to store batch replication keys: %w", err)
 		}
 
-		log.WithContext(ctx).WithField("keys", len(keysToStore)).Info("store batch replication keys count")
+		log.WithContext(ctx).WithField("keys", len(keysToStore)).WithField("from-ip", ip).Info("store batch replication keys count")
 	}
 
 	return nil
@@ -572,7 +572,14 @@ func (s *Network) serve(ctx context.Context) {
 }
 
 // Call sends the request to target and receive the response
-func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) {
+func (s *Network) Call(ctx context.Context, request *Message, isLong bool) (*Message, error) {
+	timeout := 30 * time.Second
+	if isLong {
+		timeout = 60 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	if request.Receiver != nil && request.Receiver.Port == 50052 {
 		log.P2P().WithContext(ctx).Error("invalid port")
 		return nil, errors.New("invalid port")
@@ -611,7 +618,7 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 		defer rawConn.Close()
 
 		// set the deadline for read and write
-		rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
+		rawConn.SetDeadline(time.Now().Add(timeout))
 
 		// if peer authentication is enabled
 		if s.authHelper != nil {

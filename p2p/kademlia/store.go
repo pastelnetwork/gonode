@@ -64,4 +64,6 @@ type Store interface {
 
 	// UpdateLastSeen updates the last seen time of a node
 	UpdateLastSeen(ctx context.Context, id string) error
+
+	RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchSize int) ([][]byte, error)
 }

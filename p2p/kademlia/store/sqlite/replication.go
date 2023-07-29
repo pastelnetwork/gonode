@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -213,7 +214,7 @@ func (s *Store) StoreBatchRepKeys(values [][]byte, id string, ip string, port in
 	}
 
 	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 10 * time.Second
+	b.MaxElapsedTime = 1 * time.Minute
 
 	err := backoff.Retry(operation, b)
 	if err != nil {
@@ -292,4 +293,67 @@ func (s *Store) UpdateLastSeen(_ context.Context, id string) error {
 	}
 
 	return err
+}
+
+// RetrieveBatchNotExist returns a list of keys (hex-decoded) that do not exist in the table
+func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchSize int) ([][]byte, error) {
+	var nonExistingKeys [][]byte
+	keyMap := make(map[string]bool)
+
+	// Convert the keys to hex and map them for easier lookups
+	for _, key := range keys {
+		hexKey := hex.EncodeToString(key)
+		keyMap[hexKey] = true
+	}
+
+	batchCount := (len(keys) + batchSize - 1) / batchSize // Round up division
+
+	for i := 0; i < batchCount; i++ {
+		start := i * batchSize
+		end := start + batchSize
+		if end > len(keys) {
+			end = len(keys)
+		}
+		batchKeys := keys[start:end]
+
+		placeholders := make([]string, len(batchKeys))
+		args := make([]interface{}, len(batchKeys))
+
+		for j, key := range batchKeys {
+			placeholders[j] = "?"
+			args[j] = hex.EncodeToString(key)
+		}
+
+		query := fmt.Sprintf(`SELECT key FROM data WHERE key IN (%s)`, strings.Join(placeholders, ","))
+		rows, err := s.db.QueryContext(ctx, query, args...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve records: %w", err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var key string
+			if err := rows.Scan(&key); err != nil {
+				return nil, fmt.Errorf("failed to scan key: %w", err)
+			}
+
+			// Remove existing keys from the map
+			delete(keyMap, key)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("rows processing error: %w", err)
+		}
+	}
+
+	// Convert remaining keys in the map (which do not exist in the DB) to hex-decoded byte slices
+	for key := range keyMap {
+		hexDecodedKey, err := hex.DecodeString(key)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode hex key %s: %w", key, err)
+		}
+		nonExistingKeys = append(nonExistingKeys, hexDecodedKey)
+	}
+
+	return nonExistingKeys, nil
 }

@@ -197,7 +197,7 @@ func (s *DHT) Bootstrap(ctx context.Context, bootstrapIPs string) error {
 
 			// invoke the request and handle the response
 			for i := 0; i < 5; i++ {
-				response, err := s.network.Call(ctx, request)
+				response, err := s.network.Call(ctx, request, false)
 				if err != nil {
 					// This happening in bootstrap - so potentially other nodes not yet started
 					// So if bootstrap failed, should try to connect to node again for next bootstrap retry
