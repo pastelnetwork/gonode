@@ -26,6 +26,8 @@ type DownloadNftClient interface {
 	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (DownloadNft_DownloadClient, error)
 	DownloadThumbnail(ctx context.Context, in *DownloadThumbnailRequest, opts ...grpc.CallOption) (*DownloadThumbnailReply, error)
 	DownloadDDAndFingerprints(ctx context.Context, in *DownloadDDAndFingerprintsRequest, opts ...grpc.CallOption) (*DownloadDDAndFingerprintsReply, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error)
 }
 
 type downloadNftClient struct {
@@ -86,6 +88,15 @@ func (c *downloadNftClient) DownloadDDAndFingerprints(ctx context.Context, in *D
 	return out, nil
 }
 
+func (c *downloadNftClient) GetTopMNs(ctx context.Context, in *GetTopMNsRequest, opts ...grpc.CallOption) (*GetTopMNsReply, error) {
+	out := new(GetTopMNsReply)
+	err := c.cc.Invoke(ctx, "/walletnode.DownloadNft/GetTopMNs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DownloadNftServer is the server API for DownloadNft service.
 // All implementations must embed UnimplementedDownloadNftServer
 // for forward compatibility
@@ -94,6 +105,8 @@ type DownloadNftServer interface {
 	Download(*DownloadRequest, DownloadNft_DownloadServer) error
 	DownloadThumbnail(context.Context, *DownloadThumbnailRequest) (*DownloadThumbnailReply, error)
 	DownloadDDAndFingerprints(context.Context, *DownloadDDAndFingerprintsRequest) (*DownloadDDAndFingerprintsReply, error)
+	// GetTopMNs return top MNs list from the SN
+	GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error)
 	mustEmbedUnimplementedDownloadNftServer()
 }
 
@@ -109,6 +122,9 @@ func (UnimplementedDownloadNftServer) DownloadThumbnail(context.Context, *Downlo
 }
 func (UnimplementedDownloadNftServer) DownloadDDAndFingerprints(context.Context, *DownloadDDAndFingerprintsRequest) (*DownloadDDAndFingerprintsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadDDAndFingerprints not implemented")
+}
+func (UnimplementedDownloadNftServer) GetTopMNs(context.Context, *GetTopMNsRequest) (*GetTopMNsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTopMNs not implemented")
 }
 func (UnimplementedDownloadNftServer) mustEmbedUnimplementedDownloadNftServer() {}
 
@@ -180,6 +196,24 @@ func _DownloadNft_DownloadDDAndFingerprints_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DownloadNft_GetTopMNs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTopMNsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DownloadNftServer).GetTopMNs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.DownloadNft/GetTopMNs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DownloadNftServer).GetTopMNs(ctx, req.(*GetTopMNsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DownloadNft_ServiceDesc is the grpc.ServiceDesc for DownloadNft service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -194,6 +228,10 @@ var DownloadNft_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DownloadDDAndFingerprints",
 			Handler:    _DownloadNft_DownloadDDAndFingerprints_Handler,
+		},
+		{
+			MethodName: "GetTopMNs",
+			Handler:    _DownloadNft_GetTopMNs_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

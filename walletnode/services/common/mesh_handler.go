@@ -163,6 +163,12 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 		log.WithContext(ctx).WithError(err).Error("error getting candidate nodes")
 	}
 
+	if len(candidateNodes) < n {
+		err := errors.New("not enough candidate nodes found with agreed top nodes list to setup mesh")
+		log.WithContext(ctx).WithError(err)
+		return nil, err
+	}
+
 	// Connect to top nodes to find 3SN and validate their info
 	foundNodes, err := m.connectToAndValidateSuperNodes(ctx, candidateNodes, n, m.HashCheckMaxRetries, skipNodes)
 	if err != nil {
