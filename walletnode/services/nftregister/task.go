@@ -863,14 +863,15 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 		NodeClient:    service.nodeClient,
 		LogRequestID:  task.ID(),
 		Configs: &common.MeshHandlerConfig{
-			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
-			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
-			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
-			MinSNs:                 service.config.NumberSuperNodes,
-			PastelID:               request.CreatorPastelID,
-			Passphrase:             request.CreatorPastelIDPassphrase,
-			CheckDDDatabaseHashes:  true,
-			HashCheckMaxRetries:    service.config.HashCheckMaxRetries,
+			ConnectToNextNodeDelay:        service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:          service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:            service.config.AcceptNodesTimeout,
+			MinSNs:                        service.config.NumberSuperNodes,
+			PastelID:                      request.CreatorPastelID,
+			Passphrase:                    request.CreatorPastelIDPassphrase,
+			CheckDDDatabaseHashes:         true,
+			HashCheckMaxRetries:           service.config.HashCheckMaxRetries,
+			RequireSNAgreementOnMNTopList: true,
 		},
 	}
 

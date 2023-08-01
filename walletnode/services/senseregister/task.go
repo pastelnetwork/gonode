@@ -603,14 +603,15 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 		NodeClient:    service.nodeClient,
 		LogRequestID:  task.ID(),
 		Configs: &common.MeshHandlerConfig{
-			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
-			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
-			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
-			MinSNs:                 service.config.NumberSuperNodes,
-			PastelID:               request.AppPastelID,
-			Passphrase:             request.AppPastelIDPassphrase,
-			CheckDDDatabaseHashes:  true,
-			HashCheckMaxRetries:    service.config.HashCheckMaxRetries,
+			ConnectToNextNodeDelay:        service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:          service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:            service.config.AcceptNodesTimeout,
+			MinSNs:                        service.config.NumberSuperNodes,
+			PastelID:                      request.AppPastelID,
+			Passphrase:                    request.AppPastelIDPassphrase,
+			CheckDDDatabaseHashes:         true,
+			HashCheckMaxRetries:           service.config.HashCheckMaxRetries,
+			RequireSNAgreementOnMNTopList: true,
 		},
 	}
 
