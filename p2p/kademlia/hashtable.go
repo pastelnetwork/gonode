@@ -7,6 +7,8 @@ import (
 	"math/big"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 const (
@@ -63,11 +65,7 @@ func NewHashTable(options *Options) (*HashTable, error) {
 	if options.ID != nil {
 		ht.self.ID = options.ID
 	} else {
-		id, err := newRandomID()
-		if err != nil {
-			return nil, err
-		}
-		ht.self.ID = id
+		return nil, errors.New("id is nil")
 	}
 
 	// reset the refresh time for every bucket
@@ -149,7 +147,7 @@ func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
 	id = append(id, first)
 
 	// randomize each remaining byte
-	for i := index + 1; i < 20; i++ {
+	for i := index + 1; i < 32; i++ {
 		nBig, _ := rand.Int(rand.Reader, big.NewInt(256))
 		n := nBig.Int64()
 
@@ -286,7 +284,7 @@ func (ht *HashTable) nodes() []*Node {
 
 // newRandomID returns a new random id
 func newRandomID() ([]byte, error) {
-	id := make([]byte, 20)
+	id := make([]byte, 32)
 	_, err := rand.Read(id)
 	return id, err
 }

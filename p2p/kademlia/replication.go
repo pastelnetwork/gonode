@@ -530,7 +530,7 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 			sKey := hex.EncodeToString(info.Key)
 			n := Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
 
-			b := backoff.WithMaxRetries(backoff.NewConstantBackOff(1*time.Second), 5)
+			b := backoff.WithMaxRetries(backoff.NewConstantBackOff(2*time.Second), 10)
 			var value []byte // replace with the actual type of "value"
 			err := backoff.Retry(func() error {
 				val, err := s.GetValueFromNode(cctx, info.Key, &n)
@@ -549,10 +549,10 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 					return
 				} else if len(value) == 0 {
 					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed 0 val")
+					return
+				} else {
+					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
 				}
-
-				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
-				time.Sleep(100 * time.Millisecond)
 			}
 
 			if err := s.store.Store(cctx, info.Key, value, 0, false); err != nil {
@@ -569,6 +569,8 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 
 			log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("fetch & store key success")
 		}(key)
+
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	//wg.Wait()

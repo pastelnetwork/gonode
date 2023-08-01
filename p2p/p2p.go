@@ -2,15 +2,16 @@ package p2p
 
 import (
 	"context"
+	"encoding/hex"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -175,7 +176,7 @@ func (s *p2p) NClosestNodes(ctx context.Context, n int, key string, ignores ...s
 	}
 	nodes := s.dht.NClosestNodes(ctx, n, key, ignoreNodes...)
 	for _, node := range nodes {
-		ret = append(ret, string(node.ID))
+		ret = append(ret, hex.EncodeToString(node.ID))
 	}
 	return ret
 }
@@ -196,6 +197,16 @@ func (s *p2p) configure(ctx context.Context) error {
 		ID:             []byte(s.config.ID),
 		PeerAuth:       true, // Enable peer authentication
 	}
+
+	if len(kadOpts.ID) == 0 {
+		errors.Errorf("node id is empty")
+	}
+
+	hashedID, err := utils.Sha3256hash(kadOpts.ID)
+	if err != nil {
+		return errors.Errorf("hash node id: %w", err)
+	}
+	kadOpts.ID = hashedID
 
 	// We Set ExternalIP only for integration tests
 	if s.config.BootstrapIPs != "" && s.config.ExternalIP != "" {

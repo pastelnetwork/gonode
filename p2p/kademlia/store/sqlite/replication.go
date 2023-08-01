@@ -329,11 +329,11 @@ func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchS
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve records: %w", err)
 		}
-		defer rows.Close()
 
 		for rows.Next() {
 			var key string
 			if err := rows.Scan(&key); err != nil {
+				rows.Close()
 				return nil, fmt.Errorf("failed to scan key: %w", err)
 			}
 
@@ -342,8 +342,12 @@ func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchS
 		}
 
 		if err := rows.Err(); err != nil {
+			rows.Close() // ensure rows are closed in case of error
 			return nil, fmt.Errorf("rows processing error: %w", err)
 		}
+
+		rows.Close() // explicitly close the rows
+
 	}
 
 	// Convert remaining keys in the map (which do not exist in the DB) to hex-decoded byte slices
