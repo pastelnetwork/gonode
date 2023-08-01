@@ -326,12 +326,13 @@ func NewCollectionRegistrationTask(service *CollectionRegistrationService, reque
 		PastelHandler: service.pastelHandler,
 		NodeClient:    service.nodeClient,
 		Configs: &common.MeshHandlerConfig{
-			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
-			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
-			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
-			MinSNs:                 service.config.NumberSuperNodes,
-			PastelID:               request.AppPastelID,
-			Passphrase:             request.AppPastelIDPassphrase,
+			ConnectToNextNodeDelay:        service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:          service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:            service.config.AcceptNodesTimeout,
+			MinSNs:                        service.config.NumberSuperNodes,
+			PastelID:                      request.AppPastelID,
+			Passphrase:                    request.AppPastelIDPassphrase,
+			RequireSNAgreementOnMNTopList: true,
 		},
 	}
 

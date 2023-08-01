@@ -262,12 +262,13 @@ func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphra
 		PastelHandler: service.pastelHandler,
 		NodeClient:    service.nodeClient,
 		Configs: &common.MeshHandlerConfig{
-			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
-			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
-			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
-			MinSNs:                 service.config.NumberSuperNodes,
-			PastelID:               pastelID,
-			Passphrase:             passphrase,
+			ConnectToNextNodeDelay:        service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:          service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:            service.config.AcceptNodesTimeout,
+			MinSNs:                        service.config.NumberSuperNodes,
+			PastelID:                      pastelID,
+			Passphrase:                    passphrase,
+			RequireSNAgreementOnMNTopList: false,
 		},
 	}
 

@@ -46,11 +46,12 @@ type MeshHandler struct {
 	callersPastelID string
 	passphrase      string
 
-	Nodes                 SuperNodeList
-	UseMaxNodes           bool
-	checkDDDatabaseHashes bool
-	HashCheckMaxRetries   int
-	logRequestID          string
+	Nodes                         SuperNodeList
+	UseMaxNodes                   bool
+	checkDDDatabaseHashes         bool
+	HashCheckMaxRetries           int
+	requireSNAgreementOnMNTopList bool
+	logRequestID                  string
 }
 
 // MeshHandlerOpts set of options to pass to NewMeshHandler
@@ -65,34 +66,36 @@ type MeshHandlerOpts struct {
 
 // MeshHandlerConfig config subset used by MeshHandler
 type MeshHandlerConfig struct {
-	PastelID               string
-	Passphrase             string
-	MinSNs                 int
-	ConnectToNodeTimeout   time.Duration
-	AcceptNodesTimeout     time.Duration
-	ConnectToNextNodeDelay time.Duration
-	UseMaxNodes            bool
-	CheckDDDatabaseHashes  bool
-	HashCheckMaxRetries    int
+	PastelID                      string
+	Passphrase                    string
+	MinSNs                        int
+	ConnectToNodeTimeout          time.Duration
+	AcceptNodesTimeout            time.Duration
+	ConnectToNextNodeDelay        time.Duration
+	UseMaxNodes                   bool
+	CheckDDDatabaseHashes         bool
+	HashCheckMaxRetries           int
+	RequireSNAgreementOnMNTopList bool
 }
 
 // NewMeshHandler returns new NewMeshHandler
 func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 	return &MeshHandler{
-		task:                   opts.Task,
-		nodeMaker:              opts.NodeMaker,
-		pastelHandler:          opts.PastelHandler,
-		nodeClient:             opts.NodeClient,
-		callersPastelID:        opts.Configs.PastelID,
-		passphrase:             opts.Configs.Passphrase,
-		minNumberSuperNodes:    opts.Configs.MinSNs,
-		connectToNodeTimeout:   opts.Configs.ConnectToNodeTimeout,
-		acceptNodesTimeout:     opts.Configs.AcceptNodesTimeout,
-		connectToNextNodeDelay: opts.Configs.ConnectToNextNodeDelay,
-		UseMaxNodes:            opts.Configs.UseMaxNodes,
-		checkDDDatabaseHashes:  opts.Configs.CheckDDDatabaseHashes,
-		HashCheckMaxRetries:    opts.Configs.HashCheckMaxRetries,
-		logRequestID:           opts.LogRequestID,
+		task:                          opts.Task,
+		nodeMaker:                     opts.NodeMaker,
+		pastelHandler:                 opts.PastelHandler,
+		nodeClient:                    opts.NodeClient,
+		callersPastelID:               opts.Configs.PastelID,
+		passphrase:                    opts.Configs.Passphrase,
+		minNumberSuperNodes:           opts.Configs.MinSNs,
+		connectToNodeTimeout:          opts.Configs.ConnectToNodeTimeout,
+		acceptNodesTimeout:            opts.Configs.AcceptNodesTimeout,
+		connectToNextNodeDelay:        opts.Configs.ConnectToNextNodeDelay,
+		UseMaxNodes:                   opts.Configs.UseMaxNodes,
+		checkDDDatabaseHashes:         opts.Configs.CheckDDDatabaseHashes,
+		HashCheckMaxRetries:           opts.Configs.HashCheckMaxRetries,
+		requireSNAgreementOnMNTopList: opts.Configs.RequireSNAgreementOnMNTopList,
+		logRequestID:                  opts.LogRequestID,
 	}
 }
 
@@ -158,9 +161,14 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 	}
 	log.WithContext(ctx).Infof("Found %d Supernodes", len(WNTopNodes))
 
-	candidateNodes, err := m.GetCandidateNodes(ctx, WNTopNodes)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error getting candidate nodes")
+	var candidateNodes SuperNodeList
+	if m.requireSNAgreementOnMNTopList {
+		candidateNodes, err = m.GetCandidateNodes(ctx, WNTopNodes)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error getting candidate nodes")
+		}
+	} else {
+		candidateNodes = WNTopNodes
 	}
 
 	if len(candidateNodes) < n {

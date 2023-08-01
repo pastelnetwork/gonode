@@ -332,13 +332,14 @@ func NewNftDownloadTask(service *NftDownloadingService, request *NftDownloadingR
 		NodeClient:    service.nodeClient,
 		LogRequestID:  request.Txid,
 		Configs: &common.MeshHandlerConfig{
-			ConnectToNextNodeDelay: service.config.ConnectToNextNodeDelay,
-			ConnectToNodeTimeout:   service.config.ConnectToNodeTimeout,
-			AcceptNodesTimeout:     service.config.AcceptNodesTimeout,
-			MinSNs:                 service.config.NumberSuperNodes,
-			PastelID:               request.PastelID,
-			Passphrase:             request.PastelIDPassphrase,
-			UseMaxNodes:            true,
+			ConnectToNextNodeDelay:        service.config.ConnectToNextNodeDelay,
+			ConnectToNodeTimeout:          service.config.ConnectToNodeTimeout,
+			AcceptNodesTimeout:            service.config.AcceptNodesTimeout,
+			MinSNs:                        service.config.NumberSuperNodes,
+			PastelID:                      request.PastelID,
+			Passphrase:                    request.PastelIDPassphrase,
+			UseMaxNodes:                   true,
+			RequireSNAgreementOnMNTopList: false,
 		},
 	}
 
