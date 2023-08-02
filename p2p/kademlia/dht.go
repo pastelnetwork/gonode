@@ -486,7 +486,10 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	closestNode := nl.Nodes[0]
 	// if it's a find node, reset the refresh timer
 	if iterativeType == IterateFindNode {
-		bucket := s.ht.bucketIndex(target, s.ht.self.ID)
+		hashedID, _ := utils.Sha3256hash(s.ht.self.ID)
+		hashedTargetID, _ := utils.Sha3256hash(target)
+
+		bucket := s.ht.bucketIndex(hashedID, hashedTargetID)
 		log.P2P().WithContext(ctx).Debugf("bucket for target: %v", sKey)
 
 		// reset the refresh time for the bucket
@@ -646,8 +649,8 @@ func (s *DHT) handleResponses(ctx context.Context, responses <-chan *Message, nl
 			}
 		} else if response.MessageType == FindValue {
 			v, ok := response.Data.(*FindValueResponse)
-			if ok && v.Status.Result == ResultOk {
-				if len(v.Value) > 0 {
+			if ok {
+				if v.Status.Result == ResultOk && len(v.Value) > 0 {
 					log.P2P().WithContext(ctx).Info("iterate found value from network")
 					return nl, v.Value
 				} else if len(v.Closest) > 0 {
@@ -766,7 +769,10 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	}
 
 	// the bucket index for the node
-	index := s.ht.bucketIndex(s.ht.self.ID, node.ID)
+	hashedID, _ := utils.Sha3256hash(s.ht.self.ID)
+	hashedIncomingID, _ := utils.Sha3256hash(node.ID)
+
+	index := s.ht.bucketIndex(hashedID, hashedIncomingID)
 
 	s.ht.mutex.Lock()
 	defer s.ht.mutex.Unlock()

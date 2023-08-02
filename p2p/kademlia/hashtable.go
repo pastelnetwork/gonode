@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 const (
@@ -85,8 +86,11 @@ func (ht *HashTable) resetRefreshTime(bucket int) {
 
 // refreshNode makes the node to the end
 func (ht *HashTable) refreshNode(id []byte) {
+	hashedID, _ := utils.Sha3256hash(ht.self.ID)
+	hashedIncomingID, _ := utils.Sha3256hash(id)
+
 	// bucket index of the node
-	index := ht.bucketIndex(ht.self.ID, id)
+	index := ht.bucketIndex(hashedID, hashedIncomingID)
 	// point to the bucket
 	bucket := ht.routeTable[index]
 
@@ -164,6 +168,7 @@ func (ht *HashTable) hasBucketNode(bucket int, id []byte) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -188,8 +193,10 @@ func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Nod
 	ht.mutex.RLock()
 	defer ht.mutex.RUnlock()
 
+	hashedID, _ := utils.Sha3256hash(ht.self.ID)
+
 	// find the bucket index in local route tables
-	index := ht.bucketIndex(ht.self.ID, target)
+	index := ht.bucketIndex(hashedID, target)
 	indexList := []int{index}
 	i := index - 1
 	j := index + 1
@@ -306,8 +313,9 @@ func (ht *HashTable) closestContactsWithInlcudingNode(num int, target []byte, ig
 	ht.mutex.RLock()
 	defer ht.mutex.RUnlock()
 
+	hashedID, _ := utils.Sha3256hash(ht.self.ID)
 	// find the bucket index in local route tables
-	index := ht.bucketIndex(ht.self.ID, target)
+	index := ht.bucketIndex(hashedID, target)
 	indexList := []int{index}
 	i := index - 1
 	j := index + 1
