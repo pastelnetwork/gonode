@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"go.uber.org/ratelimit"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -147,7 +149,7 @@ func (s *Network) handleFindNode(ctx context.Context, message *Message) (res []b
 	s.dht.addNode(ctx, message.Sender)
 
 	// the closest contacts
-	hashedTargetID := HashID(request.Target)
+	hashedTargetID, _ := utils.Sha3256hash(request.Target)
 	closest := s.dht.ht.closestContacts(K, hashedTargetID, []*Node{message.Sender})
 
 	response := &FindNodeResponse{

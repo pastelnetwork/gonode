@@ -151,7 +151,7 @@ func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
 	id = append(id, first)
 
 	// randomize each remaining byte
-	for i := index + 1; i < 32; i++ {
+	for i := index + 1; i < 20; i++ {
 		nBig, _ := rand.Int(rand.Reader, big.NewInt(256))
 		n := nBig.Int64()
 
@@ -291,7 +291,7 @@ func (ht *HashTable) nodes() []*Node {
 
 // newRandomID returns a new random id
 func newRandomID() ([]byte, error) {
-	id := make([]byte, 32)
+	id := make([]byte, 20)
 	_, err := rand.Read(id)
 	return id, err
 }
