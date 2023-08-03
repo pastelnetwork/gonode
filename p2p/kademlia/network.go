@@ -2,13 +2,14 @@ package kademlia
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"net"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/utils"
 
 	"go.uber.org/ratelimit"
 
@@ -148,7 +149,8 @@ func (s *Network) handleFindNode(ctx context.Context, message *Message) (res []b
 	s.dht.addNode(ctx, message.Sender)
 
 	// the closest contacts
-	closest := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
+	hashedTargetID, _ := utils.Sha3256hash(request.Target)
+	closest := s.dht.ht.closestContacts(K, hashedTargetID, []*Node{message.Sender})
 
 	response := &FindNodeResponse{
 		Status: ResponseStatus{
@@ -221,6 +223,10 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) (res []
 				ErrMsg: err.Error(),
 			},
 		}
+
+		closest := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
+		response.Closest = closest.Nodes
+
 		// new a response message
 		resMsg := s.dht.newMessage(FindValue, message.Sender, response)
 		return s.encodeMesage(resMsg)
@@ -299,9 +305,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) (res []
 	key := s.dht.hashKey(request.Data)
 
 	value, err := s.dht.store.Retrieve(ctx, key)
-	if err == nil && len(value) > 0 {
-		log.WithContext(ctx).WithField("key", hex.EncodeToString(key)).Info("data already exists")
-	} else {
+	if err != nil || len(value) == 0 {
 		// store the data to local storage
 		if err := s.dht.store.Store(ctx, key, request.Data, request.Type, false); err != nil {
 			err = errors.Errorf("store the data: %w", err)

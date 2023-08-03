@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -195,6 +195,10 @@ func (s *p2p) configure(ctx context.Context) error {
 		Port:           s.config.Port,
 		ID:             []byte(s.config.ID),
 		PeerAuth:       true, // Enable peer authentication
+	}
+
+	if len(kadOpts.ID) == 0 {
+		errors.Errorf("node id is empty")
 	}
 
 	// We Set ExternalIP only for integration tests

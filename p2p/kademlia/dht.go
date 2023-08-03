@@ -46,7 +46,7 @@ type DHT struct {
 	authHelper           *AuthHelper
 	ignorelist           *BanList
 	nodeReplicationTimes map[string]domain.NodeReplicationInfo
-	replicationMtx       sync.Mutex
+	replicationMtx       sync.RWMutex
 }
 
 // Options contains configuration options for the local node
@@ -99,7 +99,7 @@ func NewDHT(ctx context.Context, store Store, pc pastel.Client, secInfo *alts.Se
 		cache:                memory.NewKeyValue(),
 		ignorelist:           NewBanList(ctx),
 		nodeReplicationTimes: replicationMap,
-		replicationMtx:       sync.Mutex{},
+		replicationMtx:       sync.RWMutex{},
 	}
 
 	if options.ExternalIP != "" {
@@ -282,17 +282,12 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil && len(value) > 0 {
 		return value, nil
-	} else if err != nil {
-		log.WithContext(ctx).WithField("key", dbKey).WithError(err).WithField("len", len(value)).Info("key not found in local")
-	} else {
-		log.WithContext(ctx).WithField("key", dbKey).WithField("len", len(value)).Info("finish local data retrieval with zero-len value")
 	}
 
 	// if local only option is set, do not search just return error
 	if len(localOnly) > 0 && localOnly[0] {
 		return nil, fmt.Errorf("local-only failed to get properly: " + err.Error())
 	}
-	log.WithContext(ctx).WithField("key", dbKey).Info("Not found locally, searching in other nodes")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil, 0)
@@ -486,7 +481,10 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	closestNode := nl.Nodes[0]
 	// if it's a find node, reset the refresh timer
 	if iterativeType == IterateFindNode {
-		bucket := s.ht.bucketIndex(target, s.ht.self.ID)
+		hashedID, _ := utils.Sha3256hash(s.ht.self.ID)
+		hashedTargetID, _ := utils.Sha3256hash(target)
+
+		bucket := s.ht.bucketIndex(hashedID, hashedTargetID)
 		log.P2P().WithContext(ctx).Debugf("bucket for target: %v", sKey)
 
 		// reset the refresh time for the bucket
@@ -646,8 +644,8 @@ func (s *DHT) handleResponses(ctx context.Context, responses <-chan *Message, nl
 			}
 		} else if response.MessageType == FindValue {
 			v, ok := response.Data.(*FindValueResponse)
-			if ok && v.Status.Result == ResultOk {
-				if len(v.Value) > 0 {
+			if ok {
+				if v.Status.Result == ResultOk && len(v.Value) > 0 {
 					log.P2P().WithContext(ctx).Info("iterate found value from network")
 					return nl, v.Value
 				} else if len(v.Closest) > 0 {
@@ -766,7 +764,10 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	}
 
 	// the bucket index for the node
-	index := s.ht.bucketIndex(s.ht.self.ID, node.ID)
+	hashedID, _ := utils.Sha3256hash(s.ht.self.ID)
+	hashedIncomingID, _ := utils.Sha3256hash(node.ID)
+
+	index := s.ht.bucketIndex(hashedID, hashedIncomingID)
 
 	s.ht.mutex.Lock()
 	defer s.ht.mutex.Unlock()
