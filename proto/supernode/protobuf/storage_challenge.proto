@@ -48,6 +48,7 @@ message StorageChallengeData {
   string challenge_slice_correct_hash = 11;
   string challenge_response_hash = 12;
   string challenge_id = 13;
+  repeated string partial_observers = 14;
 }
 
 message ProcessStorageChallengeRequest {
