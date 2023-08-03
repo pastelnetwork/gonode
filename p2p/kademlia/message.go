@@ -21,6 +21,8 @@ const (
 	FindValue
 	// Replicate is replicate data request towards a network node
 	Replicate
+	// BatchFindValues finds values in kademlia network
+	BatchFindValues
 )
 
 func init() {
@@ -33,6 +35,8 @@ func init() {
 	gob.Register(&StoreDataResponse{})
 	gob.Register(&ReplicateDataRequest{})
 	gob.Register(&ReplicateDataResponse{})
+	gob.Register(&BatchFindValuesRequest{})
+	gob.Register(&BatchFindValuesResponse{})
 }
 
 // Message structure for kademlia network
@@ -105,6 +109,18 @@ type StoreDataRequest struct {
 // StoreDataResponse defines the response data for store data
 type StoreDataResponse struct {
 	Status ResponseStatus
+}
+
+// BatchFindValuesRequest defines the request data for find value
+type BatchFindValuesRequest struct {
+	Keys []byte
+}
+
+// BatchFindValuesResponse defines the response data for find value
+type BatchFindValuesResponse struct {
+	Status   ResponseStatus
+	Response []byte
+	Done     bool
 }
 
 // encode the message

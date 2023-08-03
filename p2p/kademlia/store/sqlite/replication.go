@@ -5,9 +5,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff"
+	"github.com/jmoiron/sqlx"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 )
@@ -30,6 +32,7 @@ type repKeys struct {
 	IP        string    `db:"ip"`
 	Port      int       `db:"port"`
 	ID        string    `db:"id"`
+	Attempts  int       `db:"attempts"`
 }
 
 func (r repKeys) toDomain() (domain.ToRepKey, error) {
@@ -44,6 +47,7 @@ func (r repKeys) toDomain() (domain.ToRepKey, error) {
 		IP:        r.IP,
 		Port:      r.Port,
 		ID:        r.ID,
+		Attempts:  r.Attempts,
 	}, nil
 }
 
@@ -75,6 +79,7 @@ func (s *Store) migrateRepKeys() error {
 		id TEXT NOT NULL,
         ip TEXT NOT NULL,
 		port INTEGER NOT NULL,
+		attempts INTEGER DEFAULT 0,
 		updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     `
@@ -91,6 +96,39 @@ func (s *Store) checkReplicateStore() bool {
 	var name string
 	err := s.db.Get(&name, query)
 	return err == nil
+}
+
+func (s *Store) ensureAttempsColumn() error {
+	rows, err := s.db.Query("PRAGMA table_info(replication_keys)")
+	if err != nil {
+		return fmt.Errorf("failed to fetch table 'replication_keys' info: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, dtype string
+		var dfltValue *string
+		err = rows.Scan(&cid, &name, &dtype, &notnull, &dfltValue, &pk)
+		if err != nil {
+			return fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		if name == "attempts" {
+			return nil
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error during iteration: %w", err)
+	}
+
+	_, err = s.db.Exec(`ALTER TABLE replication_keys ADD COLUMN attempts INTEGER DEFAULT 0`)
+	if err != nil {
+		return fmt.Errorf("failed to add column 'attempts' to table 'data': %w", err)
+	}
+
+	return nil
 }
 
 func (s *Store) ensureLastSeenColumn() error {
@@ -134,9 +172,9 @@ func (s *Store) checkReplicateKeysStore() bool {
 }
 
 // GetAllToDoRepKeys returns all keys that need to be replicated
-func (s *Store) GetAllToDoRepKeys() (retKeys domain.ToRepKeys, err error) {
+func (s *Store) GetAllToDoRepKeys(minAttempts, maxAttempts int) (retKeys domain.ToRepKeys, err error) {
 	var keys []repKeys
-	if err := s.db.Select(&keys, "SELECT * FROM replication_keys LIMIT 5000"); err != nil {
+	if err := s.db.Select(&keys, "SELECT * FROM replication_keys where attempts <= ? AND attempts >= ? LIMIT 5000", maxAttempts, minAttempts); err != nil {
 		return nil, fmt.Errorf("error reading all keys from database: %w", err)
 	}
 
@@ -227,23 +265,28 @@ func (s *Store) StoreBatchRepKeys(values [][]byte, id string, ip string, port in
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time, to time.Time) (retkeys [][]byte) {
+func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time, to time.Time) [][]byte {
 	var keys []string
 	if err := s.db.Select(&keys, `SELECT key FROM data WHERE createdAt > ? and createdAt < ?`, from, to); err != nil {
 		log.P2P().WithError(err).WithContext(ctx).Errorf("failed to get records for replication older than %s", from)
 		return nil
 	}
 
-	for i := 0; i < len(keys); i++ {
-		str, err := hex.DecodeString(keys[i])
-		if err != nil {
-			log.WithContext(ctx).WithField("key", keys[i]).Error("replicate failed to hex decode key")
-			continue
-		}
-
-		retkeys = append(retkeys, str)
+	retkeys := make([][]byte, len(keys))
+	var wg sync.WaitGroup
+	for i, key := range keys {
+		wg.Add(1)
+		go func(i int, key string) {
+			defer wg.Done()
+			str, err := hex.DecodeString(key)
+			if err != nil {
+				log.WithContext(ctx).WithField("key", key).Error("replicate failed to hex decode key")
+			}
+			retkeys[i] = str
+		}(i, key)
 	}
 
+	wg.Wait()
 	return retkeys
 }
 
@@ -301,8 +344,8 @@ func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchS
 	keyMap := make(map[string]bool)
 
 	// Convert the keys to hex and map them for easier lookups
-	for _, key := range keys {
-		hexKey := hex.EncodeToString(key)
+	for i := 0; i < len(keys); i++ {
+		hexKey := hex.EncodeToString(keys[i])
 		keyMap[hexKey] = true
 	}
 
@@ -360,4 +403,106 @@ func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchS
 	}
 
 	return nonExistingKeys, nil
+}
+
+// RetrieveBatchValues returns a list of values (hex-decoded) for the given keys (hex-encoded)
+func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byte, int, error) {
+	placeholders := make([]string, len(keys))
+	args := make([]interface{}, len(keys))
+	keyToIndex := make(map[string]int)
+
+	for i := 0; i < len(keys); i++ {
+		placeholders[i] = "?"
+		args[i] = keys[i]
+		keyToIndex[keys[i]] = i
+	}
+
+	log.WithContext(ctx).WithField("len(keys)", len(args)).WithField("len(placeholders)", len(placeholders)).
+		WithField("args[len(args)]-1", fmt.Sprint(args[len(args)-1])).WithField("args[0", fmt.Sprint(args[0])).
+		Info("RetrieveBatchValues db operation")
+
+	query := fmt.Sprintf(`SELECT key, data FROM data WHERE key IN (%s)`, strings.Join(placeholders, ","))
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to retrieve records: %w", err)
+	}
+	defer rows.Close()
+
+	values := make([][]byte, len(keys))
+	keysFound := 0
+	for rows.Next() {
+		var key string
+		var value []byte
+		if err := rows.Scan(&key, &value); err != nil {
+			return nil, keysFound, fmt.Errorf("failed to scan key and value: %w", err)
+		}
+
+		if idx, found := keyToIndex[key]; found {
+			values[idx] = value
+			keysFound++
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, keysFound, fmt.Errorf("rows processing error: %w", err)
+	}
+
+	return values, keysFound, nil
+}
+
+// BatchDeleteRepKeys will delete a list of keys from the replication_keys table
+func (s *Store) BatchDeleteRepKeys(keys []string) error {
+	var placeholders []string
+	var arguments []interface{}
+	for _, key := range keys {
+		placeholders = append(placeholders, "?")
+		arguments = append(arguments, key)
+	}
+
+	query := fmt.Sprintf("DELETE FROM replication_keys WHERE key IN (%s)", strings.Join(placeholders, ","))
+
+	res, err := s.db.Exec(query, arguments...)
+	if err != nil {
+		return fmt.Errorf("cannot batch delete records from replication_keys table: %w", err)
+	}
+
+	if rowsAffected, err := res.RowsAffected(); err != nil {
+		return fmt.Errorf("cannot get affected rows after batch deleting records from replication_keys table: %w", err)
+	} else if rowsAffected == 0 {
+		return fmt.Errorf("no record deleted (batch) from replication_keys table")
+	}
+
+	return nil
+}
+
+// IncrementAttempts increments the attempts counter for the given keys.
+func (s *Store) IncrementAttempts(keys []string) error {
+	if len(keys) == 0 {
+		return nil
+	}
+
+	// Use a transaction for consistency and to speed up the operation
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	query := `UPDATE replication_keys SET attempts = attempts + 1 WHERE key IN (?)`
+	query, args, err := sqlx.In(query, keys)
+	if err != nil {
+		return err
+	}
+
+	// Rebind is necessary to match placeholders style to the SQL driver in use
+	// (it converts "?" placeholders into the correct placeholder style, e.g., "$1, $2" for PostgreSQL)
+	query = tx.Rebind(query)
+	_, err = tx.Exec(query, args...)
+	if err != nil {
+		// rollback the transaction in case of error
+		_ = tx.Rollback()
+		return err
+	}
+
+	// commit the transaction
+	return tx.Commit()
 }

@@ -57,7 +57,7 @@ type Store interface {
 	StoreBatchRepKeys(values [][]byte, id string, ip string, port int) error
 
 	// GetAllToDoRepKeys gets all keys that need to be replicated
-	GetAllToDoRepKeys() (retKeys domain.ToRepKeys, err error)
+	GetAllToDoRepKeys(minAttempts, maxAttempts int) (retKeys domain.ToRepKeys, err error)
 
 	// DeleteRepKey deletes a key from the replication table
 	DeleteRepKey(key []byte) error
@@ -66,4 +66,10 @@ type Store interface {
 	UpdateLastSeen(ctx context.Context, id string) error
 
 	RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchSize int) ([][]byte, error)
+
+	RetrieveBatchValues(ctx context.Context, keys []string) ([][]byte, int, error)
+
+	BatchDeleteRepKeys(keys []string) error
+
+	IncrementAttempts(keys []string) error
 }

@@ -2,13 +2,16 @@ package kademlia
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/utils"
 
 	"go.uber.org/ratelimit"
@@ -22,7 +25,7 @@ import (
 const (
 	defaultConnDeadline   = 30 * time.Second
 	defaultConnRate       = 1000
-	defaultMaxPayloadSize = 32 * 1024 * 1024 // 32MB
+	defaultMaxPayloadSize = 100 * 1024 * 1024 // 100MB
 )
 
 // Network for distributed hash table
@@ -519,6 +522,14 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 				return
 			}
 			response = encoded
+		case BatchFindValues:
+			// handle the request for finding value
+			encoded, err := s.handleBatchFindValues(ctx, request)
+			if err != nil {
+				log.P2P().WithContext(ctx).WithError(err).Error("handle batch find values request failed")
+				return
+			}
+			response = encoded
 		default:
 			log.P2P().WithContext(ctx).Errorf("invalid message type: %v", request.MessageType)
 			return
@@ -579,7 +590,7 @@ func (s *Network) serve(ctx context.Context) {
 func (s *Network) Call(ctx context.Context, request *Message, isLong bool) (*Message, error) {
 	timeout := 30 * time.Second
 	if isLong {
-		timeout = 60 * time.Minute
+		timeout = 1 * time.Minute
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -661,4 +672,204 @@ func (s *Network) Call(ctx context.Context, request *Message, isLong bool) (*Mes
 	}
 
 	return response, nil
+}
+
+func (s *Network) handleBatchFindValues(ctx context.Context, message *Message) (res []byte, err error) {
+	// Add a defer function to recover from panic
+	defer func() {
+		if r := recover(); r != nil {
+			// Log the error or handle it as you see fit
+			log.WithContext(ctx).Errorf("HandleBatchFindValues Recovered from panic: %v", r)
+
+			// Convert panic to error
+			switch t := r.(type) {
+			case string:
+				err = errors.New(t)
+			case error:
+				err = t
+			default:
+				err = errors.New("unknown error")
+			}
+
+			// Create an error response
+			response := &BatchFindValuesResponse{
+				Status: ResponseStatus{
+					Result: ResultFailed,
+					ErrMsg: err.Error(),
+				},
+			}
+
+			// Create a new response message
+			resMsg := s.dht.newMessage(BatchFindValues, message.Sender, response)
+
+			res, _ = s.encodeMesage(resMsg) // Assuming that encoding cannot fail
+		}
+	}()
+
+	request, ok := message.Data.(*BatchFindValuesRequest)
+	if !ok {
+		err := errors.New("invalid BatchFindValueRequest")
+		response := &BatchFindValuesResponse{
+			Status: ResponseStatus{
+				Result: ResultFailed,
+				ErrMsg: err.Error(),
+			},
+		}
+		// new a response message
+		resMsg := s.dht.newMessage(BatchFindValues, message.Sender, response)
+		return s.encodeMesage(resMsg)
+	}
+
+	isDone, data, err := s.handleBatchFindValuesRequest(ctx, request, message.Sender.IP)
+	if err != nil {
+		response := &BatchFindValuesResponse{
+			Status: ResponseStatus{
+				Result: ResultFailed,
+				ErrMsg: err.Error(),
+			},
+		}
+		resMsg := s.dht.newMessage(BatchFindValues, message.Sender, response)
+		return s.encodeMesage(resMsg)
+	}
+
+	response := &BatchFindValuesResponse{
+		Status: ResponseStatus{
+			Result: ResultOk,
+		},
+		Response: data,
+		Done:     isDone,
+	}
+
+	resMsg := s.dht.newMessage(BatchFindValues, message.Sender, response)
+	return s.encodeMesage(resMsg)
+}
+
+func (s *Network) handleBatchFindValuesRequest(ctx context.Context, req *BatchFindValuesRequest, ip string) (isDone bool, compressedData []byte, err error) {
+	keys, err := decompressKeysStr(req.Keys)
+	if err != nil {
+		return false, nil, fmt.Errorf("unable to decode keys: %w", err)
+	}
+	log.WithContext(ctx).WithField("keys", len(keys)).WithField("from-ip", ip).Info("batch find values request received")
+	if len(keys) > 0 {
+		log.WithContext(ctx).WithField("keys[0]", keys[0]).WithField("keys[len]", keys[len(keys)-1]).
+			WithField("from-ip", ip).Info("first & last batch keys")
+	}
+
+	values, count, err := s.dht.store.RetrieveBatchValues(ctx, keys)
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to retrieve batch values: %w", err)
+	}
+	log.WithContext(ctx).WithField("values-len", len(values)).WithField("found", count).WithField("from-ip", ip).Info("batch find values request processed")
+
+	isDone, count, compressedData, err = findOptimalCompression(count, keys, values)
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to find optimal compression: %w", err)
+	}
+
+	log.WithContext(ctx).WithField("compressed-data-len", utils.BytesToMB(uint64(len(compressedData)))).WithField("found", count).
+		WithField("from-ip", ip).Info("batch find values response sent")
+
+	return isDone, compressedData, nil
+}
+
+func findOptimalCompression(count int, keys []string, values [][]byte) (bool, int, []byte, error) {
+	dataMap := make(map[string][]byte)
+	for i, key := range keys {
+		dataMap[key] = values[i]
+	}
+
+	compressedData, err := compressMap(dataMap)
+	if err != nil {
+		return true, 0, nil, err
+	}
+
+	// If the initial compressed data is under the threshold
+	if len(compressedData) < defaultMaxPayloadSize {
+		log.WithField("compressed-data-len", utils.BytesToMB(uint64(len(compressedData)))).WithField("count", count).Info("initial compression")
+		return true, len(dataMap), compressedData, nil
+	}
+
+	iter := 0
+	currentValuesCount := count
+	for len(compressedData) >= defaultMaxPayloadSize {
+		log.WithField("compressed-data-len", utils.BytesToMB(uint64(len(compressedData)))).WithField("current-count", currentValuesCount).WithField("iter", iter).Info("optimal compression")
+		iter++
+		// Find top 10 heaviest values and set their keys to nil in the map
+		var heavyKeys []string
+		currentValuesCount, heavyKeys = findTopHeaviestKeys(dataMap)
+		for _, key := range heavyKeys {
+			size := utils.BytesToMB(uint64(len(dataMap[key])))
+			if len(dataMap[key]) > defaultMaxPayloadSize {
+				log.WithField("key", key).WithField("size", size).Info("size of key is greater than max payload size")
+			}
+
+			dataMap[key] = nil
+		}
+
+		// Recompress
+		compressedData, err = compressMap(dataMap)
+		if err != nil {
+			return false, 0, nil, err
+		}
+	}
+
+	// Calculate the count of non-nil keys
+	counter := 0
+	for _, v := range dataMap {
+		if len(v) > 0 {
+			counter++
+		}
+	}
+
+	// if we were not able to fit even 1 key, there's nothing we can do at this point
+	return counter == 0, counter, compressedData, nil
+}
+
+func compressMap(dataMap map[string][]byte) ([]byte, error) {
+	dataBytes, err := json.Marshal(dataMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal data map: %w", err)
+	}
+
+	compressedData, err := zstd.CompressLevel(nil, dataBytes, 6)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compress data: %w", err)
+	}
+
+	return compressedData, nil
+}
+
+func findTopHeaviestKeys(dataMap map[string][]byte) (int, []string) {
+	type kv struct {
+		Key string
+		Len int
+	}
+
+	var sorted []kv
+	count := 0
+	for k, v := range dataMap {
+		if len(v) > 0 { // Only consider non-nil values
+			count++
+			sorted = append(sorted, kv{k, len(v)})
+		}
+	}
+
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Len > sorted[j].Len
+	})
+
+	n := 10          // number of keys to remove from payload if payload is heavier than allowed size
+	if count <= 50 { // if keys are less than 50, we'd wanna try a smaller decrement number
+		n = 5
+	}
+	if count <= 10 { // if keys are less than 10, we'd wanna try a smaller decrement number
+		n = 1
+	}
+
+	topKeys := []string{}
+	for i := 0; i < n && i < len(sorted); i++ {
+		topKeys = append(topKeys, sorted[i].Key)
+	}
+
+	return count, topKeys
 }

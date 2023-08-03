@@ -79,7 +79,7 @@ func (service *SCService) Run(ctx context.Context) error {
 				newCtx := log.ContextWithPrefix(context.Background(), "storage-challenge")
 				//task := service.NewSCTask()
 				//task.GenerateStorageChallenges(newCtx)
-				log.WithContext(newCtx).Info("Would normally generate a storage challenge")
+				log.WithContext(newCtx).Debug("Would normally generate a storage challenge")
 			}
 		case <-ctx.Done():
 			log.Println("Context done being called in generatestoragechallenge loop in service.go")

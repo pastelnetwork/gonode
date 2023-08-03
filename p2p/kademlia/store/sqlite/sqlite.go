@@ -86,11 +86,8 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	if err != nil {
 		return nil, fmt.Errorf("cannot open sqlite database: %w", err)
 	}
-	db.SetMaxOpenConns(500) // set appropriate value
-	db.SetMaxIdleConns(200) // set appropriate value
-
-	// Set connection max lifetime
-	db.SetConnMaxLifetime(time.Minute * 60) // set appropriate value
+	db.SetMaxOpenConns(250) // set appropriate value
+	db.SetMaxIdleConns(10)  // set appropriate value
 
 	s := &Store{
 		worker: worker,
@@ -119,16 +116,39 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create datatype column in p2p database")
 	}
 
+	if err := s.ensureAttempsColumn(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create attemps column in p2p database")
+	}
+
 	if err := s.ensureLastSeenColumn(); err != nil {
 		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create datatype column in p2p database")
 	}
 
-	_, err = db.Exec(`PRAGMA journal_mode=WAL;
-	PRAGMA synchronous=NORMAL;
-	PRAGMA cache_size=-20000;
-	PRAGMA journal_size_limit=5242880`)
+	log.WithContext(ctx).Info("p2p database creating index on key column")
+	_, err = db.Exec("CREATE INDEX IF NOT EXISTS idx_key ON data(key);")
 	if err != nil {
-		return nil, fmt.Errorf("cannot set sqlite database parameters: %w", err)
+		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create index on key column in p2p database")
+	}
+	log.WithContext(ctx).Info("p2p database created index on key column")
+
+	_, err = db.Exec("CREATE INDEX IF NOT EXISTS idx_createdat ON data(createdAt);")
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create index on createdAt column in p2p database")
+	}
+	log.WithContext(ctx).Info("p2p database created index on createdAt column")
+
+	pragmas := []string{
+		"PRAGMA journal_mode=WAL;",
+		"PRAGMA synchronous=NORMAL;",
+		"PRAGMA cache_size=-20000;",
+		"PRAGMA busy_timeout=120000;",
+		"PRAGMA journal_size_limit=5242880;",
+	}
+
+	for _, pragma := range pragmas {
+		if _, err := db.Exec(pragma); err != nil {
+			return nil, fmt.Errorf("cannot set sqlite database parameter: %w", err)
+		}
 	}
 
 	s.db = db

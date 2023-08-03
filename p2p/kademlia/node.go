@@ -9,6 +9,8 @@ import (
 	"sync"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 // Node is the over-the-wire representation of a node
@@ -35,6 +37,8 @@ type NodeList struct {
 	Comparator []byte
 
 	Mux sync.RWMutex
+
+	debug bool
 }
 
 // String returns the dump information for node list
@@ -102,32 +106,6 @@ func (s *NodeList) Len() int {
 	return len(s.Nodes)
 }
 
-// Swap swap two nodes
-func (s *NodeList) Swap(i, j int) {
-	if i >= 0 && i < s.Len() && j >= 0 && j < s.Len() {
-		s.Nodes[i], s.Nodes[j] = s.Nodes[j], s.Nodes[i]
-	}
-}
-
-// Sort sorts nodes
-func (s *NodeList) Sort() {
-	s.Mux.Lock()
-	defer s.Mux.Unlock()
-
-	sort.Sort(s)
-}
-
-// Less compare two nodes
-func (s *NodeList) Less(i, j int) bool {
-	if i >= 0 && i < s.Len() && j >= 0 && j < s.Len() {
-		id := s.distance(s.Nodes[i].ID, s.Comparator)
-		jd := s.distance(s.Nodes[j].ID, s.Comparator)
-
-		return id.Cmp(jd) == -1
-	}
-	return false
-}
-
 func (s *NodeList) distance(id1, id2 []byte) *big.Int {
 	o1 := new(big.Int).SetBytes(id1)
 	o2 := new(big.Int).SetBytes(id2)
@@ -151,5 +129,35 @@ func (s *NodeList) TopN(n int) {
 
 	if s.Len() > n {
 		s.Nodes = s.Nodes[:n]
+	} else {
+		s.Nodes = s.Nodes[:s.Len()]
 	}
+}
+
+func (s *NodeList) computeDistances() []big.Int {
+	distances := make([]big.Int, s.Len())
+	for i, node := range s.Nodes {
+		cID, _ := utils.Sha3256hash(node.ID)
+		dist := s.distance(cID, s.Comparator)
+		distances[i] = *dist
+
+		if s.debug {
+			log.WithField("node", node.String()).WithField("dist", distances[i]).Info("computeDistances")
+		}
+	}
+	return distances
+}
+
+// Sort sorts nodes
+func (s *NodeList) Sort() {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+
+	// Compute distances
+	distances := s.computeDistances()
+
+	// Sort using the precomputed distances
+	sort.Slice(s.Nodes, func(i, j int) bool {
+		return distances[i].Cmp(&distances[j]) == -1
+	})
 }
