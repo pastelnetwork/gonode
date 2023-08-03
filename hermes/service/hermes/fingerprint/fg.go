@@ -68,8 +68,8 @@ func (s *fingerprintService) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("unable to get nonseed record")
 	} else if !nonseed {
 		log.WithContext(ctx).Info("No NonSeed Record, set latestBlockHeight to 0")
-		s.latestNFTBlockHeight = 0
-		s.latestSenseBlockHeight = 0
+		s.latestNFTBlockHeight = 265000   //TODO: REMOVE THIS - SET TO 0
+		s.latestSenseBlockHeight = 265000 //TODO: REMOVE THIS - SET TO 0
 	}
 
 	senseErr := s.parseSenseTickets(ctx)

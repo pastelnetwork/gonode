@@ -36,6 +36,18 @@ var (
 	maxBackOff = 45 * time.Second
 )
 
+func (s *DHT) getNodeReplicationTimesCopy() map[string]domain.NodeReplicationInfo {
+	s.replicationMtx.RLock()
+	defer s.replicationMtx.RUnlock()
+
+	copy := make(map[string]domain.NodeReplicationInfo)
+	for id, info := range s.nodeReplicationTimes {
+		copy[id] = info
+	}
+
+	return copy
+}
+
 // StartReplicationWorker starts replication
 func (s *DHT) StartReplicationWorker(ctx context.Context) error {
 	log.P2P().WithContext(ctx).Info("replication worker started")
@@ -70,14 +82,20 @@ func (s *DHT) StartFetchAndStoreWorker(ctx context.Context) error {
 }
 
 func (s *DHT) updateReplicationNode(ctx context.Context, nodeID []byte, ip string, port int, isActive bool) error {
-	if info, ok := s.nodeReplicationTimes[string(nodeID)]; ok {
+	s.replicationMtx.RLock()
+	info, ok := s.nodeReplicationTimes[string(nodeID)]
+	s.replicationMtx.RUnlock()
+
+	if ok {
 		info.Active = isActive
 		info.UpdatedAt = time.Now()
 		info.IP = ip
 		info.Port = port
 		info.ID = nodeID
 
+		s.replicationMtx.Lock()
 		s.nodeReplicationTimes[string(nodeID)] = info
+		s.replicationMtx.Unlock()
 
 		if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 			log.P2P().WithContext(ctx).WithError(err).WithField("node_id", string(nodeID)).WithField("ip", ip).Error("failed to add replication info")
@@ -93,7 +111,9 @@ func (s *DHT) updateReplicationNode(ctx context.Context, nodeID []byte, ip strin
 			ID:        nodeID,
 		}
 
+		s.replicationMtx.Lock()
 		s.nodeReplicationTimes[string(nodeID)] = info
+		s.replicationMtx.Unlock()
 
 		if err := s.store.AddReplicationInfo(ctx, info); err != nil {
 			log.P2P().WithContext(ctx).WithError(err).WithField("node_id", string(nodeID)).WithField("ip", ip).Error("failed to add replication info")
@@ -105,14 +125,18 @@ func (s *DHT) updateReplicationNode(ctx context.Context, nodeID []byte, ip strin
 }
 
 func (s *DHT) updateLastReplicated(ctx context.Context, nodeID []byte, timestamp time.Time) error {
+	s.replicationMtx.RLock()
 	info, ok := s.nodeReplicationTimes[string(nodeID)]
+	s.replicationMtx.RUnlock()
 	if !ok {
 		return errors.New("node not found")
 	}
 
 	info.LastReplicatedAt = &timestamp
 
+	s.replicationMtx.Lock()
 	s.nodeReplicationTimes[string(nodeID)] = info
+	s.replicationMtx.Unlock()
 
 	if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 		log.P2P().WithContext(ctx).WithError(err).WithField("node_id", string(nodeID)).Error("failed to update replication info")
@@ -124,9 +148,6 @@ func (s *DHT) updateLastReplicated(ctx context.Context, nodeID []byte, timestamp
 // Replicate is called periodically by the replication worker to replicate the data across the network by refreshing the buckets
 // it iterates over the node replication Info map and replicates the data to the nodes that are active
 func (s *DHT) Replicate(ctx context.Context) {
-	s.replicationMtx.Lock()
-	defer s.replicationMtx.Unlock()
-
 	historicStart, err := s.store.GetOwnCreatedAt(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to get own createdAt")
@@ -146,7 +167,8 @@ func (s *DHT) Replicate(ctx context.Context) {
 	}
 
 	to := time.Now()
-	for nodeID, infoVar := range s.nodeReplicationTimes {
+	nrt := s.getNodeReplicationTimesCopy()
+	for nodeID, infoVar := range nrt {
 		info := infoVar
 
 		logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", string(nodeID))
@@ -158,7 +180,12 @@ func (s *DHT) Replicate(ctx context.Context) {
 				} else {
 					info.IsAdjusted = true
 					info.UpdatedAt = time.Now()
+
+					// lock for write
+					s.replicationMtx.Lock()
 					s.nodeReplicationTimes[string(nodeID)] = info
+					// unlock after write
+					s.replicationMtx.Unlock()
 
 					if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 						logEntry.WithError(err).Error("failed to update replication info, set isAdjusted to true")
@@ -177,9 +204,17 @@ func (s *DHT) Replicate(ctx context.Context) {
 			from = *info.LastReplicatedAt
 		}
 
+		logEntry.WithField("from", from).WithField("to", to).Info("getting replication keys")
 		replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
 		logEntry.WithField("len-rep-keys", len(replicationKeys)).Info("count of replication keys to be checked")
 		if len(replicationKeys) == 0 {
+			// Now closestContactKeys contains all the keys that are in the closest contacts.
+			if err := s.updateLastReplicated(ctx, []byte(nodeID), to); err != nil {
+				logEntry.Error("replicate update lastReplicated failed")
+			} else {
+				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("fetch-keys", 0).Info("replicate update lastReplicated success")
+			}
+
 			continue
 		}
 
@@ -198,49 +233,55 @@ func (s *DHT) Replicate(ctx context.Context) {
 		}
 		logEntry.WithField("len-rep-keys", len(closestContactKeys)).Info("closest contact keys count")
 
-		if len(closestContactKeys) > 0 {
-			data, err := compressKeys(closestContactKeys)
-			if err != nil {
-				logEntry.WithField("len-rep-keys", len(closestContactKeys)).WithError(err).Error("unable to compress keys - replication failed")
-				continue
-			}
-
-			// TODO: Check if data size is bigger than 32 MB
-			request := &ReplicateDataRequest{
-				Keys: data,
-			}
-
-			n := &Node{ID: []byte(nodeID), IP: info.IP, Port: info.Port}
-
-			b := backoff.NewExponentialBackOff()
-			b.MaxElapsedTime = maxBackOff
-
-			err = backoff.RetryNotify(func() error {
-				response, err := s.sendReplicateData(ctx, n, request)
-				if err != nil {
-					return err
-				}
-
-				if response.Status.Result != ResultOk {
-					return errors.New(response.Status.ErrMsg)
-				}
-
-				return nil
-			}, b, func(err error, duration time.Duration) {
-				logEntry.WithError(err).WithField("duration", duration).Error("retrying send replicate data")
-			})
-
-			if err != nil {
-				logEntry.WithError(err).Error("send replicate data failed after retries")
-				continue
-			}
-
-			// Now closestContactKeys contains all the keys that are in the closest contacts.
+		if len(closestContactKeys) == 0 {
 			if err := s.updateLastReplicated(ctx, []byte(nodeID), to); err != nil {
 				logEntry.Error("replicate update lastReplicated failed")
 			} else {
-				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("expected-rep-keys", len(closestContactKeys)).Info("replicate update lastReplicated success")
+				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("closest-contact-keys", 0).Info("replicate update lastReplicated success")
 			}
+		}
+
+		data, err := compressKeys(closestContactKeys)
+		if err != nil {
+			logEntry.WithField("len-rep-keys", len(closestContactKeys)).WithError(err).Error("unable to compress keys - replication failed")
+			continue
+		}
+
+		// TODO: Check if data size is bigger than 32 MB
+		request := &ReplicateDataRequest{
+			Keys: data,
+		}
+
+		n := &Node{ID: []byte(nodeID), IP: info.IP, Port: info.Port}
+
+		b := backoff.NewExponentialBackOff()
+		b.MaxElapsedTime = maxBackOff
+
+		err = backoff.RetryNotify(func() error {
+			response, err := s.sendReplicateData(ctx, n, request)
+			if err != nil {
+				return err
+			}
+
+			if response.Status.Result != ResultOk {
+				return errors.New(response.Status.ErrMsg)
+			}
+
+			return nil
+		}, b, func(err error, duration time.Duration) {
+			logEntry.WithError(err).WithField("duration", duration).Error("retrying send replicate data")
+		})
+
+		if err != nil {
+			logEntry.WithError(err).Error("send replicate data failed after retries")
+			continue
+		}
+
+		// Now closestContactKeys contains all the keys that are in the closest contacts.
+		if err := s.updateLastReplicated(ctx, []byte(nodeID), to); err != nil {
+			logEntry.Error("replicate update lastReplicated failed")
+		} else {
+			logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("expected-rep-keys", len(closestContactKeys)).Info("replicate update lastReplicated success")
 		}
 	}
 
@@ -400,10 +441,9 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 				if !utils.CheckInternetConnectivity() {
 					log.WithContext(ctx).Info("no internet connectivity, not checking node activity")
 				} else {
-					s.replicationMtx.Lock()
-					defer s.replicationMtx.Unlock()
+					nrt := s.getNodeReplicationTimesCopy()
 
-					for nodeID, info := range s.nodeReplicationTimes {
+					for nodeID, info := range nrt {
 						// new a ping request message
 						node := &Node{
 							ID:   []byte(nodeID),
@@ -429,7 +469,10 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 							// mark node as inactive in database
 							info.Active = false
 							info.UpdatedAt = time.Now()
+
+							s.replicationMtx.Lock()
 							s.nodeReplicationTimes[string(nodeID)] = info
+							s.replicationMtx.Unlock()
 
 							if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 								log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update replication info, node is inactive")
@@ -448,17 +491,26 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 								info.Active = true
 								info.IsAdjusted = false
 								info.UpdatedAt = time.Now()
+
+								s.replicationMtx.Lock()
 								s.nodeReplicationTimes[string(nodeID)] = info
+								s.replicationMtx.Unlock()
 
 								if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
 									log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update replication info, node is active")
 								}
 							}
 
+							s.replicationMtx.RLock()
 							upInfo := s.nodeReplicationTimes[string(nodeID)]
+							s.replicationMtx.RUnlock()
+
 							now := time.Now()
 							upInfo.LastSeen = &now
+
+							s.replicationMtx.Lock()
 							s.nodeReplicationTimes[string(nodeID)] = upInfo
+							s.replicationMtx.Unlock()
 
 							if err := s.store.UpdateLastSeen(ctx, string(nodeID)); err != nil {
 								log.WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update last seen")

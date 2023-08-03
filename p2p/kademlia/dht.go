@@ -46,7 +46,7 @@ type DHT struct {
 	authHelper           *AuthHelper
 	ignorelist           *BanList
 	nodeReplicationTimes map[string]domain.NodeReplicationInfo
-	replicationMtx       sync.Mutex
+	replicationMtx       sync.RWMutex
 }
 
 // Options contains configuration options for the local node
@@ -99,7 +99,7 @@ func NewDHT(ctx context.Context, store Store, pc pastel.Client, secInfo *alts.Se
 		cache:                memory.NewKeyValue(),
 		ignorelist:           NewBanList(ctx),
 		nodeReplicationTimes: replicationMap,
-		replicationMtx:       sync.Mutex{},
+		replicationMtx:       sync.RWMutex{},
 	}
 
 	if options.ExternalIP != "" {
@@ -282,17 +282,12 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil && len(value) > 0 {
 		return value, nil
-	} else if err != nil {
-		log.WithContext(ctx).WithField("key", dbKey).WithError(err).WithField("len", len(value)).Info("key not found in local")
-	} else {
-		log.WithContext(ctx).WithField("key", dbKey).WithField("len", len(value)).Info("finish local data retrieval with zero-len value")
 	}
 
 	// if local only option is set, do not search just return error
 	if len(localOnly) > 0 && localOnly[0] {
 		return nil, fmt.Errorf("local-only failed to get properly: " + err.Error())
 	}
-	log.WithContext(ctx).WithField("key", dbKey).Info("Not found locally, searching in other nodes")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil, 0)
