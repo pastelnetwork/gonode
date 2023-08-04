@@ -40,12 +40,12 @@ func (s *DHT) getNodeReplicationTimesCopy() map[string]domain.NodeReplicationInf
 	s.replicationMtx.RLock()
 	defer s.replicationMtx.RUnlock()
 
-	copy := make(map[string]domain.NodeReplicationInfo)
+	copyInfo := make(map[string]domain.NodeReplicationInfo)
 	for id, info := range s.nodeReplicationTimes {
-		copy[id] = info
+		copyInfo[id] = info
 	}
 
-	return copy
+	return copyInfo
 }
 
 // StartReplicationWorker starts replication

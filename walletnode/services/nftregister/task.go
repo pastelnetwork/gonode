@@ -166,6 +166,13 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	//Detect the file type
 	task.fileType = mimetype.Detect(nftBytes).String()
 
+	if err := task.checkDDServerAvailability(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error checking dd-server availability before probe image call")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorCheckDDServerAvailability)
+		return errors.Errorf("dd-server availability check: %w", err)
+	}
+
 	// probe ORIGINAL image for average rareness, nsfw and seen score
 	if err := task.probeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error probing image")
@@ -839,6 +846,53 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 		})
 	}
 	return group.Wait()
+}
+
+// checkDDServerAvailability sends requests to get the DD-server stats and check for availability
+func (task *NftRegistrationTask) checkDDServerAvailability(ctx context.Context) error {
+	log.WithContext(ctx).Info("sending request to connected nodes to check for dd-server availability before " +
+		"probe image")
+
+	var pRMutex sync.Mutex
+	pendingRequests := make(map[string]int32)
+	group, gctx := errgroup.WithContext(ctx)
+	for _, someNode := range task.MeshHandler.Nodes {
+		someNode := someNode
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
+		if !ok {
+			//TODO: use assert here
+			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
+		}
+		group.Go(func() (err error) {
+			stats, err := senseRegNode.GetDDServerStats(gctx)
+			if err != nil {
+				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("send registration metadata failed")
+				return errors.Errorf("node %s: %w", someNode.String(), err)
+			}
+			log.WithContext(ctx).WithField("node", someNode.Address()).WithField("stats", stats).Info("DD-server stats for node has been received")
+
+			pRMutex.Lock()
+			pendingRequests[someNode.Address()] = stats.WaitingInQueue
+			pRMutex.Unlock()
+
+			return nil
+		})
+	}
+
+	if err := group.Wait(); err != nil {
+		return err
+	}
+
+	for key, val := range pendingRequests {
+		if val > common.DDServerPendingRequestsThreshold {
+			log.WithContext(ctx).Errorf("pending requests in queue exceeds the threshold for node %s", key)
+			return fmt.Errorf("pending requests in queue exceeds the threshold for node %s", key)
+		}
+	}
+
+	log.WithContext(ctx).Infof("pending requests for DD-server does not exceed than threshold, proceeding forward")
+
+	return nil
 }
 
 // Error returns task err

@@ -36,6 +36,7 @@ const (
 	StatusErrorUploadingTicket
 	StatusErrorActivatingTicket
 	StatusErrorProbeImage
+	StatusErrorCheckDDServerAvailability
 	StatusErrorGenerateDDAndFPIds
 	StatusErrorCheckingStorageFee
 	StatusErrorInsufficientBalance
@@ -97,6 +98,7 @@ var statusNames = map[Status]string{
 	StatusErrorUploadingTicket:             "Error Uploading Ticket",
 	StatusErrorActivatingTicket:            "Error Activating Ticket",
 	StatusErrorProbeImage:                  "Error Probing Image",
+	StatusErrorCheckDDServerAvailability:   "Error checking dd-server availability before probe image",
 	StatusErrorGenerateDDAndFPIds:          "Error Generating DD and Fingerprint IDs",
 	StatusErrorCheckingStorageFee:          "Error comparing suitable storage fee with task request maximum fee",
 	StatusErrorInsufficientBalance:         "Error balance not sufficient",
