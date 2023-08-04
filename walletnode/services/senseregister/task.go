@@ -2,9 +2,11 @@ package senseregister
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	//"github.com/pastelnetwork/gonode/common/duplicate"
@@ -156,6 +158,13 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
 	}
 	task.UpdateStatus(common.StatusBurnTxnValidated)
+
+	if err := task.checkDDServerAvailability(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error checking dd-server availability before probe image call")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorCheckDDServerAvailability)
+		return errors.Errorf("dd-server availability check: %w", err)
+	}
 
 	// probe image for average rareness, nsfw and seen score - populate FingerprintsHandler with results
 	if err := task.ProbeImage(ctx, task.Request.Image, task.Request.Image.Name()); err != nil {
@@ -498,6 +507,53 @@ func (task *SenseRegistrationTask) activateActionTicket(ctx context.Context) (st
 	}
 
 	return task.service.pastelHandler.PastelClient.ActivateActionTicket(ctx, request)
+}
+
+// checkDDServerAvailability sends requests to get the DD-server stats and check for availability
+func (task *SenseRegistrationTask) checkDDServerAvailability(ctx context.Context) error {
+	log.WithContext(ctx).Info("sending request to connected nodes to check for dd-server availability before " +
+		"probe image")
+
+	var pRMutex sync.Mutex
+	pendingRequests := make(map[string]int32)
+	group, gctx := errgroup.WithContext(ctx)
+	for _, someNode := range task.MeshHandler.Nodes {
+		someNode := someNode
+		senseRegNode, ok := someNode.SuperNodeAPIInterface.(*SenseRegistrationNode)
+		if !ok {
+			//TODO: use assert here
+			return errors.Errorf("node %s is not SenseRegistrationNode", someNode.String())
+		}
+		group.Go(func() (err error) {
+			stats, err := senseRegNode.GetDDServerStats(gctx)
+			if err != nil {
+				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("send registration metadata failed")
+				return errors.Errorf("node %s: %w", someNode.String(), err)
+			}
+			log.WithContext(ctx).WithField("node", someNode.Address()).WithField("stats", stats).Info("DD-server stats for node has been received")
+
+			pRMutex.Lock()
+			pendingRequests[someNode.Address()] = stats.WaitingInQueue
+			pRMutex.Unlock()
+
+			return nil
+		})
+	}
+
+	if err := group.Wait(); err != nil {
+		return err
+	}
+
+	for key, val := range pendingRequests {
+		if val > common.DDServerPendingRequestsThreshold {
+			log.WithContext(ctx).Errorf("pending requests in queue exceeds the threshold for node %s", key)
+			return fmt.Errorf("pending requests in queue exceeds the threshold for node %s", key)
+		}
+	}
+
+	log.WithContext(ctx).Infof("pending requests for DD-server does not exceed than threshold, proceeding forward")
+
+	return nil
 }
 
 func (task *SenseRegistrationTask) removeArtifacts() {

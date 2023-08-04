@@ -42,6 +42,7 @@ func TestStatusNames(t *testing.T) {
 				StatusErrorUploadingTicket,
 				StatusErrorActivatingTicket,
 				StatusErrorProbeImage,
+				StatusErrorCheckDDServerAvailability,
 				StatusErrorGenerateDDAndFPIds,
 				StatusErrorCheckingStorageFee,
 				StatusErrorInsufficientBalance,
