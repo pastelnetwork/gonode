@@ -9,8 +9,8 @@ import (
 const (
 	//Only one block should pass in the time between storage challenge and verification. Currently block time is 2.5 minutes so this should be enough.
 	defaultStorageChallengeExpiredBlocks = 1
-	//Number of challenge replicas defaults to 3
-	defaultNumberOfChallengeReplicas = 3
+	//Number of challenge replicas defaults to 6
+	defaultNumberOfChallengeReplicas = 6
 	//Number of verifying nodes determines how many potential verifiers we test in verify_storage_challenge
 	defaultNumberOfVerifyingNodes = 10
 
