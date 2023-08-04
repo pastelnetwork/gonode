@@ -12,7 +12,7 @@ import (
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
-// VerifyStorageChallenge : Verifying the storage challenge will occur if we are one of the <default 10> closest node ID's to the file hash being challenged.
+// VerifyStorageChallenge : Verifying the storage challenge will occur only on the challenger node
 //
 //	 On receipt of challenge message we:
 //			Validate it
@@ -89,8 +89,8 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingChalleng
 		RespondingMasternodeId:       incomingChallengeMessage.RespondingMasternodeId,
 		ChallengeFile: &pb.StorageChallengeDataChallengeFile{
 			FileHashToChallenge:      incomingChallengeMessage.ChallengeFile.FileHashToChallenge,
-			ChallengeSliceStartIndex: int64(incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex),
-			ChallengeSliceEndIndex:   int64(incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex),
+			ChallengeSliceStartIndex: incomingChallengeMessage.ChallengeFile.ChallengeSliceStartIndex,
+			ChallengeSliceEndIndex:   incomingChallengeMessage.ChallengeFile.ChallengeSliceEndIndex,
 		},
 		ChallengeSliceCorrectHash: challengeCorrectHash,
 		ChallengeResponseHash:     incomingChallengeMessage.ChallengeResponseHash,
