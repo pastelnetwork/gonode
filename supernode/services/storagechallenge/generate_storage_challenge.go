@@ -251,8 +251,6 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 
 // SendProcessStorageChallenge will send the storage challenge message to the responding node
 func (task *SCTask) SendProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
-	//Reason we are retrieving the Supernodes is because the closestContacts returned by the dht only have the pastelIDs of SNs
-	//we need addresses so that we can connect with them, all the implementation is currently based on pastelIDs
 	nodesToConnect, err := task.GetNodesAddressesToConnect(ctx, *challengeMessage)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for send process storage challenge")
@@ -315,7 +313,7 @@ func minMax(array []int) (int, int) {
 	return array[0], array[1]
 }
 
-//GetNodesAddressesToConnect basically retrieves the masternode address against the pastel-id from the list and return that
+// GetNodesAddressesToConnect basically retrieves the masternode address against the pastel-id from the list and return that
 func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMessage pb.StorageChallengeData) ([]pastel.MasterNode, error) {
 	var nodesToConnect []pastel.MasterNode
 	supernodes, err := task.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
@@ -331,15 +329,26 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 
 	switch challengeMessage.MessageType {
 	case pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE:
+		//send message to challenge recipient
 		nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.RespondingMasternodeId])
 
+		//and partial observers; that's not required we only need partial observers for verification though
 		for _, po := range challengeMessage.PartialObservers {
 			nodesToConnect = append(nodesToConnect, mapSupernodes[po])
 		}
 
 		return nodesToConnect, nil
 	case pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE:
-		//not implemented yet
+		if challengeMessage.RespondingMasternodeId == task.nodeID { //if challenge recipient is the responder
+			//send message to challenger
+			nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.ChallengingMasternodeId])
+
+			//and partial observers for verification
+			for _, po := range challengeMessage.PartialObservers { //partial observers
+				nodesToConnect = append(nodesToConnect, mapSupernodes[po])
+			}
+
+		}
 	case pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE:
 		//not implemented yet
 	default:
@@ -349,7 +358,7 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 	return nil, err
 }
 
-//SendMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
+// SendMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
 func (task *SCTask) SendMessage(ctx context.Context, challengeMessage pb.StorageChallengeData, processingSupernodeAddr string) error {
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending storage challenge to processing supernode address: " + processingSupernodeAddr)
 
