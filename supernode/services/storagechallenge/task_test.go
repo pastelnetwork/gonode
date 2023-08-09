@@ -6,7 +6,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/types"
 	"testing"
+	"time"
 
 	fuzz "github.com/google/gofuzz"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
@@ -125,7 +127,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 		SCService     *SCService
 	}
 	type args struct {
-		incomingChallengeMessage *pb.StorageChallengeData
+		incomingChallengeMessage types.Message
 		PastelID                 string
 		MerkleRoot               string
 	}
@@ -137,21 +139,23 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				incomingChallengeMessage: &pb.StorageChallengeData{
-					MessageId:                    "0edd3e067b93ff597fd7e0d83ddd05161ba9b678b01c4c2fae7874b9274e6181",
-					MessageType:                  pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE,
-					ChallengeStatus:              pb.StorageChallengeData_Status_PENDING,
-					BlockNumChallengeSent:        1,
-					BlockNumChallengeRespondedTo: 0,
-					BlockNumChallengeVerified:    0,
-					MerklerootWhenChallengeSent:  "5072696d6172794944",
-					ChallengingMasternodeId:      "5072696d6172794944",
-					RespondingMasternodeId:       "B",
-					ChallengeFile:                &pb.StorageChallengeDataChallengeFile{FileHashToChallenge: "亁zȲǘ", ChallengeSliceStartIndex: 0, ChallengeSliceEndIndex: 22},
-					ChallengeSliceCorrectHash:    "",
-					ChallengeResponseHash:        "",
-					ChallengeId:                  "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
+				incomingChallengeMessage: types.Message{
+					ChallengeID: "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
+					MessageType: types.ChallengeMessageType,
+					Data: types.MessageData{
+						ChallengerID: "5072696d6172794944",
+						Challenge: types.ChallengeData{
+							Block:      1,
+							Merkelroot: "5072696d6172794944",
+							Timestamp:  time.Now(),
+							FileHash:   "亁zȲǘ",
+							StartIndex: 0,
+							EndIndex:   22,
+						},
+						RecipientID: "B",
+					},
 				},
+
 				PastelID:   "B",
 				MerkleRoot: hex.EncodeToString([]byte("PrimaryID")),
 			},
@@ -242,7 +246,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 		SCService     *SCService
 	}
 	type args struct {
-		incomingChallengeMessage *pb.StorageChallengeData
+		incomingChallengeMessage types.Message
 		PastelID                 string
 		MerkleRoot               string
 		currentBlockCount        int
@@ -255,24 +259,27 @@ func TestVerifyStorageChallenge(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				incomingChallengeMessage: &pb.StorageChallengeData{
-					MessageId:                    "be0771c56e1cb07748550f7b4650f7dba23c5af2f20f71a679eb217ddc88f7c4",
-					MessageType:                  pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE,
-					ChallengeStatus:              pb.StorageChallengeData_Status_RESPONDED,
-					BlockNumChallengeSent:        1,
-					BlockNumChallengeRespondedTo: 1,
-					BlockNumChallengeVerified:    0,
-					MerklerootWhenChallengeSent:  "5072696d6172794944",
-					ChallengingMasternodeId:      "5072696d6172794944",
-					RespondingMasternodeId:       "B",
-					ChallengeFile: &pb.StorageChallengeDataChallengeFile{
-						FileHashToChallenge:      "亁zȲǘ",
-						ChallengeSliceStartIndex: 0,
-						ChallengeSliceEndIndex:   22,
+				incomingChallengeMessage: types.Message{
+					ChallengeID: "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
+					MessageType: types.ResponseMessageType,
+					Data: types.MessageData{
+						ChallengerID: "5072696d6172794944",
+						Challenge: types.ChallengeData{
+							Block:      1,
+							Merkelroot: "5072696d6172794944",
+							Timestamp:  time.Now(),
+							FileHash:   "亁zȲǘ",
+							StartIndex: 0,
+							EndIndex:   22,
+						},
+						Response: types.ResponseData{
+							Hash:       "b7f16a4620c7e1b2bc49658f7466b321bede60a7a3ec94f00dff5b3af79ca977",
+							Block:      1,
+							Merkelroot: "5072696d6172794944",
+							Timestamp:  time.Now(),
+						},
+						RecipientID: "B",
 					},
-					ChallengeSliceCorrectHash: "",
-					ChallengeResponseHash:     "b7f16a4620c7e1b2bc49658f7466b321bede60a7a3ec94f00dff5b3af79ca977",
-					ChallengeId:               "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
 				},
 				PastelID:          "C",
 				MerkleRoot:        hex.EncodeToString([]byte("PrimaryID")),
@@ -282,24 +289,27 @@ func TestVerifyStorageChallenge(t *testing.T) {
 		},
 		"tooManyBlocksPassed": {
 			args: args{
-				incomingChallengeMessage: &pb.StorageChallengeData{
-					MessageId:                    "be0771c56e1cb07748550f7b4650f7dba23c5af2f20f71a679eb217ddc88f7c4",
-					MessageType:                  pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE,
-					ChallengeStatus:              pb.StorageChallengeData_Status_RESPONDED,
-					BlockNumChallengeSent:        1,
-					BlockNumChallengeRespondedTo: 1,
-					BlockNumChallengeVerified:    0,
-					MerklerootWhenChallengeSent:  "5072696d6172794944",
-					ChallengingMasternodeId:      "5072696d6172794944",
-					RespondingMasternodeId:       "B",
-					ChallengeFile: &pb.StorageChallengeDataChallengeFile{
-						FileHashToChallenge:      "亁zȲǘ",
-						ChallengeSliceStartIndex: 0,
-						ChallengeSliceEndIndex:   22,
+				incomingChallengeMessage: types.Message{
+					ChallengeID: "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
+					MessageType: types.ResponseMessageType,
+					Data: types.MessageData{
+						ChallengerID: "5072696d6172794944",
+						Challenge: types.ChallengeData{
+							Block:      1,
+							Merkelroot: "5072696d6172794944",
+							Timestamp:  time.Now(),
+							FileHash:   "亁zȲǘ",
+							StartIndex: 0,
+							EndIndex:   22,
+						},
+						Response: types.ResponseData{
+							Hash:       "b7f16a4620c7e1b2bc49658f7466b321bede60a7a3ec94f00dff5b3af79ca977",
+							Block:      1,
+							Merkelroot: "5072696d6172794944",
+							Timestamp:  time.Now(),
+						},
+						RecipientID: "B",
 					},
-					ChallengeSliceCorrectHash: "",
-					ChallengeResponseHash:     "b7f16a4620c7e1b2bc49658f7466b321bede60a7a3ec94f00dff5b3af79ca977",
-					ChallengeId:               "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
 				},
 				PastelID:          "C",
 				MerkleRoot:        hex.EncodeToString([]byte("PrimaryID")),
@@ -309,24 +319,27 @@ func TestVerifyStorageChallenge(t *testing.T) {
 		},
 		"badBlockHash": {
 			args: args{
-				incomingChallengeMessage: &pb.StorageChallengeData{
-					MessageId:                    "be0771c56e1cb07748550f7b4650f7dba23c5af2f20f71a679eb217ddc88f7c4",
-					MessageType:                  pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE,
-					ChallengeStatus:              pb.StorageChallengeData_Status_RESPONDED,
-					BlockNumChallengeSent:        1,
-					BlockNumChallengeRespondedTo: 1,
-					BlockNumChallengeVerified:    0,
-					MerklerootWhenChallengeSent:  "5072696d6172794944",
-					ChallengingMasternodeId:      "5072696d6172794944",
-					RespondingMasternodeId:       "B",
-					ChallengeFile: &pb.StorageChallengeDataChallengeFile{
-						FileHashToChallenge:      "亁zȲǘ",
-						ChallengeSliceStartIndex: 0,
-						ChallengeSliceEndIndex:   22,
+				incomingChallengeMessage: types.Message{
+					ChallengeID: "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
+					MessageType: types.ResponseMessageType,
+					Data: types.MessageData{
+						ChallengerID: "5072696d6172794944",
+						Challenge: types.ChallengeData{
+							Block:      1,
+							Merkelroot: "5072696d6172794944",
+							Timestamp:  time.Now(),
+							FileHash:   "亁zȲǘ",
+							StartIndex: 0,
+							EndIndex:   22,
+						},
+						Response: types.ResponseData{
+							Hash:       "b7f16a4620c7e1b2bc49658f7466b321bede60a7a3ec94f00dff5b3af79ca977",
+							Block:      1,
+							Merkelroot: "5072696d6172794944",
+							Timestamp:  time.Now(),
+						},
+						RecipientID: "B",
 					},
-					ChallengeSliceCorrectHash: "",
-					ChallengeResponseHash:     "b7f16a4620c7e1b2bc49658f7466b321bede60a7a3ec94f00dff5b3af79ca978",
-					ChallengeId:               "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
 				},
 				PastelID:          "C",
 				MerkleRoot:        hex.EncodeToString([]byte("PrimaryID")),

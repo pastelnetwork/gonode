@@ -65,7 +65,7 @@ func (service *storageChallengeGRPCClient) Session(ctx context.Context, nodeID, 
 	return nil
 }
 
-func (service *storageChallengeGRPCClient) ProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error {
+func (service *storageChallengeGRPCClient) ProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) error {
 	ctx = contextWithLogPrefix(ctx, service.conn.id)
 	ctx = contextWithMDSessID(ctx, service.sessID)
 	_, err := service.client.ProcessStorageChallenge(ctx, &pb.ProcessStorageChallengeRequest{
@@ -78,7 +78,7 @@ func (service *storageChallengeGRPCClient) ProcessStorageChallenge(ctx context.C
 
 	return nil
 }
-func (service *storageChallengeGRPCClient) VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error) {
+func (service *storageChallengeGRPCClient) VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) (*pb.StorageChallengeData, error) {
 	ctx = contextWithLogPrefix(ctx, service.conn.id)
 	ctx = contextWithMDSessID(ctx, service.sessID)
 	res, err := service.client.VerifyStorageChallenge(ctx, &pb.VerifyStorageChallengeRequest{

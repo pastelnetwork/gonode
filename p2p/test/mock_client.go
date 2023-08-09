@@ -16,6 +16,9 @@ const (
 	DeleteMethod = "Delete"
 	//NClosestMethod mocks getting the n closest nodes to a given string
 	NClosestMethod = "NClosestNodes"
+
+	//StoreBatch mocks storing in batch
+	StoreBatch = "StoreBatch"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -65,5 +68,11 @@ func (client *Client) ListenOnStore(id string, err error) *Client {
 func (client *Client) ListenOnNClosestNodes(retArr []string, err error) *Client {
 
 	client.On(NClosestMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(retArr, err)
+	return client
+}
+
+// ListenOnStoreBatch listening on StoreBatch
+func (client *Client) ListenOnStoreBatch(err error) *Client {
+	client.On(StoreBatch, mock.Anything, mock.Anything, mock.Anything).Return(err)
 	return client
 }
