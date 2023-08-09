@@ -172,7 +172,7 @@ func (service *Service) storageChallengeRetrieve(writer http.ResponseWriter, req
 	}
 	defer store.CloseHistoryDB(ctx)
 
-	challenges, err := store.QueryStorageChallenges()
+	challenges, err := store.QueryStorageChallengeMessage("", 0)
 	if err != nil {
 		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
 		return
