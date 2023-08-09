@@ -58,7 +58,7 @@ const (
 	VerifiedStorageChallengeStatus
 )
 
-// StorageChallenge represents storage challenge
+// StorageChallenge represents storage challenge log
 type StorageChallenge struct {
 	ID              int64
 	ChallengeID     string

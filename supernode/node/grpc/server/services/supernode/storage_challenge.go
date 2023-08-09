@@ -2,6 +2,8 @@ package supernode
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/pastelnetwork/gonode/common/types"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -94,7 +96,20 @@ func (service *StorageChallengeGRPC) ProcessStorageChallenge(ctx context.Context
 	log.WithContext(ctx).WithField("req", scRequest).Info("Process Storage Challenge Request received from gRpc client")
 
 	task := service.NewSCTask()
-	_, err := task.ProcessStorageChallenge(ctx, scRequest.Data)
+
+	msg := types.Message{
+		ChallengeID:     scRequest.Data.ChallengeId,
+		MessageType:     types.MessageType(scRequest.Data.MessageType),
+		Sender:          scRequest.Data.SenderId,
+		SenderSignature: scRequest.Data.SenderSignature,
+	}
+
+	if err := json.Unmarshal(scRequest.Data.Data, &msg.Data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error un-marshaling received challenge message")
+		return nil, errors.Errorf("error un-marshaling the received challenge message")
+	}
+
+	_, err := task.ProcessStorageChallenge(ctx, msg)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Processing Storage Challenge from Server Side")
 	}
@@ -107,7 +122,19 @@ func (service *StorageChallengeGRPC) VerifyStorageChallenge(ctx context.Context,
 	log.WithContext(ctx).WithField("req", scRequest).Debugf("Verify Storage Challenge Request received from gRpc client")
 	task := service.NewSCTask()
 
-	data, err := task.VerifyStorageChallenge(ctx, scRequest.Data)
+	msg := types.Message{
+		ChallengeID:     scRequest.Data.ChallengeId,
+		MessageType:     types.MessageType(scRequest.Data.MessageType),
+		Sender:          scRequest.Data.SenderId,
+		SenderSignature: scRequest.Data.SenderSignature,
+	}
+
+	if err := json.Unmarshal(scRequest.Data.Data, &msg.Data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error un-marshaling received challenge message")
+		return nil, errors.Errorf("error un-marshaling the received challenge message")
+	}
+
+	data, err := task.VerifyStorageChallenge(ctx, msg)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error verifying storage challenge")
 	}

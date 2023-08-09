@@ -100,9 +100,9 @@ type RegisterCascadeInterface interface {
 type StorageChallengeInterface interface {
 	SuperNodePeerAPIInterface
 
-	ProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) error
+	ProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) error
 
-	VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeData) (*pb.StorageChallengeData, error)
+	VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) (*pb.StorageChallengeData, error)
 }
 
 // SelfHealingChallengeInterface represents an interaction stream with supernodes for self-healing challenge communications
