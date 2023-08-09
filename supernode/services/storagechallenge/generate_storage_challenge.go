@@ -167,6 +167,13 @@ func (task *SCTask) SendProcessStorageChallenge(ctx context.Context, challengeMe
 		log.WithContext(ctx).WithError(err).Error("error marshaling the data")
 	}
 
+	signature, err := task.SignMessage(ctx, data)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error signing challenge message")
+		return err
+	}
+
+	challengeMessage.SenderSignature = signature
 	msg := pb.StorageChallengeMessage{
 		MessageType:     pb.StorageChallengeMessageMessageType(challengeMessage.MessageType),
 		ChallengeId:     challengeMessage.ChallengeID,
@@ -434,4 +441,29 @@ func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message)
 	}
 
 	return nil
+}
+
+// SignMessage signs the message using sender's pastelID and passphrase
+func (task SCTask) SignMessage(ctx context.Context, data []byte) ([]byte, error) {
+	signature, err := task.PastelClient.Sign(ctx, data, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		return nil, errors.Errorf("error signing storage challenge message: %w", err)
+	}
+
+	return signature, nil
+}
+
+// VerifyMessageSignature verifies the sender's signature on message
+func (task SCTask) VerifyMessageSignature(ctx context.Context, msg types.Message) (bool, error) {
+	data, err := json.Marshal(msg.Data)
+	if err != nil {
+		return false, errors.Errorf("unable to marshal message data")
+	}
+
+	isVerified, err := task.PastelClient.Verify(ctx, data, string(msg.SenderSignature), msg.Sender, pastel.SignAlgorithmED448)
+	if err != nil {
+		return false, errors.Errorf("error verifying storage challenge message: %w", err)
+	}
+
+	return isVerified, nil
 }
