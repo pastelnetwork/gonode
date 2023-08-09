@@ -25,21 +25,17 @@ const createTaskHistory string = `
 
 const alterTaskHistory string = `ALTER TABLE task_history ADD COLUMN details TEXT;`
 
-const createStorageChallenges string = `
-  CREATE TABLE IF NOT EXISTS storage_challenges (
+const createStorageChallengeMessages string = `
+  CREATE TABLE IF NOT EXISTS storage_challenge_messages (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   challenge_id TEXT NOT NULL,
-  file_hash TEXT NOT NULL,
-  status TEXT NOT NULL,
-  responding_node TEXT NOT NULL,
-  verifying_nodes TEXT NOT NULL,
-  challenging_node TEXT NOT NULL,
-  generated_hash TEXT,
-  starting_index INTEGER,
-  ending_index INTEGER,
+  message_type INTEGER NOT NULL,
+  data BLOB NOT NULL,
+  sender_id TEXT NOT NULL,
+  sender_signature BLOB NOT NULL,
   created_at DATETIME NOT NULL,
-  updated_at DATETIME NOT NULL                                                  
-  );`
+  updated_at DATETIME NOT NULL
+);`
 
 const createSelfHealingChallenges string = `
   CREATE TABLE IF NOT EXISTS self_healing_challenges (
@@ -128,51 +124,35 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 	return data, nil
 }
 
-// InsertStorageChallenge inserts failed storage challenge to db
-func (s *SQLiteStore) InsertStorageChallenge(challenge types.StorageChallenge) (hID int, err error) {
+// InsertStorageChallengeMessage inserts failed storage challenge to db
+func (s *SQLiteStore) InsertStorageChallengeMessage(challenge types.StorageChallengeLogMessage) error {
 	now := time.Now()
-	const insertQuery = "INSERT INTO storage_challenges(id, challenge_id, file_hash, status, generated_hash, responding_node, verifying_nodes, challenging_node, starting_index, ending_index, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?,?,?,?,?);"
-
-	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.FileHash, challenge.Status, challenge.GeneratedHash, challenge.RespondingNode, challenge.VerifyingNodes, challenge.ChallengingNode, challenge.StartingIndex, challenge.EndingIndex, now, now)
+	const insertQuery = "INSERT INTO storage_challenge_messages(id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?);"
+	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.Sender, challenge.SenderSignature, now, now)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	var id int64
-	if id, err = res.LastInsertId(); err != nil {
-		return 0, err
-	}
-
-	return int(id), nil
+	return nil
 }
 
-// QueryStorageChallenges retrieves failed challenges stored in DB for self-healing
-func (s *SQLiteStore) QueryStorageChallenges() (challenges []types.StorageChallenge, err error) {
-	const selectQuery = "SELECT * FROM storage_challenges"
-	rows, err := s.db.Query(selectQuery)
+// QueryStorageChallengeMessage retrieves storage challenge message against challengeID and messageType
+func (s *SQLiteStore) QueryStorageChallengeMessage(challengeID string, messageType int) (challengeMessage types.StorageChallengeLogMessage, err error) {
+	const selectQuery = "SELECT * FROM storage_challenge_messages WHERE challenge_id=? AND message_type=?"
+	err = s.db.QueryRow(selectQuery, challengeID, messageType).Scan(
+		&challengeMessage.ID, &challengeMessage.ChallengeID, &challengeMessage.MessageType, &challengeMessage.Data,
+		&challengeMessage.Sender, &challengeMessage.SenderSignature, &challengeMessage.CreatedAt, &challengeMessage.UpdatedAt)
+
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		challenge := types.StorageChallenge{}
-		err = rows.Scan(&challenge.ID, &challenge.ChallengeID, &challenge.FileHash, &challenge.Status,
-			&challenge.RespondingNode, &challenge.VerifyingNodes, &challenge.ChallengingNode, &challenge.GeneratedHash, &challenge.StartingIndex, &challenge.EndingIndex,
-			&challenge.CreatedAt, &challenge.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-
-		challenges = append(challenges, challenge)
+		return challengeMessage, err
 	}
 
-	return challenges, nil
+	return challengeMessage, nil
 }
 
 // CleanupStorageChallenges cleans up challenges stored in DB for self-healing
 func (s *SQLiteStore) CleanupStorageChallenges() (err error) {
-	const delQuery = "DELETE FROM storage_challenges"
+	const delQuery = "DELETE FROM storage_challenge_messages"
 	_, err = s.db.Exec(delQuery)
 	return err
 }
@@ -238,7 +218,7 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
-	if _, err := db.Exec(createStorageChallenges); err != nil {
+	if _, err := db.Exec(createStorageChallengeMessages); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 

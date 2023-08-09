@@ -111,3 +111,15 @@ type ObserverEvaluationData struct {
 	TrueHash                string    `json:"true_hash"`
 	Timestamp               time.Time `json:"timestamp"`
 }
+
+//StorageChallengeLogMessage represents the message log to be stored in the DB
+type StorageChallengeLogMessage struct {
+	ID              int       `db:"id"`
+	MessageType     int       `db:"message_type"`
+	ChallengeID     string    `db:"challenge_id"`
+	Data            []byte    `db:"data"`
+	Sender          string    `db:"sender"`
+	SenderSignature []byte    `db:"sender_signature"`
+	CreatedAt       time.Time `db:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at"`
+}

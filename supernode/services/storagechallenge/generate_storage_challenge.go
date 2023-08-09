@@ -92,15 +92,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, challengesPerBlock, sliceOfFileHashesStoredByLocalSupernode)
 
 	log.WithContext(ctx).Info("identifying challenge recipients and partial observers")
-	sliceOfSupernodesToChallenge, mapOfchallengeFilePartialObservers := task.identifyChallengeRecipientsAndObserversAgainstChallengingFiles(ctx, sliceOfFileHashesToChallenge, merkleroot, challengingSupernodeID)
-
-	store, err := local.OpenHistoryDB()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
-	}
-	if store != nil {
-		defer store.CloseHistoryDB(ctx)
-	}
+	sliceOfSupernodesToChallenge, challengeFileObservers := task.identifyChallengeRecipientsAndObserversAgainstChallengingFiles(ctx, sliceOfFileHashesToChallenge, merkleroot, challengingSupernodeID)
 
 	for idx2, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
 		b, err := task.GetSymbolFileByKey(ctx, currentFileHashToChallenge, true)
@@ -136,7 +128,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 				StartIndex: challengeSliceStartIndex,
 				EndIndex:   challengeSliceEndIndex,
 			},
-			Observers:   mapOfchallengeFilePartialObservers[idx2],
+			Observers:   challengeFileObservers[idx2],
 			RecipientID: sliceOfSupernodesToChallenge[idx2],
 		}
 
@@ -156,24 +148,6 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		}
 		// Save the challenge state
 		task.SaveChallengeMessageState(ctx, "sent", challengeID, challengingSupernodeID, currentBlockCount)
-
-		if store != nil {
-			log.WithContext(ctx).Println("Storing challenge logs to DB")
-			storageChallengeLog := types.StorageChallenge{
-				ChallengeID:     storageChallengeMessage.ChallengeID,
-				FileHash:        data.Challenge.FileHash,
-				ChallengingNode: data.ChallengerID,
-				RespondingNode:  data.RecipientID,
-				Status:          types.GeneratedStorageChallengeStatus,
-				StartingIndex:   challengeSliceStartIndex,
-				EndingIndex:     challengeSliceEndIndex,
-			}
-
-			_, err = store.InsertStorageChallenge(storageChallengeLog)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Error storing challenge log to DB")
-			}
-		}
 	}
 
 	log.WithContext(ctx).Info("files have been challenged")
@@ -202,10 +176,18 @@ func (task *SCTask) SendProcessStorageChallenge(ctx context.Context, challengeMe
 	}
 
 	for _, node := range nodesToConnect {
+		logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
+
 		if err := task.SendMessage(ctx, msg, node.ExtAddress); err != nil {
-			log.WithContext(ctx).WithError(err).Error("error sending storage challenge message for processing")
+			logger.WithError(err).Error("error sending storage challenge message for processing")
 			continue
 		}
+
+		logger.Info("challenge message has been sent")
+	}
+
+	if err := task.StoreChallengeMessage(ctx, challengeMessage); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error storing storage challenge message")
 	}
 
 	return nil
@@ -416,4 +398,40 @@ func (task SCTask) identifyChallengeRecipientsAndObserversAgainstChallengingFile
 
 	log.WithContext(ctx).Info("challenge recipients and partial observers against the files have been selected")
 	return sliceOfSupernodesToChallenge, mapOfchallengeFilePartialObservers
+}
+
+// StoreChallengeMessage stores the challenge message to db for further verification
+func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message) error {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	data, err := json.Marshal(msg.Data)
+	if err != nil {
+		return err
+	}
+
+	if store != nil {
+		log.WithContext(ctx).Info("store")
+		storageChallengeLog := types.StorageChallengeLogMessage{
+			ChallengeID:     msg.ChallengeID,
+			MessageType:     int(msg.MessageType),
+			Data:            data,
+			Sender:          msg.Sender,
+			SenderSignature: msg.SenderSignature,
+		}
+
+		err = store.InsertStorageChallengeMessage(storageChallengeLog)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error storing challenge message to DB")
+			return err
+		}
+	}
+
+	return nil
 }

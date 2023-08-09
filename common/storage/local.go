@@ -10,8 +10,8 @@ import (
 type LocalStoreInterface interface {
 	InsertTaskHistory(history types.TaskHistory) (int, error)
 	QueryTaskHistory(taskID string) (history []types.TaskHistory, err error)
-	InsertStorageChallenge(challenge types.StorageChallenge) (hID int, err error)
-	QueryStorageChallenges() (challenges []types.StorageChallenge, err error)
+	InsertStorageChallengeMessage(challenge types.StorageChallengeLogMessage) error
+	QueryStorageChallengeMessage(challengeID string, messageType int) (challenge types.StorageChallengeLogMessage, err error)
 	CleanupStorageChallenges() (err error)
 	CleanupSelfHealingChallenges() (err error)
 	InsertSelfHealingChallenge(challenge types.SelfHealingChallenge) (hID int, err error)

@@ -6,11 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"golang.org/x/crypto/sha3"
-	"strings"
 	"time"
 )
 
@@ -29,8 +27,19 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	}
 	log.WithContext(ctx).WithField("incoming_challenge", incomingChallengeMessage).Info("Incoming challenge validated")
 
-	log.WithContext(ctx).Info("retrieving the file from hash")
+	if incomingChallengeMessage.Data.RecipientID != task.nodeID { //if observers then save the challenge message & return
+		if err := task.StoreChallengeMessage(ctx, incomingChallengeMessage); err != nil {
+			log.WithContext(ctx).
+				WithField("node_id", task.nodeID).
+				WithError(err).
+				Error("error storing challenge message")
+		}
+
+		return nil, nil
+	}
+
 	// Get the file to hash
+	log.WithContext(ctx).Info("retrieving the file from hash")
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash, true)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not read file data in to memory")
@@ -44,7 +53,6 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	log.WithContext(ctx).Info(fmt.Sprintf("hash for data generated against the indices:%s", challengeResponseHash))
 
 	log.WithContext(ctx).Info("sending message to other SNs for verification")
-	messageType := types.ResponseMessageType
 	blockNumChallengeRespondedTo, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not get current block count")
@@ -60,7 +68,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 
 	//Create the response message to be validated
 	outgoingResponseMessage := types.Message{
-		MessageType: messageType,
+		MessageType: types.ResponseMessageType,
 		ChallengeID: incomingChallengeMessage.ChallengeID,
 		Data: types.MessageData{
 			ChallengerID: incomingChallengeMessage.Data.ChallengerID,
@@ -146,39 +154,6 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		if err := task.SendMessage(ctx, msg, node.ExtAddress); err != nil {
 			log.WithContext(ctx).WithError(err).Error("error sending storage challenge message for processing")
 			continue
-		}
-	}
-
-	store, err := local.OpenHistoryDB()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
-	}
-	if store != nil {
-		store.CloseHistoryDB(ctx)
-	}
-
-	if store != nil {
-		log.WithContext(ctx).Println("Storing challenge logs to DB")
-		storageChallengeLog := types.StorageChallenge{
-			ChallengeID:     challengeMessage.ChallengeID,
-			FileHash:        challengeMessage.Data.Challenge.FileHash,
-			ChallengingNode: challengeMessage.Data.ChallengerID,
-			RespondingNode:  task.nodeID,
-			Status:          types.ProcessedStorageChallengeStatus,
-			StartingIndex:   int(challengeMessage.Data.Challenge.StartIndex),
-			EndingIndex:     int(challengeMessage.Data.Challenge.EndIndex),
-		}
-
-		var verifyingNodes []string
-		for _, vn := range nodesToConnect {
-			verifyingNodes = append(verifyingNodes, vn.ExtKey)
-		}
-		storageChallengeLog.VerifyingNodes = strings.Join(verifyingNodes, ",")
-
-		_, err = store.InsertStorageChallenge(storageChallengeLog)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error storing challenge log to DB")
-			err = nil
 		}
 	}
 
