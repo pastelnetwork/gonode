@@ -3,6 +3,7 @@ package storagechallenge
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
@@ -20,7 +21,7 @@ import (
 //			If the hash is correct and within the given byte range, success is indicated otherwise failure is indicated via SaveChallengeMessageState
 func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponseMessage types.Message) (*pb.StorageChallengeData, error) {
 	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingResponseMessage.ChallengeID).Debug("Start verifying storage challenge") // Incoming challenge message validation
-	if err := task.validateVerifyingStorageChallengeIncomingData(incomingResponseMessage); err != nil {
+	if err := task.validateVerifyingStorageChallengeIncomingData(ctx, incomingResponseMessage); err != nil {
 		return nil, err
 	}
 
@@ -132,9 +133,19 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 	return nil, nil
 }
 
-func (task *SCTask) validateVerifyingStorageChallengeIncomingData(incomingChallengeMessage types.Message) error {
+func (task *SCTask) validateVerifyingStorageChallengeIncomingData(ctx context.Context, incomingChallengeMessage types.Message) error {
 	if incomingChallengeMessage.MessageType != types.ResponseMessageType {
 		return fmt.Errorf("incorrect message type to verify storage challenge")
 	}
+
+	isVerified, err := task.VerifyMessageSignature(ctx, incomingChallengeMessage)
+	if err != nil {
+		return errors.Errorf("error verifying sender's signature: %w", err)
+	}
+
+	if !isVerified {
+		return errors.Errorf("not able to verify message signature")
+	}
+
 	return nil
 }

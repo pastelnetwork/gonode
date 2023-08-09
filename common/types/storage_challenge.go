@@ -112,7 +112,7 @@ type ObserverEvaluationData struct {
 	Timestamp               time.Time `json:"timestamp"`
 }
 
-//StorageChallengeLogMessage represents the message log to be stored in the DB
+// StorageChallengeLogMessage represents the message log to be stored in the DB
 type StorageChallengeLogMessage struct {
 	ID              int       `db:"id"`
 	MessageType     int       `db:"message_type"`

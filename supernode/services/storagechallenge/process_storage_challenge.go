@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
@@ -21,7 +22,7 @@ import (
 //	Saving challenge state
 func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage types.Message) (*pb.StorageChallengeMessage, error) {
 	// incoming challenge message validation
-	if err := task.validateProcessingStorageChallengeIncomingData(incomingChallengeMessage); err != nil {
+	if err := task.validateProcessingStorageChallengeIncomingData(ctx, incomingChallengeMessage); err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error validating storage challenge incoming data: ")
 		return nil, err
 	}
@@ -89,6 +90,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 				Timestamp:  time.Now(),
 			},
 		},
+		Sender: incomingChallengeMessage.Data.RecipientID,
 	}
 
 	// send to Supernodes to validate challenge response hash
@@ -110,9 +112,18 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	return nil, nil
 }
 
-func (task *SCTask) validateProcessingStorageChallengeIncomingData(incomingChallengeMessage types.Message) error {
+func (task *SCTask) validateProcessingStorageChallengeIncomingData(ctx context.Context, incomingChallengeMessage types.Message) error {
 	if incomingChallengeMessage.MessageType != types.ChallengeMessageType {
 		return fmt.Errorf("incorrect message type to processing storage challenge")
+	}
+
+	isVerified, err := task.VerifyMessageSignature(ctx, incomingChallengeMessage)
+	if err != nil {
+		return errors.Errorf("error verifying sender's signature: %w", err)
+	}
+
+	if !isVerified {
+		return errors.Errorf("not able to verify message signature")
 	}
 
 	return nil
@@ -140,8 +151,16 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	data, err := json.Marshal(challengeMessage.Data)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error marshaling the data")
+		return err
 	}
 
+	signature, err := task.SignMessage(ctx, data)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error signing the challenge message")
+		return err
+	}
+
+	challengeMessage.SenderSignature = signature
 	msg := pb.StorageChallengeMessage{
 		MessageType:     pb.StorageChallengeMessageMessageType(challengeMessage.MessageType),
 		ChallengeId:     challengeMessage.ChallengeID,

@@ -85,7 +85,7 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 				ticket,
 			}, nil).ListenOnActionTickets(nil, nil).ListenOnGetBlockCount(1, nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
 				MerkleRoot: tt.args.MerkleRoot,
-			}, nil).ListenOnMasterNodesExtra(nodes, nil)
+			}, nil).ListenOnMasterNodesExtra(nodes, nil).ListenOnSign([]byte{}, nil)
 
 			closestNodes := []string{"A", "B", "C", "D"}
 			retrieveValue := []byte("I retrieved this result")
@@ -202,7 +202,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 				ticket,
 			}, nil).ListenOnActionTickets(nil, nil).ListenOnGetBlockCount(1, nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
 				MerkleRoot: tt.args.MerkleRoot,
-			}, nil).ListenOnMasterNodesExtra(nodes, nil)
+			}, nil).ListenOnMasterNodesExtra(nodes, nil).ListenOnVerify(true, nil).ListenOnSign([]byte{}, nil)
 
 			closestNodes := []string{"A", "B", "C", "D"}
 			retrieveValue := []byte("I retrieved this result")
@@ -388,7 +388,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 				ticket,
 			}, nil).ListenOnActionTickets(nil, nil).ListenOnGetBlockCount(int32(tt.args.currentBlockCount), nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
 				MerkleRoot: tt.args.MerkleRoot,
-			}, nil).ListenOnMasterNodesExtra(nodes, nil)
+			}, nil).ListenOnMasterNodesExtra(nodes, nil).ListenOnVerify(true, nil).ListenOnSign([]byte{}, nil)
 
 			closestNodes := []string{"A", "B", "C", "D"}
 			retrieveValue := []byte("I retrieved this result")
