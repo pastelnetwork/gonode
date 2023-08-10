@@ -21,6 +21,10 @@ import (
 //	Sending the response to all other supernodes
 //	Saving challenge state
 func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage types.Message) (*pb.StorageChallengeMessage, error) {
+	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").
+		WithField("challengeID", incomingChallengeMessage.ChallengeID).
+		Debug("Start processing storage challenge") // Incoming challenge message validation
+
 	// incoming challenge message validation
 	if err := task.validateProcessingStorageChallengeIncomingData(ctx, incomingChallengeMessage); err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error validating storage challenge incoming data: ")
@@ -73,6 +77,8 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		ChallengeID: incomingChallengeMessage.ChallengeID,
 		Data: types.MessageData{
 			ChallengerID: incomingChallengeMessage.Data.ChallengerID,
+			RecipientID:  incomingChallengeMessage.Data.RecipientID,
+			Observers:    append([]string(nil), incomingChallengeMessage.Data.Observers...),
 			Challenge: types.ChallengeData{
 				Block:      incomingChallengeMessage.Data.Challenge.Block,
 				Merkelroot: incomingChallengeMessage.Data.Challenge.Merkelroot,
@@ -81,8 +87,6 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 				StartIndex: incomingChallengeMessage.Data.Challenge.StartIndex,
 				EndIndex:   incomingChallengeMessage.Data.Challenge.EndIndex,
 			},
-			Observers:   append([]string(nil), incomingChallengeMessage.Data.Observers...),
-			RecipientID: incomingChallengeMessage.Data.RecipientID,
 			Response: types.ResponseData{
 				Block:      blockNumChallengeRespondedTo,
 				Merkelroot: blkVerbose1.MerkleRoot,
@@ -90,7 +94,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 				Timestamp:  time.Now(),
 			},
 		},
-		Sender: incomingChallengeMessage.Data.RecipientID,
+		Sender: task.nodeID,
 	}
 
 	// send to Supernodes to validate challenge response hash
@@ -101,13 +105,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	}
 	log.WithContext(ctx).Info("message sent to other SNs for verification")
 
-	task.SaveChallengeMessageState(
-		ctx,
-		"respond",
-		outgoingResponseMessage.ChallengeID,
-		outgoingResponseMessage.Data.ChallengerID,
-		outgoingResponseMessage.Data.Response.Block,
-	)
+	task.SaveChallengeMessageState(ctx, "respond", outgoingResponseMessage.ChallengeID, outgoingResponseMessage.Data.ChallengerID, outgoingResponseMessage.Data.Response.Block)
 
 	return nil, nil
 }

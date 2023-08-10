@@ -25,6 +25,7 @@ type StorageChallengeClient interface {
 	Session(ctx context.Context, opts ...grpc.CallOption) (StorageChallenge_SessionClient, error)
 	ProcessStorageChallenge(ctx context.Context, in *ProcessStorageChallengeRequest, opts ...grpc.CallOption) (*ProcessStorageChallengeReply, error)
 	VerifyStorageChallenge(ctx context.Context, in *VerifyStorageChallengeRequest, opts ...grpc.CallOption) (*VerifyStorageChallengeReply, error)
+	VerifyEvaluationResult(ctx context.Context, in *VerifyEvaluationResultRequest, opts ...grpc.CallOption) (*VerifyEvaluationResultReply, error)
 }
 
 type storageChallengeClient struct {
@@ -84,6 +85,15 @@ func (c *storageChallengeClient) VerifyStorageChallenge(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *storageChallengeClient) VerifyEvaluationResult(ctx context.Context, in *VerifyEvaluationResultRequest, opts ...grpc.CallOption) (*VerifyEvaluationResultReply, error) {
+	out := new(VerifyEvaluationResultReply)
+	err := c.cc.Invoke(ctx, "/supernode.StorageChallenge/VerifyEvaluationResult", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StorageChallengeServer is the server API for StorageChallenge service.
 // All implementations must embed UnimplementedStorageChallengeServer
 // for forward compatibility
@@ -91,6 +101,7 @@ type StorageChallengeServer interface {
 	Session(StorageChallenge_SessionServer) error
 	ProcessStorageChallenge(context.Context, *ProcessStorageChallengeRequest) (*ProcessStorageChallengeReply, error)
 	VerifyStorageChallenge(context.Context, *VerifyStorageChallengeRequest) (*VerifyStorageChallengeReply, error)
+	VerifyEvaluationResult(context.Context, *VerifyEvaluationResultRequest) (*VerifyEvaluationResultReply, error)
 	mustEmbedUnimplementedStorageChallengeServer()
 }
 
@@ -106,6 +117,9 @@ func (UnimplementedStorageChallengeServer) ProcessStorageChallenge(context.Conte
 }
 func (UnimplementedStorageChallengeServer) VerifyStorageChallenge(context.Context, *VerifyStorageChallengeRequest) (*VerifyStorageChallengeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyStorageChallenge not implemented")
+}
+func (UnimplementedStorageChallengeServer) VerifyEvaluationResult(context.Context, *VerifyEvaluationResultRequest) (*VerifyEvaluationResultReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyEvaluationResult not implemented")
 }
 func (UnimplementedStorageChallengeServer) mustEmbedUnimplementedStorageChallengeServer() {}
 
@@ -182,6 +196,24 @@ func _StorageChallenge_VerifyStorageChallenge_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StorageChallenge_VerifyEvaluationResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyEvaluationResultRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageChallengeServer).VerifyEvaluationResult(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/supernode.StorageChallenge/VerifyEvaluationResult",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageChallengeServer).VerifyEvaluationResult(ctx, req.(*VerifyEvaluationResultRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StorageChallenge_ServiceDesc is the grpc.ServiceDesc for StorageChallenge service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -196,6 +228,10 @@ var StorageChallenge_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyStorageChallenge",
 			Handler:    _StorageChallenge_VerifyStorageChallenge_Handler,
+		},
+		{
+			MethodName: "VerifyEvaluationResult",
+			Handler:    _StorageChallenge_VerifyEvaluationResult_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

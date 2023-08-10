@@ -12,6 +12,7 @@ package node
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/types"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
@@ -100,9 +101,14 @@ type RegisterCascadeInterface interface {
 type StorageChallengeInterface interface {
 	SuperNodePeerAPIInterface
 
+	// ProcessStorageChallenge process the challenge and sends the response for verification
 	ProcessStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) error
 
-	VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) (*pb.StorageChallengeData, error)
+	//VerifyStorageChallenge verifies the challenge and sends evaluation report to observers
+	VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) error
+
+	//VerifyEvaluationResult verifies the evaluation report by challenger
+	VerifyEvaluationResult(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) (types.Message, error)
 }
 
 // SelfHealingChallengeInterface represents an interaction stream with supernodes for self-healing challenge communications
