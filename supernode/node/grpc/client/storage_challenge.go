@@ -2,6 +2,8 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/pastelnetwork/gonode/common/types"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -78,21 +80,44 @@ func (service *storageChallengeGRPCClient) ProcessStorageChallenge(ctx context.C
 
 	return nil
 }
-func (service *storageChallengeGRPCClient) VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) (*pb.StorageChallengeData, error) {
+
+func (service *storageChallengeGRPCClient) VerifyStorageChallenge(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) error {
 	ctx = contextWithLogPrefix(ctx, service.conn.id)
 	ctx = contextWithMDSessID(ctx, service.sessID)
-	res, err := service.client.VerifyStorageChallenge(ctx, &pb.VerifyStorageChallengeRequest{
+	_, err := service.client.VerifyStorageChallenge(ctx, &pb.VerifyStorageChallengeRequest{
 		Data: challengeMessage,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if res == nil {
-		return nil, errors.New("nil response from VerifyStorageChallenge")
+	return nil
+}
+
+// VerifyEvaluationResult sends a gRPC request to observers
+func (service *storageChallengeGRPCClient) VerifyEvaluationResult(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) (types.Message, error) {
+	ctx = contextWithLogPrefix(ctx, service.conn.id)
+	ctx = contextWithMDSessID(ctx, service.sessID)
+	res, err := service.client.VerifyEvaluationResult(ctx, &pb.VerifyEvaluationResultRequest{
+		Data: challengeMessage,
+	})
+	if err != nil {
+		return types.Message{}, err
 	}
 
-	return res.Data, nil
+	msg := types.Message{
+		ChallengeID:     res.Data.ChallengeId,
+		MessageType:     types.MessageType(res.Data.MessageType),
+		Sender:          res.Data.SenderId,
+		SenderSignature: res.Data.SenderSignature,
+	}
+
+	if err := json.Unmarshal(res.Data.Data, &msg.Data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error un-marshaling received challenge message")
+		return msg, errors.Errorf("error un-marshaling the received challenge message")
+	}
+
+	return msg, nil
 }
 
 func newStorageChallengeGRPCClient(conn *clientConn) node.StorageChallengeInterface {

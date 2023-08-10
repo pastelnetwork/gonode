@@ -134,12 +134,49 @@ func (service *StorageChallengeGRPC) VerifyStorageChallenge(ctx context.Context,
 		return nil, errors.Errorf("error un-marshaling the received challenge message")
 	}
 
-	data, err := task.VerifyStorageChallenge(ctx, msg)
+	_, err := task.VerifyStorageChallenge(ctx, msg)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error verifying storage challenge")
 	}
 
-	return &pb.VerifyStorageChallengeReply{Data: data}, nil
+	return &pb.VerifyStorageChallengeReply{}, nil
+}
+
+// VerifyEvaluationResult is the server side of verify evaluation result
+func (service *StorageChallengeGRPC) VerifyEvaluationResult(ctx context.Context, scRequest *pb.VerifyEvaluationResultRequest) (*pb.VerifyEvaluationResultReply, error) {
+	log.WithContext(ctx).WithField("req", scRequest).Debugf("Verify Evaluation Result request received from gRpc client")
+	task := service.NewSCTask()
+
+	msg := types.Message{
+		ChallengeID:     scRequest.Data.ChallengeId,
+		MessageType:     types.MessageType(scRequest.Data.MessageType),
+		Sender:          scRequest.Data.SenderId,
+		SenderSignature: scRequest.Data.SenderSignature,
+	}
+
+	if err := json.Unmarshal(scRequest.Data.Data, &msg.Data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error un-marshaling received challenge message")
+		return nil, errors.Errorf("error un-marshaling the received challenge message")
+	}
+
+	resp, err := task.VerifyEvaluationResult(ctx, msg)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error verifying evaluation result")
+		return nil, errors.Errorf("error verifying evaluation report")
+	}
+
+	d, err := json.Marshal(resp.Data)
+	if err != nil {
+		return nil, errors.Errorf("error marshaling the evaluation result response")
+	}
+
+	return &pb.VerifyEvaluationResultReply{Data: &pb.StorageChallengeMessage{
+		ChallengeId:     resp.ChallengeID,
+		MessageType:     pb.StorageChallengeMessageMessageType(resp.MessageType),
+		SenderId:        resp.Sender,
+		SenderSignature: resp.SenderSignature,
+		Data:            d,
+	}}, nil
 }
 
 // NewStorageChallengeGRPC returns a new StorageChallenge instance.

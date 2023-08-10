@@ -283,7 +283,10 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 
 		}
 	case types.EvaluationMessageType:
-		//not implemented yet
+		for _, po := range challengeMessage.Data.Observers { //partial observers
+			nodesToConnect = append(nodesToConnect, mapSupernodes[po])
+		}
+
 	case types.AffirmationMessageType:
 		//not implemented yet
 	default:
@@ -307,8 +310,17 @@ func (task *SCTask) SendMessage(ctx context.Context, challengeMessage pb.Storage
 	defer nodeClientConn.Close()
 
 	storageChallengeIF := nodeClientConn.StorageChallenge()
-	//Calls the ProcessStorageChallenge method on the connected supernode over GRPC.
-	return storageChallengeIF.ProcessStorageChallenge(ctx, &challengeMessage)
+
+	switch challengeMessage.MessageType {
+	case pb.StorageChallengeMessage_MessageType_STORAGE_CHALLENGE_CHALLENGE_MESSAGE:
+		return storageChallengeIF.ProcessStorageChallenge(ctx, &challengeMessage)
+	case pb.StorageChallengeMessage_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE:
+		return storageChallengeIF.VerifyStorageChallenge(ctx, &challengeMessage)
+	default:
+		log.WithContext(ctx).Info("message type not supported by any Process & Verify worker")
+	}
+
+	return nil
 }
 
 func (task SCTask) isMyNodeChallenger(ctx context.Context, sliceOfChallengingSupernodeIDsForBlock []string) bool {
