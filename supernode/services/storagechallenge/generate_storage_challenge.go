@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"math"
+	"math/big"
 	"math/rand"
 	"strconv"
 	"time"
@@ -202,37 +203,36 @@ func (task *SCTask) SendProcessStorageChallenge(ctx context.Context, challengeMe
 
 // This is how we programmatically determine which pieces of the file get read and hashed for challenging to determine if the supernodes are properly hosting.
 func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashString string, blockHashString string, challengingSupernodeID string) (int, int) {
-	//raptorq files are kb in length, so this is unlikely to be run but this check might be useful at a later date
 	if totalDataLengthInBytes < 200 {
 		return 0, int(totalDataLengthInBytes) - 1
 	}
 
-	//deciding the value of K (step)
-	//K = First Digit(last number in the previous block hash) Second Digit(first number in the previous block hash)
-	blockHashStringAsInt, _ := strconv.ParseInt(blockHashString, 16, 64)
-	blockHashStringAsIntStr := fmt.Sprint(blockHashStringAsInt)
+	blockHashStringAsBigInt := new(big.Int)
+	blockHashStringAsBigInt.SetString(blockHashString, 16)
+	blockHashStringAsIntStr := blockHashStringAsBigInt.String()
 	stepSizeForIndicesStr := blockHashStringAsIntStr[len(blockHashStringAsIntStr)-1:] + blockHashStringAsIntStr[0:1]
-	stepSizeForIndices, _ := strconv.ParseUint(stepSizeForIndicesStr, 10, 32)
-	stepSizeForIndicesAsInt := int(stepSizeForIndices)
+	stepSizeForIndices, _ := strconv.Atoi(stepSizeForIndicesStr)
 
 	comparisonString := blockHashString + fileHashString + challengingSupernodeID
-	sliceOfXorDistancesOfIndicesToBlockHash := make([]uint64, 0)
+	sliceOfXorDistancesOfIndicesToBlockHash := make([]*big.Int, 0)
 	sliceOfIndicesWithStepSize := make([]int, 0)
 	totalDataLengthInBytesAsInt := int(totalDataLengthInBytes)
 
-	for j := 0; j <= totalDataLengthInBytesAsInt; j += stepSizeForIndicesAsInt {
+	for j := 0; j <= totalDataLengthInBytesAsInt; j += stepSizeForIndices {
 		jAsString := fmt.Sprintf("%d", j)
 		currentXorDistance := utils.ComputeXorDistanceBetweenTwoStrings(jAsString, comparisonString)
 		sliceOfXorDistancesOfIndicesToBlockHash = append(sliceOfXorDistancesOfIndicesToBlockHash, currentXorDistance)
 		sliceOfIndicesWithStepSize = append(sliceOfIndicesWithStepSize, j)
 	}
+
 	sliceOfSortedIndices := argsort.SortSlice(sliceOfXorDistancesOfIndicesToBlockHash, func(i, j int) bool {
-		return sliceOfXorDistancesOfIndicesToBlockHash[i] < sliceOfXorDistancesOfIndicesToBlockHash[j]
+		return sliceOfXorDistancesOfIndicesToBlockHash[i].Cmp(sliceOfXorDistancesOfIndicesToBlockHash[j]) < 0
 	})
 	sliceOfSortedIndicesWithStepSize := make([]int, 0)
 	for _, currentSortedIndex := range sliceOfSortedIndices {
 		sliceOfSortedIndicesWithStepSize = append(sliceOfSortedIndicesWithStepSize, sliceOfIndicesWithStepSize[currentSortedIndex])
 	}
+
 	firstTwoSortedIndices := sliceOfSortedIndicesWithStepSize[0:2]
 	challengeSliceStartIndex, challengeSliceEndIndex := minMax(firstTwoSortedIndices)
 	return challengeSliceStartIndex, challengeSliceEndIndex
