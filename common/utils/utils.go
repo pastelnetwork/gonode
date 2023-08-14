@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"container/heap"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -11,8 +12,6 @@ import (
 	"math/big"
 	"net"
 	"net/http"
-	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -157,7 +156,7 @@ func GetHashFromString(inputString string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// XORBytes returns xor 2 same length bytes data
+// XORBytes returns the XOR of two same-length byte slices.
 func XORBytes(a, b []byte) ([]byte, error) {
 	if len(a) != len(b) {
 		return nil, fmt.Errorf("length of byte slices is not equivalent: %d != %d", len(a), len(b))
@@ -176,47 +175,46 @@ func BytesToInt(inputBytes []byte) *big.Int {
 	return z
 }
 
-// ComputeXorDistanceBetweenTwoStrings func
-func ComputeXorDistanceBetweenTwoStrings(string1 string, string2 string) uint64 {
+// ComputeXorDistanceBetweenTwoStrings computes the XOR distance between the hashes of two strings.
+func ComputeXorDistanceBetweenTwoStrings(string1, string2 string) *big.Int {
 	string1Hash := GetHashFromString(string1)
 	string2Hash := GetHashFromString(string2)
-	string1HashAsBytes := []byte(string1Hash)
-	string2HashAsBytes := []byte(string2Hash)
-	xorDistance, _ := XORBytes(string1HashAsBytes, string2HashAsBytes)
-	xorDistanceAsInt := BytesToInt(xorDistance)
-	xorDistanceAsString := fmt.Sprint(xorDistanceAsInt)
-	if xorDistanceAsString == "0" {
-		zeroAsUint64, _ := strconv.ParseUint("0", 10, 64)
-		return zeroAsUint64
-	}
-	xorDistanceAsStringRescaled := fmt.Sprint(xorDistanceAsString[:len(xorDistanceAsString)-137])
-	xorDistanceAsUint64, _ := strconv.ParseUint(xorDistanceAsStringRescaled, 10, 64)
-	return xorDistanceAsUint64
+	xorDistance, _ := XORBytes([]byte(string1Hash), []byte(string2Hash))
+	return big.NewInt(0).SetBytes(xorDistance)
 }
 
-// GetNClosestXORDistanceStringToAGivenComparisonString func
+// GetNClosestXORDistanceStringToAGivenComparisonString finds the top N closest strings to the comparison string based on XOR distance.
 func GetNClosestXORDistanceStringToAGivenComparisonString(n int, comparisonString string, sliceOfComputingXORDistance []string, ignores ...string) []string {
-	sliceOfXORDistance := make([]uint64, 0)
-	XORDistanceToComputingStringMap := make(map[uint64]string)
+	h := &MaxHeap{}
+	heap.Init(h)
+
 	for _, currentComputing := range sliceOfComputingXORDistance {
-		currentXORDistance := ComputeXorDistanceBetweenTwoStrings(currentComputing, comparisonString)
+		ignoreCurrent := false
 		for _, ignore := range ignores {
 			if ignore == currentComputing {
-				currentXORDistance = ^(uint64(0))
+				ignoreCurrent = true
 				break
 			}
 		}
-		sliceOfXORDistance = append(sliceOfXORDistance, currentXORDistance)
-		XORDistanceToComputingStringMap[currentXORDistance] = currentComputing
-	}
-	sort.Slice(sliceOfXORDistance, func(i, j int) bool { return sliceOfXORDistance[i] < sliceOfXORDistance[j] })
-	sliceOfTopNClosestString := make([]string, n)
-	for ii, currentXORDistance := range sliceOfXORDistance {
-		if ii < n {
-			sliceOfTopNClosestString[ii] = XORDistanceToComputingStringMap[currentXORDistance]
+		if !ignoreCurrent {
+			currentXORDistance := ComputeXorDistanceBetweenTwoStrings(currentComputing, comparisonString)
+			entry := DistanceEntry{distance: currentXORDistance, str: currentComputing}
+			if h.Len() < n {
+				heap.Push(h, entry)
+			} else if entry.distance.Cmp((*h)[0].distance) < 0 {
+				heap.Pop(h)
+				heap.Push(h, entry)
+			}
 		}
 	}
-	return sliceOfTopNClosestString
+
+	result := make([]string, h.Len()) // Create the result slice with the actual size of the heap
+	for i := h.Len() - 1; i >= 0; i-- {
+		entry := heap.Pop(h).(DistanceEntry)
+		result[i] = entry.str
+	}
+
+	return result
 }
 
 // GetFileSizeInMB returns size of the file in MB
