@@ -78,7 +78,7 @@ func (s *DHT) StartBatchFetchAndStoreWorker(ctx context.Context) error {
 	}
 }
 
-// StartFetchAndStoreWorker starts replication
+// StartFailedFetchAndStoreWorker starts replication
 func (s *DHT) StartFailedFetchAndStoreWorker(ctx context.Context) error {
 	log.P2P().WithContext(ctx).Info("fetch and store worker started")
 
@@ -253,6 +253,8 @@ func (s *DHT) Replicate(ctx context.Context) {
 			} else {
 				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("closest-contact-keys", 0).Info("replicate update lastReplicated success")
 			}
+
+			continue
 		}
 
 		data, err := compressKeys(closestContactKeys)

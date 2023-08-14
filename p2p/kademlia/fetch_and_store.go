@@ -275,8 +275,21 @@ func (s *DHT) GetBatchValuesFromNode(ctx context.Context, keys []string, n *Node
 	data := &BatchFindValuesRequest{Keys: compKeys}
 	request := s.newMessage(messageType, n, data)
 
-	response, err := s.network.Call(ctx, request, true)
-	if err != nil {
+	var response *Message
+
+	operation := func() error {
+		var err error
+		response, err = s.network.Call(ctx, request, true)
+		return err
+	}
+
+	// Set up the backoff parameters
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = 2 * time.Second
+	bo.MaxElapsedTime = 10 * time.Second // max time before stop retrying
+	bo.Multiplier = 2
+
+	if err := backoff.Retry(operation, bo); err != nil {
 		log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
 		return false, nil, nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)
 	}

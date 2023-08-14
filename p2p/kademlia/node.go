@@ -161,3 +161,21 @@ func (s *NodeList) Sort() {
 		return distances[i].Cmp(&distances[j]) == -1
 	})
 }
+
+// Swap swap two nodes
+func (s *NodeList) Swap(i, j int) {
+	if i >= 0 && i < s.Len() && j >= 0 && j < s.Len() {
+		s.Nodes[i], s.Nodes[j] = s.Nodes[j], s.Nodes[i]
+	}
+}
+
+// Less compare two nodes
+func (s *NodeList) Less(i, j int) bool {
+	if i >= 0 && i < s.Len() && j >= 0 && j < s.Len() {
+		id := s.distance(s.Nodes[i].ID, s.Comparator)
+		jd := s.distance(s.Nodes[j].ID, s.Comparator)
+
+		return id.Cmp(jd) == -1
+	}
+	return false
+}
