@@ -212,7 +212,7 @@ func (s *DHT) Bootstrap(ctx context.Context, bootstrapIPs string) error {
 				// add the node to the route table
 				log.P2P().WithContext(ctx).WithField("sender-id", string(response.Sender.ID)).
 					WithField("sender-ip", string(response.Sender.IP)).
-					WithField("sender-port", response.Sender.Port).Info("add-node params")
+					WithField("sender-port", response.Sender.Port).Debug("add-node params")
 
 				if len(response.Sender.ID) != len(s.ht.self.ID) {
 					log.P2P().WithContext(ctx).WithField("sender-id", string(response.Sender.ID)).

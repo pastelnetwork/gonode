@@ -153,7 +153,7 @@ func (s *Store) StoreBatchRepKeys(_ [][]byte, _ string, _ string, _ int) error {
 }
 
 // GetAllToDoRepKeys gets all keys that need to be replicated
-func (s *Store) GetAllToDoRepKeys() (retKeys domain.ToRepKeys, err error) {
+func (s *Store) GetAllToDoRepKeys(_ int, _ int) (retKeys domain.ToRepKeys, err error) {
 	return retKeys, nil
 }
 
@@ -170,4 +170,19 @@ func (s *Store) UpdateLastSeen(_ context.Context, _ string) error {
 // RetrieveBatchNotExist retrieves a batch of keys that do not exist
 func (s *Store) RetrieveBatchNotExist(_ context.Context, _ [][]byte, _ int) ([][]byte, error) {
 	return nil, nil
+}
+
+// RetrieveBatchValues retrieves a batch of values
+func (s *Store) RetrieveBatchValues(_ context.Context, _ []string) ([][]byte, int, error) {
+	return nil, 0, nil
+}
+
+// BatchDeleteRepKeys deletes a batch of keys from the replication table
+func (s *Store) BatchDeleteRepKeys(_ []string) error {
+	return nil
+}
+
+// IncrementAttempts increments the attempts of a key
+func (s *Store) IncrementAttempts(_ []string) error {
+	return nil
 }

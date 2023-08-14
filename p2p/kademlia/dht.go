@@ -317,6 +317,10 @@ func (s *DHT) Delete(ctx context.Context, key string) error {
 
 // Stats returns stats of DHT
 func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
+	if s.store == nil {
+		return nil, fmt.Errorf("store is nil")
+	}
+
 	dbStats, err := s.store.Stats(ctx)
 	if err != nil {
 		return nil, err
@@ -504,9 +508,9 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	timeout := time.After(10 * time.Second) // Adjust the timeout duration as needed
 
 	// Set a maximum number of iterations to prevent indefinite looping
-	maxIterations := 100 // Adjust the maximum iterations as needed
+	maxIterations := 5 // Adjust the maximum iterations as needed
 
-	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("begin iteration")
+	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Debug("begin iteration")
 
 	for i := 0; i < maxIterations; i++ {
 		select {
@@ -532,22 +536,9 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 							nl.AddNodes(v.Closest)
 						}
 					}
-				case FindValue:
-					v, ok := response.Data.(*FindValueResponse)
-					if !ok {
-						log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Error("invalid find value response")
-					}
 
-					if v.Status.Result == ResultOk {
-						if len(v.Value) > 0 {
-							log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithField("resp", len(v.Value)).Info("iterate found value from network")
-							return v.Value, nil
-						} else if len(v.Closest) > 0 {
-							nl.AddNodes(v.Closest)
-						}
-					} else {
-						log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithError(errors.New(v.Status.ErrMsg)).Info("iterate could not find value from node")
-					}
+				default:
+					log.WithContext(ctx).WithField("type", response.MessageType).Error("unknown message type")
 				}
 			}
 
@@ -558,76 +549,34 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 			}
 
 			// Sort the nodes in the node list
+			nl.Comparator = target
 			nl.Sort()
 
 			log.P2P().WithContext(ctx).Debugf("id: %v, iterate %d, sorted nodes: %v", base58.Encode(s.ht.self.ID), iterativeType, nl.String())
 
-			// If closestNode is unchanged
-			if bytes.Equal(nl.Nodes[0].ID, closestNode.ID) || searchRest {
-				switch iterativeType {
-				case IterateFindNode:
+			switch iterativeType {
+			case IterateFindNode:
+				// If closestNode is unchanged
+				if bytes.Equal(nl.Nodes[0].ID, closestNode.ID) || searchRest {
 					if !searchRest {
 						// Search all the remaining nodes
 						searchRest = true
 						continue
 					}
 					return nil, nil
-				case IterateFindValue:
-					log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Error("attempt to find value from remaining network")
-					// Attempt to find the value from the remaining nodes
-					for _, n := range nl.Nodes {
-						request := &FindValueRequest{Target: target}
-						reqMsg := s.newMessage(FindValue, n, request)
-						// Send the request and receive the response
-						rspMsg, err := s.network.Call(ctx, reqMsg, false)
-						if err != nil {
-							return nil, errors.Errorf("network call: %w", err)
-						}
-
-						v, ok := rspMsg.Data.(*FindValueResponse)
-						if ok && v.Status.Result == ResultOk && len(v.Value) > 0 {
-							return v.Value, nil
-						}
-					}
-
-					log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Error("could not find value from remaining network")
-					return nil, nil
-
-				case IterateStore:
-					// Store the value to the node list
-					storeCount := 0
-					for i := 0; i < len(nl.Nodes); i++ {
-						logEntry := log.P2P().WithContext(ctx).WithField("node", nl.Nodes[i]).WithField("task_id", taskID)
-						// Limit the count below K
-						if i >= K {
-							return nil, nil
-						}
-						n := nl.Nodes[i]
-
-						if s.ignorelist.Banned(n) {
-							logEntry.Info("ignore node as its continuous failed count is above threshold")
-							continue
-						}
-
-						request := &StoreDataRequest{Data: data, Type: typ}
-						response, err := s.sendStoreData(ctx, n, request)
-						if err != nil {
-							logEntry.WithError(err).Error("send store data failed")
-						} else if response.Status.Result != ResultOk {
-							logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
-						} else {
-							storeCount++
-						}
-					}
-
-					log.P2P().WithContext(ctx).WithField("store count", storeCount).WithField("task_id", taskID).Info("task data stored")
-
-					return nil, nil
 				}
-			} else {
 				// Update the closest node
 				closestNode = nl.Nodes[0]
+
+			case IterateStore:
+				// Store the value to the node list
+				if err := s.storeToAlphaNodes(ctx, nl, data, typ, taskID); err != nil {
+					log.WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Error("could not store value to remaining network")
+				}
+
+				return nil, nil
 			}
+
 		}
 	}
 	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("finish iteration without results")
@@ -686,12 +635,12 @@ func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []
 	searchRest := false
 	// keep track of contacted nodes so that we don't hit them again
 	contacted := make(map[string]bool)
-	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("begin iteration")
+	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Debug("begin iteration")
 
 	var closestNode *Node
 	var iterationCount int
 	for iterationCount = 0; iterationCount < maxIterations; iterationCount++ {
-		log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("nl", nl.Len()).Infof("begin find value - target: %v , nodes: %v", sKey, nl.String())
+		log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("nl", nl.Len()).Debugf("begin find value - target: %v , nodes: %v", sKey, nl.String())
 
 		if nl.Len() == 0 {
 			log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithField("iteration count", iterationCount).Error("nodes list length is 0")
@@ -700,7 +649,7 @@ func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []
 
 		// if the closest node is the same as the last iteration  and we don't want to search rest of nodes, we are done
 		if !searchRest && (closestNode != nil && bytes.Equal(nl.Nodes[0].ID, closestNode.ID)) {
-			log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithField("iteration count", iterationCount).Info("closest node is the same as the last iteration")
+			log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).WithField("iteration count", iterationCount).Debug("closest node is the same as the last iteration")
 			return nil, nil
 		}
 
@@ -844,4 +793,81 @@ func (s *DHT) LocalStore(ctx context.Context, key string, data []byte) (string, 
 	}
 
 	return key, nil
+}
+
+func (s *DHT) storeToAlphaNodes(ctx context.Context, nl *NodeList, data []byte, typ int, taskID string) error {
+	storeCount := int32(0)
+	alphaCh := make(chan bool, Alpha)
+
+	// Start by sending the first Alpha requests in parallel
+	for i := 0; i < Alpha && i < nl.Len(); i++ {
+		n := nl.Nodes[i]
+
+		if s.ignorelist.Banned(n) {
+			continue
+		}
+
+		go func(n *Node) {
+			logEntry := log.P2P().WithContext(ctx).WithField("node", n).WithField("task_id", taskID)
+
+			request := &StoreDataRequest{Data: data, Type: typ}
+			response, err := s.sendStoreData(ctx, n, request)
+			if err != nil {
+				logEntry.WithError(err).Error("send store data failed")
+				alphaCh <- false
+			} else if response.Status.Result != ResultOk {
+				logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
+				alphaCh <- false
+			} else {
+				atomic.AddInt32(&storeCount, 1)
+				alphaCh <- true
+			}
+		}(n)
+	}
+	skey, _ := utils.Sha3256hash(data)
+
+	// Collect results from parallel requests
+	for i := 0; i < Alpha && i < len(nl.Nodes); i++ {
+		<-alphaCh
+		if atomic.LoadInt32(&storeCount) >= int32(Alpha) {
+			nl.TopN(Alpha)
+			log.WithContext(ctx).WithField("task_id", taskID).WithField("skey", hex.EncodeToString(skey)).WithField("closest 6 nodes", nl.String()).
+				WithField("len-total-nodes", nl.Len()).Info("store data to alpha nodes success")
+			return nil
+		}
+	}
+
+	finalStoreCount := atomic.LoadInt32(&storeCount)
+	// If storeCount is still < Alpha, send requests sequentially until it reaches Alpha
+	for i := Alpha; i < len(nl.Nodes); i++ {
+		if finalStoreCount >= int32(Alpha) {
+			break
+		}
+
+		logEntry := log.P2P().WithContext(ctx).WithField("node", nl.Nodes[i]).WithField("task_id", taskID)
+		n := nl.Nodes[i]
+
+		if s.ignorelist.Banned(n) {
+			logEntry.Info("ignore node as its continuous failed count is above threshold")
+			continue
+		}
+
+		request := &StoreDataRequest{Data: data, Type: typ}
+		response, err := s.sendStoreData(ctx, n, request)
+		if err != nil {
+			logEntry.WithError(err).Error("send store data failed")
+		} else if response.Status.Result != ResultOk {
+			logEntry.WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
+		} else {
+			finalStoreCount++
+		}
+	}
+
+	if finalStoreCount >= int32(Alpha) {
+		log.WithContext(ctx).WithField("task_id", taskID).WithField("len-total-nodes", nl.Len()).WithField("skey", hex.EncodeToString(skey)).Info("store data to alpha nodes success")
+		return nil
+	}
+	log.WithContext(ctx).WithField("task_id", taskID).WithField("store-count", finalStoreCount).WithField("skey", hex.EncodeToString(skey)).Info("store data to alpha nodes failed")
+
+	return fmt.Errorf("store data to alpha nodes failed, only %d nodes stored", finalStoreCount)
 }

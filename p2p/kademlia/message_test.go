@@ -9,7 +9,7 @@ import (
 
 func TestMessagePayloadTooBig(t *testing.T) {
 	// generate message
-	data := make([]byte, 32*1024*1024+1)
+	data := make([]byte, 100*1024*1024+1)
 	rand.Read(data)
 	msg := &Message{
 		Sender:      nil,

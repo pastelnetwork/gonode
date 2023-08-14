@@ -25,4 +25,5 @@ type ToRepKey struct {
 	IP        string    `json:"ip"`
 	Port      int       `json:"port"`
 	ID        string    `json:"id"`
+	Attempts  int       `json:"attempts"`
 }

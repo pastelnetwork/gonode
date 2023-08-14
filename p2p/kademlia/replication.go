@@ -4,34 +4,30 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
-	"sync/atomic"
 	"time"
 
-	"encoding/gob"
 	"encoding/hex"
 
-	"github.com/DataDog/zstd"
 	"github.com/cenkalti/backoff"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 )
 
 var (
 	// defaultReplicationInterval is the default interval for replication.
-	defaultReplicationInterval = time.Minute * 15
+	defaultReplicationInterval = time.Minute * 10
 
 	// nodeShowUpDeadline is the time after which the node will considered to be permeant offline
 	// we'll adjust the keys once the node is permeant offline
 	nodeShowUpDeadline = time.Minute * 35
 
 	// check for active & inactive nodes after this interval
-	checkNodeActivityInterval = time.Minute * 3
+	checkNodeActivityInterval = time.Minute * 2
 
-	defaultFetchAndStoreInterval = time.Minute * 5
+	defaultFetchAndStoreInterval = time.Minute * 10
+
+	defaultBatchFetchAndStoreInterval = time.Minute * 5
 
 	maxBackOff = 45 * time.Second
 )
@@ -53,7 +49,8 @@ func (s *DHT) StartReplicationWorker(ctx context.Context) error {
 	log.P2P().WithContext(ctx).Info("replication worker started")
 
 	go s.checkNodeActivity(ctx)
-	go s.StartFetchAndStoreWorker(ctx)
+	go s.StartBatchFetchAndStoreWorker(ctx)
+	go s.StartFailedFetchAndStoreWorker(ctx)
 
 	for {
 		select {
@@ -66,14 +63,29 @@ func (s *DHT) StartReplicationWorker(ctx context.Context) error {
 	}
 }
 
-// StartFetchAndStoreWorker starts replication
-func (s *DHT) StartFetchAndStoreWorker(ctx context.Context) error {
+// StartBatchFetchAndStoreWorker starts replication
+func (s *DHT) StartBatchFetchAndStoreWorker(ctx context.Context) error {
+	log.P2P().WithContext(ctx).Info("batch fetch and store worker started")
+
+	for {
+		select {
+		case <-time.After(defaultBatchFetchAndStoreInterval):
+			s.BatchFetchAndStore(ctx)
+		case <-ctx.Done():
+			log.P2P().WithContext(ctx).Error("closing batch fetch & store worker")
+			return nil
+		}
+	}
+}
+
+// StartFailedFetchAndStoreWorker starts replication
+func (s *DHT) StartFailedFetchAndStoreWorker(ctx context.Context) error {
 	log.P2P().WithContext(ctx).Info("fetch and store worker started")
 
 	for {
 		select {
 		case <-time.After(defaultFetchAndStoreInterval):
-			s.FetchAndStore(ctx)
+			s.BatchFetchAndStoreFailedKeys(ctx)
 		case <-ctx.Done():
 			log.P2P().WithContext(ctx).Error("closing fetch & store worker")
 			return nil
@@ -154,7 +166,7 @@ func (s *DHT) Replicate(ctx context.Context) {
 		historicStart = time.Now().Add(-24 * time.Hour * 180)
 	}
 
-	log.P2P().WithContext(ctx).Info("replicating data")
+	log.P2P().WithContext(ctx).WithField("historic-start", historicStart).Info("replicating data")
 
 	for i := 0; i < B; i++ {
 		if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
@@ -206,24 +218,26 @@ func (s *DHT) Replicate(ctx context.Context) {
 
 		logEntry.WithField("from", from).WithField("to", to).Info("getting replication keys")
 		replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
-		logEntry.WithField("len-rep-keys", len(replicationKeys)).Info("count of replication keys to be checked")
+
 		if len(replicationKeys) == 0 {
 			// Now closestContactKeys contains all the keys that are in the closest contacts.
 			if err := s.updateLastReplicated(ctx, []byte(nodeID), to); err != nil {
 				logEntry.Error("replicate update lastReplicated failed")
 			} else {
-				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("fetch-keys", 0).Info("replicate update lastReplicated success")
+				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("fetch-keys", 0).Debug("replicate update lastReplicated success")
 			}
 
 			continue
 		}
 
+		logEntry.WithField("len-rep-keys", len(replicationKeys)).Info("count of replication keys to be checked")
 		// Preallocate a slice with a capacity equal to the number of keys.
 		closestContactKeys := make([][]byte, 0, len(replicationKeys))
 		for i := 0; i < len(replicationKeys); i++ {
 			key := replicationKeys[i]
 			ignores := s.ignorelist.ToNodeList()
-			n := &Node{ID: []byte(nodeID), IP: info.IP, Port: info.Port}
+			n := &Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
+
 			nodeList := s.ht.closestContactsWithInlcudingNode(Alpha, key, ignores, n)
 
 			if nodeList.Exists(n) {
@@ -239,6 +253,8 @@ func (s *DHT) Replicate(ctx context.Context) {
 			} else {
 				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("closest-contact-keys", 0).Info("replicate update lastReplicated success")
 			}
+
+			continue
 		}
 
 		data, err := compressKeys(closestContactKeys)
@@ -428,231 +444,4 @@ func isNodeGoneAndShouldBeAdjusted(lastSeen *time.Time, isAlreadyAdjusted bool) 
 	}
 
 	return time.Since(*lastSeen) > nodeShowUpDeadline && !isAlreadyAdjusted
-}
-
-// checkNodeActivity keeps track of active nodes - the idea here is to ping nodes periodically and mark them as inactive if they don't respond
-func (s *DHT) checkNodeActivity(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(checkNodeActivityInterval): // Adjust the interval as needed
-			func() {
-				if !utils.CheckInternetConnectivity() {
-					log.WithContext(ctx).Info("no internet connectivity, not checking node activity")
-				} else {
-					nrt := s.getNodeReplicationTimesCopy()
-
-					for nodeID, info := range nrt {
-						// new a ping request message
-						node := &Node{
-							ID:   []byte(nodeID),
-							IP:   info.IP,
-							Port: info.Port,
-						}
-
-						request := s.newMessage(Ping, node, nil)
-						// new a context with timeout
-						ctx, cancel := context.WithTimeout(ctx, defaultPingTime)
-						defer cancel()
-
-						// invoke the request and handle the response
-						_, err := s.network.Call(ctx, request, false)
-						if err != nil && info.Active {
-							log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).
-								Error("failed to ping node, setting node to inactive")
-
-							// add node to ignore list
-							// we maintain this list to avoid pinging nodes that are not responding
-							s.ignorelist.IncrementCount(node)
-
-							// mark node as inactive in database
-							info.Active = false
-							info.UpdatedAt = time.Now()
-
-							s.replicationMtx.Lock()
-							s.nodeReplicationTimes[string(nodeID)] = info
-							s.replicationMtx.Unlock()
-
-							if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
-								log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update replication info, node is inactive")
-							}
-
-						} else if err == nil {
-							log.P2P().WithContext(ctx).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Info("node is active")
-
-							if !info.Active {
-								log.P2P().WithContext(ctx).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Info("node found to be active again")
-
-								// remove node from ignore list
-								s.ignorelist.Delete(node)
-
-								// mark node as active in database
-								info.Active = true
-								info.IsAdjusted = false
-								info.UpdatedAt = time.Now()
-
-								s.replicationMtx.Lock()
-								s.nodeReplicationTimes[string(nodeID)] = info
-								s.replicationMtx.Unlock()
-
-								if err := s.store.UpdateReplicationInfo(ctx, info); err != nil {
-									log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update replication info, node is active")
-								}
-							}
-
-							s.replicationMtx.RLock()
-							upInfo := s.nodeReplicationTimes[string(nodeID)]
-							s.replicationMtx.RUnlock()
-
-							now := time.Now()
-							upInfo.LastSeen = &now
-
-							s.replicationMtx.Lock()
-							s.nodeReplicationTimes[string(nodeID)] = upInfo
-							s.replicationMtx.Unlock()
-
-							if err := s.store.UpdateLastSeen(ctx, string(nodeID)); err != nil {
-								log.WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(nodeID)).Error("failed to update last seen")
-							}
-						}
-					}
-				}
-			}()
-		}
-	}
-}
-
-func compressKeys(keys [][]byte) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-
-	if err := enc.Encode(keys); err != nil {
-		return nil, fmt.Errorf("encode error: %w", err)
-	}
-
-	compressed, err := zstd.CompressLevel(nil, buf.Bytes(), 22)
-	if err != nil {
-		return nil, fmt.Errorf("compression error: %w", err)
-	}
-
-	return compressed, nil
-}
-
-func decompressKeys(data []byte) ([][]byte, error) {
-	decompressed, err := zstd.Decompress(nil, data)
-	if err != nil {
-		return nil, fmt.Errorf("decompression error: %w", err)
-	}
-
-	dec := gob.NewDecoder(bytes.NewReader(decompressed))
-
-	var keys [][]byte
-	if err := dec.Decode(&keys); err != nil {
-		return nil, fmt.Errorf("decode error: %w", err)
-	}
-
-	return keys, nil
-}
-
-// FetchAndStore fetches all keys from the local TODO replicate list, fetches value from respective nodes and stores them in the local store
-func (s *DHT) FetchAndStore(ctx context.Context) error {
-	keys, err := s.store.GetAllToDoRepKeys()
-	if err != nil {
-		return fmt.Errorf("get all keys error: %w", err)
-	}
-	log.WithContext(ctx).WithField("count", len(keys)).Info("got keys from local store")
-
-	if len(keys) == 0 {
-		return nil
-	}
-
-	//wg := sync.WaitGroup{}
-	//wg.Add(len(keys))        // Add count of all keys before spawning goroutines
-	var successCounter int32 // Create a counter for successful operations
-
-	for i := 0; i < len(keys); i++ {
-		key := keys[i]
-
-		func(info domain.ToRepKey) {
-			//defer wg.Done()
-			cctx, ccancel := context.WithTimeout(ctx, 30*time.Second)
-			defer ccancel()
-
-			sKey := hex.EncodeToString(info.Key)
-			n := Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
-
-			b := backoff.WithMaxRetries(backoff.NewConstantBackOff(2*time.Second), 10)
-			var value []byte // replace with the actual type of "value"
-			err := backoff.Retry(func() error {
-				val, err := s.GetValueFromNode(cctx, info.Key, &n)
-				if err != nil {
-					return err
-				}
-				value = val
-				return nil
-			}, b)
-
-			if err != nil {
-				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & store key failed")
-				value, err = s.iterateFindValue(cctx, IterateFindValue, info.Key)
-				if err != nil {
-					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed")
-					return
-				} else if len(value) == 0 {
-					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed 0 val")
-					return
-				} else {
-					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
-				}
-			}
-
-			if err := s.store.Store(cctx, info.Key, value, 0, false); err != nil {
-				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & local store key failed")
-				return
-			}
-
-			if err := s.store.DeleteRepKey(info.Key); err != nil {
-				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("delete key from todo list failed")
-				return
-			}
-
-			atomic.AddInt32(&successCounter, 1) // Increment the counter atomically
-
-			log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("fetch & store key success")
-		}(key)
-
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	//wg.Wait()
-
-	log.WithContext(ctx).WithField("todo-keys", len(keys)).WithField("successfully-added-keys", atomic.LoadInt32(&successCounter)).Infof("Successfully fetched & stored keys") // Log the final count
-
-	return nil
-}
-
-// Function to generate a key from a node object.
-func generateKeyFromNode(node *Node) string {
-	return string(node.ID) + ":" + node.IP + ":" + fmt.Sprint(node.Port)
-}
-
-// Function to retrieve a node object from a key.
-func getNodeFromKey(key string) (*Node, error) {
-	parts := strings.Split(key, ":")
-
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid key")
-	}
-
-	id := []byte(parts[0])
-	ip := parts[1]
-
-	// strconv.Atoi returns an int and an error, which we need to handle.
-	port, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return nil, fmt.Errorf("invalid port: %w", err)
-	}
-
-	return &Node{ID: id, IP: ip, Port: port}, nil
 }

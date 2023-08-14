@@ -1,38 +1,12 @@
 package kademlia
 
-func (s *testSuite) initIDWithValues(v byte) []byte {
-	id := [20]byte{}
-	for i := 0; i < 20; i++ {
-		id[i] = v
-	}
-	return id[:]
-}
+import (
+	"bytes"
+	"math/big"
+	"testing"
 
-func (s *testSuite) initZeroIDWithNthByte(n int, v byte) []byte {
-	id := s.initIDWithValues(0)
-	id[n] = v
-	return id
-}
-
-func (s *testSuite) TestNodeList() {
-	nl := &NodeList{}
-
-	comparator := s.initIDWithValues(0)
-	n1 := &Node{ID: s.initZeroIDWithNthByte(19, 1)}
-	n2 := &Node{ID: s.initZeroIDWithNthByte(18, 1)}
-	n3 := &Node{ID: s.initZeroIDWithNthByte(17, 1)}
-	n4 := &Node{ID: s.initZeroIDWithNthByte(16, 1)}
-
-	nl.Nodes = []*Node{n1, n2, n3, n4}
-	nl.Comparator = comparator
-
-	nl.Sort()
-
-	s.Equal(n1, nl.Nodes[0])
-	s.Equal(n2, nl.Nodes[1])
-	s.Equal(n3, nl.Nodes[2])
-	s.Equal(n4, nl.Nodes[3])
-}
+	"github.com/pastelnetwork/gonode/common/utils"
+)
 
 func (s *testSuite) TestHasBit() {
 	for i := 0; i < 8; i++ {
@@ -99,5 +73,99 @@ func (s *testSuite) TestExists() {
 
 	for _, node := range nl.Nodes {
 		s.Equal(true, nl.Exists(node))
+	}
+}
+
+func computeExpectedDistances(nodes []*Node, comparator []byte) [][]byte {
+	// Computes the distance between two hashed byte slices.
+	distance := func(id1, id2 []byte) *big.Int {
+		o1 := new(big.Int).SetBytes(id1)
+		o2 := new(big.Int).SetBytes(id2)
+		return new(big.Int).Xor(o1, o2)
+	}
+
+	// Sort based on distances and return the sorted IDs.
+	type nodeDist struct {
+		node *Node
+		dist *big.Int
+	}
+
+	var nodeDists []nodeDist
+	for _, node := range nodes {
+		dist := distance(node.ID, comparator)
+		nodeDists = append(nodeDists, nodeDist{node, dist})
+	}
+
+	// Sorting based on distances.
+	expected := make([][]byte, len(nodes))
+	for i, nd := range nodeDists {
+		expected[i] = nd.node.ID
+	}
+
+	return expected
+}
+
+func TestNodeListSort(t *testing.T) {
+	hashedComparator, err := utils.Sha3256hash([]byte{0, 1, 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name        string
+		nodes       []*Node
+		comparator  []byte
+		expectedIds [][]byte
+	}{
+		{
+			name:       "basic sort",
+			comparator: hashedComparator,
+		},
+		{
+			name:       "reversed order",
+			comparator: hashedComparator,
+		},
+	}
+
+	// Pre-compute the hashed IDs for the nodes.
+	for _, tt := range tests {
+		nodes := []*Node{
+			{ID: []byte{}}, // placeholder for hashed ID
+			{ID: []byte{}},
+			{ID: []byte{}},
+		}
+
+		ids := [][]byte{
+			[]byte{1, 2, 3},
+			[]byte{2, 3, 4},
+			[]byte{3, 4, 5},
+		}
+
+		for i, rawID := range ids {
+			hashedID, err := utils.Sha3256hash(rawID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			nodes[i].ID = hashedID
+		}
+
+		tt.nodes = nodes
+		tt.expectedIds = computeExpectedDistances(tt.nodes, tt.comparator)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			nl := &NodeList{
+				Nodes:      tt.nodes,
+				Comparator: tt.comparator,
+			}
+			nl.Sort()
+
+			for i, expectedID := range tt.expectedIds {
+				if !bytes.Equal(nl.Nodes[i].ID, expectedID) {
+					t.Errorf("expected ID at index %d to be %v but got %v", i, expectedID, nl.Nodes[i].ID)
+				}
+			}
+		})
 	}
 }

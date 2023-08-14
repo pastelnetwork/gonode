@@ -193,53 +193,28 @@ func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Nod
 	ht.mutex.RLock()
 	defer ht.mutex.RUnlock()
 
-	hashedID, _ := utils.Sha3256hash(ht.self.ID)
-
-	// find the bucket index in local route tables
-	index := ht.bucketIndex(hashedID, target)
-	indexList := []int{index}
-	i := index - 1
-	j := index + 1
-	for len(indexList) < B {
-		if j < B {
-			indexList = append(indexList, j)
-		}
-		if i >= 0 {
-			indexList = append(indexList, i)
-		}
-		i--
-		j++
+	// Convert ignoredNodes slice to a map for faster lookup
+	ignoredMap := make(map[string]bool)
+	for _, node := range ignoredNodes {
+		ignoredMap[string(node.ID)] = true
 	}
 
-	nl := &NodeList{}
+	nl := &NodeList{
+		Comparator: target,
+	}
 
-	left := num
-	// select alpha contacts and add them to the node list
-	for left > 0 && len(indexList) > 0 {
-		index, indexList = indexList[0], indexList[1:]
-		for i := 0; i < len(ht.routeTable[index]); i++ {
-			node := ht.routeTable[index][i]
-
-			ignored := false
-			for j := 0; j < len(ignoredNodes); j++ {
-				if bytes.Equal(node.ID, ignoredNodes[j].ID) {
-					ignored = true
-				}
-			}
-			if !ignored {
-				// add the node to list
+	// Flatten the routeTable and add nodes to nl if they're not in the ignoredMap
+	for _, bucket := range ht.routeTable {
+		for _, node := range bucket {
+			if !ignoredMap[string(node.ID)] {
 				nl.AddNodes([]*Node{node})
-
-				left--
-				if left == 0 {
-					break
-				}
 			}
 		}
 	}
 
-	// sort the node list
+	// Sort the node list and get the top 'num' nodes
 	nl.Sort()
+	nl.TopN(num)
 
 	return nl
 }
@@ -254,8 +229,9 @@ func (*HashTable) bucketIndex(id1 []byte, id2 []byte) int {
 		// check each bit on the xored result from left to right in order
 		for i := 0; i < 8; i++ {
 			if hasBit(xor, uint(i)) {
-				byteIndex := j * 8
+				byteIndex := j * 8 // Convert byte position to bit position
 				bitIndex := i
+				// Return bucket index based on position of differing bit (B - total bit position - 1)
 				return B - (byteIndex + bitIndex) - 1
 			}
 		}
@@ -303,49 +279,28 @@ func newRandomID() ([]byte, error) {
 // bits:    00000001
 // pos:     01234567
 func hasBit(n byte, pos uint) bool {
-	pos = 7 - pos
-	val := n & (1 << pos)
+	val := n & (1 << (7 - pos)) // check bits from left to right (7 - pos)
 	return (val > 0)
 }
 
-// closestContactsWithInlcudingNode returns the closest contacts of target
 func (ht *HashTable) closestContactsWithInlcudingNode(num int, target []byte, ignoredNodes []*Node, includeNode *Node) *NodeList {
 	ht.mutex.RLock()
 	defer ht.mutex.RUnlock()
 
-	hashedID, _ := utils.Sha3256hash(ht.self.ID)
-	// find the bucket index in local route tables
-	index := ht.bucketIndex(hashedID, target)
-	indexList := []int{index}
-	i := index - 1
-	j := index + 1
-	for len(indexList) < B {
-		if j < B {
-			indexList = append(indexList, j)
-		}
-		if i >= 0 {
-			indexList = append(indexList, i)
-		}
-		i--
-		j++
+	// Convert ignoredNodes slice to a map for faster lookup
+	ignoredMap := make(map[string]bool)
+	for _, node := range ignoredNodes {
+		ignoredMap[string(node.ID)] = true
 	}
 
-	nl := &NodeList{}
+	nl := &NodeList{
+		Comparator: target,
+	}
 
-	// select alpha contacts and add them to the node list
-	for len(indexList) > 0 {
-		index, indexList = indexList[0], indexList[1:]
-		for i := 0; i < len(ht.routeTable[index]); i++ {
-			node := ht.routeTable[index][i]
-
-			ignored := false
-			for j := 0; j < len(ignoredNodes); j++ {
-				if bytes.Equal(node.ID, ignoredNodes[j].ID) {
-					ignored = true
-				}
-			}
-			if !ignored {
-				// add the node to list
+	// Flatten the routeTable and add nodes to nl if they're not in the ignoredMap
+	for _, bucket := range ht.routeTable {
+		for _, node := range bucket {
+			if !ignoredMap[string(node.ID)] {
 				nl.AddNodes([]*Node{node})
 			}
 		}
@@ -356,9 +311,8 @@ func (ht *HashTable) closestContactsWithInlcudingNode(num int, target []byte, ig
 		nl.AddNodes([]*Node{includeNode})
 	}
 
-	// sort the node list
+	// Sort the node list and get the top 'num' nodes
 	nl.Sort()
-
 	nl.TopN(num)
 
 	return nl
