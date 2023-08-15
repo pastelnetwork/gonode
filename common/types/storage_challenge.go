@@ -58,6 +58,8 @@ type Message struct {
 	Data            MessageData `json:"data"`
 	Sender          string      `json:"sender"`
 	SenderSignature []byte      `json:"sender_signature"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
 }
 
 // MessageData represents the storage challenge message data
