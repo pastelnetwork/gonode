@@ -24,10 +24,12 @@ import (
 )
 
 var (
-	defaultNetworkAddr = "0.0.0.0"
-	defaultNetworkPort = 4445
-	defaultRefreshTime = time.Second * 3600
-	defaultPingTime    = time.Second * 10
+	defaultNetworkAddr                   = "0.0.0.0"
+	defaultNetworkPort                   = 4445
+	defaultRefreshTime                   = time.Second * 3600
+	defaultPingTime                      = time.Second * 10
+	defaultCleanupInterval               = time.Minute * 2
+	defaultDisabledKeyExpirationInterval = time.Minute * 30
 )
 
 const maxIterations = 5

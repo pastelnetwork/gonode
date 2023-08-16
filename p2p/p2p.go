@@ -20,10 +20,8 @@ const (
 )
 
 var (
-	defaultReplicateInterval             = time.Second * 3600
-	defaultRepublishInterval             = time.Second * 3600 * 24
-	defaultCleanupInterval               = time.Minute * 2
-	defaultDisabledKeyExpirationInterval = time.Minute * 30
+	defaultReplicateInterval = time.Second * 3600
+	defaultRepublishInterval = time.Second * 3600 * 24
 )
 
 // P2P represents the p2p service.
