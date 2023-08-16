@@ -35,7 +35,7 @@ type Store struct {
 	worker *Worker
 }
 
-// disabled is a data record for currently disabled key
+// DisabledKey represents the disabled key
 type DisabledKey struct {
 	Key       string    `db:"key"`
 	CreatedAt time.Time `db:"createdAt"`
