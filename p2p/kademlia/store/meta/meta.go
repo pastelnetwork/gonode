@@ -29,8 +29,8 @@ type Worker struct {
 	quit     chan bool
 }
 
-// MetaStore is the main struct
-type MetaStore struct {
+// Store is the main struct
+type Store struct {
 	db     *sqlx.DB
 	worker *Worker
 }
@@ -59,7 +59,7 @@ type Job struct {
 }
 
 // NewStore returns a new store
-func NewStore(ctx context.Context, dataDir string) (*MetaStore, error) {
+func NewStore(ctx context.Context, dataDir string) (*Store, error) {
 	worker := &Worker{
 		JobQueue: make(chan Job, 500),
 		quit:     make(chan bool),
@@ -82,12 +82,12 @@ func NewStore(ctx context.Context, dataDir string) (*MetaStore, error) {
 	db.SetMaxOpenConns(250) // set appropriate value
 	db.SetMaxIdleConns(10)  // set appropriate value
 
-	s := &MetaStore{
+	s := &Store{
 		db:     db,
 		worker: worker,
 	}
 
-	if !s.checkMetaStore() {
+	if !s.checkStore() {
 		if err = s.migrate(); err != nil {
 			return nil, fmt.Errorf("cannot create table(s) in sqlite database: %w", err)
 		}
@@ -116,14 +116,14 @@ func NewStore(ctx context.Context, dataDir string) (*MetaStore, error) {
 	return s, nil
 }
 
-func (s *MetaStore) checkMetaStore() bool {
+func (s *Store) checkStore() bool {
 	query := `SELECT name FROM sqlite_master WHERE type='table' AND name='disabled_keys'`
 	var name string
 	err := s.db.Get(&name, query)
 	return err == nil
 }
 
-func (s *MetaStore) migrate() error {
+func (s *Store) migrate() error {
 	query := `
     CREATE TABLE IF NOT EXISTS disabled_keys(
         key TEXT PRIMARY KEY,
@@ -137,7 +137,7 @@ func (s *MetaStore) migrate() error {
 	return nil
 }
 
-func (s *MetaStore) startCheckpointWorker(ctx context.Context) {
+func (s *Store) startCheckpointWorker(ctx context.Context) {
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 1 * time.Minute
 	b.InitialInterval = 100 * time.Millisecond
@@ -173,7 +173,7 @@ func (s *MetaStore) startCheckpointWorker(ctx context.Context) {
 }
 
 // Start method starts the run loop for the worker
-func (s *MetaStore) start(ctx context.Context) {
+func (s *Store) start(ctx context.Context) {
 	for {
 		select {
 		case job := <-s.worker.JobQueue:
@@ -198,7 +198,7 @@ func (w *Worker) Stop() {
 }
 
 // Store function creates a new job and pushes it into the JobQueue
-func (s *MetaStore) Store(ctx context.Context, key []byte) error {
+func (s *Store) Store(ctx context.Context, key []byte) error {
 	job := Job{
 		JobType: "Insert",
 		Key:     key,
@@ -221,7 +221,7 @@ func (s *MetaStore) Store(ctx context.Context, key []byte) error {
 }
 
 // PerformJob performs the job in the JobQueue
-func (s *MetaStore) performJob(j Job) error {
+func (s *Store) performJob(j Job) error {
 	switch j.JobType {
 	case "Insert":
 		err := s.storeDisabledKey(j.Key)
@@ -237,7 +237,7 @@ func (s *MetaStore) performJob(j Job) error {
 }
 
 // Checkpoint method for the store
-func (s *MetaStore) checkpoint() error {
+func (s *Store) checkpoint() error {
 	_, err := s.db.Exec("PRAGMA wal_checkpoint;")
 	if err != nil {
 		return fmt.Errorf("failed to checkpoint: %w", err)
@@ -246,7 +246,7 @@ func (s *MetaStore) checkpoint() error {
 }
 
 // Close the store
-func (s *MetaStore) Close(ctx context.Context) {
+func (s *Store) Close(ctx context.Context) {
 	s.worker.Stop()
 
 	if s.db != nil {
@@ -257,7 +257,7 @@ func (s *MetaStore) Close(ctx context.Context) {
 }
 
 // Retrieve will return the local key/value if it exists
-func (s *MetaStore) Retrieve(_ context.Context, key string) error {
+func (s *Store) Retrieve(_ context.Context, key string) error {
 	r := DisabledKey{}
 	err := s.db.Get(&r, `SELECT * FROM disabled_keys WHERE key = ?`, key)
 	if err != nil {
@@ -272,7 +272,7 @@ func (s *MetaStore) Retrieve(_ context.Context, key string) error {
 }
 
 // Delete a key/value pair from the store
-func (s *MetaStore) Delete(_ context.Context, key []byte) {
+func (s *Store) Delete(_ context.Context, key []byte) {
 	job := Job{
 		JobType: "Delete",
 		Key:     key,
@@ -282,7 +282,7 @@ func (s *MetaStore) Delete(_ context.Context, key []byte) {
 }
 
 // deleteRecord a key/value pair from the Store
-func (s *MetaStore) deleteRecord(key []byte) {
+func (s *Store) deleteRecord(key []byte) {
 	hkey := hex.EncodeToString(key)
 
 	res, err := s.db.Exec("DELETE FROM disabled_keys WHERE key = ?", hkey)
@@ -297,7 +297,7 @@ func (s *MetaStore) deleteRecord(key []byte) {
 	}
 }
 
-func (s *MetaStore) storeDisabledKey(key []byte) error {
+func (s *Store) storeDisabledKey(key []byte) error {
 	operation := func() error {
 		hkey := hex.EncodeToString(key)
 
@@ -329,7 +329,7 @@ func (s *MetaStore) storeDisabledKey(key []byte) error {
 }
 
 // GetDisabledKeys returns all disabled keys
-func (s *MetaStore) GetDisabledKeys(from time.Time) (retKeys domain.DisabledKeys, err error) {
+func (s *Store) GetDisabledKeys(from time.Time) (retKeys domain.DisabledKeys, err error) {
 	var keys []DisabledKey
 	if err := s.db.Select(&keys, "SELECT * FROM disabled_keys where createdAt > from", from); err != nil {
 		return nil, fmt.Errorf("error reading disabled keys from database: %w", err)

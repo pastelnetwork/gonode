@@ -28,7 +28,7 @@ type ToRepKey struct {
 	Attempts  int       `json:"attempts"`
 }
 
-// DisabledKeys is a disabled key
+// DisabledKey is a disabled key
 type DisabledKey struct {
 	Key       string    `json:"key"`
 	CreatedAt time.Time `json:"createdAt"`

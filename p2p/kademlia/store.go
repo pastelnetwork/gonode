@@ -74,6 +74,7 @@ type Store interface {
 	IncrementAttempts(keys []string) error
 }
 
+// MetaStore is the interface for implementing the storage mechanism for the DHT
 type MetaStore interface {
 	// Delete a key pair from the store
 	Delete(_ context.Context, key []byte)
