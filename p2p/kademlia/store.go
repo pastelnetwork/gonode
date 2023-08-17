@@ -73,3 +73,21 @@ type Store interface {
 
 	IncrementAttempts(keys []string) error
 }
+
+// MetaStore is the interface for implementing the storage mechanism for the DHT
+type MetaStore interface {
+	// Delete a key pair from the store
+	Delete(_ context.Context, key []byte)
+
+	// Retrieve the local key from store
+	Retrieve(_ context.Context, key string) error
+
+	// Close the store
+	Close(ctx context.Context)
+
+	// Store a key pair for the local node with the replication
+	Store(ctx context.Context, key []byte) error
+
+	// GetDisabledKeys returns all disabled keys
+	GetDisabledKeys(from time.Time) (retKeys domain.DisabledKeys, err error)
+}

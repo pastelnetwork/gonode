@@ -226,7 +226,7 @@ func (ts *testSuite) newDHTNodeWithMemStore(ctx context.Context, port int, nodes
 	// }
 	// transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
 
-	dht, err := NewDHT(ctx, ts.memStore, pastelClientMock, secInfo, options)
+	dht, err := NewDHT(ctx, ts.memStore, nil, pastelClientMock, secInfo, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
@@ -270,7 +270,7 @@ func (ts *testSuite) newDHTNodeWithDBStore(ctx context.Context, port int, nodes 
 		pub:    TestPub,
 	}
 
-	dht, err := NewDHT(ctx, ts.dbStore, fakePastelClient, secInfo, options)
+	dht, err := NewDHT(ctx, ts.dbStore, nil, fakePastelClient, secInfo, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}

@@ -55,7 +55,8 @@ func (s *DHT) StartReplicationWorker(ctx context.Context) error {
 	for {
 		select {
 		case <-time.After(defaultReplicationInterval):
-			s.Replicate(ctx)
+			//s.Replicate(ctx)
+			log.P2P().WithContext(ctx).Info("replication worker currently disabled")
 		case <-ctx.Done():
 			log.P2P().WithContext(ctx).Error("closing replication worker")
 			return nil

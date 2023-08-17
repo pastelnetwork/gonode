@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/meta"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
@@ -33,9 +35,10 @@ type P2P interface {
 // p2p structure to implements interface
 type p2p struct {
 	store        kademlia.Store // the store for kademlia network
-	dht          *kademlia.DHT  // the kademlia network
-	config       *Config        // the service configuration
-	running      bool           // if the kademlia network is ready
+	metaStore    kademlia.MetaStore
+	dht          *kademlia.DHT // the kademlia network
+	config       *Config       // the service configuration
+	running      bool          // if the kademlia network is ready
 	pastelClient pastel.Client
 	secInfo      *alts.SecInfo
 }
@@ -189,6 +192,12 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 	s.store = store
 
+	meta, err := meta.NewStore(ctx, s.config.DataDir)
+	if err != nil {
+		return errors.Errorf("new kademlia meta store: %w", err)
+	}
+	s.metaStore = meta
+
 	kadOpts := &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
@@ -208,7 +217,7 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(ctx, store, s.pastelClient, s.secInfo, kadOpts)
+	dht, err := kademlia.NewDHT(ctx, store, meta, s.pastelClient, s.secInfo, kadOpts)
 
 	if err != nil {
 		return errors.Errorf("new kademlia dht: %w", err)

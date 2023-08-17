@@ -24,10 +24,12 @@ import (
 )
 
 var (
-	defaultNetworkAddr = "0.0.0.0"
-	defaultNetworkPort = 4445
-	defaultRefreshTime = time.Second * 3600
-	defaultPingTime    = time.Second * 10
+	defaultNetworkAddr                   = "0.0.0.0"
+	defaultNetworkPort                   = 4445
+	defaultRefreshTime                   = time.Second * 3600
+	defaultPingTime                      = time.Second * 10
+	defaultCleanupInterval               = time.Minute * 2
+	defaultDisabledKeyExpirationInterval = time.Minute * 30
 )
 
 const maxIterations = 5
@@ -38,6 +40,7 @@ type DHT struct {
 	options              *Options         // the options of DHT
 	network              *Network         // the network of DHT
 	store                Store            // the storage of DHT
+	metaStore            MetaStore        // the meta storage of DHT
 	done                 chan struct{}    // distributed hash table is done
 	cache                storage.KeyValue // store bad bootstrap addresses
 	pastelClient         pastel.Client
@@ -73,7 +76,7 @@ type Options struct {
 }
 
 // NewDHT returns a new DHT node
-func NewDHT(ctx context.Context, store Store, pc pastel.Client, secInfo *alts.SecInfo, options *Options) (*DHT, error) {
+func NewDHT(ctx context.Context, store Store, metaStore MetaStore, pc pastel.Client, secInfo *alts.SecInfo, options *Options) (*DHT, error) {
 	// validate the options, if it's invalid, set them to default value
 	if options.IP == "" {
 		options.IP = defaultNetworkAddr
@@ -92,6 +95,7 @@ func NewDHT(ctx context.Context, store Store, pc pastel.Client, secInfo *alts.Se
 	}
 
 	s := &DHT{
+		metaStore:            metaStore,
 		store:                store,
 		options:              options,
 		pastelClient:         pc,
@@ -165,6 +169,7 @@ func (s *DHT) Start(ctx context.Context) error {
 	}
 
 	go s.StartReplicationWorker(ctx)
+	go s.startDisabledKeysCleanupWorker(ctx)
 
 	return nil
 }
@@ -278,6 +283,12 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	}
 
 	dbKey := hex.EncodeToString(decoded)
+	if s.metaStore != nil {
+		if err := s.metaStore.Retrieve(ctx, dbKey); err == nil {
+			return nil, fmt.Errorf("key is disabled: %v", key)
+		}
+	}
+
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil && len(value) > 0 {
@@ -870,4 +881,41 @@ func (s *DHT) storeToAlphaNodes(ctx context.Context, nl *NodeList, data []byte, 
 	log.WithContext(ctx).WithField("task_id", taskID).WithField("store-count", finalStoreCount).WithField("skey", hex.EncodeToString(skey)).Info("store data to alpha nodes failed")
 
 	return fmt.Errorf("store data to alpha nodes failed, only %d nodes stored", finalStoreCount)
+}
+
+func (s *DHT) startDisabledKeysCleanupWorker(ctx context.Context) error {
+	log.P2P().WithContext(ctx).Info("disabled keys cleanup worker started")
+
+	for {
+		select {
+		case <-time.After(defaultCleanupInterval):
+			s.cleanupDisabledKeys(ctx)
+		case <-ctx.Done():
+			log.P2P().WithContext(ctx).Error("closing disabled keys cleanup worker")
+			return nil
+		}
+	}
+}
+
+func (s *DHT) cleanupDisabledKeys(ctx context.Context) error {
+	if s.metaStore == nil {
+		return nil
+	}
+
+	from := time.Now().Add(-1 * defaultDisabledKeyExpirationInterval)
+	disabledKeys, err := s.metaStore.GetDisabledKeys(from)
+	if err != nil {
+		return errors.Errorf("get disabled keys: %w", err)
+	}
+
+	for i := 0; i < len(disabledKeys); i++ {
+		dec, err := hex.DecodeString(disabledKeys[i].Key)
+		if err != nil {
+			log.P2P().WithContext(ctx).WithError(err).Error("decode disabled key failed")
+			continue
+		}
+		s.metaStore.Delete(ctx, dec)
+	}
+
+	return nil
 }

@@ -416,8 +416,6 @@ func (s *Store) RetrieveWithType(_ context.Context, key []byte) ([]byte, int, er
 
 // Checkpoint method for the store
 func (s *Store) checkpoint() error {
-	//dbLock.Lock()
-	//defer dbLock.Unlock()
 
 	_, err := s.db.Exec("PRAGMA wal_checkpoint;")
 	if err != nil {

@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	logPrefix = "ddClient"
+	logPrefix                   = "ddClient"
+	defaultDDServiceCallTimeout = 26 * time.Minute
 )
 
 // DDServerClient contains methods for request services from dd-server service.
@@ -90,9 +91,13 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	// remove file after use
 	defer os.Remove(inputPath)
 
-	res, err := client.ImageRarenessScore(context.Background(), &req, grpc.MaxCallRecvMsgSize(35000000))
+	// Limits the dial timeout, prevent got stuck too long
+	dialCtx, dcancel := context.WithTimeout(ctx, defaultDDServiceCallTimeout)
+	defer dcancel()
+
+	res, err := client.ImageRarenessScore(dialCtx, &req, grpc.MaxCallRecvMsgSize(35000000))
 	if err != nil {
-		return nil, errors.Errorf("Error calling image rareness score: %w", err)
+		return nil, errors.Errorf("Error calling image rareness score, dd-serivce returned error: %w", err)
 	}
 
 	bytes, _ := json.Marshal(res)
