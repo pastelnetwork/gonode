@@ -127,11 +127,11 @@ func (s *Store) migrate() error {
 	query := `
     CREATE TABLE IF NOT EXISTS disabled_keys(
         key TEXT PRIMARY KEY,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     `
 	if _, err := s.db.Exec(query); err != nil {
-		return fmt.Errorf("failed to create table 'data': %w", err)
+		return fmt.Errorf("failed to create table 'disabled_keys': %w", err)
 	}
 
 	return nil
