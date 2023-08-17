@@ -169,6 +169,7 @@ func (s *DHT) Start(ctx context.Context) error {
 	}
 
 	go s.StartReplicationWorker(ctx)
+	go s.startDisabledKeysCleanupWorker(ctx)
 
 	return nil
 }
