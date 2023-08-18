@@ -26,6 +26,7 @@ type StorageChallengeClient interface {
 	ProcessStorageChallenge(ctx context.Context, in *ProcessStorageChallengeRequest, opts ...grpc.CallOption) (*ProcessStorageChallengeReply, error)
 	VerifyStorageChallenge(ctx context.Context, in *VerifyStorageChallengeRequest, opts ...grpc.CallOption) (*VerifyStorageChallengeReply, error)
 	VerifyEvaluationResult(ctx context.Context, in *VerifyEvaluationResultRequest, opts ...grpc.CallOption) (*VerifyEvaluationResultReply, error)
+	BroadcastStorageChallengeResult(ctx context.Context, in *BroadcastStorageChallengeRequest, opts ...grpc.CallOption) (*BroadcastStorageChallengeResponse, error)
 }
 
 type storageChallengeClient struct {
@@ -94,6 +95,15 @@ func (c *storageChallengeClient) VerifyEvaluationResult(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *storageChallengeClient) BroadcastStorageChallengeResult(ctx context.Context, in *BroadcastStorageChallengeRequest, opts ...grpc.CallOption) (*BroadcastStorageChallengeResponse, error) {
+	out := new(BroadcastStorageChallengeResponse)
+	err := c.cc.Invoke(ctx, "/supernode.StorageChallenge/BroadcastStorageChallengeResult", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StorageChallengeServer is the server API for StorageChallenge service.
 // All implementations must embed UnimplementedStorageChallengeServer
 // for forward compatibility
@@ -102,6 +112,7 @@ type StorageChallengeServer interface {
 	ProcessStorageChallenge(context.Context, *ProcessStorageChallengeRequest) (*ProcessStorageChallengeReply, error)
 	VerifyStorageChallenge(context.Context, *VerifyStorageChallengeRequest) (*VerifyStorageChallengeReply, error)
 	VerifyEvaluationResult(context.Context, *VerifyEvaluationResultRequest) (*VerifyEvaluationResultReply, error)
+	BroadcastStorageChallengeResult(context.Context, *BroadcastStorageChallengeRequest) (*BroadcastStorageChallengeResponse, error)
 	mustEmbedUnimplementedStorageChallengeServer()
 }
 
@@ -120,6 +131,9 @@ func (UnimplementedStorageChallengeServer) VerifyStorageChallenge(context.Contex
 }
 func (UnimplementedStorageChallengeServer) VerifyEvaluationResult(context.Context, *VerifyEvaluationResultRequest) (*VerifyEvaluationResultReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyEvaluationResult not implemented")
+}
+func (UnimplementedStorageChallengeServer) BroadcastStorageChallengeResult(context.Context, *BroadcastStorageChallengeRequest) (*BroadcastStorageChallengeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BroadcastStorageChallengeResult not implemented")
 }
 func (UnimplementedStorageChallengeServer) mustEmbedUnimplementedStorageChallengeServer() {}
 
@@ -214,6 +228,24 @@ func _StorageChallenge_VerifyEvaluationResult_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StorageChallenge_BroadcastStorageChallengeResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BroadcastStorageChallengeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageChallengeServer).BroadcastStorageChallengeResult(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/supernode.StorageChallenge/BroadcastStorageChallengeResult",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageChallengeServer).BroadcastStorageChallengeResult(ctx, req.(*BroadcastStorageChallengeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StorageChallenge_ServiceDesc is the grpc.ServiceDesc for StorageChallenge service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -232,6 +264,10 @@ var StorageChallenge_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyEvaluationResult",
 			Handler:    _StorageChallenge_VerifyEvaluationResult_Handler,
+		},
+		{
+			MethodName: "BroadcastStorageChallengeResult",
+			Handler:    _StorageChallenge_BroadcastStorageChallengeResult_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

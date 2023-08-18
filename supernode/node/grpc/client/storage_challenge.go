@@ -3,11 +3,11 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"github.com/pastelnetwork/gonode/common/types"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"google.golang.org/grpc/codes"
@@ -118,6 +118,19 @@ func (service *storageChallengeGRPCClient) VerifyEvaluationResult(ctx context.Co
 	}
 
 	return msg, nil
+}
+
+// BroadcastStorageChallengeResult broadcast the result to the entire network
+func (service *storageChallengeGRPCClient) BroadcastStorageChallengeResult(ctx context.Context, req *pb.BroadcastStorageChallengeRequest) error {
+	ctx = contextWithLogPrefix(ctx, service.conn.id)
+	ctx = contextWithMDSessID(ctx, service.sessID)
+
+	_, err := service.client.BroadcastStorageChallengeResult(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func newStorageChallengeGRPCClient(conn *clientConn) node.StorageChallengeInterface {

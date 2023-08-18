@@ -12,9 +12,9 @@ package node
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/common/types"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
@@ -109,6 +109,9 @@ type StorageChallengeInterface interface {
 
 	//VerifyEvaluationResult verifies the evaluation report by challenger
 	VerifyEvaluationResult(ctx context.Context, challengeMessage *pb.StorageChallengeMessage) (types.Message, error)
+
+	//BroadcastStorageChallengeResult broadcast the result to all SNs
+	BroadcastStorageChallengeResult(ctx context.Context, req *pb.BroadcastStorageChallengeRequest) error
 }
 
 // SelfHealingChallengeInterface represents an interaction stream with supernodes for self-healing challenge communications

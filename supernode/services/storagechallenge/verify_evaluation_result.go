@@ -3,11 +3,12 @@ package storagechallenge
 import (
 	"context"
 	"encoding/json"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
-	"time"
 )
 
 const (
@@ -121,6 +122,12 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 		},
 		Sender: task.nodeID,
 	}
+
+	signature, _, err := task.SignMessage(ctx, evaluationResultResponse.Data)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error signing evaluation response")
+	}
+	evaluationResultResponse.SenderSignature = signature
 
 	return evaluationResultResponse, nil
 }

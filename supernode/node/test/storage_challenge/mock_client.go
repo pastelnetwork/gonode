@@ -1,9 +1,9 @@
 package test
 
 import (
-	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/supernode/node/mocks"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,8 +36,14 @@ const (
 	//VerifyStorageChallengeMethod intercepts the VerifyStorageChallenge method
 	VerifyStorageChallengeMethod = "VerifyStorageChallenge"
 
+	//VerifyEvaluationResultMethod intercepts the VerifyEvaluationResult Method
+	VerifyEvaluationResultMethod = "VerifyEvaluationResult"
+
 	//StorageChallengeInterfaceMethod intercepts the StorageChallenge interface
 	StorageChallengeInterfaceMethod = "StorageChallenge"
+
+	//BroadcastStorageChallengeResultMethod intercepts the BroadcastStorageChallengeResult Method
+	BroadcastStorageChallengeResultMethod = "BroadcastStorageChallengeResult"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -83,8 +89,22 @@ func (client *Client) ListenOnProcessStorageChallengeFunc(returnErr error) *Clie
 }
 
 // ListenOnVerifyStorageChallengeFunc returns returnErr
-func (client *Client) ListenOnVerifyStorageChallengeFunc(data *pb.StorageChallengeData, returnErr error) *Client {
-	client.StorageChallengeInterface.On(VerifyStorageChallengeMethod, mock.Anything, mock.Anything).Return(data, returnErr)
+func (client *Client) ListenOnVerifyStorageChallengeFunc(returnErr error) *Client {
+	client.StorageChallengeInterface.On(VerifyStorageChallengeMethod, mock.Anything, mock.Anything).Return(returnErr)
+
+	return client
+}
+
+// ListenOnVerifyEvaluationResultFunc returns affirmations & returnErr
+func (client *Client) ListenOnVerifyEvaluationResultFunc(data types.Message, returnErr error) *Client {
+	client.StorageChallengeInterface.On(VerifyEvaluationResultMethod, mock.Anything, mock.Anything).Return(data, returnErr)
+
+	return client
+}
+
+// ListenOnBroadcastStorageChallengeResultFunc returns error
+func (client *Client) ListenOnBroadcastStorageChallengeResultFunc(returnErr error) *Client {
+	client.StorageChallengeInterface.On(BroadcastStorageChallengeResultMethod, mock.Anything, mock.Anything).Return(returnErr)
 
 	return client
 }

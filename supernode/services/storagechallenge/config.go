@@ -16,6 +16,9 @@ const (
 
 	// ChallengeFailuresThreshold is a threshold which when exceeds will send the challenge for self-healing
 	defaultChallengeFailuresThreshold = 5
+
+	// SuccessfulEvaluationThreshold is the affirmation threshold required for broadcasting
+	SuccessfulEvaluationThreshold = 2
 )
 
 // Config storage challenge config
@@ -26,9 +29,10 @@ type Config struct {
 	NumberOfVerifyingNodes        int   `mapstructure:"number_of_verifying_nodes" json:"number_of_verifying_nodes"`
 
 	// raptorq service
-	RaptorQServiceAddress      string `mapstructure:"-" json:"-"`
-	RqFilesDir                 string
-	ChallengeFailuresThreshold int
+	RaptorQServiceAddress         string `mapstructure:"-" json:"-"`
+	RqFilesDir                    string
+	ChallengeFailuresThreshold    int
+	SuccessfulEvaluationThreshold int
 }
 
 // NewConfig returns a new Config instance.
@@ -44,5 +48,6 @@ func NewConfig() *Config {
 		NumberOfChallengeReplicas:     defaultNumberOfChallengeReplicas,
 		NumberOfVerifyingNodes:        defaultNumberOfVerifyingNodes,
 		ChallengeFailuresThreshold:    challengeFailuresThreshold,
+		SuccessfulEvaluationThreshold: SuccessfulEvaluationThreshold,
 	}
 }
