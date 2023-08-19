@@ -153,7 +153,7 @@ func (s *Network) handleFindNode(ctx context.Context, message *Message) (res []b
 
 	// the closest contacts
 	hashedTargetID, _ := utils.Sha3256hash(request.Target)
-	closest := s.dht.ht.closestContacts(K, hashedTargetID, []*Node{message.Sender})
+	closest, _ := s.dht.ht.closestContacts(K, hashedTargetID, []*Node{message.Sender})
 
 	response := &FindNodeResponse{
 		Status: ResponseStatus{
@@ -227,7 +227,7 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) (res []
 			},
 		}
 
-		closest := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
+		closest, _ := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
 		response.Closest = closest.Nodes
 
 		// new a response message
@@ -246,7 +246,7 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) (res []
 		response.Value = value
 	} else {
 		// return the closest contacts
-		closest := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
+		closest, _ := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
 		response.Closest = closest.Nodes
 	}
 

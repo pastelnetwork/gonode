@@ -29,4 +29,10 @@ type Client interface {
 	// LocalStore store data to the network, which will trigger the iterative store message
 	// - the base58 encoded identifier will be returned
 	LocalStore(ctx context.Context, key string, data []byte) (string, error)
+
+	// DisableKey adds key to disabled keys list - It takes in a B58 encoded SHA-256 hash
+	DisableKey(ctx context.Context, b58EncodedHash string) error
+
+	// EnableKey removes key from disabled list - It takes in a B58 encoded SHA-256 hash
+	EnableKey(ctx context.Context, b58EncodedHash string) error
 }

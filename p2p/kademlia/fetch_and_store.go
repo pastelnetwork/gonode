@@ -118,7 +118,7 @@ func (s *DHT) BatchFetchAndStoreFailedKeys(ctx context.Context) error {
 	repKeys := make([]domain.ToRepKey, 0, len(keys))
 	for i := 0; i < len(keys); i++ {
 		igList := s.ignorelist.ToNodeList()
-		nl := s.ht.closestContacts(failedKeysClosestContactsLookupCount, keys[i].Key, igList)
+		nl, _ := s.ht.closestContacts(failedKeysClosestContactsLookupCount, keys[i].Key, igList)
 		attempt := (keys[i].Attempts - maxBatchAttempts) + 1
 
 		if len(nl.Nodes) > attempt {

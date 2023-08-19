@@ -13,7 +13,7 @@ const (
 	banDuration = 3 * time.Hour
 
 	// threshold - threshold
-	threshold = 5
+	threshold = 2
 )
 
 // BanNode is the over-the-wire representation of a node
@@ -166,7 +166,9 @@ func (s *BanList) ToNodeList() []*Node {
 	ret := make([]*Node, 0)
 
 	for i := 0; i < len(s.Nodes); i++ {
-		ret = append(ret, &s.Nodes[i].Node)
+		if s.Nodes[i].count > threshold {
+			ret = append(ret, &s.Nodes[i].Node)
+		}
 	}
 
 	return ret
