@@ -14,7 +14,7 @@ service StorageChallenge {
   rpc ProcessStorageChallenge(ProcessStorageChallengeRequest) returns (ProcessStorageChallengeReply);
   rpc VerifyStorageChallenge(VerifyStorageChallengeRequest) returns (VerifyStorageChallengeReply);
   rpc VerifyEvaluationResult(VerifyEvaluationResultRequest) returns (VerifyEvaluationResultReply);
-
+  rpc BroadcastStorageChallengeResult(BroadcastStorageChallengeRequest) returns (BroadcastStorageChallengeResponse);
 }
 
 message StorageChallengeData {
@@ -74,6 +74,17 @@ message VerifyEvaluationResultRequest {
 }
 
 message VerifyEvaluationResultReply {
+  StorageChallengeMessage data = 1;
+}
+
+message BroadcastStorageChallengeRequest {
+  StorageChallengeMessage data = 1;
+  map<string, bytes> challenger = 2;
+  map<string, bytes> recipient = 3;
+  map<string, bytes> obs = 4;
+}
+
+message BroadcastStorageChallengeResponse {
   StorageChallengeMessage data = 1;
 }
 

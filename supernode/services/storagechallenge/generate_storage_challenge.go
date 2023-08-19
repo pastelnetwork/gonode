@@ -4,18 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/errors"
 	"math"
 	"math/big"
 	"math/rand"
 	"strconv"
 	"time"
 
+	"github.com/mkmik/argsort"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
-
-	"github.com/mkmik/argsort"
-	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
@@ -118,32 +117,29 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		challengeIDInputData := challengingSupernodeID + respondingSupernodeID + currentFileHashToChallenge + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(merkleroot) + fmt.Sprint(rand.Int63())
 		challengeID := utils.GetHashFromString(challengeIDInputData)
 
-		//Create Storage Challenge Message
-		data := types.MessageData{
-			ChallengerID: challengingSupernodeID,
-			Challenge: types.ChallengeData{
-				Block:      currentBlockCount,
-				Merkelroot: merkleroot,
-				Timestamp:  time.Now(),
-				FileHash:   currentFileHashToChallenge,
-				StartIndex: challengeSliceStartIndex,
-				EndIndex:   challengeSliceEndIndex,
-			},
-			Observers:   challengeFileObservers[idx2],
-			RecipientID: sliceOfSupernodesToChallenge[idx2],
-		}
-
 		storageChallengeMessage := types.Message{
-			MessageType:     messageType,
-			ChallengeID:     challengeID,
-			Data:            data,
+			MessageType: messageType,
+			ChallengeID: challengeID,
+			Data: types.MessageData{
+				ChallengerID: challengingSupernodeID,
+				Observers:    challengeFileObservers[idx2],
+				RecipientID:  sliceOfSupernodesToChallenge[idx2],
+				Challenge: types.ChallengeData{
+					Block:      currentBlockCount,
+					Merkelroot: merkleroot,
+					Timestamp:  time.Now(),
+					FileHash:   currentFileHashToChallenge,
+					StartIndex: challengeSliceStartIndex,
+					EndIndex:   challengeSliceEndIndex,
+				},
+			},
 			Sender:          challengingSupernodeID,
 			SenderSignature: nil,
 		}
 
 		log.WithContext(ctx).WithField("challenge_id", challengeID).Info("sending challenge for processing")
 		// Send the storage challenge message for processing by the responder
-		if err = task.SendProcessStorageChallenge(ctx, storageChallengeMessage); err != nil {
+		if err = task.sendProcessStorageChallenge(ctx, storageChallengeMessage); err != nil {
 			log.WithContext(ctx).WithError(err).WithField("challenge_id", storageChallengeMessage.ChallengeID).
 				Error("Error processing storage challenge: ")
 		}
@@ -155,26 +151,25 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	return nil
 }
 
-// SendProcessStorageChallenge will send the storage challenge message to the responding node
-func (task *SCTask) SendProcessStorageChallenge(ctx context.Context, challengeMessage types.Message) error {
+// sendProcessStorageChallenge will send the storage challenge message to the responding node
+func (task *SCTask) sendProcessStorageChallenge(ctx context.Context, challengeMessage types.Message) error {
 	nodesToConnect, err := task.GetNodesAddressesToConnect(ctx, challengeMessage)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for send process storage challenge")
 		return err
 	}
 
-	data, err := json.Marshal(challengeMessage.Data)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error marshaling the data")
-	}
-
-	signature, err := task.SignMessage(ctx, data)
+	signature, data, err := task.SignMessage(ctx, challengeMessage.Data)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error signing challenge message")
 		return err
 	}
-
 	challengeMessage.SenderSignature = signature
+
+	if err := task.StoreChallengeMessage(ctx, challengeMessage); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error storing storage challenge message")
+	}
+
 	msg := pb.StorageChallengeMessage{
 		MessageType:     pb.StorageChallengeMessageMessageType(challengeMessage.MessageType),
 		ChallengeId:     challengeMessage.ChallengeID,
@@ -192,10 +187,6 @@ func (task *SCTask) SendProcessStorageChallenge(ctx context.Context, challengeMe
 		}
 
 		logger.Info("challenge message has been sent")
-	}
-
-	if err := task.StoreChallengeMessage(ctx, challengeMessage); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error storing storage challenge message")
 	}
 
 	return nil
@@ -267,7 +258,9 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 
 		//and partial observers; that's not required we only need partial observers for verification though
 		for _, po := range challengeMessage.Data.Observers {
-			nodesToConnect = append(nodesToConnect, mapSupernodes[po])
+			if value, ok := mapSupernodes[po]; ok {
+				nodesToConnect = append(nodesToConnect, value)
+			}
 		}
 
 		return nodesToConnect, nil
@@ -278,17 +271,28 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 
 			//and partial observers for verification
 			for _, po := range challengeMessage.Data.Observers { //partial observers
-				nodesToConnect = append(nodesToConnect, mapSupernodes[po])
+				if value, ok := mapSupernodes[po]; ok {
+					nodesToConnect = append(nodesToConnect, value)
+				}
 			}
 
 		}
+
+		return nodesToConnect, nil
 	case types.EvaluationMessageType:
 		for _, po := range challengeMessage.Data.Observers { //partial observers
-			nodesToConnect = append(nodesToConnect, mapSupernodes[po])
+			if value, ok := mapSupernodes[po]; ok {
+				nodesToConnect = append(nodesToConnect, value)
+			}
 		}
 
+		return nodesToConnect, nil
 	case types.AffirmationMessageType:
-		//not implemented yet
+	// not required
+
+	case types.BroadcastMessageType:
+		return supernodes, nil
+
 	default:
 		return nil, errors.Errorf("no nodes found to be connect")
 	}
@@ -316,6 +320,7 @@ func (task *SCTask) SendMessage(ctx context.Context, challengeMessage pb.Storage
 		return storageChallengeIF.ProcessStorageChallenge(ctx, &challengeMessage)
 	case pb.StorageChallengeMessage_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE:
 		return storageChallengeIF.VerifyStorageChallenge(ctx, &challengeMessage)
+
 	default:
 		log.WithContext(ctx).Info("message type not supported by any Process & Verify worker")
 	}
@@ -456,13 +461,18 @@ func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message)
 }
 
 // SignMessage signs the message using sender's pastelID and passphrase
-func (task SCTask) SignMessage(ctx context.Context, data []byte) ([]byte, error) {
-	signature, err := task.PastelClient.Sign(ctx, data, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
+func (task SCTask) SignMessage(ctx context.Context, data types.MessageData) ([]byte, []byte, error) {
+	d, err := json.Marshal(data)
 	if err != nil {
-		return nil, errors.Errorf("error signing storage challenge message: %w", err)
+		log.WithContext(ctx).WithError(err).Error("error marshaling the data")
 	}
 
-	return signature, nil
+	signature, err := task.PastelClient.Sign(ctx, d, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		return nil, nil, errors.Errorf("error signing storage challenge message: %w", err)
+	}
+
+	return signature, d, nil
 }
 
 // VerifyMessageSignature verifies the sender's signature on message

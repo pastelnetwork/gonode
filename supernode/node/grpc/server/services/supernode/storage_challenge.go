@@ -3,11 +3,11 @@ package supernode
 import (
 	"context"
 	"encoding/json"
-	"github.com/pastelnetwork/gonode/common/types"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
@@ -177,6 +177,27 @@ func (service *StorageChallengeGRPC) VerifyEvaluationResult(ctx context.Context,
 		SenderSignature: resp.SenderSignature,
 		Data:            d,
 	}}, nil
+}
+
+// BroadcastStorageChallengeResult broadcast the message to the entire network
+func (service *StorageChallengeGRPC) BroadcastStorageChallengeResult(ctx context.Context, scRequest *pb.BroadcastStorageChallengeRequest) (*pb.BroadcastStorageChallengeResponse, error) {
+	log.WithContext(ctx).WithField("req", scRequest).Debugf("broadcast storage challenge result request received from gRpc client")
+	task := service.NewSCTask()
+
+	msg := types.Message{
+		ChallengeID:     scRequest.Data.ChallengeId,
+		MessageType:     types.MessageType(scRequest.Data.MessageType),
+		Sender:          scRequest.Data.SenderId,
+		SenderSignature: scRequest.Data.SenderSignature,
+	}
+
+	_, err := task.BroadcastStorageChallengeResult(ctx, msg)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error verifying evaluation result")
+		return nil, errors.Errorf("error verifying evaluation report")
+	}
+
+	return nil, err
 }
 
 // NewStorageChallengeGRPC returns a new StorageChallenge instance.

@@ -47,7 +47,7 @@ func NewSCTask(service *SCService) *SCTask {
 
 //utils below
 
-//SaveChallengeState represents the callbacks for each step in the storage challenge process.
+// SaveChallengeState represents the callbacks for each step in the storage challenge process.
 type SaveChallengeState interface {
 	OnSent(ctx context.Context, challengeID, nodeID string, sentBlock int32)
 	OnResponded(ctx context.Context, challengeID, nodeID string, sentBlock int32)
@@ -56,10 +56,10 @@ type SaveChallengeState interface {
 	OnTimeout(ctx context.Context, challengeID, nodeID string, sentBlock int32)
 }
 
-//Placeholder for storage challenge state operations
+// Placeholder for storage challenge state operations
 type defaultChallengeStateLogging struct{}
 
-//Below are stub functions that simply log the state and some basic information.  These could be extended later.
+// Below are stub functions that simply log the state and some basic information.  These could be extended later.
 func (cs defaultChallengeStateLogging) OnSent(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
 	log.WithContext(ctx).WithPrefix(logPrefix).WithField("challengeID", challengeID).WithField("nodeID", nodeID).WithField("sentBlock", sentBlock).Println("Storage Challenge Sent")
 }
@@ -76,7 +76,7 @@ func (cs defaultChallengeStateLogging) OnTimeout(ctx context.Context, challengeI
 	log.WithContext(ctx).WithPrefix(logPrefix).WithField("challengeID", challengeID).WithField("nodeID", nodeID).WithField("sentBlock", sentBlock).Println("Storage Challenge Timed Out")
 }
 
-//SaveChallengeMessageState can be called to perform the above functions based on the state of the storage challenge.
+// SaveChallengeMessageState can be called to perform the above functions based on the state of the storage challenge.
 func (task *SCTask) SaveChallengeMessageState(ctx context.Context, status string, challengeID, nodeID string, sentBlock int32) {
 	switch status {
 	case "sent":

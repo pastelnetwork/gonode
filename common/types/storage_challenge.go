@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/pastelnetwork/gonode/common/errors"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 // MessageType represents the type of message
@@ -17,6 +18,8 @@ const (
 	EvaluationMessageType
 	// AffirmationMessageType represents the affirmation message
 	AffirmationMessageType
+	//BroadcastMessageType represents the message that needs to be broadcast
+	BroadcastMessageType
 )
 
 // String returns the message string
@@ -51,15 +54,23 @@ func MessageTypeFromString(str string) (MessageType, error) {
 	}
 }
 
+// StorageChallengeSignatures represents the signature struct for broadcasting
+type StorageChallengeSignatures struct {
+	Challenger map[string]string `json:"challenger,omitempty"`
+	Recipient  map[string]string `json:"recipient,omitempty"`
+	Obs        map[string]string `json:"obs,omitempty"`
+}
+
 // Message represents the storage challenge message
 type Message struct {
-	MessageType     MessageType `json:"message_type"`
-	ChallengeID     string      `json:"challenge_id"`
-	Data            MessageData `json:"data"`
-	Sender          string      `json:"sender"`
-	SenderSignature []byte      `json:"sender_signature"`
-	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
+	MessageType                MessageType `json:"message_type"`
+	ChallengeID                string      `json:"challenge_id"`
+	Data                       MessageData `json:"data"`
+	Sender                     string      `json:"sender"`
+	SenderSignature            []byte      `json:"sender_signature"`
+	StorageChallengeSignatures StorageChallengeStatus
+	CreatedAt                  time.Time `json:"created_at"`
+	UpdatedAt                  time.Time `json:"updated_at"`
 }
 
 // MessageData represents the storage challenge message data

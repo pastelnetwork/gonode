@@ -3,8 +3,8 @@ package storagechallenge
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -94,7 +94,8 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 				Timestamp:  time.Now(),
 			},
 		},
-		Sender: task.nodeID,
+		Sender:          task.nodeID,
+		SenderSignature: nil,
 	}
 
 	// send to Supernodes to validate challenge response hash
@@ -146,19 +147,13 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		return err
 	}
 
-	data, err := json.Marshal(challengeMessage.Data)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error marshaling the data")
-		return err
-	}
-
-	signature, err := task.SignMessage(ctx, data)
+	signature, data, err := task.SignMessage(ctx, challengeMessage.Data)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error signing the challenge message")
 		return err
 	}
-
 	challengeMessage.SenderSignature = signature
+
 	msg := pb.StorageChallengeMessage{
 		MessageType:     pb.StorageChallengeMessageMessageType(challengeMessage.MessageType),
 		ChallengeId:     challengeMessage.ChallengeID,
