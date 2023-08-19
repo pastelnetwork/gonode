@@ -202,6 +202,7 @@ func (s *Store) UpdateLastReplicated(_ context.Context, _ string, _ time.Time) e
 	return nil
 }
 
+// RecordExists checks if a record exists
 func (s *Store) RecordExists(_ string) (bool, error) {
 	return false, nil
 }

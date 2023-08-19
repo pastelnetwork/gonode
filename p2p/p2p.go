@@ -19,7 +19,8 @@ import (
 
 const (
 	logPrefix = "p2p"
-	B         = 256
+	// B is the number of bits in a SHA256 hash
+	B = 256
 )
 
 var (
