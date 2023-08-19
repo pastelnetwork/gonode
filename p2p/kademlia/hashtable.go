@@ -189,7 +189,7 @@ func (ht *HashTable) hasNode(id []byte) bool {
 }
 
 // closestContacts returns the closest contacts of target
-func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Node) *NodeList {
+func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Node) (*NodeList, int) {
 	ht.mutex.RLock()
 	defer ht.mutex.RUnlock()
 
@@ -203,9 +203,11 @@ func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Nod
 		Comparator: target,
 	}
 
+	counter := 0
 	// Flatten the routeTable and add nodes to nl if they're not in the ignoredMap
 	for _, bucket := range ht.routeTable {
 		for _, node := range bucket {
+			counter++
 			if !ignoredMap[string(node.ID)] {
 				nl.AddNodes([]*Node{node})
 			}
@@ -216,7 +218,7 @@ func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Nod
 	nl.Sort()
 	nl.TopN(num)
 
-	return nl
+	return nl, counter
 }
 
 // bucketIndex return the bucket index from two node ids
@@ -298,9 +300,11 @@ func (ht *HashTable) closestContactsWithInlcudingNode(num int, target []byte, ig
 	}
 
 	// Flatten the routeTable and add nodes to nl if they're not in the ignoredMap
+	counter := 0
 	for _, bucket := range ht.routeTable {
 		for _, node := range bucket {
 			if !ignoredMap[string(node.ID)] {
+				counter++
 				nl.AddNodes([]*Node{node})
 			}
 		}

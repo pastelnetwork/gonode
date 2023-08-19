@@ -7,10 +7,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 // Node is the over-the-wire representation of a node
@@ -26,7 +22,7 @@ type Node struct {
 }
 
 func (s *Node) String() string {
-	return fmt.Sprintf("%v-%v:%d", base58.Encode(s.ID), s.IP, s.Port)
+	return fmt.Sprintf("%v-%v:%d", string(s.ID), s.IP, s.Port)
 }
 
 // NodeList is used in order to sort a list of nodes
@@ -81,8 +77,8 @@ func (s *NodeList) Exists(node *Node) bool {
 }
 
 func (s *NodeList) exists(node *Node) bool {
-	for _, item := range s.Nodes {
-		if bytes.Equal(item.ID, node.ID) {
+	for i := 0; i < len(s.Nodes); i++ {
+		if bytes.Equal(s.Nodes[i].ID, node.ID) {
 			return true
 		}
 	}
@@ -106,13 +102,6 @@ func (s *NodeList) Len() int {
 	return len(s.Nodes)
 }
 
-func (s *NodeList) distance(id1, id2 []byte) *big.Int {
-	o1 := new(big.Int).SetBytes(id1)
-	o2 := new(big.Int).SetBytes(id2)
-
-	return new(big.Int).Xor(o1, o2)
-}
-
 // AddFirst adds a node to the first position of the list.
 func (s *NodeList) AddFirst(node *Node) {
 	s.Mux.Lock()         // lock for writing
@@ -134,18 +123,11 @@ func (s *NodeList) TopN(n int) {
 	}
 }
 
-func (s *NodeList) computeDistances() []big.Int {
-	distances := make([]big.Int, s.Len())
-	for i, node := range s.Nodes {
-		cID, _ := utils.Sha3256hash(node.ID)
-		dist := s.distance(cID, s.Comparator)
-		distances[i] = *dist
+func (s *NodeList) distance(id1, id2 []byte) *big.Int {
+	o1 := new(big.Int).SetBytes(id1)
+	o2 := new(big.Int).SetBytes(id2)
 
-		if s.debug {
-			log.WithField("node", node.String()).WithField("dist", distances[i]).Info("computeDistances")
-		}
-	}
-	return distances
+	return new(big.Int).Xor(o1, o2)
 }
 
 // Sort sorts nodes
@@ -153,13 +135,8 @@ func (s *NodeList) Sort() {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 
-	// Compute distances
-	distances := s.computeDistances()
-
 	// Sort using the precomputed distances
-	sort.Slice(s.Nodes, func(i, j int) bool {
-		return distances[i].Cmp(&distances[j]) == -1
-	})
+	sort.Sort(s)
 }
 
 // Swap swap two nodes

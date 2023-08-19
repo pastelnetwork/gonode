@@ -18,7 +18,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/utils"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
 )
@@ -36,20 +35,19 @@ const maxIterations = 5
 
 // DHT represents the state of the local node in the distributed hash table
 type DHT struct {
-	ht                   *HashTable       // the hashtable for routing
-	options              *Options         // the options of DHT
-	network              *Network         // the network of DHT
-	store                Store            // the storage of DHT
-	metaStore            MetaStore        // the meta storage of DHT
-	done                 chan struct{}    // distributed hash table is done
-	cache                storage.KeyValue // store bad bootstrap addresses
-	pastelClient         pastel.Client
-	externalIP           string
-	mtx                  sync.Mutex
-	authHelper           *AuthHelper
-	ignorelist           *BanList
-	nodeReplicationTimes map[string]domain.NodeReplicationInfo
-	replicationMtx       sync.RWMutex
+	ht             *HashTable       // the hashtable for routing
+	options        *Options         // the options of DHT
+	network        *Network         // the network of DHT
+	store          Store            // the storage of DHT
+	metaStore      MetaStore        // the meta storage of DHT
+	done           chan struct{}    // distributed hash table is done
+	cache          storage.KeyValue // store bad bootstrap addresses
+	pastelClient   pastel.Client
+	externalIP     string
+	mtx            sync.Mutex
+	authHelper     *AuthHelper
+	ignorelist     *BanList
+	replicationMtx sync.RWMutex
 }
 
 // Options contains configuration options for the local node
@@ -84,26 +82,16 @@ func NewDHT(ctx context.Context, store Store, metaStore MetaStore, pc pastel.Cli
 	if options.Port <= 0 {
 		options.Port = defaultNetworkPort
 	}
-	info, err := store.GetAllReplicationInfo(ctx)
-	if err != nil {
-		log.P2P().WithContext(ctx).WithError(err).Errorf("get all replicationInfo failed")
-	}
-
-	replicationMap := make(map[string]domain.NodeReplicationInfo)
-	for _, v := range info {
-		replicationMap[string(v.ID)] = v
-	}
 
 	s := &DHT{
-		metaStore:            metaStore,
-		store:                store,
-		options:              options,
-		pastelClient:         pc,
-		done:                 make(chan struct{}),
-		cache:                memory.NewKeyValue(),
-		ignorelist:           NewBanList(ctx),
-		nodeReplicationTimes: replicationMap,
-		replicationMtx:       sync.RWMutex{},
+		metaStore:      metaStore,
+		store:          store,
+		options:        options,
+		pastelClient:   pc,
+		done:           make(chan struct{}),
+		cache:          memory.NewKeyValue(),
+		ignorelist:     NewBanList(ctx),
+		replicationMtx: sync.RWMutex{},
 	}
 
 	if options.ExternalIP != "" {
@@ -482,7 +470,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 
 	igList := s.ignorelist.ToNodeList()
 	// find the closest contacts for the target node from local route tables
-	nl := s.ht.closestContacts(Alpha, target, igList)
+	nl, _ := s.ht.closestContacts(Alpha, target, igList)
 	if len(igList) > 0 {
 		log.P2P().WithContext(ctx).WithField("nodes", nl.String()).WithField("ignored", s.ignorelist.String()).Info("closest contacts")
 	}
@@ -633,7 +621,7 @@ func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []
 	igList := s.ignorelist.ToNodeList()
 
 	// nl will have the closest nodes to the target value, it will ignore the nodes in igList
-	nl := s.ht.closestContacts(Alpha, target, igList)
+	nl, _ := s.ht.closestContacts(Alpha, target, igList)
 	if len(igList) > 0 {
 		log.P2P().WithContext(ctx).WithField("nodes", nl.String()).WithField("ignored", s.ignorelist.String()).Info("closest contacts")
 	}
@@ -785,7 +773,7 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 func (s *DHT) NClosestNodes(_ context.Context, n int, key string, ignores ...*Node) []*Node {
 	list := s.ignorelist.ToNodeList()
 	ignores = append(ignores, list...)
-	nodeList := s.ht.closestContacts(n, base58.Decode(key), ignores)
+	nodeList, _ := s.ht.closestContacts(n, base58.Decode(key), ignores)
 
 	return nodeList.Nodes
 }
