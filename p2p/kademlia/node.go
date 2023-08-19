@@ -2,15 +2,11 @@ package kademlia
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"sort"
 	"strings"
 	"sync"
-
-	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 // Node is the over-the-wire representation of a node
@@ -132,20 +128,6 @@ func (s *NodeList) distance(id1, id2 []byte) *big.Int {
 	o2 := new(big.Int).SetBytes(id2)
 
 	return new(big.Int).Xor(o1, o2)
-}
-
-func (s *NodeList) computeDistances() []big.Int {
-	distances := make([]big.Int, s.Len())
-	for i, node := range s.Nodes {
-		cID, _ := utils.Sha3256hash(node.ID)
-		dist := s.distance(cID, s.Comparator)
-		distances[i] = *dist
-
-		if s.debug {
-			log.WithField("node", node.String()).WithField("skey", hex.EncodeToString(s.Comparator)).WithField("dist", distances[i]).Info("computeDistances")
-		}
-	}
-	return distances
 }
 
 // Sort sorts nodes
