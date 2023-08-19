@@ -2,10 +2,12 @@ package p2p
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/meta"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
@@ -17,6 +19,7 @@ import (
 
 const (
 	logPrefix = "p2p"
+	B         = 256
 )
 
 var (
@@ -245,4 +248,26 @@ func (s *p2p) LocalStore(ctx context.Context, key string, data []byte) (string, 
 	}
 
 	return s.dht.LocalStore(ctx, key, data)
+}
+
+// DisableKey adds key to disabled keys list - It takes in a B58 encoded SHA-256 hash
+func (s *p2p) DisableKey(ctx context.Context, b58EncodedHash string) error {
+	decoded := base58.Decode(b58EncodedHash)
+	if len(decoded) != B/8 {
+		return fmt.Errorf("invalid key: %v", b58EncodedHash)
+	}
+
+	return s.metaStore.Store(ctx, decoded)
+}
+
+// EnableKey removes key from disabled list - It takes in a B58 encoded SHA-256 hash
+func (s *p2p) EnableKey(ctx context.Context, b58EncodedHash string) error {
+	decoded := base58.Decode(b58EncodedHash)
+	if len(decoded) != B/8 {
+		return fmt.Errorf("invalid key: %v", b58EncodedHash)
+	}
+
+	s.metaStore.Delete(ctx, decoded)
+
+	return nil
 }

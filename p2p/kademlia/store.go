@@ -72,6 +72,14 @@ type Store interface {
 	BatchDeleteRepKeys(keys []string) error
 
 	IncrementAttempts(keys []string) error
+
+	UpdateIsActive(ctx context.Context, id string, isActive bool, isAdjusted bool) error
+
+	UpdateIsAdjusted(ctx context.Context, id string, isAdjusted bool) error
+
+	UpdateLastReplicated(ctx context.Context, id string, t time.Time) error
+
+	RecordExists(nodeID string) (bool, error)
 }
 
 // MetaStore is the interface for implementing the storage mechanism for the DHT

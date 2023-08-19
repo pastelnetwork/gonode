@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -306,10 +307,28 @@ func (s *Store) GetAllReplicationInfo(_ context.Context) ([]domain.NodeReplicati
 	return list, nil
 }
 
+// RecordExists checks if a record with the given nodeID exists in the database.
+func (s *Store) RecordExists(nodeID string) (bool, error) {
+	const query = "SELECT 1 FROM replication_info WHERE id = ? LIMIT 1"
+
+	var exists int
+	err := s.db.QueryRow(query, nodeID).Scan(&exists)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No matching record found
+			return false, nil
+		}
+		// Other database error
+		return false, fmt.Errorf("error checking record existence: %v", err)
+	}
+
+	return exists == 1, nil
+}
+
 // UpdateReplicationInfo updates replication info
 func (s *Store) UpdateReplicationInfo(_ context.Context, rep domain.NodeReplicationInfo) error {
-	_, err := s.db.Exec(`UPDATE replication_info SET ip = ?, is_active = ?, is_adjusted = ?, lastReplicatedAt = ?, updatedAt =?, port = ? WHERE id = ?`,
-		rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, string(rep.ID))
+	_, err := s.db.Exec(`UPDATE replication_info SET ip = ?, is_active = ?, is_adjusted = ?, lastReplicatedAt = ?, updatedAt =?, port = ?, last_seen = ? WHERE id = ?`,
+		rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, string(rep.ID), rep.LastSeen)
 	if err != nil {
 		return fmt.Errorf("failed to update replicated records: %v", err)
 	}
@@ -333,6 +352,36 @@ func (s *Store) UpdateLastSeen(_ context.Context, id string) error {
 	_, err := s.db.Exec(`UPDATE replication_info SET last_seen = ? WHERE id = ?`, time.Now(), id)
 	if err != nil {
 		return fmt.Errorf("failed to update last_seen of node: %s: - err: %v", id, err)
+	}
+
+	return err
+}
+
+// UpdateLastReplicated updates replication info last replicated
+func (s *Store) UpdateLastReplicated(_ context.Context, id string, t time.Time) error {
+	_, err := s.db.Exec(`UPDATE replication_info SET lastReplicatedAt = ?, updatedAt = ? WHERE id = ?`, t, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("failed to update last replicated: %v", err)
+	}
+
+	return err
+}
+
+// UpdateIsAdjusted updates adjusted
+func (s *Store) UpdateIsAdjusted(_ context.Context, id string, isAdjusted bool) error {
+	_, err := s.db.Exec(`UPDATE replication_info SET is_adjusted = ?, updatedAt = ? WHERE id = ?`, isAdjusted, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("failed to update is_adjusted of node: %s: - err: %v", id, err)
+	}
+
+	return err
+}
+
+// UpdateIsActive updates active
+func (s *Store) UpdateIsActive(_ context.Context, id string, isActive bool, isAdjusted bool) error {
+	_, err := s.db.Exec(`UPDATE replication_info SET is_active = ?, is_adjusted = ?, updatedAt = ? WHERE id = ?`, isActive, isAdjusted, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("failed to update is_active of node: %s: - err: %v", id, err)
 	}
 
 	return err

@@ -186,3 +186,22 @@ func (s *Store) BatchDeleteRepKeys(_ []string) error {
 func (s *Store) IncrementAttempts(_ []string) error {
 	return nil
 }
+
+// UpdateIsActive updates isactive
+func (s *Store) UpdateIsActive(_ context.Context, _ string, _ bool, _ bool) error {
+	return nil
+}
+
+// UpdateIsAdjusted updated isadjusted
+func (s *Store) UpdateIsAdjusted(_ context.Context, _ string, _ bool) error {
+	return nil
+}
+
+// UpdateLastReplicated updates last replicated
+func (s *Store) UpdateLastReplicated(_ context.Context, _ string, _ time.Time) error {
+	return nil
+}
+
+func (s *Store) RecordExists(_ string) (bool, error) {
+	return false, nil
+}
