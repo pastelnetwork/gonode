@@ -29,14 +29,37 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 		return nil, err
 	}
 
-	//store response message to the observers and challenger
+	//if the message is received by one of the observer then save the challenge message
+	if task.isObserver(incomingResponseMessage.Data.Observers) {
+		if err := task.StoreChallengeMessage(ctx, incomingResponseMessage); err != nil {
+			log.WithContext(ctx).
+				WithField("node_id", task.nodeID).
+				WithError(err).
+				Error("error storing response message")
+		} else {
+			log.WithContext(ctx).WithField("node_id", task.nodeID).
+				Info("response message has been stored by the observer")
+		}
+
+		return nil, nil
+	}
+
+	//if not the challenger, should return, otherwise proceed
+	if task.nodeID != incomingResponseMessage.Data.ChallengerID {
+		log.WithContext(ctx).WithField("node_id", task.nodeID).
+			Info("current node is not the challenger to verify the response message")
+
+		return nil, nil
+	}
+
+	//Challenger should also store the response message
 	if err := task.StoreChallengeMessage(ctx, incomingResponseMessage); err != nil {
 		log.WithContext(ctx).
 			WithField("node_id", task.nodeID).
 			WithError(err).
-			Error("error storing challenge message")
-
-		return nil, errors.Errorf("error storing response challenge message")
+			Error("error storing response message")
+	} else {
+		logger.Info("response message has been stored by the challenger")
 	}
 
 	//Get the file assuming we host it locally (if not, return)
@@ -74,19 +97,15 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 	log.WithContext(ctx).Info("determining the challenge outcome based on calculated and received hash")
 
 	// determine success or failure
-	var saveStatus string
 	var isVerified bool
 	if (incomingResponseMessage.Data.Response.Hash == challengeCorrectHash) && (blocksVerifyStorageChallengeInBlocks <= task.storageChallengeExpiredBlocks) {
-		saveStatus = "succeeded"
 		isVerified = true
 		logger.Info(fmt.Sprintf("Supernode %s correctly responded in %d blocks to a storage challenge for file %s", incomingResponseMessage.Data.RecipientID, blocksVerifyStorageChallengeInBlocks, incomingResponseMessage.Data.Challenge.FileHash))
 		task.SaveChallengeMessageState(ctx, "succeeded", incomingResponseMessage.ChallengeID, incomingResponseMessage.Data.ChallengerID, incomingResponseMessage.Data.Challenge.Block)
 	} else if incomingResponseMessage.Data.Response.Hash == challengeCorrectHash {
-		saveStatus = "timeout"
 		logger.Info(fmt.Sprintf("Supernode %s  correctly responded in %d blocks to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingResponseMessage.Data.RecipientID, blocksVerifyStorageChallengeInBlocks, incomingResponseMessage.Data.Challenge.FileHash))
 		task.SaveChallengeMessageState(ctx, "timeout", incomingResponseMessage.ChallengeID, incomingResponseMessage.Data.ChallengerID, incomingResponseMessage.Data.Challenge.Block)
 	} else {
-		saveStatus = "failed"
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingResponseMessage.ChallengeID).Debug(fmt.Sprintf("Supernode %s failed by incorrectly responding to a storage challenge for file %s", incomingResponseMessage.Data.RecipientID, incomingResponseMessage.Data.Challenge.FileHash))
 		task.SaveChallengeMessageState(ctx, "failed", incomingResponseMessage.ChallengeID, incomingResponseMessage.Data.ChallengerID, incomingResponseMessage.Data.Challenge.Block)
 	}
@@ -155,14 +174,6 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 
 	//blocksToRespondToStorageChallenge := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
 	//log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeId).Debug("Supernode " + outgoingChallengeMessage.RespondingMasternodeId + " responded to storage challenge for file hash " + outgoingChallengeMessage.ChallengeFile.FileHashToChallenge + " in " + fmt.Sprint(blocksToRespondToStorageChallenge) + " blocks!")
-
-	task.SaveChallengeMessageState(
-		ctx,
-		saveStatus,
-		incomingResponseMessage.ChallengeID,
-		incomingResponseMessage.Data.ChallengerID,
-		incomingResponseMessage.Data.ChallengerEvaluation.Block,
-	)
 
 	return nil, nil
 }

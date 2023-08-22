@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -32,13 +31,31 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	}
 	log.WithContext(ctx).WithField("incoming_challenge", incomingChallengeMessage).Info("Incoming challenge validated")
 
-	if incomingChallengeMessage.Data.RecipientID != task.nodeID { //if observers then save the challenge message & return
+	//if the message is received by one of the observer then save the challenge message, lock the file & return
+	if task.isObserver(incomingChallengeMessage.Data.Observers) {
+		logger := log.WithContext(ctx).WithField("node_id", task.nodeID)
+
+		if err := task.storage.P2PClient.DisableKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash); err != nil {
+			log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID).WithError(err).Error("error locking the file")
+			return nil, errors.Errorf("error locking the file")
+		}
+		logger.Info("file has been locked by the observer")
+
 		if err := task.StoreChallengeMessage(ctx, incomingChallengeMessage); err != nil {
 			log.WithContext(ctx).
 				WithField("node_id", task.nodeID).
 				WithError(err).
 				Error("error storing challenge message")
 		}
+		logger.Info("challenge message has been stored by the observer")
+
+		return nil, nil
+	}
+
+	//if not the challenge recipient, should return, otherwise proceed
+	if task.nodeID != incomingChallengeMessage.Data.RecipientID {
+		log.WithContext(ctx).WithField("node_id", task.nodeID).
+			Info("current node is not the challenge recipient to process challenge message")
 
 		return nil, nil
 	}
@@ -57,7 +74,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	challengeResponseHash := task.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.Data.Challenge.StartIndex, incomingChallengeMessage.Data.Challenge.EndIndex)
 	log.WithContext(ctx).Info(fmt.Sprintf("hash for data generated against the indices:%s", challengeResponseHash))
 
-	log.WithContext(ctx).Info("sending message to other SNs for verification")
+	log.WithContext(ctx).Info("sending message to challenger for verification")
 	blockNumChallengeRespondedTo, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not get current block count")
@@ -170,4 +187,14 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	}
 
 	return nil
+}
+
+func (task *SCTask) isObserver(sliceOfObservers []string) bool {
+	for _, ob := range sliceOfObservers {
+		if ob == task.nodeID {
+			return true
+		}
+	}
+
+	return false
 }

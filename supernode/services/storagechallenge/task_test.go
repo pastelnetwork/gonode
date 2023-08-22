@@ -6,7 +6,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -142,7 +144,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 		"success": {
 			args: args{
 				incomingChallengeMessage: types.Message{
-					ChallengeID: "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
+					ChallengeID: "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9669",
 					MessageType: types.ChallengeMessageType,
 					Data: types.MessageData{
 						ChallengerID: "5072696d6172794944",
@@ -376,7 +378,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 					Sender:          "E",
 					SenderSignature: []byte{1, 3, 4},
 				},
-				PastelID:          "C",
+				PastelID:          "5072696d6172794944",
 				MerkleRoot:        hex.EncodeToString([]byte("PrimaryID")),
 				currentBlockCount: 1,
 			},
@@ -479,7 +481,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 					Sender:          "E",
 					SenderSignature: []byte{1, 3, 4},
 				},
-				PastelID:          "C",
+				PastelID:          "5072696d6172794944",
 				MerkleRoot:        hex.EncodeToString([]byte("PrimaryID")),
 				currentBlockCount: 10,
 			},
@@ -582,7 +584,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 					Sender:          "E",
 					SenderSignature: []byte{1, 3, 4},
 				},
-				PastelID:          "C",
+				PastelID:          "5072696d6172794944",
 				MerkleRoot:        hex.EncodeToString([]byte("PrimaryID")),
 				currentBlockCount: 1,
 			},
@@ -598,7 +600,6 @@ func TestVerifyStorageChallenge(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			ticket := pastel.RegTicket{}
 			f := fuzz.New()
 			f.Fuzz(&ticket)
@@ -671,26 +672,24 @@ func TestVerifyStorageChallenge(t *testing.T) {
 			}
 			task.config.SuccessfulEvaluationThreshold = 1
 
-			task.StoreChallengeMessage(context.Background(),
+			err = task.StoreChallengeMessage(context.Background(),
 				types.Message{
 					ChallengeID:     "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
 					MessageType:     types.ChallengeMessageType,
 					Sender:          "5072696d6172794944",
 					SenderSignature: []byte{1, 2, 3},
 				})
-
-			task.StoreChallengeMessage(context.Background(),
-				types.Message{
-					ChallengeID:     "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639",
-					MessageType:     types.ChallengeMessageType,
-					Sender:          "B",
-					SenderSignature: []byte{1, 2, 3},
-				})
+			assert.NoError(t, err)
 
 			if resp, err := task.VerifyStorageChallenge(context.Background(), tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
 				t.Errorf("SCTask.VerifyStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
 				fmt.Println(resp)
 			}
+
+			store, err := local.OpenHistoryDB()
+			assert.NoError(t, err)
+
+			store.CleanupStorageChallenges()
 		})
 	}
 }
