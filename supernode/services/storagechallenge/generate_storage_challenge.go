@@ -45,18 +45,6 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	// List all NFT tickets and API Cascade Tickets, get their raptorq ids
 	// list all RQ symbol keys from nft and action tickets
 
-	log.WithContext(ctx).Info("list symbol file keys from registered nft tickets")
-	sliceOfFileHashes, err := task.ListSymbolFileKeysFromNFTAndActionTickets(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
-		return err
-	}
-	log.WithContext(ctx).Info("symbol file keys from registered nft tickets have been retrieved")
-
-	// Identify which raptorq files are currently hosted on this node
-	sliceOfFileHashesStoredByLocalSupernode := task.getFilesStoredByLocalSN(ctx, sliceOfFileHashes)
-	log.WithContext(ctx).Info("slice of file hashes stored by local SN has been retrieved")
-
 	log.WithContext(ctx).Info("retrieving block no and verbose")
 	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
@@ -79,6 +67,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error identifying challengers")
 		return err
 	}
+	log.WithContext(ctx).WithField("node_id", task.nodeID).Info("challengers have been selected")
 
 	//If we are in the sliceOfChallengingSupernodeIDsForBlock, we need to generate a storage challenge, Otherwise we don't.
 	var challengingSupernodeID string
@@ -87,6 +76,18 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		return nil
 	}
 	challengingSupernodeID = task.nodeID
+
+	log.WithContext(ctx).Info("list symbol file keys from registered nft tickets")
+	sliceOfFileHashes, err := task.ListSymbolFileKeysFromNFTAndActionTickets(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
+		return err
+	}
+	log.WithContext(ctx).Info("symbol file keys from registered nft tickets have been retrieved")
+
+	// Identify which raptorq files are currently hosted on this node
+	sliceOfFileHashesStoredByLocalSupernode := task.getFilesStoredByLocalSN(ctx, sliceOfFileHashes)
+	log.WithContext(ctx).Info("slice of file hashes stored by local SN has been retrieved")
 
 	// Identify which files should be challenged, their recipients and observers
 	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, challengesPerBlock, sliceOfFileHashesStoredByLocalSupernode)
@@ -135,6 +136,11 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 			},
 			Sender:          challengingSupernodeID,
 			SenderSignature: nil,
+		}
+
+		if err := task.storage.P2PClient.DisableKey(ctx, storageChallengeMessage.Data.Challenge.FileHash); err != nil {
+			log.WithContext(ctx).WithField("challenge_id", challengeID).WithError(err).Error("error locking the file")
+			return errors.Errorf("error locking the file")
 		}
 
 		log.WithContext(ctx).WithField("challenge_id", challengeID).Info("sending challenge for processing")
@@ -265,7 +271,8 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 
 		return nodesToConnect, nil
 	case types.ResponseMessageType:
-		if challengeMessage.Data.RecipientID == task.nodeID { //if challenge recipient is the responder
+		//should process and send by recipient only
+		if challengeMessage.Data.RecipientID == task.nodeID {
 			//send message to challenger
 			nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.ChallengerID])
 
@@ -276,11 +283,17 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 				}
 			}
 
+		} else {
+			log.WithContext(ctx).Info("the node is not recipient exiting")
+			return nodesToConnect, nil
 		}
 
 		return nodesToConnect, nil
 	case types.EvaluationMessageType:
-		for _, po := range challengeMessage.Data.Observers { //partial observers
+		//send message to challenge recipient and observers
+		nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.RecipientID])
+
+		for _, po := range challengeMessage.Data.Observers {
 			if value, ok := mapSupernodes[po]; ok {
 				nodesToConnect = append(nodesToConnect, value)
 			}

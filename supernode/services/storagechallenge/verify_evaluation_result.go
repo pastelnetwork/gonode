@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	timestampTolerance = 5 * time.Second
+	timestampTolerance          = 5 * time.Second
+	challengeTimestampTolerance = 15 * time.Second
 )
 
 // VerifyEvaluationResult process the evaluation report from the challenger by the observers
@@ -21,6 +22,23 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	logger.Debug("Start verifying challenger's evaluation report") // Incoming evaluation report validation
 
 	receivedAt := time.Now()
+
+	//if observers then save the challenge message & return
+	if task.isObserver(incomingEvaluationResult.Data.Observers) {
+		logger := log.WithContext(ctx).WithField("node_id", task.nodeID)
+
+		if err := task.StoreChallengeMessage(ctx, incomingEvaluationResult); err != nil {
+			log.WithContext(ctx).
+				WithField("node_id", task.nodeID).
+				WithError(err).
+				Error("error storing challenge message")
+		}
+
+		logger.Info("evaluation report by challenger has been stored by the observer")
+	} else {
+		log.WithContext(ctx).WithField("node_id", task.nodeID).Info("not the observer to process evaluation report")
+		return types.Message{}, nil
+	}
 
 	//retrieve messages from the DB against challengeID
 	challengeMessage, err := task.RetrieveChallengeMessage(ctx, incomingEvaluationResult.ChallengeID, int(types.ChallengeMessageType))
@@ -57,10 +75,11 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	}
 
 	//Verify message timestamps
-	isChallengeTSOk, isResponseTSOk, isEvaluationTSOk := task.verifyTimestampsForEvaluation(*challengeMessage,
+	isChallengeTSOk, isResponseTSOk, isEvaluationTSOk := task.verifyTimestampsForEvaluation(ctx, *challengeMessage,
 		*responseMessage, incomingEvaluationResult, receivedAt)
 
-	//Verify Evaluation Result
+	isChallengeBlockAndMROk, isResponseBlockAndMROk := task.verifyMerkelrootAndBlockNum(ctx, *challengeMessage, *responseMessage, incomingEvaluationResult)
+	//Verify Merkelroot and BlockNumber
 
 	//Get the file assuming we host it locally (if not, return)
 	log.WithContext(ctx).Info("getting the file from hash to verify evaluation report")
@@ -76,10 +95,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	challengeCorrectHash := task.computeHashOfFileSlice(challengeFileData, incomingEvaluationResult.Data.Challenge.StartIndex, incomingEvaluationResult.Data.Challenge.EndIndex)
 	log.WithContext(ctx).Info("hash of the data has been generated against the given indices")
 
-	var isEvaluationResultOk bool
-	if incomingEvaluationResult.Data.ChallengerEvaluation.Hash == challengeCorrectHash {
-		isEvaluationResultOk = true
-	}
+	isEvaluationResultOk, _ := task.verifyEvaluationResult(ctx, incomingEvaluationResult, challengeCorrectHash)
 
 	evaluationResultResponse := types.Message{
 		MessageType: types.AffirmationMessageType,
@@ -110,8 +126,8 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 				Timestamp:  incomingEvaluationResult.Data.ChallengerEvaluation.Timestamp,
 			},
 			ObserverEvaluation: types.ObserverEvaluationData{
-				IsChallengerSignatureOK: isChallengerSignatureOk,
-				IsRecipientSignatureOK:  isRecipientSignatureOk,
+				IsChallengerSignatureOK: isChallengerSignatureOk && isChallengeBlockAndMROk,
+				IsRecipientSignatureOK:  isRecipientSignatureOk && isResponseBlockAndMROk,
 				IsChallengeTimestampOK:  isChallengeTSOk,
 				IsProcessTimestampOK:    isResponseTSOk,
 				IsEvaluationTimestampOK: isEvaluationTSOk,
@@ -186,30 +202,141 @@ func (task *SCTask) verifyMessageSignaturesForEvaluation(ctx context.Context, ch
 	return isChallengerSignatureOk, isRecipientSignatureOk, nil
 }
 
-func (task *SCTask) verifyTimestampsForEvaluation(challengeMessage, responseMessage, incomingEvaluationResult types.Message, evaluationMsgRecvTime time.Time) (challengeMsgTS, resMsgTS, evalMsgTS bool) {
-	isChallengeTSOk := task.verifyMessageTimestamps(incomingEvaluationResult.Data.Challenge.Timestamp, challengeMessage.Data.Challenge.Timestamp, challengeMessage.CreatedAt)
+func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challengeMessage, responseMessage, incomingEvaluationResult types.Message, evaluationMsgRecvTime time.Time) (challengeMsgTS, resMsgTS, evalMsgTS bool) {
+	isChallengeTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Challenge.Timestamp,
+		challengeMessage.Data.Challenge.Timestamp, challengeMessage.CreatedAt,
+		challengeMessage.ChallengeID, challengeMessage.MessageType)
 
-	isResponseTSOk := task.verifyMessageTimestamps(incomingEvaluationResult.Data.Response.Timestamp, challengeMessage.Data.Response.Timestamp, responseMessage.CreatedAt)
+	isResponseTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Response.Timestamp,
+		challengeMessage.Data.Response.Timestamp, responseMessage.CreatedAt,
+		responseMessage.ChallengeID, responseMessage.MessageType)
 
-	difference := incomingEvaluationResult.Data.ChallengerEvaluation.Timestamp.Sub(evaluationMsgRecvTime)
-	if difference < 0 {
-		difference = -difference
+	differenceBetweenEvaluationMsgSendAndRecvTime := incomingEvaluationResult.Data.ChallengerEvaluation.Timestamp.Sub(evaluationMsgRecvTime)
+	if differenceBetweenEvaluationMsgSendAndRecvTime < 0 {
+		differenceBetweenEvaluationMsgSendAndRecvTime = -differenceBetweenEvaluationMsgSendAndRecvTime
 	}
 
-	isEvaluationTSOk := difference <= timestampTolerance
+	var evaluationReportTSOk bool
+	if differenceBetweenEvaluationMsgSendAndRecvTime <= timestampTolerance {
+		log.WithContext(ctx).Info("evaluation message timestamp is verified successfully")
+		evaluationReportTSOk = true
+	} else {
+		log.WithContext(ctx).Info("the time diff between the evaluation report send and receive time, exceeds the tolerance limit")
+		evaluationReportTSOk = false
+	}
+
+	overallTimeTakenByChallenge := evaluationMsgRecvTime.Sub(challengeMessage.Data.Challenge.Timestamp)
+	if overallTimeTakenByChallenge < 0 {
+		overallTimeTakenByChallenge = -overallTimeTakenByChallenge
+	}
+
+	overallChallengeTSOk := overallTimeTakenByChallenge <= challengeTimestampTolerance
+
+	var isEvaluationTSOk bool
+	if evaluationReportTSOk && overallChallengeTSOk {
+		isEvaluationTSOk = true
+	}
 
 	return isChallengeTSOk, isResponseTSOk, isEvaluationTSOk
 }
 
-func (task *SCTask) verifyMessageTimestamps(timeWhenMsgSent, sentTimeWhenMsgReceived, timeWhenMsgStored time.Time) bool {
+func (task *SCTask) verifyMessageTimestamps(ctx context.Context, timeWhenMsgSent, sentTimeWhenMsgReceived, timeWhenMsgStored time.Time, challengeID string, messageType types.MessageType) bool {
+	logger := log.WithContext(ctx).
+		WithField("challenge_id", challengeID).
+		WithField("message_type", messageType.String()).
+		WithField("node_id", task.nodeID)
+
 	difference := timeWhenMsgStored.Sub(timeWhenMsgSent)
 	if difference < 0 {
 		difference = -difference
 	}
 
+	var isTSOk bool
 	if timeWhenMsgSent.Equal(sentTimeWhenMsgReceived) {
-		return difference <= timestampTolerance
+
+		if difference <= timestampTolerance {
+			isTSOk = true
+		} else {
+			logger.Info("the time difference when message has been sent and when message has been stored, " +
+				"exceeds the tolerance limit")
+
+			isTSOk = false
+		}
+
+	} else {
+		logger.Info("time when message sent and sent time when message received are not same")
+	}
+	logger.Info("timestamps have been verified successfully")
+
+	return isTSOk
+}
+
+func (task *SCTask) verifyMerkelrootAndBlockNum(ctx context.Context, challengeMessage, responseMessage, incomingEvaluationResult types.Message) (isChallengeOk, isResOk bool) {
+	logger := log.WithContext(ctx).
+		WithField("challenge_id", incomingEvaluationResult.ChallengeID).
+		WithField("node_id", task.nodeID)
+
+	isChallengeBlockOk := challengeMessage.Data.Challenge.Block == incomingEvaluationResult.Data.Challenge.Block
+	if !isChallengeBlockOk {
+		logger.Info("challenge msg block num is different and not same when challenge sent and received")
 	}
 
-	return false
+	isChallengeMerkelrootOk := challengeMessage.Data.Challenge.Merkelroot == incomingEvaluationResult.Data.Challenge.Merkelroot
+	if !isChallengeMerkelrootOk {
+		logger.Info("challenge msg merkelroot is different and not same when challenge sent and received")
+	}
+
+	isResponseBlockOk := responseMessage.Data.Challenge.Block == incomingEvaluationResult.Data.Challenge.Block
+	if !isResponseBlockOk {
+		logger.Info("response msg block num is different and not same when challenge sent and received")
+	}
+
+	isResponseMerkelrootOk := responseMessage.Data.Challenge.Merkelroot == incomingEvaluationResult.Data.Challenge.Merkelroot
+	if !isResponseMerkelrootOk {
+		logger.Info("response msg merkelroot is different and not same when challenge sent and received")
+	}
+
+	return isChallengeBlockOk && isChallengeMerkelrootOk, isResponseBlockOk && isResponseMerkelrootOk
+}
+
+func (task *SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluationResult types.Message, correctHash string) (isAffirmationOk bool, reason string) {
+	logger := log.WithContext(ctx).WithField("challenge_id", incomingEvaluationResult.ChallengeID)
+
+	evaluationResultData := incomingEvaluationResult.Data
+
+	//recipientHash = true, challengerHash = true, observerAffirmation = true
+	if evaluationResultData.ChallengerEvaluation.Hash == correctHash &&
+		evaluationResultData.ChallengerEvaluation.IsVerified &&
+		evaluationResultData.Response.Hash == correctHash {
+		isAffirmationOk = true
+
+		logger.Info("both hash by challenger and recipient were correct, and challenger evaluates correctly")
+	}
+
+	//recipientHash = false, challengerHash = false, observerAffirmation = true
+	if evaluationResultData.RecipientID != correctHash && !evaluationResultData.ChallengerEvaluation.IsVerified {
+		isAffirmationOk = true
+
+		logger.Info("recipient hash was not correct, and challenger evaluates correctly")
+	}
+
+	//recipientHash = true, challengerHash = false, observerAffirmation = false
+	if evaluationResultData.RecipientID == correctHash &&
+		!evaluationResultData.ChallengerEvaluation.IsVerified {
+		isAffirmationOk = false
+
+		reason = "recipient hash was correct, but challenger evaluated to false"
+
+		logger.Info("recipient hash was correct, but challenger did not evaluate correctly")
+	}
+
+	if evaluationResultData.RecipientID != correctHash && evaluationResultData.ChallengerEvaluation.IsVerified {
+		isAffirmationOk = false
+
+		reason = "recipient hash was not correct, but challenger evaluated it to true"
+
+		logger.Info("recipient hash was not correct, but challenger evaluates it to be true")
+	}
+
+	return isAffirmationOk, reason
 }

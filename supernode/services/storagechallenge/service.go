@@ -131,6 +131,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 // These can then be accessed through p2p.
 func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.Context) ([]string, error) {
 	var keys = make([]string, 0)
+
 	regTickets, err := service.SuperNodeService.PastelClient.RegTickets(ctx)
 	if err != nil {
 		return keys, err
@@ -139,18 +140,17 @@ func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no reg tickets retrieved")
 		return keys, nil
 	}
-
 	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Reg tickets retrieved")
-	for _, regTicket := range regTickets {
 
-		decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
+	for i := 0; i < len(regTickets); i++ {
+		decTicket, err := pastel.DecodeNFTTicket(regTickets[i].RegTicketData.NFTTicket)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
 
-		regTicket.RegTicketData.NFTTicketData = *decTicket
-		keys = append(keys, regTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs...)
+		regTickets[i].RegTicketData.NFTTicketData = *decTicket
+		keys = append(keys, regTickets[i].RegTicketData.NFTTicketData.AppTicketData.RQIDs...)
 	}
 
 	actionTickets, err := service.SuperNodeService.PastelClient.ActionTickets(ctx)
@@ -163,28 +163,28 @@ func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 	}
 	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Action tickets retrieved")
 
-	for _, actionTicket := range actionTickets {
-		decTicket, err := pastel.DecodeActionTicket(actionTicket.ActionTicketData.ActionTicket)
+	for i := 0; i < len(actionTickets); i++ {
+		decTicket, err := pastel.DecodeActionTicket(actionTickets[i].ActionTicketData.ActionTicket)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
-		actionTicket.ActionTicketData.ActionTicketData = *decTicket
+		actionTickets[i].ActionTicketData.ActionTicketData = *decTicket
 
-		switch actionTicket.ActionTicketData.ActionType {
+		switch actionTickets[i].ActionTicketData.ActionType {
 		case pastel.ActionTypeCascade:
-			cascadeTicket, err := actionTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
+			cascadeTicket, err := actionTickets[i].ActionTicketData.ActionTicketData.APICascadeTicket()
 			if err != nil {
-				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTickets[i]).
 					Warnf("Could not get cascade ticket for action ticket data")
 				continue
 			}
 
 			keys = append(keys, cascadeTicket.RQIDs...)
 		case pastel.ActionTypeSense:
-			senseTicket, err := actionTicket.ActionTicketData.ActionTicketData.APISenseTicket()
+			senseTicket, err := actionTickets[i].ActionTicketData.ActionTicketData.APISenseTicket()
 			if err != nil {
-				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTicket).
+				log.WithContext(ctx).WithField("actionRegTickets.ActionTicketData", actionTickets[i]).
 					Warnf("Could not get sense ticket for action ticket data")
 				continue
 			}

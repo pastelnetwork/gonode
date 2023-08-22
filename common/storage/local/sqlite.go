@@ -37,6 +37,10 @@ const createStorageChallengeMessages string = `
   updated_at DATETIME NOT NULL
 );`
 
+const createStorageChallengeMessagesUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS storage_challenge_messages_unique ON storage_challenge_messages(challenge_id, message_type, sender_id);
+`
+
 const createSelfHealingChallenges string = `
   CREATE TABLE IF NOT EXISTS self_healing_challenges (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -220,6 +224,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 
 	if _, err := db.Exec(createStorageChallengeMessages); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createStorageChallengeMessagesUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot execute migration: %w", err)
 	}
 
 	if _, err := db.Exec(createSelfHealingChallenges); err != nil {
