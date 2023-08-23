@@ -90,6 +90,11 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	sliceOfFileHashesStoredByLocalSupernode := task.getFilesStoredByLocalSN(ctx, sliceOfFileHashes)
 	log.WithContext(ctx).Info("slice of file hashes stored by local SN has been retrieved")
 
+	if len(sliceOfFileHashesStoredByLocalSupernode) == 0 {
+		log.WithContext(ctx).Warn("no files are hosted on this node - exiting")
+		return nil
+	}
+
 	// Identify which files should be challenged, their recipients and observers
 	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, 1, sliceOfFileHashesStoredByLocalSupernode)
 	log.WithContext(ctx).Info("challenging file hashes stored by local SN has been retrieved")
