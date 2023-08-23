@@ -206,3 +206,8 @@ func (s *Store) UpdateLastReplicated(_ context.Context, _ string, _ time.Time) e
 func (s *Store) RecordExists(_ string) (bool, error) {
 	return false, nil
 }
+
+// GetLocalKeys returns a list of all keys stored locally
+func (s *Store) GetLocalKeys(_ time.Time, _ time.Time) ([]string, error) {
+	return nil, nil
+}

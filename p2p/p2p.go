@@ -2,7 +2,9 @@ package p2p
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/meta"
@@ -190,18 +192,6 @@ func (s *p2p) NClosestNodes(ctx context.Context, n int, key string, ignores ...s
 // configure the distributed hash table for p2p service
 func (s *p2p) configure(ctx context.Context) error {
 	// new the local storage
-	store, err := sqlite.NewStore(ctx, s.config.DataDir, defaultReplicateInterval, defaultRepublishInterval)
-	if err != nil {
-		return errors.Errorf("new kademlia store: %w", err)
-	}
-	s.store = store
-
-	meta, err := meta.NewStore(ctx, s.config.DataDir)
-	if err != nil {
-		return errors.Errorf("new kademlia meta store: %w", err)
-	}
-	s.metaStore = meta
-
 	kadOpts := &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
@@ -221,7 +211,7 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(ctx, store, meta, s.pastelClient, s.secInfo, kadOpts)
+	dht, err := kademlia.NewDHT(ctx, s.store, s.metaStore, s.pastelClient, s.secInfo, kadOpts)
 
 	if err != nil {
 		return errors.Errorf("new kademlia dht: %w", err)
@@ -232,12 +222,24 @@ func (s *p2p) configure(ctx context.Context) error {
 }
 
 // New returns a new p2p instance.
-func New(config *Config, pastelClient pastel.Client, secInfo *alts.SecInfo) P2P {
+func New(ctx context.Context, config *Config, pastelClient pastel.Client, secInfo *alts.SecInfo) (P2P, error) {
+	store, err := sqlite.NewStore(ctx, config.DataDir, defaultReplicateInterval, defaultRepublishInterval)
+	if err != nil {
+		return nil, errors.Errorf("new kademlia store: %w", err)
+	}
+
+	meta, err := meta.NewStore(ctx, config.DataDir)
+	if err != nil {
+		return nil, errors.Errorf("new kademlia meta store: %w", err)
+	}
+
 	return &p2p{
+		store:        store,
+		metaStore:    meta,
 		config:       config,
 		pastelClient: pastelClient,
 		secInfo:      secInfo,
-	}
+	}, nil
 }
 
 // LocalStore store data into the kademlia network
@@ -271,4 +273,41 @@ func (s *p2p) EnableKey(ctx context.Context, b58EncodedHash string) error {
 	s.metaStore.Delete(ctx, decoded)
 
 	return nil
+}
+
+// GetLocalKeys returns a list of all keys stored locally
+func (s *p2p) GetLocalKeys(ctx context.Context, from *time.Time, to time.Time) ([]string, error) {
+	if from == nil {
+		fromTime, err := s.store.GetOwnCreatedAt(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get own created at: %w", err)
+		}
+
+		from = &fromTime
+	}
+
+	keys, err := s.store.GetLocalKeys(*from, to)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get local keys: %w", err)
+	}
+
+	retkeys := make([]string, len(keys))
+	var wg sync.WaitGroup
+	for i, key := range keys {
+		wg.Add(1)
+		go func(i int, key string) {
+			defer wg.Done()
+			str, err := hex.DecodeString(key)
+			if err != nil {
+				log.WithContext(ctx).WithField("key", key).Error("replicate failed to hex decode key")
+				return
+			}
+
+			retkeys[i] = base58.Encode(str)
+		}(i, key)
+	}
+
+	wg.Wait()
+
+	return retkeys, nil
 }

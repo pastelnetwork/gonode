@@ -2,7 +2,9 @@ package storagechallenge
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -43,6 +45,9 @@ type SCService struct {
 	currentBlockCount int32
 	// currently unimplemented, default always used instead.
 	challengeStatusObserver SaveChallengeState
+
+	localKeys            sync.Map
+	localKeysLastFetchAt time.Time
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -59,7 +64,43 @@ func (service *SCService) CheckNextBlockAvailable(ctx context.Context) bool {
 	return false
 }
 
-const defaultTimerBlockCheckDuration = 30 * time.Second
+const (
+	defaultTimerBlockCheckDuration = 30 * time.Second
+	defaultLocalKeysFetchInterval  = 20 * time.Minute
+)
+
+// RunLocalKeysFetchWorker : This worker will periodically fetch the local keys from the local storage
+func (service *SCService) RunLocalKeysFetchWorker(ctx context.Context) {
+	service.localKeysLastFetchAt = time.Now()
+	if err := service.populateLocalKeys(ctx, nil); err != nil {
+		log.WithContext(ctx).WithError(err).Error("RunLocalKeysFetchWorker:populateLocalKeys")
+	}
+
+	for {
+		select {
+		case <-time.After(defaultLocalKeysFetchInterval):
+			if err := service.populateLocalKeys(ctx, &service.localKeysLastFetchAt); err != nil {
+				log.WithContext(ctx).WithError(err).Error("RunLocalKeysFetchWorker:populateLocalKeys")
+			}
+		case <-ctx.Done():
+			log.Println("Context done being called in local keys fetch worker in service.go")
+			return
+		}
+	}
+}
+
+func (service *SCService) populateLocalKeys(ctx context.Context, from *time.Time) error {
+	keys, err := service.P2PClient.GetLocalKeys(ctx, from, service.localKeysLastFetchAt)
+	if err != nil {
+		return fmt.Errorf("GetLocalKeys: %w", err)
+	}
+
+	for i := 0; i < len(keys); i++ {
+		service.localKeys.Store(keys[i], true)
+	}
+
+	return nil
+}
 
 // Run : storage challenge service will run continuously to generate storage challenges.
 func (service *SCService) Run(ctx context.Context) error {
@@ -124,6 +165,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		numberOfChallengeReplicas: config.NumberOfChallengeReplicas,
 		numberOfVerifyingNodes:    config.NumberOfVerifyingNodes,
 		challengeStatusObserver:   challengeStatusObserver,
+		localKeys:                 sync.Map{},
 	}
 }
 

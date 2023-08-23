@@ -375,13 +375,27 @@ func (task SCTask) isMyNodeChallenger(ctx context.Context, sliceOfChallengingSup
 func (task SCTask) getFilesStoredByLocalSN(ctx context.Context, sliceOfFileHashes []string) (sliceOfFileHashesStoredByLocalSupernode []string) {
 	log.WithContext(ctx).WithField("len_slice_of_file_hashes", len(sliceOfFileHashes)).Info("identifying which files are currently hosted on this node")
 
-	for _, currentFileHash := range sliceOfFileHashes {
-		_, err := task.GetSymbolFileByKey(ctx, currentFileHash, true)
-		if err == nil {
-			sliceOfFileHashesStoredByLocalSupernode = append(sliceOfFileHashesStoredByLocalSupernode, currentFileHash)
+	totalLen := len(sliceOfFileHashes)
+	sliceOfFileHashesStoredByLocalSupernode = make([]string, 0, totalLen)
+	for i := 0; i < len(sliceOfFileHashes); i++ {
+		if value, ok := task.SCService.localKeys.Load(sliceOfFileHashes[i]); ok {
+			stored, isOk := value.(bool)
+			if !isOk {
+				log.WithContext(ctx).WithField("file_hash", sliceOfFileHashes[i]).Error("could not convert stored value to bool")
+				continue
+			}
+
+			if !stored {
+				log.WithContext(ctx).WithField("file_hash", sliceOfFileHashes[i]).Info("file hash is in map but not stored")
+				continue
+			}
+
+			sliceOfFileHashesStoredByLocalSupernode = append(sliceOfFileHashesStoredByLocalSupernode, sliceOfFileHashes[i])
 		}
 	}
-	log.WithContext(ctx).Info("files hosted on this node have been identified")
+
+	log.WithContext(ctx).WithField("total-possible-keys", totalLen).WithField("keys-found-len", len(sliceOfFileHashesStoredByLocalSupernode)).
+		Info("files hosted on this node have been identified")
 
 	return sliceOfFileHashesStoredByLocalSupernode
 }
