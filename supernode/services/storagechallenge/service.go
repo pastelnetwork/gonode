@@ -71,14 +71,16 @@ func (service *SCService) Run(ctx context.Context) error {
 		}
 	}()
 
+	time.Sleep(10 * time.Minute)
+
 	for {
 		select {
 		case <-time.After(defaultTimerBlockCheckDuration):
 
 			if service.CheckNextBlockAvailable(ctx) && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
 				newCtx := log.ContextWithPrefix(context.Background(), "storage-challenge")
-				//task := service.NewSCTask()
-				//task.GenerateStorageChallenges(newCtx)
+				task := service.NewSCTask()
+				task.GenerateStorageChallenges(newCtx)
 				log.WithContext(newCtx).Debug("Would normally generate a storage challenge")
 			}
 		case <-ctx.Done():
@@ -158,7 +160,7 @@ func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 		return keys, err
 	}
 	if len(actionTickets) == 0 {
-		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no reg tickets retrieved")
+		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no action tickets retrieved")
 		return keys, nil
 	}
 	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Action tickets retrieved")

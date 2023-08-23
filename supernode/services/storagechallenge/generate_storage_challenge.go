@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"math/rand"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mkmik/argsort"
@@ -62,7 +63,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	log.WithContext(ctx).Info("block no and verbose retrieved")
 
 	// Identify challengers
-	sliceOfChallengingSupernodeIDsForBlock, _, challengesPerBlock, err := task.getChallengers(ctx, merkleroot)
+	sliceOfChallengingSupernodeIDsForBlock, _, _, err := task.getChallengers(ctx, merkleroot)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error identifying challengers")
 		return err
@@ -90,7 +91,8 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	log.WithContext(ctx).Info("slice of file hashes stored by local SN has been retrieved")
 
 	// Identify which files should be challenged, their recipients and observers
-	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, challengesPerBlock, sliceOfFileHashesStoredByLocalSupernode)
+	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, 1, sliceOfFileHashesStoredByLocalSupernode)
+	log.WithContext(ctx).Info("challenging file hashes stored by local SN has been retrieved")
 
 	log.WithContext(ctx).Info("identifying challenge recipients and partial observers")
 	sliceOfSupernodesToChallenge, challengeFileObservers := task.identifyChallengeRecipientsAndObserversAgainstChallengingFiles(ctx, sliceOfFileHashesToChallenge, merkleroot, challengingSupernodeID)
@@ -150,7 +152,6 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 				Error("Error processing storage challenge: ")
 		}
 		// Save the challenge state
-		task.SaveChallengeMessageState(ctx, "sent", challengeID, challengingSupernodeID, currentBlockCount)
 	}
 
 	log.WithContext(ctx).Info("files have been challenged")
@@ -163,6 +164,10 @@ func (task *SCTask) sendProcessStorageChallenge(ctx context.Context, challengeMe
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for send process storage challenge")
 		return err
+	}
+
+	if nodesToConnect == nil {
+		return errors.Errorf("no nodes found to connect for send process storage challenge")
 	}
 
 	signature, data, err := task.SignMessage(ctx, challengeMessage.Data)
@@ -257,18 +262,22 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 		mapSupernodes[mn.ExtKey] = mn
 	}
 
+	logger := log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).
+		WithField("message_type", challengeMessage.MessageType).WithField("node_id", task.nodeID)
+
 	switch challengeMessage.MessageType {
 	case types.ChallengeMessageType:
 		//send message to challenge recipient
 		nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.RecipientID])
 
-		//and partial observers; that's not required we only need partial observers for verification though
+		//and partial observers;
 		for _, po := range challengeMessage.Data.Observers {
 			if value, ok := mapSupernodes[po]; ok {
 				nodesToConnect = append(nodesToConnect, value)
 			}
 		}
 
+		logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
 		return nodesToConnect, nil
 	case types.ResponseMessageType:
 		//should process and send by recipient only
@@ -277,29 +286,35 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 			nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.ChallengerID])
 
 			//and partial observers for verification
-			for _, po := range challengeMessage.Data.Observers { //partial observers
+			for _, po := range challengeMessage.Data.Observers {
 				if value, ok := mapSupernodes[po]; ok {
 					nodesToConnect = append(nodesToConnect, value)
 				}
 			}
 
-		} else {
-			log.WithContext(ctx).Info("the node is not recipient exiting")
+			logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
 			return nodesToConnect, nil
 		}
 
-		return nodesToConnect, nil
+		return nil, errors.Errorf("no recipients found to send this message")
 	case types.EvaluationMessageType:
-		//send message to challenge recipient and observers
-		nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.RecipientID])
+		//should process and send by challenger only
+		if challengeMessage.Data.ChallengerID == task.nodeID {
+			//send message to challenge recipient
+			nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.RecipientID])
 
-		for _, po := range challengeMessage.Data.Observers {
-			if value, ok := mapSupernodes[po]; ok {
-				nodesToConnect = append(nodesToConnect, value)
+			//and observers
+			for _, po := range challengeMessage.Data.Observers {
+				if value, ok := mapSupernodes[po]; ok {
+					nodesToConnect = append(nodesToConnect, value)
+				}
 			}
+
+			logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
+			return nodesToConnect, nil
 		}
 
-		return nodesToConnect, nil
+		return nil, errors.Errorf("no recipients found to send this message")
 	case types.AffirmationMessageType:
 	// not required
 
@@ -307,7 +322,7 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 		return supernodes, nil
 
 	default:
-		return nil, errors.Errorf("no nodes found to be connect")
+		return nil, errors.Errorf("no nodes found to send message")
 	}
 
 	return nil, err
@@ -353,7 +368,7 @@ func (task SCTask) isMyNodeChallenger(ctx context.Context, sliceOfChallengingSup
 }
 
 func (task SCTask) getFilesStoredByLocalSN(ctx context.Context, sliceOfFileHashes []string) (sliceOfFileHashesStoredByLocalSupernode []string) {
-	log.WithContext(ctx).Info("identifying which files are currently hosted on this node")
+	log.WithContext(ctx).WithField("len_slice_of_file_hashes", len(sliceOfFileHashes)).Info("identifying which files are currently hosted on this node")
 
 	for _, currentFileHash := range sliceOfFileHashes {
 		_, err := task.GetSymbolFileByKey(ctx, currentFileHash, true)
@@ -384,7 +399,6 @@ func (task SCTask) getChallengers(ctx context.Context, merkleRoot string) (slice
 
 	// Identify challengers for this block
 	sliceOfChallengers = task.GetNClosestSupernodeIDsToComparisonString(ctx, challengersPerBlock, merkleRoot, listOfSupernodes)
-	log.WithContext(ctx).Info("challengers have been selected")
 
 	return sliceOfChallengers, challengersPerBlock, challengesPerBlock, nil
 }
@@ -409,7 +423,7 @@ func (task SCTask) identifyChallengeRecipientsAndObserversAgainstChallengingFile
 
 	// Identify which supernodes have our file to challenge
 	for idx1, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
-		sliceOfSupernodesStoringFileHashExcludingChallenger := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, task.numberOfChallengeReplicas, currentFileHashToChallenge, task.nodeID)
+		sliceOfSupernodesStoringFileHashExcludingChallenger := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, task.numberOfChallengeReplicas, currentFileHashToChallenge, challengerNodeID)
 		comparisonStringForSupernodeSelection := merkleRoot + currentFileHashToChallenge + challengerNodeID + utils.GetHashFromString(fmt.Sprint(idx1))
 
 		respondingSupernodeIDs := task.GetNClosestSupernodeIDsToComparisonString(ctx, 1, comparisonStringForSupernodeSelection, sliceOfSupernodesStoringFileHashExcludingChallenger)
@@ -465,6 +479,15 @@ func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message)
 
 		err = store.InsertStorageChallengeMessage(storageChallengeLog)
 		if err != nil {
+			if strings.Contains(err.Error(), UniqueConstraintErr.Error()) {
+				log.WithContext(ctx).WithField("challenge_id", msg.ChallengeID).
+					WithField("message_type", msg.MessageType).
+					WithField("sender_id", msg.Sender).
+					Info("message already exists, not updating")
+
+				return nil
+			}
+
 			log.WithContext(ctx).WithError(err).Error("Error storing challenge message to DB")
 			return err
 		}
@@ -474,7 +497,7 @@ func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message)
 }
 
 // SignMessage signs the message using sender's pastelID and passphrase
-func (task SCTask) SignMessage(ctx context.Context, data types.MessageData) ([]byte, []byte, error) {
+func (task SCTask) SignMessage(ctx context.Context, data types.MessageData) (sig []byte, dat []byte, err error) {
 	d, err := json.Marshal(data)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error marshaling the data")

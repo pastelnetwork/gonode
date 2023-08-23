@@ -23,7 +23,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 
 	receivedAt := time.Now()
 
-	//if observers then save the challenge message & return
+	//if observers then save the evaluation message
 	if task.isObserver(incomingEvaluationResult.Data.Observers) {
 		logger := log.WithContext(ctx).WithField("node_id", task.nodeID)
 
@@ -56,7 +56,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 
 	if challengeMessage == nil || responseMessage == nil {
 		log.WithContext(ctx).Error("unable to retrieve challenge or response message")
-		return types.Message{}, errors.Errorf("unable to retrieve storage or challenge message")
+		return types.Message{}, errors.Errorf("unable to retrieve challenge or response message")
 	}
 
 	//Need to verify the following
@@ -78,8 +78,8 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	isChallengeTSOk, isResponseTSOk, isEvaluationTSOk := task.verifyTimestampsForEvaluation(ctx, *challengeMessage,
 		*responseMessage, incomingEvaluationResult, receivedAt)
 
-	isChallengeBlockAndMROk, isResponseBlockAndMROk := task.verifyMerkelrootAndBlockNum(ctx, *challengeMessage, *responseMessage, incomingEvaluationResult)
 	//Verify Merkelroot and BlockNumber
+	isChallengeBlockAndMROk, isResponseBlockAndMROk := task.verifyMerkelrootAndBlockNum(ctx, *challengeMessage, *responseMessage, incomingEvaluationResult)
 
 	//Get the file assuming we host it locally (if not, return)
 	log.WithContext(ctx).Info("getting the file from hash to verify evaluation report")
@@ -95,7 +95,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	challengeCorrectHash := task.computeHashOfFileSlice(challengeFileData, incomingEvaluationResult.Data.Challenge.StartIndex, incomingEvaluationResult.Data.Challenge.EndIndex)
 	log.WithContext(ctx).Info("hash of the data has been generated against the given indices")
 
-	isEvaluationResultOk, _ := task.verifyEvaluationResult(ctx, incomingEvaluationResult, challengeCorrectHash)
+	isEvaluationResultOk, reason := task.verifyEvaluationResult(ctx, incomingEvaluationResult, challengeCorrectHash)
 
 	evaluationResultResponse := types.Message{
 		MessageType: types.AffirmationMessageType,
@@ -133,6 +133,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 				IsEvaluationTimestampOK: isEvaluationTSOk,
 				IsEvaluationResultOK:    isEvaluationResultOk,
 				TrueHash:                challengeCorrectHash,
+				Reason:                  reason,
 				Timestamp:               time.Now(),
 			},
 		},
@@ -144,6 +145,11 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 		log.WithContext(ctx).WithError(err).Error("error signing evaluation response")
 	}
 	evaluationResultResponse.SenderSignature = signature
+
+	if err := task.storage.P2PClient.EnableKey(ctx, evaluationResultResponse.Data.Challenge.FileHash); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error enabling the symbol file")
+		return evaluationResultResponse, err
+	}
 
 	return evaluationResultResponse, nil
 }
@@ -314,28 +320,28 @@ func (task *SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluati
 	}
 
 	//recipientHash = false, challengerHash = false, observerAffirmation = true
-	if evaluationResultData.RecipientID != correctHash && !evaluationResultData.ChallengerEvaluation.IsVerified {
+	if evaluationResultData.Response.Hash != correctHash && !evaluationResultData.ChallengerEvaluation.IsVerified {
 		isAffirmationOk = true
 
 		logger.Info("recipient hash was not correct, and challenger evaluates correctly")
 	}
 
 	//recipientHash = true, challengerHash = false, observerAffirmation = false
-	if evaluationResultData.RecipientID == correctHash &&
+	if evaluationResultData.Response.Hash == correctHash &&
 		!evaluationResultData.ChallengerEvaluation.IsVerified {
 		isAffirmationOk = false
 
 		reason = "recipient hash was correct, but challenger evaluated to false"
 
-		logger.Info("recipient hash was correct, but challenger did not evaluate correctly")
+		logger.Info("recipient hash was correct, but challenger evaluates it to false")
 	}
 
-	if evaluationResultData.RecipientID != correctHash && evaluationResultData.ChallengerEvaluation.IsVerified {
+	if evaluationResultData.Response.Hash != correctHash && evaluationResultData.ChallengerEvaluation.IsVerified {
 		isAffirmationOk = false
 
 		reason = "recipient hash was not correct, but challenger evaluated it to true"
 
-		logger.Info("recipient hash was not correct, but challenger evaluates it to be true")
+		logger.Info("recipient hash was not correct, but challenger evaluates it to true")
 	}
 
 	return isAffirmationOk, reason

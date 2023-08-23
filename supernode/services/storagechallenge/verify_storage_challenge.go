@@ -2,7 +2,6 @@ package storagechallenge
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -20,8 +19,7 @@ import (
 //			Validate it
 //	 	Get the file assuming we host it locally (if not, return)
 //	 	Compute the hash of the data at the indicated byte range
-//			If the hash is correct and within the given byte range, success is indicated otherwise failure is indicated via SaveChallengeMessageState
-func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponseMessage types.Message) (*pb.StorageChallengeData, error) {
+func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponseMessage types.Message) (*pb.StorageChallengeMessage, error) {
 	logger := log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingResponseMessage.ChallengeID)
 	logger.Debug("Start verifying storage challenge") // Incoming challenge message validation
 
@@ -35,7 +33,7 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 			log.WithContext(ctx).
 				WithField("node_id", task.nodeID).
 				WithError(err).
-				Error("error storing response message")
+				Error("error storing response message by the observer")
 		} else {
 			log.WithContext(ctx).WithField("node_id", task.nodeID).
 				Info("response message has been stored by the observer")
@@ -157,6 +155,13 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 
 		return nil, err
 	}
+	log.WithContext(ctx).WithField("challenge_id", evaluationMessage.ChallengeID).Info("sufficient affirmations have been received")
+
+	if err := task.storage.P2PClient.EnableKey(ctx, evaluationMessage.Data.Challenge.FileHash); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error enabling the symbol file")
+		return nil, err
+	}
+	log.WithContext(ctx).WithField("challenge_id", evaluationMessage.ChallengeID).Info("key has been enabled")
 
 	//Broadcasting
 	broadcastingMsg, err := task.prepareBroadcastingMessage(ctx, evaluationMessage, affirmations)
@@ -199,8 +204,12 @@ func (task *SCTask) validateVerifyingStorageChallengeIncomingData(ctx context.Co
 func (task *SCTask) getAffirmationFromObservers(ctx context.Context, challengeMessage types.Message) (map[string]types.Message, error) {
 	nodesToConnect, err := task.GetNodesAddressesToConnect(ctx, challengeMessage)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for send process storage challenge")
+		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for getting affirmations")
 		return nil, err
+	}
+
+	if nodesToConnect == nil {
+		return nil, errors.Errorf("no nodes found to connect for getting affirmations")
 	}
 
 	evaluationMsg, err := task.prepareEvaluationMessage(ctx, challengeMessage)
@@ -264,6 +273,11 @@ func (task *SCTask) processEvaluationResults(ctx context.Context, nodesToConnect
 				mu.Lock()
 				affirmations[affirmationResponse.Sender] = affirmationResponse
 				mu.Unlock()
+			}
+
+			if err := task.StoreChallengeMessage(ctx, affirmationResponse); err != nil {
+				log.WithContext(ctx).WithField("node_id", node.ExtKey).WithError(err).
+					Error("error storing affirmation response from observer")
 			}
 		}(node)
 	}
@@ -350,66 +364,74 @@ func (task *SCTask) isAffirmationSuccessful(ctx context.Context, msg types.Messa
 }
 
 // prepareBroadcastingMessage(ctx
-func (task *SCTask) prepareBroadcastingMessage(ctx context.Context, challengeMessage types.Message, affirmations map[string]types.Message) (*pb.BroadcastStorageChallengeRequest, error) {
-	data, err := json.Marshal(challengeMessage.Data)
-	if err != nil {
-		return nil, errors.Errorf("error marshaling the message data")
-	}
-
+func (task *SCTask) prepareBroadcastingMessage(ctx context.Context, evaluationMsg types.Message, affirmations map[string]types.Message) (*pb.BroadcastStorageChallengeRequest, error) {
 	challenger := make(map[string][]byte)
 	recipient := make(map[string][]byte)
 	obs := make(map[string][]byte, len(affirmations))
 
 	//challenger signature
-	challengeMsg, err := task.RetrieveChallengeMessage(ctx, challengeMessage.ChallengeID, int(types.ChallengeMessageType))
+	challengeMsg, err := task.RetrieveChallengeMessage(ctx, evaluationMsg.ChallengeID, int(types.ChallengeMessageType))
 	if err != nil {
 		return nil, errors.Errorf("error retrieving challenge message")
 	}
 	challenger[challengeMsg.Sender] = challengeMsg.SenderSignature
 
 	//recipient signature
-	responseMsg, err := task.RetrieveChallengeMessage(ctx, challengeMessage.ChallengeID, int(types.ResponseMessageType))
+	responseMsg, err := task.RetrieveChallengeMessage(ctx, evaluationMsg.ChallengeID, int(types.ResponseMessageType))
 	if err != nil {
 		return nil, errors.Errorf("error retrieving the response message")
 	}
 	recipient[responseMsg.Sender] = responseMsg.SenderSignature
 
 	//observers signatures
+	var affirmationMsg *types.Message
 	for pastelID, msg := range affirmations {
+		if affirmationMsg == nil {
+			affirmationMsg = &msg
+		}
+
 		obs[pastelID] = msg.SenderSignature
+	}
+
+	sig, data, err := task.SignMessage(ctx, affirmationMsg.Data)
+	if err != nil {
+		return nil, errors.Errorf("error marshaling the message data")
 	}
 
 	return &pb.BroadcastStorageChallengeRequest{
 		Data: &pb.StorageChallengeMessage{
-			MessageType:     pb.StorageChallengeMessageMessageType(challengeMessage.MessageType),
-			ChallengeId:     challengeMessage.ChallengeID,
+			MessageType:     pb.StorageChallengeMessage_MessageType_STORAGE_CHALLENGE_BROADCAST_MESSAGE,
+			ChallengeId:     affirmationMsg.ChallengeID,
 			Data:            data,
-			SenderId:        challengeMessage.Sender,
-			SenderSignature: challengeMessage.SenderSignature,
+			SenderId:        task.nodeID, // Sender of the broadcast message
+			SenderSignature: sig,         //Sender's signature on the broadcast message
 		},
-		Challenger: challenger,
-		Recipient:  recipient,
-		Obs:        obs,
+		Challenger: challenger, //Challenger's signature from the challenge message
+		Recipient:  recipient,  // Recipient's Signature from the recipient message
+		Obs:        obs,        // Observer's signature from the observer's evaluation
 	}, nil
 }
 
 func (task *SCTask) sendBroadcastingMessage(ctx context.Context, msg *pb.BroadcastStorageChallengeRequest) error {
 	nodesToConnect, err := task.GetNodesAddressesToConnect(ctx, types.Message{MessageType: types.BroadcastMessageType})
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for send process storage challenge")
+		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for send broadcast storage challenge")
 		return err
+	}
+
+	if nodesToConnect == nil {
+		return errors.Errorf("no nodes found to connect for send broadcast storage challenge")
 	}
 
 	for _, node := range nodesToConnect {
 		logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
 
 		if err := task.send(ctx, msg, node.ExtAddress); err != nil {
-			logger.WithError(err).Error("error sending storage challenge message for processing")
+			logger.WithError(err).Error("error sending broadcast message for processing")
 			continue
 		}
-
-		logger.Info("challenge message has been sent")
 	}
+	log.WithContext(ctx).Info("msg has been broadcast to the network")
 
 	return nil
 }
