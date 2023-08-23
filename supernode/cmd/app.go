@@ -191,7 +191,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
 	config.P2P.ID = config.PastelID
-	p2p := p2p.New(config.P2P, pastelClient, secInfo)
+	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo)
+	if err != nil {
+		return errors.Errorf("could not create p2p service, %w", err)
+	}
 
 	// Because of rqlite failures, we're going to disable metadb for now, this consequently disables user data processing until we
 	//  either fix rqlite or develop a workaround.

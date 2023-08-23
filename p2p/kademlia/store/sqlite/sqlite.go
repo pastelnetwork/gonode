@@ -671,3 +671,13 @@ func (s *Store) GetOwnCreatedAt(ctx context.Context) (time.Time, error) {
 
 	return created, nil
 }
+
+// GetLocalKeys func
+func (s *Store) GetLocalKeys(from time.Time, to time.Time) ([]string, error) {
+	var keys []string
+	if err := s.db.Select(&keys, `SELECT key FROM data WHERE createdAt > ? and createdAt < ?`, from, to); err != nil {
+		return keys, fmt.Errorf("error reading all keys from database: %w", err)
+	}
+
+	return keys, nil
+}

@@ -80,6 +80,8 @@ type Store interface {
 	UpdateLastReplicated(ctx context.Context, id string, t time.Time) error
 
 	RecordExists(nodeID string) (bool, error)
+
+	GetLocalKeys(from time.Time, to time.Time) ([]string, error)
 }
 
 // MetaStore is the interface for implementing the storage mechanism for the DHT
