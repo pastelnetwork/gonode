@@ -189,7 +189,7 @@ func (service *RegisterCascade) UploadAsset(stream pb.RegisterCascade_UploadAsse
 	if err != nil {
 		return errors.Errorf("open asset file %q: %w", assetFile.Name(), err)
 	}
-	log.WithContext(ctx).WithField("filename", assetFile.Name()).Debug("UploadAsset request")
+	log.WithContext(ctx).WithField("filename", assetFile.Name()).Info("UploadAsset request")
 
 	assetWriter := bufio.NewWriter(assetFile)
 

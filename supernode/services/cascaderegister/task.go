@@ -57,42 +57,32 @@ func (task *CascadeRegistrationTask) SendRegMetadata(_ context.Context, regMetad
 }
 
 // UploadAsset uploads the asset
-func (task *CascadeRegistrationTask) UploadAsset(_ context.Context, file *files.File) error {
-	var err error
-	if err = task.RequiredStatus(common.StatusConnected); err != nil {
+func (task *CascadeRegistrationTask) UploadAsset(ctx context.Context, file *files.File) error {
+	if err := task.RequiredStatus(common.StatusConnected); err != nil {
 		return errors.Errorf("require status %s not satisfied", common.StatusConnected)
 	}
 
-	<-task.NewAction(func(ctx context.Context) error {
-		task.UpdateStatus(common.StatusAssetUploaded)
+	task.UpdateStatus(common.StatusAssetUploaded)
 
-		task.Asset = file
+	task.Asset = file
+	fileBytes, err := file.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("read image file")
+		return errors.Errorf("read image file: %w", err)
+	}
+	task.assetSizeBytes = len(fileBytes)
 
-		// Determine file size
-		// TODO: improve it by call stats on file
-		var fileBytes []byte
-		fileBytes, err = file.Bytes()
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("read image file")
-			err = errors.Errorf("read image file: %w", err)
-			return nil
-		}
-		task.assetSizeBytes = len(fileBytes)
+	fileDataInMb := utils.GetFileSizeInMB(fileBytes)
+	fee, err := task.PastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
+	if err != nil {
+		return errors.Errorf("getting estimated fee %w", err)
+	}
 
-		fileDataInMb := utils.GetFileSizeInMB(fileBytes)
-		fee, err := task.PastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
-		if err != nil {
-			err = errors.Errorf("getting estimated fee %w", err)
-			return nil
-		}
-		task.registrationFee = int64(fee)
-		task.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
-		task.RegTaskHelper.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
+	task.registrationFee = int64(fee)
+	task.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
+	task.RegTaskHelper.ActionTicketRegMetadata.EstimatedFee = task.registrationFee
 
-		return nil
-	})
-
-	return err
+	return nil
 }
 
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
