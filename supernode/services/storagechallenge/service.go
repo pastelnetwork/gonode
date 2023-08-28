@@ -112,7 +112,11 @@ func (service *SCService) Run(ctx context.Context) error {
 		}
 	}()
 
-	time.Sleep(10 * time.Minute)
+	go service.RunLocalKeysFetchWorker(ctx)
+
+	if !service.config.IsTestConfig {
+		time.Sleep(15 * time.Minute)
+	}
 
 	for {
 		select {
@@ -202,10 +206,10 @@ func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 		return keys, err
 	}
 	if len(actionTickets) == 0 {
-		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no action tickets retrieved")
+		log.WithContext(ctx).WithField("count", len(actionTickets)).Info("no action tickets retrieved")
 		return keys, nil
 	}
-	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Action tickets retrieved")
+	log.WithContext(ctx).WithField("count", len(actionTickets)).Info("Action tickets retrieved")
 
 	for i := 0; i < len(actionTickets); i++ {
 		decTicket, err := pastel.DecodeActionTicket(actionTickets[i].ActionTicketData.ActionTicket)
@@ -295,6 +299,7 @@ func (service *SCService) GetNClosestSupernodeIDsToComparisonString(_ context.Co
 
 // GetNClosestSupernodesToAGivenFileUsingKademlia : Wrapper for a utility function that accesses kademlia's distributed hash table to determine which nodes should be closest to a given string (hence hosting it)
 func (service *SCService) GetNClosestSupernodesToAGivenFileUsingKademlia(ctx context.Context, n int, comparisonString string, ignores ...string) []string {
+	log.WithContext(ctx).WithField("file_hash", comparisonString).Info("file_hash against which closest sns required")
 	return service.P2PClient.NClosestNodes(ctx, n, comparisonString, ignores...)
 }
 

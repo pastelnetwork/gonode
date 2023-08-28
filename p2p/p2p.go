@@ -186,6 +186,10 @@ func (s *p2p) NClosestNodes(ctx context.Context, n int, key string, ignores ...s
 	for _, node := range nodes {
 		ret = append(ret, string(node.ID))
 	}
+
+	log.WithContext(ctx).WithField("no_of_closest_nodes", n).WithField("file_hash", key).
+		WithField("closest_nodes", ret).
+		Info("closest nodes retrieved")
 	return ret
 }
 

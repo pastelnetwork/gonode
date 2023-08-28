@@ -33,9 +33,10 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 
 	//if the message is received by one of the observer then save the challenge message, lock the file & return
 	if task.isObserver(incomingChallengeMessage.Data.Observers) {
-		logger := log.WithContext(ctx).WithField("node_id", task.nodeID)
+		logger := log.WithContext(ctx).WithField("node_id", task.nodeID).WithField("challenge_id",
+			incomingChallengeMessage.ChallengeID)
 
-		if err := task.storage.P2PClient.DisableKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash); err != nil {
+		if err := task.SCService.P2PClient.DisableKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash); err != nil {
 			log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID).WithError(err).Error("error locking the file")
 			return nil, errors.Errorf("error locking the file")
 		}

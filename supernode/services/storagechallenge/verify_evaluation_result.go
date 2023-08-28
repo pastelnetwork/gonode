@@ -44,13 +44,14 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	challengeMessage, err := task.RetrieveChallengeMessage(ctx, incomingEvaluationResult.ChallengeID, int(types.ChallengeMessageType))
 	if err != nil {
 		err := errors.Errorf("error retrieving challenge message for evaluation")
-		log.WithContext(ctx).WithError(err).Error(err.Error())
+		log.WithContext(ctx).WithField("challenge_id", incomingEvaluationResult.ChallengeID).WithError(err).Error(err.Error())
 		return types.Message{}, err
 	}
 
 	responseMessage, err := task.RetrieveChallengeMessage(ctx, incomingEvaluationResult.ChallengeID, int(types.ResponseMessageType))
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error retrieving response message for evaluation")
+		log.WithContext(ctx).WithField("challenge_id", incomingEvaluationResult.ChallengeID).WithError(err).
+			Error("error retrieving response message for evaluation")
 		return types.Message{}, errors.Errorf("error retrieving response message for evaluation")
 	}
 
@@ -70,7 +71,8 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	//Verify message signatures
 	isChallengerSignatureOk, isRecipientSignatureOk, err := task.verifyMessageSignaturesForEvaluation(ctx, *challengeMessage, *responseMessage)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error verifying signatures for evaluation")
+		log.WithContext(ctx).WithError(err).WithField("challenge_id", incomingEvaluationResult.ChallengeID).
+			Error("error verifying signatures for evaluation")
 		return types.Message{}, errors.Errorf("error verifying signatures for evalaution")
 	}
 
@@ -146,7 +148,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	}
 	evaluationResultResponse.SenderSignature = signature
 
-	if err := task.storage.P2PClient.EnableKey(ctx, evaluationResultResponse.Data.Challenge.FileHash); err != nil {
+	if err := task.SCService.P2PClient.EnableKey(ctx, evaluationResultResponse.Data.Challenge.FileHash); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error enabling the symbol file")
 		return evaluationResultResponse, err
 	}

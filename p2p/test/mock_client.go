@@ -25,6 +25,9 @@ const (
 
 	//DisableKeyMethod mocks disabling key
 	DisableKeyMethod = "DisableKey"
+
+	//GetLocalKeysMethod mocks GetLocalKeys
+	GetLocalKeysMethod = "GetLocalKeys"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -92,5 +95,11 @@ func (client *Client) ListenOnDisableKey(err error) *Client {
 // ListenOnEnableKey listening on EnableKeyMethod
 func (client *Client) ListenOnEnableKey(err error) *Client {
 	client.On(EnableKeyMethod, mock.Anything, mock.Anything).Return(err)
+	return client
+}
+
+// ListenOnGetLocalKeys listening on GetLocalKeys Method
+func (client *Client) ListenOnGetLocalKeys(keys []string, err error) *Client {
+	client.On(GetLocalKeysMethod, mock.Anything, mock.Anything, mock.Anything).Return(keys, err)
 	return client
 }

@@ -621,7 +621,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 			nodes := pastel.MasterNodes{}
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "PrimaryID"})
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
-			nodes = append(nodes, pastel.MasterNode{ExtKey: "B"})
+			nodes = append(nodes, pastel.MasterNode{ExtKey: "B", ExtAddress: "B"})
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "C"})
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "D", ExtAddress: "D"})
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "E", ExtAddress: "E"})
@@ -648,19 +648,20 @@ func TestVerifyStorageChallenge(t *testing.T) {
 
 			clientMock := sctest.NewMockClient(t)
 			clientMock.ListenOnConnect("D", nil).ListenOnStorageChallengeInterface().
-				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult1, nil).ConnectionInterface.On("Close").
+				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult1.Sender, tt.args.verifyEvaluationResult1, nil).ConnectionInterface.On("Close").
 				Return(nil)
 
 			clientMock.ListenOnConnect("E", nil).ListenOnStorageChallengeInterface().
-				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").
+				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2.Sender, tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").
+				Return(nil)
+
+			clientMock.ListenOnConnect("B", nil).ListenOnStorageChallengeInterface().
+				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2.Sender, tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").
 				Return(nil)
 
 			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().
 				ListenOnBroadcastStorageChallengeResultFunc(nil).ConnectionInterface.On("Close").
 				Return(nil)
-
-			clientMock.ListenOnConnect("E", nil).ListenOnStorageChallengeInterface().
-				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").Return(nil)
 
 			fsMock := storageMock.NewMockFileStorage()
 			// storage := files.NewStorage(fsMock)
@@ -674,7 +675,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
 				stateStorage:  defaultChallengeStateLogging{},
 			}
-			task.config.SuccessfulEvaluationThreshold = 1
+			task.config.IsTestConfig = true
 
 			err = task.StoreChallengeMessage(context.Background(),
 				types.Message{
