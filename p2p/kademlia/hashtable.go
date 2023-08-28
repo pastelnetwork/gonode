@@ -321,3 +321,24 @@ func (ht *HashTable) closestContactsWithInlcudingNode(num int, target []byte, ig
 
 	return nl
 }
+
+// RemoveNode removes node from bucket
+func (ht *HashTable) RemoveNode(index int, id []byte) bool {
+	ht.mutex.Lock()
+	defer ht.mutex.Unlock()
+
+	bucket := ht.routeTable[index]
+	for i, node := range bucket {
+		if bytes.Equal(node.ID, id) {
+			if i+1 < len(bucket) {
+				bucket = append(bucket[:i], bucket[i+1:]...)
+			} else {
+				bucket = bucket[:i]
+			}
+			ht.routeTable[index] = bucket
+			return true
+		}
+	}
+
+	return false
+}

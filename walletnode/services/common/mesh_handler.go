@@ -656,7 +656,7 @@ func (m *MeshHandler) disconnectFromNode(ctx context.Context, someNode *SuperNod
 			log.WithContext(ctx).WithFields(log.Fields{
 				"pastelId": someNode.PastelID(),
 				"addr":     someNode.String(),
-			}).WithError(err).Infof("connection already closed. SN - %s", someNode.String())
+			}).WithError(err).Debugf("connection already closed. SN - %s", someNode.String())
 		}
 	} else {
 		log.WithContext(ctx).WithFields(log.Fields{
