@@ -96,8 +96,9 @@ func (client *Client) ListenOnVerifyStorageChallengeFunc(returnErr error) *Clien
 }
 
 // ListenOnVerifyEvaluationResultFunc returns affirmations & returnErr
-func (client *Client) ListenOnVerifyEvaluationResultFunc(data types.Message, returnErr error) *Client {
-	client.StorageChallengeInterface.On(VerifyEvaluationResultMethod, mock.Anything, mock.Anything).Return(data, returnErr)
+func (client *Client) ListenOnVerifyEvaluationResultFunc(nodeID string, data types.Message, returnErr error) *Client {
+	data.Sender = nodeID
+	client.StorageChallengeInterface.On(VerifyEvaluationResultMethod, mock.Anything, mock.Anything).Times(1).Return(data, returnErr)
 
 	return client
 }

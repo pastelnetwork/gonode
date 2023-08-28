@@ -32,8 +32,10 @@ func TestNewService(t *testing.T) {
 	}
 
 	config := NewConfig()
+	config.IsTestConfig = true
 	pastelClient := pastelMock.NewMockClient(t)
-	p2pClient := p2pMock.NewMockClient(t)
+	p2pClient := p2pMock.NewMockClient(t).ListenOnGetLocalKeys([]string{}, nil)
+
 	nodeClient := &nodeMock.ClientInterface{}
 	raptorQClient := rqmock.NewMockClient(t)
 
@@ -106,9 +108,11 @@ func TestServiceRun(t *testing.T) {
 				Config: common.Config{
 					PastelID: "pastelID",
 				},
+				IsTestConfig: true,
 			}
 			pastelClient := pastelMock.NewMockClient(t)
-			p2pClient := p2pMock.NewMockClient(t)
+			p2pClient := p2pMock.NewMockClient(t).ListenOnGetLocalKeys([]string{}, nil)
+			p2pClient.ListenOnGetLocalKeys([]string{}, nil)
 			service := &SCService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
@@ -153,9 +157,10 @@ func TestServiceNewTask(t *testing.T) {
 				Config: common.Config{
 					PastelID: "pastelID",
 				},
+				IsTestConfig: true,
 			}
 			pastelClient := pastelMock.NewMockClient(t)
-			p2pClient := p2pMock.NewMockClient(t)
+			p2pClient := p2pMock.NewMockClient(t).ListenOnGetLocalKeys([]string{}, nil)
 
 			service := &SCService{
 				config: config,

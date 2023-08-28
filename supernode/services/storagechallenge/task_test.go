@@ -93,7 +93,8 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 
 			closestNodes := []string{"A", "B", "C", "D"}
 			retrieveValue := []byte("I retrieved this result")
-			p2pClientMock := p2pMock.NewMockClient(t).ListenOnRetrieve(retrieveValue, nil).ListenOnNClosestNodes(closestNodes[0:2], nil)
+			p2pClientMock := p2pMock.NewMockClient(t).ListenOnRetrieve(retrieveValue, nil).
+				ListenOnNClosestNodes(closestNodes[0:2], nil).ListenOnDisableKey(nil)
 
 			rqClientMock := rqMock.NewMockClient(t)
 			rqClientMock.ListenOnEncodeInfo(&rqnode.EncodeInfo{}, nil)
@@ -620,7 +621,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 			nodes := pastel.MasterNodes{}
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "PrimaryID"})
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
-			nodes = append(nodes, pastel.MasterNode{ExtKey: "B"})
+			nodes = append(nodes, pastel.MasterNode{ExtKey: "B", ExtAddress: "B"})
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "C"})
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "D", ExtAddress: "D"})
 			nodes = append(nodes, pastel.MasterNode{ExtKey: "E", ExtAddress: "E"})
@@ -631,11 +632,14 @@ func TestVerifyStorageChallenge(t *testing.T) {
 				ticket,
 			}, nil).ListenOnActionTickets(nil, nil).ListenOnGetBlockCount(int32(tt.args.currentBlockCount), nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{
 				MerkleRoot: tt.args.MerkleRoot,
-			}, nil).ListenOnMasterNodesExtra(nodes, nil).ListenOnVerify(true, nil).ListenOnSign([]byte{}, nil)
+			}, nil).ListenOnMasterNodesExtra(nodes, nil).ListenOnVerify(true, nil).
+				ListenOnSign([]byte{}, nil)
 
 			closestNodes := []string{"A", "B", "C", "D"}
 			retrieveValue := []byte("I retrieved this result")
-			p2pClientMock := p2pMock.NewMockClient(t).ListenOnRetrieve(retrieveValue, nil).ListenOnNClosestNodes(closestNodes[0:2], nil)
+			p2pClientMock := p2pMock.NewMockClient(t).
+				ListenOnRetrieve(retrieveValue, nil).
+				ListenOnNClosestNodes(closestNodes[0:2], nil).ListenOnEnableKey(nil)
 
 			rqClientMock := rqMock.NewMockClient(t)
 			rqClientMock.ListenOnEncodeInfo(&rqnode.EncodeInfo{}, nil)
@@ -644,19 +648,20 @@ func TestVerifyStorageChallenge(t *testing.T) {
 
 			clientMock := sctest.NewMockClient(t)
 			clientMock.ListenOnConnect("D", nil).ListenOnStorageChallengeInterface().
-				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult1, nil).ConnectionInterface.On("Close").
+				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult1.Sender, tt.args.verifyEvaluationResult1, nil).ConnectionInterface.On("Close").
 				Return(nil)
 
 			clientMock.ListenOnConnect("E", nil).ListenOnStorageChallengeInterface().
-				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").
+				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2.Sender, tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").
+				Return(nil)
+
+			clientMock.ListenOnConnect("B", nil).ListenOnStorageChallengeInterface().
+				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2.Sender, tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").
 				Return(nil)
 
 			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().
 				ListenOnBroadcastStorageChallengeResultFunc(nil).ConnectionInterface.On("Close").
 				Return(nil)
-
-			clientMock.ListenOnConnect("E", nil).ListenOnStorageChallengeInterface().
-				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").Return(nil)
 
 			fsMock := storageMock.NewMockFileStorage()
 			// storage := files.NewStorage(fsMock)
@@ -670,7 +675,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
 				stateStorage:  defaultChallengeStateLogging{},
 			}
-			task.config.SuccessfulEvaluationThreshold = 1
+			task.config.IsTestConfig = true
 
 			err = task.StoreChallengeMessage(context.Background(),
 				types.Message{
@@ -685,11 +690,13 @@ func TestVerifyStorageChallenge(t *testing.T) {
 				t.Errorf("SCTask.VerifyStorageChallenge() error = %v, wantErr %v", err, tt.wantErr)
 				fmt.Println(resp)
 			}
-
-			store, err := local.OpenHistoryDB()
-			assert.NoError(t, err)
-
-			store.CleanupStorageChallenges()
 		})
 	}
+
+	defer func() {
+		store, err := local.OpenHistoryDB()
+		assert.NoError(t, err)
+
+		store.CleanupStorageChallenges()
+	}()
 }

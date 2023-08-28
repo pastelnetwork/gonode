@@ -2,7 +2,10 @@
 
 package p2p
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Client exposes the interfaces for p2p service
 type Client interface {
@@ -35,4 +38,7 @@ type Client interface {
 
 	// EnableKey removes key from disabled list - It takes in a B58 encoded SHA-256 hash
 	EnableKey(ctx context.Context, b58EncodedHash string) error
+
+	// GetLocalKeys returns a list of all keys stored locally
+	GetLocalKeys(ctx context.Context, from *time.Time, to time.Time) ([]string, error)
 }

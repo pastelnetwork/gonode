@@ -19,6 +19,15 @@ const (
 
 	//StoreBatch mocks storing in batch
 	StoreBatch = "StoreBatch"
+
+	//EnableKeyMethod mocks enabling key
+	EnableKeyMethod = "EnableKey"
+
+	//DisableKeyMethod mocks disabling key
+	DisableKeyMethod = "DisableKey"
+
+	//GetLocalKeysMethod mocks GetLocalKeys
+	GetLocalKeysMethod = "GetLocalKeys"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -74,5 +83,23 @@ func (client *Client) ListenOnNClosestNodes(retArr []string, err error) *Client 
 // ListenOnStoreBatch listening on StoreBatch
 func (client *Client) ListenOnStoreBatch(err error) *Client {
 	client.On(StoreBatch, mock.Anything, mock.Anything, mock.Anything).Return(err)
+	return client
+}
+
+// ListenOnDisableKey listening on DisableKeyMethod
+func (client *Client) ListenOnDisableKey(err error) *Client {
+	client.On(DisableKeyMethod, mock.Anything, mock.Anything).Return(err)
+	return client
+}
+
+// ListenOnEnableKey listening on EnableKeyMethod
+func (client *Client) ListenOnEnableKey(err error) *Client {
+	client.On(EnableKeyMethod, mock.Anything, mock.Anything).Return(err)
+	return client
+}
+
+// ListenOnGetLocalKeys listening on GetLocalKeys Method
+func (client *Client) ListenOnGetLocalKeys(keys []string, err error) *Client {
+	client.On(GetLocalKeysMethod, mock.Anything, mock.Anything, mock.Anything).Return(keys, err)
 	return client
 }

@@ -33,9 +33,10 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 
 	//if the message is received by one of the observer then save the challenge message, lock the file & return
 	if task.isObserver(incomingChallengeMessage.Data.Observers) {
-		logger := log.WithContext(ctx).WithField("node_id", task.nodeID)
+		logger := log.WithContext(ctx).WithField("node_id", task.nodeID).WithField("challenge_id",
+			incomingChallengeMessage.ChallengeID)
 
-		if err := task.storage.P2PClient.DisableKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash); err != nil {
+		if err := task.SCService.P2PClient.DisableKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash); err != nil {
 			log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID).WithError(err).Error("error locking the file")
 			return nil, errors.Errorf("error locking the file")
 		}
@@ -123,8 +124,6 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	}
 	log.WithContext(ctx).Info("message sent to other SNs for verification")
 
-	task.SaveChallengeMessageState(ctx, "respond", outgoingResponseMessage.ChallengeID, outgoingResponseMessage.Data.ChallengerID, outgoingResponseMessage.Data.Response.Block)
-
 	return nil, nil
 }
 
@@ -160,8 +159,12 @@ func (task *SCTask) computeHashOfFileSlice(fileData []byte, challengeSliceStartI
 func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMessage types.Message) error {
 	nodesToConnect, err := task.GetNodesAddressesToConnect(ctx, challengeMessage)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for send process storage challenge")
+		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for send verify storage challenge")
 		return err
+	}
+
+	if nodesToConnect == nil {
+		return errors.Errorf("no nodes found to connect to send verify storage challenge")
 	}
 
 	signature, data, err := task.SignMessage(ctx, challengeMessage.Data)

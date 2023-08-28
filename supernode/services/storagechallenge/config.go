@@ -33,6 +33,7 @@ type Config struct {
 	RqFilesDir                    string
 	ChallengeFailuresThreshold    int
 	SuccessfulEvaluationThreshold int
+	IsTestConfig                  bool
 }
 
 // NewConfig returns a new Config instance.

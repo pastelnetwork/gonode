@@ -2,7 +2,9 @@ package storagechallenge
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -43,6 +45,9 @@ type SCService struct {
 	currentBlockCount int32
 	// currently unimplemented, default always used instead.
 	challengeStatusObserver SaveChallengeState
+
+	localKeys            sync.Map
+	localKeysLastFetchAt time.Time
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -59,7 +64,43 @@ func (service *SCService) CheckNextBlockAvailable(ctx context.Context) bool {
 	return false
 }
 
-const defaultTimerBlockCheckDuration = 30 * time.Second
+const (
+	defaultTimerBlockCheckDuration = 30 * time.Second
+	defaultLocalKeysFetchInterval  = 20 * time.Minute
+)
+
+// RunLocalKeysFetchWorker : This worker will periodically fetch the local keys from the local storage
+func (service *SCService) RunLocalKeysFetchWorker(ctx context.Context) {
+	service.localKeysLastFetchAt = time.Now()
+	if err := service.populateLocalKeys(ctx, nil); err != nil {
+		log.WithContext(ctx).WithError(err).Error("RunLocalKeysFetchWorker:populateLocalKeys")
+	}
+
+	for {
+		select {
+		case <-time.After(defaultLocalKeysFetchInterval):
+			if err := service.populateLocalKeys(ctx, &service.localKeysLastFetchAt); err != nil {
+				log.WithContext(ctx).WithError(err).Error("RunLocalKeysFetchWorker:populateLocalKeys")
+			}
+		case <-ctx.Done():
+			log.Println("Context done being called in local keys fetch worker in service.go")
+			return
+		}
+	}
+}
+
+func (service *SCService) populateLocalKeys(ctx context.Context, from *time.Time) error {
+	keys, err := service.P2PClient.GetLocalKeys(ctx, from, service.localKeysLastFetchAt)
+	if err != nil {
+		return fmt.Errorf("GetLocalKeys: %w", err)
+	}
+
+	for i := 0; i < len(keys); i++ {
+		service.localKeys.Store(keys[i], true)
+	}
+
+	return nil
+}
 
 // Run : storage challenge service will run continuously to generate storage challenges.
 func (service *SCService) Run(ctx context.Context) error {
@@ -71,14 +112,20 @@ func (service *SCService) Run(ctx context.Context) error {
 		}
 	}()
 
+	go service.RunLocalKeysFetchWorker(ctx)
+
+	if !service.config.IsTestConfig {
+		time.Sleep(15 * time.Minute)
+	}
+
 	for {
 		select {
 		case <-time.After(defaultTimerBlockCheckDuration):
 
 			if service.CheckNextBlockAvailable(ctx) && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
 				newCtx := log.ContextWithPrefix(context.Background(), "storage-challenge")
-				//task := service.NewSCTask()
-				//task.GenerateStorageChallenges(newCtx)
+				task := service.NewSCTask()
+				task.GenerateStorageChallenges(newCtx)
 				log.WithContext(newCtx).Debug("Would normally generate a storage challenge")
 			}
 		case <-ctx.Done():
@@ -122,6 +169,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		numberOfChallengeReplicas: config.NumberOfChallengeReplicas,
 		numberOfVerifyingNodes:    config.NumberOfVerifyingNodes,
 		challengeStatusObserver:   challengeStatusObserver,
+		localKeys:                 sync.Map{},
 	}
 }
 
@@ -158,10 +206,10 @@ func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 		return keys, err
 	}
 	if len(actionTickets) == 0 {
-		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no reg tickets retrieved")
+		log.WithContext(ctx).WithField("count", len(actionTickets)).Info("no action tickets retrieved")
 		return keys, nil
 	}
-	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Action tickets retrieved")
+	log.WithContext(ctx).WithField("count", len(actionTickets)).Info("Action tickets retrieved")
 
 	for i := 0; i < len(actionTickets); i++ {
 		decTicket, err := pastel.DecodeActionTicket(actionTickets[i].ActionTicketData.ActionTicket)
@@ -251,6 +299,7 @@ func (service *SCService) GetNClosestSupernodeIDsToComparisonString(_ context.Co
 
 // GetNClosestSupernodesToAGivenFileUsingKademlia : Wrapper for a utility function that accesses kademlia's distributed hash table to determine which nodes should be closest to a given string (hence hosting it)
 func (service *SCService) GetNClosestSupernodesToAGivenFileUsingKademlia(ctx context.Context, n int, comparisonString string, ignores ...string) []string {
+	log.WithContext(ctx).WithField("file_hash", comparisonString).Info("file_hash against which closest sns required")
 	return service.P2PClient.NClosestNodes(ctx, n, comparisonString, ignores...)
 }
 

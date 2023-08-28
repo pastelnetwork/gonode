@@ -121,6 +121,7 @@ type ObserverEvaluationData struct {
 	IsRecipientSignatureOK  bool      `json:"is_recipient_signature_ok"`
 	IsChallengerSignatureOK bool      `json:"is_challenger_signature_ok"`
 	IsEvaluationResultOK    bool      `json:"is_evaluation_result_ok"`
+	Reason                  string    `json:"reason"`
 	TrueHash                string    `json:"true_hash"`
 	Timestamp               time.Time `json:"timestamp"`
 }
