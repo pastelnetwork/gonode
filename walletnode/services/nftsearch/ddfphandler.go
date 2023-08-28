@@ -76,7 +76,7 @@ func (h *DDFPHandler) CloseAll(ctx context.Context) error {
 		someNode := someNode
 		g.Go(func() error {
 			if err := nftDownNode.Close(); err != nil {
-				log.WithContext(ctx).WithField("address", someNode.String()).WithField("message", err.Error()).Info("Connection already closed")
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("message", err.Error()).Debug("Connection already closed")
 			} else {
 				log.WithContext(ctx).WithField("address", someNode.String()).Info("Connection closed")
 			}

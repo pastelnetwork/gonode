@@ -37,7 +37,7 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 					_, err := s.network.Call(ctx, request, false)
 					if err != nil {
 						log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(info.ID)).
-							Error("failed to ping node")
+							Debug("failed to ping node")
 						if info.Active {
 							log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(info.ID)).
 								Error("setting node to inactive")
@@ -45,6 +45,8 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 							// add node to ignore list
 							// we maintain this list to avoid pinging nodes that are not responding
 							s.ignorelist.IncrementCount(node)
+							// remove from route table
+							s.removeNode(ctx, node)
 
 							// mark node as inactive in database
 							if err := s.store.UpdateIsActive(ctx, string(info.ID), false, false); err != nil {
@@ -58,6 +60,8 @@ func (s *DHT) checkNodeActivity(ctx context.Context) {
 
 						if !info.Active {
 							log.P2P().WithContext(ctx).WithField("ip", info.IP).WithField("node_id", string(info.ID)).Info("node found to be active again")
+							// add node adds in the route table
+							s.addNode(ctx, node)
 							if err := s.store.UpdateIsActive(ctx, string(info.ID), true, false); err != nil {
 								log.P2P().WithContext(ctx).WithError(err).WithField("ip", info.IP).WithField("node_id", string(info.ID)).Error("failed to update replication info, node is inactive")
 							}

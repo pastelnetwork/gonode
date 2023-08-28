@@ -84,11 +84,11 @@ clean-proto:
 	rm -f ./proto/walletnode/*.go
 
 release:
-	cd ./walletnode && go build -ldflags=$(LDFLAGS) -o $(BINARY_WN)
-	strip -v walletnode/$(BINARY_WN) -o dist/$(BINARY_WN)-$(os)-$(arch)$(ext)
+	#cd ./walletnode && go build -ldflags=$(LDFLAGS) -o $(BINARY_WN)
+	#strip -v walletnode/$(BINARY_WN) -o dist/$(BINARY_WN)-$(os)-$(arch)$(ext)
 
-	cd ./bridge && go build -ldflags=$(LDFLAGS) -o $(BINARY_BRIDGE)
-	strip -v bridge/$(BINARY_BRIDGE) -o dist/$(BINARY_BRIDGE)-$(os)-$(arch)$(ext)
+	#cd ./bridge && go build -ldflags=$(LDFLAGS) -o $(BINARY_BRIDGE)
+	#strip -v bridge/$(BINARY_BRIDGE) -o dist/$(BINARY_BRIDGE)-$(os)-$(arch)$(ext)
 
 	docker build -f ./scripts/release.Dockerfile --build-arg BUILD_VERSION=$(VERSION) -t gonode_release .
 	docker create -ti --name gn_builder gonode_release bash

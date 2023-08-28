@@ -478,7 +478,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	if nl.Len() == 0 {
 		return nil, nil
 	}
-	log.P2P().WithContext(ctx).WithField("task_id", taskID).Infof("type: %v, target: %v, nodes: %v", iterativeType, sKey, nl.String())
+	log.P2P().WithContext(ctx).WithField("task_id", taskID).Debugf("type: %v, target: %v, nodes: %v", iterativeType, sKey, nl.String())
 
 	// keep the closer node
 	closestNode := nl.Nodes[0]
@@ -906,4 +906,25 @@ func (s *DHT) cleanupDisabledKeys(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// remove node from appropriate k bucket
+func (s *DHT) removeNode(ctx context.Context, node *Node) {
+	// ensure this is not itself address
+	if bytes.Equal(node.ID, s.ht.self.ID) {
+		log.P2P().WithContext(ctx).Debug("trying to remove itself")
+		return
+	}
+
+	// the bucket index for the node
+	hashedID, _ := utils.Sha3256hash(s.ht.self.ID)
+	hashedIncomingID, _ := utils.Sha3256hash(node.ID)
+
+	index := s.ht.bucketIndex(hashedID, hashedIncomingID)
+
+	if removed := s.ht.RemoveNode(index, node.ID); !removed {
+		log.P2P().WithContext(ctx).Errorf("remove node %s not found in bucket %d", node.String(), index)
+	} else {
+		log.P2P().WithContext(ctx).Infof("removed node %s from bucket %d success", node.String(), index)
+	}
 }
