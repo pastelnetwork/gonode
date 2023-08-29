@@ -831,7 +831,7 @@ func compressMap(dataMap map[string][]byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal data map: %w", err)
 	}
 
-	compressedData, err := zstd.CompressLevel(nil, dataBytes, 6)
+	compressedData, err := zstd.CompressLevel(nil, dataBytes, 1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compress data: %w", err)
 	}
