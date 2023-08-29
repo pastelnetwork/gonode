@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/meta"
@@ -296,22 +295,15 @@ func (s *p2p) GetLocalKeys(ctx context.Context, from *time.Time, to time.Time) (
 	}
 
 	retkeys := make([]string, len(keys))
-	var wg sync.WaitGroup
-	for i, key := range keys {
-		wg.Add(1)
-		go func(i int, key string) {
-			defer wg.Done()
-			str, err := hex.DecodeString(key)
-			if err != nil {
-				log.WithContext(ctx).WithField("key", key).Error("replicate failed to hex decode key")
-				return
-			}
+	for i := 0; i < len(keys); i++ {
+		str, err := hex.DecodeString(keys[i])
+		if err != nil {
+			log.WithContext(ctx).WithField("key", keys[i]).Error("replicate failed to hex decode key")
+			continue
+		}
 
-			retkeys[i] = base58.Encode(str)
-		}(i, key)
+		retkeys[i] = base58.Encode(str)
 	}
-
-	wg.Wait()
 
 	return retkeys, nil
 }

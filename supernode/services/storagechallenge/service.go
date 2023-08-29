@@ -90,6 +90,11 @@ func (service *SCService) RunLocalKeysFetchWorker(ctx context.Context) {
 }
 
 func (service *SCService) populateLocalKeys(ctx context.Context, from *time.Time) error {
+	fromStr := ""
+	if from != nil {
+		fromStr = from.String()
+	}
+	log.WithContext(ctx).WithField("fromStr", fromStr).WithField("to", service.localKeysLastFetchAt).Info("Populating local keys")
 	keys, err := service.P2PClient.GetLocalKeys(ctx, from, service.localKeysLastFetchAt)
 	if err != nil {
 		return fmt.Errorf("GetLocalKeys: %w", err)

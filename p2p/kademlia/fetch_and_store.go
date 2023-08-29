@@ -21,7 +21,7 @@ const (
 	totalMaxAttempts                     = 20
 	maxSingleBatchIterations             = 10
 	failedKeysClosestContactsLookupCount = 12
-	fetchBatchSize                       = 600
+	fetchBatchSize                       = 400
 )
 
 // FetchAndStore fetches all keys from the local TODO replicate list, fetches value from respective nodes and stores them in the local store

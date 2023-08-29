@@ -74,11 +74,11 @@ gen-proto:
 	cd ./proto/bridge/protobuf && protoc --go_out=.. --go-grpc_out=.. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative download_data.proto
 integration-tests:
 	cd ./integration && INTEGRATION_TEST_ENV=true go test -v --timeout=20m ./...
-build:
-	cd ./supernode && go get && go build
-	cd ./walletnode && go get && go build
+build-linux:
+	cd ./supernode && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o supernode
+	cd ./walletnode && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o walletnode
 	cd ./bridge && go get && go build
-	cd ./hermes && go get && go build
+	cd ./hermes && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o hermes
 clean-proto:
 	rm -f ./proto/supernode/*.go
 	rm -f ./proto/walletnode/*.go

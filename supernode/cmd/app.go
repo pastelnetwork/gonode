@@ -7,6 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -39,8 +42,9 @@ import (
 )
 
 const (
-	appName  = "supernode"
-	appUsage = "SuperNode" // TODO: Write a clear description.
+	appName       = "supernode"
+	profilingPort = "8848"
+	appUsage      = "SuperNode" // TODO: Write a clear description.
 
 	tfmodelDir = "./tfmodels" // relatively from work-dir
 	rqFilesDir = "rqfiles"
@@ -282,6 +286,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
+
+	go func() {
+		_ = http.ListenAndServe(fmt.Sprintf(":%s", profilingPort), nil)
+	}()
 
 	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger, selfHealing, collectionRegister)
 }
