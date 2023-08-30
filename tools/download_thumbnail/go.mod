@@ -3,14 +3,14 @@ module github.com/pastelnetwork/gonode/tools/download_thumbnail
 go 1.17
 
 require (
-	github.com/gorilla/websocket v1.4.2
+	github.com/gorilla/websocket v1.5.0
 	github.com/pastelnetwork/gonode/walletnode v0.0.0-20210723172801-5d493665cdd7
 	github.com/pkg/errors v0.9.1
-	goa.design/goa/v3 v3.4.3
+	goa.design/goa/v3 v3.7.6
 )
 
 require (
-	github.com/dimfeld/httptreemux/v5 v5.3.0 // indirect
+	github.com/dimfeld/httptreemux/v5 v5.4.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 )
 
