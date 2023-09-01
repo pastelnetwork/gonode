@@ -37,6 +37,18 @@ const createStorageChallengeMessages string = `
   updated_at DATETIME NOT NULL
 );`
 
+const createBroadcastChallengeMessages string = `
+  CREATE TABLE IF NOT EXISTS broadcast_challenge_messages (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  challenge_id TEXT NOT NULL,
+  challenger TEXT NOT NULL,
+  recipient TEXT NOT NULL,
+  observers TEXT NOT NULL,
+  data BLOB NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+);`
+
 const createStorageChallengeMessagesUniqueIndex string = `
 CREATE UNIQUE INDEX IF NOT EXISTS storage_challenge_messages_unique ON storage_challenge_messages(challenge_id, message_type, sender_id);
 `
@@ -140,6 +152,18 @@ func (s *SQLiteStore) InsertStorageChallengeMessage(challenge types.StorageChall
 	return nil
 }
 
+// InsertBroadcastMessage inserts broadcast storage challenge msg to db
+func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage) error {
+	now := time.Now()
+	const insertQuery = "INSERT INTO broadcast_challenge_messages(id, challenge_id, data, challenger, recipient, observers, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?);"
+	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.Data, challenge.Challenger, challenge.Recipient, challenge.Observers, now, now)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // QueryStorageChallengeMessage retrieves storage challenge message against challengeID and messageType
 func (s *SQLiteStore) QueryStorageChallengeMessage(challengeID string, messageType int) (challengeMessage types.StorageChallengeLogMessage, err error) {
 	const selectQuery = "SELECT * FROM storage_challenge_messages WHERE challenge_id=? AND message_type=?"
@@ -227,6 +251,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createStorageChallengeMessagesUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot execute migration: %w", err)
+	}
+
+	if _, err := db.Exec(createBroadcastChallengeMessages); err != nil {
 		return nil, fmt.Errorf("cannot execute migration: %w", err)
 	}
 

@@ -42,10 +42,11 @@ message VerifyEvaluationResultReply {
 }
 
 message BroadcastStorageChallengeRequest {
-  StorageChallengeMessage data = 1;
+  string challenge_id = 1;
   map<string, bytes> challenger = 2;
   map<string, bytes> recipient = 3;
-  map<string, bytes> obs = 4;
+  map<string, bytes> observers = 4;
+  bytes sender_signature = 5;
 }
 
 message BroadcastStorageChallengeResponse {

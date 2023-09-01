@@ -184,11 +184,11 @@ func (service *StorageChallengeGRPC) BroadcastStorageChallengeResult(ctx context
 	log.WithContext(ctx).WithField("req", scRequest).Debugf("broadcast storage challenge result request received from gRpc client")
 	task := service.NewSCTask()
 
-	msg := types.Message{
-		ChallengeID:     scRequest.Data.ChallengeId,
-		MessageType:     types.MessageType(scRequest.Data.MessageType),
-		Sender:          scRequest.Data.SenderId,
-		SenderSignature: scRequest.Data.SenderSignature,
+	msg := types.BroadcastMessage{
+		ChallengeID: scRequest.ChallengeId,
+		Challenger:  scRequest.Challenger,
+		Recipient:   scRequest.Recipient,
+		Observers:   scRequest.Observers,
 	}
 
 	_, err := task.BroadcastStorageChallengeResult(ctx, msg)

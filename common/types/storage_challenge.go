@@ -73,6 +73,14 @@ type Message struct {
 	UpdatedAt                  time.Time `json:"updated_at"`
 }
 
+// BroadcastMessage represents the storage challenge message that needs to be broadcast after evaluation
+type BroadcastMessage struct {
+	ChallengeID string
+	Challenger  map[string][]byte
+	Recipient   map[string][]byte
+	Observers   map[string][]byte
+}
+
 // MessageData represents the storage challenge message data
 type MessageData struct {
 	ChallengerID         string                 `json:"challenger_id"`
@@ -136,4 +144,13 @@ type StorageChallengeLogMessage struct {
 	SenderSignature []byte    `db:"sender_signature"`
 	CreatedAt       time.Time `db:"created_at"`
 	UpdatedAt       time.Time `db:"updated_at"`
+}
+
+// BroadcastLogMessage represents the broadcast message log to be stored in the DB
+type BroadcastLogMessage struct {
+	ChallengeID string `db:"challenge_id"`
+	Challenger  string `db:"challenger"`
+	Recipient   string `db:"recipient"`
+	Observers   string `db:"observers"`
+	Data        []byte `db:"data"`
 }
