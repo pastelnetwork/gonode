@@ -537,6 +537,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList Supe
 		itemCount[localNode.Address()] = 0
 	}
 
+	badPeers := 0
 	log.WithContext(ctx).Info("getting candidate nodes")
 	for _, someNode := range WNTopNodesList {
 		someNodeIP := someNode.Address()
@@ -545,12 +546,18 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList Supe
 		peerNodeList[someNodeIP], err = m.GetTopMNsListFromSN(ctx, *someNode, secInfo)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list from SN")
+			badPeers++
 			continue
 		}
 
 		for _, topNodeIP := range peerNodeList[someNodeIP] {
 			itemCount[topNodeIP]++
 		}
+	}
+
+	// SNs DDoS protection
+	if badPeers > maxOutliers {
+		return nil, fmt.Errorf("failed to get mn-top lists from %d SNs", badPeers)
 	}
 
 	candidateNodes := SuperNodeList{}
