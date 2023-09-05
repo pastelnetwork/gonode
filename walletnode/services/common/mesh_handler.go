@@ -521,7 +521,11 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 // GetCandidateNodes getTopNodes from SNs and select candidateNodes that agrees with WN Top Nodes List
 func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList SuperNodeList) (SuperNodeList, error) {
 	maxOutliers := 3
+	minRequiredNodes := 3
+	minRequiredCommonIPs := 5
 	itemCount := make(map[string]int)
+	peerNodeList := make(map[string][]string)
+	var err error
 
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
@@ -535,32 +539,50 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList Supe
 
 	log.WithContext(ctx).Info("getting candidate nodes")
 	for _, someNode := range WNTopNodesList {
-		log.WithContext(ctx).WithField("address", someNode.Address())
+		someNodeIP := someNode.Address()
+		log.WithContext(ctx).WithField("address", someNodeIP)
 
-		snTopNodesIPList, err := m.GetTopMNsListFromSN(ctx, *someNode, secInfo)
+		peerNodeList[someNodeIP], err = m.GetTopMNsListFromSN(ctx, *someNode, secInfo)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list from SN")
 			continue
 		}
 
-		for _, topNodeIP := range snTopNodesIPList {
+		for _, topNodeIP := range peerNodeList[someNodeIP] {
 			itemCount[topNodeIP]++
 		}
 	}
 
 	candidateNodes := SuperNodeList{}
 	for _, someNode := range WNTopNodesList {
-		count := itemCount[someNode.Address()]
+		someNodeIP := someNode.Address()
+		count := itemCount[someNodeIP]
 		if count >= len(WNTopNodesList)-maxOutliers {
 			candidateNodes = append(candidateNodes, someNode)
 		}
 	}
 
-	if len(candidateNodes) < 3 {
+	finalCandidateNodes := SuperNodeList{}
+	for _, someNode := range WNTopNodesList {
+		someNodeIP := someNode.Address()
+		commonCount := 0
+		for _, remoteNodeIP := range peerNodeList[someNodeIP] {
+			// check if the IP from the remote node is in the candidate list and often enough (>=7)
+			if itemCount[remoteNodeIP] >= len(WNTopNodesList)-maxOutliers {
+				commonCount++
+			}
+		}
+
+		if commonCount >= minRequiredCommonIPs {
+			finalCandidateNodes = append(finalCandidateNodes, someNode)
+		}
+	}
+
+	if len(finalCandidateNodes) < minRequiredNodes {
 		return nil, fmt.Errorf("failed to find at least 3 common SNs in mn-top lists from current top MNs")
 	}
 
-	return candidateNodes, nil
+	return finalCandidateNodes, nil
 }
 
 // GetTopMNsListFromSN retrieves the MN top list from the given SN
