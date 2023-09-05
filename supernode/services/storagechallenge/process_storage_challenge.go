@@ -7,8 +7,10 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"golang.org/x/crypto/sha3"
+	"sync"
 	"time"
 )
 
@@ -109,7 +111,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 				Block:      blockNumChallengeRespondedTo,
 				Merkelroot: blkVerbose1.MerkleRoot,
 				Hash:       challengeResponseHash,
-				Timestamp:  time.Now(),
+				Timestamp:  time.Now().UTC(),
 			},
 		},
 		Sender:          task.nodeID,
@@ -182,12 +184,39 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		SenderSignature: challengeMessage.SenderSignature,
 	}
 
+	var challengerNode pastel.MasterNode
+	var wg sync.WaitGroup
 	for _, node := range nodesToConnect {
-		if err := task.SendMessage(ctx, msg, node.ExtAddress); err != nil {
-			log.WithContext(ctx).WithError(err).Error("error sending storage challenge message for processing")
-			continue
-		}
+		node := node
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			if challengeMessage.Data.ChallengerID == node.ExtKey {
+				challengerNode = node
+				return
+			}
+
+			logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
+
+			if err := task.SendMessage(ctx, msg, node.ExtAddress); err != nil {
+				logger.WithError(err).Error("error sending storage challenge message for processing")
+				return
+			}
+
+			logger.Info("response message has been sent")
+		}()
 	}
+	wg.Wait()
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Info("response message has been sent to observers")
+
+	if err := task.SendMessage(ctx, msg, challengerNode.ExtAddress); err != nil {
+		log.WithContext(ctx).WithField("node_address", challengerNode.ExtAddress).WithError(err).Error("error sending response message to challenger for verification")
+		return err
+	}
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).
+		WithField("node_address", challengerNode.ExtAddress).Info("response message has been sent to challenger")
 
 	return nil
 }

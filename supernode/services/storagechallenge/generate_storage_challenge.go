@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"math"
 	"math/big"
-	"math/rand"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mkmik/argsort"
@@ -122,7 +123,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(challengeDataSize, currentFileHashToChallenge, merkleroot, challengingSupernodeID)
 
 		//Create Challenge And Message IDs
-		challengeIDInputData := challengingSupernodeID + respondingSupernodeID + currentFileHashToChallenge + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(merkleroot) + fmt.Sprint(rand.Int63())
+		challengeIDInputData := challengingSupernodeID + respondingSupernodeID + currentFileHashToChallenge + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(merkleroot) + uuid.NewString()
 		challengeID := utils.GetHashFromString(challengeIDInputData)
 
 		storageChallengeMessage := types.Message{
@@ -135,7 +136,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 				Challenge: types.ChallengeData{
 					Block:      currentBlockCount,
 					Merkelroot: merkleroot,
-					Timestamp:  time.Now(),
+					Timestamp:  time.Now().UTC(),
 					FileHash:   currentFileHashToChallenge,
 					StartIndex: challengeSliceStartIndex,
 					EndIndex:   challengeSliceEndIndex,
@@ -196,16 +197,38 @@ func (task *SCTask) sendProcessStorageChallenge(ctx context.Context, challengeMe
 		SenderSignature: challengeMessage.SenderSignature,
 	}
 
+	var wg sync.WaitGroup
+	var recipientNode pastel.MasterNode
 	for _, node := range nodesToConnect {
-		logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
+		node := node
+		wg.Add(1)
 
-		if err := task.SendMessage(ctx, msg, node.ExtAddress); err != nil {
-			logger.WithError(err).Error("error sending storage challenge message for processing")
-			continue
-		}
+		go func() {
+			defer wg.Done()
 
-		logger.Info("challenge message has been sent")
+			if challengeMessage.Data.RecipientID == node.ExtKey {
+				recipientNode = node
+				return
+			}
+			logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
+
+			if err := task.SendMessage(ctx, msg, node.ExtAddress); err != nil {
+				logger.WithError(err).Error("error sending storage challenge message for processing")
+				return
+			}
+
+			logger.Info("challenge message has been sent")
+		}()
 	}
+	wg.Wait()
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Info("challenge message has been sent to observers")
+
+	if err := task.SendMessage(ctx, msg, recipientNode.ExtAddress); err != nil {
+		log.WithContext(ctx).WithField("node_address", recipientNode.ExtAddress).WithError(err).Error("error sending storage challenge message to recipient for processing")
+		return err
+	}
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).
+		WithField("node_address", recipientNode.ExtAddress).Info("challenge message has been sent to recipient")
 
 	return nil
 }
@@ -274,10 +297,7 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 
 	switch challengeMessage.MessageType {
 	case types.ChallengeMessageType:
-		//send message to challenge recipient
-		nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.RecipientID])
-
-		//and partial observers;
+		//send message to partial observers;
 		for _, po := range challengeMessage.Data.Observers {
 			if value, ok := mapSupernodes[po]; ok {
 				nodesToConnect = append(nodesToConnect, value)
@@ -286,15 +306,15 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 			}
 		}
 
+		// and challenge recipient
+		nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.RecipientID])
+
 		logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
 		return nodesToConnect, nil
 	case types.ResponseMessageType:
 		//should process and send by recipient only
 		if challengeMessage.Data.RecipientID == task.nodeID {
-			//send message to challenger
-			nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.ChallengerID])
-
-			//and partial observers for verification
+			//send message to partial observers for verification
 			for _, po := range challengeMessage.Data.Observers {
 				if value, ok := mapSupernodes[po]; ok {
 					nodesToConnect = append(nodesToConnect, value)
@@ -302,6 +322,9 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 					log.WithContext(ctx).WithField("observer_id", po).Info("observer not found in masternode list")
 				}
 			}
+
+			//and challenger
+			nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.ChallengerID])
 
 			logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
 			return nodesToConnect, nil

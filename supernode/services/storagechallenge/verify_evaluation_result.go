@@ -2,9 +2,12 @@ package storagechallenge
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/local"
@@ -12,16 +15,22 @@ import (
 )
 
 const (
-	timestampTolerance          = 5 * time.Second
-	challengeTimestampTolerance = 15 * time.Second
+	timestampTolerance          = 30 * time.Second
+	challengeTimestampTolerance = 60 * time.Second
 )
 
 // VerifyEvaluationResult process the evaluation report from the challenger by the observers
 func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluationResult types.Message) (types.Message, error) {
-	logger := log.WithContext(ctx).WithField("method", "VerifyEvaluationResult").WithField("challengeID", incomingEvaluationResult.ChallengeID)
-	logger.Debug("Start verifying challenger's evaluation report") // Incoming evaluation report validation
+	log.WithContext(ctx).WithField("method", "VerifyEvaluationResult").WithField("challengeID", incomingEvaluationResult.ChallengeID).
+		Debug("Start verifying challenger's evaluation report") // Incoming evaluation report validation
 
-	receivedAt := time.Now()
+	if err := task.validateVerifyingStorageChallengeEvaluationReport(ctx, incomingEvaluationResult); err != nil {
+		return types.Message{}, err
+	}
+	log.WithContext(ctx).WithField("incoming_evaluation", incomingEvaluationResult).Info("Incoming evaluation " +
+		"signature validated")
+
+	receivedAt := time.Now().UTC()
 
 	//if observers then save the evaluation message
 	if task.isObserver(incomingEvaluationResult.Data.Observers) {
@@ -41,24 +50,18 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	}
 
 	//retrieve messages from the DB against challengeID
-	challengeMessage, err := task.RetrieveChallengeMessage(ctx, incomingEvaluationResult.ChallengeID, int(types.ChallengeMessageType))
+	challengeMessage, responseMessage, err := task.retrieveChallengeAndResponseMessageForEvaluationReportVerification(ctx, incomingEvaluationResult.ChallengeID)
 	if err != nil {
-		err := errors.Errorf("error retrieving challenge message for evaluation")
-		log.WithContext(ctx).WithField("challenge_id", incomingEvaluationResult.ChallengeID).WithError(err).Error(err.Error())
+		log.WithContext(ctx).WithError(err).Error("error retrieving the challenge and response message for verification")
 		return types.Message{}, err
-	}
-
-	responseMessage, err := task.RetrieveChallengeMessage(ctx, incomingEvaluationResult.ChallengeID, int(types.ResponseMessageType))
-	if err != nil {
-		log.WithContext(ctx).WithField("challenge_id", incomingEvaluationResult.ChallengeID).WithError(err).
-			Error("error retrieving response message for evaluation")
-		return types.Message{}, errors.Errorf("error retrieving response message for evaluation")
 	}
 
 	if challengeMessage == nil || responseMessage == nil {
 		log.WithContext(ctx).Error("unable to retrieve challenge or response message")
 		return types.Message{}, errors.Errorf("unable to retrieve challenge or response message")
 	}
+	log.WithContext(ctx).WithField("challenge_msg", challengeMessage).Info("challenge msg retrieved")
+	log.WithContext(ctx).WithField("response_msg", responseMessage).Info("response msg retrieved")
 
 	//Need to verify the following
 	//	IsChallengeTimestampOK  bool      `json:"is_challenge_timestamp_ok"`
@@ -136,22 +139,32 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 				IsEvaluationResultOK:    isEvaluationResultOk,
 				TrueHash:                challengeCorrectHash,
 				Reason:                  reason,
-				Timestamp:               time.Now(),
+				Timestamp:               time.Now().UTC(),
 			},
 		},
 		Sender: task.nodeID,
 	}
+
+	logger := log.WithContext(ctx).WithField("challenge_id", evaluationResultResponse.ChallengeID).
+		WithField("node_id", task.nodeID)
 
 	signature, _, err := task.SignMessage(ctx, evaluationResultResponse.Data)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error signing evaluation response")
 	}
 	evaluationResultResponse.SenderSignature = signature
+	logger.Info("evaluation report has been signed")
 
 	if err := task.SCService.P2PClient.EnableKey(ctx, evaluationResultResponse.Data.Challenge.FileHash); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error enabling the symbol file")
 		return evaluationResultResponse, err
 	}
+	logger.Info("key has been enabled")
+
+	if err := task.StoreChallengeMessage(ctx, evaluationResultResponse); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error storing evaluation response ")
+	}
+	logger.Info("evaluation report has been stored")
 
 	return evaluationResultResponse, nil
 }
@@ -211,13 +224,15 @@ func (task *SCTask) verifyMessageSignaturesForEvaluation(ctx context.Context, ch
 }
 
 func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challengeMessage, responseMessage, incomingEvaluationResult types.Message, evaluationMsgRecvTime time.Time) (challengeMsgTS, resMsgTS, evalMsgTS bool) {
-	isChallengeTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Challenge.Timestamp,
-		challengeMessage.Data.Challenge.Timestamp, challengeMessage.CreatedAt,
+	isChallengeTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Challenge.Timestamp.UTC(),
+		challengeMessage.Data.Challenge.Timestamp.UTC(), challengeMessage.CreatedAt.UTC(),
 		challengeMessage.ChallengeID, challengeMessage.MessageType)
+	log.WithContext(ctx).Info("challenge message timestamps have been verified successfully")
 
-	isResponseTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Response.Timestamp,
-		challengeMessage.Data.Response.Timestamp, responseMessage.CreatedAt,
+	isResponseTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Response.Timestamp.UTC(),
+		responseMessage.Data.Response.Timestamp.UTC(), responseMessage.CreatedAt.UTC(),
 		responseMessage.ChallengeID, responseMessage.MessageType)
+	log.WithContext(ctx).Info("response message timestamps have been verified successfully")
 
 	differenceBetweenEvaluationMsgSendAndRecvTime := incomingEvaluationResult.Data.ChallengerEvaluation.Timestamp.Sub(evaluationMsgRecvTime)
 	if differenceBetweenEvaluationMsgSendAndRecvTime < 0 {
@@ -244,6 +259,7 @@ func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 	if evaluationReportTSOk && overallChallengeTSOk {
 		isEvaluationTSOk = true
 	}
+	log.WithContext(ctx).Info("evaluation report & overall time taken by challenge has been verified successfully")
 
 	return isChallengeTSOk, isResponseTSOk, isEvaluationTSOk
 }
@@ -252,7 +268,10 @@ func (task *SCTask) verifyMessageTimestamps(ctx context.Context, timeWhenMsgSent
 	logger := log.WithContext(ctx).
 		WithField("challenge_id", challengeID).
 		WithField("message_type", messageType.String()).
-		WithField("node_id", task.nodeID)
+		WithField("node_id", task.nodeID).
+		WithField("sent_time", timeWhenMsgSent).
+		WithField("sent_time_upon_receiving", sentTimeWhenMsgReceived).
+		WithField("time_when_stored", timeWhenMsgStored)
 
 	difference := timeWhenMsgStored.Sub(timeWhenMsgSent)
 	if difference < 0 {
@@ -274,7 +293,6 @@ func (task *SCTask) verifyMessageTimestamps(ctx context.Context, timeWhenMsgSent
 	} else {
 		logger.Info("time when message sent and sent time when message received are not same")
 	}
-	logger.Info("timestamps have been verified successfully")
 
 	return isTSOk
 }
@@ -294,12 +312,12 @@ func (task *SCTask) verifyMerkelrootAndBlockNum(ctx context.Context, challengeMe
 		logger.Info("challenge msg merkelroot is different and not same when challenge sent and received")
 	}
 
-	isResponseBlockOk := responseMessage.Data.Challenge.Block == incomingEvaluationResult.Data.Challenge.Block
+	isResponseBlockOk := responseMessage.Data.Response.Block == incomingEvaluationResult.Data.Response.Block
 	if !isResponseBlockOk {
 		logger.Info("response msg block num is different and not same when challenge sent and received")
 	}
 
-	isResponseMerkelrootOk := responseMessage.Data.Challenge.Merkelroot == incomingEvaluationResult.Data.Challenge.Merkelroot
+	isResponseMerkelrootOk := responseMessage.Data.Response.Merkelroot == incomingEvaluationResult.Data.Response.Merkelroot
 	if !isResponseMerkelrootOk {
 		logger.Info("response msg merkelroot is different and not same when challenge sent and received")
 	}
@@ -347,4 +365,71 @@ func (task *SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluati
 	}
 
 	return isAffirmationOk, reason
+}
+
+func (task *SCTask) validateVerifyingStorageChallengeEvaluationReport(ctx context.Context, evaluationReport types.Message) error {
+	if evaluationReport.MessageType != types.EvaluationMessageType {
+		return fmt.Errorf("incorrect message type to verify evaluation report")
+	}
+
+	isVerified, err := task.VerifyMessageSignature(ctx, evaluationReport)
+	if err != nil {
+		return errors.Errorf("error verifying sender's signature: %w", err)
+	}
+
+	if !isVerified {
+		return errors.Errorf("not able to verify message signature")
+	}
+
+	return nil
+}
+
+func (task *SCTask) retrieveChallengeAndResponseMessageForEvaluationReportVerification(ctx context.Context, challengeID string) (cMsg, rMsg *types.Message, er error) {
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 15 * time.Second
+	b.InitialInterval = 1 * time.Second
+
+	var challengeMessage *types.Message
+	var responseMessage *types.Message
+
+	// Retry fetching challenge message
+	err := backoff.Retry(func() error {
+		var err error
+		challengeMessage, err = task.RetrieveChallengeMessage(ctx, challengeID, int(types.ChallengeMessageType))
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return err // Will retry
+			}
+			return backoff.Permanent(err) // Won't retry
+		}
+		return nil // Success
+	}, backoff.WithMaxRetries(b, 5))
+
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to retrieve challenge message")
+		return nil, nil, errors.Errorf("failed to retrieve challenge message for evaluation affirmation")
+	}
+
+	// Reset backoff before next operation
+	b.Reset()
+
+	// Retry fetching response message
+	err = backoff.Retry(func() error {
+		var err error
+		responseMessage, err = task.RetrieveChallengeMessage(ctx, challengeID, int(types.ResponseMessageType))
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return err // Will retry
+			}
+			return backoff.Permanent(err) // Won't retry
+		}
+		return nil // Success
+	}, backoff.WithMaxRetries(b, 5))
+
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to retrieve challenge message")
+		return nil, nil, errors.Errorf("failed to retrieve challenge message for evaluation affirmation")
+	}
+
+	return challengeMessage, responseMessage, nil
 }
