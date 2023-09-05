@@ -6,14 +6,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/local"
-	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/stretchr/testify/assert"
 
 	fuzz "github.com/google/gofuzz"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
@@ -246,7 +246,11 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 //{ MessageId: "be0771c56e1cb07748550f7b4650f7dba23c5af2f20f71a679eb217ddc88f7c4", MessageType: StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE (2), ChallengeStatus: StorageChallengeData_Status_RESPONDED (2), BlockNumChallengeSent: 1, BlockNumChallengeRespondedTo: 1, BlockNumChallengeVerified: 0, MerklerootWhenChallengeSent: "5072696d6172794944", ChallengingMasternodeId: "5072696d6172794944", RespondingMasternodeId: "B", ChallengeFile: *github.com/pastelnetwork/gonode/proto/supernode.StorageChallengeDataChallengeFile {state: (*"google.golang.org/protobuf/internal/impl.MessageState")(0xc0002b20a0), sizeCache: 0, unknownFields: []uint8 len: 0, cap: 0, nil, FileHashToChallenge: "亁zȲǘ", ChallengeSliceStartIndex: 0, ChallengeSliceEndIndex: 22}, ChallengeSliceCorrectHash: "", ChallengeResponseHash: "b7f16a4620c7e1b2bc49658f7466b321bede60a7a3ec94f00dff5b3af79ca977", ChallengeId: "40fb87182c3d3643837d9e8590365f5f227088f828ad448dd18fb717231d9639"}
 
 func createTempDirInPath(basePath string) (string, error) {
-	return ioutil.TempDir(basePath, ".pastel")
+	dir, err := os.MkdirTemp(basePath, ".pastel")
+	if err != nil {
+		return "", err
+	}
+	return dir, nil
 }
 
 func TestVerifyStorageChallenge(t *testing.T) {

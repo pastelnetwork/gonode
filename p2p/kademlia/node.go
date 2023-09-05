@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 // Node is the over-the-wire representation of a node
@@ -19,8 +21,16 @@ type Node struct {
 
 	// port of the node
 	Port int `json:"port,omitempty"`
+
+	HashedID []byte
 }
 
+// SetHashedID sets hash of ID
+func (s *Node) SetHashedID() {
+	s.HashedID, _ = utils.Sha3256hash(s.ID)
+}
+
+// String returns string format
 func (s *Node) String() string {
 	return fmt.Sprintf("%v-%v:%d", string(s.ID), s.IP, s.Port)
 }
@@ -134,7 +144,6 @@ func (s *NodeList) distance(id1, id2 []byte) *big.Int {
 func (s *NodeList) Sort() {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
-
 	// Sort using the precomputed distances
 	sort.Sort(s)
 }
@@ -149,10 +158,24 @@ func (s *NodeList) Swap(i, j int) {
 // Less compare two nodes
 func (s *NodeList) Less(i, j int) bool {
 	if i >= 0 && i < s.Len() && j >= 0 && j < s.Len() {
-		id := s.distance(s.Nodes[i].ID, s.Comparator)
-		jd := s.distance(s.Nodes[j].ID, s.Comparator)
+		id := s.distance(s.Nodes[i].HashedID, s.Comparator)
+		jd := s.distance(s.Nodes[j].HashedID, s.Comparator)
 
 		return id.Cmp(jd) == -1
 	}
+
 	return false
+}
+
+// NodeIDs returns the dump information for node list
+func (s *NodeList) NodeIDs() [][]byte {
+	s.Mux.RLock()
+	defer s.Mux.RUnlock()
+
+	toRet := make([][]byte, len(s.Nodes))
+	for i := 0; i < len(s.Nodes); i++ {
+		toRet = append(toRet, s.Nodes[i].ID)
+	}
+
+	return toRet
 }

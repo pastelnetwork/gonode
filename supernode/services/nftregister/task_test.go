@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -1313,7 +1312,7 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 				base64.StdEncoding.EncodeToString(tc.args.ddSig[1]) + "." +
 				base64.StdEncoding.EncodeToString(tc.args.ddSig[2])
 
-			compressedDd, err := zstd.CompressLevel(nil, []byte(ddStr), 22)
+			compressedDd, err := utils.Compress([]byte(ddStr), 4)
 			assert.Nil(t, err)
 			dd = utils.B64Encode(compressedDd)
 
@@ -1321,7 +1320,7 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 			assert.Nil(t, err)
 			rqStr := base64.StdEncoding.EncodeToString(rqJSON)
 			rqStr = rqStr + "." + base64.StdEncoding.EncodeToString(tc.args.rqSig)
-			compressedRq, err := zstd.CompressLevel(nil, []byte(rqStr), 22)
+			compressedRq, err := utils.Compress([]byte(rqStr), 4)
 			assert.Nil(t, err)
 			rq = utils.B64Encode(compressedRq)
 

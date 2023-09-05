@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -124,7 +123,7 @@ func (h *RQHandler) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolI
 		return fmt.Errorf("get ID Files: %w", err)
 	}
 
-	comp, err := zstd.CompressLevel(nil, rqIDFile, 22)
+	comp, err := utils.Compress(rqIDFile, 4)
 	if err != nil {
 		return errors.Errorf("compress: %w", err)
 	}

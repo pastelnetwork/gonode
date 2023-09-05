@@ -3,13 +3,13 @@ package kademlia
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/hex"
 	"math"
 	"math/big"
 	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 const (
@@ -68,6 +68,7 @@ func NewHashTable(options *Options) (*HashTable, error) {
 	} else {
 		return nil, errors.New("id is nil")
 	}
+	ht.self.SetHashedID()
 
 	// reset the refresh time for every bucket
 	for i := 0; i < B; i++ {
@@ -86,11 +87,8 @@ func (ht *HashTable) resetRefreshTime(bucket int) {
 
 // refreshNode makes the node to the end
 func (ht *HashTable) refreshNode(id []byte) {
-	hashedID, _ := utils.Sha3256hash(ht.self.ID)
-	hashedIncomingID, _ := utils.Sha3256hash(id)
-
 	// bucket index of the node
-	index := ht.bucketIndex(hashedID, hashedIncomingID)
+	index := ht.bucketIndex(ht.self.HashedID, id)
 	// point to the bucket
 	bucket := ht.routeTable[index]
 
@@ -292,7 +290,7 @@ func (ht *HashTable) closestContactsWithInlcudingNode(num int, target []byte, ig
 	// Convert ignoredNodes slice to a map for faster lookup
 	ignoredMap := make(map[string]bool)
 	for _, node := range ignoredNodes {
-		ignoredMap[string(node.ID)] = true
+		ignoredMap[hex.EncodeToString(node.ID)] = true
 	}
 
 	nl := &NodeList{

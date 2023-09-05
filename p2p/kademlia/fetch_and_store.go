@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/cenkalti/backoff"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -49,13 +48,18 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 			cctx, ccancel := context.WithTimeout(ctx, 30*time.Second)
 			defer ccancel()
 
-			sKey := hex.EncodeToString(info.Key)
+			sKey, err := hex.DecodeString(info.Key)
+			if err != nil {
+				log.WithContext(cctx).WithField("key", info.Key).WithField("ip", info.IP).WithError(err).Error("hex decode key failed")
+				return
+			}
+
 			n := Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
 
 			b := backoff.WithMaxRetries(backoff.NewConstantBackOff(2*time.Second), 10)
 			var value []byte // replace with the actual type of "value"
-			err := backoff.Retry(func() error {
-				val, err := s.GetValueFromNode(cctx, info.Key, &n)
+			err = backoff.Retry(func() error {
+				val, err := s.GetValueFromNode(cctx, sKey, &n)
 				if err != nil {
 					return err
 				}
@@ -64,32 +68,32 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 			}, b)
 
 			if err != nil {
-				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & store key failed")
-				value, err = s.iterateFindValue(cctx, IterateFindValue, info.Key)
+				log.WithContext(cctx).WithField("key", info.Key).WithField("ip", info.IP).WithError(err).Error("fetch & store key failed")
+				value, err = s.iterateFindValue(cctx, IterateFindValue, sKey)
 				if err != nil {
-					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed")
+					log.WithContext(cctx).WithField("key", info.Key).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed")
 					return
 				} else if len(value) == 0 {
-					log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed 0 val")
+					log.WithContext(cctx).WithField("key", info.Key).WithField("ip", info.IP).WithError(err).Error("iterate fetch for replication failed 0 val")
 					return
 				}
 
-				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("iterate fetch for replication success")
+				log.WithContext(cctx).WithField("key", info.Key).WithField("ip", info.IP).Info("iterate fetch for replication success")
 			}
 
-			if err := s.store.Store(cctx, info.Key, value, 0, false); err != nil {
-				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("fetch & local store key failed")
+			if err := s.store.Store(cctx, sKey, value, 0, false); err != nil {
+				log.WithContext(cctx).WithField("key", info.Key).WithField("ip", info.IP).WithError(err).Error("fetch & local store key failed")
 				return
 			}
 
 			if err := s.store.DeleteRepKey(info.Key); err != nil {
-				log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).WithError(err).Error("delete key from todo list failed")
+				log.WithContext(cctx).WithField("key", info.Key).WithField("ip", info.IP).WithError(err).Error("delete key from todo list failed")
 				return
 			}
 
 			atomic.AddInt32(&successCounter, 1) // Increment the counter atomically
 
-			log.WithContext(cctx).WithField("key", sKey).WithField("ip", info.IP).Info("fetch & store key success")
+			log.WithContext(cctx).WithField("key", info.Key).WithField("ip", info.IP).Info("fetch & store key success")
 		}(key)
 
 		time.Sleep(100 * time.Millisecond)
@@ -118,7 +122,13 @@ func (s *DHT) BatchFetchAndStoreFailedKeys(ctx context.Context) error {
 	repKeys := make([]domain.ToRepKey, 0, len(keys))
 	for i := 0; i < len(keys); i++ {
 		igList := s.ignorelist.ToNodeList()
-		nl, _ := s.ht.closestContacts(failedKeysClosestContactsLookupCount, keys[i].Key, igList)
+		sKey, err := hex.DecodeString(keys[i].Key)
+		if err != nil {
+			log.WithContext(ctx).WithField("key", keys[i].Key).WithField("ip", keys[i].IP).WithError(err).Error("hex decode key failed")
+			continue
+		}
+
+		nl, _ := s.ht.closestContacts(failedKeysClosestContactsLookupCount, sKey, igList)
 		attempt := (keys[i].Attempts - maxBatchAttempts) + 1
 
 		if len(nl.Nodes) > attempt {
@@ -132,7 +142,7 @@ func (s *DHT) BatchFetchAndStoreFailedKeys(ctx context.Context) error {
 			repKeys = append(repKeys, repKey)
 		}
 	}
-	log.WithField("count", len(repKeys)).Info("got to-fetch failed todo rep-keys from store")
+	log.WithField("count", len(repKeys)).Info("got 2nd tier replication keys from local store")
 
 	if err := s.GroupAndBatchFetch(ctx, repKeys, 0, false); err != nil {
 		log.WithContext(ctx).WithError(err).Error("group and batch fetch failed-keys error")
@@ -195,7 +205,7 @@ func (s *DHT) GroupAndBatchFetch(ctx context.Context, repKeys []domain.ToRepKey,
 			// Convert repKeyList[i:end] to byteKeys
 			stringKeys := make([]string, end-i)
 			for j, key := range repKeyList[i:end] {
-				stringKeys[j] = hex.EncodeToString(key.Key)
+				stringKeys[j] = key.Key
 			}
 
 			iterations := 0
@@ -280,14 +290,41 @@ func (s *DHT) GetBatchValuesFromNode(ctx context.Context, keys []string, n *Node
 	operation := func() error {
 		var err error
 		response, err = s.network.Call(ctx, request, true)
+		if err != nil {
+			return fmt.Errorf("call error: %w", err)
+		}
+
+		if response == nil {
+			return fmt.Errorf("response is nil")
+		}
+
+		v, ok := response.Data.(*BatchFindValuesResponse)
+		if !ok {
+			return fmt.Errorf("batch get request failure - %s - node: %s", response.String(), n.String())
+		}
+
+		if v == nil {
+			return fmt.Errorf("response data is nil")
+		}
+
+		if v.Status.Result == ResultOk {
+			return nil
+		} else if v.Status.Result == ResultFailed {
+			if v.Status.ErrMsg == errorBusy {
+				return fmt.Errorf("batch get request failure - %s - node: %s", "server busy", n.String())
+			}
+
+			return fmt.Errorf("batch get request failure - %s - node: %s", response.String(), n.String())
+		}
+
 		return err
 	}
 
 	// Set up the backoff parameters
 	bo := backoff.NewExponentialBackOff()
-	bo.InitialInterval = 2 * time.Second
-	bo.MaxElapsedTime = 10 * time.Second // max time before stop retrying
-	bo.Multiplier = 2
+	bo.InitialInterval = 10 * time.Second
+	bo.MaxElapsedTime = 30 * time.Second // max time before stop retrying
+	bo.Multiplier = 1
 
 	if err := backoff.Retry(operation, bo); err != nil {
 		log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
@@ -298,7 +335,7 @@ func (s *DHT) GetBatchValuesFromNode(ctx context.Context, keys []string, n *Node
 	isDone := false
 	if ok && v.Status.Result == ResultOk {
 		// First, decompress the data
-		decompressedData, err := zstd.Decompress(nil, v.Response)
+		decompressedData, err := utils.Decompress(v.Response)
 		if err != nil {
 			return isDone, nil, nil, fmt.Errorf("failed to decompress data: %w", err)
 		}

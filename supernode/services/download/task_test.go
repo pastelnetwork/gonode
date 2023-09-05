@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -44,7 +43,7 @@ func fakeRQIDsData() ([]byte, []string) {
 	buffer.WriteByte(46)
 	buffer.WriteString(strconv.Itoa(55))
 
-	compressedData, _ := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+	compressedData, _ := utils.Compress(buffer.Bytes(), 4)
 
 	return compressedData, []string{
 		"24wvWw6zhpaCDwpBAjWXprsnnnB4HApKPkAyArDSi94z",

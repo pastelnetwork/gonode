@@ -9,7 +9,6 @@ import (
 
 	"golang.org/x/crypto/sha3"
 
-	"github.com/DataDog/zstd"
 	fuzz "github.com/google/gofuzz"
 	"github.com/pastelnetwork/gonode/common/utils"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
@@ -222,7 +221,7 @@ func fakeRQIDsData() ([]byte, []string) {
 	buffer.WriteByte(46)
 	buffer.WriteString(strconv.Itoa(55))
 
-	compressedData, _ := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+	compressedData, _ := utils.Compress(buffer.Bytes(), 4)
 
 	return compressedData, []string{
 		"GfzPCcSwyyvz5faMjrjPk9rnL5QcSbW1MV1FSPuWXvS3",

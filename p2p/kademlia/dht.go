@@ -484,10 +484,8 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	closestNode := nl.Nodes[0]
 	// if it's a find node, reset the refresh timer
 	if iterativeType == IterateFindNode {
-		hashedID, _ := utils.Sha3256hash(s.ht.self.ID)
 		hashedTargetID, _ := utils.Sha3256hash(target)
-
-		bucket := s.ht.bucketIndex(hashedID, hashedTargetID)
+		bucket := s.ht.bucketIndex(s.ht.self.HashedID, hashedTargetID)
 		log.P2P().WithContext(ctx).Debugf("bucket for target: %v", sKey)
 
 		// reset the refresh time for the bucket
@@ -710,18 +708,15 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 		log.P2P().WithContext(ctx).Debug("trying to add itself")
 		return nil
 	}
+	node.SetHashedID()
 
-	// the bucket index for the node
-	hashedID, _ := utils.Sha3256hash(s.ht.self.ID)
-	hashedIncomingID, _ := utils.Sha3256hash(node.ID)
-
-	index := s.ht.bucketIndex(hashedID, hashedIncomingID)
+	index := s.ht.bucketIndex(s.ht.self.HashedID, node.HashedID)
 
 	s.ht.mutex.Lock()
 	defer s.ht.mutex.Unlock()
 	// 1. if the node is existed, refresh the node to the end of bucket
 	if s.ht.hasBucketNode(index, node.ID) {
-		s.ht.refreshNode(node.ID)
+		s.ht.refreshNode(node.HashedID)
 		return nil
 	}
 
@@ -915,12 +910,9 @@ func (s *DHT) removeNode(ctx context.Context, node *Node) {
 		log.P2P().WithContext(ctx).Debug("trying to remove itself")
 		return
 	}
+	node.SetHashedID()
 
-	// the bucket index for the node
-	hashedID, _ := utils.Sha3256hash(s.ht.self.ID)
-	hashedIncomingID, _ := utils.Sha3256hash(node.ID)
-
-	index := s.ht.bucketIndex(hashedID, hashedIncomingID)
+	index := s.ht.bucketIndex(s.ht.self.HashedID, node.HashedID)
 
 	if removed := s.ht.RemoveNode(index, node.ID); !removed {
 		log.P2P().WithContext(ctx).Errorf("remove node %s not found in bucket %d", node.String(), index)

@@ -8,8 +8,7 @@ import (
 	"path/filepath"
 
 	"net/http"
-	//not required
-	_ "net/http/pprof"
+	_ "net/http/pprof" //profiling
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"

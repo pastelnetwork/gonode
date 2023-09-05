@@ -583,9 +583,8 @@ func (ts *testSuite) TestAddNodeForAppend() {
 		ts.T().Fatalf("new random id: %v", err)
 	}
 
-	hash, _ := utils.Sha3256hash(ts.main.ht.self.ID)
 	hash2, _ := utils.Sha3256hash(id)
-	index := ts.main.ht.bucketIndex(hash, hash2)
+	index := ts.main.ht.bucketIndex(ts.main.ht.self.HashedID, hash2)
 
 	// add the node to hash table
 	node := &Node{

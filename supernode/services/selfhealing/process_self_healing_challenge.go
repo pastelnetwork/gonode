@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -532,7 +531,7 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 	var (
 		countOfFailures  int
 		wg               sync.WaitGroup
-		responseMessages []pb.SelfHealingData
+		responseMessages []*pb.SelfHealingData
 	)
 	err = nil
 	// iterate through supernodes, connecting and sending the message
@@ -573,7 +572,12 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 				return
 			}
 
-			responseMessages = task.appendResponses(responseMessages, res)
+			func() {
+				task.responseMessageMu.Lock()
+				defer task.responseMessageMu.Unlock()
+				responseMessages = append(responseMessages, res)
+			}()
+
 			log.WithContext(ctx).WithField("challenge_id", res.ChallengeId).
 				Info("response has been received from verifying node")
 		}()
@@ -584,9 +588,8 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 	}
 
 	//Counting the number of challenges being failed by verifying nodes.
-	var responseMessage pb.SelfHealingData
-	for _, responseMessage = range responseMessages {
-		if responseMessage.ChallengeStatus == pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE {
+	for i := 0; i < len(responseMessages); i++ {
+		if responseMessages[i].ChallengeStatus == pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE {
 			countOfFailures++
 		}
 	}
@@ -599,14 +602,6 @@ func (task *SHTask) sendSelfHealingVerificationMessage(ctx context.Context, msg 
 	return nil
 }
 
-func (task *SHTask) appendResponses(responseMessages []pb.SelfHealingData, message *pb.SelfHealingData) []pb.SelfHealingData {
-	task.responseMessageMu.Lock()
-	defer task.responseMessageMu.Unlock()
-	responseMessages = append(responseMessages, *message)
-
-	return responseMessages
-}
-
 // DownloadDDAndFingerprints gets dd and fp file from ticket based on id and returns the file.
 func (task *SHTask) DownloadDDAndFingerprints(ctx context.Context, DDAndFingerprintsIDs []string) (availableDDFPFiles []pastel.DDAndFingerprints, err error) {
 	for i := 0; i < len(DDAndFingerprintsIDs); i++ {
@@ -616,7 +611,7 @@ func (task *SHTask) DownloadDDAndFingerprints(ctx context.Context, DDAndFingerpr
 			continue
 		}
 		log.WithContext(ctx).WithField("file", file).Println("Got the file")
-		decompressedData, err := zstd.Decompress(nil, file)
+		decompressedData, err := utils.Decompress(file)
 		if err != nil {
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails self healing - failed to decompress this file. ")
 			continue

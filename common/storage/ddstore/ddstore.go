@@ -109,7 +109,7 @@ func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err err
 	}
 
 	hash = utils.GetHashFromString(sb.String())
-	log.WithContext(ctx).WithField("hash", hash).Info("dd data hash returned")
+	log.WithContext(ctx).WithField("hash", hash).Debug("dd data hash returned")
 
 	return hash, nil
 }

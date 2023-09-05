@@ -12,10 +12,13 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+
+	"github.com/klauspost/compress/zstd"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -276,4 +279,60 @@ func CheckInternetConnectivity() bool {
 	}
 
 	return false
+}
+
+// BytesIntToMB converts bytes to MB
+func BytesIntToMB(b int) int {
+	return int(math.Ceil(float64(b) / 1048576.0))
+}
+
+// Compress compresses the data
+func Compress(data []byte, level int) ([]byte, error) {
+	if level < 1 || level > 4 {
+		return nil, fmt.Errorf("invalid compression level: %d - allowed levels are 1 - 4", level)
+	}
+
+	numCPU := runtime.NumCPU()
+	// Create a buffer to store compressed data
+	var compressedData bytes.Buffer
+
+	// Create a new Zstd encoder with concurrency set to the number of CPU cores
+	encoder, err := zstd.NewWriter(&compressedData, zstd.WithEncoderConcurrency(numCPU), zstd.WithEncoderLevel(zstd.EncoderLevel(level)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Zstd encoder: %v", err)
+	}
+
+	// Perform the compression
+	_, err = io.Copy(encoder, bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("failed to compress data: %v", err)
+	}
+
+	// Close the encoder to flush any remaining data
+	if err := encoder.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close encoder: %v", err)
+	}
+
+	return compressedData.Bytes(), nil
+}
+
+// Decompress decompresses the data
+func Decompress(data []byte) ([]byte, error) {
+	// Get the number of CPU cores available
+	numCPU := runtime.NumCPU()
+
+	// Create a new Zstd decoder with concurrency set to the number of CPU cores
+	decoder, err := zstd.NewReader(bytes.NewReader(data), zstd.WithDecoderConcurrency(numCPU))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Zstd decoder: %v", err)
+	}
+	defer decoder.Close()
+
+	// Perform the decompression
+	decompressedData, err := io.ReadAll(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decompress data: %v", err)
+	}
+
+	return decompressedData, nil
 }

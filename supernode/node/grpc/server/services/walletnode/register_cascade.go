@@ -313,7 +313,7 @@ func (service *RegisterCascade) SendSignedActionTicket(ctx context.Context, req 
 	rsp := pb.SendSignedActionTicketReply{
 		ActionRegTxid: actionRegTxid,
 	}
-	log.WithContext(ctx).WithField("rsp", rsp).Info("SignTicket request success")
+	log.WithContext(ctx).WithField("rsp.retxid", actionRegTxid).Info("SignTicket request success")
 
 	return &rsp, nil
 }
@@ -337,7 +337,7 @@ func (service *RegisterCascade) SendActionAct(ctx context.Context, req *pb.SendA
 
 // GetTopMNs implements walletnode.RegisterCascadeServer.GetTopMNs()
 func (service *RegisterCascade) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
-	log.WithContext(ctx).Info("request for mn-top list has been received")
+	log.WithContext(ctx).Debug("request for mn-top list has been received")
 
 	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
@@ -353,7 +353,7 @@ func (service *RegisterCascade) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRe
 		MnTopList: mnList,
 	}
 
-	log.WithContext(ctx).WithField("mn-list", mnList).Info("top mn-list has been returned")
+	log.WithContext(ctx).WithField("mn-list", mnList).Debug("top mn-list has been returned")
 	return resp, nil
 }
 

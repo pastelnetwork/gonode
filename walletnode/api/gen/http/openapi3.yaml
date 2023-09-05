@@ -36,32 +36,28 @@ paths:
                                 example:
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
                                       timestamp: 2006-01-02T15:04:05Z07:00
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
                                       timestamp: 2006-01-02T15:04:05Z07:00
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
                                       timestamp: 2006-01-02T15:04:05Z07:00
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
@@ -69,24 +65,21 @@ paths:
                             example:
                                 - details:
                                     fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                     message: Image has been downloaded...
                                   message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                   status: Started, Image Probed, Downloaded...
                                   timestamp: 2006-01-02T15:04:05Z07:00
                                 - details:
                                     fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                     message: Image has been downloaded...
                                   message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                   status: Started, Image Probed, Downloaded...
                                   timestamp: 2006-01-02T15:04:05Z07:00
                                 - details:
                                     fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                     message: Image has been downloaded...
                                   message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                   status: Started, Image Probed, Downloaded...
@@ -243,136 +236,120 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/NftDetail'
                             example:
-                                alt_rare_on_internet_dict_json_b64: Quidem facere.
+                                alt_rare_on_internet_dict_json_b64: Fuga aut saepe vero tempore.
                                 copies: 1
                                 creator_name: Leonardo da Vinci
                                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                                 creator_website_url: https://www.leonardodavinci.net
                                 description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                                 drawing_nsfw_score: 1
-                                earliest_date_of_results: Enim ut voluptas omnis.
+                                earliest_date_of_results: Aut sunt magnam nemo nemo labore est.
                                 green_address: false
                                 hentai_nsfw_score: 1
                                 is_likely_dupe: false
                                 is_rare_on_internet: false
                                 keywords: Renaissance, sfumato, portrait
-                                min_num_exact_matches_on_page: 435784517
+                                min_num_exact_matches_on_page: 2231857725
                                 neutral_nsfw_score: 1
                                 nsfw_score: 1
                                 porn_nsfw_score: 1
                                 preview_thumbnail:
-                                    - 73
-                                    - 110
-                                    - 99
-                                    - 105
-                                    - 100
-                                    - 117
-                                    - 110
+                                    - 86
+                                    - 101
+                                    - 108
+                                    - 32
+                                    - 101
+                                    - 115
                                     - 116
                                     - 32
+                                    - 101
+                                    - 108
+                                    - 105
+                                    - 103
+                                    - 101
+                                    - 110
+                                    - 100
+                                    - 105
+                                    - 32
+                                    - 115
                                     - 97
+                                    - 101
                                     - 112
+                                    - 101
+                                    - 32
+                                    - 118
                                     - 101
                                     - 114
                                     - 105
+                                    - 116
                                     - 97
-                                    - 109
+                                    - 116
+                                    - 105
+                                    - 115
                                     - 32
-                                    - 104
+                                    - 101
                                     - 97
-                                    - 114
-                                    - 117
-                                    - 109
                                     - 46
-                                rare_on_internet_graph_json_b64: Et sit maxime voluptatum rerum voluptate.
-                                rare_on_internet_summary_table_json_b64: Consectetur aliquid dignissimos rerum impedit.
+                                rare_on_internet_graph_json_b64: Atque aut molestiae.
+                                rare_on_internet_summary_table_json_b64: Dolores aliquid aliquid placeat incidunt laboriosam iste.
                                 rareness_score: 1
-                                royalty: 0.3604170600211999
+                                royalty: 0.4596615735920303
                                 series_name: Famous artist
                                 sexy_nsfw_score: 1
                                 storage_fee: 100
                                 thumbnail_1:
-                                    - 81
-                                    - 117
-                                    - 105
-                                    - 115
+                                    - 69
+                                    - 97
                                     - 113
                                     - 117
-                                    - 97
-                                    - 109
+                                    - 101
                                     - 32
-                                    - 118
+                                    - 110
+                                    - 101
+                                    - 109
                                     - 111
-                                    - 108
-                                    - 117
-                                    - 112
-                                    - 116
+                                    - 32
                                     - 97
-                                    - 116
-                                    - 101
-                                    - 109
+                                    - 100
                                     - 32
                                     - 101
-                                    - 117
-                                    - 109
-                                    - 32
-                                    - 101
-                                    - 97
-                                    - 113
-                                    - 117
-                                    - 101
-                                    - 32
-                                    - 117
                                     - 116
                                     - 46
                                 thumbnail_2:
-                                    - 81
-                                    - 117
-                                    - 105
+                                    - 65
                                     - 32
+                                    - 110
+                                    - 105
+                                    - 104
+                                    - 105
+                                    - 108
+                                    - 32
+                                    - 109
+                                    - 111
+                                    - 108
+                                    - 108
+                                    - 105
+                                    - 116
+                                    - 105
+                                    - 97
+                                    - 32
+                                    - 112
+                                    - 114
+                                    - 97
                                     - 101
                                     - 115
-                                    - 115
                                     - 101
+                                    - 110
+                                    - 116
+                                    - 105
+                                    - 117
+                                    - 109
                                     - 32
                                     - 113
                                     - 117
-                                    - 105
-                                    - 32
-                                    - 112
-                                    - 114
                                     - 97
-                                    - 101
                                     - 115
-                                    - 101
-                                    - 110
-                                    - 116
                                     - 105
-                                    - 117
-                                    - 109
-                                    - 32
-                                    - 101
-                                    - 120
-                                    - 101
-                                    - 114
-                                    - 99
-                                    - 105
-                                    - 116
-                                    - 97
-                                    - 116
-                                    - 105
-                                    - 111
-                                    - 110
-                                    - 101
-                                    - 109
-                                    - 32
-                                    - 112
-                                    - 108
-                                    - 97
-                                    - 99
-                                    - 101
-                                    - 97
-                                    - 116
                                     - 46
                                 title: Mona Lisa
                                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -429,24 +406,21 @@ paths:
                                 example:
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
                                       timestamp: 2006-01-02T15:04:05Z07:00
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
                                       timestamp: 2006-01-02T15:04:05Z07:00
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
@@ -454,24 +428,14 @@ paths:
                             example:
                                 - details:
                                     fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                     message: Image has been downloaded...
                                   message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                   status: Started, Image Probed, Downloaded...
                                   timestamp: 2006-01-02T15:04:05Z07:00
                                 - details:
                                     fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
-                                    message: Image has been downloaded...
-                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
-                                  status: Started, Image Probed, Downloaded...
-                                  timestamp: 2006-01-02T15:04:05Z07:00
-                                - details:
-                                    fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                     message: Image has been downloaded...
                                   message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                   status: Started, Image Probed, Downloaded...
@@ -529,7 +493,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/FileDownloadResult'
                             example:
-                                file_id: Voluptates numquam officiis rerum at.
+                                file_id: Quibusdam est.
                 "404":
                     description: 'NotFound: Not Found response.'
                     content:
@@ -585,7 +549,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/DDFPResultFile'
                             example:
-                                file: Qui non quia quo molestiae omnis dolorem.
+                                file: Consequatur optio natus sequi voluptatem voluptatem ex.
                 "404":
                     description: 'NotFound: Not Found response.'
                     content:
@@ -642,185 +606,129 @@ paths:
                                 $ref: '#/components/schemas/DDServiceOutputFileResult'
                             example:
                                 alternative_nsfw_scores:
-                                    drawings: 0.39911348
-                                    hentai: 0.120642185
-                                    neutral: 0.81837386
-                                    porn: 0.24296588
-                                    sexy: 0.2746812
-                                candidate_image_thumbnail_webp_as_base64_string: Quibusdam est.
-                                child_probability: 0.5338171
-                                collection_name_string: A nihil mollitia praesentium quasi.
-                                cp_probability: 0.04269389
-                                creator_name: Fugit maiores.
-                                creator_website: Ex placeat optio quaerat nam reprehenderit.
-                                creator_written_statement: Non aut.
-                                does_not_impact_the_following_collection_strings: Dolores tempore ab rem eum.
-                                dupe_detection_system_version: Molestiae in.
-                                file_type: Architecto corporis voluptatum rerum.
-                                group_rareness_score: 0.051745437
-                                hash_of_candidate_image_file: Laborum eaque nemo ad et.
-                                image_file_path: Necessitatibus dolor voluptatum quia omnis.
+                                    drawings: 0.9764369
+                                    hentai: 0.7066565
+                                    neutral: 0.63074267
+                                    porn: 0.04768783
+                                    sexy: 0.4008529
+                                candidate_image_thumbnail_webp_as_base64_string: In qui at vitae rem recusandae reiciendis.
+                                child_probability: 0.193436
+                                collection_name_string: Aut aut deleniti atque accusamus.
+                                cp_probability: 0.6352992
+                                creator_name: Amet ea quia similique.
+                                creator_website: Aliquam neque et tempore rem eaque et.
+                                creator_written_statement: Mollitia et sequi corrupti.
+                                does_not_impact_the_following_collection_strings: Beatae sed cumque temporibus nemo accusantium placeat.
+                                dupe_detection_system_version: Omnis dolorem veritatis et aut dolores.
+                                file_type: Est quidem sed autem suscipit pariatur.
+                                group_rareness_score: 0.091534875
+                                hash_of_candidate_image_file: Sunt minus voluptate distinctio rem iusto sapiente.
+                                image_file_path: Libero dolorem ut explicabo nam doloremque.
                                 image_fingerprint_of_candidate_image_file:
-                                    - 0.1737613854231052
-                                    - 0.8206089369088078
+                                    - 0.46500133992769777
+                                    - 0.15286766228962276
+                                    - 0.3418670693168958
+                                    - 0.9668325347832287
                                 internet_rareness:
-                                    alternative_rare_on_internet_dict_as_json_compressed_b64: Sit qui.
-                                    earliest_available_date_of_internet_results: Eos amet numquam aspernatur.
-                                    min_number_of_exact_matches_in_page: 81279702
-                                    rare_on_internet_graph_json_compressed_b64: Est illo veritatis.
-                                    rare_on_internet_summary_table_as_json_compressed_b64: Est aut qui.
+                                    alternative_rare_on_internet_dict_as_json_compressed_b64: Placeat optio quaerat.
+                                    earliest_available_date_of_internet_results: Ipsum non aut sit in aut.
+                                    min_number_of_exact_matches_in_page: 178179253
+                                    rare_on_internet_graph_json_compressed_b64: Omnis aspernatur fugit maiores nihil.
+                                    rare_on_internet_summary_table_as_json_compressed_b64: Qui iure est necessitatibus dolor voluptatum.
                                 is_likely_dupe: false
                                 is_pastel_openapi_request: true
                                 is_rare_on_internet: false
-                                max_permitted_open_nsfw_score: 0.3719470942714533
-                                nft_creation_video_youtube_url: Impedit voluptatum quidem tenetur.
-                                nft_keyword_set: Non nisi cumque tenetur quidem iste quia.
-                                nft_series_name: Quos aliquam blanditiis.
-                                nft_title: In aut adipisci odio minus iusto.
-                                open_api_group_id_string: Facere ut quisquam cumque fugit quia quia.
-                                open_nsfw_score: 0.56560606
-                                original_file_size_in_bytes: 7417177835614609599
-                                overall_rareness_score: 0.9898921
-                                pastel_block_hash_when_request_submitted: Et sed praesentium et eos.
-                                pastel_block_height_when_request_submitted: Animi eum.
-                                pastel_id_of_registering_supernode_1: Magni et vel est eligendi.
-                                pastel_id_of_registering_supernode_2: Veritatis ea itaque dolores aliquid.
-                                pastel_id_of_registering_supernode_3: Placeat incidunt laboriosam iste a.
-                                pastel_id_of_submitter: Velit dolores itaque optio saepe facilis repellendus.
-                                pct_of_top_10_most_similar_with_dupe_prob_above_25pct: 0.49085942
-                                pct_of_top_10_most_similar_with_dupe_prob_above_33pct: 0.4779009
-                                pct_of_top_10_most_similar_with_dupe_prob_above_50pct: 0.068396024
+                                max_permitted_open_nsfw_score: 0.7292773055524072
+                                nft_creation_video_youtube_url: Quos dignissimos ut corrupti eos aut.
+                                nft_keyword_set: Fuga ut et neque.
+                                nft_series_name: Nulla voluptatem ut.
+                                nft_title: Iste rerum.
+                                open_api_group_id_string: Ut voluptas porro ipsam enim cumque.
+                                open_nsfw_score: 0.9245141
+                                original_file_size_in_bytes: 4616051904174084433
+                                overall_rareness_score: 0.290828
+                                pastel_block_hash_when_request_submitted: Aliquam blanditiis voluptas impedit voluptatum quidem tenetur.
+                                pastel_block_height_when_request_submitted: Non nisi cumque tenetur quidem iste quia.
+                                pastel_id_of_registering_supernode_1: Autem quis et quidem iusto ipsam.
+                                pastel_id_of_registering_supernode_2: Quos architecto corporis voluptatum rerum.
+                                pastel_id_of_registering_supernode_3: Voluptatem qui non quia.
+                                pastel_id_of_submitter: Non recusandae eligendi nemo non quia dolores.
+                                pct_of_top_10_most_similar_with_dupe_prob_above_25pct: 0.94503915
+                                pct_of_top_10_most_similar_with_dupe_prob_above_33pct: 0.7485391
+                                pct_of_top_10_most_similar_with_dupe_prob_above_50pct: 0.68904555
                                 preview_hash:
-                                    - 69
-                                    - 120
-                                    - 101
+                                    - 65
                                     - 114
                                     - 99
+                                    - 104
                                     - 105
                                     - 116
-                                    - 97
+                                    - 101
+                                    - 99
                                     - 116
-                                    - 105
                                     - 111
-                                    - 110
+                                    - 32
+                                    - 113
+                                    - 117
+                                    - 105
+                                    - 97
+                                    - 32
+                                    - 101
+                                    - 116
+                                    - 46
+                                rareness_scores_table_json_compressed_b64: Iure iste.
+                                similarity_score_to_first_entry_in_collection: 0.111620486
+                                thumbnail1_hash:
+                                    - 81
+                                    - 117
+                                    - 105
+                                    - 100
                                     - 101
                                     - 109
                                     - 32
+                                    - 101
                                     - 118
                                     - 101
-                                    - 108
+                                    - 110
                                     - 105
+                                    - 101
                                     - 116
                                     - 32
-                                    - 113
-                                    - 117
-                                    - 111
-                                    - 100
-                                    - 32
                                     - 97
-                                    - 108
-                                    - 105
-                                    - 113
                                     - 117
-                                    - 97
+                                    - 116
+                                    - 101
                                     - 109
                                     - 32
-                                    - 105
-                                    - 112
-                                    - 115
-                                    - 97
-                                    - 32
-                                    - 114
                                     - 101
-                                    - 114
-                                    - 117
-                                    - 109
-                                    - 46
-                                rareness_scores_table_json_compressed_b64: Sit maxime aut sunt.
-                                similarity_score_to_first_entry_in_collection: 0.22754811
-                                thumbnail1_hash:
-                                    - 78
-                                    - 111
-                                    - 110
-                                    - 32
-                                    - 114
-                                    - 101
+                                    - 120
                                     - 99
+                                    - 101
+                                    - 112
+                                    - 116
                                     - 117
-                                    - 115
-                                    - 97
-                                    - 110
-                                    - 100
-                                    - 97
-                                    - 101
-                                    - 32
-                                    - 101
-                                    - 108
-                                    - 105
-                                    - 103
-                                    - 101
-                                    - 110
-                                    - 100
-                                    - 105
-                                    - 32
-                                    - 110
-                                    - 101
-                                    - 109
-                                    - 111
-                                    - 32
-                                    - 110
-                                    - 111
-                                    - 110
-                                    - 32
-                                    - 113
-                                    - 117
-                                    - 105
-                                    - 97
-                                    - 32
-                                    - 100
-                                    - 111
-                                    - 108
-                                    - 111
                                     - 114
-                                    - 101
+                                    - 105
+                                    - 32
                                     - 115
+                                    - 111
+                                    - 108
+                                    - 117
+                                    - 116
+                                    - 97
                                     - 46
                                 thumbnail2_hash:
-                                    - 65
+                                    - 81
                                     - 117
-                                    - 116
-                                    - 101
-                                    - 109
+                                    - 105
                                     - 32
                                     - 113
                                     - 117
                                     - 105
-                                    - 115
-                                    - 32
-                                    - 101
-                                    - 116
-                                    - 32
-                                    - 113
-                                    - 117
-                                    - 105
-                                    - 100
-                                    - 101
-                                    - 109
-                                    - 32
-                                    - 105
-                                    - 117
-                                    - 115
-                                    - 116
-                                    - 111
-                                    - 32
-                                    - 105
-                                    - 112
-                                    - 115
                                     - 97
-                                    - 109
                                     - 46
-                                total_copies: 7017839919288208355
-                                utc_timestamp_when_request_submitted: Rem velit aliquid.
+                                total_copies: 7172508702880347370
+                                utc_timestamp_when_request_submitted: Et exercitationem velit quod aliquam ipsa rerum.
                 "404":
                     description: 'NotFound: Not Found response.'
                     content:
@@ -865,7 +773,7 @@ paths:
                                     make_publicly_accessible: false
                                     maximum_fee: 100
                                     name: Mona Lisa
-                                    open_api_group_id: Eius excepturi et sed.
+                                    open_api_group_id: Facere enim eum enim.
                                     royalty: 12
                                     series_name: Famous artist
                                     spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -891,7 +799,59 @@ paths:
                                     make_publicly_accessible: false
                                     maximum_fee: 100
                                     name: Mona Lisa
-                                    open_api_group_id: Eius excepturi et sed.
+                                    open_api_group_id: Facere enim eum enim.
+                                    royalty: 12
+                                    series_name: Famous artist
+                                    spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                                    thumbnail_coordinate:
+                                        bottom_right_x: 640
+                                        bottom_right_y: 480
+                                        top_left_x: 0
+                                        top_left_y: 0
+                                    youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+                                  txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                                - id: n6Qn6TFM
+                                  status: Task Started
+                                  ticket:
+                                    collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                                    creator_name: Leonardo da Vinci
+                                    creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                                    creator_website_url: https://www.leonardodavinci.net
+                                    description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
+                                    green: false
+                                    issued_copies: 1
+                                    key: Basic abcdef12345
+                                    keywords: Renaissance, sfumato, portrait
+                                    make_publicly_accessible: false
+                                    maximum_fee: 100
+                                    name: Mona Lisa
+                                    open_api_group_id: Facere enim eum enim.
+                                    royalty: 12
+                                    series_name: Famous artist
+                                    spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                                    thumbnail_coordinate:
+                                        bottom_right_x: 640
+                                        bottom_right_y: 480
+                                        top_left_x: 0
+                                        top_left_y: 0
+                                    youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+                                  txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                                - id: n6Qn6TFM
+                                  status: Task Started
+                                  ticket:
+                                    collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                                    creator_name: Leonardo da Vinci
+                                    creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                                    creator_website_url: https://www.leonardodavinci.net
+                                    description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
+                                    green: false
+                                    issued_copies: 1
+                                    key: Basic abcdef12345
+                                    keywords: Renaissance, sfumato, portrait
+                                    make_publicly_accessible: false
+                                    maximum_fee: 100
+                                    name: Mona Lisa
+                                    open_api_group_id: Facere enim eum enim.
                                     royalty: 12
                                     series_name: Famous artist
                                     spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -933,7 +893,7 @@ paths:
                             make_publicly_accessible: false
                             maximum_fee: 100
                             name: Mona Lisa
-                            open_api_group_id: Perspiciatis libero.
+                            open_api_group_id: Autem unde quod vel voluptatem error reiciendis.
                             royalty: 12
                             series_name: Famous artist
                             spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -1001,8 +961,6 @@ paths:
                                       status: Task Started
                                     - date: 2006-01-02T15:04:05Z07:00
                                       status: Task Started
-                                    - date: 2006-01-02T15:04:05Z07:00
-                                      status: Task Started
                                 status: Task Started
                                 ticket:
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1017,7 +975,7 @@ paths:
                                     make_publicly_accessible: false
                                     maximum_fee: 100
                                     name: Mona Lisa
-                                    open_api_group_id: Modi est velit minus qui occaecati veritatis.
+                                    open_api_group_id: Aliquid dignissimos rerum impedit.
                                     royalty: 12
                                     series_name: Famous artist
                                     spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -1096,38 +1054,7 @@ paths:
                             $ref: '#/components/schemas/UploadAssetRequestBody'
                         example:
                             file:
-                                - 69
-                                - 120
-                                - 32
-                                - 113
-                                - 117
-                                - 105
-                                - 97
-                                - 32
-                                - 110
-                                - 105
-                                - 104
-                                - 105
-                                - 108
-                                - 32
-                                - 97
-                                - 117
-                                - 116
-                                - 101
-                                - 109
-                                - 32
-                                - 101
-                                - 116
-                                - 32
-                                - 116
-                                - 101
-                                - 110
-                                - 101
-                                - 116
-                                - 117
-                                - 114
-                                - 32
-                                - 118
+                                - 86
                                 - 111
                                 - 108
                                 - 117
@@ -1137,6 +1064,32 @@ paths:
                                 - 116
                                 - 101
                                 - 109
+                                - 32
+                                - 101
+                                - 117
+                                - 109
+                                - 32
+                                - 101
+                                - 97
+                                - 113
+                                - 117
+                                - 101
+                                - 32
+                                - 117
+                                - 116
+                                - 32
+                                - 113
+                                - 117
+                                - 105
+                                - 32
+                                - 113
+                                - 117
+                                - 105
+                                - 32
+                                - 101
+                                - 115
+                                - 115
+                                - 101
                                 - 46
             responses:
                 "201":
@@ -1176,9 +1129,9 @@ paths:
                   schema:
                     type: string
                     description: Artist PastelID or special value; mine
-                    example: rf5
+                    example: n17
                     maxLength: 256
-                  example: 5rk
+                  example: fe5
                 - name: limit
                   in: query
                   description: Number of results to be return
@@ -1199,8 +1152,8 @@ paths:
                   schema:
                     type: string
                     description: Query is search query entered by user
-                    example: Est fugit.
-                  example: Rerum est ipsa earum quam et doloribus.
+                    example: Veniam fugiat.
+                  example: Fugiat et minima modi eligendi quos sapiente.
                 - name: creator_name
                   in: query
                   description: Name of the nft creator
@@ -1209,8 +1162,8 @@ paths:
                     type: boolean
                     description: Name of the nft creator
                     default: true
-                    example: false
-                  example: true
+                    example: true
+                  example: false
                 - name: art_title
                   in: query
                   description: Title of NFT
@@ -1220,7 +1173,7 @@ paths:
                     description: Title of NFT
                     default: true
                     example: false
-                  example: true
+                  example: false
                 - name: series
                   in: query
                   description: NFT series name
@@ -1230,7 +1183,7 @@ paths:
                     description: NFT series name
                     default: true
                     example: true
-                  example: false
+                  example: true
                 - name: descr
                   in: query
                   description: Artist written statement
@@ -1239,8 +1192,8 @@ paths:
                     type: boolean
                     description: Artist written statement
                     default: true
-                    example: true
-                  example: false
+                    example: false
+                  example: true
                 - name: keyword
                   in: query
                   description: Keyword that Artist assigns to NFT
@@ -1249,8 +1202,8 @@ paths:
                     type: boolean
                     description: Keyword that Artist assigns to NFT
                     default: true
-                    example: false
-                  example: true
+                    example: true
+                  example: false
                 - name: min_copies
                   in: query
                   description: Minimum number of created copies
@@ -1281,9 +1234,9 @@ paths:
                     type: integer
                     description: Minimum blocknum
                     default: 1
-                    example: 8027502279750641726
+                    example: 2678899856403753301
                     minimum: 1
-                  example: 7285457769169881387
+                  example: 1732677450694874583
                 - name: max_block
                   in: query
                   description: Maximum blocknum
@@ -1291,9 +1244,9 @@ paths:
                   schema:
                     type: integer
                     description: Maximum blocknum
-                    example: 7903522734867322307
+                    example: 4975823778293461824
                     minimum: 1
-                  example: 7653404906569487218
+                  example: 8597496313011536895
                 - name: is_likely_dupe
                   in: query
                   description: Is this image likely a duplicate of another known image
@@ -1376,24 +1329,24 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/NftSearchResult'
                             example:
-                                match_index: 93691244893428306
+                                match_index: 542433261360692645
                                 matches:
-                                    - field_type: descr
+                                    - field_type: art_title
                                       matched_indexes:
-                                        - 3022723478944623121
-                                        - 6404825768300896153
-                                        - 6722310756416767671
-                                        - 2970196784894370171
-                                      score: 8837067668969045958
-                                      str: Suscipit sint ut in.
-                                    - field_type: descr
+                                        - 6699364159978974132
+                                        - 1603365964145601563
+                                        - 734622800437223057
+                                        - 3072721248117648128
+                                      score: 5278752630472728296
+                                      str: Et sed praesentium et eos.
+                                    - field_type: art_title
                                       matched_indexes:
-                                        - 3022723478944623121
-                                        - 6404825768300896153
-                                        - 6722310756416767671
-                                        - 2970196784894370171
-                                      score: 8837067668969045958
-                                      str: Suscipit sint ut in.
+                                        - 6699364159978974132
+                                        - 1603365964145601563
+                                        - 734622800437223057
+                                        - 3072721248117648128
+                                      score: 5278752630472728296
+                                      str: Et sed praesentium et eos.
                                 nft:
                                     copies: 1
                                     creator_name: Leonardo da Vinci
@@ -1406,63 +1359,72 @@ paths:
                                     rareness_score: 1
                                     series_name: Famous artist
                                     thumbnail_1:
-                                        - 79
-                                        - 109
-                                        - 110
+                                        - 77
+                                        - 111
+                                        - 108
+                                        - 101
+                                        - 115
+                                        - 116
                                         - 105
+                                        - 97
+                                        - 101
+                                        - 32
+                                        - 101
+                                        - 111
                                         - 115
                                         - 32
-                                        - 101
                                         - 97
-                                        - 46
-                                    thumbnail_2:
-                                        - 65
-                                        - 117
-                                        - 116
+                                        - 109
                                         - 101
+                                        - 116
+                                        - 32
+                                        - 110
+                                        - 117
+                                        - 109
+                                        - 113
+                                        - 117
+                                        - 97
                                         - 109
                                         - 32
-                                        - 117
-                                        - 110
-                                        - 100
+                                        - 97
+                                        - 115
+                                        - 112
                                         - 101
+                                        - 114
+                                        - 110
+                                        - 97
+                                        - 116
+                                        - 117
+                                        - 114
+                                        - 46
+                                    thumbnail_2:
+                                        - 83
+                                        - 117
+                                        - 115
+                                        - 99
+                                        - 105
+                                        - 112
+                                        - 105
+                                        - 116
                                         - 32
                                         - 113
                                         - 117
-                                        - 111
+                                        - 105
                                         - 100
-                                        - 32
-                                        - 118
-                                        - 101
-                                        - 108
-                                        - 32
-                                        - 118
-                                        - 111
-                                        - 108
-                                        - 117
-                                        - 112
-                                        - 116
-                                        - 97
-                                        - 116
                                         - 101
                                         - 109
                                         - 32
-                                        - 101
-                                        - 114
-                                        - 114
+                                        - 100
+                                        - 111
+                                        - 108
                                         - 111
                                         - 114
                                         - 32
                                         - 114
                                         - 101
-                                        - 105
-                                        - 99
-                                        - 105
-                                        - 101
-                                        - 110
-                                        - 100
-                                        - 105
-                                        - 115
+                                        - 114
+                                        - 117
+                                        - 109
                                         - 46
                                     title: Mona Lisa
                                     txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1510,16 +1472,21 @@ paths:
                                 example:
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
                                       timestamp: 2006-01-02T15:04:05Z07:00
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
+                                        message: Image has been downloaded...
+                                      message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                      status: Started, Image Probed, Downloaded...
+                                      timestamp: 2006-01-02T15:04:05Z07:00
+                                    - details:
+                                        fields:
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
@@ -1527,16 +1494,21 @@ paths:
                             example:
                                 - details:
                                     fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                     message: Image has been downloaded...
                                   message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                   status: Started, Image Probed, Downloaded...
                                   timestamp: 2006-01-02T15:04:05Z07:00
                                 - details:
                                     fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
+                                    message: Image has been downloaded...
+                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                  status: Started, Image Probed, Downloaded...
+                                  timestamp: 2006-01-02T15:04:05Z07:00
+                                - details:
+                                    fields:
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                     message: Image has been downloaded...
                                   message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                   status: Started, Image Probed, Downloaded...
@@ -1594,7 +1566,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/FileDownloadResult'
                             example:
-                                file_id: Cum rerum aliquam occaecati.
+                                file_id: Omnis et error eius excepturi.
                 "404":
                     description: 'NotFound: Not Found response.'
                     content:
@@ -1788,24 +1760,21 @@ paths:
                                 example:
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
                                       timestamp: 2006-01-02T15:04:05Z07:00
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
                                       timestamp: 2006-01-02T15:04:05Z07:00
                                     - details:
                                         fields:
-                                            Nesciunt sit.: Aut voluptatem dolor.
-                                            Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                            Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                         message: Image has been downloaded...
                                       message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                       status: Started, Image Probed, Downloaded...
@@ -1813,16 +1782,21 @@ paths:
                             example:
                                 - details:
                                     fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                     message: Image has been downloaded...
                                   message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                   status: Started, Image Probed, Downloaded...
                                   timestamp: 2006-01-02T15:04:05Z07:00
                                 - details:
                                     fields:
-                                        Nesciunt sit.: Aut voluptatem dolor.
-                                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
+                                    message: Image has been downloaded...
+                                  message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
+                                  status: Started, Image Probed, Downloaded...
+                                  timestamp: 2006-01-02T15:04:05Z07:00
+                                - details:
+                                    fields:
+                                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                                     message: Image has been downloaded...
                                   message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                                   status: Started, Image Probed, Downloaded...
@@ -1881,33 +1855,59 @@ paths:
                                 $ref: '#/components/schemas/DownloadResult'
                             example:
                                 file:
-                                    - 73
-                                    - 115
+                                    - 68
+                                    - 105
+                                    - 99
                                     - 116
-                                    - 101
+                                    - 97
                                     - 32
+                                    - 102
+                                    - 97
+                                    - 99
+                                    - 101
                                     - 114
                                     - 101
+                                    - 32
+                                    - 97
+                                    - 108
+                                    - 105
+                                    - 97
+                                    - 115
+                                    - 32
+                                    - 116
+                                    - 111
+                                    - 116
+                                    - 97
                                     - 109
                                     - 32
                                     - 101
                                     - 120
-                                    - 32
-                                    - 113
-                                    - 117
-                                    - 105
-                                    - 32
-                                    - 99
-                                    - 111
-                                    - 110
-                                    - 115
                                     - 101
-                                    - 113
-                                    - 117
+                                    - 114
+                                    - 99
+                                    - 105
+                                    - 116
                                     - 97
                                     - 116
+                                    - 105
+                                    - 111
+                                    - 110
+                                    - 101
+                                    - 109
+                                    - 32
+                                    - 118
+                                    - 111
+                                    - 108
                                     - 117
-                                    - 114
+                                    - 112
+                                    - 116
+                                    - 97
+                                    - 116
+                                    - 101
+                                    - 109
+                                    - 32
+                                    - 101
+                                    - 97
                                     - 46
                 "404":
                     description: 'NotFound: Not Found response.'
@@ -1952,7 +1952,7 @@ paths:
                             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                             burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                             collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-                            open_api_group_id: Quam eius.
+                            open_api_group_id: Quia quaerat aliquam consequatur at vel quia.
             responses:
                 "201":
                     description: Created response.
@@ -2033,11 +2033,34 @@ paths:
                         example:
                             file:
                                 - 69
-                                - 116
+                                - 114
+                                - 114
+                                - 111
+                                - 114
                                 - 32
                                 - 97
-                                - 117
+                                - 114
+                                - 99
+                                - 104
+                                - 105
                                 - 116
+                                - 101
+                                - 99
+                                - 116
+                                - 111
+                                - 32
+                                - 115
+                                - 101
+                                - 113
+                                - 117
+                                - 105
+                                - 32
+                                - 108
+                                - 105
+                                - 98
+                                - 101
+                                - 114
+                                - 111
                                 - 46
             responses:
                 "201":
@@ -2257,34 +2280,34 @@ components:
                 drawings:
                     type: number
                     description: drawings nsfw score
-                    example: 0.30959046
+                    example: 0.8273837
                     format: float
                 hentai:
                     type: number
                     description: hentai nsfw score
-                    example: 0.78778833
+                    example: 0.9196092
                     format: float
                 neutral:
                     type: number
                     description: neutral nsfw score
-                    example: 0.088545874
+                    example: 0.4539222
                     format: float
                 porn:
                     type: number
                     description: porn nsfw score
-                    example: 0.276769
+                    example: 0.56051135
                     format: float
                 sexy:
                     type: number
                     description: sexy nsfw score
-                    example: 0.6749969
+                    example: 0.3021049
                     format: float
             example:
-                drawings: 0.7457961
-                hentai: 0.4068111
-                neutral: 0.6126851
-                porn: 0.49343213
-                sexy: 0.045513958
+                drawings: 0.5499716
+                hentai: 0.2905467
+                neutral: 0.55393463
+                porn: 0.02465187
+                sexy: 0.29412735
         Asset:
             type: object
             properties:
@@ -2404,9 +2427,9 @@ components:
                 file:
                     type: string
                     description: File downloaded
-                    example: Exercitationem ab aliquid totam.
+                    example: Voluptatibus commodi iure ut unde voluptatum.
             example:
-                file: Autem vel est harum earum.
+                file: Aliquid voluptatum qui sit nemo accusamus.
             required:
                 - file
         DDServiceOutputFileResult:
@@ -2417,69 +2440,70 @@ components:
                 candidate_image_thumbnail_webp_as_base64_string:
                     type: string
                     description: candidate image thumbnail as base64 string
-                    example: Ut explicabo modi.
+                    example: Molestiae omnis aut adipisci.
                 child_probability:
                     type: number
                     description: child probability
-                    example: 0.5286254
+                    example: 0.83391047
                     format: float
                 collection_name_string:
                     type: string
                     description: name of the collection
-                    example: Eum accusantium ut rerum ducimus.
+                    example: Est et.
                 cp_probability:
                     type: number
                     description: probability of CP
-                    example: 0.79301894
+                    example: 0.12029178
                     format: float
                 creator_name:
                     type: string
                     description: name of the creator
-                    example: Placeat omnis in.
+                    example: Earum consectetur et.
                 creator_website:
                     type: string
                     description: website of creator
-                    example: Molestiae iusto at sed a cupiditate.
+                    example: Asperiores voluptatibus est non iste repellat.
                 creator_written_statement:
                     type: string
                     description: written statement of creator
-                    example: At non et et.
+                    example: Ut culpa.
                 does_not_impact_the_following_collection_strings:
                     type: string
                     description: does not impact collection strings
-                    example: Accusantium non.
+                    example: Voluptates ab.
                 dupe_detection_system_version:
                     type: string
                     description: system version of dupe detection
-                    example: Et qui autem et.
+                    example: Voluptatem eligendi quo quia doloribus aut numquam.
                 file_type:
                     type: string
                     description: type of the file
-                    example: Voluptatem voluptatem et iste nisi.
+                    example: Delectus qui.
                 group_rareness_score:
                     type: number
                     description: rareness score of the group
-                    example: 0.24557726
+                    example: 0.7260625
                     format: float
                 hash_of_candidate_image_file:
                     type: string
                     description: hash of candidate image file
-                    example: Molestias adipisci et ut distinctio.
+                    example: Dolor qui aut expedita.
                 image_file_path:
                     type: string
                     description: file path of the image
-                    example: Consequatur enim excepturi eum.
+                    example: Libero et alias.
                 image_fingerprint_of_candidate_image_file:
                     type: array
                     items:
                         type: number
-                        example: 0.3865043181209828
+                        example: 0.42258339521681254
                         format: double
                     description: Image fingerprint of candidate image file
                     example:
-                        - 0.38010452364616865
-                        - 0.782077880564127
-                        - 0.47035809287330516
+                        - 0.4735953845404105
+                        - 0.3737670671721093
+                        - 0.9666435235543988
+                        - 0.8867914755375936
                 internet_rareness:
                     $ref: '#/components/schemas/InternetRareness'
                 is_likely_dupe:
@@ -2497,290 +2521,339 @@ components:
                 max_permitted_open_nsfw_score:
                     type: number
                     description: max permitted open NSFW score
-                    example: 0.3706388714258282
+                    example: 0.8569016519431726
                     format: double
                 nft_creation_video_youtube_url:
                     type: string
                     description: nft creation video youtube url
-                    example: Illo amet.
+                    example: Omnis quidem nam.
                 nft_keyword_set:
                     type: string
                     description: keywords for NFT
-                    example: Sunt velit repellat qui reprehenderit id ex.
+                    example: Neque cumque nam est fugit.
                 nft_series_name:
                     type: string
                     description: series name of NFT
-                    example: Voluptatem nobis.
+                    example: Molestiae illum neque quia quos autem.
                 nft_title:
                     type: string
                     description: title of NFT
-                    example: Aperiam voluptates magnam.
+                    example: Mollitia recusandae dolorum aperiam ut.
                 open_api_group_id_string:
                     type: string
                     description: open api group id string
-                    example: Sint et qui voluptate excepturi ut.
+                    example: Ex qui.
                 open_nsfw_score:
                     type: number
                     description: open nsfw score
-                    example: 0.05434643
+                    example: 0.69038594
                     format: float
                 original_file_size_in_bytes:
                     type: integer
                     description: original file size in bytes
-                    example: 3031455223561341672
+                    example: 9152030477059012157
                     format: int64
                 overall_rareness_score:
                     type: number
                     description: pastel rareness score
-                    example: 0.9134149
+                    example: 0.24159485
                     format: float
                 pastel_block_hash_when_request_submitted:
                     type: string
                     description: block hash when request submitted
-                    example: Sint autem ipsam labore minima aut harum.
+                    example: Vero nihil.
                 pastel_block_height_when_request_submitted:
                     type: string
                     description: block Height when request submitted
-                    example: Possimus accusamus a qui maiores et aut.
+                    example: Molestias quia aut rerum expedita.
                 pastel_id_of_registering_supernode_1:
                     type: string
                     description: pastel id of registering SN1
-                    example: Nisi officia sit eligendi soluta.
+                    example: Minus non quibusdam sit id.
                 pastel_id_of_registering_supernode_2:
                     type: string
                     description: pastel id of registering SN2
-                    example: Voluptatem ex tenetur officiis qui deserunt.
+                    example: Minima est consectetur.
                 pastel_id_of_registering_supernode_3:
                     type: string
                     description: pastel id of registering SN3
-                    example: Repellat veniam pariatur magni voluptatem tempora adipisci.
+                    example: Voluptas repellat beatae voluptatibus sint modi voluptas.
                 pastel_id_of_submitter:
                     type: string
                     description: pastel id of the submitter
-                    example: Qui itaque illo dignissimos.
+                    example: Architecto velit.
                 pct_of_top_10_most_similar_with_dupe_prob_above_25pct:
                     type: number
                     description: PCT of top 10 most similar with dupe probe above 25 PCT
-                    example: 0.5052066
+                    example: 0.44048318
                     format: float
                 pct_of_top_10_most_similar_with_dupe_prob_above_33pct:
                     type: number
                     description: PCT of top 10 most similar with dupe probe above 33 PCT
-                    example: 0.5755107
+                    example: 0.06183635
                     format: float
                 pct_of_top_10_most_similar_with_dupe_prob_above_50pct:
                     type: number
                     description: PCT of top 10 most similar with dupe probe above 50 PCT
-                    example: 0.42818454
+                    example: 0.08000969
                     format: float
                 preview_hash:
                     type: string
                     description: preview hash of NFT
                     example:
-                        - 67
-                        - 111
-                        - 109
-                        - 109
-                        - 111
-                        - 100
-                        - 105
+                        - 69
+                        - 115
+                        - 116
                         - 32
-                        - 116
-                        - 111
-                        - 116
+                        - 105
+                        - 112
+                        - 115
                         - 97
-                        - 109
-                        - 32
-                        - 113
-                        - 117
-                        - 105
                         - 46
                     format: binary
                 rareness_scores_table_json_compressed_b64:
                     type: string
                     description: rareness scores table json compressed b64
-                    example: Laboriosam expedita dolor quisquam nulla et accusantium.
+                    example: Molestiae iusto.
                 similarity_score_to_first_entry_in_collection:
                     type: number
                     description: similarity score to first entry in collection
-                    example: 0.55059886
+                    example: 0.11335511
                     format: float
                 thumbnail1_hash:
                     type: string
                     description: thumbnail1 hash of NFT
                     example:
-                        - 65
-                        - 108
-                        - 105
-                        - 113
+                        - 81
                         - 117
                         - 97
                         - 109
                         - 32
-                        - 113
-                        - 117
-                        - 105
+                        - 101
+                        - 116
+                        - 32
                         - 100
+                        - 111
+                        - 108
+                        - 111
+                        - 114
+                        - 105
+                        - 98
+                        - 117
+                        - 115
+                        - 32
+                        - 110
+                        - 111
+                        - 98
+                        - 105
+                        - 115
+                        - 32
+                        - 100
+                        - 111
+                        - 108
+                        - 111
+                        - 114
                         - 101
                         - 109
+                        - 113
+                        - 117
+                        - 101
                         - 46
                     format: binary
                 thumbnail2_hash:
                     type: string
                     description: thumbnail2 hash of NFT
                     example:
-                        - 77
-                        - 97
-                        - 103
-                        - 110
-                        - 97
-                        - 109
-                        - 32
-                        - 105
-                        - 112
-                        - 115
-                        - 117
-                        - 109
-                        - 32
-                        - 105
-                        - 116
-                        - 97
-                        - 113
-                        - 117
-                        - 101
-                        - 32
-                        - 112
-                        - 114
+                        - 78
                         - 111
-                        - 118
+                        - 98
                         - 105
+                        - 115
+                        - 32
+                        - 117
+                        - 116
+                        - 32
                         - 100
+                        - 111
+                        - 108
+                        - 111
+                        - 114
                         - 101
-                        - 110
+                        - 109
+                        - 32
+                        - 116
+                        - 101
+                        - 109
+                        - 112
+                        - 111
+                        - 114
+                        - 101
+                        - 32
+                        - 101
                         - 116
                         - 46
                     format: binary
                 total_copies:
                     type: integer
                     description: total copies of NFT
-                    example: 6942573509392070565
+                    example: 4644310390739548232
                     format: int64
                 utc_timestamp_when_request_submitted:
                     type: string
                     description: timestamp of request when submitted
-                    example: Necessitatibus nulla dolorem.
+                    example: Nostrum fuga excepturi.
             example:
                 alternative_nsfw_scores:
-                    drawings: 0.39911348
-                    hentai: 0.120642185
-                    neutral: 0.81837386
-                    porn: 0.24296588
-                    sexy: 0.2746812
-                candidate_image_thumbnail_webp_as_base64_string: Qui aut expedita id.
-                child_probability: 0.7260625
-                collection_name_string: Nostrum esse dolorem id molestiae iusto quo.
-                cp_probability: 0.07860163
-                creator_name: Voluptates ab.
-                creator_website: Quis iure.
-                creator_written_statement: Libero et alias.
-                does_not_impact_the_following_collection_strings: Et quia.
-                dupe_detection_system_version: Non quibusdam sit id pariatur minima est.
-                file_type: Velit ipsa qui eveniet id accusamus.
-                group_rareness_score: 0.81323725
-                hash_of_candidate_image_file: Aut numquam.
-                image_file_path: Molestiae omnis aut adipisci.
+                    drawings: 0.9764369
+                    hentai: 0.7066565
+                    neutral: 0.63074267
+                    porn: 0.04768783
+                    sexy: 0.4008529
+                candidate_image_thumbnail_webp_as_base64_string: Quia quod.
+                child_probability: 0.09606748
+                collection_name_string: Beatae quia quia deleniti sint.
+                cp_probability: 0.22587094
+                creator_name: Eum quasi.
+                creator_website: Voluptatem sint recusandae.
+                creator_written_statement: Molestias nisi ut provident pariatur.
+                does_not_impact_the_following_collection_strings: Corrupti qui non quibusdam est.
+                dupe_detection_system_version: Qui fugiat omnis architecto qui officiis.
+                file_type: Eveniet eligendi.
+                group_rareness_score: 0.2855439
+                hash_of_candidate_image_file: Deleniti omnis maiores dolorem quod molestias.
+                image_file_path: Maxime aut perspiciatis fugit eaque.
                 image_fingerprint_of_candidate_image_file:
-                    - 0.7643204320571899
-                    - 0.7374947093588823
+                    - 0.7496926409801882
+                    - 0.23373225123910737
+                    - 0.9431662745445217
                 internet_rareness:
-                    alternative_rare_on_internet_dict_as_json_compressed_b64: Sit qui.
-                    earliest_available_date_of_internet_results: Eos amet numquam aspernatur.
-                    min_number_of_exact_matches_in_page: 81279702
-                    rare_on_internet_graph_json_compressed_b64: Est illo veritatis.
-                    rare_on_internet_summary_table_as_json_compressed_b64: Est aut qui.
+                    alternative_rare_on_internet_dict_as_json_compressed_b64: Placeat optio quaerat.
+                    earliest_available_date_of_internet_results: Ipsum non aut sit in aut.
+                    min_number_of_exact_matches_in_page: 178179253
+                    rare_on_internet_graph_json_compressed_b64: Omnis aspernatur fugit maiores nihil.
+                    rare_on_internet_summary_table_as_json_compressed_b64: Qui iure est necessitatibus dolor voluptatum.
                 is_likely_dupe: false
                 is_pastel_openapi_request: true
                 is_rare_on_internet: false
-                max_permitted_open_nsfw_score: 0.8273836973056361
-                nft_creation_video_youtube_url: Sapiente sequi ullam neque.
-                nft_keyword_set: Quas ut natus beatae voluptatem quis dolorum.
-                nft_series_name: Et voluptates sed.
-                nft_title: Aut voluptas.
-                open_api_group_id_string: Excepturi nisi est est veritatis.
-                open_nsfw_score: 0.05832132
-                original_file_size_in_bytes: 6771148532458487867
-                overall_rareness_score: 0.4918193
-                pastel_block_hash_when_request_submitted: Sapiente nulla ipsum qui.
-                pastel_block_height_when_request_submitted: Ut totam et quia sunt consectetur.
-                pastel_id_of_registering_supernode_1: Consequatur vero nihil molestias molestias quia.
-                pastel_id_of_registering_supernode_2: Rerum expedita ea nostrum.
-                pastel_id_of_registering_supernode_3: Excepturi doloribus architecto velit.
-                pastel_id_of_submitter: Et veniam porro corrupti voluptates.
-                pct_of_top_10_most_similar_with_dupe_prob_above_25pct: 0.6662209
-                pct_of_top_10_most_similar_with_dupe_prob_above_33pct: 0.12511066
-                pct_of_top_10_most_similar_with_dupe_prob_above_50pct: 0.06440586
+                max_permitted_open_nsfw_score: 0.9013238198196614
+                nft_creation_video_youtube_url: Deserunt rem dolore aut harum voluptas exercitationem.
+                nft_keyword_set: Id accusantium voluptatibus blanditiis.
+                nft_series_name: Officiis ut quia repellendus labore architecto sit.
+                nft_title: Iusto accusantium qui quod.
+                open_api_group_id_string: Ullam officiis libero ut dolor autem.
+                open_nsfw_score: 0.35242748
+                original_file_size_in_bytes: 4593311199668385630
+                overall_rareness_score: 0.4600906
+                pastel_block_hash_when_request_submitted: Autem qui totam omnis.
+                pastel_block_height_when_request_submitted: Rem et qui qui unde sapiente.
+                pastel_id_of_registering_supernode_1: Culpa pariatur.
+                pastel_id_of_registering_supernode_2: Enim dolorem magni autem nihil.
+                pastel_id_of_registering_supernode_3: Eos sit tempore inventore debitis.
+                pastel_id_of_submitter: Explicabo rerum.
+                pct_of_top_10_most_similar_with_dupe_prob_above_25pct: 0.781387
+                pct_of_top_10_most_similar_with_dupe_prob_above_33pct: 0.12911676
+                pct_of_top_10_most_similar_with_dupe_prob_above_50pct: 0.24960928
                 preview_hash:
-                    - 68
+                    - 69
+                    - 120
+                    - 112
+                    - 108
+                    - 105
+                    - 99
+                    - 97
+                    - 98
+                    - 111
+                    - 32
+                    - 110
+                    - 105
+                    - 104
+                    - 105
+                    - 108
+                    - 32
+                    - 110
+                    - 111
+                    - 110
+                    - 32
+                    - 111
+                    - 99
+                    - 99
+                    - 97
+                    - 101
+                    - 99
+                    - 97
+                    - 116
+                    - 105
+                    - 32
+                    - 97
+                    - 99
+                    - 99
+                    - 117
+                    - 115
+                    - 97
+                    - 109
+                    - 117
+                    - 115
+                    - 46
+                rareness_scores_table_json_compressed_b64: Quaerat sint aut.
+                similarity_score_to_first_entry_in_collection: 0.3754854
+                thumbnail1_hash:
+                    - 65
+                    - 115
+                    - 112
+                    - 101
+                    - 114
+                    - 105
+                    - 111
+                    - 114
+                    - 101
+                    - 115
+                    - 32
+                    - 112
+                    - 97
+                    - 114
+                    - 105
+                    - 97
+                    - 116
+                    - 117
+                    - 114
+                    - 32
+                    - 101
+                    - 116
+                    - 32
+                    - 100
                     - 111
                     - 108
                     - 111
                     - 114
                     - 32
                     - 100
-                    - 101
+                    - 111
                     - 108
+                    - 111
+                    - 114
                     - 101
-                    - 99
-                    - 116
-                    - 117
-                    - 115
                     - 32
-                    - 97
+                    - 113
                     - 117
-                    - 116
-                    - 32
-                    - 100
                     - 105
+                    - 32
                     - 99
-                    - 116
-                    - 97
-                    - 46
-                rareness_scores_table_json_compressed_b64: Voluptatibus sint modi voluptas quisquam quisquam.
-                similarity_score_to_first_entry_in_collection: 0.7250932
-                thumbnail1_hash:
-                    - 73
-                    - 108
-                    - 108
                     - 117
                     - 109
-                    - 32
-                    - 100
-                    - 111
-                    - 108
-                    - 111
-                    - 114
-                    - 101
-                    - 115
-                    - 32
-                    - 118
-                    - 101
-                    - 108
                     - 46
                 thumbnail2_hash:
-                    - 65
+                    - 69
+                    - 97
                     - 32
-                    - 111
-                    - 99
-                    - 99
-                    - 97
-                    - 101
-                    - 99
-                    - 97
-                    - 116
                     - 105
+                    - 100
+                    - 32
+                    - 114
+                    - 101
+                    - 109
                     - 46
-                total_copies: 4398712531015404501
-                utc_timestamp_when_request_submitted: Aut ipsam qui voluptatibus aspernatur ducimus.
+                total_copies: 6500330244729024855
+                utc_timestamp_when_request_submitted: Officia ducimus.
             required:
                 - creator_name
                 - creator_website
@@ -2803,20 +2876,17 @@ components:
                     type: object
                     description: important fields regarding status history
                     example:
-                        Eveniet quia.: Et voluptatum.
-                    additionalProperties:
-                        type: string
-                        example: Officia molestias.
-                        format: binary
+                        Ab et.: In laboriosam expedita.
+                        Ex tenetur officiis.: Deserunt debitis repellat.
+                        Pariatur magni voluptatem tempora adipisci modi.: Et qui autem et.
+                    additionalProperties: true
                 message:
                     type: string
                     description: details regarding the status
                     example: Image has been downloaded...
             example:
                 fields:
-                    Nihil sed.: Velit sed et officiis.
-                    Quia illo cupiditate nobis.: Quae dolor.
-                    Ratione est facilis.: Nulla laborum quos vel.
+                    Nulla et accusantium consequuntur.: Voluptas quod placeat ut atque molestias adipisci.
                 message: Image has been downloaded...
         DownloadResult:
             type: object
@@ -2825,56 +2895,76 @@ components:
                     type: string
                     description: File downloaded
                     example:
-                        - 82
-                        - 101
-                        - 99
-                        - 117
-                        - 115
-                        - 97
-                        - 110
-                        - 100
+                        - 83
                         - 97
                         - 101
-                        - 32
-                        - 100
-                        - 111
-                        - 108
-                        - 111
-                        - 114
-                        - 117
-                        - 109
-                        - 32
-                        - 97
                         - 112
                         - 101
+                        - 32
+                        - 99
+                        - 111
+                        - 110
+                        - 115
+                        - 101
+                        - 113
+                        - 117
+                        - 117
+                        - 110
+                        - 116
+                        - 117
                         - 114
-                        - 105
+                        - 32
+                        - 118
+                        - 111
+                        - 108
+                        - 117
+                        - 112
+                        - 116
                         - 97
-                        - 109
+                        - 115
                         - 46
                     format: binary
             example:
                 file:
-                    - 78
-                    - 101
-                    - 109
-                    - 111
-                    - 32
-                    - 109
-                    - 111
-                    - 108
-                    - 101
+                    - 81
+                    - 117
+                    - 105
+                    - 98
+                    - 117
                     - 115
-                    - 116
-                    - 105
+                    - 100
                     - 97
-                    - 101
+                    - 109
                     - 32
-                    - 105
-                    - 108
+                    - 118
+                    - 111
                     - 108
                     - 117
+                    - 112
+                    - 116
+                    - 97
+                    - 116
+                    - 101
                     - 109
+                    - 32
+                    - 113
+                    - 117
+                    - 97
+                    - 109
+                    - 32
+                    - 105
+                    - 116
+                    - 97
+                    - 113
+                    - 117
+                    - 101
+                    - 32
+                    - 108
+                    - 105
+                    - 98
+                    - 101
+                    - 114
+                    - 111
                     - 46
             required:
                 - file
@@ -2884,7 +2974,7 @@ components:
                 fault:
                     type: boolean
                     description: Is the error a server-side fault?
-                    example: false
+                    example: true
                 id:
                     type: string
                     description: ID is a unique identifier for this particular occurrence of the problem.
@@ -2904,11 +2994,14 @@ components:
                 timeout:
                     type: boolean
                     description: Is the error a timeout?
-                    example: true
+                    example: false
             example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
+                fault: false
+                id: 123abc
+                message: parameter 'p' must be an integer
                 name: bad_request
+                temporary: true
+                timeout: false
             required:
                 - name
                 - id
@@ -2922,9 +3015,9 @@ components:
                 file_id:
                     type: string
                     description: File path
-                    example: Natus sit velit consequatur qui quae.
+                    example: Distinctio ipsum eum accusantium ut rerum.
             example:
-                file_id: Consequatur tenetur eaque.
+                file_id: Ipsa sint.
             required:
                 - file_id
         FuzzyMatch:
@@ -2933,7 +3026,7 @@ components:
                 field_type:
                     type: string
                     description: Field that is matched
-                    example: keyword
+                    example: descr
                     enum:
                         - creator_name
                         - art_title
@@ -2944,32 +3037,28 @@ components:
                     type: array
                     items:
                         type: integer
-                        example: 8435541305615730193
+                        example: 2740060991170642141
                         format: int64
                     description: The indexes of matched characters. Useful for highlighting matches
                     example:
-                        - 6978400147829433673
-                        - 5255327873539303039
-                        - 7564343702549782771
-                        - 7765663512921940153
+                        - 6324943009725631472
+                        - 485280990098740984
                 score:
                     type: integer
                     description: Score used to rank matches
-                    example: 1898054658483945928
+                    example: 5800884126589090295
                     format: int64
                 str:
                     type: string
                     description: String that is matched
-                    example: Quia quidem voluptas neque occaecati magnam.
+                    example: Vel quisquam ratione vel repudiandae.
             example:
-                field_type: descr
+                field_type: keyword
                 matched_indexes:
-                    - 3734607516579488649
-                    - 3461024504052527500
-                    - 5858154531944508588
-                    - 3802651327441643055
-                score: 3379093258379224162
-                str: Ab quisquam corporis qui.
+                    - 752859849790584750
+                    - 1159019843134588515
+                score: 2661992185411149955
+                str: Cumque molestias et quae eum itaque.
         Image:
             type: object
             properties:
@@ -3039,36 +3128,36 @@ components:
                 alternative_rare_on_internet_dict_as_json_compressed_b64:
                     type: string
                     description: Base64 Compressed Json of Alternative Rare On Internet Dict
-                    example: Sint expedita eaque.
+                    example: Sapiente sequi ullam neque.
                 earliest_available_date_of_internet_results:
                     type: string
                     description: Earliest Available Date of Internet Results
-                    example: Sed itaque rem suscipit a laudantium consequatur.
+                    example: Ut natus beatae voluptatem quis dolorum similique.
                 min_number_of_exact_matches_in_page:
                     type: integer
                     description: Minimum Number of Exact Matches on Page
-                    example: 2167789074
+                    example: 2222177350
                 rare_on_internet_graph_json_compressed_b64:
                     type: string
                     description: Base64 Compressed JSON of Rare On Internet Graph
-                    example: Voluptatibus et.
+                    example: Et voluptates sed.
                 rare_on_internet_summary_table_as_json_compressed_b64:
                     type: string
                     description: Base64 Compressed JSON Table of Rare On Internet Summary
-                    example: Necessitatibus impedit aut repellendus adipisci pariatur accusamus.
+                    example: Aut voluptas.
             example:
-                alternative_rare_on_internet_dict_as_json_compressed_b64: Aut voluptas cumque molestias et quae eum.
-                earliest_available_date_of_internet_results: Dicta quaerat quis recusandae.
-                min_number_of_exact_matches_in_page: 1163208946
-                rare_on_internet_graph_json_compressed_b64: Ratione vel repudiandae ut quia sit dicta.
-                rare_on_internet_summary_table_as_json_compressed_b64: Excepturi officiis ratione velit a perspiciatis vel.
+                alternative_rare_on_internet_dict_as_json_compressed_b64: A occaecati.
+                earliest_available_date_of_internet_results: Velit ipsa qui eveniet id accusamus.
+                min_number_of_exact_matches_in_page: 3153061742
+                rare_on_internet_graph_json_compressed_b64: Illum dolores vel.
+                rare_on_internet_summary_table_as_json_compressed_b64: Dolor delectus aut dicta.
         NftDetail:
             type: object
             properties:
                 alt_rare_on_internet_dict_json_b64:
                     type: string
                     description: Base64 Compressed Json of Alternative Rare On Internet Dict
-                    example: Reiciendis atque odit accusantium optio beatae molestiae.
+                    example: Et et nihil aperiam voluptates magnam.
                 copies:
                     type: integer
                     description: Number of copies
@@ -3107,7 +3196,7 @@ components:
                 earliest_date_of_results:
                     type: string
                     description: Earliest Available Date of Internet Results
-                    example: Est eum reiciendis eum et placeat et.
+                    example: Nobis architecto illo.
                 green_address:
                     type: boolean
                     description: Green address
@@ -3134,7 +3223,7 @@ components:
                 min_num_exact_matches_on_page:
                     type: integer
                     description: Minimum Number of Exact Matches on Page
-                    example: 2194753055
+                    example: 2872001533
                 neutral_nsfw_score:
                     type: number
                     description: nsfw score
@@ -3157,67 +3246,59 @@ components:
                     type: string
                     description: Preview Image
                     example:
-                        - 83
-                        - 101
-                        - 100
-                        - 32
-                        - 114
-                        - 101
-                        - 112
-                        - 117
-                        - 100
-                        - 105
-                        - 97
+                        - 79
+                        - 109
                         - 110
-                        - 100
-                        - 97
-                        - 101
-                        - 32
-                        - 118
-                        - 111
-                        - 108
-                        - 117
-                        - 112
-                        - 116
-                        - 97
+                        - 105
                         - 115
                         - 32
-                        - 100
-                        - 111
-                        - 108
-                        - 111
-                        - 114
-                        - 32
-                        - 97
-                        - 117
-                        - 116
-                        - 32
-                        - 118
-                        - 101
-                        - 108
                         - 105
+                        - 108
+                        - 108
+                        - 111
+                        - 32
+                        - 100
+                        - 101
+                        - 108
+                        - 101
+                        - 99
+                        - 116
+                        - 117
+                        - 115
+                        - 32
+                        - 97
+                        - 117
                         - 116
                         - 32
-                        - 118
-                        - 111
-                        - 108
+                        - 114
+                        - 101
+                        - 114
                         - 117
+                        - 109
+                        - 32
                         - 112
-                        - 116
+                        - 108
+                        - 97
+                        - 99
+                        - 101
                         - 97
                         - 116
-                        - 101
+                        - 32
+                        - 111
                         - 109
+                        - 110
+                        - 105
+                        - 115
                         - 46
                     format: binary
                 rare_on_internet_graph_json_b64:
                     type: string
                     description: Base64 Compressed JSON of Rare On Internet Graph
-                    example: Dolores at assumenda illum a.
+                    example: A cupiditate repellat at.
                 rare_on_internet_summary_table_json_b64:
                     type: string
                     description: Base64 Compressed JSON Table of Rare On Internet Summary
-                    example: Vel cupiditate corrupti nemo officiis eaque quis.
+                    example: Quaerat molestiae iusto at.
                 rareness_score:
                     type: number
                     description: Average pastel rareness score
@@ -3227,7 +3308,7 @@ components:
                 royalty:
                     type: number
                     description: how much artist should get on all future resales
-                    example: 0.3969328327320095
+                    example: 0.08854587220899127
                     format: double
                 series_name:
                     type: string
@@ -3249,50 +3330,74 @@ components:
                     type: string
                     description: Thumbnail_1 image
                     example:
-                        - 68
-                        - 111
+                        - 69
+                        - 116
+                        - 32
+                        - 115
+                        - 117
+                        - 110
+                        - 116
+                        - 32
+                        - 118
+                        - 101
                         - 108
-                        - 111
+                        - 105
+                        - 116
+                        - 32
                         - 114
                         - 101
-                        - 109
+                        - 112
+                        - 101
+                        - 108
+                        - 108
+                        - 97
+                        - 116
+                        - 32
                         - 113
                         - 117
-                        - 101
-                        - 32
                         - 105
+                        - 32
+                        - 114
+                        - 101
+                        - 112
+                        - 114
+                        - 101
+                        - 104
+                        - 101
                         - 110
+                        - 100
+                        - 101
+                        - 114
+                        - 105
+                        - 116
                         - 46
                     format: binary
                 thumbnail_2:
                     type: string
                     description: Thumbnail_2 image
                     example:
-                        - 78
-                        - 105
-                        - 104
-                        - 105
-                        - 108
+                        - 69
+                        - 120
+                        - 32
+                        - 101
+                        - 97
+                        - 32
+                        - 117
+                        - 116
                         - 32
                         - 99
                         - 111
-                        - 110
-                        - 115
-                        - 101
-                        - 113
-                        - 117
-                        - 117
-                        - 110
-                        - 116
-                        - 117
-                        - 114
-                        - 32
-                        - 115
-                        - 101
+                        - 109
+                        - 109
+                        - 111
                         - 100
+                        - 105
                         - 32
-                        - 101
                         - 116
+                        - 111
+                        - 116
+                        - 97
+                        - 109
                         - 46
                     format: binary
                 title:
@@ -3317,97 +3422,74 @@ components:
                     example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
                     maxLength: 128
             example:
-                alt_rare_on_internet_dict_json_b64: Occaecati rerum.
+                alt_rare_on_internet_dict_json_b64: Ipsum qui recusandae ut totam.
                 copies: 1
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 creator_website_url: https://www.leonardodavinci.net
                 description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
                 drawing_nsfw_score: 1
-                earliest_date_of_results: Nihil et aspernatur perspiciatis.
+                earliest_date_of_results: Sunt consectetur laudantium.
                 green_address: false
                 hentai_nsfw_score: 1
                 is_likely_dupe: false
                 is_rare_on_internet: false
                 keywords: Renaissance, sfumato, portrait
-                min_num_exact_matches_on_page: 1986500611
+                min_num_exact_matches_on_page: 2659693400
                 neutral_nsfw_score: 1
                 nsfw_score: 1
                 porn_nsfw_score: 1
                 preview_thumbnail:
-                    - 69
-                    - 120
-                    - 112
-                    - 101
+                    - 81
+                    - 117
+                    - 105
                     - 100
-                    - 105
-                    - 116
-                    - 97
-                    - 32
-                    - 109
-                    - 105
-                    - 110
-                    - 117
-                    - 115
-                    - 32
-                    - 118
-                    - 111
-                    - 108
-                    - 117
-                    - 112
-                    - 116
-                    - 97
-                    - 116
                     - 101
                     - 109
+                    - 32
+                    - 116
+                    - 111
+                    - 116
+                    - 97
+                    - 109
+                    - 32
+                    - 109
+                    - 97
+                    - 103
+                    - 110
+                    - 97
+                    - 109
+                    - 32
+                    - 105
+                    - 112
+                    - 115
+                    - 117
+                    - 109
+                    - 32
+                    - 105
+                    - 116
+                    - 97
+                    - 113
+                    - 117
+                    - 101
                     - 46
-                rare_on_internet_graph_json_b64: Perferendis est.
-                rare_on_internet_summary_table_json_b64: Et consectetur eligendi omnis excepturi.
+                rare_on_internet_graph_json_b64: Voluptatem et iste nisi eos animi sapiente.
+                rare_on_internet_summary_table_json_b64: Dicta aliquid.
                 rareness_score: 1
-                royalty: 0.45047236958938297
+                royalty: 0.08771453263249898
                 series_name: Famous artist
                 sexy_nsfw_score: 1
                 storage_fee: 100
                 thumbnail_1:
-                    - 81
-                    - 117
-                    - 111
+                    - 73
+                    - 112
                     - 115
+                    - 97
+                    - 109
                     - 32
                     - 113
                     - 117
                     - 105
-                    - 115
-                    - 32
-                    - 114
-                    - 101
-                    - 112
-                    - 101
-                    - 108
-                    - 108
-                    - 97
-                    - 116
-                    - 32
-                    - 112
-                    - 114
-                    - 111
-                    - 118
-                    - 105
-                    - 100
-                    - 101
-                    - 110
-                    - 116
-                    - 32
-                    - 97
-                    - 114
-                    - 99
-                    - 104
-                    - 105
-                    - 116
-                    - 101
-                    - 99
-                    - 116
-                    - 111
                     - 32
                     - 118
                     - 111
@@ -3417,30 +3499,81 @@ components:
                     - 116
                     - 97
                     - 116
-                    - 101
-                    - 109
-                    - 32
+                    - 105
+                    - 98
+                    - 117
                     - 115
+                    - 32
+                    - 97
+                    - 115
+                    - 112
                     - 101
+                    - 114
+                    - 110
+                    - 97
+                    - 116
+                    - 117
+                    - 114
+                    - 32
                     - 100
+                    - 117
+                    - 99
+                    - 105
+                    - 109
+                    - 117
+                    - 115
+                    - 32
+                    - 111
+                    - 109
+                    - 110
+                    - 105
+                    - 115
                     - 46
                 thumbnail_2:
-                    - 80
-                    - 97
-                    - 114
+                    - 86
+                    - 101
+                    - 110
                     - 105
+                    - 97
+                    - 109
+                    - 32
+                    - 112
+                    - 111
+                    - 114
+                    - 114
+                    - 111
+                    - 32
+                    - 99
+                    - 111
+                    - 114
+                    - 114
+                    - 117
+                    - 112
+                    - 116
+                    - 105
+                    - 32
+                    - 118
+                    - 111
+                    - 108
+                    - 117
+                    - 112
+                    - 116
+                    - 97
+                    - 116
+                    - 101
+                    - 115
+                    - 32
+                    - 99
+                    - 111
+                    - 110
+                    - 115
+                    - 101
+                    - 113
+                    - 117
                     - 97
                     - 116
                     - 117
                     - 114
-                    - 32
-                    - 102
-                    - 97
-                    - 99
-                    - 105
-                    - 108
-                    - 105
-                    - 115
                     - 46
                 title: Mona Lisa
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -3524,7 +3657,7 @@ components:
                     type: string
                     description: OpenAPI GroupID string
                     default: PASTEL
-                    example: Sint dolorum cumque illum consectetur unde aut.
+                    example: Eum sed necessitatibus impedit aut repellendus.
                 royalty:
                     type: number
                     description: Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT
@@ -3563,7 +3696,7 @@ components:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Sequi laboriosam sequi vel qui nostrum.
+                open_api_group_id: Pariatur accusamus.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -3586,7 +3719,7 @@ components:
                 match_index:
                     type: integer
                     description: Sort index of the match based on score.This must be used to sort results on UI.
-                    example: 4369210221233051281
+                    example: 8267879701506341356
                     format: int64
                 matches:
                     type: array
@@ -3594,43 +3727,67 @@ components:
                         $ref: '#/components/schemas/FuzzyMatch'
                     description: Match result details
                     example:
-                        - field_type: descr
+                        - field_type: art_title
                           matched_indexes:
-                            - 3022723478944623121
-                            - 6404825768300896153
-                            - 6722310756416767671
-                            - 2970196784894370171
-                          score: 8837067668969045958
-                          str: Suscipit sint ut in.
-                        - field_type: descr
+                            - 6699364159978974132
+                            - 1603365964145601563
+                            - 734622800437223057
+                            - 3072721248117648128
+                          score: 5278752630472728296
+                          str: Et sed praesentium et eos.
+                        - field_type: art_title
                           matched_indexes:
-                            - 3022723478944623121
-                            - 6404825768300896153
-                            - 6722310756416767671
-                            - 2970196784894370171
-                          score: 8837067668969045958
-                          str: Suscipit sint ut in.
+                            - 6699364159978974132
+                            - 1603365964145601563
+                            - 734622800437223057
+                            - 3072721248117648128
+                          score: 5278752630472728296
+                          str: Et sed praesentium et eos.
+                        - field_type: art_title
+                          matched_indexes:
+                            - 6699364159978974132
+                            - 1603365964145601563
+                            - 734622800437223057
+                            - 3072721248117648128
+                          score: 5278752630472728296
+                          str: Et sed praesentium et eos.
+                        - field_type: art_title
+                          matched_indexes:
+                            - 6699364159978974132
+                            - 1603365964145601563
+                            - 734622800437223057
+                            - 3072721248117648128
+                          score: 5278752630472728296
+                          str: Et sed praesentium et eos.
                 nft:
                     $ref: '#/components/schemas/NftSummary'
             example:
-                match_index: 9132095313691362619
+                match_index: 7266064727115744850
                 matches:
-                    - field_type: descr
+                    - field_type: art_title
                       matched_indexes:
-                        - 3022723478944623121
-                        - 6404825768300896153
-                        - 6722310756416767671
-                        - 2970196784894370171
-                      score: 8837067668969045958
-                      str: Suscipit sint ut in.
-                    - field_type: descr
+                        - 6699364159978974132
+                        - 1603365964145601563
+                        - 734622800437223057
+                        - 3072721248117648128
+                      score: 5278752630472728296
+                      str: Et sed praesentium et eos.
+                    - field_type: art_title
                       matched_indexes:
-                        - 3022723478944623121
-                        - 6404825768300896153
-                        - 6722310756416767671
-                        - 2970196784894370171
-                      score: 8837067668969045958
-                      str: Suscipit sint ut in.
+                        - 6699364159978974132
+                        - 1603365964145601563
+                        - 734622800437223057
+                        - 3072721248117648128
+                      score: 5278752630472728296
+                      str: Et sed praesentium et eos.
+                    - field_type: art_title
+                      matched_indexes:
+                        - 6699364159978974132
+                        - 1603365964145601563
+                        - 734622800437223057
+                        - 3072721248117648128
+                      score: 5278752630472728296
+                      str: Et sed praesentium et eos.
                 nft:
                     copies: 1
                     creator_name: Leonardo da Vinci
@@ -3643,63 +3800,72 @@ components:
                     rareness_score: 1
                     series_name: Famous artist
                     thumbnail_1:
-                        - 79
-                        - 109
-                        - 110
+                        - 77
+                        - 111
+                        - 108
+                        - 101
+                        - 115
+                        - 116
                         - 105
+                        - 97
+                        - 101
+                        - 32
+                        - 101
+                        - 111
                         - 115
                         - 32
-                        - 101
                         - 97
-                        - 46
-                    thumbnail_2:
-                        - 65
-                        - 117
-                        - 116
+                        - 109
                         - 101
+                        - 116
+                        - 32
+                        - 110
+                        - 117
+                        - 109
+                        - 113
+                        - 117
+                        - 97
                         - 109
                         - 32
-                        - 117
-                        - 110
-                        - 100
+                        - 97
+                        - 115
+                        - 112
                         - 101
+                        - 114
+                        - 110
+                        - 97
+                        - 116
+                        - 117
+                        - 114
+                        - 46
+                    thumbnail_2:
+                        - 83
+                        - 117
+                        - 115
+                        - 99
+                        - 105
+                        - 112
+                        - 105
+                        - 116
                         - 32
                         - 113
                         - 117
-                        - 111
+                        - 105
                         - 100
-                        - 32
-                        - 118
-                        - 101
-                        - 108
-                        - 32
-                        - 118
-                        - 111
-                        - 108
-                        - 117
-                        - 112
-                        - 116
-                        - 97
-                        - 116
                         - 101
                         - 109
                         - 32
-                        - 101
-                        - 114
-                        - 114
+                        - 100
+                        - 111
+                        - 108
                         - 111
                         - 114
                         - 32
                         - 114
                         - 101
-                        - 105
-                        - 99
-                        - 105
-                        - 101
-                        - 110
-                        - 100
-                        - 105
-                        - 115
+                        - 114
+                        - 117
+                        - 109
                         - 46
                     title: Mona Lisa
                     txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -3776,72 +3942,21 @@ components:
                         - 105
                         - 116
                         - 32
-                        - 101
-                        - 116
-                        - 32
-                        - 114
-                        - 101
-                        - 114
-                        - 117
-                        - 109
-                        - 32
-                        - 101
-                        - 97
-                        - 32
-                        - 101
-                        - 120
-                        - 112
-                        - 101
-                        - 100
-                        - 105
-                        - 116
-                        - 97
-                        - 32
-                        - 118
-                        - 111
-                        - 108
-                        - 117
-                        - 112
-                        - 116
-                        - 97
                         - 115
+                        - 105
+                        - 110
+                        - 116
                         - 46
                     format: binary
                 thumbnail_2:
                     type: string
                     description: Thumbnail_2 image
                     example:
-                        - 77
-                        - 111
-                        - 108
-                        - 101
-                        - 115
-                        - 116
-                        - 105
+                        - 69
                         - 97
-                        - 115
-                        - 32
-                        - 97
-                        - 110
-                        - 105
-                        - 109
-                        - 105
-                        - 32
-                        - 114
-                        - 101
-                        - 114
+                        - 113
                         - 117
-                        - 109
-                        - 32
-                        - 111
-                        - 99
-                        - 99
-                        - 97
                         - 101
-                        - 99
-                        - 97
-                        - 116
-                        - 105
                         - 32
                         - 97
                         - 117
@@ -3853,15 +3968,7 @@ components:
                         - 112
                         - 111
                         - 114
-                        - 97
-                        - 32
-                        - 97
-                        - 108
-                        - 105
-                        - 113
-                        - 117
-                        - 105
-                        - 100
+                        - 101
                         - 46
                     format: binary
                 title:
@@ -3893,87 +4000,89 @@ components:
                 rareness_score: 1
                 series_name: Famous artist
                 thumbnail_1:
-                    - 67
-                    - 111
-                    - 110
-                    - 115
-                    - 101
-                    - 99
-                    - 116
-                    - 101
-                    - 116
-                    - 117
-                    - 114
-                    - 32
-                    - 118
-                    - 111
-                    - 108
-                    - 117
-                    - 112
+                    - 73
                     - 116
                     - 97
-                    - 116
-                    - 101
-                    - 109
-                    - 32
-                    - 101
-                    - 111
-                    - 115
-                    - 32
-                    - 105
-                    - 115
-                    - 116
-                    - 101
-                    - 46
-                thumbnail_2:
-                    - 68
-                    - 101
-                    - 115
-                    - 101
-                    - 114
-                    - 117
-                    - 110
-                    - 116
-                    - 32
-                    - 109
-                    - 111
-                    - 108
-                    - 101
-                    - 115
-                    - 116
-                    - 105
-                    - 97
-                    - 101
-                    - 32
-                    - 104
-                    - 97
-                    - 114
-                    - 117
-                    - 109
-                    - 32
-                    - 110
-                    - 97
-                    - 109
-                    - 32
-                    - 105
-                    - 112
-                    - 115
-                    - 117
-                    - 109
-                    - 32
-                    - 97
-                    - 116
                     - 113
                     - 117
                     - 101
                     - 32
+                    - 114
+                    - 101
+                    - 109
+                    - 32
+                    - 115
+                    - 117
+                    - 115
+                    - 99
+                    - 105
+                    - 112
+                    - 105
                     - 116
-                    - 101
+                    - 32
+                    - 97
+                    - 32
+                    - 108
+                    - 97
+                    - 117
+                    - 100
+                    - 97
                     - 110
+                    - 116
+                    - 105
+                    - 117
+                    - 109
+                    - 32
+                    - 99
+                    - 111
+                    - 110
+                    - 115
                     - 101
+                    - 113
+                    - 117
+                    - 97
                     - 116
                     - 117
                     - 114
+                    - 32
+                    - 110
+                    - 101
+                    - 99
+                    - 101
+                    - 115
+                    - 115
+                    - 105
+                    - 116
+                    - 97
+                    - 116
+                    - 105
+                    - 98
+                    - 117
+                    - 115
+                    - 46
+                thumbnail_2:
+                    - 79
+                    - 102
+                    - 102
+                    - 105
+                    - 99
+                    - 105
+                    - 105
+                    - 115
+                    - 32
+                    - 114
+                    - 97
+                    - 116
+                    - 105
+                    - 111
+                    - 110
+                    - 101
+                    - 32
+                    - 118
+                    - 101
+                    - 108
+                    - 105
+                    - 116
                     - 46
                 title: Mona Lisa
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -4022,7 +4131,7 @@ components:
                     type: array
                     items:
                         type: string
-                        example: Ipsam explicabo velit.
+                        example: Qui voluptate excepturi.
                     description: list of authorized contributors
                     example:
                         - apple
@@ -4174,7 +4283,7 @@ components:
                     type: string
                     description: OpenAPI GroupID string
                     default: PASTEL
-                    example: Qui temporibus quis quisquam aut.
+                    example: Amet ut explicabo modi aut accusantium non.
                 royalty:
                     type: number
                     description: Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT
@@ -4212,7 +4321,7 @@ components:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Fuga ex doloribus doloremque.
+                open_api_group_id: Reiciendis velit voluptatem.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -4261,10 +4370,6 @@ components:
                           status: Task Started
                         - date: 2006-01-02T15:04:05Z07:00
                           status: Task Started
-                        - date: 2006-01-02T15:04:05Z07:00
-                          status: Task Started
-                        - date: 2006-01-02T15:04:05Z07:00
-                          status: Task Started
                 status:
                     type: string
                     description: Status of the registration process
@@ -4274,6 +4379,7 @@ components:
                         - Connected
                         - Validating Duplicate Reg Tickets
                         - Validating Burn Txn
+                        - Burn Txn Validated
                         - Image Probed
                         - Image And Thumbnail Uploaded
                         - Status Gen ReptorQ Symbols
@@ -4292,6 +4398,7 @@ components:
                         - Error Uploading Ticket
                         - Error Activating Ticket
                         - Error Probing Image
+                        - Error checking dd-server availability before probe image
                         - Error Generating DD and Fingerprint IDs
                         - Error comparing suitable storage fee with task request maximum fee
                         - Error balance not sufficient
@@ -4331,6 +4438,10 @@ components:
                       status: Task Started
                     - date: 2006-01-02T15:04:05Z07:00
                       status: Task Started
+                    - date: 2006-01-02T15:04:05Z07:00
+                      status: Task Started
+                    - date: 2006-01-02T15:04:05Z07:00
+                      status: Task Started
                 status: Task Started
                 ticket:
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -4345,7 +4456,7 @@ components:
                     make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
-                    open_api_group_id: Modi est velit minus qui occaecati veritatis.
+                    open_api_group_id: Aliquid dignissimos rerum impedit.
                     royalty: 12
                     series_name: Famous artist
                     spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -4412,12 +4523,12 @@ components:
                     type: string
                     description: OpenAPI GroupID string
                     default: PASTEL
-                    example: Et aut asperiores voluptatibus.
+                    example: Ut quibusdam.
             example:
                 app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-                open_api_group_id: Non iste repellat dolores ut culpa.
+                open_api_group_id: Ipsum quibusdam facilis quos non dignissimos.
             required:
                 - burn_txid
                 - app_pastelid
@@ -4454,8 +4565,7 @@ components:
             example:
                 details:
                     fields:
-                        Nesciunt sit.: Aut voluptatem dolor.
-                        Possimus dolorem ut veritatis vitae eum magni.: Mollitia fugiat.
+                        Cum rerum aliquam occaecati.: Repellendus dolorem cumque perspiciatis libero incidunt.
                     message: Image has been downloaded...
                 message: Balance less than maximum fee provied in the request, could not gather enough confirmations...
                 status: Started, Image Probed, Downloaded...
@@ -4480,6 +4590,7 @@ components:
                         - Connected
                         - Validating Duplicate Reg Tickets
                         - Validating Burn Txn
+                        - Burn Txn Validated
                         - Image Probed
                         - Image And Thumbnail Uploaded
                         - Status Gen ReptorQ Symbols
@@ -4498,6 +4609,7 @@ components:
                         - Error Uploading Ticket
                         - Error Activating Ticket
                         - Error Probing Image
+                        - Error checking dd-server availability before probe image
                         - Error Generating DD and Fingerprint IDs
                         - Error comparing suitable storage fee with task request maximum fee
                         - Error balance not sufficient
@@ -4546,7 +4658,7 @@ components:
                     make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
-                    open_api_group_id: Eius excepturi et sed.
+                    open_api_group_id: Facere enim eum enim.
                     royalty: 12
                     series_name: Famous artist
                     spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -4582,7 +4694,7 @@ components:
                     make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
-                    open_api_group_id: Eius excepturi et sed.
+                    open_api_group_id: Facere enim eum enim.
                     royalty: 12
                     series_name: Famous artist
                     spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -4608,33 +4720,7 @@ components:
                     make_publicly_accessible: false
                     maximum_fee: 100
                     name: Mona Lisa
-                    open_api_group_id: Eius excepturi et sed.
-                    royalty: 12
-                    series_name: Famous artist
-                    spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
-                    thumbnail_coordinate:
-                        bottom_right_x: 640
-                        bottom_right_y: 480
-                        top_left_x: 0
-                        top_left_y: 0
-                    youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-                  txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-                - id: n6Qn6TFM
-                  status: Task Started
-                  ticket:
-                    collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-                    creator_name: Leonardo da Vinci
-                    creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                    creator_website_url: https://www.leonardodavinci.net
-                    description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
-                    green: false
-                    issued_copies: 1
-                    key: Basic abcdef12345
-                    keywords: Renaissance, sfumato, portrait
-                    make_publicly_accessible: false
-                    maximum_fee: 100
-                    name: Mona Lisa
-                    open_api_group_id: Eius excepturi et sed.
+                    open_api_group_id: Facere enim eum enim.
                     royalty: 12
                     series_name: Famous artist
                     spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -4661,6 +4747,7 @@ components:
                         - Connected
                         - Validating Duplicate Reg Tickets
                         - Validating Burn Txn
+                        - Burn Txn Validated
                         - Image Probed
                         - Image And Thumbnail Uploaded
                         - Status Gen ReptorQ Symbols
@@ -4679,6 +4766,7 @@ components:
                         - Error Uploading Ticket
                         - Error Activating Ticket
                         - Error Probing Image
+                        - Error checking dd-server availability before probe image
                         - Error Generating DD and Fingerprint IDs
                         - Error comparing suitable storage fee with task request maximum fee
                         - Error balance not sufficient
@@ -4791,34 +4879,39 @@ components:
                     type: string
                     description: File to upload
                     example:
-                        - 69
-                        - 116
-                        - 32
-                        - 113
+                        - 65
+                        - 99
+                        - 99
                         - 117
-                        - 111
+                        - 115
+                        - 97
+                        - 109
+                        - 117
                         - 115
                         - 32
                         - 97
-                        - 117
-                        - 116
-                        - 101
-                        - 109
-                        - 32
-                        - 115
-                        - 101
-                        - 100
                         - 32
                         - 113
                         - 117
                         - 105
+                        - 32
+                        - 109
+                        - 97
+                        - 105
+                        - 111
+                        - 114
+                        - 101
                         - 115
                         - 32
-                        - 110
                         - 101
-                        - 113
+                        - 116
+                        - 32
+                        - 97
                         - 117
-                        - 101
+                        - 116
+                        - 32
+                        - 117
+                        - 116
                         - 46
                     format: binary
                 filename:
@@ -4826,43 +4919,51 @@ components:
                     description: For internal use
             example:
                 file:
-                    - 68
-                    - 105
-                    - 115
-                    - 116
-                    - 105
-                    - 110
-                    - 99
-                    - 116
-                    - 105
-                    - 111
-                    - 32
-                    - 101
-                    - 111
-                    - 115
-                    - 32
-                    - 101
-                    - 116
-                    - 32
-                    - 101
-                    - 120
-                    - 99
-                    - 101
-                    - 112
-                    - 116
+                    - 78
                     - 117
-                    - 114
-                    - 105
+                    - 108
+                    - 108
+                    - 97
                     - 32
-                    - 116
+                    - 100
+                    - 111
+                    - 108
+                    - 111
+                    - 114
                     - 101
                     - 109
-                    - 112
-                    - 111
-                    - 114
+                    - 32
+                    - 115
                     - 105
-                    - 98
+                    - 110
+                    - 116
+                    - 32
+                    - 113
                     - 117
+                    - 105
+                    - 32
+                    - 105
+                    - 116
+                    - 97
+                    - 113
+                    - 117
+                    - 101
+                    - 32
+                    - 105
+                    - 108
+                    - 108
+                    - 111
+                    - 32
+                    - 100
+                    - 105
+                    - 103
+                    - 110
+                    - 105
+                    - 115
+                    - 115
+                    - 105
+                    - 109
+                    - 111
                     - 115
                     - 46
             required:

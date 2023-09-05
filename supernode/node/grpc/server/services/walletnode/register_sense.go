@@ -125,7 +125,7 @@ func (service *RegisterSense) GetDDDatabaseHash(ctx context.Context, _ *pb.GetDB
 		Hash: hash,
 	}
 
-	log.WithContext(ctx).WithField("hash len", len(hash)).Info("DupeDetection DB hash returned")
+	log.WithContext(ctx).WithField("hash len", len(hash)).Debug("DupeDetection DB hash returned")
 
 	return resp, nil
 }
@@ -151,7 +151,7 @@ func (service *RegisterSense) GetDDServerStats(ctx context.Context, _ *pb.DDServ
 
 // GetTopMNs implements walletnode.RegisterSenseServer.GetTopMNs()
 func (service *RegisterSense) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
-	log.WithContext(ctx).Info("request for mn-top list has been received")
+	log.WithContext(ctx).Debug("request for mn-top list has been received")
 
 	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
@@ -167,7 +167,7 @@ func (service *RegisterSense) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequ
 		MnTopList: mnList,
 	}
 
-	log.WithContext(ctx).WithField("mn-list", mnList).Info("top mn-list has been returned")
+	log.WithContext(ctx).WithField("mn-list", mnList).Debug("top mn-list has been returned")
 	return resp, nil
 }
 

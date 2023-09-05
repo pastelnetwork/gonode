@@ -22,7 +22,7 @@ type Store interface {
 	Delete(ctx context.Context, key []byte)
 
 	// KeysForReplication returns the keys of all data to be replicated across the network
-	GetKeysForReplication(ctx context.Context, from time.Time, to time.Time) [][]byte
+	GetKeysForReplication(ctx context.Context, from time.Time, to time.Time) domain.KeysWithTimestamp
 
 	// Stats returns stats of store
 	Stats(ctx context.Context) (map[string]interface{}, error)
@@ -54,18 +54,18 @@ type Store interface {
 	GetOwnCreatedAt(ctx context.Context) (time.Time, error)
 
 	// StoreBatchRepKeys ...
-	StoreBatchRepKeys(values [][]byte, id string, ip string, port int) error
+	StoreBatchRepKeys(values []string, id string, ip string, port int) error
 
 	// GetAllToDoRepKeys gets all keys that need to be replicated
 	GetAllToDoRepKeys(minAttempts, maxAttempts int) (retKeys domain.ToRepKeys, err error)
 
 	// DeleteRepKey deletes a key from the replication table
-	DeleteRepKey(key []byte) error
+	DeleteRepKey(key string) error
 
 	// UpdateLastSeen updates the last seen time of a node
 	UpdateLastSeen(ctx context.Context, id string) error
 
-	RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchSize int) ([][]byte, error)
+	RetrieveBatchNotExist(ctx context.Context, keys []string, batchSize int) ([]string, error)
 
 	RetrieveBatchValues(ctx context.Context, keys []string) ([][]byte, int, error)
 

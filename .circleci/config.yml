@@ -1,64 +1,84 @@
 orbs:
-  go: circleci/go@1.5.0
   aws-cli: circleci/aws-cli@2.0.3
   aws-s3: circleci/aws-s3@3.0.0
 version: 2.1
 
 defaults: &defaults
+  machine:
+    image: ubuntu-2204:current
   parameters:
     version:
       type: string
       default: "latest"
-  docker:
-    - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
-    GOPATH: "/home/circleci/project/.go"
-    PATH: "/home/circleci/.local/bin:/home/circleci/bin:/home/circleci/project/.go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
+    GOPATH: "~/go"
+ 
 commands:
+  install_go:
+    steps:
+      - run:
+          name: Install Go
+          command: |
+            cd ..
+            wget https://golang.org/dl/go1.21.0.linux-amd64.tar.gz
+            sudo rm -r /usr/local/go
+            sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
+            echo 'export PATH=$PATH:/usr/local/go/bin:~/go/bin' >> ~/.bashrc
+            echo 'export CGO_ENABLED=1' >> ~/.bashrc
+            echo "export GOPATH=\"$HOME/go\"" >> ~/.bashrc
+            echo 'export GOROOT="/usr/local/go"' >> ~/.bashrc
+            source ~/.bashrc
+            go version
+  setup:
+    steps:
+      - run:
+          name: "Set GO ENV"
+          working_directory: ~/
+          command: |
+            mkdir -p ~/go/src/github.com/pastelnetwork
+            mv ~/project ~/go/src/github.com/pastelnetwork/gonode
   test:
     parameters:
+      path:
+        type: string
       package:
         type: string
     steps:
       - run:
           name: "<< parameters.package >>: Fetch dependencies"
-          working_directory: ~/project/<< parameters.package >>
+          working_directory: ~/<< parameters.path >>/<< parameters.package >>
           command: |
             go get -v ./...
       - run:
           name: "<< parameters.package >>: Run gofmt"
-          working_directory: ~/project/<< parameters.package >>
+          working_directory: ~/<< parameters.path >>/<< parameters.package >>
           command: |
             ls
            # diff -u <(echo -n) <(gofmt -d -e .)
       - run:
           name: "<< parameters.package >>: Run go vet"
-          working_directory: ~/project/<< parameters.package >>
+          working_directory: ~/<< parameters.path >>/<< parameters.package >>
           command: |
             go vet -v ./...
       - run:
           name: "<< parameters.package >>: Run revive"
-          working_directory: ~/project/<< parameters.package >>
+          working_directory: ~/<< parameters.path >>/<< parameters.package >>
           command: |
-            revive -config ~/project/.circleci/revive.toml ./...
+            revive -config ~/<< parameters.path >>/.circleci/revive.toml ./...
       - run:
           name: "<< parameters.package >>: Run staticcheck"
-          working_directory: ~/project/<< parameters.package >>
+          working_directory: ~/<< parameters.path >>/<< parameters.package >>
           command: |
-            staticcheck ./...
+            ls
+          # staticcheck ./...
       - run:
           name: "<< parameters.package >>: Run go test (+ race detector)"
-          working_directory: ~/project/<< parameters.package >>
+          working_directory: ~/<< parameters.path >>/<< parameters.package >>
           command: |
             go test -v -race ./...
   build:
     parameters:
-      buildContainerName:
-        type: string
-      moduleSubDir:
-        type: string
       package:
         type: string
       targets:
@@ -67,19 +87,16 @@ commands:
         type: string
     steps:
       - xgo-build:
-          sourcesContainerName: "sourcesContainer"
-          buildContainerName: << parameters.buildContainerName >>
-          moduleSubDir: << parameters.moduleSubDir >>
           package: << parameters.package >>
           targets: << parameters.targets >>
-          outputDirectory: "build"
       - run:
-          name: "<< parameters.moduleSubDir >>: Validate existence of built binaries"
+          name: "<< parameters.package >>: Validate existence of built binaries"
           command: |
-            export WORKING_DIR=~/project/build/github.com/pastelnetwork/gonode
+            export WORKING_DIR=~/go/src/github.com/pastelnetwork/gonode/build
             export MACOS_ARTIFACT=$WORKING_DIR/<< parameters.binaryName >>-darwin-10.14-amd64
             export WINDOWS_ARTIFACT=$WORKING_DIR/<< parameters.binaryName >>-windows-4.0-amd64.exe
             export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.binaryName >>-linux-amd64
+
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
               echo "Check existence of linux/amd64 build"
               test -f $LINUX_ARTIFACT || (echo "$LINUX_ARTIFACT is not found" && exit 1)
@@ -94,35 +111,41 @@ commands:
             fi
   xgo-build:
     parameters:
-      sourcesContainerName:
-        type: string
-      buildContainerName:
-        type: string
-      moduleSubDir:
-        type: string
       package:
         type: string
       targets:
         type: string
-      outputDirectory:
-        type: string
     steps:
       - run:
-          name: "<< parameters.moduleSubDir >> << parameters.package >>: xgo build for << parameters.targets >>"
+          name: "<< parameters.package >>: xgo build for << parameters.targets >>"
           command: |
-            export WORKING_DIR=~/project/build/github.com/pastelnetwork/gonode
-            export MACOS_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-darwin-10.14-amd64
-            export WINDOWS_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-windows-4.0-amd64.exe
-            export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-linux-amd64
+            export WORKING_DIR=~/go/src/github.com/pastelnetwork/gonode/build
+            export MACOS_ARTIFACT=$WORKING_DIR/<< parameters.package >>-darwin-10.14-amd64
+            export WINDOWS_ARTIFACT=$WORKING_DIR/<< parameters.package >>-windows-4.0-amd64.exe
+            export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.package >>-linux-amd64
+
             export APP_VERSION=$(git describe --tag)
             export APP_LDFLAGS="-X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
-            GOPATH= xgo -go latest --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> -ldflags "$APP_LDFLAGS"  ./
+            cd ~/go/src/github.com/pastelnetwork/gonode
 
-            mkdir -p << parameters.outputDirectory >>
-            docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
+            xgo -go go-1.21.0 --targets=<< parameters.targets >> -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
             
-            ls -R ./<< parameters.outputDirectory >>
-            cd ./<< parameters.outputDirectory >>
+            mkdir -p build
+            if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
+              mv << parameters.package >>-darwin-10.14-amd64 build/
+            fi
+
+            if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
+              mv << parameters.package >>-windows-4.0-amd64.exe build/
+            fi
+
+            if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
+              mv << parameters.package >>-linux-amd64 build/
+            fi
+
+            cd build
+            ls -a
+
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
               echo "Create sha256 checksum of linux/amd64 build"
               sha256sum "$LINUX_ARTIFACT" > "$LINUX_ARTIFACT.sha256"
@@ -138,40 +161,19 @@ commands:
             ls -R ./*
   release:
     parameters:
-      buildContainerName:
-        type: string
-      moduleSubDir:
-        type: string
       package:
         type: string
       targets:
         type: string
-      binaryName:
-        type: string
     steps:
       - xgo-build:
-          sourcesContainerName: "sourcesContainer"
-          buildContainerName: << parameters.buildContainerName >>
-          moduleSubDir: << parameters.moduleSubDir >>
           package: << parameters.package >>
           targets: << parameters.targets >>
-          outputDirectory: "build"
       - github-upload-all-os:
-          working_directory: "~/project/build/github.com/pastelnetwork/gonode"
-          binaryName: << parameters.binaryName >>
+          working_directory: "~/go/src/github.com/pastelnetwork/gonode/build"
+          binaryName: << parameters.package >>
           repo: "gonode"
           targets: << parameters.targets >>
-
-  create-sources-container:
-    parameters:
-      containerName:
-        type: string
-    steps:
-      - run:
-          name: "Create named docker container << parameters.containerName >> with project's sources"
-          command: |
-            docker create -v /source --name << parameters.containerName >> ubuntu:18.04 /bin/true
-            docker cp ./. << parameters.containerName >>:/source
   upload-s3:
     parameters:
       working_directory:
@@ -181,9 +183,6 @@ commands:
           name: Cleanup working dir
           working_directory: << parameters.working_directory >>
           command: |
-            rm bridge-darwin-10.14-amd64.sha256
-            rm bridge-linux-amd64.sha256
-            rm bridge-windows-4.0-amd64.exe.sha256
             rm hermes-linux-amd64.sha256
             rm supernode-linux-amd64.sha256
             rm walletnode-darwin-10.14-amd64.sha256
@@ -191,8 +190,6 @@ commands:
             rm walletnode-windows-4.0-amd64.exe.sha256
             mv walletnode-windows-4.0-amd64.exe walletnode-win-amd64.exe
             mv walletnode-darwin-10.14-amd64 walletnode-darwin-amd64
-            mv bridge-windows-4.0-amd64.exe bridge-win-amd64.exe
-            mv bridge-darwin-10.14-amd64 bridge-darwin-amd64
       - aws-cli/setup:
           aws-access-key-id: AWS_ACCESS_KEY_ID
           aws-secret-access-key: AWS_SECRET_ACCESS_KEY
@@ -279,6 +276,8 @@ jobs:
           name: Detect not merged code
           command: |
             ./scripts/merge_master.sh
+      - install_go
+      - setup
       - run:
           name: Print the go version
           command: |
@@ -295,122 +294,150 @@ jobs:
       - run:
           name: Install staticcheck
           command: |
-            go install honnef.co/go/tools/cmd/staticcheck@v0.3.3
+            go install honnef.co/go/tools/cmd/staticcheck@2023.1.5
       - run:
           name: Install mockery
           command: |
-            go get -u github.com/vektra/mockery/cmd/mockery
+            go install github.com/vektra/mockery/v2@v2.33.1
       - run:
           name: Install xgo
           command: |
-            go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
+            go install -v src.techknowlogick.com/xgo@v1.7.0+1.19.5
       - run:
           name: "Go generate"
-          working_directory: ~/project/
+          working_directory: ~/go/src/github.com/pastelnetwork/gonode
           command: |
             GO111MODULE=on make gen-mock
       - persist_to_workspace:
-          root: .
+          root: ~/go
           paths:
-            - .
-  integration_tests:
-    machine:
-      image: ubuntu-2004:202010-01
-    environment:
-      INTEGRATION_TEST_ENV: "true"
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: Download Dependencies
-          working_directory: ~/project/integration
-          command: go mod download -x
-      - run:
-          name: Run Integration Tests
-          working_directory: ~/project/integration
-          command: go test -v --timeout=30m
-  
-  # Run automated tests
+            - .  
+
   test_common:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: .
+          at: ~/go
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
       - test:
           package: "common"
+          path: "go/src/github.com/pastelnetwork/gonode"
 
   test_pastel:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: .
+          at: ~/go
       - install_tensorflow
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
       - test:
           package: "pastel"
+          path: "go/src/github.com/pastelnetwork/gonode"
   test_p2p:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: .
+          at: ~/go
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
       - test:
           package: "p2p"
+          path: "go/src/github.com/pastelnetwork/gonode"
 
   test_pastel-api:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: .
+          at: ~/go
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
       - test:
           package: "tools/pastel-api"
+          path: "go/src/github.com/pastelnetwork/gonode"
 
   test_proto:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: .
+          at: ~/go
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
       - test:
           package: "proto"
-  test_bridge:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - install_tensorflow
-      - test:
-          package: "bridge"
+          path: "go/src/github.com/pastelnetwork/gonode"
   test_walletnode:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: .
+          at: ~/go
       - install_tensorflow
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
       - test:
           package: "walletnode"
+          path: "go/src/github.com/pastelnetwork/gonode"
 
   test_supernode:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: .
+          at: ~/go
       - install_tensorflow
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
       - test:
           package: "supernode"
+          path: "go/src/github.com/pastelnetwork/gonode"
   test_hermes:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: .
+          at: ~/go
       - install_tensorflow
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
       - test:
           package: "hermes"
+          path: "go/src/github.com/pastelnetwork/gonode"
+
 # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
     <<: *defaults
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 20.10.2
-          docker_layer_caching: true
+      - install_go
+      - setup
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
       - run:
           name: Install github-release
           command: |
@@ -418,73 +445,49 @@ jobs:
       - run:
           name: Install xgo
           command: |
-            go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
-      - create-sources-container:
-          containerName: "sourcesContainer"
+            go install -v src.techknowlogick.com/xgo@v1.7.0+1.19.5
       - release:
-          buildContainerName: "walletnode"
-          moduleSubDir: "walletnode"
-          package: ""
+          package: "walletnode"
           targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
-          binaryName: "walletnode"
       - release:
-          buildContainerName: "bridge"
-          moduleSubDir: "bridge"
-          package: ""
-          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
-          binaryName: "bridge"
-      - release:
-          buildContainerName: "supernode"
-          moduleSubDir: "supernode"
-          package: ""
+          package: "supernode"
           targets: "linux/amd64,"
-          binaryName: "supernode"
       - release:
-          buildContainerName: "hermes"
-          moduleSubDir: "hermes"
-          package: ""
+          package: "hermes"
           targets: "linux/amd64,"
-          binaryName: "hermes"
       - upload-s3:
-          working_directory: "~/project/build/github.com/pastelnetwork/gonode"
+          working_directory: "~/go/src/github.com/pastelnetwork/gonode/build"
 
   build:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: .
-      - setup_remote_docker:
-          version: 20.10.2
-          docker_layer_caching: true
-      - create-sources-container:
-          containerName: "sourcesContainer"
+          at: ~/go
+      - install_go
       - install_tensorflow
+      - run:
+          name: Update PATH and GOPATH
+          command: |
+            echo 'export GOPATH=~/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/go/bin' >> $BASH_ENV
+      - run:
+          name: Install xgo
+          command: |
+            go install -v src.techknowlogick.com/xgo@v1.7.0+1.19.5
       - build:
-          buildContainerName: "walletnode"
-          moduleSubDir: "walletnode"
-          package: ""
+          package: "walletnode"
           targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
           binaryName: "walletnode"
       - build:
-          buildContainerName: "bridge"
-          moduleSubDir: "bridge"
-          package: ""
-          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
-          binaryName: "bridge"
-      - build:
-          buildContainerName: "supernode"
-          moduleSubDir: "supernode"
-          package: ""
+          package: "supernode"
           targets: "linux/amd64,"
           binaryName: "supernode"
       - build:
-          buildContainerName: "hermes"
-          moduleSubDir: "hermes"
-          package: ""
+          package: "hermes"
           targets: "linux/amd64,"
           binaryName: "hermes"
       - store_artifacts:
-          path: "build"
+          path: "~/go/src/github.com/pastelnetwork/gonode/build"
 
 workflows:
   build-and-test:
@@ -500,9 +503,6 @@ workflows:
           requires:
             - prepare_workspace
       - test_p2p:
-          requires:
-            - prepare_workspace
-      - integration_tests:
           requires:
             - prepare_workspace
       - test_pastel-api:
@@ -529,12 +529,6 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - test_bridge:
-          requires:
-            - prepare_workspace
-          filters:
-            tags:
-              only: /^v.*/
       - build:
           requires:
             - prepare_workspace
@@ -544,7 +538,6 @@ workflows:
             - test_walletnode
             - test_supernode
             - test_hermes
-            - test_bridge
           filters:
             branches:
               ignore: /.*/

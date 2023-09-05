@@ -1,11 +1,11 @@
 package sqlite
 
 import (
-	"encoding/hex"
+	"testing"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestStoreBatchRepKeys(t *testing.T) {
@@ -34,7 +34,7 @@ func TestStoreBatchRepKeys(t *testing.T) {
 	}
 
 	// Define test data
-	testValues := [][]byte{[]byte("testValue1"), []byte("testValue2")}
+	testValues := []string{"testValue1", "testValue2"}
 	testID := "testID"
 	testIP := "127.0.0.1"
 	testPort := 8080
@@ -54,14 +54,13 @@ func TestStoreBatchRepKeys(t *testing.T) {
 	}
 
 	for _, testValue := range testValues {
-		hkey := hex.EncodeToString(testValue)
 		var res result
-		err = db.Get(&res, "SELECT key, id, ip, port FROM replication_keys WHERE key = ?", hkey)
+		err = db.Get(&res, "SELECT key, id, ip, port FROM replication_keys WHERE key = ?", testValue)
 		if err != nil {
 			t.Fatalf("Failed to retrieve data: %v", err)
 		}
 
-		assert.Equal(t, hkey, res.Key)
+		assert.Equal(t, testValue, res.Key)
 		assert.Equal(t, testID, res.ID)
 		assert.Equal(t, testIP, res.IP)
 		assert.Equal(t, testPort, res.Port)

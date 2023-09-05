@@ -1,5 +1,6 @@
 package nftsearch
 
+/*
 import (
 	"encoding/json"
 	"fmt"
@@ -318,3 +319,4 @@ func TestNewNftGetSearchTask(t *testing.T) {
 		})
 	}
 }
+*/

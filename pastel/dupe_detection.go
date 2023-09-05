@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -126,7 +125,7 @@ func (s DDAndFingerprints) Validate() error {
 // - signature, signature returned is base64 string of signature
 func ExtractCompressSignedDDAndFingerprints(compressed []byte) (*DDAndFingerprints, []byte, []byte, error) {
 	// Decompress compressedSignedDDAndFingerprints
-	decompressedReply, err := zstd.Decompress(nil, compressed)
+	decompressedReply, err := utils.Decompress(compressed)
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("decompress: %w", err)
 	}
@@ -173,7 +172,7 @@ func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []by
 	res = append(res, signature...)
 
 	// Compress it
-	compressed, err := zstd.CompressLevel(nil, res, 22)
+	compressed, err := utils.Compress(res, 4)
 	if err != nil {
 		return nil, errors.Errorf("compress fingerprint data: %w", err)
 	}
@@ -194,7 +193,7 @@ func GetIDFiles(file []byte, ic uint32, max uint32) (ids []string, files [][]byt
 		buffer.WriteByte(SeparatorByte)
 		buffer.WriteString(strconv.Itoa(int(counter)))
 
-		compressedData, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+		compressedData, err := utils.Compress(buffer.Bytes(), 4)
 		if err != nil {
 			return ids, idFiles, errors.Errorf("compress identifiers file: %w", err)
 		}

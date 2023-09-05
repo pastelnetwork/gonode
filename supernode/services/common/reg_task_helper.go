@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -125,7 +124,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 		return nil, nil, errors.Errorf("decode data: %w", err)
 	}
 
-	decData, err := zstd.Decompress(nil, dec)
+	decData, err := utils.Decompress(dec)
 	if err != nil {
 		return nil, nil, errors.Errorf("decompress: %w", err)
 	}

@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -145,7 +144,7 @@ func (h *FingerprintsHandler) GenerateDDAndFingerprintsIDs(_ context.Context, ma
 		return errors.Errorf("get ID Files: %w", err)
 	}
 
-	comp, err := zstd.CompressLevel(nil, ddFpFile, 22)
+	comp, err := utils.Compress(ddFpFile, 4)
 	if err != nil {
 		return errors.Errorf("compress: %w", err)
 	}
