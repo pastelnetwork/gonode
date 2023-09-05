@@ -35,15 +35,15 @@ sn-unit-tests:
 	cd ./bridge && go test -race --timeout=5m ./...
 	cd ./hermes && go test -race --timeout=5m ./...
 gen-mock:
-	rm -r -f ./dupedetection/ddclient/mocks
-	rm -r -f ./p2p/mocks
-	rm -r -f ./pastel/mocks
-	rm -r -f ./raptorq/node/mocks
-	rm -r -f ./bridge/node/mocks
-	rm -r -f ./supernode/node/mocks
-	rm -r -f ./walletnode/node/mocks
-	rm -r -f ./hermes/service/mocks
-	rm -r -f ./hermes/store/mocks
+	# rm -r -f ./dupedetection/ddclient/mocks
+	# rm -r -f ./p2p/mocks
+	# rm -r -f ./pastel/mocks
+	# rm -r -f ./raptorq/node/mocks
+	# rm -r -f ./bridge/node/mocks
+	# rm -r -f ./supernode/node/mocks
+	# rm -r -f ./walletnode/node/mocks
+	# rm -r -f ./hermes/service/mocks
+	# rm -r -f ./hermes/store/mocks
 	cd ./dupedetection/ddclient && go generate ./...
 	cd ./p2p && go generate ./...
 	cd ./common && go generate ./...
@@ -77,7 +77,6 @@ integration-tests:
 build-linux:
 	cd ./supernode && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o supernode
 	cd ./walletnode && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o walletnode
-	cd ./bridge && go get && go build
 	cd ./hermes && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o hermes
 clean-proto:
 	rm -f ./proto/supernode/*.go

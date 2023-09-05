@@ -6,8 +6,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/b85"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 const (
@@ -62,7 +62,7 @@ func (payload *Payload) Decode() error {
 
 	if !(payload.name == PayloadPostQuantumPubKey || payload.name == PayloadEd448PubKey) {
 		var err error
-		raw, err = zstd.Decompress(nil, raw)
+		raw, err = utils.Decompress(raw)
 		if err != nil {
 			return errors.Errorf("decompress: %w", err)
 		}
@@ -77,7 +77,7 @@ func (payload *Payload) Encode() error {
 	raw := payload.raw
 	if !(payload.name == PayloadPostQuantumPubKey || payload.name == PayloadEd448PubKey) {
 		var err error
-		raw, err = zstd.CompressLevel(nil, payload.raw, 22)
+		raw, err = utils.Compress(payload.raw, 4)
 		if err != nil {
 			return errors.Errorf("compress: %w", err)
 		}

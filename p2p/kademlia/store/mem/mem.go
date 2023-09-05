@@ -21,17 +21,8 @@ type Store struct {
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(_ context.Context, _ time.Time, _ time.Time) [][]byte {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-
-	var keys [][]byte
-	for k := range s.data {
-		if time.Now().After(s.replications[k]) {
-			keys = append(keys, []byte(k))
-		}
-	}
-	return keys
+func (s *Store) GetKeysForReplication(_ context.Context, _ time.Time, _ time.Time) domain.KeysWithTimestamp {
+	return nil
 }
 
 // UpdateKeyReplication updates the replication status of the key
@@ -148,7 +139,7 @@ func (s *Store) GetOwnCreatedAt(_ context.Context) (t time.Time, err error) {
 }
 
 // StoreBatchRepKeys ...
-func (s *Store) StoreBatchRepKeys(_ [][]byte, _ string, _ string, _ int) error {
+func (s *Store) StoreBatchRepKeys(_ []string, _ string, _ string, _ int) error {
 	return nil
 }
 
@@ -158,7 +149,7 @@ func (s *Store) GetAllToDoRepKeys(_ int, _ int) (retKeys domain.ToRepKeys, err e
 }
 
 // DeleteRepKey deletes a key from the replication table
-func (s *Store) DeleteRepKey(_ []byte) error {
+func (s *Store) DeleteRepKey(_ string) error {
 	return nil
 }
 
@@ -168,7 +159,7 @@ func (s *Store) UpdateLastSeen(_ context.Context, _ string) error {
 }
 
 // RetrieveBatchNotExist retrieves a batch of keys that do not exist
-func (s *Store) RetrieveBatchNotExist(_ context.Context, _ [][]byte, _ int) ([][]byte, error) {
+func (s *Store) RetrieveBatchNotExist(_ context.Context, _ []string, _ int) ([]string, error) {
 	return nil, nil
 }
 

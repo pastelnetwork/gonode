@@ -3,10 +3,8 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -27,6 +25,21 @@ type nodeReplicationInfo struct {
 	LastSeen       *time.Time `db:"last_seen"`
 }
 
+func (n *nodeReplicationInfo) toDomain() domain.NodeReplicationInfo {
+	return domain.NodeReplicationInfo{
+		LastReplicatedAt: n.LastReplicated,
+		UpdatedAt:        n.UpdatedAt,
+		CreatedAt:        n.CreatedAt,
+		Active:           n.Active,
+		IsAdjusted:       n.Adjusted,
+		IP:               n.IP,
+		Port:             n.Port,
+		ID:               []byte(n.ID),
+		LastSeen:         n.LastSeen,
+	}
+}
+
+/*
 type repKeys struct {
 	Key       string    `db:"key"`
 	UpdatedAt time.Time `db:"updatedAt"`
@@ -50,7 +63,7 @@ func (r repKeys) toDomain() (domain.ToRepKey, error) {
 		ID:        r.ID,
 		Attempts:  r.Attempts,
 	}, nil
-}
+}*/
 
 func (s *Store) migrateReplication() error {
 	replicateQuery := `
@@ -174,28 +187,16 @@ func (s *Store) checkReplicateKeysStore() bool {
 
 // GetAllToDoRepKeys returns all keys that need to be replicated
 func (s *Store) GetAllToDoRepKeys(minAttempts, maxAttempts int) (retKeys domain.ToRepKeys, err error) {
-	var keys []repKeys
+	var keys []domain.ToRepKey
 	if err := s.db.Select(&keys, "SELECT * FROM replication_keys where attempts <= ? AND attempts >= ? LIMIT 5000", maxAttempts, minAttempts); err != nil {
 		return nil, fmt.Errorf("error reading all keys from database: %w", err)
 	}
 
-	retKeys = make(domain.ToRepKeys, 0, len(keys))
-
-	for _, key := range keys {
-		domainKey, err := key.toDomain()
-		if err != nil {
-			return nil, fmt.Errorf("error converting key to domain: %w", err)
-		}
-		retKeys = append(retKeys, domainKey)
-	}
-
-	return retKeys, nil
+	return domain.ToRepKeys(retKeys), nil
 }
 
 // DeleteRepKey will delete a key from the replication_keys table
-func (s *Store) DeleteRepKey(key []byte) error {
-	hkey := hex.EncodeToString(key)
-
+func (s *Store) DeleteRepKey(hkey string) error {
 	res, err := s.db.Exec("DELETE FROM replication_keys WHERE key = ?", hkey)
 	if err != nil {
 		return fmt.Errorf("cannot delete record from replication_keys table by key %s: %v", hkey, err)
@@ -211,7 +212,7 @@ func (s *Store) DeleteRepKey(key []byte) error {
 }
 
 // StoreBatchRepKeys will store a batch of values with their SHA256 hash as the key
-func (s *Store) StoreBatchRepKeys(values [][]byte, id string, ip string, port int) error {
+func (s *Store) StoreBatchRepKeys(values []string, id string, ip string, port int) error {
 	operation := func() error {
 		tx, err := s.db.Beginx()
 		if err != nil {
@@ -225,21 +226,20 @@ func (s *Store) StoreBatchRepKeys(values [][]byte, id string, ip string, port in
 				return fmt.Errorf("statement preparation failed, rollback failed: %v, original error: %w", rollbackErr, err)
 			}
 			return fmt.Errorf("cannot prepare statement: %w", err)
-
 		}
+
 		defer stmt.Close()
 
 		// For each value, calculate its hash and insert into DB
 		now := time.Now().UTC()
 		for i := 0; i < len(values); i++ {
-			hkey := hex.EncodeToString(values[i])
-			r := repKeys{Key: hkey, UpdatedAt: now, ID: id, IP: ip, Port: port}
+			r := domain.ToRepKey{Key: values[i], UpdatedAt: now, ID: id, IP: ip, Port: port}
 
 			// Execute the insert statement
 			_, err = stmt.Exec(r)
 			if err != nil {
 				tx.Rollback()
-				return fmt.Errorf("cannot insert or update replication key record with key %s: %w", hkey, err)
+				return fmt.Errorf("cannot insert or update replication key record with key %s: %w", values[i], err)
 			}
 		}
 
@@ -266,42 +266,32 @@ func (s *Store) StoreBatchRepKeys(values [][]byte, id string, ip string, port in
 // GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time, to time.Time) [][]byte {
-	var keys []string
-	if err := s.db.Select(&keys, `SELECT key FROM data WHERE createdAt > ? and createdAt < ?`, from, to); err != nil {
-		log.P2P().WithError(err).WithContext(ctx).Errorf("failed to get records for replication older than %s", from)
+func (s *Store) GetKeysForReplication(ctx context.Context, from time.Time, to time.Time) domain.KeysWithTimestamp {
+	var results []domain.KeyWithTimestamp
+	query := `SELECT key, createdAt FROM data WHERE createdAt > ? AND createdAt < ? ORDER BY createdAt ASC`
+	if err := s.db.Select(&results, query, from, to); err != nil {
+		log.P2P().WithError(err).WithContext(ctx).Errorf("failed to get records for replication between %s and %s", from, to)
 		return nil
 	}
 
-	retkeys := make([][]byte, len(keys))
-	var wg sync.WaitGroup
-	for i, key := range keys {
-		wg.Add(1)
-		go func(i int, key string) {
-			defer wg.Done()
-			str, err := hex.DecodeString(key)
-			if err != nil {
-				log.WithContext(ctx).WithField("key", key).Error("replicate failed to hex decode key")
-			}
-			retkeys[i] = str
-		}(i, key)
-	}
-
-	wg.Wait()
-	return retkeys
+	return domain.KeysWithTimestamp(results)
 }
 
 // GetAllReplicationInfo returns all records in replication table
 func (s *Store) GetAllReplicationInfo(_ context.Context) ([]domain.NodeReplicationInfo, error) {
 	r := []nodeReplicationInfo{}
-	err := s.db.Select(&r, "SELECT * FROM replication_info")
+	err := s.db.Select(&r, `SELECT * FROM replication_info 
+	ORDER BY 
+		CASE WHEN lastReplicatedAt IS NULL THEN 0 ELSE 1 END,
+		lastReplicatedAt
+	`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get replication info %w", err)
 	}
 
-	list := []domain.NodeReplicationInfo{}
-	for _, v := range r {
-		list = append(list, v.toDomain())
+	list := make([]domain.NodeReplicationInfo, len(r))
+	for i := 0; i < len(r); i++ {
+		list = append(list, r[i].toDomain())
 	}
 
 	return list, nil
@@ -388,14 +378,12 @@ func (s *Store) UpdateIsActive(_ context.Context, id string, isActive bool, isAd
 }
 
 // RetrieveBatchNotExist returns a list of keys (hex-decoded) that do not exist in the table
-func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchSize int) ([][]byte, error) {
-	var nonExistingKeys [][]byte
+func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys []string, batchSize int) ([]string, error) {
 	keyMap := make(map[string]bool)
 
-	// Convert the keys to hex and map them for easier lookups
+	// Convert the keys to map them for easier lookups
 	for i := 0; i < len(keys); i++ {
-		hexKey := hex.EncodeToString(keys[i])
-		keyMap[hexKey] = true
+		keyMap[keys[i]] = true
 	}
 
 	batchCount := (len(keys) + batchSize - 1) / batchSize // Round up division
@@ -413,7 +401,7 @@ func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchS
 
 		for j, key := range batchKeys {
 			placeholders[j] = "?"
-			args[j] = hex.EncodeToString(key)
+			args[j] = key
 		}
 
 		query := fmt.Sprintf(`SELECT key FROM data WHERE key IN (%s)`, strings.Join(placeholders, ","))
@@ -443,12 +431,10 @@ func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys [][]byte, batchS
 	}
 
 	// Convert remaining keys in the map (which do not exist in the DB) to hex-decoded byte slices
+	nonExistingKeys := make([]string, 0, len(keyMap))
 	for key := range keyMap {
-		hexDecodedKey, err := hex.DecodeString(key)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode hex key %s: %w", key, err)
-		}
-		nonExistingKeys = append(nonExistingKeys, hexDecodedKey)
+		nonExistingKeys = append(nonExistingKeys, key)
+
 	}
 
 	return nonExistingKeys, nil

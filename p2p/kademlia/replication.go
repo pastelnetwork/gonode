@@ -143,67 +143,86 @@ func (s *DHT) Replicate(ctx context.Context) {
 		}
 	}
 
-	to := time.Now()
 	repInfo, err := s.store.GetAllReplicationInfo(ctx)
 	if err != nil {
 		log.P2P().WithContext(ctx).WithError(err).Errorf("get all replicationInfo failed")
+		return
+	}
+
+	if len(repInfo) == 0 {
+		log.P2P().WithContext(ctx).Info("no replication info found")
+		return
+	}
+
+	from := historicStart
+	if repInfo[0].LastReplicatedAt != nil {
+		from = *repInfo[0].LastReplicatedAt
+	}
+
+	log.P2P().WithContext(ctx).WithField("from", from).Info("getting all possible replication keys")
+	to := time.Now()
+	replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
+
+	ignores := s.ignorelist.ToNodeList()
+	closestContactsMap := make(map[string][][]byte)
+
+	for i := 0; i < len(replicationKeys); i++ {
+		self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
+		decKey, _ := hex.DecodeString(replicationKeys[i].Key)
+		closestContactsMap[replicationKeys[i].Key] = s.ht.closestContactsWithInlcudingNode(Alpha, decKey, ignores, self).NodeIDs()
 	}
 
 	for _, info := range repInfo {
 		if !info.Active {
-			s.checkAndAdjustNode(ctx, info)
+			s.checkAndAdjustNode(ctx, info, historicStart)
 			continue
 		}
 
 		logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", string(info.ID))
-		from := historicStart
+
+		start := historicStart
 		if info.LastReplicatedAt != nil {
-			from = *info.LastReplicatedAt
+			start = *info.LastReplicatedAt
 		}
 
-		logEntry.WithField("from", from).WithField("to", to).Info("getting replication keys")
-		replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
-
-		if len(replicationKeys) == 0 {
+		idx := replicationKeys.FindFirstAfter(start)
+		if idx == -1 {
 			// Now closestContactKeys contains all the keys that are in the closest contacts.
 			if err := s.updateLastReplicated(ctx, info.ID, to); err != nil {
 				logEntry.Error("replicate update lastReplicated failed")
 			} else {
-				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("fetch-keys", 0).Debug("replicate update lastReplicated success")
+				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("fetch-keys", 0).Info("no replication keys - replicate update lastReplicated success")
 			}
 
 			continue
 		}
-
-		logEntry.WithField("len-rep-keys", len(replicationKeys)).Info("count of replication keys to be checked")
+		countToSendKeys := len(replicationKeys) - idx
+		logEntry.WithField("len-rep-keys", countToSendKeys).Info("count of replication keys to be checked")
 		// Preallocate a slice with a capacity equal to the number of keys.
-		closestContactKeys := make([][]byte, 0, len(replicationKeys))
-		for i := 0; i < len(replicationKeys); i++ {
-			key := replicationKeys[i]
-			ignores := s.ignorelist.ToNodeList()
-			n := &Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
+		closestContactKeys := make([]string, 0, countToSendKeys)
 
-			self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
-			nodeList := s.ht.closestContactsWithInlcudingNode(Alpha, key, ignores, self)
-
-			if nodeList.Exists(n) {
-				// the node is supposed to hold this key as it's in the 6 closest contacts
-				closestContactKeys = append(closestContactKeys, key)
+		for i := idx; i < len(replicationKeys); i++ {
+			for j := 0; j < len(closestContactsMap[replicationKeys[i].Key]); j++ {
+				if bytes.Equal(closestContactsMap[replicationKeys[i].Key][j], info.ID) {
+					// the node is supposed to hold this key as it's in the 6 closest contacts
+					closestContactKeys = append(closestContactKeys, replicationKeys[i].Key)
+				}
 			}
 		}
+
 		logEntry.WithField("len-rep-keys", len(closestContactKeys)).Info("closest contact keys count")
 
 		if len(closestContactKeys) == 0 {
 			if err := s.updateLastReplicated(ctx, info.ID, to); err != nil {
 				logEntry.Error("replicate update lastReplicated failed")
 			} else {
-				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("closest-contact-keys", 0).Info("replicate update lastReplicated success")
+				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("closest-contact-keys", 0).Info("no closest keys found - replicate update lastReplicated success")
 			}
 
 			continue
 		}
 
-		data, err := compressKeys(closestContactKeys)
+		data, err := compressKeysStr(closestContactKeys)
 		if err != nil {
 			logEntry.WithField("len-rep-keys", len(closestContactKeys)).WithError(err).Error("unable to compress keys - replication failed")
 			continue
@@ -268,13 +287,13 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 	}
 
 	nodeKeysMap := make(map[string][]string)
-	for _, key := range replicationKeys {
+	for i := 0; i < len(replicationKeys); i++ {
 
 		offNode := &Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
 
 		// get closest contacts to the key
-		nodeList := s.ht.closestContactsWithInlcudingNode(Alpha, key, updatedIgnored, offNode)
-
+		key, _ := hex.DecodeString(replicationKeys[i].Key)
+		nodeList := s.ht.closestContactsWithInlcudingNode(Alpha+1, key, updatedIgnored, offNode) // +1 because we want to include the node we are adjusting
 		// check if the node that is gone was supposed to hold the key
 		if !nodeList.Exists(offNode) {
 			// the node is not supposed to hold this key as its not in 6 closest contacts
@@ -288,11 +307,9 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 
 			// If the node is supposed to hold the key, we map the node's info to the key
 			nodeInfo := generateKeyFromNode(nodeList.Nodes[i])
-			// convert key to string representation
-			keyString := hex.EncodeToString(key)
 
 			// append the key to the list of keys that the node is supposed to have
-			nodeKeysMap[nodeInfo] = append(nodeKeysMap[nodeInfo], keyString)
+			nodeKeysMap[nodeInfo] = append(nodeKeysMap[nodeInfo], replicationKeys[i].Key)
 
 		}
 	}
@@ -311,20 +328,9 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 			return fmt.Errorf("failed to parse node info from key: %w", err)
 		}
 
-		// Convert the hexadecimal string keys back to byte slices
-		byteKeys := make([][]byte, len(keys))
-		for i, key := range keys {
-			byteKey, err := hex.DecodeString(key)
-			if err != nil {
-				logEntry.WithError(err).Errorf("Failed to decode key: %s", key)
-				return fmt.Errorf("failed to decode key: %s: %w", key, err)
-			}
-			byteKeys[i] = byteKey
-		}
-
-		data, err := compressKeys(byteKeys)
+		data, err := compressKeysStr(keys)
 		if err != nil {
-			logEntry.WithField("adjust-rep-keys", len(byteKeys)).WithError(err).Error("unable to compress keys - adjust keys failed")
+			logEntry.WithField("adjust-rep-keys", len(keys)).WithError(err).Error("unable to compress keys - adjust keys failed")
 			return fmt.Errorf("unable to compress keys - adjust keys failed: %w", err)
 		}
 
@@ -389,11 +395,11 @@ func isNodeGoneAndShouldBeAdjusted(lastSeen *time.Time, isAlreadyAdjusted bool) 
 	return time.Since(*lastSeen) > nodeShowUpDeadline && !isAlreadyAdjusted
 }
 
-func (s *DHT) checkAndAdjustNode(ctx context.Context, info domain.NodeReplicationInfo) {
+func (s *DHT) checkAndAdjustNode(ctx context.Context, info domain.NodeReplicationInfo, start time.Time) {
 	logEntry := log.P2P().WithContext(ctx).WithField("rep-ip", info.IP).WithField("rep-id", string(info.ID))
 	adjustNodeKeys := isNodeGoneAndShouldBeAdjusted(info.LastSeen, info.IsAdjusted)
 	if adjustNodeKeys {
-		if err := s.adjustNodeKeys(ctx, info.CreatedAt, info); err != nil {
+		if err := s.adjustNodeKeys(ctx, start, info); err != nil {
 			logEntry.WithError(err).Error("failed to adjust node keys")
 		} else {
 			info.IsAdjusted = true

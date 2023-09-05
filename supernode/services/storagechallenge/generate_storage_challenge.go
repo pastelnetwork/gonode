@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"math"
 	"math/big"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/mkmik/argsort"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -212,7 +213,7 @@ func (task *SCTask) sendProcessStorageChallenge(ctx context.Context, challengeMe
 			}
 			logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
 
-			if err := task.SendMessage(ctx, msg, node.ExtAddress); err != nil {
+			if err := task.SendMessage(ctx, &msg, node.ExtAddress); err != nil {
 				logger.WithError(err).Error("error sending storage challenge message for processing")
 				return
 			}
@@ -223,7 +224,7 @@ func (task *SCTask) sendProcessStorageChallenge(ctx context.Context, challengeMe
 	wg.Wait()
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Info("challenge message has been sent to observers")
 
-	if err := task.SendMessage(ctx, msg, recipientNode.ExtAddress); err != nil {
+	if err := task.SendMessage(ctx, &msg, recipientNode.ExtAddress); err != nil {
 		log.WithContext(ctx).WithField("node_address", recipientNode.ExtAddress).WithError(err).Error("error sending storage challenge message to recipient for processing")
 		return err
 	}
@@ -365,7 +366,7 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 }
 
 // SendMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
-func (task *SCTask) SendMessage(ctx context.Context, challengeMessage pb.StorageChallengeMessage, processingSupernodeAddr string) error {
+func (task *SCTask) SendMessage(ctx context.Context, challengeMessage *pb.StorageChallengeMessage, processingSupernodeAddr string) error {
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending storage challenge to processing supernode address: " + processingSupernodeAddr)
 
 	//Connect over grpc
@@ -381,9 +382,9 @@ func (task *SCTask) SendMessage(ctx context.Context, challengeMessage pb.Storage
 
 	switch challengeMessage.MessageType {
 	case pb.StorageChallengeMessage_MessageType_STORAGE_CHALLENGE_CHALLENGE_MESSAGE:
-		return storageChallengeIF.ProcessStorageChallenge(ctx, &challengeMessage)
+		return storageChallengeIF.ProcessStorageChallenge(ctx, challengeMessage)
 	case pb.StorageChallengeMessage_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE:
-		return storageChallengeIF.VerifyStorageChallenge(ctx, &challengeMessage)
+		return storageChallengeIF.VerifyStorageChallenge(ctx, challengeMessage)
 
 	default:
 		log.WithContext(ctx).Info("message type not supported by any Process & Verify worker")

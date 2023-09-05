@@ -8,6 +8,7 @@ import (
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 const (
@@ -133,7 +134,7 @@ func encode(message *Message) ([]byte, error) {
 		return nil, err
 	}
 
-	if buf.Len() > defaultMaxPayloadSize {
+	if utils.BytesIntToMB(buf.Len()) > defaultMaxPayloadSize {
 		return nil, errors.New("payload too big")
 	}
 
@@ -162,7 +163,7 @@ func decode(conn io.Reader) (*Message, error) {
 		return nil, errors.Errorf("parse header length: %w", err)
 	}
 
-	if length > defaultMaxPayloadSize {
+	if utils.BytesToMB(length) > defaultMaxPayloadSize {
 		return nil, errors.New("payload too big")
 	}
 

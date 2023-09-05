@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/files"
@@ -918,7 +917,7 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 				base64.StdEncoding.EncodeToString(tc.args.ddSig[1]) + "." +
 				base64.StdEncoding.EncodeToString(tc.args.ddSig[2])
 
-			compressedDd, err := zstd.CompressLevel(nil, []byte(ddStr), 22)
+			compressedDd, err := utils.Compress([]byte(ddStr), 4)
 			assert.Nil(t, err)
 			dd = utils.B64Encode(compressedDd)
 			ticketData := &pastel.APISenseTicket{

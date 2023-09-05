@@ -2,9 +2,10 @@ package walletnode
 
 import (
 	"context"
-	"google.golang.org/grpc"
 	"io"
 	"runtime/debug"
+
+	"google.golang.org/grpc"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -183,7 +184,7 @@ func (service *RegisterCollection) SendCollectionTicketForSignature(ctx context.
 
 // GetTopMNs implements walletnode.RegisterCollectionServer.GetTopMNs()
 func (service *RegisterCollection) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
-	log.WithContext(ctx).Info("request for mn-top list has been received")
+	log.WithContext(ctx).Debug("request for mn-top list has been received")
 
 	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
@@ -199,7 +200,7 @@ func (service *RegisterCollection) GetTopMNs(ctx context.Context, _ *pb.GetTopMN
 		MnTopList: mnList,
 	}
 
-	log.WithContext(ctx).WithField("mn-list", mnList).Info("top mn-list has been returned")
+	log.WithContext(ctx).WithField("mn-list", mnList).Debug("top mn-list has been returned")
 	return resp, nil
 }
 

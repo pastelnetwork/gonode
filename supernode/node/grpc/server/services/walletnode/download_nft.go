@@ -117,7 +117,7 @@ func (service *DownloadNft) DownloadDDAndFingerprints(ctx context.Context, req *
 
 // GetTopMNs implements walletnode.downloadNFT.GetTopMNs()
 func (service *DownloadNft) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
-	log.WithContext(ctx).Info("request for mn-top list has been received")
+	log.WithContext(ctx).Debug("request for mn-top list has been received")
 
 	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
@@ -133,7 +133,7 @@ func (service *DownloadNft) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsReques
 		MnTopList: mnList,
 	}
 
-	log.WithContext(ctx).WithField("mn-list", mnList).Info("top mn-list has been returned")
+	log.WithContext(ctx).WithField("mn-list", mnList).Debug("top mn-list has been returned")
 	return resp, nil
 }
 

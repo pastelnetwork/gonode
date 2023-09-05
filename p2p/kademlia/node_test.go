@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"strings"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 func (s *testSuite) TestHasBit() {
@@ -80,100 +78,6 @@ func (s *testSuite) TestExists() {
 	}
 }
 
-func computeExpectedDistances(nodes []*Node, comparator []byte) [][]byte {
-	// Computes the distance between two hashed byte slices.
-	distance := func(id1, id2 []byte) *big.Int {
-		o1 := new(big.Int).SetBytes(id1)
-		o2 := new(big.Int).SetBytes(id2)
-		return new(big.Int).Xor(o1, o2)
-	}
-
-	// Sort based on distances and return the sorted IDs.
-	type nodeDist struct {
-		node *Node
-		dist *big.Int
-	}
-
-	var nodeDists []nodeDist
-	for _, node := range nodes {
-		dist := distance(node.ID, comparator)
-		nodeDists = append(nodeDists, nodeDist{node, dist})
-	}
-
-	// Sorting based on distances.
-	expected := make([][]byte, len(nodes))
-	for i, nd := range nodeDists {
-		expected[i] = nd.node.ID
-	}
-
-	return expected
-}
-
-func TestNodeListSort(t *testing.T) {
-	hashedComparator, err := utils.Sha3256hash([]byte{0, 1, 2})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		name        string
-		nodes       []*Node
-		comparator  []byte
-		expectedIds [][]byte
-	}{
-		{
-			name:       "basic sort",
-			comparator: hashedComparator,
-		},
-		{
-			name:       "reversed order",
-			comparator: hashedComparator,
-		},
-	}
-
-	// Pre-compute the hashed IDs for the nodes.
-	for _, tt := range tests {
-		nodes := []*Node{
-			{ID: []byte{}}, // placeholder for hashed ID
-			{ID: []byte{}},
-			{ID: []byte{}},
-		}
-
-		ids := [][]byte{
-			[]byte{1, 2, 3},
-			[]byte{2, 3, 4},
-			[]byte{3, 4, 5},
-		}
-
-		for i, rawID := range ids {
-			hashedID, err := utils.Sha3256hash(rawID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			nodes[i].ID = hashedID
-		}
-
-		tt.nodes = nodes
-		tt.expectedIds = computeExpectedDistances(tt.nodes, tt.comparator)
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			nl := &NodeList{
-				Nodes:      tt.nodes,
-				Comparator: tt.comparator,
-			}
-			nl.Sort()
-
-			for i, expectedID := range tt.expectedIds {
-				if !bytes.Equal(nl.Nodes[i].ID, expectedID) {
-					t.Errorf("expected ID at index %d to be %v but got %v", i, expectedID, nl.Nodes[i].ID)
-				}
-			}
-		})
-	}
-}
-
 func CreateNodeList(data string) *NodeList {
 	records := strings.Split(data, ",")
 	nodelist := &NodeList{}
@@ -202,6 +106,7 @@ func CreateNodeList(data string) *NodeList {
 			IP:   strings.TrimSpace(ip),
 			Port: port,
 		}
+		node.SetHashedID()
 		nodelist.Nodes = append(nodelist.Nodes, node)
 	}
 

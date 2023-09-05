@@ -4,14 +4,16 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"time"
+
+	"sync"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"golang.org/x/crypto/sha3"
-	"sync"
-	"time"
 )
 
 // ProcessStorageChallenge consists of:
@@ -200,7 +202,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 
 			logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
 
-			if err := task.SendMessage(ctx, msg, node.ExtAddress); err != nil {
+			if err := task.SendMessage(ctx, &msg, node.ExtAddress); err != nil {
 				logger.WithError(err).Error("error sending storage challenge message for processing")
 				return
 			}
@@ -211,7 +213,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	wg.Wait()
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Info("response message has been sent to observers")
 
-	if err := task.SendMessage(ctx, msg, challengerNode.ExtAddress); err != nil {
+	if err := task.SendMessage(ctx, &msg, challengerNode.ExtAddress); err != nil {
 		log.WithContext(ctx).WithField("node_address", challengerNode.ExtAddress).WithError(err).Error("error sending response message to challenger for verification")
 		return err
 	}

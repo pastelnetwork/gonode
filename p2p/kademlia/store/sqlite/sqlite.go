@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
-
 	"github.com/pastelnetwork/gonode/common/log"
 
 	"github.com/cenkalti/backoff"
@@ -253,20 +251,6 @@ func (s *Store) startCheckpointWorker(ctx context.Context) {
 			return
 		default:
 		}
-	}
-}
-
-func (n *nodeReplicationInfo) toDomain() domain.NodeReplicationInfo {
-	return domain.NodeReplicationInfo{
-		LastReplicatedAt: n.LastReplicated,
-		UpdatedAt:        n.UpdatedAt,
-		CreatedAt:        n.CreatedAt,
-		Active:           n.Active,
-		IsAdjusted:       n.Adjusted,
-		IP:               n.IP,
-		Port:             n.Port,
-		ID:               []byte(n.ID),
-		LastSeen:         n.LastSeen,
 	}
 }
 

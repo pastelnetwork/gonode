@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 
@@ -715,7 +714,7 @@ func makeDDAndFpFile() []byte {
 	buffer.WriteByte(46)
 	buffer.WriteString(strconv.Itoa(55))
 
-	compressedData, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+	compressedData, err := utils.Compress(buffer.Bytes(), 4)
 	if err != nil {
 		fmt.Println("Failed to compress a dd and fp file")
 		return nil

@@ -219,7 +219,7 @@ func (task *SCTask) getAffirmationFromObservers(ctx context.Context, challengeMe
 		return nil, err
 	}
 
-	return task.processEvaluationResults(ctx, nodesToConnect, evaluationMsg), nil
+	return task.processEvaluationResults(ctx, nodesToConnect, &evaluationMsg), nil
 }
 
 // prepareEvaluationMessage prepares the evaluation message by gathering the data required for it
@@ -246,7 +246,7 @@ func (task *SCTask) prepareEvaluationMessage(ctx context.Context, challengeMessa
 }
 
 // processEvaluationResults simply sends an evaluation msg, receive an evaluation result and process the results
-func (task *SCTask) processEvaluationResults(ctx context.Context, nodesToConnect []pastel.MasterNode, evaluationMsg pb.StorageChallengeMessage) (affirmations map[string]types.Message) {
+func (task *SCTask) processEvaluationResults(ctx context.Context, nodesToConnect []pastel.MasterNode, evaluationMsg *pb.StorageChallengeMessage) (affirmations map[string]types.Message) {
 	affirmations = make(map[string]types.Message)
 
 	var wg sync.WaitGroup
@@ -293,7 +293,7 @@ func (task *SCTask) processEvaluationResults(ctx context.Context, nodesToConnect
 }
 
 // sendEvaluationMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
-func (task SCTask) sendEvaluationMessage(ctx context.Context, challengeMessage pb.StorageChallengeMessage, processingSupernodeAddr string) (*types.Message, error) {
+func (task SCTask) sendEvaluationMessage(ctx context.Context, challengeMessage *pb.StorageChallengeMessage, processingSupernodeAddr string) (*types.Message, error) {
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending evaluation message to supernode address: " + processingSupernodeAddr)
 
 	//Connect over grpc
@@ -311,7 +311,7 @@ func (task SCTask) sendEvaluationMessage(ctx context.Context, challengeMessage p
 
 	storageChallengeIF := nodeClientConn.StorageChallenge()
 
-	affirmationResult, err := storageChallengeIF.VerifyEvaluationResult(ctx, &challengeMessage)
+	affirmationResult, err := storageChallengeIF.VerifyEvaluationResult(ctx, challengeMessage)
 	if err != nil {
 		log.WithContext(ctx).
 			WithField("challengeID", challengeMessage.ChallengeId).

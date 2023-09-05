@@ -126,7 +126,7 @@ func (service *RegisterNft) GetDDDatabaseHash(ctx context.Context, _ *pb.GetDBHa
 		Hash: hash,
 	}
 
-	log.WithContext(ctx).WithField("hash len", len(hash)).Info("DupeDetection DB hash returned")
+	log.WithContext(ctx).WithField("hash len", len(hash)).Debug("DupeDetection DB hash returned")
 
 	return resp, nil
 }
@@ -152,7 +152,7 @@ func (service *RegisterNft) GetDDServerStats(ctx context.Context, _ *pb.DDServer
 
 // GetTopMNs implements walletnode.RegisterNFTServer.GetTopMNs()
 func (service *RegisterNft) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
-	log.WithContext(ctx).Info("request for mn-top list has been received")
+	log.WithContext(ctx).Debug("request for mn-top list has been received")
 
 	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
@@ -168,7 +168,7 @@ func (service *RegisterNft) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsReques
 		MnTopList: mnList,
 	}
 
-	log.WithContext(ctx).WithField("mn-list", mnList).Info("top mn-list has been returned")
+	log.WithContext(ctx).WithField("mn-list", mnList).Debug("top mn-list has been returned")
 	return resp, nil
 }
 

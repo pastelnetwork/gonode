@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/google/uuid"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +20,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -178,7 +178,7 @@ func TestTaskRun(t *testing.T) {
 
 			// prepare task
 			fg := []float64{0.1, 0, 2}
-			compressedFg, err := zstd.CompressLevel(nil, float64SliceToBytes(fg), 22)
+			compressedFg, err := utils.Compress(float64SliceToBytes(fg), 4)
 			assert.Nil(t, err)
 			testCase.args.fingerPrint = compressedFg
 

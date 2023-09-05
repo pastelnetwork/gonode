@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -57,7 +56,7 @@ func NewSHTask(service *SHService) *SHTask {
 }
 
 func (task *SHTask) getRQSymbolIDs(ctx context.Context, id string, rqIDsData []byte) (rqIDs []string, err error) {
-	fileContent, err := zstd.Decompress(nil, rqIDsData)
+	fileContent, err := utils.Decompress(rqIDsData)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Decompress compressed symbol IDs file failed")
 	}

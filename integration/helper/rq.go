@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -42,7 +41,7 @@ func (file *RawSymbolIDFile) GetIDFile() ([]byte, error) {
 	buffer.WriteByte(46)
 	buffer.WriteString(strconv.Itoa(55))
 
-	compressedData, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+	compressedData, err := utils.Compress(buffer.Bytes(), 4)
 	if err != nil {
 		return nil, errors.Errorf("compress identifiers file: %w", err)
 	}

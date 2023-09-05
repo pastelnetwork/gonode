@@ -8,7 +8,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 
-	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -134,7 +133,7 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 			continue
 		}
 
-		decompressedData, err := zstd.Decompress(nil, file)
+		decompressedData, err := utils.Decompress(file)
 		if err != nil {
 			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
 			continue
@@ -402,7 +401,7 @@ func (task *NftDownloadingTask) decodeRegTicket(nftRegTicket *pastel.RegTicket) 
 }
 
 func (task *NftDownloadingTask) getRQSymbolIDs(ctx context.Context, id string, rqIDsData []byte) (rqIDs []string, err error) {
-	fileContent, err := zstd.Decompress(nil, rqIDsData)
+	fileContent, err := utils.Decompress(rqIDsData)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", id).Warn("Decompress compressed symbol IDs file failed")
 		task.UpdateStatus(common.StatusSymbolFileInvalid)
