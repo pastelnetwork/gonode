@@ -113,13 +113,13 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes, []string{})
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
-		return 0, "", errors.Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
+		return 0, "", errors.Errorf("failed validating of %d SNs: %w", m.minNumberSuperNodes, err)
 	}
 
 	meshedNodes, err := m.setMesh(ctx, connectedNodes, m.minNumberSuperNodes)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("req-id", m.logRequestID).Errorf("failed setting up Mesh of %d SNs from %d SNs", m.minNumberSuperNodes, len(connectedNodes))
-		return 0, "", errors.Errorf("failed setting up Mesh of %d SNs from %d SNs", m.minNumberSuperNodes, len(connectedNodes))
+		return 0, "", errors.Errorf("failed setting up Mesh of %d SNs from %d SNs %w", m.minNumberSuperNodes, len(connectedNodes), err)
 	}
 	m.Nodes = meshedNodes
 
@@ -519,41 +519,77 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 }
 
 // GetCandidateNodes getTopNodes from SNs and select candidateNodes that agrees with WN Top Nodes List
-func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList SuperNodeList) (candidateNodes SuperNodeList, err error) {
+func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList SuperNodeList) (SuperNodeList, error) {
+	maxOutliers := 3
+	minRequiredNodes := 3
+	minRequiredCommonIPs := 5
+	itemCount := make(map[string]int)
+	peerNodeList := make(map[string][]string)
+	var err error
+
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
 		PassPhrase: m.passphrase,
 		Algorithm:  pastel.SignAlgorithmED448,
 	}
 
-	WNTopNodesHash, err := getWNTopNodesHash(WNTopNodesList)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error retrieving hash for WN top nodes")
+	for _, localNode := range WNTopNodesList {
+		itemCount[localNode.Address()] = 0
 	}
 
+	badPeers := 0
 	log.WithContext(ctx).Info("getting candidate nodes")
 	for _, someNode := range WNTopNodesList {
-		logger := log.WithContext(ctx).WithField("address", someNode.Address())
+		someNodeIP := someNode.Address()
+		log.WithContext(ctx).WithField("address", someNodeIP)
 
-		snTopNodesList, err := m.GetTopMNsListFromSN(ctx, *someNode, secInfo)
+		peerNodeList[someNodeIP], err = m.GetTopMNsListFromSN(ctx, *someNode, secInfo)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list from SN")
+			badPeers++
 			continue
 		}
 
-		SNTopNodesHash, err := sortIPsAndGenerateHash(snTopNodesList)
-		if err != nil {
-			logger.WithError(err).Error("error calculating hash for top mns")
-			continue
+		for _, topNodeIP := range peerNodeList[someNodeIP] {
+			itemCount[topNodeIP]++
 		}
+	}
 
-		if WNTopNodesHash == SNTopNodesHash {
-			logger.Info("SN agrees with WN top mns list")
+	// SNs DDoS protection
+	if badPeers > maxOutliers {
+		return nil, fmt.Errorf("failed to get mn-top lists from %d SNs", badPeers)
+	}
+
+	candidateNodes := SuperNodeList{}
+	for _, someNode := range WNTopNodesList {
+		someNodeIP := someNode.Address()
+		count := itemCount[someNodeIP]
+		if count >= len(WNTopNodesList)-maxOutliers {
 			candidateNodes = append(candidateNodes, someNode)
 		}
 	}
 
-	return candidateNodes, nil
+	finalCandidateNodes := SuperNodeList{}
+	for _, someNode := range WNTopNodesList {
+		someNodeIP := someNode.Address()
+		commonCount := 0
+		for _, remoteNodeIP := range peerNodeList[someNodeIP] {
+			// check if the IP from the remote node is in the candidate list and often enough (>=7)
+			if itemCount[remoteNodeIP] >= len(WNTopNodesList)-maxOutliers {
+				commonCount++
+			}
+		}
+
+		if commonCount >= minRequiredCommonIPs {
+			finalCandidateNodes = append(finalCandidateNodes, someNode)
+		}
+	}
+
+	if len(finalCandidateNodes) < minRequiredNodes {
+		return nil, fmt.Errorf("failed to find at least 3 common SNs in mn-top lists from current top MNs")
+	}
+
+	return finalCandidateNodes, nil
 }
 
 // GetTopMNsListFromSN retrieves the MN top list from the given SN
