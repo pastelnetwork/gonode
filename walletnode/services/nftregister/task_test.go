@@ -106,15 +106,16 @@ func TestTaskRun(t *testing.T) {
 				networkFee: 0.4,
 				masterNodes: pastel.MasterNodes{
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
-					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
+					pastel.MasterNode{ExtAddress: "127.0.0.2:4444", ExtKey: "2"},
+					pastel.MasterNode{ExtAddress: "127.0.0.3:4444", ExtKey: "3"},
 				},
-				getTopMNsReply: &pb.GetTopMNsReply{MnTopList: []string{"127.0.0.1:4444", "127.0.0.1:4446", "127.0.0.1:4447"}},
-				primarySessID:  "sesid1",
-				pastelIDS:      []string{"2", "3"},
-				fingerPrint:    []byte("match"),
-				signature:      []byte("sign"),
-				returnErr:      nil,
+				getTopMNsReply: &pb.GetTopMNsReply{MnTopList: []string{"127.0.0.1:4444", "127.0.0.2:4444", "127.0.0.3:4444", "127.0.0.1:4448", "127.0.0.1:4449",
+					"127.0.0.1:4440", "127.0.0.1:4441", "127.0.0.1:4442", "127.0.0.1:4443", "127.0.0.1:4445"}},
+				primarySessID: "sesid1",
+				pastelIDS:     []string{"2", "3"},
+				fingerPrint:   []byte("match"),
+				signature:     []byte("sign"),
+				returnErr:     nil,
 				encodeInfoReturns: &rqnode.EncodeInfo{
 					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
 						"test-file": {
