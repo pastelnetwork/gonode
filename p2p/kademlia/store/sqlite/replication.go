@@ -186,13 +186,13 @@ func (s *Store) checkReplicateKeysStore() bool {
 }
 
 // GetAllToDoRepKeys returns all keys that need to be replicated
-func (s *Store) GetAllToDoRepKeys(minAttempts, maxAttempts int) (retKeys domain.ToRepKeys, err error) {
+func (s *Store) GetAllToDoRepKeys(minAttempts, maxAttempts int) (domain.ToRepKeys, error) {
 	var keys []domain.ToRepKey
-	if err := s.db.Select(&keys, "SELECT * FROM replication_keys where attempts <= ? AND attempts >= ? LIMIT 5000", maxAttempts, minAttempts); err != nil {
+	if err := s.db.Select(&keys, "SELECT * FROM replication_keys where attempts <= ? AND attempts >= ? LIMIT 10000", maxAttempts, minAttempts); err != nil {
 		return nil, fmt.Errorf("error reading all keys from database: %w", err)
 	}
 
-	return domain.ToRepKeys(retKeys), nil
+	return domain.ToRepKeys(keys), nil
 }
 
 // DeleteRepKey will delete a key from the replication_keys table
