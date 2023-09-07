@@ -618,7 +618,9 @@ func (m MeshHandler) GetTopMNsListFromSN(ctx context.Context, someNode SuperNode
 
 // CloseSNsConnections closes connections to all nodes
 func (m *MeshHandler) CloseSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
-	close(nodesDone)
+	if nodesDone != nil { // Check for nil before closing
+		close(nodesDone)
+	}
 
 	log.WithContext(ctx).Debug("close connections to ALL supernodes")
 
