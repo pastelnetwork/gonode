@@ -98,7 +98,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	}
 
 	// Identify which files should be challenged, their recipients and observers
-	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, 1, sliceOfFileHashesStoredByLocalSupernode)
+	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, defaultChallengeReplicas, sliceOfFileHashesStoredByLocalSupernode)
 	log.WithContext(ctx).Info("challenging file hashes stored by local SN has been retrieved")
 
 	log.WithContext(ctx).Info("identifying challenge recipients and partial observers")

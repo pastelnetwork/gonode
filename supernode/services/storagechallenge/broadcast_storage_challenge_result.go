@@ -19,6 +19,8 @@ func (task *SCTask) BroadcastStorageChallengeResult(ctx context.Context, incomin
 	if err := task.storeBroadcastChallengeMsg(ctx, incomingBroadcastMsg); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error storing broadcast message")
 	}
+	log.WithContext(ctx).WithField("challenge_id", incomingBroadcastMsg.ChallengeID).
+		Info("Broadcast message has been stored")
 
 	return types.Message{}, nil
 }

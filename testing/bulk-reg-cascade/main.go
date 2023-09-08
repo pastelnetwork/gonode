@@ -314,7 +314,7 @@ func main() {
 		}
 		logger.Printf("amount pre-burned:%s, request-count:%d\n", burnTxID, count)
 
-		payload := payload{BurnTxid: burnTxID, AppPastelid: "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX"}
+		payload := payload{BurnTxid: burnTxID, AppPastelid: "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX", MakePubliclyAccessible: true}
 		taskID, err := doCascadeRequest(payload, uploadImageRes.FileId, logger)
 		if err != nil {
 			logger.Printf("Request to cascade registration failed:%v\n", err)
