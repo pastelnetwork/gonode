@@ -14,6 +14,8 @@ const (
 	//Number of verifying nodes determines how many potential verifiers we test in verify_storage_challenge
 	defaultNumberOfVerifyingNodes = 10
 
+	//defaultChallengeReplicas is the number of default challenges per block
+	defaultChallengeReplicas = 2
 	// ChallengeFailuresThreshold is a threshold which when exceeds will send the challenge for self-healing
 	defaultChallengeFailuresThreshold = 5
 
