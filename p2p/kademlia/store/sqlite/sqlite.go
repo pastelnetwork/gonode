@@ -2,7 +2,6 @@ package sqlite
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"fmt"
@@ -23,8 +22,9 @@ import (
 var (
 	checkpointInterval = 5 * time.Second // Checkpoint interval in seconds
 	//dbLock             sync.Mutex
-	dbName     = "data001.sqlite3"
-	dbFilePath = ""
+	dbName                 = "data001.sqlite3"
+	dbFilePath             = ""
+	storeBatchRetryTimeout = 5 * time.Second
 )
 
 // Job represents the job to be run
@@ -498,8 +498,6 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 		now := time.Now().UTC()
 		for i := 0; i < len(values); i++ {
 			// Compute the SHA256 hash
-			h := sha256.New()
-			h.Write(values[i])
 			hashed, err := utils.Sha3256hash(values[i])
 			if err != nil {
 				tx.Rollback()
@@ -527,7 +525,7 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 	}
 
 	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 10 * time.Second
+	b.MaxElapsedTime = storeBatchRetryTimeout
 
 	err := backoff.Retry(operation, b)
 	if err != nil {

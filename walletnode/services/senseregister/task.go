@@ -10,9 +10,11 @@ import (
 	"time"
 
 	//"github.com/pastelnetwork/gonode/common/duplicate"
+	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -28,6 +30,8 @@ const (
 	DateTimeFormat = "2006:01:02 15:04:05"
 
 	taskTypeSense = "sense"
+
+	maxRetries = 2
 )
 
 // SenseRegistrationTask is the task of registering new nft.
@@ -63,7 +67,50 @@ type SenseRegistrationTask struct {
 
 // Run starts the task
 func (task *SenseRegistrationTask) Run(ctx context.Context) error {
-	return task.RunHelper(ctx, task.run, task.removeArtifacts)
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", task.LogPrefix, task.ID()))
+
+	task.SetStatusNotifyFunc(func(status *state.Status) {
+		log.WithContext(ctx).WithField("status", status).Debug("States updated")
+	})
+
+	log.WithContext(ctx).Debug("Start task")
+	defer log.WithContext(ctx).Debug("End task")
+
+	defer task.removeArtifacts()
+
+	retries := 0
+	blockTracker := blocktracker.New(task.service.pastelHandler.PastelClient)
+	baseBlkCnt, err := blockTracker.GetBlockCount()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+		return fmt.Errorf("get block count: %w", err)
+	}
+
+	err = task.run(ctx)
+	for doRetry(err) && retries < maxRetries {
+		retries++
+		log.WithContext(ctx).WithError(err).WithField("current-try", retries).WithField("base-block", baseBlkCnt).Error("Task is failed, retrying")
+		task.FingerprintsHandler = mixins.NewFingerprintsHandler(task.service.pastelHandler)
+		task.MeshHandler.Reset()
+
+		if err := blockTracker.WaitTillNextBlock(ctx, baseBlkCnt); err != nil {
+			log.WithContext(ctx).WithError(err).Warn("failed to wait till next block")
+			return fmt.Errorf("wait till next block: %w", err)
+		}
+
+		err = task.run(ctx)
+	}
+
+	if err != nil {
+		task.WalletNodeTask.SetError(err)
+		task.UpdateStatus(common.StatusTaskRejected)
+		log.WithContext(ctx).WithErrorStack(err).Error("Task is rejected")
+		return nil
+	}
+
+	task.UpdateStatus(common.StatusTaskCompleted)
+
+	return nil
 }
 
 // Error returns task err
@@ -163,7 +210,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error checking dd-server availability before probe image call")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorCheckDDServerAvailability)
-		return errors.Errorf("dd-server availability check: %w", err)
+		return errors.Errorf("retry: dd-server availability check: %w", err)
 	}
 
 	// probe image for average rareness, nsfw and seen score - populate FingerprintsHandler with results
@@ -680,4 +727,12 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 		taskType:            taskTypeSense,
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 	}
+}
+
+func doRetry(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "retry")
 }

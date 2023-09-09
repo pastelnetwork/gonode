@@ -3,8 +3,9 @@ package download
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 

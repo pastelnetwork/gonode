@@ -1,8 +1,9 @@
 package types
 
 import (
-	"encoding/json"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/log"
 )

@@ -3,9 +3,10 @@ package storagechallenge
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/cenkalti/backoff"
 	"github.com/pastelnetwork/gonode/common/errors"

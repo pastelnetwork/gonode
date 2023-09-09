@@ -76,7 +76,7 @@ func (s pastelBlockService) run(ctx context.Context) error {
 		if err := s.store.StorePastelBlock(ctx, domain.PastelBlock{
 			BlockHeight:        i,
 			BlockHash:          blockHash,
-			DatetimeBlockAdded: time.Now().Format(time.RFC3339),
+			DatetimeBlockAdded: time.Now().UTC().Format(time.RFC3339),
 		}); err != nil {
 			log.WithContext(ctx).WithError(err).Error("error storing pastel block to DB")
 			return nil

@@ -85,16 +85,16 @@ func (s *SQLiteStore) StorePastelBlock(ctx context.Context, pb domain.PastelBloc
 		return errors.Errorf("unable to begin transaction")
 	}
 
-	pastelBlockQuery := `INSERT into pastel_blocks_table(block_hash, block_height, datetime_block_added) VALUES(?,?,?)`
+	pastelBlockQuery := `INSERT OR IGNORE into pastel_blocks_table(block_hash, block_height, datetime_block_added) VALUES(?,?,?)`
 	_, err = tx.ExecContext(ctx, pastelBlockQuery, pb.BlockHash, pb.BlockHeight, pb.DatetimeBlockAdded)
 	if err != nil {
 		tx.Rollback()
-		return errors.Errorf("unable to insert into pastel blocks table")
+		return errors.Errorf("unable to insert into pastel blocks table: height: %d - hash: %s - err: %w", pb.BlockHeight, pb.BlockHash, err)
 	}
 
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
-		return errors.Errorf("unable to commit transaction")
+		return errors.Errorf("unable to commit txn: height: %d - hash: %s - err: %w", pb.BlockHeight, pb.BlockHash, err)
 	}
 
 	return nil
@@ -104,20 +104,47 @@ func (s *SQLiteStore) StorePastelBlock(ctx context.Context, pb domain.PastelBloc
 func (s *SQLiteStore) UpdatePastelBlock(ctx context.Context, pb domain.PastelBlock) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Errorf("unable to begin transaction")
+		return errors.Errorf("unable to begin transaction : %w", err)
 	}
 
 	updatePastelBlockQuery := `update pastel_blocks_table set block_hash=? where block_height =?`
 	_, err = tx.ExecContext(ctx, updatePastelBlockQuery, pb.BlockHash, pb.BlockHeight)
 	if err != nil {
 		tx.Rollback()
-		return errors.Errorf("unable to update pastel blocks table")
+		return errors.Errorf("unable to update pastel blocks table by height: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
-		return errors.Errorf("unable to commit transaction")
+		return errors.Errorf("unable to commit transaction : %w", err)
 	}
 
 	return nil
+}
+
+func (s *SQLiteStore) FetchAllTxIDs() (map[string]bool, error) {
+	txIDs := make(map[string]bool)
+
+	rows, err := s.db.Query("SELECT registration_ticket_txid FROM image_hash_to_image_fingerprint_table WHERE registration_ticket_txid IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var txID string
+	for rows.Next() {
+		if err := rows.Scan(&txID); err != nil {
+			return nil, err
+		}
+		txIDs[txID] = true
+	}
+
+	return txIDs, rows.Err()
+}
+
+func (s *SQLiteStore) UpdateTxIDTimestamp(registrationTicketTxID string) error {
+	query := "UPDATE image_hash_to_image_fingerprint_table SET txid_timestamp = 0 WHERE registration_ticket_txid = ?"
+
+	_, err := s.db.Exec(query, registrationTicketTxID)
+	return err
 }

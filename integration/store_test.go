@@ -1,8 +1,9 @@
 package main_test
 
 import (
-	"encoding/json"
 	"net/http"
+
+	json "github.com/json-iterator/go"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

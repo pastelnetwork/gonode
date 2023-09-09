@@ -2,10 +2,11 @@ package storagechallenge
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"

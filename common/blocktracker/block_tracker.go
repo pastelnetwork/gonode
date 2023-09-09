@@ -16,6 +16,7 @@ const (
 	defaultSuccessUpdateDuration = 10 * time.Second
 	// Update duration in case last update was failed - prevent too much call to pasteld
 	defaultFailedUpdateDuration = 5 * time.Second
+	defaultNextBlockTimeout     = 30 * time.Minute
 )
 
 // PastelClient defines interface functions BlockCntTracker expects from pastel
@@ -96,4 +97,24 @@ func (tracker *BlockCntTracker) GetBlockCount() (int32, error) {
 	}
 
 	return tracker.curBlockCnt, nil
+}
+
+func (tracker *BlockCntTracker) WaitTillNextBlock(ctx context.Context, blockCnt int32) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("context done: %w", ctx.Err())
+		case <-time.After(defaultNextBlockTimeout):
+			return errors.Errorf("timeout waiting for next block")
+		case <-time.After(defaultSuccessUpdateDuration):
+			curBlockCnt, err := tracker.GetBlockCount()
+			if err != nil {
+				return errors.Errorf("failed to get blockcount: %w", err)
+			}
+
+			if curBlockCnt > blockCnt {
+				return nil
+			}
+		}
+	}
 }

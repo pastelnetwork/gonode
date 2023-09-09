@@ -2,9 +2,10 @@ package common
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/cenkalti/backoff"
 

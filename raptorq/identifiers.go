@@ -1,7 +1,7 @@
 package raptorq
 
 import (
-	"encoding/json"
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )

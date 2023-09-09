@@ -4,12 +4,13 @@ package ddclient
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/dupedetection"
@@ -206,14 +207,14 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 		reqCancel() // cancel context after use
 
 		if err != nil {
-			return nil, errors.Errorf("get status: %w", err)
+			return nil, errors.Errorf("retry: get status: %w", err)
 		} else if stats == nil {
-			return nil, errors.Errorf("get status: stats is nil")
+			return nil, errors.Errorf("retry: get status: stats is nil")
 		}
 
 		taskCount := stats.GetTaskCount()
 		if taskCount == nil {
-			return nil, errors.New("task count is nil")
+			return nil, errors.New("retry: task count is nil")
 		}
 
 		log.WithContext(reqCtx).WithField("executing", taskCount.GetExecuting()).WithField("waiting", taskCount.GetWaitingInQueue()).WithField("max-concurrent", taskCount.GetMaxConcurrent()).
@@ -225,7 +226,7 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 		}
 
 		if time.Since(startTime).Minutes() > 25 {
-			return nil, errors.New("waiting count did not reach 0 after 25 minutes")
+			return nil, errors.New("retry: waiting count did not reach 0 after 25 minutes")
 		}
 
 		// Wait for a minute before checking the status again

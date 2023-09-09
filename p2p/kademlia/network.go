@@ -2,7 +2,6 @@ package kademlia
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -10,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/utils"
 
@@ -310,7 +311,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) (res []
 	s.dht.addNode(ctx, message.Sender)
 
 	// format the key
-	key := s.dht.hashKey(request.Data)
+	key, _ := utils.Sha3256hash(request.Data)
 
 	value, err := s.dht.store.Retrieve(ctx, key)
 	if err != nil || len(value) == 0 {

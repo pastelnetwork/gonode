@@ -2,9 +2,10 @@ package nftsearch
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
+
+	json "github.com/json-iterator/go"
 
 	"sort"
 

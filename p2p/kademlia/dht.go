@@ -19,7 +19,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
-	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -172,12 +171,6 @@ func (s *DHT) Stop(ctx context.Context) {
 	s.network.Stop(ctx)
 }
 
-// a hash key for the data
-func (s *DHT) hashKey(data []byte) []byte {
-	sha := sha3.Sum256(data)
-	return sha[:]
-}
-
 func (s *DHT) retryStore(ctx context.Context, key []byte, data []byte, typ int) error {
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 1 * time.Minute
@@ -190,7 +183,7 @@ func (s *DHT) retryStore(ctx context.Context, key []byte, data []byte, typ int) 
 
 // Store the data into the network
 func (s *DHT) Store(ctx context.Context, data []byte, typ int) (string, error) {
-	key := s.hashKey(data)
+	key, _ := utils.Sha3256hash(data)
 
 	retKey := base58.Encode(key)
 	// store the key to local storage
@@ -244,7 +237,7 @@ func (s *DHT) StoreBatch(ctx context.Context, values [][]byte, typ int) error {
 			// Increment the counter
 			atomic.AddInt32(&counter, 1)
 
-			key := s.hashKey(val)
+			key, _ := utils.Sha3256hash(val)
 			_, err := s.iterate(ctx, IterateStore, key, val, typ)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("iterate data batch store failure")

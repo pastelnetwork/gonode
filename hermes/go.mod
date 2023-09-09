@@ -17,6 +17,7 @@ require (
 	github.com/bxcodec/faker/v4 v4.0.0-beta.3
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.5
+	github.com/json-iterator/go v1.1.12
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/pastelnetwork/gonode/common v0.0.0-20230829114806-701c926c0c44
 	github.com/pastelnetwork/gonode/mixins v0.0.0-20230829114806-701c926c0c44
@@ -45,6 +46,8 @@ require (
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/otrv4/ed448 v0.0.0-20221017120334-a33859724cfd // indirect
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-20230829114806-701c926c0c44 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect

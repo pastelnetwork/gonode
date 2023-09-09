@@ -39,7 +39,8 @@ func (task *WalletNodeTask) RunHelper(ctx context.Context, run TaskRunnerFunc, c
 
 	defer clean()
 
-	if err := run(ctx); err != nil {
+	err := run(ctx)
+	if err != nil {
 		task.err = err
 		task.UpdateStatus(StatusTaskRejected)
 		log.WithContext(ctx).WithErrorStack(err).Error("Task is rejected")
@@ -63,6 +64,11 @@ func (task *WalletNodeTask) RemoveFile(file *files.File) {
 // Error returns the task err
 func (task *WalletNodeTask) Error() error {
 	return task.err
+}
+
+// SetError returns the task err
+func (task *WalletNodeTask) SetError(err error) {
+	task.err = err
 }
 
 // NewWalletNodeTask returns a new WalletNodeTask instance.

@@ -2,10 +2,11 @@ package debug
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/gorilla/mux"
 	"github.com/pastelnetwork/gonode/common/log"

@@ -6,6 +6,7 @@ replace github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
 
 require (
 	github.com/google/uuid v1.3.1
+	github.com/json-iterator/go v1.1.12
 	github.com/pastelnetwork/gonode/common v0.0.0-20230829114806-701c926c0c44
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/grpc v1.57.0
@@ -21,6 +22,8 @@ require (
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
+	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onsi/gomega v1.27.10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

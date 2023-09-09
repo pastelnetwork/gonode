@@ -2,12 +2,13 @@ package cascaderegister
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 	"testing"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"

@@ -1,10 +1,11 @@
 package main_test
 
 import (
-	"encoding/json"
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/integration/fakes/common/testconst"
 

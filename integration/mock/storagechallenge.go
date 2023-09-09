@@ -1,7 +1,7 @@
 package mock
 
 import (
-	"encoding/json"
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/integration/helper"
 	"github.com/pastelnetwork/gonode/pastel"

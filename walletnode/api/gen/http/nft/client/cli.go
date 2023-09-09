@@ -8,7 +8,7 @@
 package client
 
 import (
-	"encoding/json"
+	json "github.com/json-iterator/go"
 	"fmt"
 	"strconv"
 	"unicode/utf8"

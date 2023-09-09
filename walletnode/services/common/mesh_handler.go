@@ -710,6 +710,11 @@ func (m *MeshHandler) AddNewNode(address string, pastelID string) {
 	m.Nodes.AddNewNode(m.nodeClient, address, pastelID, m.nodeMaker)
 }
 
+// Reset resets meshhandler
+func (m *MeshHandler) Reset() {
+	m.Nodes = SuperNodeList{}
+}
+
 func combinations(candidatesNodes SuperNodeList) []SuperNodeList {
 	n := len(candidatesNodes)
 	var result []SuperNodeList

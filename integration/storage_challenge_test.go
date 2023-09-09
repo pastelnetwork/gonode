@@ -1,11 +1,12 @@
 package main_test
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/cenkalti/backoff"
 	. "github.com/onsi/ginkgo"

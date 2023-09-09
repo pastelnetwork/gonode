@@ -6,6 +6,7 @@ replace github.com/pastelnetwork/gonode/common => ../common
 
 require (
 	github.com/btcsuite/btcutil v1.0.2
+	github.com/json-iterator/go v1.1.12
 	github.com/onsi/gomega v1.27.10
 	github.com/pastelnetwork/gonode/common v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.8.4
@@ -20,6 +21,8 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
+	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect

@@ -3,9 +3,10 @@ package selfhealing
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"strconv"
 	"testing"
+
+	json "github.com/json-iterator/go"
 
 	"golang.org/x/crypto/sha3"
 

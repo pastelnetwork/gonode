@@ -1,7 +1,7 @@
 package debug
 
 import (
-	"encoding/json"
+	json "github.com/json-iterator/go"
 )
 
 const (

@@ -2,7 +2,8 @@ package healthcheck
 
 import (
 	"context"
-	"encoding/json"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	pb "github.com/pastelnetwork/gonode/proto/healthcheck"

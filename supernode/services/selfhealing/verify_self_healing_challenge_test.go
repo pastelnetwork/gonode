@@ -3,8 +3,9 @@ package selfhealing
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"testing"
+
+	json "github.com/json-iterator/go"
 
 	fuzz "github.com/google/gofuzz"
 	"golang.org/x/crypto/sha3"

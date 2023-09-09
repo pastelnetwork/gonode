@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
-	cli "github.com/pastelnetwork/gonode/walletnode/api/gen/http/nft/client"
 	"io"
 	"net/http"
 	"os"
 	"time"
+
+	json "github.com/json-iterator/go"
+	cli "github.com/pastelnetwork/gonode/walletnode/api/gen/http/nft/client"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
