@@ -99,6 +99,7 @@ func (tracker *BlockCntTracker) GetBlockCount() (int32, error) {
 	return tracker.curBlockCnt, nil
 }
 
+// WaitTillNextBlock will wait until next block height is greater than blockCnt
 func (tracker *BlockCntTracker) WaitTillNextBlock(ctx context.Context, blockCnt int32) error {
 	for {
 		select {

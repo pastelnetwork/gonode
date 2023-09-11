@@ -142,6 +142,7 @@ func (s *SQLiteStore) FetchAllTxIDs() (map[string]bool, error) {
 	return txIDs, rows.Err()
 }
 
+// UpdateTxIDTimestamp updates timestamp
 func (s *SQLiteStore) UpdateTxIDTimestamp(registrationTicketTxID string) error {
 	query := "UPDATE image_hash_to_image_fingerprint_table SET txid_timestamp = 0 WHERE registration_ticket_txid = ?"
 

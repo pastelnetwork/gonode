@@ -16,6 +16,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
+	"github.com/pkg/errors"
 )
 
 // CascadeRegistrationTask is the task of registering new nft.
@@ -412,14 +413,26 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 		return errors.Errorf("uploading ticket: creatorSignature is empty")
 	}
 
+	// Debug: Check if root context 'ctx' is cancelled
+	go func() {
+		<-ctx.Done()
+		log.Println("Root context 'ctx' was cancelled:", ctx.Err())
+	}()
+
 	rqidsFile := task.RqHandler.RQIDsFile
 	encoderParams := task.RqHandler.RQEncodeParams
 
 	group, gctx := errgroup.WithContext(ctx)
+
+	// Debug: Check if derived context 'gctx' is cancelled
+	go func() {
+		<-gctx.Done()
+		log.Println("Derived context 'gctx' was cancelled:", gctx.Err())
+	}()
+
 	for _, someNode := range task.MeshHandler.Nodes {
 		cascadeRegNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
 		if !ok {
-			//TODO: use assert here
 			return errors.Errorf("node %s is not CascadeRegistrationNode", someNode.String())
 		}
 
@@ -428,7 +441,7 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 			ticketTxid, err := cascadeRegNode.SendSignedTicket(gctx, task.serializedTicket, task.creatorSignature, rqidsFile, encoderParams)
 			if err != nil {
 				log.WithContext(gctx).WithError(err).WithField("node", cascadeRegNode).Error("send signed ticket failed")
-				return err
+				return errors.Errorf("node %s: %w", someNode.String(), err)
 			}
 			if !someNode.IsPrimary() && ticketTxid != "" && !task.skipPrimaryNodeTxidCheck() {
 				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, someNode.PastelID())
@@ -442,7 +455,11 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 			return nil
 		})
 	}
-	return group.Wait()
+	err := group.Wait()
+	if err != nil {
+		log.Println("Error from goroutine group:", err)
+	}
+	return err
 }
 
 func (task *CascadeRegistrationTask) activateActionTicket(ctx context.Context) (string, error) {

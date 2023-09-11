@@ -3,7 +3,7 @@ package api
 import (
 	"bytes"
 
-	json "github.com/json-iterator/go"
+	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )

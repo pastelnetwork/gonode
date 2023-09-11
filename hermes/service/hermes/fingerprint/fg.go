@@ -305,11 +305,10 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 				counter++
 			}
 			continue
-		} else {
-			// Found a unique hash, so set it and break out of the loop.
-			ddAndFpFromTicket.HashOfCandidateImageFile = currentHash
-			break
 		}
+		// Found a unique hash, so set it and break out of the loop.
+		ddAndFpFromTicket.HashOfCandidateImageFile = currentHash
+		break
 	}
 
 	//make sure ImageFingerprintOfCnadidateImageFile exists.
