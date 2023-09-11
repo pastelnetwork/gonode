@@ -29,6 +29,18 @@ func (s *fingerprintService) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return errors.Errorf("context done: %w", ctx.Err())
+		case msg := <-s.blockMsgChan:
+			log.WithContext(ctx).WithField("received-block", msg.Block).WithField("last-nft-block", s.latestNFTBlockHeight).
+				WithField("last-sense-block", s.latestSenseBlockHeight).Info("Received signal from chain-reorg service")
+
+			if s.latestNFTBlockHeight > msg.Block { // if last scanned block is already lower than received block, there's no need to update block
+				s.latestNFTBlockHeight = msg.Block
+			}
+
+			if s.latestSenseBlockHeight > msg.Block {
+				s.latestSenseBlockHeight = msg.Block
+			}
+
 		case <-time.After(runTaskInterval):
 			// Check if node is synchronized or not
 			log.WithContext(ctx).Info("fingerprint service run() has been invoked")

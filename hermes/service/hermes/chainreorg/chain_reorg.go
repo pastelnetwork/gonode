@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/hermes/common"
 	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
@@ -94,7 +95,10 @@ func (s *chainReorgService) run(ctx context.Context) error {
 		return nil
 	}
 
-	log.WithContext(ctx).Info("chain-reorg has been fixed, tickets settled")
+	log.WithContext(ctx).WithField("last_good_block_height", lastGoodBlockHeight).Info("chain-reorg has been fixed, tickets settled - sending message to fingerprints service")
+	s.blockMsgChan <- common.BlockMessage{Block: int(lastGoodBlockHeight)}
+	log.WithContext(ctx).WithField("last_good_block_height", lastGoodBlockHeight).Info("chain-reorg message sent to fingerprints service")
+
 	return nil
 }
 

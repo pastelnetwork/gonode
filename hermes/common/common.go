@@ -10,6 +10,10 @@ import (
 	"github.com/pastelnetwork/gonode/hermes/service/node"
 )
 
+type BlockMessage struct {
+	Block int
+}
+
 const (
 	//P2PConnectionCloseError represents the p2p connection close error
 	P2PConnectionCloseError = "grpc: the client connection is closing"

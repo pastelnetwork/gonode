@@ -3,11 +3,15 @@ package hermes
 import (
 	"context"
 	"fmt"
+	"os"
+	"reflect"
+
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/hermes/common"
 	service2 "github.com/pastelnetwork/gonode/hermes/service"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/chainreorg"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/cleaner"
@@ -18,8 +22,6 @@ import (
 	"github.com/pastelnetwork/gonode/hermes/service/node"
 	"github.com/pastelnetwork/gonode/hermes/store"
 	"github.com/pastelnetwork/gonode/pastel"
-	"os"
-	"reflect"
 )
 
 type service struct {
@@ -42,12 +44,14 @@ func (s *service) Run(ctx context.Context) error {
 	}
 
 	fingerprintServiceConfig := fingerprint.NewConfig(s.config.SNHost, s.config.SNPort, s.sn)
-	fingerprintService, err := fingerprint.NewFingerprintService(s.store, s.pastelClient, s.p2p, fingerprintServiceConfig)
+
+	blockMsgChan := make(chan common.BlockMessage)
+	fingerprintService, err := fingerprint.NewFingerprintService(s.store, s.pastelClient, s.p2p, fingerprintServiceConfig, blockMsgChan)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize fingerprint service")
 	}
 
-	chainReorgService, err := chainreorg.NewChainReorgService(s.store, s.pastelClient)
+	chainReorgService, err := chainreorg.NewChainReorgService(s.store, s.pastelClient, blockMsgChan)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize chain reorg service")
 	}
