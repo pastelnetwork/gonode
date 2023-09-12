@@ -171,6 +171,11 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 		return nil, err
 	}
 
+	if broadcastingMsg == nil {
+		log.WithContext(ctx).WithField("challenge_id", evaluationMessage.ChallengeID).Info("Unable to create broadcast message")
+		return nil, nil
+	}
+
 	if err := task.sendBroadcastingMessage(ctx, broadcastingMsg); err != nil {
 		log.WithContext(ctx).WithError(err).Error("broadcasting storage challenge result failed")
 		return nil, err
@@ -404,6 +409,7 @@ func (task *SCTask) prepareBroadcastingMessage(ctx context.Context, evaluationMs
 		affirmationMsg, err := json.Marshal(msg)
 		if err != nil {
 			log.WithContext(ctx).WithField("pastel_id", pastelID).WithError(err).Error("error converting affirmation msg to bytes")
+			continue
 		}
 
 		obs[pastelID] = affirmationMsg
@@ -456,8 +462,6 @@ func (task *SCTask) sendBroadcastingMessage(ctx context.Context, msg *pb.Broadca
 		}()
 	}
 	wg.Wait()
-
-	log.WithContext(ctx).Info("msg has been broadcast to the network")
 
 	return nil
 }

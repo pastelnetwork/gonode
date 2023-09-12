@@ -186,7 +186,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 		blockTracker := blocktracker.New(h.PastelHandler.PastelClient)
 		baseBlkCnt, err := blockTracker.GetBlockCount()
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+			log.WithContext(ctx).WithError(err).Error("failed to get block count")
 			ch <- err
 			return
 		}
@@ -195,13 +195,13 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 			select {
 			case <-ctx.Done():
 				// context cancelled or abort by caller so no need to return anything
-				log.WithContext(ctx).Debugf("context done: %s", ctx.Err())
+				log.WithContext(ctx).Infof("context done while waiting for confirmation: %s", ctx.Err())
 				ch <- ctx.Err()
 				return
 			case <-time.After(interval):
 				txResult, err := h.PastelHandler.PastelClient.GetRawTransactionVerbose1(ctx, txid)
 				if err != nil {
-					log.WithContext(ctx).WithError(err).WithField("txid", txid).Warn("GetRawTransactionVerbose1 err")
+					log.WithContext(ctx).WithError(err).WithField("txid", txid).Error("GetRawTransactionVerbose1 err")
 				} else {
 					if txResult.Confirmations >= minConfirmation {
 						if verifyBurnAmt {
@@ -220,7 +220,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 
 				currentBlkCnt, err := blockTracker.GetBlockCount()
 				if err != nil {
-					log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+					log.WithContext(ctx).WithError(err).Error("failed to get block count")
 					continue
 				}
 

@@ -173,6 +173,17 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	}
 	log.WithContext(ctx).Info("signed cascade reg ticket")
 
+	task.UpdateStatus(common.StatusValidateBurnTxn)
+	newCtx := log.ContextWithPrefix(context.Background(), "cascade")
+	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.Request.BurnTxID, 3,
+		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
+
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
+		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
+	}
+	task.UpdateStatus(common.StatusBurnTxnValidated)
+	log.WithContext(ctx).Info("burn txn has been validated")
+
 	// UPLOAD signed ticket to supernodes to validate and register action with the network
 	if err := task.uploadSignedTicket(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error uploading signed ticket")
@@ -222,7 +233,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Infof("Waiting Confirmations for Cascade Reg Ticket - Ticket txid: %s", task.regCascadeTxid)
 
 	// new context because the old context already cancelled
-	newCtx := log.ContextWithPrefix(context.Background(), "cascade")
+	newCtx = log.ContextWithPrefix(context.Background(), "cascade")
 	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error waiting for Reg TXID confirmations")
