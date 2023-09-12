@@ -24,3 +24,19 @@ func NewLogger() *Logger {
 		Logger: logger,
 	}
 }
+
+func (l *Logger) V(level int) bool {
+	switch level {
+	case 0:
+		return true // always log errors
+	case 1:
+		return true // always log warnings
+	case 2:
+		return true // always log info
+	case 3:
+		return false // never log debug
+	default:
+		return false
+	}
+
+}

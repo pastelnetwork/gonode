@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"google.golang.org/grpc"
@@ -13,7 +14,7 @@ import (
 func UnaryInterceptor() grpc.ServerOption {
 	return grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer errors.Recover(func(recErr error) {
-			err = status.Error(codes.Internal, "internal server error")
+			err = status.Error(codes.Internal, fmt.Sprintf("internal server error: %s", recErr.Error()))
 		})
 
 		ctx = WithRequestID(ctx)
@@ -27,7 +28,7 @@ func UnaryInterceptor() grpc.ServerOption {
 func StreamInterceptor() grpc.ServerOption {
 	return grpc.StreamInterceptor(func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 		defer errors.Recover(func(recErr error) {
-			err = status.Error(codes.Internal, "internal server error")
+			err = status.Error(codes.Internal, fmt.Sprintf("internal server error: %s", recErr.Error()))
 		})
 
 		ctx := ss.Context()

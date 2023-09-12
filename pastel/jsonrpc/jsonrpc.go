@@ -12,12 +12,14 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"time"
 
 	"encoding/json"
 )
 
 const (
 	jsonrpcVersion = "2.0"
+	timeout        = 5 * time.Second
 )
 
 // RPCClient sends JSON-RPC requests over HTTP to the provided JSON-RPC backend.
@@ -338,7 +340,10 @@ func (client *rpcClient) CallWithContext(ctx context.Context, method string, par
 		JSONRPC: jsonrpcVersion,
 	}
 
-	return client.doCall(ctx, request)
+	gctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	return client.doCall(gctx, request)
 }
 
 func (client *rpcClient) Call(method string, params ...interface{}) (*RPCResponse, error) {
