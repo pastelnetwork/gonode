@@ -199,7 +199,15 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 				ch <- ctx.Err()
 				return
 			case <-time.After(interval):
-				txResult, err := h.PastelHandler.PastelClient.GetRawTransactionVerbose1(ctx, txid)
+				gctx, cancel := context.WithCancel(ctx)
+				defer cancel()
+
+				go func() {
+					<-gctx.Done()
+					log.Println("Derived context 'gctx' was cancelled:", gctx.Err())
+				}()
+
+				txResult, err := h.PastelHandler.PastelClient.GetRawTransactionVerbose1(gctx, txid)
 				if err != nil {
 					log.WithContext(ctx).WithError(err).WithField("txid", txid).Error("GetRawTransactionVerbose1 err")
 				} else {
@@ -212,7 +220,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 							}
 						}
 
-						log.WithContext(ctx).Debug("transaction confirmed")
+						log.WithContext(ctx).Info("transaction confirmed")
 						ch <- nil
 						return
 					}

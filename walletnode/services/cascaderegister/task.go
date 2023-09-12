@@ -16,7 +16,6 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
-	"github.com/pkg/errors"
 )
 
 // CascadeRegistrationTask is the task of registering new nft.

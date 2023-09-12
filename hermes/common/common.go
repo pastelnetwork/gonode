@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/hermes/service/node"
 )
 
+// BlockMessage is block message
 type BlockMessage struct {
 	Block int
 }

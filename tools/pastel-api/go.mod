@@ -2,8 +2,6 @@ module github.com/pastelnetwork/gonode/tools/pastel-api
 
 go 1.21
 
-toolchain go1.21.0
-
 replace github.com/pastelnetwork/gonode/common => ../../common
 
 replace github.com/pastelnetwork/gonode/proto => ../../proto

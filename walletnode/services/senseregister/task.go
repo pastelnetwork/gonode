@@ -138,7 +138,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorMeshSetupFailed)
-		return errors.Errorf("connect to top rank nodes: %w", err)
+		return errors.Errorf("retry: connect to top rank nodes: %w", err)
 	}
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash

@@ -122,6 +122,7 @@ func (s *SQLiteStore) UpdatePastelBlock(ctx context.Context, pb domain.PastelBlo
 	return nil
 }
 
+// FetchAllTxIDs fetches all txids
 func (s *SQLiteStore) FetchAllTxIDs() (map[string]bool, error) {
 	txIDs := make(map[string]bool)
 
