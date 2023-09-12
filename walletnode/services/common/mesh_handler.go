@@ -66,12 +66,14 @@ type MeshHandlerOpts struct {
 	LogRequestID  string
 }
 
+// DDStats contains dd-service stats
 type DDStats struct {
 	WaitingInQueue int32
 	Executing      int32
 	IsReady        bool
 }
 
+// SNData contains data required for supernode
 type SNData struct {
 	TopMNsList map[string][]string
 	Hashes     map[string]string
@@ -197,6 +199,7 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 	return foundNodes, nil
 }
 
+// GetCandidateNodes returns list of candidate nodes
 func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes SuperNodeList, n int) (SuperNodeList, error) {
 	if !m.checkDDDatabaseHashes && !m.requireSNAgreementOnMNTopList {
 		return candidatesNodes, nil
@@ -351,7 +354,7 @@ func (m *MeshHandler) getTopNodes(ctx context.Context) (SuperNodeList, error) {
 	return nodes, nil
 }
 
-func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candidatesNodes SuperNodeList, n int, maxRetries int, skipNodes []string) (SuperNodeList, error) {
+func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candidatesNodes SuperNodeList, n int, _ int, skipNodes []string) (SuperNodeList, error) {
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
 		PassPhrase: m.passphrase,
