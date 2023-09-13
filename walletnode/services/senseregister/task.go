@@ -101,6 +101,18 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 		return err
 	}
 
+	log.WithContext(ctx).Info("validating burn transaction")
+	task.UpdateStatus(common.StatusValidateBurnTxn)
+	newCtx := log.ContextWithPrefix(context.Background(), "sense")
+	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.Request.BurnTxID, 3,
+		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
+
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
+		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
+	}
+	task.UpdateStatus(common.StatusBurnTxnValidated)
+	log.WithContext(ctx).Info("burn txn has been validated")
+
 	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
 	task.StatusLog[common.FieldTaskType] = "Sense Registration"
 
@@ -167,16 +179,6 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 			return errors.Errorf("Error duplicate ticket")
 		}*/
 	log.WithContext(ctx).Info("no duplicate tickets have been found")
-
-	task.UpdateStatus(common.StatusValidateBurnTxn)
-	newCtx := log.ContextWithPrefix(context.Background(), "sense")
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.Request.BurnTxID, 3,
-		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
-
-		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
-		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
-	}
-	task.UpdateStatus(common.StatusBurnTxnValidated)
 
 	if err := task.checkDDServerAvailability(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error checking dd-server availability before probe image call")
