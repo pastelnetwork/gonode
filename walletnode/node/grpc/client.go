@@ -33,9 +33,9 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 
 	// Define the keep-alive parameters
 	ka := keepalive.ClientParameters{
-		Time:                5 * time.Minute // Send pings every 5 minutes  if there is no activity
-		Timeout:             1 * time.Minute,  // Wait 1 minute for ping ack before considering the connection dead
-		PermitWithoutStream: true,              // Allow pings to be sent without a stream
+		Time:                5 * time.Minute, // Send pings every 5 minutes  if there is no activity
+		Timeout:             1 * time.Minute, // Wait 1 minute for ping ack before considering the connection dead
+		PermitWithoutStream: true,            // Allow pings to be sent without a stream
 	}
 
 	altsTCClient := credentials.NewClientCreds(client.secClient, secInfo)
