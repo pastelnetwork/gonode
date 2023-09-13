@@ -155,7 +155,8 @@ func (ts *testSuite) SetupSuite() {
 	// init key and value for one data
 	ts.Value = make([]byte, 50*1024)
 	rand.Read(ts.Value)
-	ts.Key = base58.Encode(dht.hashKey(ts.Value))
+	hash, _ := utils.Sha3256hash(ts.Value)
+	ts.Key = base58.Encode(hash)
 }
 
 // run before each test in the suite
@@ -443,7 +444,8 @@ func (ts *testSuite) TestStoreWith10Nodes() {
 	// init key and value for one data
 	value := make([]byte, 50*1024)
 	rand.Read(value)
-	key := base58.Encode(ts.main.hashKey(value))
+	hash, _ := utils.Sha3256hash(value)
+	key := base58.Encode(hash)
 
 	// store the key and value by main node
 	encodedKey, err := ts.main.Store(ts.ctx, value, 0)
@@ -596,11 +598,6 @@ func (ts *testSuite) TestAddNodeForAppend() {
 
 	bucket := ts.main.ht.routeTable[index]
 	ts.Equal(string(id), string(bucket[len(bucket)-1].ID))
-}
-
-func (ts *testSuite) TestHashKey() {
-	key := ts.main.hashKey(ts.Value)
-	ts.Equal(B/8, len(key))
 }
 
 func (ts *testSuite) TestRateLimiter() {

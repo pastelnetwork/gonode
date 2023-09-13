@@ -2,8 +2,9 @@ package pastel
 
 import (
 	"bytes"
-	"encoding/json"
 	"strconv"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"

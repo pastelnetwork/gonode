@@ -2,8 +2,9 @@ package pastel
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
+
+	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 

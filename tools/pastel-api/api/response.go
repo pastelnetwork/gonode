@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+
 	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/common/errors"

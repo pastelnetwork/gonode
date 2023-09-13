@@ -3,10 +3,11 @@ package kademlia
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"sync/atomic"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/cenkalti/backoff"
 	"github.com/pastelnetwork/gonode/common/log"

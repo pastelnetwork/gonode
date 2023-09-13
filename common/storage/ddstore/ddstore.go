@@ -87,7 +87,7 @@ func (s *SQLiteDDStore) IfFingerprintExists(_ context.Context, hash string) (boo
 // GetDDDataHash returns hash of dd data
 func (s *SQLiteDDStore) GetDDDataHash(ctx context.Context) (hash string, err error) {
 	r := []fingerprints{}
-	err = s.db.Select(&r, "SELECT sha256_hash_of_art_image_file FROM image_hash_to_image_fingerprint_table order by txid_timestamp asc")
+	err = s.db.Select(&r, "SELECT sha256_hash_of_art_image_file FROM image_hash_to_image_fingerprint_table where txid_timestamp > 0 order by sha256_hash_of_art_image_file asc")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get image_hash_to_image_fingerprint_table")
 	}

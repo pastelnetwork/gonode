@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"fmt"
 
 	"io"
 	"runtime/debug"
@@ -82,7 +83,10 @@ func (service *RegisterCascade) Session(stream pb.RegisterCascade_SessionServer)
 				return nil
 			}
 			switch status.Code(err) {
-			case codes.Canceled, codes.Unavailable:
+			case codes.Canceled:
+				log.WithContext(ctx).WithError(err).Error("handshake stream canceled")
+				return nil
+			case codes.Unavailable:
 				return nil
 			}
 			return errors.Errorf("handshake stream closed: %w", err)
@@ -154,7 +158,7 @@ func (service *RegisterCascade) MeshNodes(ctx context.Context, req *pb.MeshNodes
 
 // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
 func (service *RegisterCascade) SendRegMetadata(ctx context.Context, req *pb.SendRegMetadataRequest) (*pb.SendRegMetadataReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debug("SendRegMetadata request")
+	log.WithContext(ctx).WithField("burn-txn", req.BurnTxid).Info("SendRegMetadata  rcvd")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
@@ -167,8 +171,13 @@ func (service *RegisterCascade) SendRegMetadata(ctx context.Context, req *pb.Sen
 	}
 
 	err = task.SendRegMetadata(ctx, reqMetadata)
+	if err != nil {
+		return nil, fmt.Errorf("send reg metadata: %w", err)
+	}
 
-	return &pb.SendRegMetadataReply{}, err
+	log.WithContext(ctx).WithField("burn-txn", req.BurnTxid).Info("SendRegMetadata responded")
+
+	return &pb.SendRegMetadataReply{}, nil
 }
 
 // UploadAsset implements walletnode.RegisterNft.UploadAssetWithThumbnail
@@ -267,12 +276,12 @@ func (service *RegisterCascade) UploadAsset(stream pb.RegisterCascade_UploadAsse
 	}()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("hash file: %w", err)
 	}
 
 	err = task.UploadAsset(ctx, asset)
 	if err != nil {
-		return err
+		return fmt.Errorf("upload asset: %w", err)
 	}
 
 	resp := &pb.UploadAssetReply{}
@@ -280,6 +289,8 @@ func (service *RegisterCascade) UploadAsset(stream pb.RegisterCascade_UploadAsse
 	if err := stream.SendAndClose(resp); err != nil {
 		return errors.Errorf("send UploadAsset response: %w", err)
 	}
+
+	log.WithContext(ctx).WithField("filename", assetFile.Name()).Info("UploadAsset request success")
 
 	return nil
 }
@@ -305,7 +316,7 @@ func (service *RegisterCascade) SendSignedActionTicket(ctx context.Context, req 
 	}
 	log.WithContext(ctx).Info("Burn txn validated")
 
-	actionRegTxid, err := task.ValidateAndRegister(ctx, req.ActionTicket, req.CreatorSignature, req.RqFiles, req.EncodeParameters.Oti)
+	actionRegTxid, err := task.ValidateAndRegister(ctx, req.ActionTicket, req.CreatorSignature, req.RqFiles)
 	if err != nil {
 		return nil, errors.Errorf("get total storage fee: %w", err)
 	}

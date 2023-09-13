@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -14,6 +15,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/middleware"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/keepalive"
 )
 
 type service interface {
@@ -31,6 +34,7 @@ type Server struct {
 
 // Run starts the server
 func (server *Server) Run(ctx context.Context) error {
+	grpclog.SetLoggerV2(log.DefaultLogger)
 	ctx = log.ContextWithPrefix(ctx, server.name)
 
 	group, ctx := errgroup.WithContext(ctx)
@@ -84,14 +88,31 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 		return nil
 	}
 
+	// Define the keep-alive parameters
+	kaParams := keepalive.ServerParameters{
+		MaxConnectionIdle:     2 * time.Hour,
+		MaxConnectionAge:      2 * time.Hour,
+		MaxConnectionAgeGrace: 1 * time.Hour,
+		Time:                  1 * time.Hour,
+		Timeout:               2 * time.Minute,
+	}
+
+	// Define the keep-alive enforcement policy
+	kaPolicy := keepalive.EnforcementPolicy{
+		MinTime:             3 * time.Minute, // Minimum time a client should wait before sending keep-alive probes
+		PermitWithoutStream: true,            // Only allow pings when there are active streams
+	}
+
 	var grpcServer *grpc.Server
 	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
 		grpcServer = grpc.NewServer(middleware.UnaryInterceptor(), middleware.StreamInterceptor(), grpc.MaxSendMsgSize(35000000),
-			grpc.MaxRecvMsgSize(35000000))
+			grpc.MaxRecvMsgSize(35000000), grpc.KeepaliveParams(kaParams), // Use the keep-alive parameters
+			grpc.KeepaliveEnforcementPolicy(kaPolicy))
 	} else {
 		grpcServer = grpc.NewServer(middleware.UnaryInterceptor(), middleware.StreamInterceptor(),
 			middleware.AltsCredential(server.secClient, server.secInfo), grpc.MaxSendMsgSize(35000000),
-			grpc.MaxRecvMsgSize(35000000))
+			grpc.MaxRecvMsgSize(35000000), grpc.KeepaliveParams(kaParams), // Use the keep-alive parameters
+			grpc.KeepaliveEnforcementPolicy(kaPolicy))
 	}
 
 	for _, service := range server.services {

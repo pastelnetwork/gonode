@@ -1,11 +1,12 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/integration/fakes/common/testconst"
 

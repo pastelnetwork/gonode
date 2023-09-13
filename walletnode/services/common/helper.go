@@ -2,10 +2,11 @@ package common
 
 import (
 	b64 "encoding/base64"
-	"encoding/json"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/errors"
 	"time"
+
+	json "github.com/json-iterator/go"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 var (

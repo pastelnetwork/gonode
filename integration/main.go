@@ -4,9 +4,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/integration/helper"
 	"github.com/pastelnetwork/gonode/integration/mock"

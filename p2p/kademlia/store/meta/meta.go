@@ -303,7 +303,7 @@ func (s *Store) storeDisabledKey(key []byte) error {
 
 		now := time.Now().UTC()
 		r := DisabledKey{Key: hkey, CreatedAt: now}
-		res, err := s.db.NamedExec(`INSERT INTO disabled_keys(key, createdAt) values(:key, :createdat) ON CONFLICT(key) DO UPDATE SET createdAt=:createdat`, r)
+		res, err := s.db.NamedExec(`INSERT INTO disabled_keys(key, createdAt) values(:key, :createdat) ON CONFLICT(key) DO UPDATE SET createdAt=:createdAt`, r)
 		if err != nil {
 			return fmt.Errorf("cannot insert or update disabled key record with key %s: %w", hkey, err)
 		}

@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"encoding/json"
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/p2p"

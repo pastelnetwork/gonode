@@ -23,10 +23,14 @@ type CleanupService struct {
 
 // Run runs the cleanup service.
 func (service *CleanupService) Run(ctx context.Context) error {
+	if r := recover(); r != nil {
+		log.Errorf("Recovered from panic in cleanup run: %v", r)
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
-			log.WithContext(ctx).Info("context canceled, returning cleanup service")
+			log.Info("context canceled, returning cleanup service")
 			return nil
 		case <-time.After(defaultCheckInterval):
 			count, err := service.cleanup(ctx)

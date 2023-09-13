@@ -76,7 +76,7 @@ integration-tests:
 	cd ./integration && INTEGRATION_TEST_ENV=true go test -v --timeout=20m ./...
 build-linux:
 	cd ./supernode && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o supernode
-	cd ./walletnode && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o walletnode
+#	cd ./walletnode && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o walletnode
 	cd ./hermes && CC=musl-gcc go build --ldflags '-linkmode external -extldflags "-static"' -o hermes
 clean-proto:
 	rm -f ./proto/supernode/*.go

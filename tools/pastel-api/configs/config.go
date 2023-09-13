@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"encoding/json"
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/tools/pastel-api/api"
 )

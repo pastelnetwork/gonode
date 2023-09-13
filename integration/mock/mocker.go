@@ -1,11 +1,12 @@
 package mock
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/pastel"
 

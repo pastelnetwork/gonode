@@ -2,8 +2,9 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"io"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"

@@ -29,6 +29,18 @@ func (s *fingerprintService) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return errors.Errorf("context done: %w", ctx.Err())
+		case msg := <-s.blockMsgChan:
+			log.WithContext(ctx).WithField("received-block", msg.Block).WithField("last-nft-block", s.latestNFTBlockHeight).
+				WithField("last-sense-block", s.latestSenseBlockHeight).Info("Received signal from chain-reorg service")
+
+			if s.latestNFTBlockHeight > msg.Block { // if last scanned block is already lower than received block, there's no need to update block
+				s.latestNFTBlockHeight = msg.Block
+			}
+
+			if s.latestSenseBlockHeight > msg.Block {
+				s.latestSenseBlockHeight = msg.Block
+			}
+
 		case <-time.After(runTaskInterval):
 			// Check if node is synchronized or not
 			log.WithContext(ctx).Info("fingerprint service run() has been invoked")
@@ -194,7 +206,8 @@ func (s *fingerprintService) parseNFTTickets(ctx context.Context) error {
 
 		rawTxn, err := s.pastelClient.GetRawTransactionVerbose1(ctx, regTicket.TXID)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("unable to get raw transaction")
+			log.WithContext(ctx).WithField("act-txid", actTickets[i].TXID).WithField("reg-txid", actTickets[i].ActTicketData.RegTXID).WithError(err).Error("unable to get raw transaction")
+			continue
 		}
 
 		stored, p2pRunning := s.fetchDDFpFileAndStoreFingerprints(ctx, regTicket.RegTicketData.Type, regTicket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName,
@@ -265,14 +278,37 @@ func (s *fingerprintService) fetchDDFpFileAndStoreFingerprints(ctx context.Conte
 
 	logMsg.WithField("image_hash", ddAndFpFromTicket.HashOfCandidateImageFile).Info("image hash retrieved")
 
-	existsInDatabase, err := s.store.IfFingerprintExists(ctx, ddAndFpFromTicket.HashOfCandidateImageFile)
-	if existsInDatabase {
-		logMsg.Info("fingerprint already exist in database, skipping")
-		return true, true
-	}
-	if err != nil {
-		logMsg.Error("Could not properly query the dd database for this hash")
-		return false, true
+	isFirstIteration := true
+	var counter int
+	for {
+		// If it's not the first iteration, append the counter to the hash.
+		var currentHash string
+		if isFirstIteration {
+			currentHash = ddAndFpFromTicket.HashOfCandidateImageFile
+		} else {
+			currentHash = fmt.Sprintf("%s_%02d", ddAndFpFromTicket.HashOfCandidateImageFile, counter)
+		}
+
+		existsInDatabase, err := s.store.IfFingerprintExists(ctx, currentHash)
+		if err != nil {
+			logMsg.Error("Could not properly query the dd database for this hash")
+			return false, true
+		}
+
+		if existsInDatabase {
+			if isFirstIteration {
+				// If it's the first iteration, initialize the counter and set the flag to false.
+				counter = 1
+				isFirstIteration = false
+			} else {
+				logMsg.Infof("fingerprint with hash %s already exists in database, trying next hash", currentHash)
+				counter++
+			}
+			continue
+		}
+		// Found a unique hash, so set it and break out of the loop.
+		ddAndFpFromTicket.HashOfCandidateImageFile = currentHash
+		break
 	}
 
 	//make sure ImageFingerprintOfCnadidateImageFile exists.

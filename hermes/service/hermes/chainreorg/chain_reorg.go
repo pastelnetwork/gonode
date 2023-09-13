@@ -2,11 +2,13 @@ package chainreorg
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/hermes/common"
 	"github.com/pastelnetwork/gonode/hermes/domain"
 )
 
@@ -39,6 +41,36 @@ func (s *chainReorgService) Run(ctx context.Context) error {
 	}
 }
 
+func (s *chainReorgService) checkAndDeleteTerminatedTickets(ctx context.Context) error {
+	log.WithContext(ctx).Info("checking and deleting terminated tickets")
+	txids, err := s.store.FetchAllTxIDs()
+	if err != nil {
+		return fmt.Errorf("error fetching all txids: %w", err)
+	}
+
+	log.WithContext(ctx).WithField("txids", txids).Info("fetched all txids")
+	for txid := range txids {
+		ticket, err := s.pastelClient.RegTicket(ctx, txid)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("error getting ticket for txid: %s", txid)
+			continue
+		}
+
+		if ticket.Height < 0 {
+			if err := s.store.UpdateTxIDTimestamp(txid); err != nil {
+				log.WithContext(ctx).WithError(err).Errorf("error updating timestamp for txid: %s", txid)
+				continue
+			}
+
+			log.WithContext(ctx).WithField("txid", txid).Info("ticket is terminated")
+		}
+
+		time.Sleep(200 * time.Millisecond) // don't spam the cnode
+	}
+
+	return nil
+}
+
 func (s *chainReorgService) run(ctx context.Context) error {
 	isDetected, lastGoodBlockHeight, err := s.IsChainReorgDetected(ctx)
 	if err != nil {
@@ -58,7 +90,15 @@ func (s *chainReorgService) run(ctx context.Context) error {
 		return nil
 	}
 
-	log.WithContext(ctx).Info("chain-reorg has been fixed")
+	if err := s.checkAndDeleteTerminatedTickets(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error checking and deleting terminated tickets")
+		return nil
+	}
+
+	log.WithContext(ctx).WithField("last_good_block_height", lastGoodBlockHeight).Info("chain-reorg has been fixed, tickets settled - sending message to fingerprints service")
+	s.blockMsgChan <- common.BlockMessage{Block: int(lastGoodBlockHeight)}
+	log.WithContext(ctx).WithField("last_good_block_height", lastGoodBlockHeight).Info("chain-reorg message sent to fingerprints service")
+
 	return nil
 }
 

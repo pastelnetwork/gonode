@@ -3,7 +3,6 @@ package helper
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -15,6 +14,8 @@ import (
 	"os/signal"
 	"strings"
 	"time"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/gorilla/websocket"
 )

@@ -56,21 +56,27 @@ func (worker *Worker) RemoveTask(subTask Task) {
 	}
 }
 
-// Run waits for new tasks, starts handling eche of them in a new goroutine.
+// Run waits for new tasks, starts handling each of them in a new goroutine.
 func (worker *Worker) Run(ctx context.Context) error {
-	group, ctx := errgroup.WithContext(ctx)
+	group, _ := errgroup.WithContext(ctx) // Create an error group but ignore the derived context
 	for {
 		select {
 		case <-ctx.Done():
+			log.WithContext(ctx).Warn("worker run stopping : %w", ctx.Err())
 			return group.Wait()
-		case task := <-worker.taskCh:
+		case t := <-worker.taskCh: // Rename here
+			currentTask := t // Capture the loop variable
 			group.Go(func() error {
 				defer func() {
-					log.WithContext(ctx).WithField("task", task.ID()).Info("Task Removed")
-					worker.RemoveTask(task)
+					if r := recover(); r != nil {
+						log.WithContext(ctx).Errorf("Recovered from panic in common task's worker run: %v", r)
+					}
+
+					log.WithContext(ctx).WithField("task", currentTask.ID()).Info("Task Removed")
+					worker.RemoveTask(currentTask)
 				}()
 
-				return task.Run(ctx)
+				return currentTask.Run(ctx) // Use the captured variable
 			})
 		}
 	}

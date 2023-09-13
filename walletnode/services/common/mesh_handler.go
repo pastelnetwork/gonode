@@ -1,15 +1,8 @@
 package common
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"math/rand"
-	"net"
-	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -26,7 +19,9 @@ import (
 
 const (
 	//DDServerPendingRequestsThreshold is the threshold for DD-server pending requests
-	DDServerPendingRequestsThreshold = 2
+	DDServerPendingRequestsThreshold = 0
+	// DDServerExecutingRequestsThreshold is the threshold for DD-server executing requests
+	DDServerExecutingRequestsThreshold = 2
 )
 
 // MeshHandler provides networking functionality, including mesh
@@ -62,6 +57,21 @@ type MeshHandlerOpts struct {
 	PastelHandler *mixins.PastelHandler
 	Configs       *MeshHandlerConfig
 	LogRequestID  string
+}
+
+// DDStats contains dd-service stats
+type DDStats struct {
+	WaitingInQueue int32
+	Executing      int32
+	MaxConcurrency int32
+	IsReady        bool
+}
+
+// SNData contains data required for supernode
+type SNData struct {
+	TopMNsList map[string][]string
+	Hashes     map[string]string
+	DDStats    map[string]DDStats
 }
 
 // MeshHandlerConfig config subset used by MeshHandler
@@ -161,19 +171,14 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 	}
 	log.WithContext(ctx).Infof("Found %d Supernodes", len(WNTopNodes))
 
-	var candidateNodes SuperNodeList
-	if m.requireSNAgreementOnMNTopList {
-		candidateNodes, err = m.GetCandidateNodes(ctx, WNTopNodes)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("error getting candidate nodes")
-		}
-	} else {
-		candidateNodes = WNTopNodes
+	candidateNodes, err := m.GetCandidateNodes(ctx, WNTopNodes, n)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error getting candidate nodes")
 	}
 
 	if len(candidateNodes) < n {
-		err := errors.New("not enough candidate nodes found with agreed top nodes list to setup mesh")
-		log.WithContext(ctx).WithError(err)
+		err := errors.New("not enough candidate nodes found with required parameters")
+		log.WithContext(ctx).WithField("count", len(candidateNodes)).WithError(err)
 		return nil, err
 	}
 
@@ -186,6 +191,79 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 	}
 	log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Found %d valid Supernodes", len(foundNodes))
 	return foundNodes, nil
+}
+
+// GetCandidateNodes returns list of candidate nodes
+func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes SuperNodeList, n int) (SuperNodeList, error) {
+	if !m.checkDDDatabaseHashes && !m.requireSNAgreementOnMNTopList {
+		return candidatesNodes, nil
+	}
+
+	log.WithContext(ctx).WithField("given nodes", len(candidatesNodes)).Info("GetCandidateNodes Starting...")
+
+	WNTopNodesList := SuperNodeList{}
+	topMap := make(map[string][]string)
+	hashes := make(map[string]string)
+	dataMap := make(map[string]DDStats)
+	var err error
+
+	secInfo := &alts.SecInfo{
+		PastelID:   m.callersPastelID,
+		PassPhrase: m.passphrase,
+		Algorithm:  pastel.SignAlgorithmED448,
+	}
+
+	// Get WN top nodes list from all the candidate nodes
+	for _, someNode := range candidatesNodes {
+		top, hash, data, err := m.GetRequiredDataFromSN(ctx, *someNode, secInfo)
+		if err != nil {
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get required data from supernode - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			continue
+		}
+
+		WNTopNodesList.Add(someNode)
+		topMap[someNode.Address()] = top
+		hashes[someNode.Address()] = hash
+		dataMap[someNode.Address()] = data
+	}
+
+	if len(WNTopNodesList) < n {
+		return nil, errors.New("failed to get required data from all candidate nodes")
+	}
+
+	if m.requireSNAgreementOnMNTopList {
+
+		// Filter out nodes with different top MNs list
+		WNTopNodesList, err = m.filterByTopNodesList(ctx, WNTopNodesList, topMap)
+		if err != nil {
+			return nil, fmt.Errorf("filter by top nodes list: %w", err)
+		}
+
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Matching top nodes list for nodes %d", len(WNTopNodesList))
+	}
+
+	if len(WNTopNodesList) < n {
+		return nil, errors.New("failed to get enough nodes with matching top 10 list")
+	}
+
+	if m.checkDDDatabaseHashes {
+		WNTopNodesList, err = m.filterByDDHash(ctx, WNTopNodesList, hashes)
+		if err != nil {
+			return nil, fmt.Errorf("filter by top nodes list: %w", err)
+		}
+
+		if len(WNTopNodesList) < n {
+			return nil, errors.New("failed to get enough nodes with matching fingerprints database hash")
+		}
+
+		WNTopNodesList, err = m.filterDDServerRequestsInWaitingQueue(ctx, WNTopNodesList, dataMap)
+		if err != nil {
+			return nil, fmt.Errorf("filter by dd-service stats: %w", err)
+		}
+
+	}
+
+	return WNTopNodesList, nil
 }
 
 func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList, n int) (SuperNodeList, error) {
@@ -270,59 +348,21 @@ func (m *MeshHandler) getTopNodes(ctx context.Context) (SuperNodeList, error) {
 	return nodes, nil
 }
 
-func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candidatesNodes SuperNodeList, n int, maxRetries int, skipNodes []string) (SuperNodeList, error) {
+func (m *MeshHandler) connectToAndValidateSuperNodes(ctx context.Context, candidatesNodes SuperNodeList, n int, _ int, skipNodes []string) (SuperNodeList, error) {
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
 		PassPhrase: m.passphrase,
 		Algorithm:  pastel.SignAlgorithmED448,
 	}
 
-	if m.checkDDDatabaseHashes {
-		return m.connectToAndValidateSuperNodesWithHashCheck(ctx, candidatesNodes, n, maxRetries, secInfo, skipNodes)
-	}
-
 	return m.connectToAndValidateSuperNodesWithoutHashCheck(ctx, candidatesNodes, n, secInfo, skipNodes)
-}
-
-func (m *MeshHandler) connectToAndValidateSuperNodesWithHashCheck(ctx context.Context, candidatesNodes SuperNodeList, n int, maxRetries int, secInfo *alts.SecInfo, skipNodes []string) (SuperNodeList, error) {
-	combinations := combinations(candidatesNodes)
-
-	for retryCount := 0; retryCount < maxRetries; retryCount++ {
-		for _, set := range combinations {
-			nodes := m.connectToNodes(ctx, set, n, secInfo, skipNodes)
-
-			if len(nodes) != n {
-				continue
-			}
-
-			if err := m.matchDatabaseHash(ctx, nodes); err != nil {
-				continue
-			}
-
-			if err := m.CheckDDServerRequestsInWaitingQueue(ctx, nodes); err != nil {
-				continue
-			}
-
-			return nodes, nil
-		}
-
-		log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Could not match database hash, retrying in 30s... (attempt %d/%d)", retryCount+1, maxRetries)
-
-		select {
-		case <-ctx.Done():
-			return nil, fmt.Errorf("context canceled while waiting to retry: %w", ctx.Err())
-		case <-time.After(30 * time.Second):
-		}
-	}
-
-	return nil, errors.Errorf("nodes not found, could not match database hash after %d attempts", maxRetries)
 }
 
 func (m *MeshHandler) connectToAndValidateSuperNodesWithoutHashCheck(ctx context.Context, candidatesNodes SuperNodeList, n int, secInfo *alts.SecInfo, skipNodes []string) (SuperNodeList, error) {
 	nodes := m.connectToNodes(ctx, candidatesNodes, n, secInfo, skipNodes)
 
 	if len(nodes) < n {
-		log.WithContext(ctx).WithField("req-id", m.logRequestID).Errorf("Failed to validate enough Supernodes - only found %d good", n)
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).Errorf("Failed to connect with required number of supernodes - only found %d good", n)
 		return nil, errors.Errorf("validate %d Supernodes from pastel network", n)
 	}
 
@@ -358,66 +398,52 @@ func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNo
 	return nodes
 }
 
-// matchDatabaseHash matches database hashes
-func (m *MeshHandler) matchDatabaseHash(ctx context.Context, nodesList SuperNodeList) error {
-
+// filterByDDHash matches database hashes
+func (m *MeshHandler) filterByDDHash(ctx context.Context, nodesList SuperNodeList, hashes map[string]string) (retList SuperNodeList, err error) {
+	retList = SuperNodeList{}
 	log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Matching database hash for nodes %d", len(nodesList))
-	hashes := make(map[string]string)
-	matcher := ""
-	// Connect to top nodes to find 3SN and validate their info
-	for i, someNode := range nodesList {
-		hash, err := someNode.GetDupeDetectionDBHash(ctx)
-		if err != nil {
-			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get dd database hash - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-			return fmt.Errorf("failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
-		}
-
-		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("node", someNode.Address()).WithField("hash", hash).Info("DD Database hash for node received")
-		hashes[someNode.Address()] = hash
-
-		if i == 0 {
-			matcher = hash
-		}
-	}
-
-	for key, val := range hashes {
-		if val != matcher {
-			log.WithContext(ctx).WithField("req-id", m.logRequestID).Errorf("database hash mismatch for node %s", key)
-			return fmt.Errorf("database hash mismatch for node %s", key)
-		}
-	}
-
-	log.WithContext(ctx).Infof("DD Database hashes matched")
-
-	return nil
-}
-
-// CheckDDServerRequestsInWaitingQueue checks the no of requests waiting in queue for DD server to process
-func (m *MeshHandler) CheckDDServerRequestsInWaitingQueue(ctx context.Context, nodesList SuperNodeList) error {
-	log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("checking dd-server no of requests waiting in a list of %d nodes ", len(nodesList))
-	pendingRequests := make(map[string]int32)
+	counter := make(map[string]SuperNodeList)
 	// Connect to top nodes to find 3SN and validate their info
 	for _, someNode := range nodesList {
-		stats, err := someNode.GetDDServerStats(ctx)
-		if err != nil {
-			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get dd server stats - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-			return fmt.Errorf("failed to get dd server stats - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
+		hash := hashes[someNode.Address()]
+
+		if counter[hash] == nil {
+			counter[hash] = SuperNodeList{}
 		}
 
-		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("node", someNode.Address()).WithField("stats", stats).Info("DD-server stats for node has been received")
-		pendingRequests[someNode.Address()] = stats.WaitingInQueue
+		counter[hash] = append(counter[hash], someNode)
 	}
 
-	for key, val := range pendingRequests {
-		if val > DDServerPendingRequestsThreshold {
-			log.WithContext(ctx).WithField("req-id", m.logRequestID).Errorf("pending requests in queue exceeds the threshold for node %s", key)
-			return fmt.Errorf("pending requests in queue exceeds the threshold for node %s", key)
+	matchingKey := ""
+	for key, val := range counter {
+		if len(val) > len(retList) {
+			retList = val
+			matchingKey = key
 		}
 	}
 
-	log.WithContext(ctx).Infof("pending requests for DD-server does not exceed than threshold, proceeding forward")
+	log.WithContext(ctx).WithField("given nodes count", len(nodesList)).WithField("matching hash nodes count", len(retList)).WithField("matching hash", matchingKey).Infof("DD Database hashes matched")
 
-	return nil
+	return retList, nil
+}
+
+func (m *MeshHandler) filterDDServerRequestsInWaitingQueue(ctx context.Context, nodesList SuperNodeList, dataMap map[string]DDStats) (retList SuperNodeList, err error) {
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("checking dd-server no of requests waiting in a list of %d nodes ", len(nodesList))
+	retList = SuperNodeList{}
+	// Connect to top nodes to find 3SN and validate their info
+	for _, someNode := range nodesList {
+		waiting, executing, maxConcurrent := dataMap[someNode.Address()].WaitingInQueue, dataMap[someNode.Address()].Executing, dataMap[someNode.Address()].MaxConcurrency
+		if maxConcurrent-executing-waiting > 0 {
+			retList = append(retList, someNode)
+		}
+
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("executing", executing).WithField("max-concurrent", maxConcurrent).
+			WithField("waiting tasks", waiting).Warnf("dd-service not ready %s", someNode.Address())
+	}
+
+	log.WithContext(ctx).WithField("give nodes count", len(nodesList)).WithField("dd-service ready nodes", len(retList)).Infof("dd-service ready nodes matched")
+
+	return retList, nil
 }
 
 // meshNodes establishes communication between supernodes.
@@ -518,21 +544,12 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 	return meshedNodes, nil
 }
 
-// GetCandidateNodes getTopNodes from SNs and select candidateNodes that agrees with WN Top Nodes List
-func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList SuperNodeList) (SuperNodeList, error) {
+func (m *MeshHandler) filterByTopNodesList(ctx context.Context, WNTopNodesList SuperNodeList, topMap map[string][]string) (SuperNodeList, error) {
 	maxOutliers := 3
 	minRequiredNodes := 3
 	minRequiredCommonIPs := 5
 	itemCount := make(map[string]int)
 	peerNodeList := make(map[string][]string)
-	var err error
-
-	secInfo := &alts.SecInfo{
-		PastelID:   m.callersPastelID,
-		PassPhrase: m.passphrase,
-		Algorithm:  pastel.SignAlgorithmED448,
-	}
-
 	for _, localNode := range WNTopNodesList {
 		itemCount[localNode.Address()] = 0
 	}
@@ -543,13 +560,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList Supe
 		someNodeIP := someNode.Address()
 		log.WithContext(ctx).WithField("address", someNodeIP)
 
-		peerNodeList[someNodeIP], err = m.GetTopMNsListFromSN(ctx, *someNode, secInfo)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list from SN")
-			badPeers++
-			continue
-		}
-
+		peerNodeList[someNodeIP] = topMap[someNodeIP]
 		for _, topNodeIP := range peerNodeList[someNodeIP] {
 			itemCount[topNodeIP]++
 		}
@@ -570,7 +581,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList Supe
 	}
 
 	finalCandidateNodes := SuperNodeList{}
-	for _, someNode := range WNTopNodesList {
+	for _, someNode := range candidateNodes {
 		someNodeIP := someNode.Address()
 		commonCount := 0
 		for _, remoteNodeIP := range peerNodeList[someNodeIP] {
@@ -592,28 +603,66 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, WNTopNodesList Supe
 	return finalCandidateNodes, nil
 }
 
-// GetTopMNsListFromSN retrieves the MN top list from the given SN
-func (m MeshHandler) GetTopMNsListFromSN(ctx context.Context, someNode SuperNodeClient, secInfo *alts.SecInfo) ([]string, error) {
+// GetRequiredDataFromSN retrieves the MN top list from the given SN, dd databse hash and dd-service stats if required
+func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNodeClient, secInfo *alts.SecInfo) (top []string, hash string, data DDStats, err error) {
 	logger := log.WithContext(ctx).WithField("address", someNode.Address())
 
 	if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
 		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-		return nil, err
+		return top, hash, data, err
 	}
 
 	defer func() {
-		if err := someNode.Close(); err != nil {
-			log.WithContext(ctx).WithError(err).Info("WN-SN to get top-mns connection closed already")
+		someNode.RLock()
+		defer someNode.RUnlock()
+
+		if someNode.ConnectionInterface != nil {
+			if err = someNode.ConnectionInterface.Close(); err != nil {
+				log.WithContext(ctx).WithFields(log.Fields{
+					"pastelId": someNode.PastelID(),
+					"addr":     someNode.String(),
+				}).WithError(err).Debugf("connection already closed. SN - %s", someNode.String())
+			}
 		}
 	}()
 
-	resp, err := someNode.GetTopMNs(ctx)
-	if err != nil {
-		logger.WithError(err).Error("error getting top mns through gRPC call")
-		return nil, err
+	if m.requireSNAgreementOnMNTopList {
+		resp, err := someNode.GetTopMNs(ctx)
+		if err != nil {
+			logger.WithError(err).Error("error getting top mns through gRPC call")
+			return top, hash, data, fmt.Errorf("error getting top mns through gRPC call: node: %s - err: %w", someNode.Address(), err)
+		}
+
+		top = resp.MnTopList
 	}
 
-	return resp.MnTopList, nil
+	if m.checkDDDatabaseHashes {
+		h, err := someNode.GetDupeDetectionDBHash(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get dd database hash - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			return top, hash, data, fmt.Errorf("failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
+		}
+
+		hash = h
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("node", someNode.Address()).WithField("hash", hash).Info("DD Database hash for node received")
+
+		s, err := someNode.GetDDServerStats(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get dd server stats - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+			return top, hash, data, fmt.Errorf("failed to get dd server stats - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
+		}
+
+		data = DDStats{
+			WaitingInQueue: s.WaitingInQueue,
+			Executing:      s.Executing,
+			MaxConcurrency: s.MaxConcurrent,
+			IsReady:        true,
+		}
+
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("node", someNode.Address()).WithField("stats", data).Info("DD-server stats for node has been received")
+	}
+
+	return top, hash, data, nil
 }
 
 // CloseSNsConnections closes connections to all nodes
@@ -710,75 +759,9 @@ func (m *MeshHandler) AddNewNode(address string, pastelID string) {
 	m.Nodes.AddNewNode(m.nodeClient, address, pastelID, m.nodeMaker)
 }
 
-func combinations(candidatesNodes SuperNodeList) []SuperNodeList {
-	n := len(candidatesNodes)
-	var result []SuperNodeList
-
-	for i := 0; i < n-2; i++ {
-		for j := i + 1; j < n-1; j++ {
-			for k := j + 1; k < n; k++ {
-				result = append(result, SuperNodeList{candidatesNodes[i], candidatesNodes[j], candidatesNodes[k]})
-			}
-		}
-	}
-
-	rand.Seed(time.Now().UnixNano()) // Seed the random number generator
-	for i := len(result) - 1; i > 0; i-- {
-		j := rand.Intn(i + 1) // Generate a random index from 0 to i
-		// Swap elements at index i and j
-		result[i], result[j] = result[j], result[i]
-	}
-
-	return result
-}
-
-func getWNTopNodesHash(WNTopNodesList SuperNodeList) (string, error) {
-	var WNTopNodesIPs []string
-	for _, node := range WNTopNodesList {
-		WNTopNodesIPs = append(WNTopNodesIPs, node.Address())
-	}
-
-	WNTopNodesHash, err := sortIPsAndGenerateHash(WNTopNodesIPs)
-	if err != nil {
-		return "", err
-	}
-
-	return WNTopNodesHash, nil
-}
-
-func sortIPsAndGenerateHash(ips []string) (string, error) {
-	realIPs := make([]net.IP, 0, len(ips))
-
-	for _, ip := range ips {
-		host, _, err := net.SplitHostPort(ip)
-		if err != nil {
-			return "", err
-		}
-
-		realIPs = append(realIPs, net.ParseIP(host))
-	}
-
-	sort.Slice(realIPs, func(i, j int) bool {
-		return bytes.Compare(realIPs[i], realIPs[j]) < 0
-	})
-
-	sortedIPs := make([]string, 0, len(realIPs))
-	for _, ip := range realIPs {
-		sortedIPs = append(sortedIPs, ip.String())
-	}
-
-	// Concatenate the sorted IPs into a single string
-	concatenated := strings.Join(sortedIPs, "")
-
-	// Create a new hash
-	h := sha256.New()
-
-	// Write the concatenated string into the hash
-	h.Write([]byte(concatenated))
-
-	// Compute the final hash and print it
-	hashed := h.Sum(nil)
-	return hex.EncodeToString(hashed), nil
+// Reset resets meshhandler
+func (m *MeshHandler) Reset() {
+	m.Nodes = SuperNodeList{}
 }
 
 // NewMeshHandlerSimple returns new MeshHandlerSimple

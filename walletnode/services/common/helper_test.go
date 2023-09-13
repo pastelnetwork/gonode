@@ -2,8 +2,9 @@ package common
 
 import (
 	b64 "encoding/base64"
-	"encoding/json"
 	"testing"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/stretchr/testify/assert"
 )

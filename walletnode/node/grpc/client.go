@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -12,6 +13,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/keepalive"
 )
 
 const (
@@ -24,8 +27,16 @@ type client struct {
 
 // Connect implements node.Client.Connect()
 func (client *client) Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (node.ConnectionInterface, error) {
+	grpclog.SetLoggerV2(log.NewLoggerWithErrorLevel())
 	id, _ := random.String(8, random.Base62Chars)
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
+
+	// Define the keep-alive parameters
+	ka := keepalive.ClientParameters{
+		Time:                5 * time.Minute, // Send pings every 5 minutes  if there is no activity
+		Timeout:             1 * time.Minute, // Wait 1 minute for ping ack before considering the connection dead
+		PermitWithoutStream: true,            // Allow pings to be sent without a stream
+	}
 
 	altsTCClient := credentials.NewClientCreds(client.secClient, secInfo)
 	var grpcConn *grpc.ClientConn
@@ -36,6 +47,7 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 			grpc.WithInsecure(),
 			grpc.WithBlock(),
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(35000000), grpc.MaxCallSendMsgSize(35000000)),
+			grpc.WithKeepaliveParams(ka),
 		)
 
 	} else {
@@ -43,18 +55,19 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 			grpc.WithTransportCredentials(altsTCClient),
 			grpc.WithBlock(),
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(35000000), grpc.MaxCallSendMsgSize(35000000)),
+			grpc.WithKeepaliveParams(ka),
 		)
 	}
 
 	if err != nil {
 		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)
 	}
-	log.WithContext(ctx).Debugf("Connected to %s", address)
+	log.WithContext(ctx).Infof("Connected to %s", address)
 
 	conn := newClientConn(id, grpcConn)
 	go func() {
 		<-conn.Done()
-		log.WithContext(ctx).Debugf("Disconnected %s", grpcConn.Target())
+		log.WithContext(ctx).Infof("Disconnected %s", grpcConn.Target())
 	}()
 	return conn, nil
 }

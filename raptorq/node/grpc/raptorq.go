@@ -2,12 +2,13 @@ package grpc
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"

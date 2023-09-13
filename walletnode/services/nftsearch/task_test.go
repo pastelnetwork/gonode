@@ -2,7 +2,7 @@ package nftsearch
 
 /*
 import (
-	"encoding/json"
+	json "github.com/json-iterator/go"
 	"fmt"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/stretchr/testify/mock"

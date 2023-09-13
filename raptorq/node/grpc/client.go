@@ -14,7 +14,7 @@ import (
 
 const (
 	logPrefix             = "grpc-raptorqClient"
-	defaultConnectTimeout = 5 * time.Second
+	defaultConnectTimeout = 15 * time.Second
 )
 
 type client struct{}
@@ -36,12 +36,12 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	if err != nil {
 		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)
 	}
-	log.WithContext(ctx).Debugf("Connected to %s", address)
+	log.WithContext(ctx).Infof("Connected to RQ %s", address)
 
 	conn := newClientConn(id, grpcConn)
 	go func() {
 		<-conn.Done()
-		log.WithContext(ctx).Debugf("Disconnected %s", grpcConn.Target())
+		log.WithContext(ctx).Infof("Disconnected RQ %s", grpcConn.Target())
 	}()
 	return conn, nil
 }

@@ -36,6 +36,8 @@ type PastelBlockStore interface {
 	GetPastelBlockByHash(ctx context.Context, hash string) (domain.PastelBlock, error)
 	GetPastelBlockByHeight(ctx context.Context, height int32) (domain.PastelBlock, error)
 	UpdatePastelBlock(ctx context.Context, block domain.PastelBlock) error
+	FetchAllTxIDs() (map[string]bool, error)
+	UpdateTxIDTimestamp(registrationTicketTxID string) error
 }
 
 // CollectionStore is collection store

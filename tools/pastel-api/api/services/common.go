@@ -2,9 +2,10 @@ package services
 
 import (
 	"embed"
-	"encoding/json"
 	"regexp"
 	"strings"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )

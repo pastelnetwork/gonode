@@ -2,8 +2,9 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/integration/fakes/dd-server/dupedetection"

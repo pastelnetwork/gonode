@@ -1,7 +1,7 @@
 package pastel
 
 import (
-	"encoding/json"
+	json "github.com/json-iterator/go"
 )
 
 const (

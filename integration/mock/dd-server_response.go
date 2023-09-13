@@ -1,8 +1,9 @@
 package mock
 
 import (
-	"encoding/json"
 	"time"
+
+	json "github.com/json-iterator/go"
 )
 
 func getDDServerResponse() ([]byte, error) {
