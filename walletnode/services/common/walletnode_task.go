@@ -3,12 +3,15 @@ package common
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/pastel"
 )
 
 // TaskCleanerFunc pointer to cleaner function
@@ -43,7 +46,52 @@ func (task *WalletNodeTask) RunHelper(ctx context.Context, run TaskRunnerFunc, c
 	if err != nil {
 		task.err = err
 		task.UpdateStatus(StatusTaskRejected)
-		log.WithContext(ctx).WithErrorStack(err).Error("Task is rejected")
+		log.WithContext(ctx).WithError(err).Error("Task is rejected")
+		return nil
+	}
+
+	task.UpdateStatus(StatusTaskCompleted)
+	return nil
+}
+
+// RunHelper with Retry
+func (task *WalletNodeTask) RunHelperWithRetry(ctx context.Context, run TaskRunnerFunc, clean TaskCleanerFunc, maxRetries int, pt pastel.Client, resetFunc func(), setErrFunc func(err error)) error {
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", task.LogPrefix, task.ID()))
+
+	task.SetStatusNotifyFunc(func(status *state.Status) {
+		log.WithContext(ctx).WithField("status", status).Debug("States updated")
+	})
+
+	log.WithContext(ctx).Debug("Start task")
+	defer log.WithContext(ctx).Debug("End task")
+
+	defer clean()
+
+	retries := 0
+	blockTracker := blocktracker.New(pt)
+	baseBlkCnt, err := blockTracker.GetBlockCount()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+		return nil
+	}
+
+	err = run(ctx)
+	for doRetry(err) && retries < maxRetries {
+		retries++
+		log.WithContext(ctx).WithError(err).WithField("current-try", retries).WithField("base-block", baseBlkCnt).Error("Task is failed, retrying")
+		resetFunc()
+
+		if err := blockTracker.WaitTillNextBlock(ctx, baseBlkCnt); err != nil {
+			log.WithContext(ctx).WithError(err).Warn("failed to wait till next block")
+			return nil
+		}
+
+		err = run(ctx)
+	}
+
+	if err != nil {
+		task.UpdateStatus(StatusTaskRejected)
+		log.WithContext(ctx).WithError(err).Error("Task is rejected")
 		return nil
 	}
 
@@ -81,4 +129,12 @@ func NewWalletNodeTask(logPrefix string) *WalletNodeTask {
 	wnt.SetStateLog(wnt.StatusLog)
 
 	return wnt
+}
+
+func doRetry(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "retry")
 }

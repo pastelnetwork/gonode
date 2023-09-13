@@ -19,7 +19,7 @@ import (
 
 const (
 	jsonrpcVersion = "2.0"
-	timeout        = 5 * time.Second
+	timeout        = 15 * time.Second
 )
 
 // RPCClient sends JSON-RPC requests over HTTP to the provided JSON-RPC backend.

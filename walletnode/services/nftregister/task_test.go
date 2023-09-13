@@ -106,8 +106,8 @@ func TestTaskRun(t *testing.T) {
 				networkFee: 0.4,
 				masterNodes: pastel.MasterNodes{
 					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-					pastel.MasterNode{ExtAddress: "127.0.0.2:4444", ExtKey: "2"},
-					pastel.MasterNode{ExtAddress: "127.0.0.3:4444", ExtKey: "3"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
 				},
 				getTopMNsReply: &pb.GetTopMNsReply{MnTopList: []string{"127.0.0.1:4444", "127.0.0.2:4444", "127.0.0.3:4444", "127.0.0.1:4448", "127.0.0.1:4449",
 					"127.0.0.1:4440", "127.0.0.1:4441", "127.0.0.1:4442", "127.0.0.1:4443", "127.0.0.1:4445"}},
@@ -192,7 +192,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnSessID(testCase.args.primarySessID).
 				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 				ListenOnRegisterGetDupeDetectionDBHash("", nil).
-				ListenOnNFTGetDDServerStats(&pb.DDServerStatsReply{WaitingInQueue: 1}, nil).
+				ListenOnNFTGetDDServerStats(&pb.DDServerStatsReply{WaitingInQueue: 0}, nil).
 				ListenOnDone().
 				ListenOnUploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
 				ListenOnSendSignedTicket(1, nil).

@@ -88,10 +88,10 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 }
 
 // StartProcessing - Starts a processing image task
-func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascade.StartProcessingPayload) (res *cascade.StartProcessingResult, err error) {
+func (service *CascadeAPIHandler) StartProcessing(_ context.Context, p *cascade.StartProcessingPayload) (res *cascade.StartProcessingResult, err error) {
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("unable to add task")
+		log.WithError(err).Error("unable to add task")
 		return nil, cascade.MakeInternalServerError(err)
 	}
 
@@ -101,7 +101,7 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 
 	fileName, err := service.register.ImageHandler.FileDb.Get(p.FileID)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("unable to get file data")
+		log.WithError(err).Error("unable to get file data")
 	}
 
 	log.WithField("task_id", taskID).WithField("file_id", p.FileID).WithField("file_name", string(fileName)).

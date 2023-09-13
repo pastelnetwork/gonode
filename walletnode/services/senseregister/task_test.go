@@ -252,6 +252,7 @@ func TestTaskRun(t *testing.T) {
 			Request := testCase.fields.Request
 			Request.Image = senseFile
 			task := NewSenseRegisterTask(service, Request)
+			task.MaxRetries = 0
 
 			//create context with timeout to automatically end process after 5 sec
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 5*time.Second)

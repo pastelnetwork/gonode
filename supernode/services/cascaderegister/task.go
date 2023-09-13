@@ -86,10 +86,7 @@ func (task *CascadeRegistrationTask) UploadAsset(ctx context.Context, file *file
 }
 
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
-func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context,
-	ticket []byte, creatorSignature []byte,
-	rqidFile []byte, _ /*oti*/ []byte,
-) (string, error) {
+func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context, ticket []byte, creatorSignature []byte, rqidFile []byte) (string, error) {
 	var err error
 	if err = task.RequiredStatus(common.StatusAssetUploaded); err != nil {
 		return "", errors.Errorf("require status %s not satisfied", common.StatusAssetUploaded)

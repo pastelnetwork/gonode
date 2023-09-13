@@ -10,11 +10,10 @@ import (
 	"time"
 
 	//"github.com/pastelnetwork/gonode/common/duplicate"
-	"github.com/pastelnetwork/gonode/common/blocktracker"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -44,6 +43,7 @@ type SenseRegistrationTask struct {
 	service         *SenseRegistrationService
 	downloadService *download.NftDownloadingService
 	Request         *common.ActionRegistrationRequest
+	MaxRetries      int
 
 	// data to create ticket
 	creatorBlockHeight int
@@ -67,50 +67,8 @@ type SenseRegistrationTask struct {
 
 // Run starts the task
 func (task *SenseRegistrationTask) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", task.LogPrefix, task.ID()))
 
-	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status).Debug("States updated")
-	})
-
-	log.WithContext(ctx).Debug("Start task")
-	defer log.WithContext(ctx).Debug("End task")
-
-	defer task.removeArtifacts()
-
-	retries := 0
-	blockTracker := blocktracker.New(task.service.pastelHandler.PastelClient)
-	baseBlkCnt, err := blockTracker.GetBlockCount()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Warn("failed to get block count")
-		return fmt.Errorf("get block count: %w", err)
-	}
-
-	err = task.run(ctx)
-	for doRetry(err) && retries < maxRetries {
-		retries++
-		log.WithContext(ctx).WithError(err).WithField("current-try", retries).WithField("base-block", baseBlkCnt).Error("Task is failed, retrying")
-		task.FingerprintsHandler = mixins.NewFingerprintsHandler(task.service.pastelHandler)
-		task.MeshHandler.Reset()
-
-		if err := blockTracker.WaitTillNextBlock(ctx, baseBlkCnt); err != nil {
-			log.WithContext(ctx).WithError(err).Warn("failed to wait till next block")
-			return fmt.Errorf("wait till next block: %w", err)
-		}
-
-		err = task.run(ctx)
-	}
-
-	if err != nil {
-		task.WalletNodeTask.SetError(err)
-		task.UpdateStatus(common.StatusTaskRejected)
-		log.WithContext(ctx).WithErrorStack(err).Error("Task is rejected")
-		return nil
-	}
-
-	task.UpdateStatus(common.StatusTaskCompleted)
-
-	return nil
+	return task.RunHelperWithRetry(ctx, task.run, task.removeArtifacts, task.MaxRetries, task.service.pastelHandler.PastelClient, task.Reset, task.SetError)
 }
 
 // Error returns task err
@@ -118,9 +76,23 @@ func (task *SenseRegistrationTask) Error() error {
 	return task.WalletNodeTask.Error()
 }
 
-func (task *SenseRegistrationTask) run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
+func (task *SenseRegistrationTask) run(cctx context.Context) error {
+	if r := recover(); r != nil {
+		log.Errorf("Recovered from panic in cascade run: %v", r)
+	}
+
+	go func() {
+		<-cctx.Done()
+		log.Println("root context 'cctx' in run func was cancelled:", cctx.Err())
+	}()
+
+	ctx, cancel := context.WithCancel(cctx)
 	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+		log.Println("Derived context 'ctx' in run func was cancelled:", ctx.Err())
+	}()
 
 	log.WithContext(ctx).Info("checking collection verification")
 	err := task.IsValidForCollection(ctx)
@@ -393,7 +365,7 @@ func (task *SenseRegistrationTask) sendActionMetadata(ctx context.Context) error
 		group.Go(func() (err error) {
 			err = senseRegNode.SendRegMetadata(gctx, regMetadata)
 			if err != nil {
-				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("send registration metadata failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode.String()).Error("send registration metadata failed")
 				return errors.Errorf("node %s: %w", someNode.String(), err)
 			}
 
@@ -422,18 +394,18 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 		group.Go(func() (err error) {
 			compress, stateOk, errString, hashExists, err := senseRegNode.ProbeImage(gctx, file)
 			if err != nil {
-				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("probe image failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode.String()).Error("probe image failed")
 				return errors.Errorf("node %s: probe failed :%w", someNode.String(), err)
 			}
 
 			if hashExists {
-				log.WithContext(gctx).WithField("node", senseRegNode).Error("image already registered")
+				log.WithContext(gctx).WithField("node", someNode.String()).Error("image already registered")
 				return errors.Errorf("remote node %s: image already registered: %s", someNode.String(), errString)
 			}
 
 			someNode.SetRemoteState(stateOk)
 			if !stateOk {
-				log.WithContext(gctx).WithField("node", senseRegNode).Error("probe image failed")
+				log.WithContext(gctx).WithField("node", someNode.String()).Error("probe image failed")
 				return errors.Errorf("remote node %s: indicated processing error:%s", someNode.String(), errString)
 			}
 
@@ -526,15 +498,15 @@ func (task *SenseRegistrationTask) uploadSignedTicket(ctx context.Context) error
 		group.Go(func() error {
 			ticketTxid, err := senseRegNode.SendSignedTicket(gctx, task.serializedTicket, task.creatorSignature, ddFpFile)
 			if err != nil {
-				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("send signed ticket failed")
-				return err
+				log.WithContext(gctx).WithError(err).WithField("node", someNode.String()).Error("send signed ticket failed")
+				return fmt.Errorf("node %s: %w", someNode.String(), err)
 			}
 			if !someNode.IsPrimary() && ticketTxid != "" && !task.skipPrimaryNodeTxidCheck() {
-				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, someNode.PastelID())
+				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, someNode.String())
 			}
 			if someNode.IsPrimary() {
 				if ticketTxid == "" {
-					return errors.Errorf("primary node - %s, returned empty txid", someNode.PastelID())
+					return errors.Errorf("primary node - %s, returned empty txid", someNode.String())
 				}
 				task.regSenseTxid = ticketTxid
 			}
@@ -562,7 +534,7 @@ func (task *SenseRegistrationTask) checkDDServerAvailability(ctx context.Context
 		"probe image")
 
 	var pRMutex sync.Mutex
-	pendingRequests := make(map[string]int32)
+	pendingRequests := make(map[string]common.DDStats)
 	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		someNode := someNode
@@ -574,13 +546,20 @@ func (task *SenseRegistrationTask) checkDDServerAvailability(ctx context.Context
 		group.Go(func() (err error) {
 			stats, err := senseRegNode.GetDDServerStats(gctx)
 			if err != nil {
-				log.WithContext(gctx).WithError(err).WithField("node", senseRegNode).Error("send registration metadata failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode.String()).Error("send registration metadata failed")
 				return errors.Errorf("node %s: %w", someNode.String(), err)
 			}
 			log.WithContext(ctx).WithField("node", someNode.Address()).WithField("stats", stats).Info("DD-server stats for node has been received")
 
 			pRMutex.Lock()
-			pendingRequests[someNode.Address()] = stats.WaitingInQueue
+			data := common.DDStats{
+				WaitingInQueue: stats.WaitingInQueue,
+				Executing:      stats.Executing,
+				MaxConcurrency: stats.MaxConcurrent,
+				IsReady:        true,
+			}
+
+			pendingRequests[someNode.Address()] = data
 			pRMutex.Unlock()
 
 			return nil
@@ -592,7 +571,8 @@ func (task *SenseRegistrationTask) checkDDServerAvailability(ctx context.Context
 	}
 
 	for key, val := range pendingRequests {
-		if val > common.DDServerPendingRequestsThreshold {
+		waiting, executing, maxConcurrent := val.WaitingInQueue, val.Executing, val.MaxConcurrency
+		if maxConcurrent-executing-waiting <= 0 {
 			log.WithContext(ctx).Errorf("pending requests in queue exceeds the threshold for node %s", key)
 			return fmt.Errorf("pending requests in queue exceeds the threshold for node %s", key)
 		}
@@ -607,6 +587,15 @@ func (task *SenseRegistrationTask) removeArtifacts() {
 	if task.Request != nil {
 		task.RemoveFile(task.Request.Image)
 	}
+}
+
+func (task *SenseRegistrationTask) Reset() {
+	task.FingerprintsHandler = mixins.NewFingerprintsHandler(task.service.pastelHandler)
+	task.MeshHandler.Reset()
+}
+
+func (task *SenseRegistrationTask) SetError(err error) {
+	task.WalletNodeTask.SetError(err)
 }
 
 func (task *SenseRegistrationTask) skipPrimaryNodeTxidCheck() bool {
@@ -726,6 +715,7 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 		MeshHandler:         common.NewMeshHandler(meshHandlerOpts),
 		taskType:            taskTypeSense,
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
+		MaxRetries:          maxRetries,
 	}
 }
 

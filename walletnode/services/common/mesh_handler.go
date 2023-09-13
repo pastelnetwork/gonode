@@ -1,15 +1,8 @@
 package common
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"math/rand"
-	"net"
-	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -70,6 +63,7 @@ type MeshHandlerOpts struct {
 type DDStats struct {
 	WaitingInQueue int32
 	Executing      int32
+	MaxConcurrency int32
 	IsReady        bool
 }
 
@@ -438,18 +432,13 @@ func (m *MeshHandler) filterDDServerRequestsInWaitingQueue(ctx context.Context, 
 	retList = SuperNodeList{}
 	// Connect to top nodes to find 3SN and validate their info
 	for _, someNode := range nodesList {
-		waiting, executing := dataMap[someNode.Address()].WaitingInQueue, dataMap[someNode.Address()].Executing
-		if waiting > DDServerPendingRequestsThreshold {
-			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("waiting tasks", waiting).Warnf("pending requests in queue exceeds the threshold for node %s", someNode.Address())
-			continue
+		waiting, executing, maxConcurrent := dataMap[someNode.Address()].WaitingInQueue, dataMap[someNode.Address()].Executing, dataMap[someNode.Address()].MaxConcurrency
+		if maxConcurrent-executing-waiting > 0 {
+			retList = append(retList, someNode)
 		}
 
-		if executing > DDServerExecutingRequestsThreshold {
-			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("executing tasks", executing).Warnf("executing tasks exceeds the threshold for node %s", someNode.Address())
-			continue
-		}
-
-		retList = append(retList, someNode)
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("executing", executing).WithField("max-concurrent", maxConcurrent).
+			WithField("waiting tasks", waiting).Warnf("dd-service not ready %s", someNode.Address())
 	}
 
 	log.WithContext(ctx).WithField("give nodes count", len(nodesList)).WithField("dd-service ready nodes", len(retList)).Infof("dd-service ready nodes matched")
@@ -592,7 +581,7 @@ func (m *MeshHandler) filterByTopNodesList(ctx context.Context, WNTopNodesList S
 	}
 
 	finalCandidateNodes := SuperNodeList{}
-	for _, someNode := range WNTopNodesList {
+	for _, someNode := range candidateNodes {
 		someNodeIP := someNode.Address()
 		commonCount := 0
 		for _, remoteNodeIP := range peerNodeList[someNodeIP] {
@@ -666,6 +655,7 @@ func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNo
 		data = DDStats{
 			WaitingInQueue: s.WaitingInQueue,
 			Executing:      s.Executing,
+			MaxConcurrency: s.MaxConcurrent,
 			IsReady:        true,
 		}
 
@@ -772,77 +762,6 @@ func (m *MeshHandler) AddNewNode(address string, pastelID string) {
 // Reset resets meshhandler
 func (m *MeshHandler) Reset() {
 	m.Nodes = SuperNodeList{}
-}
-
-func combinations(candidatesNodes SuperNodeList) []SuperNodeList {
-	n := len(candidatesNodes)
-	var result []SuperNodeList
-
-	for i := 0; i < n-2; i++ {
-		for j := i + 1; j < n-1; j++ {
-			for k := j + 1; k < n; k++ {
-				result = append(result, SuperNodeList{candidatesNodes[i], candidatesNodes[j], candidatesNodes[k]})
-			}
-		}
-	}
-
-	rand.Seed(time.Now().UnixNano()) // Seed the random number generator
-	for i := len(result) - 1; i > 0; i-- {
-		j := rand.Intn(i + 1) // Generate a random index from 0 to i
-		// Swap elements at index i and j
-		result[i], result[j] = result[j], result[i]
-	}
-
-	return result
-}
-
-func getWNTopNodesHash(WNTopNodesList SuperNodeList) (string, error) {
-	var WNTopNodesIPs []string
-	for _, node := range WNTopNodesList {
-		WNTopNodesIPs = append(WNTopNodesIPs, node.Address())
-	}
-
-	WNTopNodesHash, err := sortIPsAndGenerateHash(WNTopNodesIPs)
-	if err != nil {
-		return "", err
-	}
-
-	return WNTopNodesHash, nil
-}
-
-func sortIPsAndGenerateHash(ips []string) (string, error) {
-	realIPs := make([]net.IP, 0, len(ips))
-
-	for _, ip := range ips {
-		host, _, err := net.SplitHostPort(ip)
-		if err != nil {
-			return "", err
-		}
-
-		realIPs = append(realIPs, net.ParseIP(host))
-	}
-
-	sort.Slice(realIPs, func(i, j int) bool {
-		return bytes.Compare(realIPs[i], realIPs[j]) < 0
-	})
-
-	sortedIPs := make([]string, 0, len(realIPs))
-	for _, ip := range realIPs {
-		sortedIPs = append(sortedIPs, ip.String())
-	}
-
-	// Concatenate the sorted IPs into a single string
-	concatenated := strings.Join(sortedIPs, "")
-
-	// Create a new hash
-	h := sha256.New()
-
-	// Write the concatenated string into the hash
-	h.Write([]byte(concatenated))
-
-	// Compute the final hash and print it
-	hashed := h.Sum(nil)
-	return hex.EncodeToString(hashed), nil
 }
 
 // NewMeshHandlerSimple returns new MeshHandlerSimple

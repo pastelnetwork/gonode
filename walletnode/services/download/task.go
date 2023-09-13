@@ -82,6 +82,10 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 	var nodesDone chan struct{}
 
 	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("Recovered from panic in defer: %v", r)
+		}
+
 		task.close(ctx)
 
 		// Disconnect all nodes after finished downloading.

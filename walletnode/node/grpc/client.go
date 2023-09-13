@@ -27,7 +27,7 @@ type client struct {
 
 // Connect implements node.Client.Connect()
 func (client *client) Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (node.ConnectionInterface, error) {
-	grpclog.SetLoggerV2(log.DefaultLogger)
+	grpclog.SetLoggerV2(log.NewLoggerWithErrorLevel())
 	id, _ := random.String(8, random.Base62Chars)
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
 

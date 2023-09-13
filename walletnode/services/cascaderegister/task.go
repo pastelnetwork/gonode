@@ -53,9 +53,23 @@ func (task *CascadeRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
-func (task *CascadeRegistrationTask) run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
+func (task *CascadeRegistrationTask) run(cctx context.Context) error {
+	if r := recover(); r != nil {
+		log.Errorf("Recovered from panic in cascade run: %v", r)
+	}
+
+	go func() {
+		<-cctx.Done()
+		log.Println("root context 'cctx' in run func was cancelled:", cctx.Err())
+	}()
+
+	ctx, cancel := context.WithCancel(cctx)
 	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+		log.Println("Derived context 'ctx' in run func was cancelled:", ctx.Err())
+	}()
 
 	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
 	task.StatusLog[common.FieldTaskType] = "Cascade Registration"

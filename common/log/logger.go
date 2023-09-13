@@ -25,6 +25,18 @@ func NewLogger() *Logger {
 	}
 }
 
+// NewLoggerWithErrorLevel returns a new Logger instance with default values
+func NewLoggerWithErrorLevel() *Logger {
+	logger := logrus.New()
+	logger.SetFormatter(formatters.Terminal)
+	logger.SetLevel(logrus.ErrorLevel)
+
+	return &Logger{
+		Logger: logger,
+	}
+}
+
+// V sets verbose level
 func (l *Logger) V(level int) bool {
 	switch level {
 	case 0:
@@ -32,7 +44,7 @@ func (l *Logger) V(level int) bool {
 	case 1:
 		return true // always log warnings
 	case 2:
-		return true // always log info
+		return false // always log info
 	case 3:
 		return false // never log debug
 	default:
