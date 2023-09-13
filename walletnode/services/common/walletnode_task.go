@@ -54,7 +54,7 @@ func (task *WalletNodeTask) RunHelper(ctx context.Context, run TaskRunnerFunc, c
 	return nil
 }
 
-// RunHelper with Retry
+// RunHelperWithRetry starts the task with retry
 func (task *WalletNodeTask) RunHelperWithRetry(ctx context.Context, run TaskRunnerFunc, clean TaskCleanerFunc, maxRetries int, pt pastel.Client, resetFunc func(), setErrFunc func(err error)) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", task.LogPrefix, task.ID()))
 
@@ -90,6 +90,7 @@ func (task *WalletNodeTask) RunHelperWithRetry(ctx context.Context, run TaskRunn
 	}
 
 	if err != nil {
+		setErrFunc(err)
 		task.UpdateStatus(StatusTaskRejected)
 		log.WithContext(ctx).WithError(err).Error("Task is rejected")
 		return nil

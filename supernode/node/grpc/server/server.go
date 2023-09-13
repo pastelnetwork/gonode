@@ -90,17 +90,17 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 
 	// Define the keep-alive parameters
 	kaParams := keepalive.ServerParameters{
-		MaxConnectionIdle:     3 * time.Hour,
-		MaxConnectionAge:      3 * time.Hour,
+		MaxConnectionIdle:     2 * time.Hour,
+		MaxConnectionAge:      2 * time.Hour,
 		MaxConnectionAgeGrace: 1 * time.Hour,
 		Time:                  1 * time.Hour,
-		Timeout:               1 * time.Minute,
+		Timeout:               2 * time.Minute,
 	}
 
 	// Define the keep-alive enforcement policy
 	kaPolicy := keepalive.EnforcementPolicy{
-		MinTime:             60 * time.Second, // Minimum time a client should wait before sending keep-alive probes
-		PermitWithoutStream: true,             // Only allow pings when there are active streams
+		MinTime:             3 * time.Minute, // Minimum time a client should wait before sending keep-alive probes
+		PermitWithoutStream: true,            // Only allow pings when there are active streams
 	}
 
 	var grpcServer *grpc.Server

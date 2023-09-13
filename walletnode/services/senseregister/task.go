@@ -589,11 +589,13 @@ func (task *SenseRegistrationTask) removeArtifacts() {
 	}
 }
 
+// Reset resets the task
 func (task *SenseRegistrationTask) Reset() {
 	task.FingerprintsHandler = mixins.NewFingerprintsHandler(task.service.pastelHandler)
 	task.MeshHandler.Reset()
 }
 
+// SetError sets the task error
 func (task *SenseRegistrationTask) SetError(err error) {
 	task.WalletNodeTask.SetError(err)
 }
@@ -717,12 +719,4 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 		MaxRetries:          maxRetries,
 	}
-}
-
-func doRetry(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	return strings.Contains(err.Error(), "retry")
 }
