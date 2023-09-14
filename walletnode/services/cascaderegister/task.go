@@ -81,13 +81,37 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
 	}
 	task.UpdateStatus(common.StatusBurnTxnValidated)
-	log.WithContext(ctx).Info("burn txn has been validated")
+	log.WithContext(ctx).Info("burn txn has been validated, calculating hash now.")
+
+	// calculate hash of data
+	nftBytes, err := task.Request.Image.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
+		return errors.Errorf("convert image to byte stream %w", err)
+	}
+
+	task.originalFileSizeInBytes = len(nftBytes)
+	//Detect the file type
+	task.fileType = mimetype.Detect(nftBytes).String()
+
+	if task.dataHash, err = utils.Sha3256hash(nftBytes); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("error creating hash")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorEncodingImage)
+		return errors.Errorf("hash encoded image: %w", err)
+	}
+
+	log.WithContext(ctx).Info("calculating sort key")
+	key := append(nftBytes, []byte(task.WalletNodeTask.ID())...)
+	sortKey, _ := utils.Sha3256hash(key)
 
 	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
 	task.StatusLog[common.FieldTaskType] = "Cascade Registration"
 
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
-	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
+	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx, sortKey)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -127,25 +151,6 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 		return errors.Errorf("upload image: %w", err)
 	}
 	log.WithContext(ctx).Info("image has been uploaded")
-
-	// calculate hash of data
-	nftBytes, err := task.Request.Image.Bytes()
-	task.originalFileSizeInBytes = len(nftBytes)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
-		return errors.Errorf("convert image to byte stream %w", err)
-	}
-	//Detect the file type
-	task.fileType = mimetype.Detect(nftBytes).String()
-
-	if task.dataHash, err = utils.Sha3256hash(nftBytes); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("error creating hash")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorEncodingImage)
-		return errors.Errorf("hash encoded image: %w", err)
-	}
 
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Generating RaptorQ symbols' identifiers ",

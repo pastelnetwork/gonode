@@ -103,8 +103,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 
 	log.WithContext(ctx).Info("validating burn transaction")
 	task.UpdateStatus(common.StatusValidateBurnTxn)
-	newCtx := log.ContextWithPrefix(context.Background(), "sense")
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.Request.BurnTxID, 3,
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.Request.BurnTxID, 3,
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
@@ -113,11 +112,31 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 	task.UpdateStatus(common.StatusBurnTxnValidated)
 	log.WithContext(ctx).Info("burn txn has been validated")
 
+	// calculate hash of data
+	imgBytes, err := task.Request.Image.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
+		return errors.Errorf("convert image to byte stream %w", err)
+	}
+	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting bytes to hash")
+
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorEncodingImage)
+		return errors.Errorf("hash encoded image: %w", err)
+	}
+
+	log.WithContext(ctx).Info("calculating sort key")
+	key := append(imgBytes, []byte(task.WalletNodeTask.ID())...)
+	sortKey, _ := utils.Sha3256hash(key)
+
 	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
 	task.StatusLog[common.FieldTaskType] = "Sense Registration"
 
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
-	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
+	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx, sortKey)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -155,22 +174,6 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 	}
 
 	log.WithContext(ctx).Info("action metadata has been sent")
-
-	// calculate hash of data
-	imgBytes, err := task.Request.Image.Bytes()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
-		return errors.Errorf("convert image to byte stream %w", err)
-	}
-	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error converting bytes to hash")
-
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorEncodingImage)
-		return errors.Errorf("hash encoded image: %w", err)
-	}
 
 	task.UpdateStatus(common.StatusValidateDuplicateTickets)
 	/*	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
@@ -280,9 +283,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 
 	log.WithContext(ctx).Infof("Waiting Confirmations for Sense Reg Ticket - Ticket txid: %s", task.regSenseTxid)
 
-	// new context because the old context already cancelled
-	newCtx = log.ContextWithPrefix(context.Background(), "sense")
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations),
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations")
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
@@ -297,7 +298,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 
 	log.WithContext(ctx).Debug("Sense Reg Ticket confirmed, Activating Sense Reg Ticket")
 	// activate sense ticket registered at previous step by SN
-	activateTxID, err := task.activateActionTicket(newCtx)
+	activateTxID, err := task.activateActionTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error activating sense ticket")
 
@@ -316,7 +317,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 	log.WithContext(ctx).Infof("Waiting Confirmations for Sense Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
-	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.SenseActTxMinConfirmations),
+	err = task.service.pastelHandler.WaitTxidValid(ctx, activateTxID, int64(task.service.config.SenseActTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations for activation")

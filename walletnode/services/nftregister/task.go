@@ -32,6 +32,7 @@ const (
 	defaultGreen        = false
 	defaultIssuedCopies = 1
 	defaultRoyalty      = 0.0
+	maxRetries          = 2
 )
 
 // NftRegistrationTask an NFT on the blockchain
@@ -66,6 +67,7 @@ type NftRegistrationTask struct {
 	regNFTTxid     string
 	collectionTxID string
 	taskType       string
+	MaxRetries     int
 
 	// only set to true for unit tests
 	skipPrimaryNodeTxidVerify bool
@@ -73,7 +75,21 @@ type NftRegistrationTask struct {
 
 // Run starts the task
 func (task *NftRegistrationTask) Run(ctx context.Context) error {
-	return task.RunHelper(ctx, task.run, task.removeArtifacts)
+	return task.RunHelperWithRetry(ctx, task.run, task.removeArtifacts, task.MaxRetries, task.service.pastelHandler.PastelClient, task.Reset, task.SetError)
+}
+
+// Reset resets the task
+func (task *NftRegistrationTask) Reset() {
+	task.FingerprintsHandler = mixins.NewFingerprintsHandler(task.service.pastelHandler)
+	task.MeshHandler.Reset()
+	task.RqHandler = mixins.NewRQHandler(task.service.rqClient, task.service.pastelHandler,
+		task.service.config.RaptorQServiceAddress, task.service.config.RqFilesDir,
+		task.service.config.NumberRQIDSFiles, task.service.config.RQIDsMax)
+}
+
+// SetError sets the task error
+func (task *NftRegistrationTask) SetError(err error) {
+	task.WalletNodeTask.SetError(err)
 }
 
 func (task *NftRegistrationTask) skipPrimaryNodeTxidCheck() bool {
@@ -117,10 +133,26 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("current balance is less than max fee provided in the ticket: %v", task.Request.MaximumFee)
 	}
 
+	nftBytes, err := task.Request.Image.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
+		return errors.Errorf("convert image to byte stream %w", err)
+	}
+	task.originalFileSizeInBytes = len(nftBytes)
+
+	log.WithContext(ctx).Info("calculating sort key")
+	key := append(nftBytes, []byte(task.WalletNodeTask.ID())...)
+	sortKey, _ := utils.Sha3256hash(key)
+
+	//Detect the file type
+	task.fileType = mimetype.Detect(nftBytes).String()
+
 	log.WithContext(ctx).Info("setting up mesh with top supernodes")
 
 	// Setup mesh with supernodes with the highest ranks.
-	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
+	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx, sortKey)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error establishing a mesh of SNs")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -153,18 +185,6 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
 		return errors.Errorf("send registration metadata: %w", err)
 	}
-
-	nftBytes, err := task.Request.Image.Bytes()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
-		return errors.Errorf("convert image to byte stream %w", err)
-	}
-	task.originalFileSizeInBytes = len(nftBytes)
-
-	//Detect the file type
-	task.fileType = mimetype.Detect(nftBytes).String()
 
 	if err := task.checkDDServerAvailability(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error checking dd-server availability before probe image call")
@@ -938,6 +958,7 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 		downloadService:     service.downloadHandler,
 		taskType:            taskTypeNFT,
+		MaxRetries:          maxRetries,
 		RqHandler: mixins.NewRQHandler(service.rqClient, service.pastelHandler,
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir,
 			service.config.NumberRQIDSFiles, service.config.RQIDsMax),

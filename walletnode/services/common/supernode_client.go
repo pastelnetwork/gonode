@@ -25,6 +25,8 @@ type SuperNodeClient struct {
 	activated bool
 
 	isRemoteState bool
+	HashedID      []byte
+	Comparator    []byte
 }
 
 // String returns node as string (address)
