@@ -155,7 +155,7 @@ func (pt *PastelHandler) WaitTxidValid(ctx context.Context, txID string, expecte
 	for {
 		select {
 		case <-ctx.Done():
-			return errors.Errorf("context done: %w", ctx.Err())
+			return errors.Errorf("wait tixid valid context done: %w", ctx.Err())
 		case <-time.After(interval):
 			checkConfirms := func() error {
 				subCtx, cancel := context.WithTimeout(ctx, 15*time.Second)

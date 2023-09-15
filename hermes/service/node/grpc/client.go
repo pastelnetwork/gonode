@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	logPrefix             = "hermes-grpc-secclient"
-	defaultConnectTimeout = 60 * time.Second
+	logPrefix             = "hermes-grpc"
+	defaultConnectTimeout = 45 * time.Second
 )
 
 type client struct{}

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	logPrefix = "walletnode-download"
+	logPrefix = "wN-download"
 )
 
 // NftDownloadingService represents a service for the registration NFT.

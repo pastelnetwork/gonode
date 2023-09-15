@@ -5,9 +5,9 @@ import "time"
 const (
 	defaultNumberSuperNodes = 3
 
-	defaultConnectToNextNodeDelay = 400 * time.Millisecond
+	defaultConnectToNextNodeDelay = 600 * time.Millisecond
 	defaultAcceptNodesTimeout     = 600 * time.Second // = 3 * (2* ConnectToNodeTimeout)
-	defaultConnectToNodeTimeout   = time.Second * 20
+	defaultConnectToNodeTimeout   = time.Second * 30
 	defaultHashCheckMaxRetries    = 2
 )
 

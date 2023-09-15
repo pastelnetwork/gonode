@@ -9,8 +9,7 @@ import (
 	"sync"
 	"time"
 
-	//"github.com/pastelnetwork/gonode/common/duplicate"
-
+	"github.com/pastelnetwork/gonode/common/duplicate"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -76,22 +75,25 @@ func (task *SenseRegistrationTask) Error() error {
 	return task.WalletNodeTask.Error()
 }
 
-func (task *SenseRegistrationTask) run(cctx context.Context) error {
+func (task *SenseRegistrationTask) run(ctx context.Context) error {
+	// recover from panic
 	if r := recover(); r != nil {
 		log.Errorf("Recovered from panic in cascade run: %v", r)
 	}
 
-	go func() {
-		<-cctx.Done()
-		log.Println("root context 'cctx' in run func was cancelled:", cctx.Err())
-	}()
-
-	ctx, cancel := context.WithCancel(cctx)
-	defer cancel()
-
+	// know when root context was cancelled and log it
 	go func() {
 		<-ctx.Done()
-		log.Println("Derived context 'ctx' in run func was cancelled:", ctx.Err())
+		log.Println("root context 'cctx' in run func was cancelled:", ctx.Err())
+	}()
+
+	connCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// know when derived context was cancelled and log it
+	go func() {
+		<-connCtx.Done()
+		log.Println("Conn context 'connCtx' in run func was cancelled:", connCtx.Err())
 	}()
 
 	log.WithContext(ctx).Info("checking collection verification")
@@ -103,8 +105,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 
 	log.WithContext(ctx).Info("validating burn transaction")
 	task.UpdateStatus(common.StatusValidateBurnTxn)
-	newCtx := log.ContextWithPrefix(context.Background(), "sense")
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.Request.BurnTxID, 3,
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.Request.BurnTxID, 3,
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
@@ -112,49 +113,6 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 	}
 	task.UpdateStatus(common.StatusBurnTxnValidated)
 	log.WithContext(ctx).Info("burn txn has been validated")
-
-	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
-	task.StatusLog[common.FieldTaskType] = "Sense Registration"
-
-	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
-	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorMeshSetupFailed)
-		return errors.Errorf("retry: connect to top rank nodes: %w", err)
-	}
-	task.creatorBlockHeight = creatorBlockHeight
-	task.creatorBlockHash = creatorBlockHash
-	task.creationTimestamp = time.Now().Format(DateTimeFormat)
-	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
-
-	log.WithContext(ctx).Info("Mesh of supernodes have been established")
-
-	// supervise the connection to top rank nodes
-	// cancel any ongoing context if the connections are broken
-	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
-	defer func(err error) {
-		if err != nil {
-			if err := task.MeshHandler.CloseSNsConnections(ctx, nodesDone); err != nil {
-				log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
-			}
-		}
-	}(err)
-
-	/* Step 5: Send image, burn txid to SNs */
-
-	log.WithContext(ctx).Info("Uploading data to Supernodes")
-
-	// send registration metadata
-	if err := task.sendActionMetadata(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error sending action metadata")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
-		return errors.Errorf("send registration metadata: %w", err)
-	}
-
-	log.WithContext(ctx).Info("action metadata has been sent")
 
 	// calculate hash of data
 	imgBytes, err := task.Request.Image.Bytes()
@@ -172,18 +130,72 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 		return errors.Errorf("hash encoded image: %w", err)
 	}
 
-	task.UpdateStatus(common.StatusValidateDuplicateTickets)
-	/*	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
-		if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
-			log.WithContext(ctx).WithError(err)
-			return errors.Errorf("Error duplicate ticket")
-		}*/
+	log.WithContext(ctx).Info("calculating sort key")
+	key := append(imgBytes, []byte(task.WalletNodeTask.ID())...)
+	sortKey, _ := utils.Sha3256hash(key)
+
+	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
+	task.StatusLog[common.FieldTaskType] = "Sense Registration"
+
+	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
+	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(connCtx, sortKey)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorMeshSetupFailed)
+		if err := task.MeshHandler.CloseSNsConnections(ctx, nil); err != nil {
+			log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
+		}
+		return errors.Errorf("retry: connect to top rank nodes: %w", err)
+	}
+	task.creatorBlockHeight = creatorBlockHeight
+	task.creatorBlockHash = creatorBlockHash
+	task.creationTimestamp = time.Now().Format(DateTimeFormat)
+	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
+
+	log.WithContext(ctx).Info("Mesh of supernodes have been established")
+
+	// supervise the connection to top rank nodes
+	// cancel any ongoing context if the connections are broken
+	var closeErr error
+	nodesDone := task.MeshHandler.ConnectionsSupervisor(connCtx, cancel)
+	defer func() {
+		if closeErr != nil {
+			log.WithContext(ctx).Info("close err not nil - closing connections")
+			if err := task.MeshHandler.CloseSNsConnections(ctx, nodesDone); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
+			}
+		}
+	}()
+
+	/* Step 5: Send image, burn txid to SNs */
+
+	log.WithContext(ctx).Info("Uploading data to Supernodes")
+
+	// send registration metadata
+	if err := task.sendActionMetadata(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error sending action metadata")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		closeErr = err
+		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
+		return errors.Errorf("send registration metadata: %w", err)
+	}
+
+	log.WithContext(ctx).Info("action metadata has been sent")
+
+	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
+	if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
+		log.WithContext(ctx).WithError(err)
+		return errors.Errorf("Error duplicate ticket")
+	}
 	log.WithContext(ctx).Info("no duplicate tickets have been found")
+	task.UpdateStatus(common.StatusValidateDuplicateTickets)
 
 	if err := task.checkDDServerAvailability(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error checking dd-server availability before probe image call")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorCheckDDServerAvailability)
+		closeErr = err
 		return errors.Errorf("retry: dd-server availability check: %w", err)
 	}
 
@@ -192,6 +204,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error probing image")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorProbeImage)
+		closeErr = err
 		return errors.Errorf("probe image: %w", err)
 	}
 
@@ -202,6 +215,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error generating DD & Fingerprint IDs")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorGenerateDDAndFPIds)
+		closeErr = err
 		return errors.Errorf("generate dd and fp IDs: %w", err)
 	}
 
@@ -209,6 +223,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 
 	fee, err := task.service.pastelHandler.GetEstimatedSenseFee(ctx, utils.GetFileSizeInMB(imgBytes))
 	if err != nil {
+		closeErr = err
 		log.WithContext(ctx).WithError(err).Error("error getting estimated sense fee")
 		return errors.Errorf("getting estimated fee %w", err)
 	}
@@ -218,6 +233,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 	log.WithContext(ctx).Info("Create and sign Sense Reg Ticket")
 
 	if err := task.createSenseTicket(ctx); err != nil {
+		closeErr = err
 		log.WithContext(ctx).WithError(err).Error("error creating sense ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorCreatingTicket)
@@ -226,6 +242,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 
 	// sign ticket with creator signature
 	if err := task.signTicket(ctx); err != nil {
+		closeErr = err
 		log.WithContext(ctx).WithError(err).Error("error signing sense ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorSigningTicket)
@@ -237,7 +254,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 	// UPLOAD signed ticket to supernodes to validate and register action with the network
 	if err := task.uploadSignedTicket(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error uploading signed ticket")
-
+		closeErr = err
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorUploadingTicket)
 		return errors.Errorf("send signed sense ticket: %w", err)
@@ -254,6 +271,11 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 
 	log.WithContext(ctx).Infof("Sense Reg Ticket registered. Sense Registration Ticket txid: %s", task.regSenseTxid)
 	log.WithContext(ctx).Info("Closing SNs connections")
+	// don't need SNs anymore
+	if err := task.MeshHandler.CloseSNsConnections(ctx, nodesDone); err != nil {
+		closeErr = err
+		log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
+	}
 
 	now := time.Now()
 	if task.downloadService != nil {
@@ -275,14 +297,9 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 		}
 	}
 
-	// don't need SNs anymore
-	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-
 	log.WithContext(ctx).Infof("Waiting Confirmations for Sense Reg Ticket - Ticket txid: %s", task.regSenseTxid)
 
-	// new context because the old context already cancelled
-	newCtx = log.ContextWithPrefix(context.Background(), "sense")
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations),
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations")
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
@@ -297,7 +314,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 
 	log.WithContext(ctx).Debug("Sense Reg Ticket confirmed, Activating Sense Reg Ticket")
 	// activate sense ticket registered at previous step by SN
-	activateTxID, err := task.activateActionTicket(newCtx)
+	activateTxID, err := task.activateActionTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error activating sense ticket")
 
@@ -316,7 +333,7 @@ func (task *SenseRegistrationTask) run(cctx context.Context) error {
 	log.WithContext(ctx).Infof("Waiting Confirmations for Sense Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
-	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.SenseActTxMinConfirmations),
+	err = task.service.pastelHandler.WaitTxidValid(ctx, activateTxID, int64(task.service.config.SenseActTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations for activation")

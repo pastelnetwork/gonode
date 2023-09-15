@@ -181,14 +181,14 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 }
 
 // Download downloads the file from supernodes.
-func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string, timeout time.Duration) ([]error, []string, error) {
+func (task *NftDownloadingTask) Download(cctx context.Context, txid, timestamp, signature, ttxid, ttype string, timeout time.Duration) ([]error, []string, error) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
 	var badNodes []string
 	var badMtx sync.Mutex
 
 	// Create a new context with a cancel function
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(cctx)
 	defer cancel()
 
 	// Create a buffered channel to communicate successful downloads

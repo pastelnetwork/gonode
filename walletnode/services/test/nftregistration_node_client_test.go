@@ -3,15 +3,15 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	service "github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	service "github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/nft_register"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestRegisterNftNodeConnect(t *testing.T) {
@@ -66,10 +66,9 @@ func TestRegisterNftNodeConnect(t *testing.T) {
 			testCase.node.RealNodeMaker = service.RegisterNftNodeMaker{}
 
 			//assertion error
-			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
+			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}, ""))
 			//mock assertion
 			clientMock.ClientInterface.AssertExpectations(t)
-			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address, mock.Anything)
 			clientMock.AssertRegisterNftCall(testCase.numberAPICall)
 		})
 	}

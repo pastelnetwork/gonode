@@ -23,7 +23,7 @@ import (
 // ClientInterface represents a base connection interface.
 type ClientInterface interface {
 	// Connect connects to the server at the given address.
-	Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (ConnectionInterface, error)
+	Connect(ctx context.Context, address string, secInfo *alts.SecInfo, taskID string) (ConnectionInterface, error)
 }
 
 // ConnectionInterface represents a client connection

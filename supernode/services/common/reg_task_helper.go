@@ -204,7 +204,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 
 				go func() {
 					<-gctx.Done()
-					log.Println("Derived context 'gctx' was cancelled:", gctx.Err())
+					log.Println("wait confirmation: derived context 'gctx' was cancelled:", gctx.Err())
 				}()
 
 				txResult, err := h.PastelHandler.PastelClient.GetRawTransactionVerbose1(gctx, txid)

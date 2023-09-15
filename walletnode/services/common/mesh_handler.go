@@ -110,7 +110,7 @@ func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 }
 
 // SetupMeshOfNSupernodesNodes sets Mesh
-func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, string, error) {
+func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context, sortKey []byte) (int, string, error) {
 	log.WithContext(ctx).Info("SetupMeshOfNSupernodesNodes Starting...")
 
 	// Get current block height & hash
@@ -120,7 +120,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 	}
 	log.WithContext(ctx).Infof("Current block is %d", blockNum)
 
-	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes, []string{})
+	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes, []string{}, sortKey)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
 		return 0, "", errors.Errorf("failed validating of %d SNs: %w", m.minNumberSuperNodes, err)
@@ -139,7 +139,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context) (int, str
 // ConnectToNSuperNodes sets single simple connection to N SNs
 func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int, skipNodes []string) error {
 
-	connectedNodes, err := m.findNValidTopSuperNodes(ctx, n, skipNodes)
+	connectedNodes, err := m.findNValidTopSuperNodes(ctx, n, skipNodes, []byte{})
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int, skipNodes
 }
 
 // ConnectToTopRankNodes - find N supernodes and create mesh of 3 nodes
-func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNodes []string) (SuperNodeList, error) {
+func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNodes []string, sortKey []byte) (SuperNodeList, error) {
 
 	// Retrieve supernodes with the highest ranks.
 	WNTopNodes, err := m.getTopNodes(ctx)
@@ -180,6 +180,14 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 		err := errors.New("not enough candidate nodes found with required parameters")
 		log.WithContext(ctx).WithField("count", len(candidateNodes)).WithError(err)
 		return nil, err
+	}
+
+	if len(sortKey) > 0 {
+		log.WithContext(ctx).WithField("before sort", candidateNodes).Info("candidate nodes before sorting")
+		candidateNodes.Sort(sortKey)
+		log.WithContext(ctx).WithField("after sort", candidateNodes).Info("candidate nodes after sorting")
+	} else {
+		log.WithContext(ctx).Info("no sort key provided")
 	}
 
 	// Connect to top nodes to find 3SN and validate their info
@@ -277,7 +285,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList
 	for primaryRank := range candidatesNodes {
 		meshedNodes, err = m.connectToPrimarySecondary(ctx, candidatesNodes, primaryRank)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Warn("Connecting to primary ans secondary failed. Disconnecting any still connected")
+			log.WithContext(ctx).WithError(err).Warn("Connecting to primary and secondary failed. Disconnecting any still connected")
 			// close connected connections
 			m.disconnectNodes(ctx, candidatesNodes)
 
@@ -384,7 +392,7 @@ func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNo
 			continue
 		}
 
-		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
 			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 			continue
 		}
@@ -435,10 +443,11 @@ func (m *MeshHandler) filterDDServerRequestsInWaitingQueue(ctx context.Context, 
 		waiting, executing, maxConcurrent := dataMap[someNode.Address()].WaitingInQueue, dataMap[someNode.Address()].Executing, dataMap[someNode.Address()].MaxConcurrency
 		if maxConcurrent-executing-waiting > 0 {
 			retList = append(retList, someNode)
-		}
+		} else {
 
-		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("executing", executing).WithField("max-concurrent", maxConcurrent).
-			WithField("waiting tasks", waiting).Warnf("dd-service not ready %s", someNode.Address())
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("executing", executing).WithField("max-concurrent", maxConcurrent).
+				WithField("waiting tasks", waiting).Warnf("dd-service not ready %s", someNode.Address())
+		}
 	}
 
 	log.WithContext(ctx).WithField("give nodes count", len(nodesList)).WithField("dd-service ready nodes", len(retList)).Infof("dd-service ready nodes matched")
@@ -458,7 +467,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 
 	primary := candidatesNodes[primaryIndex]
 	log.WithContext(ctx).Debugf("Trying to connect to primary node %q", primary)
-	if err := primary.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+	if err := primary.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("Failed to connect to primary node %q", primary)
 		return nil, fmt.Errorf("connect: %w", err)
 	}
@@ -489,7 +498,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 				go func() {
 					defer errors.Recover(log.Fatal)
 
-					if err := sameNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+					if err := sameNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("Failed to connect to secondary node %q", sameNode.String())
 						return
 					}
@@ -532,7 +541,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 	defer secondariesMtx.Unlock()
 
 	for _, pastelID := range accepted {
-		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
+		log.WithContext(ctx).Infof("Primary accepted %q secondary node", pastelID)
 
 		someNode := secondaries.FindByPastelID(pastelID)
 		if someNode == nil {
@@ -607,7 +616,7 @@ func (m *MeshHandler) filterByTopNodesList(ctx context.Context, WNTopNodesList S
 func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNodeClient, secInfo *alts.SecInfo) (top []string, hash string, data DDStats, err error) {
 	logger := log.WithContext(ctx).WithField("address", someNode.Address())
 
-	if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+	if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
 		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 		return top, hash, data, err
 	}

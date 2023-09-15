@@ -32,6 +32,7 @@ const (
 	defaultGreen        = false
 	defaultIssuedCopies = 1
 	defaultRoyalty      = 0.0
+	maxRetries          = 2
 )
 
 // NftRegistrationTask an NFT on the blockchain
@@ -66,6 +67,7 @@ type NftRegistrationTask struct {
 	regNFTTxid     string
 	collectionTxID string
 	taskType       string
+	MaxRetries     int
 
 	// only set to true for unit tests
 	skipPrimaryNodeTxidVerify bool
@@ -73,7 +75,21 @@ type NftRegistrationTask struct {
 
 // Run starts the task
 func (task *NftRegistrationTask) Run(ctx context.Context) error {
-	return task.RunHelper(ctx, task.run, task.removeArtifacts)
+	return task.RunHelperWithRetry(ctx, task.run, task.removeArtifacts, task.MaxRetries, task.service.pastelHandler.PastelClient, task.Reset, task.SetError)
+}
+
+// Reset resets the task
+func (task *NftRegistrationTask) Reset() {
+	task.FingerprintsHandler = mixins.NewFingerprintsHandler(task.service.pastelHandler)
+	task.MeshHandler.Reset()
+	task.RqHandler = mixins.NewRQHandler(task.service.rqClient, task.service.pastelHandler,
+		task.service.config.RaptorQServiceAddress, task.service.config.RqFilesDir,
+		task.service.config.NumberRQIDSFiles, task.service.config.RQIDsMax)
+}
+
+// SetError sets the task error
+func (task *NftRegistrationTask) SetError(err error) {
+	task.WalletNodeTask.SetError(err)
 }
 
 func (task *NftRegistrationTask) skipPrimaryNodeTxidCheck() bool {
@@ -85,7 +101,7 @@ func (task *NftRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 //		Task here will abstract away the individual node communications layer, and instead operate at the mesh control layer.
 //	 For individual communcations control, see node/grpc/nft_register.go
 func (task *NftRegistrationTask) run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
+	connCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log.WithContext(ctx).Info("checking collection verification")
@@ -117,14 +133,40 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		return errors.Errorf("current balance is less than max fee provided in the ticket: %v", task.Request.MaximumFee)
 	}
 
+	nftBytes, err := task.Request.Image.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
+		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
+		return errors.Errorf("convert image to byte stream %w", err)
+	}
+	task.originalFileSizeInBytes = len(nftBytes)
+
+	log.WithContext(ctx).Info("calculating sort key")
+	var key []byte
+
+	if task.MaxRetries > 0 { // Ugly hack only for unit tests - need to re-write the logic
+		key = append(nftBytes, []byte(task.WalletNodeTask.ID())...)
+	}
+
+	sortKey, _ := utils.Sha3256hash(key)
+
+	//Detect the file type
+	task.fileType = mimetype.Detect(nftBytes).String()
+
 	log.WithContext(ctx).Info("setting up mesh with top supernodes")
 
 	// Setup mesh with supernodes with the highest ranks.
-	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx)
+	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(connCtx, sortKey)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error establishing a mesh of SNs")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorMeshSetupFailed)
+
+		if err := task.MeshHandler.CloseSNsConnections(ctx, nil); err != nil {
+			log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
+		}
+
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
 	task.creatorBlockHeight = creatorBlockHeight
@@ -135,14 +177,15 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
-	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
-	defer func(err error) {
-		if err != nil {
+	var closeErr error
+	nodesDone := task.MeshHandler.ConnectionsSupervisor(connCtx, cancel)
+	defer func() {
+		if closeErr != nil {
 			if err := task.MeshHandler.CloseSNsConnections(ctx, nodesDone); err != nil {
 				log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
 			}
 		}
-	}(err)
+	}()
 
 	log.WithContext(ctx).Info("uploading data to supernodes")
 
@@ -151,25 +194,15 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error sending reg metadata")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
+		closeErr = err
 		return errors.Errorf("send registration metadata: %w", err)
 	}
-
-	nftBytes, err := task.Request.Image.Bytes()
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
-		task.StatusLog[common.FieldErrorDetail] = err.Error()
-		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
-		return errors.Errorf("convert image to byte stream %w", err)
-	}
-	task.originalFileSizeInBytes = len(nftBytes)
-
-	//Detect the file type
-	task.fileType = mimetype.Detect(nftBytes).String()
 
 	if err := task.checkDDServerAvailability(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error checking dd-server availability before probe image call")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorCheckDDServerAvailability)
+		closeErr = err
 		return errors.Errorf("dd-server availability check: %w", err)
 	}
 
@@ -178,6 +211,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error probing image")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorProbeImage)
+		closeErr = err
 		return errors.Errorf("probe image: %w", err)
 	}
 
@@ -189,6 +223,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Errorf("Error generating FPs:%s", err.Error())
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorGenerateDDAndFPIds)
+		closeErr = err
 		return errors.Errorf("DD and/or Fingerprint ID error: %w", err)
 	}
 	log.WithContext(ctx).Info("fingerprint && dd IDs have been generated")
@@ -202,6 +237,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error creating copy with encoded FPs")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorEncodingImage)
+		closeErr = err
 		return errors.Errorf("encode image with fingerprint: %w", err)
 	}
 	log.WithContext(ctx).Info("copy created with encoded fingerprints")
@@ -210,6 +246,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error retrieving nft hash")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorGetImageHash)
+		closeErr = err
 		return errors.Errorf("get image hash: %w", err)
 	}
 	log.WithContext(ctx).Info("data hash has been generated")
@@ -217,6 +254,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	task.UpdateStatus(common.StatusValidateDuplicateTickets)
 	dtc := duplicate.NewDupTicketsDetector(task.service.pastelHandler.PastelClient)
 	if err := dtc.CheckDuplicateSenseOrNFTTickets(ctx, task.dataHash); err != nil {
+		closeErr = err
 		log.WithContext(ctx).WithError(err)
 		return errors.Errorf("Error checking duplicate ticket")
 	}
@@ -229,6 +267,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Errorf("error uploading signed image")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorUploadImageFailed)
+		closeErr = err
 		return errors.Errorf("upload image: %w", err)
 	}
 	log.WithContext(ctx).Info("signed image has been uploaded")
@@ -240,6 +279,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error generating RQIDs")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
+		closeErr = err
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
 	log.WithContext(ctx).Info("rq IDs have been generated")
@@ -248,6 +288,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error creating NFT ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorCreatingTicket)
+		closeErr = err
 		return errors.Errorf("create ticket: %w", err)
 	}
 	log.WithContext(ctx).Info("nft-reg ticket has been created")
@@ -258,6 +299,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error signing ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorSigningTicket)
+		closeErr = err
 		return errors.Errorf("sign NFT ticket: %w", err)
 	}
 	log.WithContext(ctx).Info("nft-reg ticket has been signed")
@@ -268,6 +310,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Errorf("error sending signed ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorSendSignTicketFailed)
+		closeErr = err
 		return errors.Errorf("send signed NFT ticket: %w", err)
 	}
 	log.WithContext(ctx).Info("signed ticket has been sent")
@@ -280,6 +323,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error checking balance to pay reg fee")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorCheckBalance)
+		closeErr = err
 		return errors.Errorf("check current balance: %s", err.Error())
 	}
 	log.WithContext(ctx).Info("spendable address has been validated to check if have enough PSL")
@@ -291,6 +335,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error registering NFT ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorPreburnRegFeeGetTicketID)
+		closeErr = err
 		return errors.Errorf("pre-burnt ten percent of registration fee: %s", err.Error())
 	}
 	task.StatusLog[common.FieldRegTicketTxnID] = task.regNFTTxid
@@ -302,6 +347,10 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	})
 	task.UpdateStatus(common.StatusTicketAccepted)
 	log.WithContext(ctx).Debug("pre-burned 10% of fee, signed ticket uploaded to SNs")
+	log.WithContext(ctx).Info("Closing SNs connections")
+
+	// don't need SNs anymore
+	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
 	now := time.Now()
 	if task.downloadService != nil {
@@ -324,18 +373,12 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	}
 
 	log.WithContext(ctx).Infof("nft-reg ticket registered. NFT Registration Ticket txid: %s", task.regNFTTxid)
-	log.WithContext(ctx).Info("Closing SNs connections")
 
-	// don't need SNs anymore
-	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-
-	// new context because the old context already cancelled
-	newCtx := log.ContextWithPrefix(context.Background(), "nft-reg")
 	//Start Step 20
 
 	log.WithContext(ctx).Info("waiting confirmations for nft-reg ticket")
 
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regNFTTxid, int64(task.service.config.NFTRegTxMinConfirmations),
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.regNFTTxid, int64(task.service.config.NFTRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error validating nft-reg-txid")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -343,6 +386,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 		return errors.Errorf("wait reg-nft ticket valid: %s", err.Error())
 	}
+
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Validated NFT Reg TXID: ",
 		StatusString:  task.regNFTTxid,
@@ -354,7 +398,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// activate reg-nft ticket at previous step
 	// Send Activation ticket and Registration Fee (cNode API)
-	activateTxID, err := task.registerActTicket(newCtx)
+	activateTxID, err := task.registerActTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error registering act ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -372,7 +416,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Infof("waiting confirmations for NFT Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until actTxid is valid
-	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID,
+	err = task.service.pastelHandler.WaitTxidValid(ctx, activateTxID,
 		int64(task.service.config.NFTActTxMinConfirmations), time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("error validating nft-act ticket")
@@ -938,6 +982,7 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 		downloadService:     service.downloadHandler,
 		taskType:            taskTypeNFT,
+		MaxRetries:          maxRetries,
 		RqHandler: mixins.NewRQHandler(service.rqClient, service.pastelHandler,
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir,
 			service.config.NumberRQIDSFiles, service.config.RQIDsMax),
