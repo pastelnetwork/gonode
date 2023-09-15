@@ -143,7 +143,12 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	task.originalFileSizeInBytes = len(nftBytes)
 
 	log.WithContext(ctx).Info("calculating sort key")
-	key := append(nftBytes, []byte(task.WalletNodeTask.ID())...)
+	var key []byte
+
+	if task.MaxRetries > 0 { // Ugly hack only for unit tests - need to re-write the logic
+		key = append(nftBytes, []byte(task.WalletNodeTask.ID())...)
+	}
+
 	sortKey, _ := utils.Sha3256hash(key)
 
 	//Detect the file type

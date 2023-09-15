@@ -105,14 +105,14 @@ func TestTaskRun(t *testing.T) {
 				ctx:        context.Background(),
 				networkFee: 0.4,
 				masterNodes: pastel.MasterNodes{
-					pastel.MasterNode{ExtAddress: "127.0.0.2:4444", ExtKey: "1"},
-					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
-					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "3"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
 				},
-				getTopMNsReply: &pb.GetTopMNsReply{MnTopList: []string{"127.0.0.1:4444", "127.0.0.2:4444", "127.0.0.3:4444", "127.0.0.4:4444", "127.0.0.5:4444",
-					"127.0.0.6:4444", "127.0.0.7:4444", "127.0.0.8:4444", "127.0.0.9:4444", "127.0.0.0:4444"}},
+				getTopMNsReply: &pb.GetTopMNsReply{MnTopList: []string{"127.0.0.1:4444", "127.0.0.1:4445", "127.0.0.1:4446", "127.0.0.1:4447", "127.0.0.1:4448",
+					"127.0.0.1:4449", "127.0.0.0:4440", "127.0.0.0:4441", "127.0.0.0:4442", "127.0.0.1:4443"}},
 				primarySessID: "sesid1",
-				pastelIDS:     []string{"2", "3"},
+				pastelIDS:     []string{"3", "1"},
 				fingerPrint:   []byte("match"),
 				signature:     []byte("sign"),
 				returnErr:     nil,
@@ -129,44 +129,44 @@ func TestTaskRun(t *testing.T) {
 				},
 			},
 		},
-		/*
-			"failure": {
-				wantErr: errors.New("test"),
-				fields: fields{
-					Request: &NftRegistrationRequest{
-						MaximumFee:                0.5,
-						CreatorPastelID:           testCreatorPastelID,
-						CreatorPastelIDPassphrase: "passphrase",
-					},
-				},
-				args: args{
-					taskID:     "1",
-					ctx:        context.Background(),
-					networkFee: 0.4,
-					masterNodes: pastel.MasterNodes{
-						pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-						pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
-						pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
-					},
 
-					primarySessID: "sesid1",
-					pastelIDS:     []string{"2", "3"},
-					fingerPrint:   []byte("match"),
-					signature:     []byte("sign"),
-					returnErr:     errors.New("test"),
-					encodeInfoReturns: &rqnode.EncodeInfo{
-						SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
-							"test-file": {
-								ID:                uuid.New().String(),
-								SymbolIdentifiers: []string{"test-s1, test-s2"},
-								BlockHash:         "test-block-hash",
-								PastelID:          "test-pastel-id",
-							},
-						},
-						EncoderParam: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
-					},
+		"failure": {
+			wantErr: errors.New("test"),
+			fields: fields{
+				Request: &NftRegistrationRequest{
+					MaximumFee:                0.5,
+					CreatorPastelID:           testCreatorPastelID,
+					CreatorPastelIDPassphrase: "passphrase",
 				},
-			},*/
+			},
+			args: args{
+				taskID:     "1",
+				ctx:        context.Background(),
+				networkFee: 0.4,
+				masterNodes: pastel.MasterNodes{
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
+				},
+
+				primarySessID: "sesid1",
+				pastelIDS:     []string{"2", "3"},
+				fingerPrint:   []byte("match"),
+				signature:     []byte("sign"),
+				returnErr:     errors.New("test"),
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": {
+							ID:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelID:          "test-pastel-id",
+						},
+					},
+					EncoderParam: rqnode.EncoderParameters{Oti: []byte{1, 2, 3}},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

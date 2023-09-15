@@ -73,8 +73,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 
 	log.WithContext(ctx).Info("validating burn transaction")
 	task.UpdateStatus(common.StatusValidateBurnTxn)
-	newCtx := log.ContextWithPrefix(context.Background(), "cascade")
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.Request.BurnTxID, 3,
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.Request.BurnTxID, 3,
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
@@ -253,8 +252,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 	log.WithContext(ctx).Infof("Waiting Confirmations for Cascade Reg Ticket - Ticket txid: %s", task.regCascadeTxid)
 
 	// new context because the old context already cancelled
-	newCtx = log.ContextWithPrefix(context.Background(), "cascade")
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error waiting for Reg TXID confirmations")
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
@@ -270,7 +268,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 	log.WithContext(ctx).Info("cascade reg ticket confirmed, now activating cascade reg ticket")
 
 	// activate cascade ticket registered at previous step by SN
-	activateTxID, err := task.activateActionTicket(newCtx)
+	activateTxID, err := task.activateActionTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error activating action ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -286,7 +284,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 	})
 	log.WithContext(ctx).Infof("Cascade ticket activated. Activation ticket txid: %s, waiting for confirmations now", activateTxID)
 	// Wait until activateTxID is valid
-	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.CascadeActTxMinConfirmations),
+	err = task.service.pastelHandler.WaitTxidValid(ctx, activateTxID, int64(task.service.config.CascadeActTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error waiting for activated Reg TXID confirmations")
