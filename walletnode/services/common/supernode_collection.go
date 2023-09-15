@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"sort"
 
@@ -58,8 +57,6 @@ func (nodes *SuperNodeList) WaitConnClose(ctx context.Context, done <-chan struc
 // FindByPastelID returns node by its patstelID.
 func (nodes *SuperNodeList) FindByPastelID(id string) *SuperNodeClient {
 	for _, someNode := range *nodes {
-		fmt.Println("someNode.PastelID():", someNode.PastelID())
-		fmt.Println("id", id)
 		if someNode.PastelID() == id {
 			return someNode
 		}

@@ -10,7 +10,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -18,7 +17,7 @@ import (
 )
 
 const (
-	logPrefix = "walletnode-grpc-secclient"
+	logPrefix = "wn-grpc"
 )
 
 type client struct {
@@ -26,10 +25,9 @@ type client struct {
 }
 
 // Connect implements node.Client.Connect()
-func (client *client) Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (node.ConnectionInterface, error) {
+func (client *client) Connect(ctx context.Context, address string, secInfo *alts.SecInfo, taskID string) (node.ConnectionInterface, error) {
 	grpclog.SetLoggerV2(log.NewLoggerWithErrorLevel())
-	id, _ := random.String(8, random.Base62Chars)
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, taskID))
 
 	// Define the keep-alive parameters
 	ka := keepalive.ClientParameters{
@@ -64,7 +62,7 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 	}
 	log.WithContext(ctx).Infof("Connected to %s", address)
 
-	conn := newClientConn(id, grpcConn)
+	conn := newClientConn(taskID, grpcConn)
 	go func() {
 		<-conn.Done()
 		log.WithContext(ctx).Infof("Disconnected %s", grpcConn.Target())

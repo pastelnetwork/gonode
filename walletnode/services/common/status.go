@@ -70,7 +70,7 @@ var statusNames = map[Status]string{
 	StatusConnected:                "Connected",
 	StatusValidateBurnTxn:          "Validating Burn Txn",
 	StatusBurnTxnValidated:         "Burn Txn Validated",
-	StatusValidateDuplicateTickets: "Validating Duplicate Reg Tickets",
+	StatusValidateDuplicateTickets: "Validated Duplicate Reg Tickets",
 
 	// Sense and NFT reg
 	StatusImageProbed:               "Image Probed",

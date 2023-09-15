@@ -85,7 +85,7 @@ func (node *SuperNodeClient) RUnlock() {
 }
 
 // Connect connects to supernode.
-func (node *SuperNodeClient) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo) error {
+func (node *SuperNodeClient) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo, taskID string) error {
 	node.mtx.Lock()
 	defer node.mtx.Unlock()
 
@@ -96,7 +96,7 @@ func (node *SuperNodeClient) Connect(ctx context.Context, timeout time.Duration,
 	connCtx, connCancel := context.WithTimeout(ctx, timeout)
 	defer connCancel()
 
-	conn, err := node.ClientInterface.Connect(connCtx, node.address, secInfo)
+	conn, err := node.ClientInterface.Connect(connCtx, node.address, secInfo, taskID)
 	if err != nil {
 		return err
 	}

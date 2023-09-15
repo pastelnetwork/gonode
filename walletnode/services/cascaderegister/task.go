@@ -53,22 +53,21 @@ func (task *CascadeRegistrationTask) Run(ctx context.Context) error {
 	return task.RunHelper(ctx, task.run, task.removeArtifacts)
 }
 
-func (task *CascadeRegistrationTask) run(cctx context.Context) error {
+func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	if r := recover(); r != nil {
 		log.Errorf("Recovered from panic in cascade run: %v", r)
 	}
 
 	go func() {
-		<-cctx.Done()
-		log.Println("root context 'cctx' in run func was cancelled:", cctx.Err())
+		<-ctx.Done()
+		log.Println("root context 'ctx' in run func was cancelled:", ctx.Err())
 	}()
 
-	ctx, cancel := context.WithCancel(cctx)
+	connCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
 	go func() {
-		<-ctx.Done()
-		log.Println("Derived context 'ctx' in run func was cancelled:", ctx.Err())
+		<-connCtx.Done()
+		log.Println("Conn context 'connCtx' in run func was cancelled:", connCtx.Err())
 	}()
 
 	log.WithContext(ctx).Info("validating burn transaction")
@@ -110,27 +109,34 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 	task.StatusLog[common.FieldTaskType] = "Cascade Registration"
 
 	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
-	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx, sortKey)
+	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(connCtx, sortKey)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorMeshSetupFailed)
+
+		if err := task.MeshHandler.CloseSNsConnections(ctx, nil); err != nil { // disconnect in case any of the nodes were connected
+			log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
+		}
+
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
+
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
-	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
-	defer func(err error) {
-		if err != nil {
+	var closeErr error
+	nodesDone := task.MeshHandler.ConnectionsSupervisor(connCtx, cancel)
+	defer func() {
+		if closeErr != nil {
 			if err := task.MeshHandler.CloseSNsConnections(ctx, nodesDone); err != nil {
 				log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
 			}
 		}
-	}(err)
+	}()
 
 	log.WithContext(ctx).Info("uploading data to supernodes")
 
@@ -138,6 +144,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 	if err := task.sendActionMetadata(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error sending action metadata")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		closeErr = err
 		task.UpdateStatus(common.StatusErrorSendingRegMetadata)
 		return errors.Errorf("send registration metadata: %w", err)
 	}
@@ -147,6 +154,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error uploading image")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorUploadImageFailed)
+		closeErr = err
 		return errors.Errorf("upload image: %w", err)
 	}
 	log.WithContext(ctx).Info("image has been uploaded")
@@ -164,6 +172,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error generating RQIDs")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorGenRaptorQSymbolsFailed)
+		closeErr = err
 		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
 	}
 	log.WithContext(ctx).Info("rq-ids have been generated")
@@ -171,6 +180,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 	fileDataInMb := utils.GetFileSizeInMB(nftBytes)
 	fee, err := task.service.pastelHandler.GetEstimatedCascadeFee(ctx, fileDataInMb)
 	if err != nil {
+		closeErr = err
 		log.WithContext(ctx).WithError(err).Error("error getting estimated fee")
 		return errors.Errorf("getting estimated fee %w", err)
 	}
@@ -189,6 +199,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 	if err := task.createCascadeTicket(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error creating cascade ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
+		closeErr = err
 		task.UpdateStatus(common.StatusErrorCreatingTicket)
 		return errors.Errorf("create ticket: %w", err)
 	}
@@ -199,6 +210,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error signing ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorSigningTicket)
+		closeErr = err
 		return errors.Errorf("sign cascade ticket: %w", err)
 	}
 	log.WithContext(ctx).Info("signed cascade reg ticket")
@@ -208,6 +220,7 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error uploading signed ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorUploadingTicket)
+		closeErr = err
 		return errors.Errorf("send signed cascade ticket: %w", err)
 	}
 	task.StatusLog[common.FieldRegTicketTxnID] = task.regCascadeTxid
@@ -218,7 +231,14 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 		IsFailureBool: false,
 		IsFinalBool:   false,
 	})
-	log.WithContext(ctx).Info("uploaded signed cascade reg ticket to SNs")
+	log.WithContext(ctx).Info("uploaded signed cascade reg ticket to SNs, closing SN connections")
+
+	// don't need SNs anymore
+	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+	if err != nil {
+		closeErr = err
+		log.WithContext(ctx).WithError(err).Error("error closing SNs connections")
+	}
 
 	now := time.Now()
 	if task.downloadService != nil {
@@ -238,19 +258,9 @@ func (task *CascadeRegistrationTask) run(cctx context.Context) error {
 			return errors.Errorf("error validating cascade ticket data")
 		}
 	}
-	log.WithContext(ctx).Info("data-validation completed for cascade-reg ticket")
-
-	log.WithContext(ctx).Infof("Cascade Reg Ticket registered. Cascade Registration Ticket txid: %s", task.regCascadeTxid)
-	log.WithContext(ctx).Info("Closing SNs connections")
-
-	// don't need SNs anymore
-	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error closing SNs connections")
-	}
+	log.WithContext(ctx).Infof("data-validation completed, Cascade Reg Ticket registered with txid: %s", task.regCascadeTxid)
 
 	log.WithContext(ctx).Infof("Waiting Confirmations for Cascade Reg Ticket - Ticket txid: %s", task.regCascadeTxid)
-
 	// new context because the old context already cancelled
 	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.regCascadeTxid, int64(task.service.config.CascadeRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {

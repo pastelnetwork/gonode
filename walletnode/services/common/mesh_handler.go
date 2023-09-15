@@ -392,7 +392,7 @@ func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNo
 			continue
 		}
 
-		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
 			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 			continue
 		}
@@ -467,7 +467,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 
 	primary := candidatesNodes[primaryIndex]
 	log.WithContext(ctx).Debugf("Trying to connect to primary node %q", primary)
-	if err := primary.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+	if err := primary.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("Failed to connect to primary node %q", primary)
 		return nil, fmt.Errorf("connect: %w", err)
 	}
@@ -498,7 +498,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 				go func() {
 					defer errors.Recover(log.Fatal)
 
-					if err := sameNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+					if err := sameNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("Failed to connect to secondary node %q", sameNode.String())
 						return
 					}
@@ -616,7 +616,7 @@ func (m *MeshHandler) filterByTopNodesList(ctx context.Context, WNTopNodesList S
 func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNodeClient, secInfo *alts.SecInfo) (top []string, hash string, data DDStats, err error) {
 	logger := log.WithContext(ctx).WithField("address", someNode.Address())
 
-	if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo); err != nil {
+	if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
 		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 		return top, hash, data, err
 	}
