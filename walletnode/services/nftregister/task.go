@@ -386,6 +386,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 		return errors.Errorf("wait reg-nft ticket valid: %s", err.Error())
 	}
+
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Validated NFT Reg TXID: ",
 		StatusString:  task.regNFTTxid,

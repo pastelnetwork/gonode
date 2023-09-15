@@ -111,9 +111,9 @@ func (client *Client) AssertRegisterSenseCall(expectedCalls int, arguments ...in
 // ListenOnConnect listening Connect call and returns error from args
 func (client *Client) ListenOnConnect(addr string, returnErr error) *Client {
 	if addr == "" {
-		client.ClientInterface.On(ConnectMethod, mock.Anything, mock.IsType(string("")), mock.Anything).Return(client.ConnectionInterface, returnErr)
+		client.ClientInterface.On(ConnectMethod, mock.Anything, mock.IsType(string("")), mock.Anything, mock.Anything).Return(client.ConnectionInterface, returnErr)
 	} else {
-		client.ClientInterface.On(ConnectMethod, mock.Anything, addr, mock.Anything).Return(client.ConnectionInterface, returnErr)
+		client.ClientInterface.On(ConnectMethod, mock.Anything, addr, mock.Anything, mock.Anything).Return(client.ConnectionInterface, returnErr)
 	}
 
 	return client
