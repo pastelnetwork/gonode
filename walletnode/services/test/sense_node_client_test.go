@@ -3,10 +3,11 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	service "github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
+	service "github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/sense_register"
@@ -66,7 +67,7 @@ func TestRegisterSenseNodeConnect(t *testing.T) {
 			testCase.node.RealNodeMaker = service.RegisterSenseNodeMaker{}
 
 			//assertion error
-			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
+			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}, ""))
 			//mock assertion
 			clientMock.ClientInterface.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address, mock.Anything)
