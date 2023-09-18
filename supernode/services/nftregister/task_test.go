@@ -67,7 +67,7 @@ func add2NodesAnd2TicketSignatures(task *NftRegistrationTask) *NftRegistrationTa
 
 func makeEmptyNftRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client,
 	ddClient ddclient.DDServerClient, rqClient rqnode.ClientInterface) *NftRegistrationTask {
-	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, ddClient)
+	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, ddClient, nil)
 	task := NewNftRegistrationTask(service)
 	task.storage.RqClient = rqClient
 	task.Ticket = &pastel.NFTTicket{}

@@ -553,7 +553,7 @@ func (task *CascadeRegistrationTask) Download(ctx context.Context) error {
 // NewCascadeRegisterTask returns a new CascadeRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
 func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common.ActionRegistrationRequest) *CascadeRegistrationTask {
-	task := common.NewWalletNodeTask(logPrefix)
+	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
 		NodeMaker:     &RegisterCascadeNodeMaker{},

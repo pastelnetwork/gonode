@@ -71,7 +71,7 @@ func TestDDFPConnect(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(tc.nodesRet, nil).ListenOnFindTicketByID(&pastel.IDTicket{TXID: "txid"}, nil)
 
 			meshHandlerOpts := common.MeshHandlerOpts{
-				Task:          common.NewWalletNodeTask(logPrefix),
+				Task:          common.NewWalletNodeTask(logPrefix, nil),
 				NodeMaker:     &NftSearchingNodeMaker{},
 				PastelHandler: mixins.NewPastelHandler(pastelClientMock),
 				NodeClient:    nodeClientMock,

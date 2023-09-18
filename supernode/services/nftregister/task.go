@@ -582,7 +582,7 @@ func (task *NftRegistrationTask) removeArtifacts() {
 // NewNftRegistrationTask returns a new Task instance.
 func NewNftRegistrationTask(service *NftRegistrationService) *NftRegistrationTask {
 	task := &NftRegistrationTask{
-		SuperNodeTask:          common.NewSuperNodeTask(logPrefix),
+		SuperNodeTask:          common.NewSuperNodeTask(logPrefix, service.historyDB),
 		NftRegistrationService: service,
 		storage: common.NewStorageHandler(service.P2PClient, rqgrpc.NewClient(),
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),

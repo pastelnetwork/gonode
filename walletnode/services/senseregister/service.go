@@ -37,6 +37,7 @@ type SenseRegistrationService struct {
 	ImageHandler    *mixins.FilesHandler
 	pastelHandler   *mixins.PastelHandler
 	nodeClient      node.ClientInterface
+	historyDB       storage.LocalStoreInterface
 }
 
 // Run starts worker.
@@ -120,6 +121,7 @@ func NewService(
 	fileStorage storage.FileStorageInterface,
 	downloadService *download.NftDownloadingService,
 	db storage.KeyValue,
+	historyDB storage.LocalStoreInterface,
 ) *SenseRegistrationService {
 	return &SenseRegistrationService{
 		Worker:          task.NewWorker(),
@@ -128,5 +130,6 @@ func NewService(
 		downloadHandler: downloadService,
 		ImageHandler:    mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
 		pastelHandler:   mixins.NewPastelHandler(pastelClient),
+		historyDB:       historyDB,
 	}
 }

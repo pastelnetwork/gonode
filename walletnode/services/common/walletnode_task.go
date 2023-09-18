@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -121,15 +122,17 @@ func (task *WalletNodeTask) SetError(err error) {
 }
 
 // NewWalletNodeTask returns a new WalletNodeTask instance.
-func NewWalletNodeTask(logPrefix string) *WalletNodeTask {
-	wnt := &WalletNodeTask{
+func NewWalletNodeTask(logPrefix string, hDB storage.LocalStoreInterface) *WalletNodeTask {
+	wnt := WalletNodeTask{
 		Task:      task.New(StatusTaskStarted),
 		LogPrefix: logPrefix,
 		StatusLog: make(map[string]interface{}),
 	}
+
+	wnt.InitialiseHistoryDB(hDB)
 	wnt.SetStateLog(wnt.StatusLog)
 
-	return wnt
+	return &wnt
 }
 
 func doRetry(err error) bool {

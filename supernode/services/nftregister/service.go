@@ -25,6 +25,7 @@ type NftRegistrationService struct {
 
 	nodeClient node.ClientInterface
 	ddClient   ddclient.DDServerClient
+	historyDB  storage.LocalStoreInterface
 }
 
 // Run starts task
@@ -69,11 +70,12 @@ func (service *NftRegistrationService) GetDupeDetectionServerStats(ctx context.C
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, ddClient ddclient.DDServerClient) *NftRegistrationService {
+func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, ddClient ddclient.DDServerClient, historyDB storage.LocalStoreInterface) *NftRegistrationService {
 	return &NftRegistrationService{
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient),
 		config:           config,
 		nodeClient:       nodeClient,
 		ddClient:         ddClient,
+		historyDB:        historyDB,
 	}
 }

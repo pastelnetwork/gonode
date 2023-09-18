@@ -2,12 +2,12 @@ package nftsearch
 
 import (
 	"context"
-
 	bridgeNode "github.com/pastelnetwork/gonode/bridge/node"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
@@ -26,6 +26,7 @@ type NftSearchingService struct {
 	nodeClient    node.ClientInterface
 	pastelHandler *mixins.PastelHandler
 	bridgeClient  bridgeNode.DownloadDataInterface
+	historyDB     storage.LocalStoreInterface
 }
 
 // Run starts worker.
@@ -150,7 +151,7 @@ func (service *NftSearchingService) RegTicket(ctx context.Context, RegTXID strin
 //	NB: Because NewNftApiHandler calls AddTask, an NftSearchTask will actually
 //		be instantiated instead of a generic Task.
 func NewNftSearchService(config *Config, pastelClient pastel.Client,
-	nodeClient node.ClientInterface, bridgeClient bridgeNode.DownloadDataInterface) *NftSearchingService {
+	nodeClient node.ClientInterface, bridgeClient bridgeNode.DownloadDataInterface, historyDB storage.LocalStoreInterface) *NftSearchingService {
 
 	return &NftSearchingService{
 		Worker:        task.NewWorker(),
@@ -158,5 +159,6 @@ func NewNftSearchService(config *Config, pastelClient pastel.Client,
 		nodeClient:    nodeClient,
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
 		bridgeClient:  bridgeClient,
+		historyDB:     historyDB,
 	}
 }

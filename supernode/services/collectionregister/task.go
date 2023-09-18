@@ -250,7 +250,7 @@ func (task *CollectionRegistrationTask) removeArtifacts() {
 // NewCollectionRegistrationTask returns a new Task instance.
 func NewCollectionRegistrationTask(service *CollectionRegistrationService) *CollectionRegistrationTask {
 	task := &CollectionRegistrationTask{
-		SuperNodeTask:                 common.NewSuperNodeTask(logPrefix),
+		SuperNodeTask:                 common.NewSuperNodeTask(logPrefix, service.historyDB),
 		CollectionRegistrationService: service,
 	}
 

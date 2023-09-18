@@ -16,6 +16,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
+	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
@@ -204,6 +205,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// Initialize temporary local file storage
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
+	//Initialize History DB
+	hDB, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error connecting history db..")
+	}
+	defer hDB.CloseHistoryDB(ctx)
+
 	//Set minimum confirmation requirements for transactions to ensure completion
 	if config.RegTxMinConfirmations > 0 {
 		config.NftRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
@@ -231,13 +239,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// These services connect the different clients and configs together to provide tasking and handling for
 	//  the required functionality.  These services aren't started with these declarations, they will be run
 	//	later through the API Server.
-	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient, bridge)
-	nftDownload := download.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient)
+	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient, bridge, hDB)
+	nftDownload := download.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient, hDB)
 	//userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
-	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, *nftDownload)
-	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, nftDownload, db)
-	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload)
-	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient)
+	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, *nftDownload, hDB)
+	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, nftDownload, db, hDB)
+	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload, hDB)
+	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient, hDB)
 
 	fileMappings := &sync.Map{}
 	server := api.NewAPIServer(config.API, fileMappings, pastelClient,

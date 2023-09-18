@@ -953,7 +953,7 @@ func (task *NftRegistrationTask) removeArtifacts() {
 
 // NewNFTRegistrationTask returns a new Task instance.
 func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistrationRequest) *NftRegistrationTask {
-	task := common.NewWalletNodeTask(logPrefix)
+	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
 		NodeMaker:     &RegisterNftNodeMaker{},

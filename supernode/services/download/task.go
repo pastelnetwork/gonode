@@ -443,7 +443,7 @@ func (task *NftDownloadingTask) removeArtifacts() {
 // NewNftDownloadingTask returns a new Task instance.
 func NewNftDownloadingTask(service *NftDownloaderService) *NftDownloadingTask {
 	return &NftDownloadingTask{
-		SuperNodeTask:        common.NewSuperNodeTask(logPrefix),
+		SuperNodeTask:        common.NewSuperNodeTask(logPrefix, service.historyDB),
 		NftDownloaderService: service,
 		RqClient:             rqgrpc.NewClient(),
 	}

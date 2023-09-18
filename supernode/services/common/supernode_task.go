@@ -7,6 +7,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 )
 
@@ -51,9 +52,13 @@ func (task *SuperNodeTask) RemoveFile(file *files.File) {
 }
 
 // NewSuperNodeTask returns a new Task instance.
-func NewSuperNodeTask(logPrefix string) *SuperNodeTask {
-	return &SuperNodeTask{
+func NewSuperNodeTask(logPrefix string, historyDB storage.LocalStoreInterface) *SuperNodeTask {
+	snt := &SuperNodeTask{
 		Task:      task.New(StatusTaskStarted),
 		LogPrefix: logPrefix,
 	}
+
+	snt.InitialiseHistoryDB(historyDB)
+
+	return snt
 }

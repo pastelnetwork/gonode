@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/storage/local"
-
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
 )
 
@@ -36,6 +36,9 @@ type State interface {
 
 	//SetStateLog set the wallet node task status log to the state status log
 	SetStateLog(statusLog types.Fields)
+
+	//InitialiseHistoryDB sets the connection to historyDB
+	InitialiseHistoryDB(store storage.LocalStoreInterface)
 }
 
 type state struct {
@@ -44,9 +47,10 @@ type state struct {
 
 	notifyFn func(status *Status)
 	sync.RWMutex
-	subsCh    []chan *Status
-	taskID    string
-	statusLog types.Fields
+	subsCh         []chan *Status
+	taskID         string
+	statusLog      types.Fields
+	historyDBStore storage.LocalStoreInterface
 }
 
 // Status implements State.Status()
@@ -89,15 +93,21 @@ func (state *state) UpdateStatus(subStatus SubStatus) {
 		history.Details = types.NewDetails(status.String(), state.statusLog)
 	}
 
-	store, err := local.OpenHistoryDB()
-	if err != nil {
-		log.WithError(err).Error("error opening history db")
-	}
-
-	if store != nil {
-		defer store.CloseHistoryDB(context.Background())
-		if _, err := store.InsertTaskHistory(history); err != nil {
+	if state.historyDBStore != nil {
+		if _, err := state.historyDBStore.InsertTaskHistory(history); err != nil {
 			log.WithError(err).Error("unable to store task status")
+		}
+	} else {
+		store, err := local.OpenHistoryDB()
+		if err != nil {
+			log.WithError(err).Error("error opening history db")
+		}
+
+		if store != nil {
+			defer store.CloseHistoryDB(context.Background())
+			if _, err := store.InsertTaskHistory(history); err != nil {
+				log.WithError(err).Error("unable to store task status")
+			}
 		}
 	}
 
@@ -136,6 +146,10 @@ func (state *state) SubscribeStatus() func() <-chan *Status {
 
 func (state *state) SetStateLog(statusLog types.Fields) {
 	state.statusLog = statusLog
+}
+
+func (state *state) InitialiseHistoryDB(storeInterface storage.LocalStoreInterface) {
+	state.historyDBStore = storeInterface
 }
 
 // New returns a new state instance.

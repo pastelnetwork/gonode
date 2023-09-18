@@ -137,7 +137,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnVerifyCollectionTicket(true, nil).ListenOnGetBalance(10, nil).
 				ListenOnActivateCollectionTicket("txid", nil)
 
-			service := NewService(NewConfig(), pastelClientMock, nodeClient)
+			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil)
 			service.config.WaitTxnValidInterval = 1
 
 			go service.Run(testCase.args.ctx)

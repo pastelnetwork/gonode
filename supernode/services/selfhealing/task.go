@@ -46,7 +46,7 @@ func (task *SHTask) RemoveArtifacts() {
 // NewSHTask returns a new Task instance.
 func NewSHTask(service *SHService) *SHTask {
 	task := &SHTask{
-		SuperNodeTask: common.NewSuperNodeTask(logPrefix),
+		SuperNodeTask: common.NewSuperNodeTask(logPrefix, service.historyDB),
 		StorageHandler: common.NewStorageHandler(service.P2PClient, rqgrpc.NewClient(),
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
 		SHService:           service,

@@ -35,6 +35,7 @@ type NftRegistrationService struct {
 
 	rqClient        rqnode.ClientInterface
 	downloadHandler *download.NftDownloadingService
+	historyDB       storage.LocalStoreInterface
 }
 
 // Run starts worker. //TODO: make common with the same from SenseRegisterService
@@ -119,7 +120,7 @@ func (service *NftRegistrationService) CalculateFee(ctx context.Context, fileID 
 //
 //	are  handled in NftApiHandler, an NftRegistrationTask will actually be created via AddTask.
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface, fileStorage storage.FileStorageInterface,
-	db storage.KeyValue, downloadService *download.NftDownloadingService) *NftRegistrationService {
+	db storage.KeyValue, downloadService *download.NftDownloadingService, historyDB storage.LocalStoreInterface) *NftRegistrationService {
 	return &NftRegistrationService{
 		Worker:          task.NewWorker(),
 		config:          config,
@@ -128,5 +129,6 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Clie
 		pastelHandler:   mixins.NewPastelHandler(pastelClient),
 		downloadHandler: downloadService,
 		rqClient:        rqgrpc.NewClient(),
+		historyDB:       historyDB,
 	}
 }

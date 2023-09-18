@@ -20,6 +20,7 @@ type CascadeRegistrationService struct {
 	config *Config
 
 	nodeClient node.ClientInterface
+	historyDB  storage.LocalStoreInterface
 }
 
 // Run starts task
@@ -46,11 +47,12 @@ func (service *CascadeRegistrationService) Task(id string) *CascadeRegistrationT
 
 // NewService returns a new Service instance.
 func NewService(config *Config, fileStorage storage.FileStorageInterface,
-	pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client) *CascadeRegistrationService {
+	pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, historyDB storage.LocalStoreInterface) *CascadeRegistrationService {
 
 	return &CascadeRegistrationService{
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient),
 		config:           config,
 		nodeClient:       nodeClient,
+		historyDB:        historyDB,
 	}
 }
