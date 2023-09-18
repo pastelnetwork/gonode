@@ -51,7 +51,7 @@ func TestNewService(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			// t.Parallel()
 
-			service := NewNftDownloadService(testCase.args.config, testCase.args.pastelClient, testCase.args.nodeClient)
+			service := NewNftDownloadService(testCase.args.config, testCase.args.pastelClient, testCase.args.nodeClient, nil)
 			assert.Equal(t, testCase.want.config, service.config)
 			assert.Equal(t, testCase.want.pastelHandler.PastelClient, service.pastelHandler.PastelClient)
 			assert.Equal(t, testCase.want.nodeClient, service.nodeClient)

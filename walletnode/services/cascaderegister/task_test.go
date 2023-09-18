@@ -192,8 +192,8 @@ func TestTaskRun(t *testing.T) {
 			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 			rqClientMock.ListenOnConnect(testCase.args.connectErr)
 
-			downloadService := download.NewNftDownloadService(download.NewConfig(), pastelClientMock, nodeClient)
-			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, *downloadService)
+			downloadService := download.NewNftDownloadService(download.NewConfig(), pastelClientMock, nodeClient, nil)
+			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, *downloadService, nil)
 			service.rqClient = rqClientMock
 			service.config.WaitTxnValidInterval = 1
 

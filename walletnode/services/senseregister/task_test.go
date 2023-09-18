@@ -244,7 +244,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnGetInactiveActionTickets(pastel.ActTickets{}, nil).
 				ListenOnGetInactiveNFTTickets(pastel.RegTickets{}, nil)
 
-			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, nil)
+			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, nil, nil)
 			service.config.WaitTxnValidInterval = 1
 
 			go service.Run(testCase.args.ctx)

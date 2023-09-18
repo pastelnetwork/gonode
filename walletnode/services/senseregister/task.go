@@ -708,7 +708,7 @@ func (task *SenseRegistrationTask) IsValidForCollection(ctx context.Context) err
 // NewSenseRegisterTask returns a new SenseRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
 func NewSenseRegisterTask(service *SenseRegistrationService, request *common.ActionRegistrationRequest) *SenseRegistrationTask {
-	task := common.NewWalletNodeTask(logPrefix)
+	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
 		NodeMaker:     &RegisterSenseNodeMaker{},

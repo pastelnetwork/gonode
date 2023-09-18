@@ -374,7 +374,7 @@ func (task *CascadeRegistrationTask) removeArtifacts() {
 func NewCascadeRegistrationTask(service *CascadeRegistrationService) *CascadeRegistrationTask {
 
 	task := &CascadeRegistrationTask{
-		SuperNodeTask:              common.NewSuperNodeTask(logPrefix),
+		SuperNodeTask:              common.NewSuperNodeTask(logPrefix, service.historyDB),
 		CascadeRegistrationService: service,
 		storage: common.NewStorageHandler(service.P2PClient, rqgrpc.NewClient(),
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),

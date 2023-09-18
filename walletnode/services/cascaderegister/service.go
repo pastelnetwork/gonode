@@ -42,6 +42,7 @@ type CascadeRegistrationService struct {
 	rqClient rqnode.ClientInterface
 
 	downloadHandler download.NftDownloadingService
+	historyDB       storage.LocalStoreInterface
 }
 
 // Run starts worker.
@@ -122,6 +123,7 @@ func (service *CascadeRegistrationService) CalculateFee(ctx context.Context, fil
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface, db storage.KeyValue,
 	downloadService download.NftDownloadingService,
+	historyDB storage.LocalStoreInterface,
 ) *CascadeRegistrationService {
 	return &CascadeRegistrationService{
 		Worker:          task.NewWorker(),
@@ -131,5 +133,6 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Clie
 		pastelHandler:   mixins.NewPastelHandler(pastelClient),
 		rqClient:        rqgrpc.NewClient(),
 		downloadHandler: downloadService,
+		historyDB:       historyDB,
 	}
 }

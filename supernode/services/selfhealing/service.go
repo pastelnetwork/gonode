@@ -28,6 +28,7 @@ type SHService struct {
 	nodeID            string
 	nodeClient        node.ClientInterface
 	currentBlockCount int32
+	historyDB         storage.LocalStoreInterface
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -96,13 +97,15 @@ func (service *SHService) Task(id string) *SHTask {
 // NewService : Create a new self-healing service
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastel-client, p2p, and rqClient.
-func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client) *SHService {
+func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client,
+	historyDB storage.LocalStoreInterface) *SHService {
 	return &SHService{
 		config:           config,
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2p),
 		nodeClient:       nodeClient,
 		nodeID:           config.PastelID,
 		pastelHandler:    mixins.NewPastelHandler(pastelClient),
+		historyDB:        historyDB,
 	}
 }
 

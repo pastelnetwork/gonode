@@ -68,7 +68,7 @@ func TestNewService(t *testing.T) {
 			t.Parallel()
 
 			service := NewService(testCase.args.config, nil, testCase.args.pastelClient, testCase.args.nodeClient,
-				testCase.args.p2pClient)
+				testCase.args.p2pClient, nil)
 			assert.Equal(t, testCase.want.config, service.config)
 			assert.Equal(t, testCase.want.PastelClient, service.PastelClient)
 			assert.Equal(t, testCase.want.P2PClient, service.P2PClient)

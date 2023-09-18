@@ -25,6 +25,7 @@ type SenseRegistrationService struct {
 
 	nodeClient node.ClientInterface
 	ddClient   ddclient.DDServerClient
+	historyDB  storage.LocalStoreInterface
 }
 
 // Run starts task
@@ -75,11 +76,13 @@ func NewService(config *Config,
 	nodeClient node.ClientInterface,
 	p2pClient p2p.Client,
 	ddClient ddclient.DDServerClient,
+	historyDB storage.LocalStoreInterface,
 ) *SenseRegistrationService {
 	return &SenseRegistrationService{
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient),
 		config:           config,
 		nodeClient:       nodeClient,
 		ddClient:         ddClient,
+		historyDB:        historyDB,
 	}
 }

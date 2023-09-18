@@ -219,7 +219,7 @@ func (task *NftSearchingTask) removeArtifacts() {
 
 // NewNftSearchTask returns a new NftSearchingTask instance.
 func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest) *NftSearchingTask {
-	task := common.NewWalletNodeTask(logPrefix)
+	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
 		NodeMaker:     &NftSearchingNodeMaker{},
@@ -256,7 +256,7 @@ type NftGetSearchTask struct {
 
 // NewNftGetSearchTask returns a new NftSearchingTask instance.
 func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphrase string) *NftGetSearchTask {
-	task := common.NewWalletNodeTask(logPrefix)
+	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
 		NodeMaker:     &NftSearchingNodeMaker{},

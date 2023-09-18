@@ -323,7 +323,7 @@ func (task *CollectionRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 // NewCollectionRegistrationTask returns a new CollectionRegistrationTask instance.
 // TODO: make config interface and pass it instead of individual items
 func NewCollectionRegistrationTask(service *CollectionRegistrationService, request *common.CollectionRegistrationRequest) *CollectionRegistrationTask {
-	task := common.NewWalletNodeTask(logPrefix)
+	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
 		NodeMaker:     &RegisterCollectionNodeMaker{},

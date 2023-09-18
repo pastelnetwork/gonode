@@ -328,7 +328,7 @@ func (task *NftDownloadingTask) close(ctx context.Context) error {
 
 // NewNftDownloadTask returns a new Task instance.
 func NewNftDownloadTask(service *NftDownloadingService, request *NftDownloadingRequest) *NftDownloadingTask {
-	task := common.NewWalletNodeTask(logPrefix)
+	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
 		NodeMaker:     &NftDownloadingNodeMaker{},

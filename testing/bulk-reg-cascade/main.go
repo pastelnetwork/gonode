@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -24,10 +23,9 @@ import (
 )
 
 const (
-	initialDelay           = 1 * time.Second
-	maxRetries             = 5
-	timeoutAfter           = 300
-	preBurnedFeePercentage = 0.2
+	initialDelay = 1 * time.Second
+	maxRetries   = 5
+	timeoutAfter = 1000
 )
 
 type result struct {
@@ -74,7 +72,7 @@ func doUploadImage(method, filePath, fileName string) (res uploadImageResponse, 
 		return res, nil
 	}
 
-	res.RequiredPreburnAmount = math.Round(float64(res.TotalEstimatedFee)*preBurnedFeePercentage*10) / 10
+	log.Printf("pre-burn-amount: %f\n", res.RequiredPreburnAmount)
 
 	return res, nil
 }
@@ -324,6 +322,8 @@ func main() {
 
 		taskIDs[taskID] = startReq
 		count++
+
+		time.Sleep(3 * time.Second)
 	}
 
 	count = 1

@@ -38,7 +38,7 @@ func (task *SCTask) RemoveArtifacts() {
 // NewSCTask returns a new Task instance.
 func NewSCTask(service *SCService) *SCTask {
 	task := &SCTask{
-		SuperNodeTask: common.NewSuperNodeTask(logPrefix),
+		SuperNodeTask: common.NewSuperNodeTask(logPrefix, service.historyDB),
 		SCService:     service,
 		stateStorage:  &defaultChallengeStateLogging{},
 	}

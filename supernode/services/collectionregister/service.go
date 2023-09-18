@@ -20,6 +20,7 @@ type CollectionRegistrationService struct {
 	config *Config
 
 	nodeClient node.ClientInterface
+	historyDB  storage.LocalStoreInterface
 }
 
 // Run starts task
@@ -45,10 +46,12 @@ func NewService(config *Config,
 	pastelClient pastel.Client,
 	nodeClient node.ClientInterface,
 	p2pClient p2p.Client,
+	historyDB storage.LocalStoreInterface,
 ) *CollectionRegistrationService {
 	return &CollectionRegistrationService{
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient),
 		config:           config,
 		nodeClient:       nodeClient,
+		historyDB:        historyDB,
 	}
 }

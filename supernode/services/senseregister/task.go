@@ -425,7 +425,7 @@ func (task *SenseRegistrationTask) removeArtifacts() {
 // NewSenseRegistrationTask returns a new Task instance.
 func NewSenseRegistrationTask(service *SenseRegistrationService) *SenseRegistrationTask {
 	task := &SenseRegistrationTask{
-		SuperNodeTask:            common.NewSuperNodeTask(logPrefix),
+		SuperNodeTask:            common.NewSuperNodeTask(logPrefix, service.historyDB),
 		SenseRegistrationService: service,
 		storage:                  common.NewStorageHandler(service.P2PClient, nil, "", ""),
 	}
