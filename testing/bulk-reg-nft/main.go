@@ -25,7 +25,7 @@ import (
 const (
 	initialDelay = 1 * time.Second
 	maxRetries   = 5
-	timeoutAfter = 300
+	timeoutAfter = 1000
 )
 
 type result struct {
@@ -274,10 +274,10 @@ func main() {
 			ImageId:           uploadImageRes.ImageID,
 			IssuedCopies:      1,
 			Keywords:          "bulk-reg-nft-test" + uploadImageRes.ImageID,
-			MaximumFee:        500,
+			MaximumFee:        1500,
 			Name:              fileName,
 			SeriesName:        "Test Series",
-			SpendableAddress:  "tPnZqg14epVVp4c512DyDTXr44gxRdF63T3",
+			SpendableAddress:  "tPoQ1SLYSRFkob5nC6yHfrM3cJqBoCivS5c",
 			ThumbnailCoordinate: ThumbnailCoordinate{
 				BottomRightX: 640,
 				BottomRightY: 480,
@@ -285,7 +285,7 @@ func main() {
 				TopLeftY:     0,
 			},
 			YoutubeUrl:             "https://www.youtube.com/watch?v=0xl6Ufo4ZX0",
-			MakePubliclyAccessible: getPubliclyAccessible(count),
+			MakePubliclyAccessible: true,
 		}
 
 		logger.Printf("payload for image-id:%s, request:%d, payload:%s", uploadImageRes.ImageID, count, req)
@@ -298,6 +298,8 @@ func main() {
 
 		taskIDs[taskID] = startReq
 		count++
+
+		time.Sleep(3 * time.Second)
 	}
 
 	count = 1
