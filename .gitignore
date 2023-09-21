@@ -5,3 +5,5 @@
 proto/github.com/
 .idea
 go.sum
+go.work
+go.work.sum

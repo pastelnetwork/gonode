@@ -3,7 +3,9 @@ package utils
 import (
 	"bytes"
 	"container/heap"
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -335,4 +337,15 @@ func Decompress(data []byte) ([]byte, error) {
 	}
 
 	return decompressedData, nil
+}
+
+// RandomDuration returns a random duration between min and max
+func RandomDuration(min, max int) time.Duration {
+	if min > max {
+		min, max = max, min
+	}
+	var n uint64
+	binary.Read(rand.Reader, binary.LittleEndian, &n) // read a random uint64
+	randomMillisecond := min + int(n%(uint64(max-min+1)))
+	return time.Duration(randomMillisecond) * time.Millisecond
 }

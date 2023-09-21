@@ -3,6 +3,7 @@ package download
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"time"
 
 	json "github.com/json-iterator/go"
@@ -94,6 +95,41 @@ func (task *NftDownloadingTask) DownloadThumbnail(ctx context.Context, txid stri
 	return resMap, err
 }
 
+func (task *NftDownloadingTask) downloadDDFPFile(ctx context.Context, ddFpID string) ([]byte, error) {
+	file, err := task.P2PClient.Retrieve(ctx, ddFpID)
+	if err != nil {
+		return nil, errors.Errorf("DDAndFingerPrintDetails tried to get this file and failed: %w", err)
+	}
+
+	if len(file) == 0 {
+		return nil, errors.Errorf("DDAndFingerPrintDetails empty file received: %w", err)
+	}
+
+	decompressedData, err := utils.Decompress(file)
+	if err != nil {
+		return nil, errors.Errorf("DDAndFingerPrintDetails failed to decompress this file: %w", err)
+	}
+
+	//base64 dataset doesn't contain periods, so we just find the first index of period and chop it and everything else
+	firstIndexOfSeparator := bytes.IndexByte(decompressedData, pastel.SeparatorByte)
+	if firstIndexOfSeparator < 1 {
+		return nil, errors.Errorf("DDAndFingerPrintDetails got a bad separator index: %w", err)
+	}
+	dataToBase64Decode := decompressedData[:firstIndexOfSeparator]
+	dataToJSONDecode, err := utils.B64Decode(dataToBase64Decode)
+	if err != nil {
+		return nil, errors.Errorf("DDAndFingerPrintDetails could not base64 decode: %w", err)
+	}
+
+	/*ddAndFingerprintsStruct := &pastel.DDAndFingerprints{}
+	err = json.Unmarshal(dataToJSONDecode, ddAndFingerprintsStruct)
+	if err != nil {
+		return nil, errors.Errorf("DDAndFingerPrintDetails could not JSON unmarshal: %w", err)
+	}*/ // Is this required?
+
+	return dataToJSONDecode, nil
+}
+
 // DownloadDDAndFingerprints gets dd and fp file from ticket based on id and returns the file.
 func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, txid string) ([]byte, error) {
 	log.WithContext(ctx).WithField("txid", txid).Info("Getting dd and fingerprints for txid")
@@ -109,7 +145,7 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 	}
 
 	DDAndFingerprintsIDs := info.ddAndFpIDs
-	log.WithContext(ctx).WithField("ddandfpids", info.ddAndFpIDs).Info("Found dd and fp ids")
+	log.WithContext(ctx).WithField("ddandfpids", info.ddAndFpIDs).WithField("txid", txid).Info("Found dd and fp ids")
 
 	//utility function for getting the DD and Fingerprint Details given
 	//	a list of IDs (presumably from AppTicketData's DDAndFingerprintIDs), fingerprint IC, and fingerprint max
@@ -121,48 +157,25 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 	//6) try to JSON decode into a pastel.DDAndFingerprints
 	//7) if all these are successful, return this struct
 	//8) else, something got messed up somewhere so keep iterating through the files until successful
-
 	for i := 0; i < len(DDAndFingerprintsIDs); i++ {
-		file, err := task.P2PClient.Retrieve(ctx, DDAndFingerprintsIDs[i])
+		decKey := base58.Decode(DDAndFingerprintsIDs[i])
+		dbKey := hex.EncodeToString(decKey)
+
+		log.WithContext(ctx).WithField("hash", decKey).WithField("db_key", dbKey).WithField("txid", txid).
+			WithField("dd_fp_id", DDAndFingerprintsIDs[i]).Info("DDAndFingerPrintDetails trying to fetch & decode this file")
+
+		retData, err := task.downloadDDFPFile(ctx, DDAndFingerprintsIDs[i])
 		if err != nil {
-			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails tried to get this file and failed. ")
+			log.WithContext(ctx).WithField("db_key", dbKey).WithField("txid", txid).WithField("dd_fp_id", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to download this file. ")
 			continue
 		}
 
-		if len(file) == 0 {
-			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails empty file received.")
-			continue
-		}
+		log.WithContext(ctx).WithField("txid", txid).WithField("hash", decKey).WithField("db_key", dbKey).
+			WithField("Hash", DDAndFingerprintsIDs[i]).Info("DDAndFingerPrintDetails successfully downloaded this file. ")
 
-		decompressedData, err := utils.Decompress(file)
-		if err != nil {
-			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to decompress this file. ")
-			continue
-		}
-		log.WithContext(ctx).Println("Decompressed the file")
-		//base64 dataset doesn't contain periods, so we just find the first index of period and chop it and everything else
-		firstIndexOfSeparator := bytes.IndexByte(decompressedData, pastel.SeparatorByte)
-		if firstIndexOfSeparator < 1 {
-			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails got a bad separator index. ")
-			continue
-		}
-		dataToBase64Decode := decompressedData[:firstIndexOfSeparator]
-		dataToJSONDecode, err := utils.B64Decode(dataToBase64Decode)
-		if err != nil {
-			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not base64 decode. ")
-			continue
-		}
-		log.WithContext(ctx).Println("base64 decoded the file")
-		ddAndFingerprintsStruct := &pastel.DDAndFingerprints{}
-		err = json.Unmarshal(dataToJSONDecode, ddAndFingerprintsStruct)
-		if err != nil {
-			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails could not JSON unmarshal. ")
-			continue
-		}
-
-		return dataToJSONDecode, nil
-
+		return retData, nil
 	}
+
 	return nil, errors.Errorf("could not get dd and fingerprints for any file tested")
 }
 
@@ -282,7 +295,6 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		task.ttype = ttype
 
 		if ttype == pastel.ActionTypeSense {
-			log.WithContext(ctx).WithField("txid", txid).Info("sense file download begin")
 			data, err := task.DownloadDDAndFingerprints(ctx, txid)
 			if err != nil {
 				err = errors.Errorf("downloa dd & fingerprints file: %w", err)

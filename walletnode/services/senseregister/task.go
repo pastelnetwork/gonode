@@ -191,6 +191,10 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Info("no duplicate tickets have been found")
 	task.UpdateStatus(common.StatusValidateDuplicateTickets)
 
+	// adding on request - a random delay to avoid all nodes sending requests at the same time
+	randomDelay := utils.RandomDuration(0, 500)
+	time.Sleep(randomDelay)
+
 	if err := task.checkDDServerAvailability(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error checking dd-server availability before probe image call")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -593,7 +597,7 @@ func (task *SenseRegistrationTask) checkDDServerAvailability(ctx context.Context
 		waiting, executing, maxConcurrent := val.WaitingInQueue, val.Executing, val.MaxConcurrency
 		if maxConcurrent-executing-waiting <= 0 {
 			log.WithContext(ctx).Errorf("pending requests in queue exceeds the threshold for node %s", key)
-			return fmt.Errorf("pending requests in queue exceeds the threshold for node %s", key)
+			return fmt.Errorf("retry: pending requests in queue exceeds the threshold for node %s", key)
 		}
 	}
 
