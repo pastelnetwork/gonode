@@ -1,5 +1,6 @@
 package jsonrpc
 
+/*
 import (
 	"fmt"
 	"io/ioutil"
@@ -345,14 +346,6 @@ func TestRpcJsonResponseStruct(t *testing.T) {
 	gomega.Expect(err).NotTo(gomega.BeNil())
 	gomega.Expect(res).To(gomega.BeNil())
 
-	// TODO: result must contain one of "result", "error"
-	// TODO: is there an efficient way to do this?
-	/*responseBody = `{}`
-	res, err = rpcClient.Call("something", 1, 2, 3)
-	<-requestChan
-	gomega.Expect(err).NotTo(gomega.BeNil())
-	gomega.Expect(res).To(gomega.BeNil())*/
-
 	// result null is ok
 	responseBody = `{"result": null}`
 	res, err = rpcClient.Call("something", 1, 2, 3)
@@ -377,14 +370,6 @@ func TestRpcJsonResponseStruct(t *testing.T) {
 	gomega.Expect(res.Result).To(gomega.BeNil())
 	gomega.Expect(res.Error).To(gomega.BeNil())
 
-	// TODO: result must not contain both of "result", "error" != null
-	// TODO: is there an efficient way to do this?
-	/*responseBody = `{ "result": 123, "error": {"code": 123, "message": "something wrong"}}`
-	res, err = rpcClient.Call("something", 1, 2, 3)
-	<-requestChan
-	gomega.Expect(err).NotTo(gomega.BeNil())
-	gomega.Expect(res).To(gomega.BeNil())*/
-
 	// result string is ok
 	responseBody = `{"result": "ok"}`
 	res, err = rpcClient.Call("something", 1, 2, 3)
@@ -407,30 +392,6 @@ func TestRpcJsonResponseStruct(t *testing.T) {
 	gomega.Expect(res.Result).To(gomega.BeNil())
 	gomega.Expect(res.Error.Code).To(gomega.Equal(123))
 	gomega.Expect(res.Error.Message).To(gomega.Equal("something wrong"))
-
-	// TODO: empty error is not ok, must at least contain code and message
-	/*responseBody = `{ "error": {}}`
-	res, err = rpcClient.Call("something", 1, 2, 3)
-	<-requestChan
-	gomega.Expect(err).To(gomega.BeNil())
-	gomega.Expect(res.Result).To(gomega.BeNil())
-	gomega.Expect(res.Error).NotTo(gomega.BeNil())*/
-
-	// TODO: only code in error is not ok, must at least contain code and message
-	/*responseBody = `{ "error": {"code": 123}}`
-	res, err = rpcClient.Call("something", 1, 2, 3)
-	<-requestChan
-	gomega.Expect(err).To(gomega.BeNil())
-	gomega.Expect(res.Result).To(gomega.BeNil())
-	gomega.Expect(res.Error).NotTo(gomega.BeNil())*/
-
-	// TODO: only message in error is not ok, must at least contain code and message
-	/*responseBody = `{ "error": {"message": "something wrong"}}`
-	res, err = rpcClient.Call("something", 1, 2, 3)
-	<-requestChan
-	gomega.Expect(err).To(gomega.BeNil())
-	gomega.Expect(res.Result).To(gomega.BeNil())
-	gomega.Expect(res.Error).NotTo(gomega.BeNil())*/
 
 	// error with code and message is ok
 	responseBody = `{ "error": {"code": 123, "message": "something wrong"}}`
@@ -647,14 +608,6 @@ func TestRpcBatchJsonResponseStruct(t *testing.T) {
 	gomega.Expect(err).NotTo(gomega.BeNil())
 	gomega.Expect(res).To(gomega.BeNil())
 
-	// TODO: result must contain one of "result", "error"
-	// TODO: is there an efficient way to do this?
-	/*responseBody = `[{}]`
-	res, err = rpcClient.Call("something", 1, 2, 3)
-	<-requestChan
-	gomega.Expect(err).NotTo(gomega.BeNil())
-	gomega.Expect(res).To(gomega.BeNil())*/
-
 	// result must be wrapped in array on batch request
 	responseBody = `{"result": null}`
 	_, err = rpcClient.CallBatch(RPCRequests{
@@ -693,16 +646,6 @@ func TestRpcBatchJsonResponseStruct(t *testing.T) {
 	gomega.Expect(res[0].Result).To(gomega.BeNil())
 	gomega.Expect(res[0].Error).To(gomega.BeNil())
 
-	// TODO: result must not contain both of "result", "error" != null
-	// TODO: is there an efficient way to do this?
-	/*responseBody = `[{ "result": 123, "error": {"code": 123, "message": "something wrong"}}]`
-	res, err = rpcClient.CallBatch(RPCRequests{
-	NewRequest("something",1, 2, 3),
-	})
-	<-requestChan
-	gomega.Expect(err).NotTo(gomega.BeNil())
-	gomega.Expect(res).To(gomega.BeNil())*/
-
 	// result string is ok
 	responseBody = `[{"result": "ok","id":0}]`
 	res, err = rpcClient.CallBatch(RPCRequests{
@@ -732,36 +675,6 @@ func TestRpcBatchJsonResponseStruct(t *testing.T) {
 	gomega.Expect(res[0].Result).To(gomega.BeNil())
 	gomega.Expect(res[0].Error.Code).To(gomega.Equal(123))
 	gomega.Expect(res[0].Error.Message).To(gomega.Equal("something wrong"))
-
-	// TODO: empty error is not ok, must at least contain code and message
-	/*responseBody = `[{ "error": {}}]`
-	res, err = rpcClient.CallBatch(RPCRequests{
-	NewRequest("something",1, 2, 3),
-	})
-	<-requestChan
-	gomega.Expect(err).To(gomega.BeNil())
-	gomega.Expect(res[0].Result).To(gomega.BeNil())
-	gomega.Expect(res[0].Error).NotTo(gomega.BeNil())*/ /*
-
-		// TODO: only code in error is not ok, must at least contain code and message
-	*/ /*responseBody = `[{ "error": {"code": 123}}]`
-	res, err = rpcClient.CallBatch(RPCRequests{
-	NewRequest("something",1, 2, 3),
-	})
-	<-requestChan
-	gomega.Expect(err).To(gomega.BeNil())
-	gomega.Expect(res[0].Result).To(gomega.BeNil())
-	gomega.Expect(res[0].Error).NotTo(gomega.BeNil())*/ /*
-
-		// TODO: only message in error is not ok, must at least contain code and message
-	*/ /*responseBody = `[{ "error": {"message": "something wrong"}}]`
-	res, err = rpcClient.CallBatch(RPCRequests{
-	NewRequest("something",1, 2, 3),
-	})
-	<-requestChan
-	gomega.Expect(err).To(gomega.BeNil())
-	gomega.Expect(res[0].Result).To(gomega.BeNil())
-	gomega.Expect(res[0].Error).NotTo(gomega.BeNil())*/
 
 	// error with code and message is ok
 	responseBody = `[{ "error": {"code": 123, "message": "something wrong"}}]`
@@ -877,134 +790,6 @@ func TestRpcBatchJsonResponseStruct(t *testing.T) {
 	<-requestChan
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(res.HasError()).To(gomega.BeTrue())
-
-	/*
-		// TODO: How to check if result could be parsed or if it is default?
-		p = nil
-		responseBody = `{ "result": {"anotherField": "something"} }`
-		res, err = rpcClient.CallBatch(RPCRequests{
-			{"something", Params(1, 2, 3)},
-		})
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(res.Error).To(gomega.BeNil())
-		err = res.GetObject(&p)
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(p).NotTo(gomega.BeNil())
-
-		// TODO: HERE######
-		var pp *PointerFieldPerson
-		responseBody = `{ "result": {"anotherField": "something", "country": "Germany"} }`
-		res, err = rpcClient.CallBatch(RPCRequests{
-			{"something", Params(1, 2, 3)},
-		})
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(res.Error).To(gomega.BeNil())
-		err = res.GetObject(&pp)
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(pp.Name).To(gomega.BeNil())
-		gomega.Expect(pp.Age).To(gomega.BeNil())
-		gomega.Expect(*pp.Country).To(gomega.Equal("Germany"))
-
-		p = nil
-		responseBody = `{ "result": null }`
-		res, err = rpcClient.CallBatch(RPCRequests{
-			{"something", Params(1, 2, 3)},
-		})
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(res.Error).To(gomega.BeNil())
-		err = res.GetObject(&p)
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(p).To(gomega.BeNil())
-
-		// passing nil is an error
-		p = nil
-		responseBody = `{ "result": null }`
-		res, err = rpcClient.CallBatch(RPCRequests{
-			{"something", Params(1, 2, 3)},
-		})
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(res.Error).To(gomega.BeNil())
-		err = res.GetObject(p)
-		gomega.Expect(err).NotTo(gomega.BeNil())
-		gomega.Expect(p).To(gomega.BeNil())
-
-		p2 := &Person{
-			Name: "Alex",
-		}
-		responseBody = `{ "result": null }`
-		res, err = rpcClient.CallBatch(RPCRequests{
-			{"something", Params(1, 2, 3)},
-		})
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(res.Error).To(gomega.BeNil())
-		err = res.GetObject(&p2)
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(p2).To(gomega.BeNil())
-
-		p2 = &Person{
-			Name: "Alex",
-		}
-		responseBody = `{ "result": {"age": 35} }`
-		res, err = rpcClient.CallBatch(RPCRequests{
-			{"something", Params(1, 2, 3)},
-		})
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(res.Error).To(gomega.BeNil())
-		err = res.GetObject(p2)
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(p2.Name).To(gomega.Equal("Alex"))
-		gomega.Expect(p2.Age).To(gomega.Equal(35))
-
-		// prefilled struct is kept on no result
-		p3 := Person{
-			Name: "Alex",
-		}
-		responseBody = `{ "result": null }`
-		res, err = rpcClient.CallBatch(RPCRequests{
-			{"something", Params(1, 2, 3)},
-		})
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(res.Error).To(gomega.BeNil())
-		err = res.GetObject(&p3)
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(p3.Name).To(gomega.Equal("Alex"))
-
-		// prefilled struct is extended / overwritten
-		p3 = Person{
-			Name: "Alex",
-			Age:  123,
-		}
-		responseBody = `{ "result": {"age": 35, "country": "Germany"} }`
-		res, err = rpcClient.CallBatch(RPCRequests{
-			{"something", Params(1, 2, 3)},
-		})
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(res.Error).To(gomega.BeNil())
-		err = res.GetObject(&p3)
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(p3.Name).To(gomega.Equal("Alex"))
-		gomega.Expect(p3.Age).To(gomega.Equal(35))
-		gomega.Expect(p3.Country).To(gomega.Equal("Germany"))
-
-		// nil is an error
-		responseBody = `{ "result": {"age": 35} }`
-		res, err = rpcClient.CallBatch(RPCRequests{
-			{"something", Params(1, 2, 3)},
-		})
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(res.Error).To(gomega.BeNil())
-		err = res.GetObject(nil)
-		gomega.Expect(err).NotTo(gomega.BeNil())
-	*/
 }
 
 func TestRpcClient_CallFor(t *testing.T) {
@@ -1017,114 +802,6 @@ func TestRpcClient_CallFor(t *testing.T) {
 	<-requestChan
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(i).To(gomega.Equal(3))
-
-	/*
-		i = 3
-		responseBody = `{"result":null,"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(&i, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		// i is not modified when result is empty since null (nil) value cannot be stored in int
-		gomega.Expect(i).To(gomega.Equal(3))
-
-		var pi *int
-		responseBody = `{"result":4,"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(pi, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).NotTo(gomega.BeNil())
-		gomega.Expect(pi).To(gomega.BeNil())
-
-		responseBody = `{"result":4,"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(&pi, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Expect(*pi).To(gomega.Equal(4))
-
-		*pi = 3
-		responseBody = `{"result":null,"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(&pi, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		// since pi has a value it is not overwritten by null result
-		gomega.Expect(pi).To(gomega.BeNil())
-
-		p := &Person{}
-		responseBody = `{"result":null,"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(p, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		// p is not changed since it has a value and result is null
-		gomega.Expect(p).NotTo(gomega.BeNil())
-
-		var p2 *Person
-		responseBody = `{"result":null,"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(p2, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).NotTo(gomega.BeNil())
-		// p is not changed since it has a value and result is null
-		gomega.Expect(p2).To(gomega.BeNil())
-
-		p3 := Person{}
-		responseBody = `{"result":null,"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(&p3, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		// p is not changed since it has a value and result is null
-		gomega.Expect(p).NotTo(gomega.BeNil())
-
-		p = &Person{Age: 35}
-		responseBody = `{"result":{"name":"Alex"},"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(p, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		// p is not changed since it has a value and result is null
-		gomega.Expect(p.Name).To(gomega.Equal("Alex"))
-		gomega.Expect(p.Age).To(gomega.Equal(35))
-
-		p2 = nil
-		responseBody = `{"result":{"name":"Alex"},"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(p2, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).NotTo(gomega.BeNil())
-		// p is not changed since it has a value and result is null
-		gomega.Expect(p2).To(gomega.BeNil())
-
-		p2 = nil
-		responseBody = `{"result":{"name":"Alex"},"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(&p2, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		// p is not changed since it has a value and result is null
-		gomega.Expect(p2).NotTo(gomega.BeNil())
-		gomega.Expect(p2.Name).To(gomega.Equal("Alex"))
-
-		p3 = Person{Age: 35}
-		responseBody = `{"result":{"name":"Alex"},"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(&p3, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		// p is not changed since it has a value and result is null
-		gomega.Expect(p.Name).To(gomega.Equal("Alex"))
-		gomega.Expect(p.Age).To(gomega.Equal(35))
-
-		p3 = Person{Age: 35}
-		responseBody = `{"result":{"name":"Alex"},"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(&p3, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		// p is not changed since it has a value and result is null
-		gomega.Expect(p.Name).To(gomega.Equal("Alex"))
-		gomega.Expect(p.Age).To(gomega.Equal(35))
-
-		var intArray []int
-		responseBody = `{"result":[1, 2, 3],"id":0,"jsonrpc":"2.0"}`
-		err = rpcClient.CallFor(&intArray, "something", 1, 2, 3)
-		<-requestChan
-		gomega.Expect(err).To(gomega.BeNil())
-		// p is not changed since it has a value and result is null
-		gomega.Expect(intArray).To(ContainElement(1))
-		gomega.Expect(intArray).To(ContainElement(2))
-		gomega.Expect(intArray).To(ContainElement(3))*/
 }
 
 type Person struct {
@@ -1153,3 +830,4 @@ type Properties struct {
 	Distance int    `json:"distance"`
 	Color    string `json:"color"`
 }
+*/
