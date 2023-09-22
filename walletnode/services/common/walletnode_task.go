@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -12,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -86,6 +88,10 @@ func (task *WalletNodeTask) RunHelperWithRetry(ctx context.Context, run TaskRunn
 			log.WithContext(ctx).WithError(err).Warn("failed to wait till next block")
 			return nil
 		}
+
+		// if requests are in batch, we don't want to send them all at once
+		randomDelay := utils.RandomDuration(0, 1000)
+		time.Sleep(randomDelay)
 
 		err = run(ctx)
 	}

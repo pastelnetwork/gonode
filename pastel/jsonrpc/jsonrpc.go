@@ -15,11 +15,13 @@ import (
 	"time"
 
 	"encoding/json"
+
+	"github.com/cenkalti/backoff"
 )
 
 const (
 	jsonrpcVersion = "2.0"
-	timeout        = 15 * time.Second
+	timeout        = 45 * time.Second
 )
 
 // RPCClient sends JSON-RPC requests over HTTP to the provided JSON-RPC backend.
@@ -333,17 +335,33 @@ func NewClientWithOpts(endpoint string, opts *RPCClientOpts) RPCClient {
 }
 
 func (client *rpcClient) CallWithContext(ctx context.Context, method string, params ...interface{}) (*RPCResponse, error) {
-
 	request := &RPCRequest{
 		Method:  method,
 		Params:  Params(params...),
 		JSONRPC: jsonrpcVersion,
 	}
 
-	gctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
+	var resp *RPCResponse
+	var err error
 
-	return client.doCall(gctx, request)
+	// Define the retry policy.
+	b := backoff.NewExponentialBackOff()
+	b.InitialInterval = 3 * time.Second
+	b.Multiplier = 1                   // make it constant
+	b.RandomizationFactor = 0.5        // this introduces the jitter
+	b.MaxElapsedTime = 6 * time.Second // after this time, no more retries; ensures 2 retries
+	// Define the operation to be retried.
+	operation := func() error {
+		resp, err = client.doCall(ctx, request)
+		return err
+	}
+
+	// Execute the operation with the retry policy.
+	if err := backoff.Retry(operation, b); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
 }
 
 func (client *rpcClient) Call(method string, params ...interface{}) (*RPCResponse, error) {
@@ -424,7 +442,9 @@ func (client *rpcClient) newRequest(ctx context.Context, req interface{}) (*http
 	return request, nil
 }
 
-func (client *rpcClient) doCall(ctx context.Context, RPCRequest *RPCRequest) (*RPCResponse, error) {
+func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*RPCResponse, error) {
+	ctx, cancel := context.WithTimeout(cctx, timeout)
+	defer cancel()
 
 	httpRequest, err := client.newRequest(ctx, RPCRequest)
 	if err != nil {

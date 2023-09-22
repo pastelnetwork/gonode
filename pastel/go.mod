@@ -6,6 +6,7 @@ replace github.com/pastelnetwork/gonode/common => ../common
 
 require (
 	github.com/btcsuite/btcutil v1.0.2
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/json-iterator/go v1.1.12
 	github.com/onsi/gomega v1.27.10
 	github.com/pastelnetwork/gonode/common v0.0.0-00010101000000-000000000000

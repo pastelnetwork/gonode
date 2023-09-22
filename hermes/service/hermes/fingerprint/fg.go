@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -352,7 +351,7 @@ func (s *fingerprintService) tryToGetFingerprintFileFromHash(ctx context.Context
 		return nil, errors.Errorf("Error finding dd and fp file from hash: %w - %s", err, hash)
 	}
 
-	decData, err := zstd.Decompress(nil, rawFile)
+	decData, err := utils.Decompress(rawFile)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("decompress err")
 		return nil, errors.Errorf("decompress: %w", err)
