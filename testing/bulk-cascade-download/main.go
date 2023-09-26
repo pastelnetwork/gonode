@@ -48,7 +48,7 @@ func main() {
 
 	logger.Printf("Total Tickets in the batch: %d\n", len(regTxIDs))
 
-	startingTime := time.Now()
+	startingTime := time.Now().UTC()
 	logger.Printf("Batch starts at:%s\n", startingTime)
 	var success = 0
 	var failure = 0

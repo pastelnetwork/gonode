@@ -45,7 +45,7 @@ func (st *FilesHandler) StoreFileNameIntoStorage(_ context.Context, fileName *st
 	}
 	file.RemoveAfter(st.fileTTL)
 
-	return id, time.Now().Add(st.fileTTL).Format(time.RFC3339), nil
+	return id, time.Now().UTC().Add(st.fileTTL).Format(time.RFC3339), nil
 }
 
 // GetImgData returns the image data from the storage

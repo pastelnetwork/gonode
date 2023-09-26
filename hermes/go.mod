@@ -12,7 +12,6 @@ replace (
 )
 
 require (
-	github.com/DataDog/zstd v1.5.5
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/bxcodec/faker/v4 v4.0.0-beta.3
 	github.com/gorilla/mux v1.8.0
@@ -29,6 +28,7 @@ require (
 )
 
 require (
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect

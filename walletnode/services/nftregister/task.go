@@ -172,7 +172,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
 	//set timestamp for nft reg metadata
-	task.creationTimestamp = time.Now().Format(DateTimeFormat)
+	task.creationTimestamp = time.Now().UTC().Format(DateTimeFormat)
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
 
 	// supervise the connection to top rank nodes
@@ -352,7 +352,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// don't need SNs anymore
 	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 
-	now := time.Now()
+	now := time.Now().UTC()
 	if task.downloadService != nil {
 		if err := common.DownloadWithRetry(ctx, task, now, now.Add(common.RetryTime*time.Minute)); err != nil {
 			log.WithContext(ctx).WithField("reg_tx_id", task.regNFTTxid).WithError(err).Error("error validating nft ticket data")

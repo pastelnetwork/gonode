@@ -169,7 +169,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, challengeMe
 			return nil
 		}
 
-		ids, idFiles, err := task.senseSelfHealing(senseTicket, mostCommonFile)
+		ids, idFiles, err := task.senseSelfHealing(ctx, senseTicket, mostCommonFile)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("self-healing not required for sense action ticket")
 			return err
@@ -451,7 +451,7 @@ func (task *SHTask) senseCheckingProcess(ctx context.Context, ddFPIDs []string) 
 	return true, fileHashMap[mostCommonHash]
 }
 
-func (task *SHTask) senseSelfHealing(senseTicket *pastel.APISenseTicket, ddFPID *pastel.DDAndFingerprints) (ids []string, idFiles [][]byte, err error) {
+func (task *SHTask) senseSelfHealing(ctx context.Context, senseTicket *pastel.APISenseTicket, ddFPID *pastel.DDAndFingerprints) (ids []string, idFiles [][]byte, err error) {
 	if len(task.SNsSignatures) != 3 {
 		return nil, nil, errors.Errorf("wrong number of signature for fingerprints - %d", len(task.SNsSignatures))
 	}
@@ -473,7 +473,7 @@ func (task *SHTask) senseSelfHealing(senseTicket *pastel.APISenseTicket, ddFPID 
 	buffer.Write(task.SNsSignatures[2])
 	ddFpFile := buffer.Bytes()
 
-	ids, idFiles, err = pastel.GetIDFiles(ddFpFile, senseTicket.DDAndFingerprintsIc, senseTicket.DDAndFingerprintsMax)
+	ids, idFiles, err = pastel.GetIDFiles(ctx, ddFpFile, senseTicket.DDAndFingerprintsIc, senseTicket.DDAndFingerprintsMax)
 	if err != nil {
 		return nil, nil, errors.Errorf("get ID Files: %w", err)
 	}

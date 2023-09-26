@@ -77,7 +77,7 @@ func TestNodesSendImage(t *testing.T) {
 		HashOfCandidateImageFile: "HashOfCandidateImageFile",
 	}
 
-	testCompressedFingerAndScores, genErr := pastel.ToCompressSignedDDAndFingerprints(fingerAndScores, []byte("testSignature"))
+	testCompressedFingerAndScores, genErr := pastel.ToCompressSignedDDAndFingerprints(context.Background(), fingerAndScores, []byte("testSignature"))
 	assert.Nil(t, genErr)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

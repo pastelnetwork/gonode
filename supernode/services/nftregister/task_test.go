@@ -880,7 +880,7 @@ func TestTaskProbeImage(t *testing.T) {
 
 				pastelClientMock.ListenOnMasterNodesTop(nodes, nil).ListenOnMasterNodesExtra(nodes, nil)
 
-				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(genfingerAndScoresFunc(), []byte("signature"))
+				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(context.Background(), genfingerAndScoresFunc(), []byte("signature"))
 				go task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
 				go task.AddSignedDDAndFingerprints("B", peerDDAndFingerprints)
 			}
@@ -1330,13 +1330,13 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 			task.Ticket.AppTicketData.RQIc = rand.Uint32()
 			task.Ticket.AppTicketData.RQMax = 50
 
-			task.Ticket.AppTicketData.DDAndFingerprintsIDs, _, err = pastel.GetIDFiles([]byte(ddStr),
+			task.Ticket.AppTicketData.DDAndFingerprintsIDs, _, err = pastel.GetIDFiles(context.Background(), []byte(ddStr),
 				task.Ticket.AppTicketData.DDAndFingerprintsIc,
 				task.Ticket.AppTicketData.DDAndFingerprintsMax)
 
 			assert.Nil(t, err)
 
-			task.Ticket.AppTicketData.RQIDs, _, err = pastel.GetIDFiles([]byte(rqStr),
+			task.Ticket.AppTicketData.RQIDs, _, err = pastel.GetIDFiles(context.Background(), []byte(rqStr),
 				task.Ticket.AppTicketData.RQIc,
 				task.Ticket.AppTicketData.RQMax)
 

@@ -11,7 +11,7 @@ func getDDServerResponse() ([]byte, error) {
 		BlockHash:   "39720f0d10c7a877f2bd6edcacbfe18e1333fe77a3032f6d394a1df742f42b37",
 		BlockHeight: "160647",
 
-		TimestampOfRequest: time.Now().Format("YYYY-MM-DD hh:mm:ss"),
+		TimestampOfRequest: time.Now().UTC().Format("YYYY-MM-DD hh:mm:ss"),
 		SubmitterPastelID:  "SubmitterPastelID",
 		SN1PastelID:        "Supernode1PastelID",
 		SN2PastelID:        "Supernode2PastelID",
@@ -35,7 +35,7 @@ func getDDServerResponse() ([]byte, error) {
 			RareOnInternetGraphJSONCompressedB64:             "eyJQYXN0ZWwgcmFyZSBvbiBpbnRlcm5ldCBncmFwaCI6ImdyYXBoIn0K",
 			AlternativeRareOnInternetDictAsJSONCompressedB64: "eyJQYXN0ZWwgYWx0ZXJuYXRpdmUgcmFyZSBvbiBpbnRlcm5ldCBkaWN0IjoiZGljdCJ9Cg==",
 			MinNumberOfExactMatchesInPage:                    3,
-			EarliestAvailableDateOfInternetResults:           time.Now().Format("2022-01-01 hh:mm:ss"),
+			EarliestAvailableDateOfInternetResults:           time.Now().UTC().Format("2022-01-01 hh:mm:ss"),
 		},
 		OpenNSFWScore: 0.4,
 

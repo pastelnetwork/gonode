@@ -250,7 +250,7 @@ func main() {
 	var results []result
 	var wg sync.WaitGroup
 
-	start := time.Now()
+	start := time.Now().UTC()
 
 	files := readFiles()
 
@@ -258,7 +258,7 @@ func main() {
 	taskIDs := make(map[string]time.Time)
 
 	for fileName, filePath := range files {
-		startReq := time.Now()
+		startReq := time.Now().UTC()
 
 		uploadImageRes, err := doUploadImage("POST", filePath, fileName)
 		if err != nil {

@@ -329,7 +329,7 @@ func (s *Store) UpdateReplicationInfo(_ context.Context, rep domain.NodeReplicat
 // AddReplicationInfo adds replication info
 func (s *Store) AddReplicationInfo(_ context.Context, rep domain.NodeReplicationInfo) error {
 	_, err := s.db.Exec(`INSERT INTO replication_info(id, ip, is_active, is_adjusted, lastReplicatedAt, updatedAt, port, last_seen) values(?, ?, ?, ?, ?, ?, ?, ?)`,
-		string(rep.ID), rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, time.Now())
+		string(rep.ID), rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, time.Now().UTC())
 	if err != nil {
 		return fmt.Errorf("failed to insert replicate record: %v", err)
 	}
@@ -339,7 +339,7 @@ func (s *Store) AddReplicationInfo(_ context.Context, rep domain.NodeReplication
 
 // UpdateLastSeen updates last seen
 func (s *Store) UpdateLastSeen(_ context.Context, id string) error {
-	_, err := s.db.Exec(`UPDATE replication_info SET last_seen = ? WHERE id = ?`, time.Now(), id)
+	_, err := s.db.Exec(`UPDATE replication_info SET last_seen = ? WHERE id = ?`, time.Now().UTC(), id)
 	if err != nil {
 		return fmt.Errorf("failed to update last_seen of node: %s: - err: %v", id, err)
 	}
@@ -349,7 +349,7 @@ func (s *Store) UpdateLastSeen(_ context.Context, id string) error {
 
 // UpdateLastReplicated updates replication info last replicated
 func (s *Store) UpdateLastReplicated(_ context.Context, id string, t time.Time) error {
-	_, err := s.db.Exec(`UPDATE replication_info SET lastReplicatedAt = ?, updatedAt = ? WHERE id = ?`, t, time.Now(), id)
+	_, err := s.db.Exec(`UPDATE replication_info SET lastReplicatedAt = ?, updatedAt = ? WHERE id = ?`, t, time.Now().UTC(), id)
 	if err != nil {
 		return fmt.Errorf("failed to update last replicated: %v", err)
 	}
@@ -359,7 +359,7 @@ func (s *Store) UpdateLastReplicated(_ context.Context, id string, t time.Time) 
 
 // UpdateIsAdjusted updates adjusted
 func (s *Store) UpdateIsAdjusted(_ context.Context, id string, isAdjusted bool) error {
-	_, err := s.db.Exec(`UPDATE replication_info SET is_adjusted = ?, updatedAt = ? WHERE id = ?`, isAdjusted, time.Now(), id)
+	_, err := s.db.Exec(`UPDATE replication_info SET is_adjusted = ?, updatedAt = ? WHERE id = ?`, isAdjusted, time.Now().UTC(), id)
 	if err != nil {
 		return fmt.Errorf("failed to update is_adjusted of node: %s: - err: %v", id, err)
 	}
@@ -369,7 +369,7 @@ func (s *Store) UpdateIsAdjusted(_ context.Context, id string, isAdjusted bool) 
 
 // UpdateIsActive updates active
 func (s *Store) UpdateIsActive(_ context.Context, id string, isActive bool, isAdjusted bool) error {
-	_, err := s.db.Exec(`UPDATE replication_info SET is_active = ?, is_adjusted = ?, updatedAt = ? WHERE id = ?`, isActive, isAdjusted, time.Now(), id)
+	_, err := s.db.Exec(`UPDATE replication_info SET is_active = ?, is_adjusted = ?, updatedAt = ? WHERE id = ?`, isActive, isAdjusted, time.Now().UTC(), id)
 	if err != nil {
 		return fmt.Errorf("failed to update is_active of node: %s: - err: %v", id, err)
 	}

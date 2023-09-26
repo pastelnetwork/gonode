@@ -44,7 +44,7 @@ func main() {
 	defer rawConn.Close()
 
 	// set the deadline for read and write
-	rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
+	rawConn.SetDeadline(time.Now().UTC().Add(defaultConnDeadline))
 
 	secInfo := &alts.SecInfo{}
 	fakePastelClient := &common.SecClient{

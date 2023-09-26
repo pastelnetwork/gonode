@@ -84,7 +84,7 @@ func TestBanList_Exists(t *testing.T) {
 	}
 
 	// Add the Node to the BanList
-	banList.AddWithCreatedAt(node, time.Now(), 6)
+	banList.AddWithCreatedAt(node, time.Now().UTC(), 6)
 
 	// Check if the Node exists in the BanList
 	exists := banList.Exists(node)
@@ -114,9 +114,9 @@ func TestBanList_Delete(t *testing.T) {
 	node1 := &Node{ID: []byte{1}, IP: "127.0.0.1", Port: 8000}
 	node2 := &Node{ID: []byte{2}, IP: "127.0.0.2", Port: 8001}
 	node3 := &Node{ID: []byte{3}, IP: "127.0.0.3", Port: 8002}
-	banList.AddWithCreatedAt(node1, time.Now(), 6)
-	banList.AddWithCreatedAt(node2, time.Now(), 6)
-	banList.AddWithCreatedAt(node3, time.Now(), 6)
+	banList.AddWithCreatedAt(node1, time.Now().UTC(), 6)
+	banList.AddWithCreatedAt(node2, time.Now().UTC(), 6)
+	banList.AddWithCreatedAt(node3, time.Now().UTC(), 6)
 
 	// Test deleting a node that exists in the BanList
 	banList.Delete(node2)
@@ -155,9 +155,9 @@ func TestBanList_Purge(t *testing.T) {
 	node1 := &Node{ID: []byte{1}, IP: "127.0.0.1", Port: 8000}
 	node2 := &Node{ID: []byte{2}, IP: "127.0.0.2", Port: 8001}
 	node3 := &Node{ID: []byte{3}, IP: "127.0.0.3", Port: 8002}
-	banList.AddWithCreatedAt(node1, time.Now().Add(-2*time.Hour), 6)
-	banList.AddWithCreatedAt(node2, time.Now().Add(-6*time.Hour), 6)
-	banList.AddWithCreatedAt(node3, time.Now().Add(-1*time.Hour), 16)
+	banList.AddWithCreatedAt(node1, time.Now().UTC().Add(-2*time.Hour), 6)
+	banList.AddWithCreatedAt(node2, time.Now().UTC().Add(-6*time.Hour), 6)
+	banList.AddWithCreatedAt(node3, time.Now().UTC().Add(-1*time.Hour), 16)
 
 	// Call Purge to remove expired nodes
 	banList.Purge()

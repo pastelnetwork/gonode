@@ -174,7 +174,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, challengeMes
 			return responseMessage, nil
 		}
 
-		ids, _, err := task.senseSelfHealing(senseTicket, mostCommonFile)
+		ids, _, err := task.senseSelfHealing(ctx, senseTicket, mostCommonFile)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("error while self-healing sense action ticket")
 			responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE

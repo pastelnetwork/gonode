@@ -66,7 +66,7 @@ func (mngr *StatsMngr) updateStats(ctx context.Context) (map[string]interface{},
 		stats[id] = subStats
 	}
 
-	stats["time_stamp"] = time.Now()
+	stats["time_stamp"] = time.Now().UTC()
 	return stats, nil
 }
 

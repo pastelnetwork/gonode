@@ -88,7 +88,7 @@ func (state *state) UpdateStatus(subStatus SubStatus) {
 	state.history = append(state.history, state.status)
 	state.status = status
 
-	history := types.TaskHistory{CreatedAt: time.Now(), TaskID: state.taskID, Status: status.String()}
+	history := types.TaskHistory{CreatedAt: time.Now().UTC(), TaskID: state.taskID, Status: status.String()}
 	if state.statusLog.IsValid() {
 		history.Details = types.NewDetails(status.String(), state.statusLog)
 	}
@@ -162,7 +162,7 @@ func New(subStatus SubStatus, taskID string) State {
 	if store != nil {
 		defer store.CloseHistoryDB(context.Background())
 
-		if _, err := store.InsertTaskHistory(types.TaskHistory{CreatedAt: time.Now(), TaskID: taskID,
+		if _, err := store.InsertTaskHistory(types.TaskHistory{CreatedAt: time.Now().UTC(), TaskID: taskID,
 			Status: subStatus.String()}); err != nil {
 			log.WithError(err).Error("unable to store task status")
 		}

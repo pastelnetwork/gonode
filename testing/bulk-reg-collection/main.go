@@ -194,13 +194,13 @@ func main() {
 	var results []result
 	var wg sync.WaitGroup
 
-	start := time.Now()
+	start := time.Now().UTC()
 	count := 1
 	taskIDs := make(map[string]time.Time)
-	rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	for count <= NoOfRequests {
-		startReq := time.Now()
+		startReq := time.Now().UTC()
 
 		req := collectionRegPayload{
 			CollectionName:                                 uuid.NewString(),

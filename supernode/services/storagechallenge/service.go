@@ -72,7 +72,7 @@ const (
 
 // RunLocalKeysFetchWorker : This worker will periodically fetch the local keys from the local storage
 func (service *SCService) RunLocalKeysFetchWorker(ctx context.Context) {
-	service.localKeysLastFetchAt = time.Now()
+	service.localKeysLastFetchAt = time.Now().UTC()
 	if err := service.populateLocalKeys(ctx, nil); err != nil {
 		log.WithContext(ctx).WithError(err).Error("RunLocalKeysFetchWorker:populateLocalKeys")
 	}
