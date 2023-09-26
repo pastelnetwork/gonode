@@ -48,13 +48,13 @@ func New(pastelClient PastelClient) *BlockCntTracker {
 }
 
 func (tracker *BlockCntTracker) refreshBlockCount(retries int) {
-	tracker.lastRetried = time.Now()
+	tracker.lastRetried = time.Now().UTC()
 	for i := 0; i < retries; i = i + 1 {
 		ctx, cancel := context.WithTimeout(context.Background(), defaultRPCConnectTimeout)
 		blockCnt, err := tracker.pastelClient.GetBlockCount(ctx)
 		if err == nil {
 			tracker.curBlockCnt = blockCnt
-			tracker.lastSuccess = time.Now()
+			tracker.lastSuccess = time.Now().UTC()
 			cancel()
 			tracker.lastErr = nil
 			return
@@ -78,12 +78,12 @@ func (tracker *BlockCntTracker) GetBlockCount() (int32, error) {
 	shouldRefresh := false
 
 	if tracker.lastSuccess.After(tracker.lastRetried) {
-		if time.Now().After(tracker.lastSuccess.Add(defaultSuccessUpdateDuration)) {
+		if time.Now().UTC().After(tracker.lastSuccess.Add(defaultSuccessUpdateDuration)) {
 			shouldRefresh = true
 		}
 	} else {
 		// prevent update too much
-		if time.Now().After(tracker.lastRetried.Add(defaultFailedUpdateDuration)) {
+		if time.Now().UTC().After(tracker.lastRetried.Add(defaultFailedUpdateDuration)) {
 			shouldRefresh = true
 		}
 	}

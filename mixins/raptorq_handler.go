@@ -119,12 +119,12 @@ func (h *RQHandler) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolI
 	rqIDFile := buffer.Bytes()
 
 	h.RQIDsIc = rand.Uint32()
-	h.RQIDs, _, err = pastel.GetIDFiles(rqIDFile, h.RQIDsIc, h.maxRQIDs)
+	h.RQIDs, _, err = pastel.GetIDFiles(ctx, rqIDFile, h.RQIDsIc, h.maxRQIDs)
 	if err != nil {
 		return fmt.Errorf("get ID Files: %w", err)
 	}
 
-	comp, err := utils.Compress(rqIDFile, 4)
+	comp, err := utils.HighCompress(ctx, rqIDFile)
 	if err != nil {
 		return errors.Errorf("compress: %w", err)
 	}

@@ -192,7 +192,7 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 	defer conn.Close()
 	client := pb.NewDupeDetectionServerClient(conn)
 
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	for {
 		// Check if the context is done
 		select {

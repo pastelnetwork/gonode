@@ -36,7 +36,7 @@ func (s *Store) Store(_ context.Context, key []byte, value []byte, _ int, _ bool
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.replications[string(key)] = time.Now().Add(s.replicateInterval).UTC()
+	s.replications[string(key)] = time.Now().UTC().Add(s.replicateInterval).UTC()
 	s.data[string(key)] = value
 
 	return nil

@@ -309,7 +309,7 @@ func TestTaskDownload(t *testing.T) {
 			args: args{
 				ctx:                          context.Background(),
 				txid:                         "txid",
-				timestamp:                    time.Now().Format(time.RFC3339),
+				timestamp:                    time.Now().UTC().Format(time.RFC3339),
 				signature:                    "signature",
 				ttxid:                        "ttxid",
 				regTicket:                    regTicket,

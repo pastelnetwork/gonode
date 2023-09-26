@@ -60,11 +60,14 @@ import (
 	"C"
 	"os"
 
+	_ "net/http/pprof"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/walletnode/cmd"
 )
+import "net/http"
 
 const (
 	debugModeEnvName = "WALLETNODE_DEBUG"
@@ -76,6 +79,10 @@ var (
 
 func main() {
 	defer errors.Recover(log.FatalAndExit)
+
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
 
 	//configuration in here, app.Run will actually run NewApp's runApp function.
 	app := cmd.NewApp()

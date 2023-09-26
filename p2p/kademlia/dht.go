@@ -878,7 +878,7 @@ func (s *DHT) cleanupDisabledKeys(ctx context.Context) error {
 		return nil
 	}
 
-	from := time.Now().Add(-1 * defaultDisabledKeyExpirationInterval)
+	from := time.Now().UTC().Add(-1 * defaultDisabledKeyExpirationInterval)
 	disabledKeys, err := s.metaStore.GetDisabledKeys(from)
 	if err != nil {
 		return errors.Errorf("get disabled keys: %w", err)

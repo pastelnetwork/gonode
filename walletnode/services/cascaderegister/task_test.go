@@ -2,12 +2,13 @@ package cascaderegister
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	"image"
 	"image/png"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/walletnode/services/download"
 
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 

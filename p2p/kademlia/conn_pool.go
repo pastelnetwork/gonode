@@ -52,7 +52,7 @@ func (pool *ConnPool) Add(addr string, conn net.Conn) {
 	if _, ok := pool.conns[addr]; !ok {
 		// if pool is full
 		if len(pool.conns) >= pool.capacity {
-			oldestAccess := time.Now()
+			oldestAccess := time.Now().UTC()
 			oldestAccessAddr := ""
 
 			for addr, item := range pool.conns {
@@ -67,7 +67,7 @@ func (pool *ConnPool) Add(addr string, conn net.Conn) {
 	}
 
 	pool.conns[addr] = &connectionItem{
-		lastAccess: time.Now(),
+		lastAccess: time.Now().UTC(),
 		conn:       conn,
 	}
 }
@@ -81,7 +81,7 @@ func (pool *ConnPool) Get(addr string) (net.Conn, error) {
 		return nil, fmt.Errorf("not found")
 	}
 
-	item.lastAccess = time.Now()
+	item.lastAccess = time.Now().UTC()
 	return item.conn, nil
 }
 
@@ -121,7 +121,7 @@ func NewSecureClientConn(ctx context.Context, secureHelper credentials.Transport
 	}
 
 	// set the deadline for read and write
-	rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
+	rawConn.SetDeadline(time.Now().UTC().Add(defaultConnDeadline))
 
 	conn, _, err := secureHelper.ClientHandshake(ctx, "", rawConn)
 	if err != nil {

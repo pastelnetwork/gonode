@@ -33,7 +33,7 @@ type CleanTracker struct {
 func (tracker *CleanTracker) Track(key string, expires time.Time) {
 	tracker.mtx.Lock()
 	defer tracker.mtx.Unlock()
-	tracker.expireTrackMap[time.Now()] = &trackItem{
+	tracker.expireTrackMap[time.Now().UTC()] = &trackItem{
 		key:     key,
 		expires: expires,
 	}
@@ -45,7 +45,7 @@ func (tracker *CleanTracker) CheckExpires(ctx context.Context) {
 
 	// determines which key need to be delete
 	tracker.mtx.Lock()
-	now := time.Now()
+	now := time.Now().UTC()
 	for key, trackItem := range tracker.expireTrackMap {
 		if now.After(trackItem.expires) {
 			deleteItems = append(deleteItems, trackItem)

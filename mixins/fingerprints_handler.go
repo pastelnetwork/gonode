@@ -111,7 +111,7 @@ func (h *FingerprintsHandler) matchFingerprintAndScores() error {
 }
 
 // GenerateDDAndFingerprintsIDs generates redundant IDs and assigns to task.redundantIDs
-func (h *FingerprintsHandler) GenerateDDAndFingerprintsIDs(_ context.Context, max uint32) error {
+func (h *FingerprintsHandler) GenerateDDAndFingerprintsIDs(ctx context.Context, max uint32) error {
 	if len(h.SNsSignatures) != 3 {
 		return errors.Errorf("wrong number of signature for fingerprints - %d", len(h.SNsSignatures))
 	}
@@ -140,12 +140,12 @@ func (h *FingerprintsHandler) GenerateDDAndFingerprintsIDs(_ context.Context, ma
 	rand.Read(random_bytes)
 	//turn 4 random bytes into a uint32
 	ddAndFingerprintsIc := binary.LittleEndian.Uint32(random_bytes)
-	ids, _, err := pastel.GetIDFiles(ddFpFile, ddAndFingerprintsIc, max)
+	ids, _, err := pastel.GetIDFiles(ctx, ddFpFile, ddAndFingerprintsIc, max)
 	if err != nil {
 		return errors.Errorf("get ID Files: %w", err)
 	}
 
-	comp, err := utils.Compress(ddFpFile, 4)
+	comp, err := utils.HighCompress(ctx, ddFpFile)
 	if err != nil {
 		return errors.Errorf("compress: %w", err)
 	}

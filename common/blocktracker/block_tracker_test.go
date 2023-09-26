@@ -68,8 +68,8 @@ func TestGetBlockCountNoRefresh(t *testing.T) {
 	tracker := New(pastelClient)
 	tracker.retries = 1
 	tracker.curBlockCnt = expectedBlk
-	tracker.lastRetried = time.Now()
-	tracker.lastSuccess = time.Now()
+	tracker.lastRetried = time.Now().UTC()
+	tracker.lastSuccess = time.Now().UTC()
 
 	blkCnt, err := tracker.GetBlockCount()
 	assert.Equal(t, expectedBlk, blkCnt)
@@ -87,8 +87,8 @@ func TestGetBlockCountRefresh(t *testing.T) {
 	tracker := New(pastelClient)
 	tracker.retries = 1
 	tracker.curBlockCnt = 1
-	tracker.lastRetried = time.Now().Add(-defaultSuccessUpdateDuration)
-	tracker.lastSuccess = time.Now().Add(-defaultSuccessUpdateDuration)
+	tracker.lastRetried = time.Now().UTC().Add(-defaultSuccessUpdateDuration)
+	tracker.lastSuccess = time.Now().UTC().Add(-defaultSuccessUpdateDuration)
 
 	blkCnt, err := tracker.GetBlockCount()
 	assert.Equal(t, expectedBlk, blkCnt)

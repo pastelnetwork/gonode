@@ -276,7 +276,7 @@ func (h *DupeDetectionHandler) compressAndSignDDAndFingerprints(ctx context.Cont
 	}
 
 	// Compress the data and signature, there is a separator byte
-	compressed, err := pastel.ToCompressSignedDDAndFingerprints(ddData, signature)
+	compressed, err := pastel.ToCompressSignedDDAndFingerprints(ctx, ddData, signature)
 	if err != nil {
 		return nil, errors.Errorf("compress SignedDDAndFingerprints: %w", err)
 	}

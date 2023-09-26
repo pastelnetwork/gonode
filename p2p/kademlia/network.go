@@ -640,7 +640,7 @@ func (s *Network) Call(ctx context.Context, request *Message, isLong bool) (*Mes
 		defer rawConn.Close()
 
 		// set the deadline for read and write
-		rawConn.SetDeadline(time.Now().Add(timeout))
+		rawConn.SetDeadline(time.Now().UTC().Add(timeout))
 
 		// if peer authentication is enabled
 		if s.authHelper != nil {

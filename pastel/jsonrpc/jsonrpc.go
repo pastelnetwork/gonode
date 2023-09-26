@@ -15,13 +15,11 @@ import (
 	"time"
 
 	"encoding/json"
-
-	"github.com/cenkalti/backoff"
 )
 
 const (
 	jsonrpcVersion = "2.0"
-	timeout        = 45 * time.Second
+	timeout        = 60 * time.Second
 )
 
 // RPCClient sends JSON-RPC requests over HTTP to the provided JSON-RPC backend.
@@ -341,7 +339,7 @@ func (client *rpcClient) CallWithContext(ctx context.Context, method string, par
 		JSONRPC: jsonrpcVersion,
 	}
 
-	var resp *RPCResponse
+	/*var resp *RPCResponse
 	var err error
 
 	// Define the retry policy.
@@ -359,9 +357,9 @@ func (client *rpcClient) CallWithContext(ctx context.Context, method string, par
 	// Execute the operation with the retry policy.
 	if err := backoff.Retry(operation, b); err != nil {
 		return resp, err
-	}
+	}*/
 
-	return resp, nil
+	return client.doCall(ctx, request)
 }
 
 func (client *rpcClient) Call(method string, params ...interface{}) (*RPCResponse, error) {

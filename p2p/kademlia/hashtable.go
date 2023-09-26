@@ -82,7 +82,7 @@ func NewHashTable(options *Options) (*HashTable, error) {
 func (ht *HashTable) resetRefreshTime(bucket int) {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
-	ht.refreshers[bucket] = time.Now()
+	ht.refreshers[bucket] = time.Now().UTC()
 }
 
 // refreshNode makes the node to the end

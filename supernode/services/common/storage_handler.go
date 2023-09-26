@@ -55,40 +55,6 @@ func (h *StorageHandler) StoreBytesIntoP2P(ctx context.Context, data []byte, typ
 	return h.P2PClient.Store(ctx, data, typ)
 }
 
-/*
-
-// StoreListOfBytesIntoP2P stores into P2P array of bytes arrays
-func (h *StorageHandler) StoreListOfBytesIntoP2P(ctx context.Context, list [][]byte) error {
-	val := ctx.Value(log.TaskIDKey)
-	taskID := ""
-	if val != nil {
-		taskID = fmt.Sprintf("%v", val)
-	}
-	log.WithContext(ctx).WithField("task_id", taskID).Info("task_id in storeList")
-
-	group, gctx := errgroup.WithContext(ctx)
-	val = gctx.Value(log.TaskIDKey)
-	taskID = ""
-	if val != nil {
-		taskID = fmt.Sprintf("%v", val)
-	}
-
-	log.WithContext(gctx).WithField("task_id", taskID).Info("task_id in storeList after gctx")
-	for i := 0; i < len(list); i++ {
-		data := list[i]
-		group.Go(func() (err error) {
-			if _, err := h.StoreBytesIntoP2P(gctx, data); err != nil {
-				return errors.Errorf("store data into p2p: %w", err)
-			}
-
-			return nil
-		})
-	}
-
-	return group.Wait()
-}
-*/
-
 // StoreBatch stores into P2P array of bytes arrays
 func (h *StorageHandler) StoreBatch(ctx context.Context, list [][]byte, typ int) error {
 	val := ctx.Value(log.TaskIDKey)
@@ -240,76 +206,5 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
 		Info("done batch stored raptorQ symbols in p2p")
 
-	/*g, ctx := errgroup.WithContext(ctx)
-
-	// Create a semaphore with a capacity of 2000
-	sem := make(chan struct{}, 2000)
-	defer close(sem) // close the semaphore channel after all routines finished
-
-	var successCounter int32
-	var errorCounter int32
-	var errorList []error
-	var errorMutex sync.Mutex
-
-	for id := range symbols {
-		id, symbol := id, symbols[id] // Shadow variables for correct closure capture
-
-		// Acquire a token
-		sem <- struct{}{}
-
-		g.Go(func() error {
-			defer func() { <-sem }() // Release the token at the end of the goroutine
-
-			// Check if context has been cancelled
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-				_, err := h.P2PClient.Store(ctx, symbol)
-				if err != nil {
-					errorMutex.Lock()
-					if errorCounter < 10 {
-						errorList = append(errorList, errors.Errorf("store symbol id=%s into kademlia: %w", id, err))
-					}
-					errorMutex.Unlock()
-					atomic.AddInt32(&errorCounter, 1)
-					return nil
-				}
-
-				atomic.AddInt32(&successCounter, 1)
-				return nil
-			}
-		})
-	}
-
-	// Wait for all goroutines to finish
-	if err := g.Wait(); err != nil {
-		// Return the error that caused the goroutine to fail
-		return err
-	}
-
-	// Calculate success rate
-	totalSymbols := len(symbols)
-	successRate := float64(successCounter) / float64(totalSymbols)
-
-	// Log the errors but limit to the top 10
-	errorList = errorList[:min(10, len(errorList))]
-	for _, err := range errorList {
-		log.WithContext(ctx).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).WithError(err).Error("error while storing raptorQ symbols in p2p")
-	}
-
-	if successRate < 0.75 {
-		return errors.New("less than 75% symbols were stored successfully")
-	}
-	*/
-
 	return nil
 }
-
-/* Helper function to get minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}*/

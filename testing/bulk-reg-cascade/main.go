@@ -65,6 +65,7 @@ func doUploadImage(method, filePath, fileName string) (res uploadImageResponse, 
 	cmd := exec.Command(app, arg0, arg1, method, url, arg4, arg5, arg6, arg7)
 	resp, err := cmd.Output()
 	if err != nil {
+		fmt.Println("curl resp -- err", resp, err)
 		return res, err
 	}
 
@@ -96,6 +97,8 @@ func preBurnAmount(amount float64) (string, error) {
 		return "", nil
 	}
 
+	log.Printf("pre-burn-amount: %s\n", string(res))
+
 	return strings.Replace(string(res), "\n", "", 1), nil
 }
 
@@ -117,6 +120,7 @@ func getBlockCount() string {
 	if err != nil {
 		return ""
 	}
+	fmt.Printf("block-count: %s\n", string(res))
 
 	return strings.Replace(string(res), "\n", "", 1)
 }
@@ -160,7 +164,8 @@ func doCascadeRequest(payload payload, taskID string, logger *log.Logger) (strin
 	}
 
 	if res.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("received non-200 response code: %d", res.StatusCode)
+		fmt.Printf("response: %s\n", string(body))
+		return "", fmt.Errorf("received non-200 response code: %d %s", res.StatusCode, string(body))
 	}
 
 	var startResp startResponse
@@ -236,10 +241,11 @@ func readFiles() map[string]string {
 		fmt.Println("Error reading directory:", err)
 		os.Exit(1)
 	}
-
+	log.Printf("Total files: %d\n", len(files))
 	for _, file := range files {
 		filesInfo[file.Name()] = filepath.Join(".", "images", file.Name())
 	}
+	log.Printf("Total files after trunc: %d\n", len(filesInfo))
 
 	return filesInfo
 }
@@ -292,17 +298,18 @@ func main() {
 	var results []result
 	var wg sync.WaitGroup
 
-	start := time.Now()
+	start := time.Now().UTC()
 
 	files := readFiles()
 
 	count := 1
 	taskIDs := make(map[string]time.Time)
 	for fileName, filePath := range files {
-		startReq := time.Now()
+		startReq := time.Now().UTC()
 
 		uploadImageRes, err := doUploadImage("POST", filePath, fileName)
 		if err != nil {
+			fmt.Printf("Request to upload image failed:%v\n", err)
 			logger.Printf("Request to upload image failed:%v\n", err)
 		}
 		logger.Printf("image uploaded:%d\n", count)
@@ -313,7 +320,7 @@ func main() {
 		}
 		logger.Printf("amount pre-burned:%s, request-count:%d\n", burnTxID, count)
 
-		payload := payload{BurnTxid: burnTxID, AppPastelid: "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX", MakePubliclyAccessible: true}
+		payload := payload{BurnTxid: burnTxID, AppPastelid: "jXZMSxS5w9UakpVMAs2vihcCVQ4fBrPsSriXmNqTq2nvK4awXvaP9hZJYL1eJ4o9y3jpvoGghVUQyvsU7Q64Jp", MakePubliclyAccessible: true}
 		taskID, err := doCascadeRequest(payload, uploadImageRes.FileId, logger)
 		if err != nil {
 			logger.Printf("Request to cascade registration failed:%v\n", err)

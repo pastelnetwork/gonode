@@ -89,9 +89,9 @@ func (s *DHT) updateReplicationNode(ctx context.Context, nodeID []byte, ip strin
 		return fmt.Errorf("err checking if replication info record exists: %w", err)
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	info := domain.NodeReplicationInfo{
-		UpdatedAt: time.Now(),
+		UpdatedAt: time.Now().UTC(),
 		Active:    isActive,
 		IP:        ip,
 		Port:      port,
@@ -128,7 +128,7 @@ func (s *DHT) Replicate(ctx context.Context) {
 	historicStart, err := s.store.GetOwnCreatedAt(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to get own createdAt")
-		historicStart = time.Now().Add(-24 * time.Hour * 180)
+		historicStart = time.Now().UTC().Add(-24 * time.Hour * 180)
 	}
 
 	log.P2P().WithContext(ctx).WithField("historic-start", historicStart).Info("replicating data")
@@ -160,7 +160,7 @@ func (s *DHT) Replicate(ctx context.Context) {
 	}
 
 	log.P2P().WithContext(ctx).WithField("from", from).Info("getting all possible replication keys")
-	to := time.Now()
+	to := time.Now().UTC()
 	replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
 
 	ignores := s.ignorelist.ToNodeList()
@@ -270,7 +270,7 @@ func (s *DHT) Replicate(ctx context.Context) {
 }
 
 func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.NodeReplicationInfo) error {
-	replicationKeys := s.store.GetKeysForReplication(ctx, from, time.Now())
+	replicationKeys := s.store.GetKeysForReplication(ctx, from, time.Now().UTC())
 	logEntry := log.P2P().WithContext(ctx).WithField("offline-node-ip", info.IP).WithField("offline-node-id", string(info.ID)).
 		WithField("total-rep-keys", len(replicationKeys))
 
@@ -403,7 +403,7 @@ func (s *DHT) checkAndAdjustNode(ctx context.Context, info domain.NodeReplicatio
 			logEntry.WithError(err).Error("failed to adjust node keys")
 		} else {
 			info.IsAdjusted = true
-			info.UpdatedAt = time.Now()
+			info.UpdatedAt = time.Now().UTC()
 
 			if err := s.store.UpdateIsAdjusted(ctx, string(info.ID), true); err != nil {
 				logEntry.WithError(err).Error("failed to update replication info, set isAdjusted to true")

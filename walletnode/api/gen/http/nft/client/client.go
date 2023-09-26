@@ -172,7 +172,7 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 			conn.WriteControl(
 				websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "client closing connection"),
-				time.Now().Add(time.Second),
+				time.Now().UTC().Add(time.Second),
 			)
 			conn.Close()
 		}()
@@ -295,7 +295,7 @@ func (c *Client) NftSearch() goa.Endpoint {
 			conn.WriteControl(
 				websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "client closing connection"),
-				time.Now().Add(time.Second),
+				time.Now().UTC().Add(time.Second),
 			)
 			conn.Close()
 		}()

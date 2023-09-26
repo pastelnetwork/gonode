@@ -222,7 +222,7 @@ func TestTaskRun(t *testing.T) {
 
 				HashOfCandidateImageFile: "HashOfCandidateImageFile",
 			}
-			compressed, err := pastel.ToCompressSignedDDAndFingerprints(ddData, []byte("signature"))
+			compressed, err := pastel.ToCompressSignedDDAndFingerprints(context.Background(), ddData, []byte("signature"))
 			assert.Nil(t, err)
 
 			nodeClient.ListenOnProbeImage(compressed, true, "", false, testCase.args.returnErr)

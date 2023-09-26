@@ -45,7 +45,7 @@ func TestAuthenticator_isPeerInMasterNodes(t *testing.T) {
 	}{
 		"no-refesh_IsPeerInMasterNodes-false": {
 			args: args{
-				testInitLastMasterNodesRefresh: time.Now(),
+				testInitLastMasterNodesRefresh: time.Now().UTC(),
 				testInitMasterNodesExtra:       pastel.MasterNodes{masterNodes2},
 				testRefreshMasterNodesExtra:    pastel.MasterNodes{},
 				testRefreshMasterNodesExtraErr: nil,
@@ -60,7 +60,7 @@ func TestAuthenticator_isPeerInMasterNodes(t *testing.T) {
 		},
 		"no-refesh_IsPeerInMasterNodes-true": {
 			args: args{
-				testInitLastMasterNodesRefresh: time.Now(),
+				testInitLastMasterNodesRefresh: time.Now().UTC(),
 				testInitMasterNodesExtra:       pastel.MasterNodes{masterNodes1, masterNodes2},
 				testRefreshMasterNodesExtra:    pastel.MasterNodes{},
 				testRefreshMasterNodesExtraErr: nil,
@@ -75,7 +75,7 @@ func TestAuthenticator_isPeerInMasterNodes(t *testing.T) {
 		},
 		"refresh-master-node-extra-failed_IsPeerInMasterNodes-false": {
 			args: args{
-				testInitLastMasterNodesRefresh: time.Now().Add(-testRefreshDuration - timestampMarginDuration),
+				testInitLastMasterNodesRefresh: time.Now().UTC().Add(-testRefreshDuration - timestampMarginDuration),
 				testInitMasterNodesExtra:       pastel.MasterNodes{},
 				testRefreshMasterNodesExtra:    pastel.MasterNodes{},
 				testRefreshMasterNodesExtraErr: errors.New("test error"),
@@ -90,7 +90,7 @@ func TestAuthenticator_isPeerInMasterNodes(t *testing.T) {
 		},
 		"refresh-master-node-extra-failed_IsPeerInMasterNodes-true": {
 			args: args{
-				testInitLastMasterNodesRefresh: time.Now().Add(-testRefreshDuration - timestampMarginDuration),
+				testInitLastMasterNodesRefresh: time.Now().UTC().Add(-testRefreshDuration - timestampMarginDuration),
 				testInitMasterNodesExtra:       pastel.MasterNodes{masterNodes1},
 				testRefreshMasterNodesExtra:    pastel.MasterNodes{},
 				testRefreshMasterNodesExtraErr: errors.New("test error"),
@@ -105,7 +105,7 @@ func TestAuthenticator_isPeerInMasterNodes(t *testing.T) {
 		},
 		"refresh-master-node-extra-success_IsPeerInMasterNodes-false": {
 			args: args{
-				testInitLastMasterNodesRefresh: time.Now().Add(-testRefreshDuration - timestampMarginDuration),
+				testInitLastMasterNodesRefresh: time.Now().UTC().Add(-testRefreshDuration - timestampMarginDuration),
 				testInitMasterNodesExtra:       pastel.MasterNodes{masterNodes1},
 				testRefreshMasterNodesExtra:    pastel.MasterNodes{masterNodes2},
 				testRefreshMasterNodesExtraErr: nil,
@@ -120,7 +120,7 @@ func TestAuthenticator_isPeerInMasterNodes(t *testing.T) {
 		},
 		"refresh-master-node-extra-success_IsPeerInMasterNodes-true": {
 			args: args{
-				testInitLastMasterNodesRefresh: time.Now().Add(-testRefreshDuration - timestampMarginDuration),
+				testInitLastMasterNodesRefresh: time.Now().UTC().Add(-testRefreshDuration - timestampMarginDuration),
 				testInitMasterNodesExtra:       pastel.MasterNodes{},
 				testRefreshMasterNodesExtra:    pastel.MasterNodes{masterNodes1, masterNodes2},
 				testRefreshMasterNodesExtraErr: nil,
@@ -191,7 +191,7 @@ func TestAuthenticator_GenAuthInfo(t *testing.T) {
 			args: args{
 				testSignErr:       nil,
 				testSignature:     []byte("new-sig"),
-				testInitTimeStamp: time.Now(),
+				testInitTimeStamp: time.Now().UTC(),
 				testInitSignature: []byte("old-sig"),
 				testSecInfo:       &alts.SecInfo{},
 			},
@@ -202,7 +202,7 @@ func TestAuthenticator_GenAuthInfo(t *testing.T) {
 			args: args{
 				testSignErr:       nil,
 				testSignature:     []byte("new-sig"),
-				testInitTimeStamp: time.Now().Add(-testRefreshDuration - timestampMarginDuration),
+				testInitTimeStamp: time.Now().UTC().Add(-testRefreshDuration - timestampMarginDuration),
 				testInitSignature: []byte("old-sig"),
 				testSecInfo:       &alts.SecInfo{},
 			},
@@ -213,7 +213,7 @@ func TestAuthenticator_GenAuthInfo(t *testing.T) {
 			args: args{
 				testSignErr:       errors.New("sign-error"),
 				testSignature:     []byte("new-sig"),
-				testInitTimeStamp: time.Now().Add(-testRefreshDuration - timestampMarginDuration),
+				testInitTimeStamp: time.Now().UTC().Add(-testRefreshDuration - timestampMarginDuration),
 				testInitSignature: []byte("old-sig"),
 				testSecInfo:       &alts.SecInfo{},
 			},

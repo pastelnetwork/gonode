@@ -251,7 +251,7 @@ func (service *Service) p2pStore(writer http.ResponseWriter, request *http.Reque
 	}
 
 	// Store to remove key after expires
-	service.cleanTracker.Track(key, time.Now().Add(defaultP2PExpiresDuration))
+	service.cleanTracker.Track(key, time.Now().UTC().Add(defaultP2PExpiresDuration))
 
 	responseWithJSON(writer, http.StatusOK, &StoreReply{
 		Key: key,
@@ -306,7 +306,7 @@ func (service *Service) p2pLocalStore(writer http.ResponseWriter, request *http.
 	}
 
 	// Store to remove key after expires
-	service.cleanTracker.Track(key, time.Now().Add(defaultP2PExpiresDuration))
+	service.cleanTracker.Track(key, time.Now().UTC().Add(defaultP2PExpiresDuration))
 
 	responseWithJSON(writer, http.StatusOK, &StoreReply{
 		Key: key,
