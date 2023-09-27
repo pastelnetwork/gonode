@@ -21,7 +21,7 @@ require (
 	github.com/pastelnetwork/gonode/bridge v0.0.0-20230829114806-701c926c0c44
 	github.com/pastelnetwork/gonode/common v0.0.0-20230829114806-701c926c0c44
 	github.com/pastelnetwork/gonode/mixins v0.0.0-20230829114806-701c926c0c44
-	github.com/pastelnetwork/gonode/pastel v0.0.0-20230829114806-701c926c0c44
+	github.com/pastelnetwork/gonode/pastel v0.0.0-20230922111414-13f183de2818
 	github.com/pastelnetwork/gonode/proto v0.0.0-20230829114806-701c926c0c44
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-20230829114806-701c926c0c44
 	github.com/sahilm/fuzzy v0.1.0

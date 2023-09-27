@@ -174,7 +174,7 @@ func ToCompressSignedDDAndFingerprints(ctx context.Context, ddData *DDAndFingerp
 	res = append(res, signature...)
 
 	// Compress it
-	compressed, err := utils.HighCompress(context.Background(), res)
+	compressed, err := utils.HighCompress(ctx, res)
 	if err != nil {
 		return nil, errors.Errorf("compress fingerprint data: %w", err)
 	}
