@@ -18,5 +18,5 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/pastelnetwork/gonode/walletnode v0.0.0-00010101000000-000000000000
 	github.com/pkg/errors v0.9.1
-	goa.design/goa/v3 v3.13.0
+	goa.design/goa/v3 v3.13.1
 )

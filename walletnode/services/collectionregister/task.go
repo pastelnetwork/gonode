@@ -54,8 +54,21 @@ func (task *CollectionRegistrationTask) Run(ctx context.Context) error {
 }
 
 func (task *CollectionRegistrationTask) run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
+	if r := recover(); r != nil {
+		log.Errorf("Recovered from panic in cascade run: %v", r)
+	}
+
+	go func() {
+		<-ctx.Done()
+		log.Println("root context 'ctx' in run func was cancelled:", ctx.Err())
+	}()
+
+	connCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	go func() {
+		<-connCtx.Done()
+		log.Println("Conn context 'connCtx' in run func was cancelled:", connCtx.Err())
+	}()
 
 	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
 	task.StatusLog[common.FieldTaskType] = "Collection Registration"
@@ -63,7 +76,7 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Info("calculating sort key")
 	sortKey, _ := utils.Sha3256hash([]byte(task.WalletNodeTask.ID()))
 
-	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(ctx, sortKey)
+	creatorBlockHeight, creatorBlockHash, err := task.MeshHandler.SetupMeshOfNSupernodesNodes(connCtx, sortKey)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error setting up mesh of supernodes")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -79,14 +92,15 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
-	nodesDone := task.MeshHandler.ConnectionsSupervisor(ctx, cancel)
-	defer func(err error) {
-		if err != nil {
+	var closeErr error
+	nodesDone := task.MeshHandler.ConnectionsSupervisor(connCtx, cancel)
+	defer func() {
+		if closeErr != nil {
 			if err := task.MeshHandler.CloseSNsConnections(ctx, nodesDone); err != nil {
 				log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
 			}
 		}
-	}(err)
+	}()
 
 	if err := task.createCollectionTicket(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error creating collection ticket")
@@ -115,6 +129,17 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	}
 	log.WithContext(ctx).Info("pre-burned 10% of collection reg fee")
 
+	log.WithContext(ctx).Info("validating burn transaction")
+	task.UpdateStatus(common.StatusValidateBurnTxn)
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.burnTxID, 3,
+		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
+
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
+		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
+	}
+	task.UpdateStatus(common.StatusBurnTxnValidated)
+	log.WithContext(ctx).Info("burn txn has been validated")
+
 	log.WithContext(ctx).Info("upload signed collection reg ticket to SNs")
 	if err := task.uploadSignedTicket(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error uploading signed ticket")
@@ -135,11 +160,14 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Infof("Collection Reg Ticket registered. Collection Registration Ticket txid: %s", task.collectionTXID)
 	log.WithContext(ctx).Info("Closing SNs connections")
 
-	_ = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
+	if err != nil {
+		closeErr = err
+		log.WithContext(ctx).WithError(err).Error("error closing SNs connections")
+	}
 
 	log.WithContext(ctx).Infof("Waiting Confirmations for Collection Reg Ticket - Ticket txid: %s", task.collectionTXID)
-	newCtx := log.ContextWithPrefix(context.Background(), "Collection")
-	if err := task.service.pastelHandler.WaitTxidValid(newCtx, task.collectionTXID, int64(task.service.config.CollectionRegTxMinConfirmations),
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.collectionTXID, int64(task.service.config.CollectionRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations")
@@ -155,7 +183,7 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 
 	log.WithContext(ctx).Info("Collection Reg Ticket confirmed, Activating Collection Reg Ticket")
 	// activate Collection ticket registered at previous step by SN
-	activateTxID, err := task.activateCollectionTicket(newCtx)
+	activateTxID, err := task.activateCollectionTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error activating collection ticket")
 
@@ -174,7 +202,7 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	log.WithContext(ctx).Infof("Waiting Confirmations for Collection Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
-	err = task.service.pastelHandler.WaitTxidValid(newCtx, activateTxID, int64(task.service.config.CollectionActTxMinConfirmations),
+	err = task.service.pastelHandler.WaitTxidValid(ctx, activateTxID, int64(task.service.config.CollectionActTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error getting confirmations for activation")
@@ -244,8 +272,8 @@ func (task *CollectionRegistrationTask) preBurnRegistrationFee(ctx context.Conte
 		return errors.Errorf("not enough PSL - balance(%f) < registration-fee(%d)", balance, collectionRegFee)
 	}
 
-	task.burnTxID, err = task.service.pastelHandler.BurnSomeCoins(ctx, address,
-		collectionRegFee, 10)
+	task.burnTxID, err = task.service.pastelHandler.PastelClient.SendToAddress(ctx, task.service.pastelHandler.GetBurnAddress(),
+		100)
 	if err != nil {
 		task.UpdateStatus(common.StatusErrorPreburnRegFeeGetTicketID)
 		return fmt.Errorf("burn some coins: %w", err)

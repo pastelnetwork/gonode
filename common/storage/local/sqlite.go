@@ -265,6 +265,18 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 
 	_, _ = db.Exec(alterTaskHistory)
 
+	pragmas := []string{
+		"PRAGMA synchronous=NORMAL;",
+		"PRAGMA cache_size=-262144;",
+		"PRAGMA busy_timeout=120000;",
+	}
+
+	for _, pragma := range pragmas {
+		if _, err := db.Exec(pragma); err != nil {
+			return nil, fmt.Errorf("cannot set sqlite database parameter: %w", err)
+		}
+	}
+
 	return &SQLiteStore{
 		db: db,
 	}, nil

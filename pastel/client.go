@@ -761,9 +761,9 @@ func (client *client) FindActionRegTicketsByLabel(ctx context.Context, label str
 	return tickets, nil
 }
 
-func (client *client) GetBalance(ctx context.Context, address string) (float64, error) {
+func (client *client) GetBalance(ctx context.Context, _ string) (float64, error) {
 	var balance float64
-	if err := client.callFor(ctx, &balance, "z_getbalance", address); err != nil {
+	if err := client.callFor(ctx, &balance, "getbalance"); err != nil {
 		return 0.0, errors.Errorf("failed to call z_getbalance: %w", err)
 	}
 	return balance, nil

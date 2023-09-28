@@ -45,6 +45,7 @@ type payload struct {
 	BurnTxid               string `json:"burn_txid"`
 	AppPastelid            string `json:"app_pastelid"`
 	MakePubliclyAccessible bool   `json:"make_publicly_accessible"`
+	CollectionActTxid      string `json:"collection_act_txid"`
 }
 
 type startResponse struct {
