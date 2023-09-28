@@ -11,7 +11,7 @@ replace (
 	golang.org/x/crypto => github.com/golang/crypto v0.13.0
 )
 
-go 1.21.1
+go 1.21
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.2
