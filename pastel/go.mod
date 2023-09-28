@@ -6,8 +6,8 @@ go 1.21
 
 require (
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/json-iterator/go v1.1.12
+	github.com/onsi/gomega v1.4.3
 	github.com/pastelnetwork/gonode/common v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.8.4
 )
@@ -27,9 +27,12 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/term v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/yaml.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
