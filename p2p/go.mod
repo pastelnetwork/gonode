@@ -50,8 +50,8 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/term v0.11.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/term v0.12.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

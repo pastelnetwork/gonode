@@ -164,7 +164,7 @@ func (h *RegTaskHelper) ValidateIDFiles(ctx context.Context,
 		return nil, nil, errors.Errorf("file verification failed: need %d verifications, got %d", numSignRequired, verifications)
 	}
 
-	gotIDs, idFiles, err := pastel.GetIDFiles(decData, ic, max)
+	gotIDs, idFiles, err := pastel.GetIDFiles(ctx, decData, ic, max)
 	if err != nil {
 		return nil, nil, errors.Errorf("get ids: %w", err)
 	}

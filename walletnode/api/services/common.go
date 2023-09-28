@@ -3,11 +3,11 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 	"math/rand"
+	"time"
 )
 
-var randIDGen = rand.New(rand.NewSource(time.Now().UnixNano()))
+var randIDGen = rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
 
 // Config represents a config for the common service.
 type Config struct {

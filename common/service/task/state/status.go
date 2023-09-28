@@ -28,7 +28,7 @@ func (status *Status) Is(subStatus SubStatus) bool {
 // NewStatus returns a new Status instance.
 func NewStatus(subStatus SubStatus) *Status {
 	return &Status{
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 		SubStatus: subStatus,
 	}
 }

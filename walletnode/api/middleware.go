@@ -38,7 +38,7 @@ func Log(ctx context.Context) func(h http.Handler) http.Handler {
 			if reqID == nil {
 				reqID, _ = random.String(8, random.Base62Chars)
 			}
-			started := time.Now()
+			started := time.Now().UTC()
 
 			ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, reqID))
 

@@ -143,7 +143,7 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 
 // InsertStorageChallengeMessage inserts failed storage challenge to db
 func (s *SQLiteStore) InsertStorageChallengeMessage(challenge types.StorageChallengeLogMessage) error {
-	now := time.Now()
+	now := time.Now().UTC()
 	const insertQuery = "INSERT INTO storage_challenge_messages(id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?);"
 	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.Sender, challenge.SenderSignature, now, now)
 	if err != nil {
@@ -155,7 +155,7 @@ func (s *SQLiteStore) InsertStorageChallengeMessage(challenge types.StorageChall
 
 // InsertBroadcastMessage inserts broadcast storage challenge msg to db
 func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage) error {
-	now := time.Now()
+	now := time.Now().UTC()
 	const insertQuery = "INSERT INTO broadcast_challenge_messages(id, challenge_id, data, challenger, recipient, observers, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?);"
 	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.Data, challenge.Challenger, challenge.Recipient, challenge.Observers, now, now)
 	if err != nil {
@@ -212,7 +212,7 @@ func (s *SQLiteStore) QuerySelfHealingChallenges() (challenges []types.SelfHeali
 
 // InsertSelfHealingChallenge inserts self-healing challenge
 func (s *SQLiteStore) InsertSelfHealingChallenge(challenge types.SelfHealingChallenge) (hID int, err error) {
-	now := time.Now()
+	now := time.Now().UTC()
 	const insertQuery = "INSERT INTO self_healing_challenges(id, challenge_id, merkleroot, file_hash, challenging_node, responding_node, verifying_node, reconstructed_file_hash, status, created_at, updated_at) VALUES(NULL,$1,$2,$3,$4,$5,$6,$7,$8,$9,$9);"
 
 	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MerkleRoot, challenge.FileHash, challenge.ChallengingNode, challenge.RespondingNode, challenge.VerifyingNode, challenge.ReconstructedFileHash, challenge.Status, now)

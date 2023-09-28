@@ -150,7 +150,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	}
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
-	task.creationTimestamp = time.Now().Format(DateTimeFormat)
+	task.creationTimestamp = time.Now().UTC().Format(DateTimeFormat)
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
 
 	log.WithContext(ctx).Info("Mesh of supernodes have been established")
@@ -281,7 +281,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	if task.downloadService != nil {
 		if err := common.DownloadWithRetry(ctx, task, now, now.Add(common.RetryTime*time.Minute)); err != nil {
 			log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).WithError(err).Error("error validating sense ticket data")

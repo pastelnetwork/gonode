@@ -24,7 +24,7 @@ func DownloadWithRetry(ctx context.Context, fn DownloadVerifier, retryN, maxRetr
 		}
 
 		time.Sleep(15 * time.Second)
-		return DownloadWithRetry(ctx, fn, time.Now(), maxRetry)
+		return DownloadWithRetry(ctx, fn, time.Now().UTC(), maxRetry)
 	}
 
 	return nil

@@ -12,6 +12,7 @@ replace (
 )
 
 require (
+	github.com/json-iterator/go v1.1.12
 	github.com/pastelnetwork/gonode/common v0.0.0-20230829114806-701c926c0c44
 	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
@@ -23,6 +24,7 @@ require (
 
 require (
 	github.com/btcsuite/btcutil v1.0.2 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
@@ -40,6 +42,8 @@ require (
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/otrv4/ed448 v0.0.0-20221017120334-a33859724cfd // indirect
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
@@ -60,9 +64,9 @@ require (
 	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 	golang.org/x/net v0.12.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/term v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/term v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230525234030-28d5490b6b19 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect

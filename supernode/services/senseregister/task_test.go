@@ -642,7 +642,7 @@ func TestTaskProbeImage(t *testing.T) {
 
 				pastelClientMock.ListenOnMasterNodesTop(nodes, nil).ListenOnMasterNodesExtra(nodes, nil)
 
-				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(genfingerAndScoresFunc(), []byte("signature"))
+				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(context.Background(), genfingerAndScoresFunc(), []byte("signature"))
 				go task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
 				go task.AddSignedDDAndFingerprints("B", peerDDAndFingerprints)
 			}

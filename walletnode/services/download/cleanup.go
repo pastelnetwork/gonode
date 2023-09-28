@@ -50,7 +50,7 @@ func (service *CleanupService) cleanup(ctx context.Context) (int, error) {
 		return count, err
 	}
 
-	cutoffTime := time.Now().Add(-service.fileTTL)
+	cutoffTime := time.Now().UTC().Add(-service.fileTTL)
 
 	for _, f := range files {
 		fullPath := filepath.Join(service.fileDir, f.Name())

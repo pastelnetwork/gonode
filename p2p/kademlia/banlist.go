@@ -40,7 +40,7 @@ func (s *BanList) Add(node *Node) {
 			IP:   node.IP,
 			Port: node.Port,
 		},
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 		count:     1,
 	}
 
@@ -69,7 +69,7 @@ func (s *BanList) IncrementCount(node *Node) {
 				IP:   node.IP,
 				Port: node.Port,
 			},
-			CreatedAt: time.Now(),
+			CreatedAt: time.Now().UTC(),
 			count:     1,
 		}
 
@@ -130,7 +130,7 @@ func (s *BanList) Purge() {
 	defer s.mtx.Unlock()
 
 	for i := 0; i < len(s.Nodes); i++ {
-		if time.Now().After(s.Nodes[i].CreatedAt.Add(banDuration)) {
+		if time.Now().UTC().After(s.Nodes[i].CreatedAt.Add(banDuration)) {
 
 			newNodes := s.Nodes[:i]
 			if i+1 < len(s.Nodes) {

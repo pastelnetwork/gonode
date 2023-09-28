@@ -106,7 +106,7 @@ func (s *RegisterTaskStateServerStream) Close() error {
 	if err = s.conn.WriteControl(
 		websocket.CloseMessage,
 		websocket.FormatCloseMessage(websocket.CloseNormalClosure, "server closing connection"),
-		time.Now().Add(time.Second),
+		time.Now().UTC().Add(time.Second),
 	); err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (s *NftSearchServerStream) Close() error {
 	if err = s.conn.WriteControl(
 		websocket.CloseMessage,
 		websocket.FormatCloseMessage(websocket.CloseNormalClosure, "server closing connection"),
-		time.Now().Add(time.Second),
+		time.Now().UTC().Add(time.Second),
 	); err != nil {
 		return err
 	}

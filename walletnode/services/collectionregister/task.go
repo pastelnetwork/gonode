@@ -73,7 +73,7 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	task.creatorBlockHeight = uint(creatorBlockHeight)
 	task.creatorBlockHash = creatorBlockHash
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
-	task.creationTimestamp = time.Now().Format(DateTimeFormat)
+	task.creationTimestamp = time.Now().UTC().Format(DateTimeFormat)
 
 	log.WithContext(ctx).Info("Mesh of supernodes have been established")
 

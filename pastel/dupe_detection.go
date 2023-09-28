@@ -2,6 +2,7 @@ package pastel
 
 import (
 	"bytes"
+	"context"
 	"strconv"
 
 	json "github.com/json-iterator/go"
@@ -160,7 +161,7 @@ func ExtractCompressSignedDDAndFingerprints(compressed []byte) (*DDAndFingerprin
 // ToCompressSignedDDAndFingerprints converts dd_and_fingerptints data to compress((b64(dd_and_fp).(sig)))
 // https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration
 // Step 4.A.4
-func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []byte) ([]byte, error) {
+func ToCompressSignedDDAndFingerprints(ctx context.Context, ddData *DDAndFingerprints, signature []byte) ([]byte, error) {
 	ddDataJSON, err := json.Marshal(ddData)
 
 	if err != nil {
@@ -173,7 +174,7 @@ func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []by
 	res = append(res, signature...)
 
 	// Compress it
-	compressed, err := utils.Compress(res, 4)
+	compressed, err := utils.HighCompress(ctx, res)
 	if err != nil {
 		return nil, errors.Errorf("compress fingerprint data: %w", err)
 	}
@@ -184,17 +185,20 @@ func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []by
 // GetIDFiles generates ID Files for dd_and_fingerprints files and rq_id files
 // file is b64 encoded file appended with signatures and compressed, ic is the initial counter
 // and max is the number of ids to generate
-func GetIDFiles(file []byte, ic uint32, max uint32) (ids []string, files [][]byte, err error) {
-	var idFiles [][]byte
+func GetIDFiles(ctx context.Context, file []byte, ic uint32, max uint32) (ids []string, files [][]byte, err error) {
+	idFiles := make([][]byte, 0, max)
+	ids = make([]string, 0, max)
+	var buffer bytes.Buffer
+
 	for i := uint32(0); i < max; i++ {
-		var buffer bytes.Buffer
+		buffer.Reset()
 		counter := ic + i
 
 		buffer.Write(file)
 		buffer.WriteByte(SeparatorByte)
-		buffer.WriteString(strconv.Itoa(int(counter)))
+		buffer.WriteString(strconv.Itoa(int(counter))) // Using the string representation to maintain backward compatibility
 
-		compressedData, err := utils.Compress(buffer.Bytes(), 4)
+		compressedData, err := utils.HighCompress(ctx, buffer.Bytes()) // Ensure you're using the same compression level
 		if err != nil {
 			return ids, idFiles, errors.Errorf("compress identifiers file: %w", err)
 		}

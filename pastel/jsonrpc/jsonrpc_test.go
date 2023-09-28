@@ -1,6 +1,5 @@
 package jsonrpc
 
-/*
 import (
 	"fmt"
 	"io/ioutil"
@@ -830,4 +829,3 @@ type Properties struct {
 	Distance int    `json:"distance"`
 	Color    string `json:"color"`
 }
-*/

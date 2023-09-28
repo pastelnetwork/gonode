@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"container/heap"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
@@ -19,10 +20,20 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/klauspost/compress/zstd"
 	"golang.org/x/crypto/sha3"
 )
+
+const (
+	maxParallelHighCompressCalls = 5
+	semaphoreWeight              = 1
+	highCompressTimeout          = 30 * time.Minute
+	highCompressionLevel         = 4
+)
+
+var sem = semaphore.NewWeighted(maxParallelHighCompressCalls)
 
 // DiskStatus cotains info of disk storage
 type DiskStatus struct {
@@ -348,4 +359,39 @@ func RandomDuration(min, max int) time.Duration {
 	binary.Read(rand.Reader, binary.LittleEndian, &n) // read a random uint64
 	randomMillisecond := min + int(n%(uint64(max-min+1)))
 	return time.Duration(randomMillisecond) * time.Millisecond
+}
+
+// HighCompress compresses the data
+func HighCompress(cctx context.Context, data []byte) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(cctx, highCompressTimeout)
+	defer cancel()
+
+	// Acquire the semaphore. This will block if 5 other goroutines are already inside this function.
+	if err := sem.Acquire(ctx, semaphoreWeight); err != nil {
+		return nil, fmt.Errorf("failed to acquire semaphore: %v", err)
+	}
+	defer sem.Release(semaphoreWeight) // Ensure that the semaphore is always released
+
+	numCPU := runtime.NumCPU()
+	// Create a buffer to store compressed data
+	var compressedData bytes.Buffer
+
+	// Create a new Zstd encoder with concurrency set to the number of CPU cores
+	encoder, err := zstd.NewWriter(&compressedData, zstd.WithEncoderConcurrency(numCPU), zstd.WithEncoderLevel(zstd.EncoderLevel(highCompressionLevel)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Zstd encoder: %v", err)
+	}
+
+	// Perform the compression
+	_, err = io.Copy(encoder, bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("failed to compress data: %v", err)
+	}
+
+	// Close the encoder to flush any remaining data
+	if err := encoder.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close encoder: %v", err)
+	}
+
+	return compressedData.Bytes(), nil
 }

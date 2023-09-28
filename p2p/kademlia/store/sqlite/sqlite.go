@@ -631,7 +631,7 @@ func (s *Store) GetOwnCreatedAt(ctx context.Context) (time.Time, error) {
 
 	createdAtString := createdAtStr.String
 	if createdAtString == "" {
-		return time.Now(), nil
+		return time.Now().UTC(), nil
 	}
 
 	createdAtString = strings.Split(createdAtString, "+")[0]

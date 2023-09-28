@@ -1,6 +1,7 @@
 package qrsignature
 
 import (
+	"context"
 	"fmt"
 	"math"
 
@@ -77,7 +78,7 @@ func (payload *Payload) Encode() error {
 	raw := payload.raw
 	if !(payload.name == PayloadPostQuantumPubKey || payload.name == PayloadEd448PubKey) {
 		var err error
-		raw, err = utils.Compress(payload.raw, 4)
+		raw, err = utils.HighCompress(context.Background(), payload.raw)
 		if err != nil {
 			return errors.Errorf("compress: %w", err)
 		}

@@ -53,7 +53,7 @@ func (ath *AuthHelper) GenAuthInfo(ctx context.Context) (*auth.PeerAuthInfo, err
 	ath.authMtx.Lock()
 	defer ath.authMtx.Unlock()
 	// if need to refresh current timestamp
-	if time.Now().After(ath.timestamp.Add(ath.expiredDuration + timestampMarginDuration)) {
+	if time.Now().UTC().After(ath.timestamp.Add(ath.expiredDuration + timestampMarginDuration)) {
 		if err := ath.unsafeRefreshAuthInfo(ctx); err != nil {
 			return nil, errors.Errorf("refresh auth: %w", err)
 		}
@@ -69,12 +69,12 @@ func (ath *AuthHelper) GenAuthInfo(ctx context.Context) (*auth.PeerAuthInfo, err
 // VerifyPeer verify auth info of other side
 func (ath *AuthHelper) VerifyPeer(ctx context.Context, authInfo *auth.PeerAuthInfo) error {
 	// verify timestamp - if too old
-	if time.Now().Add(-ath.expiredDuration).After(authInfo.Timestamp) {
+	if time.Now().UTC().Add(-ath.expiredDuration).After(authInfo.Timestamp) {
 		return errors.New("invalid timestamp - too old")
 	}
 
 	// verify timestamp - if too high
-	if authInfo.Timestamp.After(time.Now().Add(timestampMarginDuration)) {
+	if authInfo.Timestamp.After(time.Now().UTC().Add(timestampMarginDuration)) {
 		return errors.New("invalid timestamp - far from now")
 	}
 
@@ -139,7 +139,7 @@ func (ath *AuthHelper) isPeerInMasterNodes(ctx context.Context, authInfo *auth.P
 
 func (ath *AuthHelper) unsafeRefreshAuthInfo(ctx context.Context) error {
 	// Prepare timestamp
-	newTimestamp := time.Now()
+	newTimestamp := time.Now().UTC()
 	buf := new(bytes.Buffer)
 	_ = binary.Write(buf, binary.LittleEndian, newTimestamp.Unix())
 
@@ -157,12 +157,12 @@ func (ath *AuthHelper) unsafeRefreshAuthInfo(ctx context.Context) error {
 }
 
 func (ath *AuthHelper) tryRefreshMasternodeList(ctx context.Context) {
-	if len(ath.masterNodes) == 0 || time.Now().After(ath.lastMasterNodesRefresh.Add(ath.masterNodesRefreshDuration)) {
+	if len(ath.masterNodes) == 0 || time.Now().UTC().After(ath.lastMasterNodesRefresh.Add(ath.masterNodesRefreshDuration)) {
 		if err := ath.unsafeRefreshMasternodeList(ctx); err != nil {
 			log.P2P().WithContext(ctx).WithError(err).Error("Update master node list failed")
 			return
 		}
-		ath.lastMasterNodesRefresh = time.Now()
+		ath.lastMasterNodesRefresh = time.Now().UTC()
 	}
 }
 func (ath *AuthHelper) unsafeRefreshMasternodeList(ctx context.Context) error {
