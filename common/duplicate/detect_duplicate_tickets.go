@@ -69,7 +69,7 @@ func (task *DupTicketsDetector) checkMempoolForInProgressSenseOrNFTTickets(ctx c
 		senseTicket, err := task.getSenseTicket(ctx, txID)
 		if err != nil {
 			log.WithContext(ctx).WithField("transaction_id", txID).
-				Info("not valid TxID for sense reg ticket")
+				Debug("not valid TxID for sense reg ticket")
 		}
 
 		if senseTicket != nil {
@@ -85,9 +85,6 @@ func (task *DupTicketsDetector) checkMempoolForInProgressSenseOrNFTTickets(ctx c
 
 		nftTicket, err := task.getNFTTicket(ctx, txID)
 		if err != nil {
-			log.WithContext(ctx).WithField("transaction_id", txID).
-				Info("not valid TxID for NFT reg ticket")
-
 			continue
 		}
 
@@ -128,21 +125,17 @@ func (task *DupTicketsDetector) checkInactiveSenseTickets(ctx context.Context, d
 	}
 
 	if len(inactiveActionTickets) == 0 {
-		log.WithContext(ctx).Info("no inactive action tickets found")
 		return nil
 	}
 
 	for _, ticket := range inactiveActionTickets {
 		senseTicket, err := task.getSenseTicket(ctx, ticket.ActTicketData.RegTXID)
 		if err != nil {
-			log.WithContext(ctx).WithField("transaction_id", ticket.ActTicketData.RegTXID).
-				Info("not valid TxID for sense reg ticket")
 			continue
 		}
 
 		currentBlockCount, err := task.pastelClient.GetBlockCount(ctx)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("unable to get block count")
 			continue
 		}
 		blockCountWhenTicketCreated := ticket.ActTicketData.CreatorHeight
@@ -171,20 +164,17 @@ func (task *DupTicketsDetector) checkInactiveNFTTickets(ctx context.Context, dat
 	}
 
 	if len(inactiveNFTTickets) == 0 {
-		log.WithContext(ctx).Info("no inactive action tickets found")
 		return nil
 	}
 
 	for _, ticket := range inactiveNFTTickets {
 		nftTicket, err := task.getNFTTicket(ctx, ticket.TXID)
 		if err != nil {
-			log.WithContext(ctx).WithField("transaction_id", ticket.TXID).Info("not valid TxID for NFT reg ticket")
 			continue
 		}
 
 		currentBlockCount, err := task.pastelClient.GetBlockCount(ctx)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("unable to get block count")
 			continue
 		}
 		blockCountWhenTicketCreated := nftTicket.BlockNum

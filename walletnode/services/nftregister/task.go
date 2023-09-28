@@ -854,11 +854,23 @@ func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string,
 // WalletNode - Burn 10% of Registration fee
 // WalletNode - Upload txid of burned transaction to the SuperNode’s 1, 2 and 3
 func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context.Context) error {
-	burnTxid, err := task.service.pastelHandler.BurnSomeCoins(ctx, task.Request.SpendableAddress,
-		task.registrationFee, 10)
+	burnAmount := float64(task.registrationFee) / float64(10)
+
+	burnTxid, err := task.service.pastelHandler.PastelClient.SendToAddress(ctx, task.service.pastelHandler.GetBurnAddress(), int64(burnAmount))
 	if err != nil {
 		return fmt.Errorf("burn some coins: %w", err)
 	}
+
+	log.WithContext(ctx).Info("validating burn transaction")
+	task.UpdateStatus(common.StatusValidateBurnTxn)
+	if err := task.service.pastelHandler.WaitTxidValid(ctx, burnTxid, 3,
+		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
+
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
+		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
+	}
+	task.UpdateStatus(common.StatusBurnTxnValidated)
+	log.WithContext(ctx).Info("burn txn has been validated")
 
 	task.StatusLog[common.FieldBurnTxnID] = burnTxid
 	group, gctx := errgroup.WithContext(ctx)

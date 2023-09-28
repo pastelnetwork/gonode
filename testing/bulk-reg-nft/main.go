@@ -274,10 +274,10 @@ func main() {
 			ImageId:           uploadImageRes.ImageID,
 			IssuedCopies:      1,
 			Keywords:          "bulk-reg-nft-test" + uploadImageRes.ImageID,
-			MaximumFee:        1500,
+			MaximumFee:        5000,
 			Name:              fileName,
 			SeriesName:        "Test Series",
-			SpendableAddress:  "tPoQ1SLYSRFkob5nC6yHfrM3cJqBoCivS5c",
+			SpendableAddress:  "tPoVwtTmLvJTV5XCaFqUM6cobZkbu4Uyg9J",
 			ThumbnailCoordinate: ThumbnailCoordinate{
 				BottomRightX: 640,
 				BottomRightY: 480,

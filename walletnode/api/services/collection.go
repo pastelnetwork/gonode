@@ -91,7 +91,7 @@ func (service *CollectionAPIHandler) RegisterTaskState(ctx context.Context, p *c
 			if status.IsFailure() {
 				if task.Error() != nil {
 					errStr := task.Error()
-					log.WithContext(ctx).WithError(errStr).Errorf("error registering cascade")
+					log.WithContext(ctx).WithError(errStr).Errorf("error registering collection")
 				}
 
 			}
