@@ -195,7 +195,8 @@ func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, 
 		task.UpdateStatus(common.StatusRQServiceConnectionFailed)
 		return file, errors.Errorf("could not connect to rqservice: %w", err)
 	}
-	defer rqConnection.Done()
+	defer rqConnection.Close()
+
 	rqNodeConfig := &rqnode.Config{
 		RqFilesDir: task.NftDownloaderService.config.RqFilesDir,
 	}

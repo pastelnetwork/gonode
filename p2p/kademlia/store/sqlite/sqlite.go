@@ -84,7 +84,7 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	if err != nil {
 		return nil, fmt.Errorf("cannot open sqlite database: %w", err)
 	}
-	db.SetMaxOpenConns(250) // set appropriate value
+	db.SetMaxOpenConns(200) // set appropriate value
 	db.SetMaxIdleConns(10)  // set appropriate value
 
 	s := &Store{
