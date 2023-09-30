@@ -18,6 +18,7 @@ var _ = Service("collection", func() {
 		Path("/collection")
 	})
 
+	Error("UnAuthorized", ErrorResult)
 	Error("BadRequest", ErrorResult)
 	Error("NotFound", ErrorResult)
 	Error("InternalServerError", ErrorResult)
@@ -35,6 +36,7 @@ var _ = Service("collection", func() {
 		HTTP(func() {
 			POST("/register")
 
+			Response("UnAuthorized", StatusUnauthorized)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)

@@ -22,6 +22,7 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
 
@@ -75,6 +76,11 @@ func (service *CascadeRegistrationService) GetTask(id string) *CascadeRegistrati
 		return t.(*CascadeRegistrationTask)
 	}
 	return nil
+}
+
+// ValidateUser validates user
+func (service *CascadeRegistrationService) ValidateUser(ctx context.Context, id string, pass string) bool {
+	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass)
 }
 
 // AddTask create ticket request and start a new task with the given payload

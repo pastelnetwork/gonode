@@ -19,6 +19,7 @@ var _ = Service("cascade", func() {
 		Path("/openapi/cascade")
 	})
 
+	Error("UnAuthorized", ErrorResult)
 	Error("BadRequest", ErrorResult)
 	Error("NotFound", ErrorResult)
 	Error("InternalServerError", ErrorResult)
@@ -60,6 +61,7 @@ var _ = Service("cascade", func() {
 				Param("file_id", String)
 			})
 			// Define error HTTP statuses.
+			Response("UnAuthorized", StatusUnauthorized)
 			Response("BadRequest", StatusBadRequest)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusCreated)
@@ -116,7 +118,7 @@ var _ = Service("cascade", func() {
 			Param("txid")
 			Param("pid")
 
-			// Header("key:Authorization") // Provide the key in Authorization header (default)
+			Response("UnAuthorized", StatusUnauthorized)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)

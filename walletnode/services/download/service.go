@@ -2,6 +2,7 @@ package download
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
@@ -9,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
 const (
@@ -48,6 +50,11 @@ func (service *NftDownloadingService) Tasks() []*NftDownloadingTask {
 		tasks = append(tasks, task.(*NftDownloadingTask))
 	}
 	return tasks
+}
+
+// ValidateUser validates the user by the given id and pass.
+func (service *NftDownloadingService) ValidateUser(ctx context.Context, id string, pass string) bool {
+	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass)
 }
 
 // GetTask returns the task of the NFT downloading by the given id.

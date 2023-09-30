@@ -16,6 +16,7 @@ import (
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
 
@@ -113,6 +114,11 @@ func (service *NftRegistrationService) CalculateFee(ctx context.Context, fileID 
 	}
 
 	return float64(unitFee) * fileDataInMb, nil
+}
+
+// ValidateUser validates user credentials
+func (service *NftRegistrationService) ValidateUser(ctx context.Context, id string, pass string) bool {
+	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass)
 }
 
 // NewService returns a new Service instance.

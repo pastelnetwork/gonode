@@ -25,6 +25,7 @@ var _ = Service("nft", func() {
 	Error("BadRequest", ErrorResult)
 	Error("NotFound", ErrorResult)
 	Error("InternalServerError", ErrorResult)
+	Error("UnAuthorized", ErrorResult)
 
 	Method("register", func() {
 		Description("Runs a new registration process for the new NFT.")
@@ -46,6 +47,7 @@ var _ = Service("nft", func() {
 
 		HTTP(func() {
 			POST("/register")
+			Response("UnAuthorized", StatusUnauthorized)
 			Response("BadRequest", StatusBadRequest)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusCreated)
@@ -212,6 +214,8 @@ var _ = Service("nft", func() {
 			Param("txid")
 			Param("pid")
 			// Header("key:Authorization") // Provide the key in Authorization header (default)
+
+			Response("UnAuthorized", StatusUnauthorized)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
@@ -231,6 +235,7 @@ var _ = Service("nft", func() {
 			Param("txid")
 			Param("pid")
 
+			Response("UnAuthorized", StatusUnauthorized)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
@@ -250,6 +255,7 @@ var _ = Service("nft", func() {
 			Param("txid")
 			Param("pid")
 
+			Response("UnAuthorized", StatusUnauthorized)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)

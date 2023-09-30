@@ -48,6 +48,10 @@ func (service *CollectionAPIHandler) Mount(ctx context.Context, mux goahttp.Muxe
 
 // RegisterCollection - Starts a processing for a collection registration
 func (service *CollectionAPIHandler) RegisterCollection(ctx context.Context, p *collection.RegisterCollectionPayload) (res *collection.RegisterCollectionResponse, err error) {
+	if !service.register.ValidateUser(ctx, p.AppPastelID, *p.Key) {
+		return nil, collection.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to add task")

@@ -20,6 +20,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
 
@@ -70,6 +71,11 @@ func (service *SenseRegistrationService) GetTask(id string) *SenseRegistrationTa
 		return t.(*SenseRegistrationTask)
 	}
 	return nil
+}
+
+// ValidateUser validates the user by the given id and pass.
+func (service *SenseRegistrationService) ValidateUser(ctx context.Context, id string, pass string) bool {
+	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass)
 }
 
 // AddTask create ticket request and start a new task with the given payload

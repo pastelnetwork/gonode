@@ -19,6 +19,7 @@ var _ = Service("sense", func() {
 		Path("/openapi/sense")
 	})
 
+	Error("UnAuthorized", ErrorResult)
 	Error("BadRequest", ErrorResult)
 	Error("NotFound", ErrorResult)
 	Error("InternalServerError", ErrorResult)
@@ -61,6 +62,8 @@ var _ = Service("sense", func() {
 			})
 
 			// Define error HTTP statuses.
+
+			Response("UnAuthorized", StatusUnauthorized)
 			Response("BadRequest", StatusBadRequest)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusCreated)
@@ -115,6 +118,8 @@ var _ = Service("sense", func() {
 			Param("txid")
 			Param("pid")
 			// Header("key:Authorization") // Provide the key in Authorization header (default)
+
+			Response("UnAuthorized", StatusUnauthorized)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)

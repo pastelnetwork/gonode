@@ -88,7 +88,11 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 }
 
 // StartProcessing - Starts a processing image task
-func (service *CascadeAPIHandler) StartProcessing(_ context.Context, p *cascade.StartProcessingPayload) (res *cascade.StartProcessingResult, err error) {
+func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascade.StartProcessingPayload) (res *cascade.StartProcessingResult, err error) {
+	if !service.register.ValidateUser(ctx, p.AppPastelID, p.Key) {
+		return nil, cascade.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		log.WithError(err).Error("unable to add task")
@@ -101,7 +105,7 @@ func (service *CascadeAPIHandler) StartProcessing(_ context.Context, p *cascade.
 
 	fileName, err := service.register.ImageHandler.FileDb.Get(p.FileID)
 	if err != nil {
-		log.WithError(err).Error("unable to get file data")
+		return nil, cascade.MakeBadRequest(errors.New("file not found, please re-upload and try again"))
 	}
 
 	log.WithField("task_id", taskID).WithField("file_id", p.FileID).WithField("file_name", string(fileName)).
@@ -158,6 +162,11 @@ func (service *CascadeAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 // Download registered NFT
 func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) (*cascade.FileDownloadResult, error) {
 	log.WithContext(ctx).WithField("txid", p.Txid).Info("Start downloading")
+
+	if !service.register.ValidateUser(ctx, p.Pid, p.Key) {
+		return nil, nft.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
 	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
 	taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade)
 	task := service.download.GetTask(taskID)
