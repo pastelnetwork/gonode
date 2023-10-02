@@ -3,22 +3,18 @@ package debug
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
-	json "github.com/json-iterator/go"
-
-	"github.com/pastelnetwork/gonode/supernode/services/common"
-
-	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
-
-	"github.com/pastelnetwork/gonode/common/storage/local"
-
 	"github.com/gorilla/mux"
+	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/p2p"
-
-	"net/http"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
+	"github.com/pastelnetwork/gonode/supernode/services/common"
+	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 )
 
 const (
@@ -70,14 +66,16 @@ type Service struct {
 	httpServer   *http.Server
 	cleanTracker *CleanTracker
 	scService    *storagechallenge.SCService
+	trackedCon   map[string][]*server.TrackedConn
 }
 
 // NewService returns debug service
-func NewService(config *Config, p2pClient p2p.Client, srvc *storagechallenge.SCService) *Service {
+func NewService(config *Config, p2pClient p2p.Client, srvc *storagechallenge.SCService, openCons map[string][]*server.TrackedConn) *Service {
 	service := &Service{
-		config:    config,
-		p2pClient: p2pClient,
-		scService: srvc,
+		config:     config,
+		p2pClient:  p2pClient,
+		scService:  srvc,
+		trackedCon: openCons,
 	}
 
 	router := mux.NewRouter()
@@ -93,6 +91,7 @@ func NewService(config *Config, p2pClient p2p.Client, srvc *storagechallenge.SCS
 	router.HandleFunc("/selfhealing/cleanup", service.selfHealingChallengeCleanup).Methods(http.MethodDelete)   // cleanup self-healing data from history db
 	router.HandleFunc("/health", service.p2pHealth).Methods(http.MethodGet)
 	router.HandleFunc("/storage/initiate", service.storageInitiate).Methods(http.MethodGet)
+	router.HandleFunc("/open/cons", service.getOpenCons).Methods(http.MethodGet)
 
 	service.httpServer = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.HTTPPort),
@@ -225,6 +224,13 @@ func (service *Service) storageInitiate(writer http.ResponseWriter, _ *http.Requ
 	go task.GenerateStorageChallenges(ctx)
 
 	responseWithJSON(writer, http.StatusOK, fmt.Sprintf("ok %s", "storage challenge initiated"))
+}
+
+func (service *Service) getOpenCons(writer http.ResponseWriter, _ *http.Request) {
+	ctx := context.Background()
+	log.WithContext(ctx).Info("returning open cons")
+
+	responseWithJSON(writer, http.StatusOK, service.trackedCon)
 }
 
 func (service *Service) p2pHealth(writer http.ResponseWriter, request *http.Request) {
