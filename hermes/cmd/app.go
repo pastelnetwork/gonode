@@ -19,6 +19,7 @@ import (
 	"github.com/pastelnetwork/gonode/hermes/debug"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes"
 	"github.com/pastelnetwork/gonode/hermes/service/node/grpc"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -123,6 +124,13 @@ func runApp(ctx context.Context, conf *config.Config) error {
 
 	// entities
 	pastelClient := pastel.NewClient(conf.Pastel, conf.Pastel.BurnAddress())
+
+	// Try to get PastelID from cnode API MasterNodeStatus
+	extKey, err := mixins.GetPastelIDfromMNConfig(ctx, pastelClient, conf.PastelID)
+	if err != nil {
+		return fmt.Errorf("get pastelID from mn config: %w", err)
+	}
+	conf.PastelID = extKey
 
 	secInfo := &alts.SecInfo{
 		PastelID:   conf.PastelID,
