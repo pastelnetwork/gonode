@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/collection"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
 const (
@@ -63,6 +64,11 @@ func (service *CollectionRegistrationService) AddTask(p *collection.RegisterColl
 	service.Worker.AddTask(task)
 
 	return task.ID(), nil
+}
+
+// ValidateUser validates user
+func (service *CollectionRegistrationService) ValidateUser(ctx context.Context, id string, pass string) bool {
+	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass)
 }
 
 // NewService returns a new Service instance

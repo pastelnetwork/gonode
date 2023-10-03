@@ -13,9 +13,7 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -96,7 +94,7 @@ func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
 		log.WithError(err).Error("error calculating fee")
-		return nil, cascade.MakeInternalServerError(err)
+		return nil, nft.MakeInternalServerError(err)
 	}
 
 	log.Infof("estimated fee has been calculated: %f", fee)
@@ -112,10 +110,14 @@ func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 
 // Register runs registers process for the new NFT.
 func (service *NftAPIHandler) Register(ctx context.Context, p *nft.RegisterPayload) (res *nft.RegisterResult, err error) {
+	if !service.register.ValidateUser(ctx, p.CreatorPastelID, p.Key) {
+		return nil, nft.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		log.WithError(err).Error("unable to add task")
-		return nil, sense.MakeInternalServerError(err)
+		return nil, nft.MakeInternalServerError(err)
 	}
 
 	res = &nft.RegisterResult{
@@ -239,6 +241,10 @@ func (service *NftAPIHandler) RegisterTasks(_ context.Context) (res nft.TaskColl
 
 // Download registered NFT
 func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPayload) (res *nft.FileDownloadResult, err error) {
+	if !service.register.ValidateUser(ctx, p.Pid, p.Key) {
+		return nil, nft.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
 	log.WithContext(ctx).WithField("txid", p.Txid).Info("Start downloading")
 	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
 	taskID := service.download.AddTask(p, "")
@@ -289,7 +295,7 @@ func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPaylo
 				filePath := filepath.Join(folderPath, task.Filename)
 				err := os.WriteFile(filePath, task.File, 0644)
 				if err != nil {
-					return nil, cascade.MakeInternalServerError(errors.New("unable to write file"))
+					return nil, nft.MakeInternalServerError(errors.New("unable to write file"))
 				}
 				service.fileMappings.Store(uniqueID, filePath)
 				return &nft.FileDownloadResult{
@@ -378,6 +384,10 @@ func (service *NftAPIHandler) NftGet(ctx context.Context, p *nft.NftGetPayload) 
 
 // DdServiceOutputFileDetail returns Dupe detection output file details
 func (service *NftAPIHandler) DdServiceOutputFileDetail(ctx context.Context, p *nft.DownloadPayload) (res *nft.DDServiceOutputFileResult, err error) {
+	if !service.register.ValidateUser(ctx, p.Pid, p.Key) {
+		return nil, nft.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
 	ticket, err := service.search.RegTicket(ctx, p.Txid)
 	if err != nil {
 		log.WithError(err).Error("error retrieving ticket")
@@ -402,6 +412,10 @@ func (service *NftAPIHandler) DdServiceOutputFileDetail(ctx context.Context, p *
 
 // DdServiceOutputFile returns Dupe detection output file
 func (service *NftAPIHandler) DdServiceOutputFile(ctx context.Context, p *nft.DownloadPayload) (res *nft.DDFPResultFile, err error) {
+	if !service.register.ValidateUser(ctx, p.Pid, p.Key) {
+		return nil, nft.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
 	ticket, err := service.search.RegTicket(ctx, p.Txid)
 	if err != nil {
 		log.WithError(err).Error("error retrieving ticket")

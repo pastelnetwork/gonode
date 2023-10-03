@@ -85,6 +85,10 @@ func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.Upload
 
 // StartProcessing - Starts a processing image task
 func (service *SenseAPIHandler) StartProcessing(ctx context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
+	if !service.register.ValidateUser(ctx, p.AppPastelID, p.Key) {
+		return nil, sense.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
 		log.WithError(err).Error("unable to add task")
@@ -188,6 +192,10 @@ func (service *SenseAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *sec
 // Download registered NFT
 func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadPayload) (res *sense.DownloadResult, err error) {
 	log.WithContext(ctx).WithField("txid", p.Txid).Info("Start downloading")
+	if !service.register.ValidateUser(ctx, p.Pid, p.Key) {
+		return nil, sense.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
 	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
 	taskID := service.download.AddTask(&nft.DownloadPayload{Txid: p.Txid, Pid: p.Pid, Key: p.Key}, pastel.ActionTypeSense)
 	task := service.download.GetTask(taskID)
