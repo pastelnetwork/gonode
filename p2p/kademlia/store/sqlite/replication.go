@@ -286,12 +286,12 @@ func (s *Store) GetAllReplicationInfo(_ context.Context) ([]domain.NodeReplicati
 		lastReplicatedAt
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get replication info %w", err)
+		return nil, fmt.Errorf("failed to get replication info: %w", err)
 	}
 
 	list := make([]domain.NodeReplicationInfo, len(r))
-	for i := 0; i < len(r); i++ {
-		list = append(list, r[i].toDomain())
+	for i := range r {
+		list[i] = r[i].toDomain()
 	}
 
 	return list, nil
@@ -317,6 +317,10 @@ func (s *Store) RecordExists(nodeID string) (bool, error) {
 
 // UpdateReplicationInfo updates replication info
 func (s *Store) UpdateReplicationInfo(_ context.Context, rep domain.NodeReplicationInfo) error {
+	if rep.IP == "" || len(rep.ID) == 0 || rep.Port == 0 {
+		return fmt.Errorf("invalid replication info: %v", rep)
+	}
+
 	_, err := s.db.Exec(`UPDATE replication_info SET ip = ?, is_active = ?, is_adjusted = ?, lastReplicatedAt = ?, updatedAt =?, port = ?, last_seen = ? WHERE id = ?`,
 		rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, string(rep.ID), rep.LastSeen)
 	if err != nil {
@@ -328,6 +332,10 @@ func (s *Store) UpdateReplicationInfo(_ context.Context, rep domain.NodeReplicat
 
 // AddReplicationInfo adds replication info
 func (s *Store) AddReplicationInfo(_ context.Context, rep domain.NodeReplicationInfo) error {
+	if rep.IP == "" || len(rep.ID) == 0 || rep.Port == 0 {
+		return fmt.Errorf("invalid replication info: %v", rep)
+	}
+
 	_, err := s.db.Exec(`INSERT INTO replication_info(id, ip, is_active, is_adjusted, lastReplicatedAt, updatedAt, port, last_seen) values(?, ?, ?, ?, ?, ?, ?, ?)`,
 		string(rep.ID), rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, time.Now().UTC())
 	if err != nil {
@@ -454,7 +462,7 @@ func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byt
 
 	log.WithContext(ctx).WithField("len(keys)", len(args)).WithField("len(placeholders)", len(placeholders)).
 		WithField("args[len(args)]-1", fmt.Sprint(args[len(args)-1])).WithField("args[0", fmt.Sprint(args[0])).
-		Info("RetrieveBatchValues db operation")
+		Debug("RetrieveBatchValues db operation")
 
 	query := fmt.Sprintf(`SELECT key, data FROM data WHERE key IN (%s)`, strings.Join(placeholders, ","))
 	rows, err := s.db.QueryContext(ctx, query, args...)

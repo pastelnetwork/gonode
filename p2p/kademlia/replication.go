@@ -191,7 +191,7 @@ func (s *DHT) Replicate(ctx context.Context) {
 			if err := s.updateLastReplicated(ctx, info.ID, to); err != nil {
 				logEntry.Error("replicate update lastReplicated failed")
 			} else {
-				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("fetch-keys", 0).Info("no replication keys - replicate update lastReplicated success")
+				logEntry.WithField("node", info.IP).WithField("to", to.String()).WithField("fetch-keys", 0).Debug("no replication keys - replicate update lastReplicated success")
 			}
 
 			continue

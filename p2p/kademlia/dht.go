@@ -287,9 +287,9 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 		return nil, errors.Errorf("retrieve from peer: %w", err)
 	}
 	if len(peerValue) > 0 {
-		log.WithContext(ctx).WithField("key", dbKey).WithField("data len", len(peerValue)).Info("Not found locally, retrieved from other nodes")
+		log.WithContext(ctx).WithField("key", dbKey).WithField("data len", len(peerValue)).Debug("Not found locally, retrieved from other nodes")
 	} else {
-		log.WithContext(ctx).WithField("key", dbKey).Info("Not found locally, not found in other nodes")
+		log.WithContext(ctx).WithField("key", dbKey).Debug("Not found locally, not found in other nodes")
 	}
 
 	return peerValue, nil

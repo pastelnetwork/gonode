@@ -412,9 +412,9 @@ func (s *Network) handleReplicate(ctx context.Context, message *Message) (res []
 func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateDataRequest, id []byte, ip string, port int) error {
 	keys, err := decompressKeysStr(req.Keys)
 	if err != nil {
+		log.WithContext(ctx).WithField("keys", len(req.Keys)).WithField("from-ip", ip).Errorf("unable to decode rcvd batch rep keys: %v", err)
 		return fmt.Errorf("unable to decode keys: %w", err)
 	}
-	log.WithContext(ctx).WithField("keys", len(keys)).WithField("from-ip", ip).Info("store batch replication request received")
 
 	keysToStore, err := s.dht.store.RetrieveBatchNotExist(ctx, keys, 5000)
 	if err != nil {
@@ -422,13 +422,14 @@ func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateData
 		return fmt.Errorf("unable to retrieve batch replication keys: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("keys", len(keysToStore)).WithField("from-ip", ip).Info("store batch replication keys to be stored")
+	log.WithContext(ctx).WithField("to-store-keys", len(keysToStore)).WithField("rcvd-keys", len(keys)).WithField("from-ip", ip).Debug("store batch replication keys to be stored")
+
 	if len(keysToStore) > 0 {
 		if err := s.dht.store.StoreBatchRepKeys(keysToStore, string(id), ip, port); err != nil {
 			return fmt.Errorf("unable to store batch replication keys: %w", err)
 		}
 
-		log.WithContext(ctx).WithField("keys", len(keysToStore)).WithField("from-ip", ip).Info("store batch replication keys count")
+		log.WithContext(ctx).WithField("to-store-keys", len(keysToStore)).WithField("rcvd-keys", len(keys)).WithField("from-ip", ip).Info("store batch replication keys stored")
 	}
 
 	return nil
@@ -695,7 +696,7 @@ func (s *Network) batchFindValuesRespMsg(sender *Node, result ResultType, errMsg
 
 func (s *Network) handleBatchFindValues(ctx context.Context, message *Message, reqID string) (res []byte, err error) {
 	// Try to acquire the semaphore, wait up to 1 minute
-	log.WithContext(ctx).Info("Attempting to acquire semaphore immediately.")
+	log.WithContext(ctx).Debug("Attempting to acquire semaphore immediately.")
 	if !s.sem.TryAcquire(1) {
 		log.WithContext(ctx).Info("Immediate acquisition failed. Waiting up to 1 minute.")
 		ctxWithTimeout, cancel := context.WithTimeout(ctx, 1*time.Minute)
@@ -707,8 +708,6 @@ func (s *Network) handleBatchFindValues(ctx context.Context, message *Message, r
 			return s.batchFindValuesRespMsg(message.Sender, ResultFailed, errorBusy)
 		}
 		log.WithContext(ctx).Info("Semaphore acquired after waiting.")
-	} else {
-		log.WithContext(ctx).Info("Semaphore acquired immediately.")
 	}
 
 	// Add a defer function to recover from panic
@@ -763,7 +762,7 @@ func (s *Network) handleBatchFindValuesRequest(ctx context.Context, req *BatchFi
 	log.WithContext(ctx).WithField("p2p-req-id", reqID).WithField("keys", len(keys)).WithField("from-ip", ip).Info("batch find values request received")
 	if len(keys) > 0 {
 		log.WithContext(ctx).WithField("p2p-req-id", reqID).WithField("keys[0]", keys[0]).WithField("keys[len]", keys[len(keys)-1]).
-			WithField("from-ip", ip).Info("first & last batch keys")
+			WithField("from-ip", ip).Debug("first & last batch keys")
 	}
 
 	values, count, err := s.dht.store.RetrieveBatchValues(ctx, keys)
@@ -796,7 +795,7 @@ func findOptimalCompression(count int, keys []string, values [][]byte) (bool, in
 
 	// If the initial compressed data is under the threshold
 	if utils.BytesIntToMB(len(compressedData)) < defaultMaxPayloadSize {
-		log.WithField("compressed-data-len", utils.BytesToMB(uint64(len(compressedData)))).WithField("count", count).Info("initial compression")
+		log.WithField("compressed-data-len", utils.BytesToMB(uint64(len(compressedData)))).WithField("count", count).Debug("initial compression")
 		return true, len(dataMap), compressedData, nil
 	}
 
