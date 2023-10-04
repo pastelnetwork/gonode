@@ -21,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
+	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/configs"
@@ -185,6 +186,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// entities
 	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
+	// Try to get PastelID from cnode API MasterNodeStatus
+	extKey, err := mixins.GetPastelIDfromMNConfig(ctx, pastelClient, config.PastelID)
+	if err != nil {
+		return fmt.Errorf("get pastelID from mn config: %w", err)
+	}
+	config.PastelID = extKey
+
 	secInfo := &alts.SecInfo{
 		PastelID:   config.PastelID,
 		PassPhrase: config.PassPhrase,

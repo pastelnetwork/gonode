@@ -11,6 +11,7 @@ replace (
 
 require (
 	github.com/btcsuite/btcutil v1.0.2
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/google/uuid v1.3.1
 	github.com/json-iterator/go v1.1.12
 	github.com/pastelnetwork/gonode/common v0.0.0-20230829114806-701c926c0c44
@@ -20,7 +21,6 @@ require (
 )
 
 require (
-	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
