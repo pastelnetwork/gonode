@@ -277,9 +277,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// statsMngr.Add("mdl", metadb)
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
 
-	// Debug service
-	debugSerivce := debug.NewService(config.DebugService, p2p, storageChallenger)
-
 	// server
 	grpc := server.New(config.Server,
 		"service",
@@ -300,6 +297,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		healthcheck.NewHealthCheck(statsMngr),
 		hermes.NewHermes(p2p),
 	)
+
+	openConsMap := grpc.GetConnTrackerMap()
+
+	// Debug service
+	debugSerivce := debug.NewService(config.DebugService, p2p, storageChallenger, openConsMap)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 

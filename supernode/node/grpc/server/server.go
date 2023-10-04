@@ -30,6 +30,7 @@ type Server struct {
 	name      string
 	secClient alts.SecClient
 	secInfo   *alts.SecInfo
+	connTrack *ConnectionTracker // connection tracker
 }
 
 // Run starts the server
@@ -60,6 +61,12 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 	listen, err := net.Listen("tcp", address)
 	if err != nil {
 		return errors.Errorf("listen: %w", err).WithField("address", address)
+	}
+
+	// The listener that will track connections.
+	listen = &connTrackListener{
+		Listener:  listen,
+		connTrack: server.connTrack, // connection tracker
 	}
 
 	errCh := make(chan error, 1)
@@ -131,5 +138,11 @@ func New(config *Config, name string, secClient alts.SecClient, secInfo *alts.Se
 		secInfo:   secInfo,
 		services:  services,
 		name:      name,
+		connTrack: NewConnectionTracker(), // create a new connection tracker
 	}
+}
+
+// GetConnTrackerMap returns the map keeping track of open cons
+func (server *Server) GetConnTrackerMap() map[string][]*TrackedConn {
+	return server.connTrack.conns
 }
