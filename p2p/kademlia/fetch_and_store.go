@@ -109,7 +109,7 @@ func (s *DHT) FetchAndStore(ctx context.Context) error {
 
 // BatchFetchAndStoreFailedKeys fetches all failed keys from the local TODO replicate list, fetches value from respective nodes and stores them in the local store
 func (s *DHT) BatchFetchAndStoreFailedKeys(ctx context.Context) error {
-	log.WithContext(ctx).Info("Getting batch fetch and store keys")
+	log.WithContext(ctx).Debug("Getting failed batch fetch and store keys")
 	keys, err := s.store.GetAllToDoRepKeys(maxBatchAttempts+1, failedKeysClosestContactsLookupCount+maxBatchAttempts+1) // 2 - 14
 	if err != nil {
 		return fmt.Errorf("get all keys error: %w", err)
@@ -155,7 +155,7 @@ func (s *DHT) BatchFetchAndStoreFailedKeys(ctx context.Context) error {
 
 // BatchFetchAndStore fetches all keys from the local TODO replicate list, fetches value from respective nodes and stores them in the local store
 func (s *DHT) BatchFetchAndStore(ctx context.Context) error {
-	log.WithContext(ctx).Info("Getting batch fetch and store keys")
+	log.WithContext(ctx).Debug("Getting batch fetch and store keys")
 	keys, err := s.store.GetAllToDoRepKeys(0, maxBatchAttempts)
 	if err != nil {
 		return fmt.Errorf("get all keys error: %w", err)

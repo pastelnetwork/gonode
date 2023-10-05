@@ -38,7 +38,6 @@ require (
 
 require (
 	github.com/btcsuite/btcutil v1.0.2 // indirect
-	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
