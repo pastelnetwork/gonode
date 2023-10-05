@@ -445,7 +445,7 @@ jobs:
       - run:
           name: Install xgo
           command: |
-            go install -v src.techknowlogick.com/xgo@v1.7.0+1.19.5
+            go install -v src.techknowlogick.com/xgo@latest
       - release:
           package: "walletnode"
           targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
@@ -473,7 +473,7 @@ jobs:
       - run:
           name: Install xgo
           command: |
-            go install -v src.techknowlogick.com/xgo@v1.7.0+1.19.5
+            go install -v src.techknowlogick.com/xgo@latest
       - build:
           package: "walletnode"
           targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
