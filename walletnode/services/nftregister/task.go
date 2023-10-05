@@ -203,7 +203,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
 		task.UpdateStatus(common.StatusErrorCheckDDServerAvailability)
 		closeErr = err
-		return errors.Errorf("dd-server availability check: %w", err)
+		return errors.Errorf("retry: dd-server availability check: %w", err)
 	}
 
 	// probe ORIGINAL image for average rareness, nsfw and seen score

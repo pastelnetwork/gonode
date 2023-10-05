@@ -190,7 +190,7 @@ func (h *DupeDetectionHandler) ProbeImage(ctx context.Context, file *files.File,
 
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("call CombineFingerPrintAndScores() failed")
-			err = errors.Errorf("call CombineFingerPrintAndScores() failed")
+			err = errors.Errorf("call CombineFingerPrintAndScores() failed: %s", err.Error())
 			return nil, err
 		}
 

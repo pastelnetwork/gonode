@@ -209,7 +209,7 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 		if err != nil {
 			return nil, errors.Errorf("retry: get status: %w", err)
 		} else if stats == nil {
-			return nil, errors.Errorf("retry: get status: stats is nil")
+			return nil, errors.New("retry: get status: stats is nil")
 		}
 
 		taskCount := stats.GetTaskCount()
