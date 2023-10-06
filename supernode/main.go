@@ -21,6 +21,7 @@ func main() {
 	defer errors.Recover(log.FatalAndExit)
 
 	app := cmd.NewApp()
+	app.HideVersion = false
 	err := app.Run(os.Args)
 
 	log.FatalAndExit(err)
