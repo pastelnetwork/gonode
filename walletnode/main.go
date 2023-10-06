@@ -86,6 +86,7 @@ func main() {
 
 	//configuration in here, app.Run will actually run NewApp's runApp function.
 	app := cmd.NewApp()
+	app.HideVersion = false
 	err := app.Run(os.Args)
 
 	log.FatalAndExit(err)
