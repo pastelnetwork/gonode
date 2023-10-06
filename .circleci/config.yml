@@ -136,7 +136,7 @@ commands:
 
             cd ~/go/src/github.com/pastelnetwork/gonode
 
-            xgo -go go-1.21.1 --targets=<< parameters.targets >> -ldflags $APP_LDFLAGS github.com/pastelnetwork/gonode/<< parameters.package >>
+            xgo -go go-1.21.1 --targets=<< parameters.targets >> -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
             
             mkdir -p build
             if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
