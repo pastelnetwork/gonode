@@ -167,7 +167,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 			log.WithContext(ctx).WithError(err).Error("error closing sn-connections")
 		}
 
-		return errors.Errorf("connect to top rank nodes: %w", err)
+		return errors.Errorf("retry: connect to top rank nodes: %w", err)
 	}
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
