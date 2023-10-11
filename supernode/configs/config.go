@@ -92,3 +92,25 @@ func New() *Config {
 		DebugService: debug.NewConfig(),
 	}
 }
+
+func (config *Config) OverridePastelIDAndPass(id, pass string) {
+	// Override pastel id
+	config.PastelID = id
+	config.CascadeRegister.PastelID = id
+	config.CollectionRegister.PastelID = id
+	config.NftRegister.PastelID = id
+	config.SenseRegister.PastelID = id
+	config.NftDownload.PastelID = id
+	config.StorageChallenge.PastelID = id
+	config.SelfHealingChallenge.PastelID = id
+
+	// Override pass phrase
+	config.PassPhrase = pass
+	config.CascadeRegister.PassPhrase = pass
+	config.CollectionRegister.PassPhrase = pass
+	config.NftRegister.PassPhrase = pass
+	config.SenseRegister.PassPhrase = pass
+	config.NftDownload.PassPhrase = pass
+	config.StorageChallenge.PassPhrase = pass
+	config.SelfHealingChallenge.PassPhrase = pass
+}

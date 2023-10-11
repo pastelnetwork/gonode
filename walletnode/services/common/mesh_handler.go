@@ -177,9 +177,11 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 	}
 
 	if len(candidateNodes) < n {
-		err := errors.New("not enough candidate nodes found with required parameters")
+		if err == nil {
+			err = errors.New("not enough candidate nodes found with required parameters")
+		}
 		log.WithContext(ctx).WithField("count", len(candidateNodes)).WithError(err)
-		return nil, err
+		return nil, fmt.Errorf("unable to find enough Supernodes: required: %d - found: %d - err: %w", n, len(candidateNodes), err)
 	}
 
 	if len(sortKey) > 0 {
@@ -236,7 +238,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 	}
 
 	if len(WNTopNodesList) < n {
-		return nil, errors.New("failed to get required data from all candidate nodes")
+		return WNTopNodesList, errors.New("failed to get required data from enough candidate nodes")
 	}
 
 	if m.requireSNAgreementOnMNTopList {
@@ -251,7 +253,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 	}
 
 	if len(WNTopNodesList) < n {
-		return nil, errors.New("failed to get enough nodes with matching top 10 list")
+		return WNTopNodesList, errors.New("failed to get enough nodes with matching top 10 list")
 	}
 
 	if m.checkDDDatabaseHashes {
@@ -261,12 +263,16 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 		}
 
 		if len(WNTopNodesList) < n {
-			return nil, errors.New("failed to get enough nodes with matching fingerprints database hash")
+			return WNTopNodesList, errors.New("failed to get enough nodes with matching fingerprints database hash")
 		}
 
 		WNTopNodesList, err = m.filterDDServerRequestsInWaitingQueue(ctx, WNTopNodesList, dataMap)
 		if err != nil {
 			return nil, fmt.Errorf("filter by dd-service stats: %w", err)
+		}
+
+		if len(WNTopNodesList) < n {
+			return WNTopNodesList, errors.New("failed to get required number of nodes with available dd-service")
 		}
 
 	}

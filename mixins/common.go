@@ -3,6 +3,7 @@ package mixins
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
@@ -23,11 +24,13 @@ func GetPastelIDfromMNConfig(ctx context.Context, pastelClient pastel.Client, co
 		if err != nil {
 			log.Warnf("Error getting master-node status: %v", err) // Updated log message
 		} else {
-			if mnStatus.ExtKey == "" {
+			if strings.TrimSpace(mnStatus.ExtKey) == "" {
 				log.Warn("extKey is empty")
 			} else {
-				if mnStatus.ExtKey != confKey {
-					log.Warnf("Warning! pastel IDs do not match - ID in config: %s - ID from cnode API( this will be used ): %s\n", confKey, extKey)
+				if strings.TrimSpace(confKey) == "" {
+					log.Warn("no pastelID in config file, override with the one from cnode API")
+				} else if mnStatus.ExtKey != confKey {
+					log.Warnf("Warning! pastel IDs do not match - ID in config: %s - ID from cnode API( this will be used ): %s\n", confKey, mnStatus.ExtKey)
 				}
 				extKey = mnStatus.ExtKey // Save the extKey
 				return extKey, nil       // Successfully found a matching extKey, return it
@@ -42,4 +45,10 @@ func GetPastelIDfromMNConfig(ctx context.Context, pastelClient pastel.Client, co
 
 	log.Warnf("Unable to get pastelID from mn config API - error after retries.")
 	return "", fmt.Errorf("failed to get pastelID after %d retries", maxRetries)
+}
+
+// ValidateUser validates user by id and password.
+func ValidateUser(ctx context.Context, pc pastel.Client, id string, pass string) bool {
+	_, err := pc.Sign(ctx, []byte("data"), id, pass, pastel.SignAlgorithmED448)
+	return err == nil
 }

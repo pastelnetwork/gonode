@@ -186,12 +186,22 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// entities
 	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
+
+	if config.PassPhrase == "" {
+		return errors.New("passphrase is empty, please provide passphrase in config file")
+	}
+
 	// Try to get PastelID from cnode API MasterNodeStatus
 	extKey, err := mixins.GetPastelIDfromMNConfig(ctx, pastelClient, config.PastelID)
 	if err != nil {
 		return fmt.Errorf("get pastelID from mn config: %w", err)
 	}
-	config.PastelID = extKey
+	config.OverridePastelIDAndPass(extKey, config.PassPhrase)
+
+	// Validate PastelID and passphrase
+	if !mixins.ValidateUser(ctx, pastelClient, config.PastelID, config.PassPhrase) {
+		return errors.New("invalid pastelID or passphrase")
+	}
 
 	secInfo := &alts.SecInfo{
 		PastelID:   config.PastelID,
@@ -208,15 +218,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	if err != nil {
 		return errors.Errorf("could not create p2p service, %w", err)
 	}
-
-	// Because of rqlite failures, we're going to disable metadb for now, this consequently disables user data processing until we
-	//  either fix rqlite or develop a workaround.
-	//	NB: Removed protobuf and grpc comms files as well to prevent malicious behavior.
-
-	// new metadb service
-	// config.MetaDB.SetWorkDir(config.WorkDir)
-	// metadb := metadb.New(config.MetaDB, config.Node.PastelID, pastelClient)
-	// database := database.NewDatabaseOps(metadb, config.UserDB)
 
 	rqAddr := fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	// raptorq client
