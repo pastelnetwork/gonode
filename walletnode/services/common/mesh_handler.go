@@ -61,6 +61,7 @@ type MeshHandlerOpts struct {
 
 // DDStats contains dd-service stats
 type DDStats struct {
+	Version        string
 	WaitingInQueue int32
 	Executing      int32
 	MaxConcurrency int32
@@ -436,7 +437,8 @@ func (m *MeshHandler) filterByDDHash(ctx context.Context, nodesList SuperNodeLis
 		}
 	}
 
-	log.WithContext(ctx).WithField("given nodes count", len(nodesList)).WithField("matching hash nodes count", len(retList)).WithField("matching hash", matchingKey).Infof("DD Database hashes matched")
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("given nodes count", len(nodesList)).
+		WithField("matching hash nodes count", len(retList)).WithField("matching hash", matchingKey).Infof("DD Database hashes matched")
 
 	return retList, nil
 }
@@ -456,9 +458,31 @@ func (m *MeshHandler) filterDDServerRequestsInWaitingQueue(ctx context.Context, 
 		}
 	}
 
-	log.WithContext(ctx).WithField("give nodes count", len(nodesList)).WithField("dd-service ready nodes", len(retList)).Infof("dd-service ready nodes matched")
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("give nodes count", len(nodesList)).
+		WithField("dd-service ready nodes", len(retList)).Infof("dd-service ready nodes matched")
 
-	return retList, nil
+	versionMap := make(map[string]SuperNodeList)
+
+	for _, someNode := range retList {
+		version := dataMap[someNode.Address()].Version
+		versionMap[version] = append(versionMap[version], someNode)
+	}
+
+	// Find the key (version) with the highest count of nodes
+	var maxVersion string
+	var maxCount int
+
+	for version, nodeList := range versionMap {
+		if len(nodeList) > maxCount {
+			maxCount = len(nodeList)
+			maxVersion = version
+		}
+	}
+
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("version", maxVersion).WithField("count", maxCount).
+		Infof("dd-service version matched")
+
+	return versionMap[maxVersion], nil
 }
 
 // meshNodes establishes communication between supernodes.
@@ -668,6 +692,7 @@ func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNo
 		}
 
 		data = DDStats{
+			Version:        s.Version,
 			WaitingInQueue: s.WaitingInQueue,
 			Executing:      s.Executing,
 			MaxConcurrency: s.MaxConcurrent,

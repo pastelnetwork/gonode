@@ -144,6 +144,7 @@ func (service *RegisterNft) GetDDServerStats(ctx context.Context, _ *pb.DDServer
 		MaxConcurrent:  resp.MaxConcurrent,
 		WaitingInQueue: resp.WaitingInQueue,
 		Executing:      resp.Executing,
+		Version:        resp.Version,
 	}
 
 	log.WithContext(ctx).WithField("stats", stats).Info("DD server stats returned")

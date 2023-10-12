@@ -89,6 +89,7 @@ message DDServerStatsReply {
     int32 max_concurrent = 1;
     int32 executing = 2;
     int32 waiting_in_queue = 3;
+    string version = 4;
 }
 
 message GetTopMNsRequest {}

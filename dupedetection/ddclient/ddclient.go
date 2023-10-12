@@ -23,7 +23,7 @@ import (
 
 const (
 	logPrefix                   = "ddClient"
-	defaultDDServiceCallTimeout = 26 * time.Minute
+	defaultDDServiceCallTimeout = 31 * time.Minute
 )
 
 // DDServerClient contains methods for request services from dd-server service.
@@ -265,6 +265,7 @@ func (ddClient ddServerClientImpl) GetStats(ctx context.Context) (stats dupedete
 		MaxConcurrent:  resp.TaskCount.GetMaxConcurrent(),
 		Executing:      resp.TaskCount.GetExecuting(),
 		WaitingInQueue: resp.TaskCount.GetWaitingInQueue(),
+		Version:        resp.GetVersion(),
 	}
 
 	return stats, nil
