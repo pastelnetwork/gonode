@@ -93,6 +93,7 @@ func New() *Config {
 	}
 }
 
+// OverridePastelIDAndPass overrides pastel id and pass phrase for all components
 func (config *Config) OverridePastelIDAndPass(id, pass string) {
 	// Override pastel id
 	config.PastelID = id
