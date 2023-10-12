@@ -125,12 +125,21 @@ func runApp(ctx context.Context, conf *config.Config) error {
 	// entities
 	pastelClient := pastel.NewClient(conf.Pastel, conf.Pastel.BurnAddress())
 
+	if conf.PassPhrase == "" {
+		return errors.New("passphrase is empty, please provide passphrase in config file")
+	}
+
 	// Try to get PastelID from cnode API MasterNodeStatus
 	extKey, err := mixins.GetPastelIDfromMNConfig(ctx, pastelClient, conf.PastelID)
 	if err != nil {
 		return fmt.Errorf("get pastelID from mn config: %w", err)
 	}
 	conf.PastelID = extKey
+
+	// Validate PastelID and passphrase
+	if !mixins.ValidateUser(ctx, pastelClient, conf.PastelID, conf.PassPhrase) {
+		return errors.New("invalid pastelID or passphrase")
+	}
 
 	secInfo := &alts.SecInfo{
 		PastelID:   conf.PastelID,

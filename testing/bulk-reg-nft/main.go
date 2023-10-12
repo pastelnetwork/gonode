@@ -23,9 +23,11 @@ import (
 )
 
 const (
-	initialDelay = 1 * time.Second
-	maxRetries   = 5
-	timeoutAfter = 1000
+	initialDelay     = 1 * time.Second
+	maxRetries       = 5
+	timeoutAfter     = 1000
+	pastelID         = "jXZMSxS5w9UakpVMAs2vihcCVQ4fBrPsSriXmNqTq2nvK4awXvaP9hZJYL1eJ4o9y3jpvoGghVUQyvsU7Q64Jp"
+	spendableAddress = "tPfpGZd8QG6A7mQJRKVHs9cDRrQUUaeeiQP"
 )
 
 type result struct {
@@ -268,7 +270,7 @@ func main() {
 
 		req := payload{
 			CreatorName:       "Jawad",
-			CreatorPastelid:   "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX",
+			CreatorPastelid:   pastelID,
 			CreatorWebsiteUrl: "www.testnft.net",
 			Description:       "test-" + uploadImageRes.ImageID,
 			ImageId:           uploadImageRes.ImageID,
@@ -277,7 +279,7 @@ func main() {
 			MaximumFee:        5000,
 			Name:              fileName,
 			SeriesName:        "Test Series",
-			SpendableAddress:  "tPoVwtTmLvJTV5XCaFqUM6cobZkbu4Uyg9J",
+			SpendableAddress:  spendableAddress,
 			ThumbnailCoordinate: ThumbnailCoordinate{
 				BottomRightX: 640,
 				BottomRightY: 480,
@@ -288,13 +290,13 @@ func main() {
 			MakePubliclyAccessible: true,
 		}
 
-		logger.Printf("payload for image-id:%s, request:%d, payload:%s", uploadImageRes.ImageID, count, req)
+		logger.Printf("payload for image-id:%s, request:%d, payload:%v", uploadImageRes.ImageID, count, req)
 
 		taskID, err := doNFTRequest(req)
 		if err != nil {
-			logger.Printf("Request to sense registration failed:%v\n", err)
+			logger.Printf("Request to nft registration failed:%v\n", err)
 		}
-		logger.Printf("sense task initiated:%s, request-count:%d\n", taskID, count)
+		logger.Printf("nft task initiated:%s, request-count:%d\n", taskID, count)
 
 		taskIDs[taskID] = startReq
 		count++
@@ -314,7 +316,7 @@ func main() {
 				logger.Printf("Request to task state has been failed:%v\n", err)
 			}
 
-			results = appendResults(mu, results, result{
+			results = appendResults(&mu, results, result{
 				ID:      fmt.Sprintf("request%d", count),
 				Elapsed: time.Since(startReq),
 				Error:   err,
@@ -348,7 +350,7 @@ func main() {
 	logger.Printf("Total failures: %d\n", failures)
 }
 
-func appendResults(mu sync.Mutex, results []result, result result) (res []result) {
+func appendResults(mu *sync.Mutex, results []result, result result) (res []result) {
 	mu.Lock()
 	defer mu.Unlock()
 
