@@ -92,7 +92,9 @@ message DDServerStatsReply {
     string version = 4;
 }
 
-message GetTopMNsRequest {}
+message GetTopMNsRequest {
+    int64 block = 1;
+}
 
 message GetTopMNsReply {
     repeated string mn_top_list = 1;

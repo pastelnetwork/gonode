@@ -585,7 +585,7 @@ func (s *DHT) handleResponses(ctx context.Context, responses <-chan *Message, nl
 			v, ok := response.Data.(*FindValueResponse)
 			if ok {
 				if v.Status.Result == ResultOk && len(v.Value) > 0 {
-					log.P2P().WithContext(ctx).Info("iterate found value from network")
+					log.P2P().WithContext(ctx).Debug("iterate found value from network")
 					return nl, v.Value
 				} else if len(v.Closest) > 0 {
 					nl.AddNodes(v.Closest)
@@ -653,7 +653,7 @@ func (s *DHT) iterateFindValue(ctx context.Context, iterativeType int, target []
 
 		nl.Sort()
 
-		log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Infof("iteration: %v, nodes: %v", iterationCount, nl.Len())
+		log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Debugf("iteration: %v, nodes: %v", iterationCount, nl.Len())
 	}
 
 	log.P2P().WithContext(ctx).WithField("task_id", taskID).WithField("key", sKey).Info("finished iterations without results")

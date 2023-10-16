@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/pastel"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -71,7 +72,7 @@ func (service *RegisterNft) Session(stream pb.RegisterNft_SessionServer) error {
 	if err := stream.Send(resp); err != nil {
 		return errors.Errorf("send handshake response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debug("Session response")
+	log.WithContext(ctx).WithField("resp", resp.SessID).Info("Session started")
 
 	for {
 		if _, err := stream.Recv(); err != nil {
@@ -152,12 +153,21 @@ func (service *RegisterNft) GetDDServerStats(ctx context.Context, _ *pb.DDServer
 }
 
 // GetTopMNs implements walletnode.RegisterNFTServer.GetTopMNs()
-func (service *RegisterNft) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
+func (service *RegisterNft) GetTopMNs(ctx context.Context, req *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
 	log.WithContext(ctx).Debug("request for mn-top list has been received")
 
-	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+	var mnTopList pastel.MasterNodes
+	var err error
+	if req.Block == 0 {
+		mnTopList, err = service.PastelClient.MasterNodesTop(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+		}
+	} else {
+		mnTopList, err = service.PastelClient.MasterNodesTopN(ctx, int(req.Block))
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+		}
 	}
 
 	var mnList []string
@@ -468,7 +478,7 @@ func (service *RegisterNft) SendSignedNFTTicket(ctx context.Context, req *pb.Sen
 		retErr = recErr
 	})
 
-	log.WithContext(ctx).WithField("req", req).Debug("SignTicket request")
+	log.WithContext(ctx).WithField("req.label", req.Label).Info("NFT SignTicket request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, errors.Errorf("get task from metada %w", err)
@@ -490,7 +500,7 @@ func (service *RegisterNft) SendSignedNFTTicket(ctx context.Context, req *pb.Sen
 // Receives Step 14, Starts Step 15
 func (service *RegisterNft) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (retRes *pb.SendPreBurntFeeTxidReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
-		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicSendPreBurntFeeTxid")
+		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).WithField("err", recErr).Error("PanicSendPreBurntFeeTxid")
 		retErr = recErr
 	})
 

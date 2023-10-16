@@ -72,6 +72,21 @@ func (client *client) MasterNodesTop(ctx context.Context) (MasterNodes, error) {
 	return nil, nil
 }
 
+// MasterNodesTopN implements pastel.Client.MasterNodesTop
+func (client *client) MasterNodesTopN(ctx context.Context, n int) (MasterNodes, error) {
+	blocknumMNs := make(map[string]MasterNodes)
+
+	if err := client.callFor(ctx, &blocknumMNs, "masternode", "top", n); err != nil {
+		return nil, errors.Errorf("failed to get top masternodes: %w", err)
+	}
+
+	for _, masterNodes := range blocknumMNs {
+		return masterNodes, nil
+	}
+
+	return nil, nil
+}
+
 // MasterNodesList implements pastel.Client.MasterNodesList
 func (client *client) MasterNodesList(ctx context.Context) (MasterNodes, error) {
 	blocknumMNs := make(map[string]MasterNodes)

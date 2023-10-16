@@ -35,7 +35,7 @@ func (cl *client) Connect(ctx context.Context, address string) (*clientConn, err
 		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)
 	}
 
-	log.DD().WithContext(ctx).Infof("Connected to %s with max recv size 35 MB", address)
+	log.DD().WithContext(ctx).Debugf("Connected to %s with max recv size 35 MB", address)
 
 	conn := newClientConn(id, grpcConn)
 	go func() {

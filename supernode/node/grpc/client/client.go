@@ -28,16 +28,16 @@ type client struct {
 
 // Connect implements node.Client.Connect()
 func (client *client) Connect(ctx context.Context, address string) (node.ConnectionInterface, error) {
-	grpclog.SetLoggerV2(log.DefaultLogger)
+	grpclog.SetLoggerV2(log.NewLoggerWithErrorLevel())
 
 	id, _ := random.String(8, random.Base62Chars)
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
 
 	// Define the keep-alive parameters
 	ka := keepalive.ClientParameters{
-		Time:                5 * time.Minute, // Send pings every 5 minutes  if there is no activity
-		Timeout:             1 * time.Minute, // Wait 1 minute for ping ack before considering the connection dead
-		PermitWithoutStream: true,            // Allow pings to be sent without a stream
+		Time:                30 * time.Minute, // Send pings every 5 minutes  if there is no activity
+		Timeout:             30 * time.Minute, // Wait 5 minute for ping ack before considering the connection dead
+		PermitWithoutStream: true,             // Allow pings to be sent without a stream
 	}
 
 	if client.secClient == nil || client.secInfo == nil {

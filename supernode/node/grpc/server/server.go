@@ -30,12 +30,12 @@ type Server struct {
 	name      string
 	secClient alts.SecClient
 	secInfo   *alts.SecInfo
-	connTrack *ConnectionTracker // connection tracker
+	//connTrack *ConnectionTracker // connection tracker
 }
 
 // Run starts the server
 func (server *Server) Run(ctx context.Context) error {
-	grpclog.SetLoggerV2(log.DefaultLogger)
+	grpclog.SetLoggerV2(log.NewLoggerWithErrorLevel())
 	ctx = log.ContextWithPrefix(ctx, server.name)
 
 	group, ctx := errgroup.WithContext(ctx)
@@ -64,10 +64,10 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 	}
 
 	// The listener that will track connections.
-	listen = &connTrackListener{
+	/*listen = &connTrackListener{
 		Listener:  listen,
 		connTrack: server.connTrack, // connection tracker
-	}
+	}*/
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -101,7 +101,7 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 		MaxConnectionAge:      2 * time.Hour,
 		MaxConnectionAgeGrace: 1 * time.Hour,
 		Time:                  1 * time.Hour,
-		Timeout:               2 * time.Minute,
+		Timeout:               30 * time.Minute,
 	}
 
 	// Define the keep-alive enforcement policy
@@ -116,6 +116,7 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 			grpc.MaxRecvMsgSize(35000000), grpc.KeepaliveParams(kaParams), // Use the keep-alive parameters
 			grpc.KeepaliveEnforcementPolicy(kaPolicy))
 	} else {
+
 		grpcServer = grpc.NewServer(middleware.UnaryInterceptor(), middleware.StreamInterceptor(),
 			middleware.AltsCredential(server.secClient, server.secInfo), grpc.MaxSendMsgSize(35000000),
 			grpc.MaxRecvMsgSize(35000000), grpc.KeepaliveParams(kaParams), // Use the keep-alive parameters
@@ -138,11 +139,13 @@ func New(config *Config, name string, secClient alts.SecClient, secInfo *alts.Se
 		secInfo:   secInfo,
 		services:  services,
 		name:      name,
-		connTrack: NewConnectionTracker(), // create a new connection tracker
+		//connTrack: NewConnectionTracker(), // create a new connection tracker
 	}
 }
 
+/*
 // GetConnTrackerMap returns the map keeping track of open cons
 func (server *Server) GetConnTrackerMap() map[string][]*TrackedConn {
 	return server.connTrack.conns
 }
+*/

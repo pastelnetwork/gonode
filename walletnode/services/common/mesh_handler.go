@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -121,7 +122,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context, sortKey [
 	}
 	log.WithContext(ctx).Infof("Current block is %d", blockNum)
 
-	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes, []string{}, sortKey)
+	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes, []string{}, sortKey, blockNum)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("failed validating of %d SNs", m.minNumberSuperNodes)
 		return 0, "", errors.Errorf("failed validating of %d SNs: %w", m.minNumberSuperNodes, err)
@@ -140,7 +141,7 @@ func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context, sortKey [
 // ConnectToNSuperNodes sets single simple connection to N SNs
 func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int, skipNodes []string) error {
 
-	connectedNodes, err := m.findNValidTopSuperNodes(ctx, n, skipNodes, []byte{})
+	connectedNodes, err := m.findNValidTopSuperNodes(ctx, n, skipNodes, []byte{}, 0)
 	if err != nil {
 		return err
 	}
@@ -156,7 +157,7 @@ func (m *MeshHandler) ConnectToNSuperNodes(ctx context.Context, n int, skipNodes
 }
 
 // ConnectToTopRankNodes - find N supernodes and create mesh of 3 nodes
-func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNodes []string, sortKey []byte) (SuperNodeList, error) {
+func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNodes []string, sortKey []byte, block int) (SuperNodeList, error) {
 
 	// Retrieve supernodes with the highest ranks.
 	WNTopNodes, err := m.getTopNodes(ctx)
@@ -172,7 +173,7 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 	}
 	log.WithContext(ctx).Infof("Found %d Supernodes", len(WNTopNodes))
 
-	candidateNodes, err := m.GetCandidateNodes(ctx, WNTopNodes, n)
+	candidateNodes, err := m.GetCandidateNodes(ctx, WNTopNodes, n, block)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error getting candidate nodes")
 	}
@@ -205,7 +206,7 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 }
 
 // GetCandidateNodes returns list of candidate nodes
-func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes SuperNodeList, n int) (SuperNodeList, error) {
+func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes SuperNodeList, n int, block int) (SuperNodeList, error) {
 	if !m.checkDDDatabaseHashes && !m.requireSNAgreementOnMNTopList {
 		return candidatesNodes, nil
 	}
@@ -226,7 +227,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 
 	// Get WN top nodes list from all the candidate nodes
 	for _, someNode := range candidatesNodes {
-		top, hash, data, err := m.GetRequiredDataFromSN(ctx, *someNode, secInfo)
+		top, hash, data, err := m.GetRequiredDataFromSN(ctx, *someNode, secInfo, block)
 		if err != nil {
 			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get required data from supernode - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 			continue
@@ -245,12 +246,21 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 	if m.requireSNAgreementOnMNTopList {
 
 		// Filter out nodes with different top MNs list
+		given := WNTopNodesList
 		WNTopNodesList, err = m.filterByTopNodesList(ctx, WNTopNodesList, topMap)
 		if err != nil {
 			return nil, fmt.Errorf("filter by top nodes list: %w", err)
 		}
 
-		log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Matching top nodes list for nodes %d", len(WNTopNodesList))
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("given nodes count", len(given)).
+			WithField("matching top 10 count", len(WNTopNodesList)).Info("Matched top nodes list for nodes")
+
+		if len(WNTopNodesList) < len(given) {
+			topJSON, _ := json.Marshal(topMap)
+
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("given nodes", given.String()).
+				WithField("matched list", WNTopNodesList).WithField("block", block).WithField("top 10 lists", string(topJSON)).Warn("some nodes left out due to mismatching top 10 list")
+		}
 	}
 
 	if len(WNTopNodesList) < n {
@@ -506,6 +516,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 		log.WithContext(ctx).WithError(err).Errorf("Failed to open session with primary node %q", primary)
 		return nil, fmt.Errorf("session: %w", err)
 	}
+	log.WithContext(ctx).WithField("task", m.logRequestID).WithField("remote-sess-id", primary.SessID()).Infof("Connected to primary node %q", primary.Address())
 
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
@@ -549,7 +560,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 					}); err != nil {
 						return
 					}
-					log.WithContext(ctx).Debugf("Secondary %q connected to primary", sameNode)
+					log.WithContext(ctx).WithField("task", m.logRequestID).WithField("sameNode", sameNode.SessID()).Infof("Connected to secondry node %q", sameNode.Address())
 				}()
 			}
 		}
@@ -643,7 +654,7 @@ func (m *MeshHandler) filterByTopNodesList(ctx context.Context, WNTopNodesList S
 }
 
 // GetRequiredDataFromSN retrieves the MN top list from the given SN, dd databse hash and dd-service stats if required
-func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNodeClient, secInfo *alts.SecInfo) (top []string, hash string, data DDStats, err error) {
+func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNodeClient, secInfo *alts.SecInfo, block int) (top []string, hash string, data DDStats, err error) {
 	logger := log.WithContext(ctx).WithField("address", someNode.Address())
 
 	if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
@@ -666,7 +677,7 @@ func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNo
 	}()
 
 	if m.requireSNAgreementOnMNTopList {
-		resp, err := someNode.GetTopMNs(ctx)
+		resp, err := someNode.GetTopMNs(ctx, block)
 		if err != nil {
 			logger.WithError(err).Error("error getting top mns through gRPC call")
 			return top, hash, data, fmt.Errorf("error getting top mns through gRPC call: node: %s - err: %w", someNode.Address(), err)
@@ -683,7 +694,6 @@ func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNo
 		}
 
 		hash = h
-		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("node", someNode.Address()).WithField("hash", hash).Info("DD Database hash for node received")
 
 		s, err := someNode.GetDDServerStats(ctx)
 		if err != nil {
@@ -699,7 +709,7 @@ func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNo
 			IsReady:        true,
 		}
 
-		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("node", someNode.Address()).WithField("stats", data).Info("DD-server stats for node has been received")
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("hash", hash).WithField("node", someNode.Address()).WithField("stats", data).Info("DD-service stats & hash for node has been received")
 	}
 
 	return top, hash, data, nil

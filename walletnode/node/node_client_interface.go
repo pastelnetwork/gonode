@@ -61,7 +61,7 @@ type SuperNodeAPIInterface interface {
 	// GetDDServerStats requests stats of dd server
 	GetDDServerStats(ctx context.Context) (stats *pb.DDServerStatsReply, err error)
 
-	GetTopMNs(ctx context.Context) (stats *pb.GetTopMNsReply, err error)
+	GetTopMNs(ctx context.Context, block int) (stats *pb.GetTopMNsReply, err error)
 }
 
 // RealNodeMaker interface to make concrete node types

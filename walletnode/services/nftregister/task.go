@@ -32,7 +32,7 @@ const (
 	defaultGreen        = false
 	defaultIssuedCopies = 1
 	defaultRoyalty      = 0.0
-	maxRetries          = 2
+	maxRetries          = 3
 )
 
 // NftRegistrationTask an NFT on the blockchain
@@ -80,6 +80,8 @@ func (task *NftRegistrationTask) Run(ctx context.Context) error {
 
 // Reset resets the task
 func (task *NftRegistrationTask) Reset() {
+	task.SetError(nil)
+	task.StatusLog[common.FieldErrorDetail] = ""
 	task.FingerprintsHandler = mixins.NewFingerprintsHandler(task.service.pastelHandler)
 	task.MeshHandler.Reset()
 	task.RqHandler = mixins.NewRQHandler(task.service.rqClient, task.service.pastelHandler,
@@ -103,6 +105,18 @@ func (task *NftRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 func (task *NftRegistrationTask) run(ctx context.Context) error {
 	connCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	// know when root context was cancelled and log it
+	go func() {
+		<-ctx.Done()
+		log.Println("nft reg: root context 'ctx' in run func was cancelled: task - err", task.ID(), ctx.Err())
+	}()
+
+	// know when derived context was cancelled and log it
+	go func() {
+		<-connCtx.Done()
+		log.Printf("nft reg: conn context 'connCtx' in run func was cancelled: - err", task.ID(), connCtx.Err())
+	}()
 
 	log.WithContext(ctx).Info("checking collection verification")
 	err := task.IsValidForCollection(ctx)
@@ -174,6 +188,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	//set timestamp for nft reg metadata
 	task.creationTimestamp = time.Now().UTC().Format(DateTimeFormat)
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
+	task.StatusLog[common.FieldMeshNodes] = task.MeshHandler.Nodes.String()
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken
@@ -794,6 +809,7 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 
 	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
+		someNode := someNode
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
 			//TODO: use assert here
@@ -805,7 +821,7 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 		group.Go(func() error {
 			fee, err := nftRegNode.SendSignedTicket(gctx, task.serializedTicket, task.creatorSignature, label, rqidsFile, ddFpFile, encoderParams)
 			if err != nil {
-				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Error("send signed ticket failed")
+				log.WithContext(gctx).WithError(err).WithField("label", label).WithField("node", someNode.String()).Error("send signed ticket failed")
 				return err
 			}
 
@@ -884,7 +900,7 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 		group.Go(func() error {
 			ticketTxid, err := nftRegNode.SendPreBurntFeeTxid(gctx, burnTxid)
 			if err != nil {
-				log.WithContext(gctx).WithError(err).WithField("node", nftRegNode).Error("send pre-burnt fee txid failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode.Address()).Error("send pre-burnt fee txid failed")
 				return err
 			}
 			if !someNode.IsPrimary() && ticketTxid != "" && !task.skipPrimaryNodeTxidCheck() {

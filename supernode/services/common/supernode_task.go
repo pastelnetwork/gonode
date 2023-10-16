@@ -24,8 +24,8 @@ type SuperNodeTask struct {
 // RunHelper common code for Task runner
 func (task *SuperNodeTask) RunHelper(ctx context.Context, clean TaskCleanerFunc) error {
 	ctx = task.context(ctx)
-	log.WithContext(ctx).Debug("Start task")
-	defer log.WithContext(ctx).Debug("Task canceled")
+	log.WithContext(ctx).Info("Start task")
+	defer log.WithContext(ctx).Info("Task canceled")
 	defer task.Cancel()
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {

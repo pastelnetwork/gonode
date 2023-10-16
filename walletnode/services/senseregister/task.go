@@ -29,7 +29,7 @@ const (
 
 	taskTypeSense = "sense"
 
-	maxRetries = 2
+	maxRetries = 3
 )
 
 // SenseRegistrationTask is the task of registering new nft.
@@ -152,6 +152,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	task.creatorBlockHash = creatorBlockHash
 	task.creationTimestamp = time.Now().UTC().Format(DateTimeFormat)
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
+	task.StatusLog[common.FieldMeshNodes] = task.MeshHandler.Nodes.String()
 
 	log.WithContext(ctx).Info("Mesh of supernodes have been established")
 

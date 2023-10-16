@@ -18,6 +18,10 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
+const (
+	allDDAndFingerprintsResultTimeout = 35 * time.Minute
+)
+
 // Tasker interface to call back concrete Task for specific actions
 type Tasker interface {
 	SendDDFBack(ctx context.Context, node node.SuperNodePeerAPIInterface, nodeInfo *types.MeshedSuperNode, pastelID string, data []byte) error
@@ -205,7 +209,7 @@ func (h *DupeDetectionHandler) ProbeImage(ctx context.Context, file *files.File,
 
 		log.WithContext(ctx).Debug("DDAndFingerprints combined and compressed")
 		return retCompressed, nil
-	case <-time.After(25 * time.Minute):
+	case <-time.After(allDDAndFingerprintsResultTimeout):
 		log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers timeout")
 		err = errors.New("waiting for DDAndFingerprints timeout")
 		return nil, err

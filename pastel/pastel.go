@@ -10,6 +10,10 @@ type Client interface {
 	// Command `masternode top`.
 	MasterNodesTop(ctx context.Context) (MasterNodes, error)
 
+	// MasterNodesTopN returns 10 top masternodes for n-th block.
+	// Command `masternode top N`.
+	MasterNodesTopN(ctx context.Context, n int) (MasterNodes, error)
+
 	// MasterNodesList returns all masternodes.
 	// Command `masternode list full`.
 	MasterNodesList(ctx context.Context) (MasterNodes, error)
