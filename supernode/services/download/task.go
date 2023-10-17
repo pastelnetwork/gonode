@@ -161,12 +161,12 @@ func (task *NftDownloadingTask) DownloadDDAndFingerprints(ctx context.Context, t
 		decKey := base58.Decode(DDAndFingerprintsIDs[i])
 		dbKey := hex.EncodeToString(decKey)
 
-		log.WithContext(ctx).WithField("hash", decKey).WithField("db_key", dbKey).WithField("txid", txid).
-			WithField("dd_fp_id", DDAndFingerprintsIDs[i]).Info("DDAndFingerPrintDetails trying to fetch & decode this file")
+		log.WithContext(ctx).WithField("db_key", dbKey).WithField("txid", txid).
+			WithField("dd_fp_id", DDAndFingerprintsIDs[i]).Debug("DDAndFingerPrintDetails trying to fetch & decode this file")
 
 		retData, err := task.downloadDDFPFile(ctx, DDAndFingerprintsIDs[i])
 		if err != nil {
-			log.WithContext(ctx).WithField("db_key", dbKey).WithField("txid", txid).WithField("dd_fp_id", DDAndFingerprintsIDs[i]).Warn("DDAndFingerPrintDetails failed to download this file. ")
+			log.WithContext(ctx).WithField("db_key", dbKey).WithField("txid", txid).WithField("dd_fp_id", DDAndFingerprintsIDs[i]).Debug("DDAndFingerPrintDetails failed to download this file. ")
 			continue
 		}
 

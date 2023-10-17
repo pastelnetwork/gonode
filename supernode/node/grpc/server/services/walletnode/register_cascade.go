@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc"
@@ -347,14 +348,22 @@ func (service *RegisterCascade) SendActionAct(ctx context.Context, req *pb.SendA
 }
 
 // GetTopMNs implements walletnode.RegisterCascadeServer.GetTopMNs()
-func (service *RegisterCascade) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
+func (service *RegisterCascade) GetTopMNs(ctx context.Context, req *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
 	log.WithContext(ctx).Debug("request for mn-top list has been received")
 
-	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+	var mnTopList pastel.MasterNodes
+	var err error
+	if req.Block == 0 {
+		mnTopList, err = service.PastelClient.MasterNodesTop(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+		}
+	} else {
+		mnTopList, err = service.PastelClient.MasterNodesTopN(ctx, int(req.Block))
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+		}
 	}
-
 	var mnList []string
 	for _, mn := range mnTopList {
 		mnList = append(mnList, mn.ExtAddress)

@@ -164,11 +164,13 @@ func (service *registerCollection) GetDDServerStats(_ context.Context) (stats *p
 }
 
 // GetTopMNs implements node.RegisterCollection.GetTopMNs
-func (service *registerCollection) GetTopMNs(ctx context.Context) (mnList *pb.GetTopMNsReply, err error) {
+func (service *registerCollection) GetTopMNs(ctx context.Context, block int) (mnList *pb.GetTopMNsReply, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := &pb.GetTopMNsRequest{}
+	req := &pb.GetTopMNsRequest{
+		Block: int64(block),
+	}
 	resp, err := service.client.GetTopMNs(ctx, req)
 	if err != nil {
 		return nil, errors.Errorf("WN request to SN for mn-top list: %w", err)

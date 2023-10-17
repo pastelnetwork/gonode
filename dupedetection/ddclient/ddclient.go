@@ -92,6 +92,11 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	// remove file after use
 	defer os.Remove(inputPath)
 
+	go func() {
+		<-ctx.Done()
+		log.WithContext(ctx).Error("root context cancelled in callImageRarenessScore")
+	}()
+
 	// Limits the dial timeout, prevent got stuck too long
 	dialCtx, dcancel := context.WithTimeout(ctx, defaultDDServiceCallTimeout)
 	defer dcancel()

@@ -299,10 +299,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		hermes.NewHermes(p2p),
 	)
 
-	openConsMap := grpc.GetConnTrackerMap()
+	//openConsMap := grpc.GetConnTrackerMap()
 
 	// Debug service
-	debugSerivce := debug.NewService(config.DebugService, p2p, storageChallenger, openConsMap)
+	debugSerivce := debug.NewService(config.DebugService, p2p, storageChallenger, nil)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 

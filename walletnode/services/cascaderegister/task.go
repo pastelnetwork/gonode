@@ -125,6 +125,7 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	task.creatorBlockHeight = creatorBlockHeight
 	task.creatorBlockHash = creatorBlockHash
 	task.StatusLog[common.FieldBlockHeight] = creatorBlockHeight
+	task.StatusLog[common.FieldMeshNodes] = task.MeshHandler.Nodes.String()
 
 	// supervise the connection to top rank nodes
 	// cancel any ongoing context if the connections are broken

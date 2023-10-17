@@ -350,13 +350,14 @@ func (task *NftRegistrationTask) signAndSendNftTicket(ctx context.Context, isPri
 
 		nftRegNode, ok := task.NetworkHandler.ConnectedTo.SuperNodePeerAPIInterface.(*NftRegistrationNode)
 		if !ok {
-			return errors.Errorf("node is not SenseRegistrationNode")
+			return errors.Errorf("node is not NFTRegistrationNode")
 		}
 
 		if err := nftRegNode.SendNftTicketSignature(ctx, task.config.PastelID, task.ownSignature); err != nil {
 			return errors.Errorf("send signature to primary node %s at address %s: %w", task.NetworkHandler.ConnectedTo.ID, task.NetworkHandler.ConnectedTo.Address, err)
 		}
 	}
+
 	return nil
 }
 

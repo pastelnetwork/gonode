@@ -157,7 +157,7 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 
 func (task *NftDownloadingTask) getSymbolIDsFromMetadataFile(ctx context.Context, id string, txid string) (symbolIDs []string, err error) {
 	var rqIDsData []byte
-	log.WithContext(ctx).WithField("id", id).WithField("txid", txid).Info("Retrieving symbol IDs from metadata file")
+	log.WithContext(ctx).WithField("id", id).WithField("txid", txid).Debug("Retrieving symbol IDs from metadata file")
 	rqIDsData, err = task.P2PClient.Retrieve(ctx, id)
 	if err != nil {
 		return symbolIDs, fmt.Errorf("retrieve rq metadatafile: %w", err)

@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
@@ -183,12 +184,21 @@ func (service *RegisterCollection) SendCollectionTicketForSignature(ctx context.
 }
 
 // GetTopMNs implements walletnode.RegisterCollectionServer.GetTopMNs()
-func (service *RegisterCollection) GetTopMNs(ctx context.Context, _ *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
+func (service *RegisterCollection) GetTopMNs(ctx context.Context, req *pb.GetTopMNsRequest) (*pb.GetTopMNsReply, error) {
 	log.WithContext(ctx).Debug("request for mn-top list has been received")
 
-	mnTopList, err := service.PastelClient.MasterNodesTop(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+	var mnTopList pastel.MasterNodes
+	var err error
+	if req.Block == 0 {
+		mnTopList, err = service.PastelClient.MasterNodesTop(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+		}
+	} else {
+		mnTopList, err = service.PastelClient.MasterNodesTopN(ctx, int(req.Block))
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error retrieving mn-top list on the SN")
+		}
 	}
 
 	var mnList []string

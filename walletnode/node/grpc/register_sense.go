@@ -125,11 +125,13 @@ func (service *registerSense) GetDDServerStats(ctx context.Context) (stats *pb.D
 	return resp, nil
 }
 
-func (service *registerSense) GetTopMNs(ctx context.Context) (mnList *pb.GetTopMNsReply, err error) {
+func (service *registerSense) GetTopMNs(ctx context.Context, block int) (mnList *pb.GetTopMNsReply, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := &pb.GetTopMNsRequest{}
+	req := &pb.GetTopMNsRequest{
+		Block: int64(block),
+	}
 	resp, err := service.client.GetTopMNs(ctx, req)
 	if err != nil {
 		return nil, errors.Errorf("WN request to SN for mn-top list: %w", err)

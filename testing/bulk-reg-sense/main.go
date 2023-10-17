@@ -317,7 +317,7 @@ func main() {
 
 		payload := payload{
 			BurnTxid:               burnTxID,
-			AppPastelid:            "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX",
+			AppPastelid:            "jXZMSxS5w9UakpVMAs2vihcCVQ4fBrPsSriXmNqTq2nvK4awXvaP9hZJYL1eJ4o9y3jpvoGghVUQyvsU7Q64Jp",
 			MakePubliclyAccessible: true,
 		}
 		taskID, err := doSenseRequest(payload, uploadImageRes.ImageID, logger)
@@ -344,7 +344,7 @@ func main() {
 				logger.Printf("Request to task state has been failed:%v\n", err)
 			}
 
-			results = appendResults(mu, results, result{
+			results = appendResults(&mu, results, result{
 				ID:      fmt.Sprintf("request%d", count),
 				Elapsed: time.Since(startReq),
 				Error:   err,
@@ -379,7 +379,7 @@ func main() {
 	logger.Printf("Total failures: %d\n", failures)
 }
 
-func appendResults(mu sync.Mutex, results []result, result result) (res []result) {
+func appendResults(mu *sync.Mutex, results []result, result result) (res []result) {
 	mu.Lock()
 	defer mu.Unlock()
 

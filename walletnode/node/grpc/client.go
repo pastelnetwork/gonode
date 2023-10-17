@@ -31,9 +31,9 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 
 	// Define the keep-alive parameters
 	ka := keepalive.ClientParameters{
-		Time:                5 * time.Minute, // Send pings every 5 minutes  if there is no activity
-		Timeout:             1 * time.Minute, // Wait 1 minute for ping ack before considering the connection dead
-		PermitWithoutStream: true,            // Allow pings to be sent without a stream
+		Time:                30 * time.Minute, // Send pings every 5 minutes  if there is no activity
+		Timeout:             30 * time.Minute, // Wait 1 minute for ping ack before considering the connection dead
+		PermitWithoutStream: true,             // Allow pings to be sent without a stream
 	}
 
 	altsTCClient := credentials.NewClientCreds(client.secClient, secInfo)
@@ -60,12 +60,12 @@ func (client *client) Connect(ctx context.Context, address string, secInfo *alts
 	if err != nil {
 		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)
 	}
-	log.WithContext(ctx).Infof("Connected to %s", address)
+	log.WithContext(ctx).Debugf("Connected to %s", address)
 
 	conn := newClientConn(taskID, grpcConn)
 	go func() {
 		<-conn.Done()
-		log.WithContext(ctx).Infof("Disconnected %s", grpcConn.Target())
+		log.WithContext(ctx).Debugf("Disconnected %s", grpcConn.Target())
 	}()
 	return conn, nil
 }

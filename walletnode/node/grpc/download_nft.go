@@ -129,10 +129,12 @@ func (service *downloadNft) GetDupeDetectionDBHash(_ context.Context) (hash stri
 }
 
 // GetTopMNs implements node.downloadNFT.GetTopMNs
-func (service *downloadNft) GetTopMNs(ctx context.Context) (mnList *pb.GetTopMNsReply, err error) {
+func (service *downloadNft) GetTopMNs(ctx context.Context, block int) (mnList *pb.GetTopMNsReply, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 
-	req := &pb.GetTopMNsRequest{}
+	req := &pb.GetTopMNsRequest{
+		Block: int64(block),
+	}
 	resp, err := service.client.GetTopMNs(ctx, req)
 	if err != nil {
 		return nil, errors.Errorf("WN request to SN for mn-top list: %w", err)

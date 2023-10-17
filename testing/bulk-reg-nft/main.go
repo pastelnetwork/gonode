@@ -296,7 +296,7 @@ func main() {
 		if err != nil {
 			logger.Printf("Request to nft registration failed:%v\n", err)
 		}
-		logger.Printf("nft task initiated:%s, request-count:%d\n", taskID, count)
+		logger.Printf("nft task initiated:%s, image_file_name: %s request-count:%d\n", taskID, fileName, count)
 
 		taskIDs[taskID] = startReq
 		count++

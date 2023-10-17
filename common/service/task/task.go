@@ -31,12 +31,15 @@ type Task interface {
 	// Done returns a channel when the task is canceled.
 	Done() <-chan struct{}
 
-	// RunAction waits for new actions, starts handling eche of them in a new goroutine.
+	// RunAction waits for new actions, starts handling each of them in a new goroutine.
 	RunAction(ctx context.Context) error
 
 	// NewAction creates a new action and passes for the execution.
 	// It is used when it is necessary to run an action in the context of `Tasks` rather than the one who was called.
 	NewAction(fn ActionFn) <-chan struct{}
+
+	// CloseActionCh closes action ch
+	CloseActionCh()
 }
 
 type task struct {
@@ -46,8 +49,9 @@ type task struct {
 
 	actionCh chan *Action
 
-	doneMu sync.Mutex
-	doneCh chan struct{}
+	doneMu    sync.Mutex
+	doneCh    chan struct{}
+	closeOnce sync.Once
 }
 
 // ID implements Task.ID
@@ -88,15 +92,21 @@ func (task *task) RunAction(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			log.WithContext(ctx).Debug("context done")
+			log.WithContext(ctx).WithField("task", task.ID()).Info("context done")
 		case <-task.Done():
-			log.WithContext(ctx).Debugf("task %s done", task.ID())
+			log.WithContext(ctx).Infof("task %s done", task.ID())
 			cancel()
-		case action := <-task.actionCh:
-			group.Go(func() error {
-				defer close(action.doneCh)
+		case action, ok := <-task.actionCh:
+			if !ok {
+				log.WithContext(ctx).Info("action channel closed")
+				return group.Wait()
+			}
 
-				return action.fn(ctx)
+			currAction := action
+			group.Go(func() error {
+				defer close(currAction.doneCh)
+
+				return currAction.fn(ctx)
 			})
 			continue
 		}
@@ -104,6 +114,13 @@ func (task *task) RunAction(ctx context.Context) error {
 	}
 
 	return group.Wait()
+}
+
+// CloseActionCh safely closes the action channel
+func (task *task) CloseActionCh() {
+	task.closeOnce.Do(func() {
+		close(task.actionCh)
+	})
 }
 
 // NewAction implements Task.NewAction

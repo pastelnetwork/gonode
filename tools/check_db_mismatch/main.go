@@ -33,7 +33,7 @@ func fetchTxIDsFromDB(db *sqlx.DB) (map[string]bool, error) {
 
 func main() {
 
-	db1, err := sqlx.Connect("sqlite3", "hermes-154.12.235.12.sqlite")
+	db1, err := sqlx.Connect("sqlite3", "154.38.161.58-fg_db.sqlite")
 	if err != nil {
 		log.Errorf("cannot open dd-service database: %w", err)
 		return
@@ -41,7 +41,7 @@ func main() {
 
 	defer db1.Close()
 
-	db2, err := sqlx.Connect("sqlite3", "hermes-3.19.48.187.sqlite")
+	db2, err := sqlx.Connect("sqlite3", "85.239.240.252-fg_db.sqlite")
 	if err != nil {
 		log.Errorf("cannot open dd-service database: %w", err)
 		return
@@ -62,14 +62,14 @@ func main() {
 	}
 	fmt.Println("Number of txIDs in hermes 2", len(txIDs2))
 
-	fmt.Println("TxIDs in hermes-154.12.235.16.sqlite but not in hermes-154.38.161.58.sqlite:")
+	fmt.Println("TxIDs in db1 but not in db2")
 	for txID := range txIDs1 {
 		if _, exists := txIDs2[txID]; !exists {
 			fmt.Println(txID)
 		}
 	}
 
-	fmt.Println("\nTxIDs in hermes-154.12.235.41.sqlite but not in hermes-154.12.235.41.sqlite:")
+	fmt.Println("\nTxIDs in db1 but not in db2")
 	for txID := range txIDs2 {
 		if _, exists := txIDs1[txID]; !exists {
 			fmt.Println(txID)
