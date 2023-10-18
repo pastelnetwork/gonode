@@ -227,7 +227,6 @@ func (task *DupTicketsDetector) getNFTTicket(ctx context.Context, txID string) (
 
 	decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to decode reg nft ticket")
 		return nil, fmt.Errorf("failed to decode reg nft ticket")
 	}
 	regTicket.RegTicketData.NFTTicketData = *decTicket
