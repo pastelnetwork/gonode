@@ -26,8 +26,8 @@ const (
 	initialDelay     = 1 * time.Second
 	maxRetries       = 5
 	timeoutAfter     = 1000
-	pastelID         = "jXZMSxS5w9UakpVMAs2vihcCVQ4fBrPsSriXmNqTq2nvK4awXvaP9hZJYL1eJ4o9y3jpvoGghVUQyvsU7Q64Jp"
-	spendableAddress = "tPfpGZd8QG6A7mQJRKVHs9cDRrQUUaeeiQP"
+	pastelID         = "jXa6QiopivJLer8G65QsxwQmGELi1w6mbNXvrrYTvsddVE5BT57LtNCZ2SCmWStvLwWWTkuAFPsRREytgG62YX"
+	spendableAddress = "tPaaTHZTxLGjaduuXLiQ4Zny3qgyZ4dFHVm"
 )
 
 type result struct {
