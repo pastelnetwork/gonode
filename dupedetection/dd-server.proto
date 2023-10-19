@@ -60,6 +60,7 @@ message ImageRarenessScoreReply {
     float similarity_score_to_first_entry_in_collection = 30;
     float cp_probability = 31;
     float child_probability = 32;
+    string image_fingerprint_set_checksum = 33;
 }
 
 
