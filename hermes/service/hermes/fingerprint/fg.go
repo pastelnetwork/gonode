@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	runTaskInterval = 2 * time.Minute
+	runTaskInterval         = 2 * time.Minute
+	parseTicketsBlockHeight = 265000
 )
 
 // Run stores the latest block hash and height to DB if not stored already
@@ -73,15 +74,10 @@ func (s *fingerprintService) Run(ctx context.Context) error {
 }
 
 func (s *fingerprintService) run(ctx context.Context) error {
-	log.WithContext(ctx).Info("getting Activation tickets, checking non seed records.")
-	nonseed, err := s.store.CheckNonSeedRecord(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("unable to get nonseed record")
-	} else if !nonseed {
-		log.WithContext(ctx).Info("No NonSeed Record, set latestBlockHeight to 0")
-		s.latestNFTBlockHeight = 265000   //TODO: REMOVE THIS - SET TO 0
-		s.latestSenseBlockHeight = 265000 //TODO: REMOVE THIS - SET TO 0
-	}
+	log.WithContext(ctx).Infof("getting Activation tickets, set latest block height to %d", parseTicketsBlockHeight)
+
+	s.latestNFTBlockHeight = parseTicketsBlockHeight
+	s.latestSenseBlockHeight = parseTicketsBlockHeight
 
 	senseErr := s.parseSenseTickets(ctx)
 	nftErr := s.parseNFTTickets(ctx)
