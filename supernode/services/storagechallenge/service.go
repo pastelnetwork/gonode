@@ -118,7 +118,7 @@ func (service *SCService) Run(ctx context.Context) error {
 		}
 	}()
 
-	//go service.RunLocalKeysFetchWorker(ctx)
+	go service.RunLocalKeysFetchWorker(ctx)
 
 	if !service.config.IsTestConfig {
 		time.Sleep(15 * time.Minute)
@@ -130,8 +130,8 @@ func (service *SCService) Run(ctx context.Context) error {
 
 			if service.CheckNextBlockAvailable(ctx) && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
 				newCtx := log.ContextWithPrefix(context.Background(), "storage-challenge")
-				//task := service.NewSCTask()
-				//task.GenerateStorageChallenges(newCtx)
+				task := service.NewSCTask()
+				task.GenerateStorageChallenges(newCtx)
 				log.WithContext(newCtx).Debug("Would normally generate a storage challenge")
 			}
 		case <-ctx.Done():
