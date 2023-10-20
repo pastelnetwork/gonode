@@ -20,7 +20,7 @@ import (
 
 const (
 	runTaskInterval         = 2 * time.Minute
-	parseTicketsBlockHeight = 265000
+	parseTicketsBlockHeight = 575000
 )
 
 // Run stores the latest block hash and height to DB if not stored already
