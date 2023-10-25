@@ -9,7 +9,7 @@ replace github.com/pastelnetwork/gonode/proto => ../../proto
 require (
 	github.com/pastelnetwork/gonode/common v0.0.0-20230829114806-701c926c0c44
 	github.com/pastelnetwork/gonode/proto v0.0.0-00010101000000-000000000000
-	google.golang.org/grpc v1.57.0
+	google.golang.org/grpc v1.57.1
 )
 
 require (
