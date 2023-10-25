@@ -3,7 +3,7 @@ module github.com/pastelnetwork/gonode/proto
 go 1.21
 
 require (
-	google.golang.org/grpc v1.57.0
+	google.golang.org/grpc v1.57.1
 	google.golang.org/protobuf v1.31.0
 )
 
