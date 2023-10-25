@@ -24,7 +24,7 @@ require (
 	github.com/pastelnetwork/gonode/proto v0.0.0-20230829114806-701c926c0c44
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.12.0
-	google.golang.org/grpc v1.57.0
+	google.golang.org/grpc v1.57.1
 )
 
 require (
