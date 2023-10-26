@@ -443,6 +443,13 @@ func (task *SCTask) sendBroadcastingMessage(ctx context.Context, msg *pb.Broadca
 		node := node
 		wg.Add(1)
 
+		req := &pb.BroadcastStorageChallengeRequest{
+			ChallengeId: msg.ChallengeId,
+			Challenger:  msg.Challenger,
+			Recipient:   msg.Recipient,
+			Observers:   msg.Observers,
+		}
+
 		go func() {
 			defer wg.Done()
 
@@ -452,11 +459,11 @@ func (task *SCTask) sendBroadcastingMessage(ctx context.Context, msg *pb.Broadca
 
 			logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
 
-			if msg == nil || node.ExtAddress == "" {
+			if req == nil || node.ExtAddress == "" {
 				return //not the valid state
 			}
 
-			if err := task.send(ctx, msg, node.ExtAddress); err != nil {
+			if err := task.send(ctx, req, node.ExtAddress); err != nil {
 				logger.WithError(err).Error("error sending broadcast message for processing")
 				return
 			}
