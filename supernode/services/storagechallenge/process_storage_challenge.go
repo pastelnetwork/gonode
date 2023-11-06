@@ -203,7 +203,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 			logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
 
 			if err := task.SendMessage(ctx, &msg, node.ExtAddress); err != nil {
-				logger.WithError(err).Error("error sending storage challenge message for processing")
+				logger.WithError(err).Error("error sending process storage challenge message for processing")
 				return
 			}
 
