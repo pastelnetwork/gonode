@@ -215,7 +215,7 @@ func (task *SCTask) sendProcessStorageChallenge(ctx context.Context, challengeMe
 			logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
 
 			if err := task.SendMessage(ctx, &msg, node.ExtAddress); err != nil {
-				logger.WithError(err).Error("error sending storage challenge message for processing")
+				logger.WithError(err).Error("error sending generate storage challenge message for processing")
 				return
 			}
 
@@ -291,6 +291,13 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 
 	mapSupernodes := make(map[string]pastel.MasterNode)
 	for _, mn := range supernodes {
+		if mn.ExtAddress == "" || mn.ExtKey == "" {
+			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeID).WithField("method", "sendProcessStorageChallenge").
+				WithField("node_id", mn.ExtKey).Warn("node address or node id is empty")
+
+			continue
+		}
+
 		mapSupernodes[mn.ExtKey] = mn
 	}
 
@@ -373,7 +380,7 @@ func (task *SCTask) SendMessage(ctx context.Context, challengeMessage *pb.Storag
 	//Connect over grpc
 	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not use nodeclient to connect to: " + processingSupernodeAddr)
+		err = fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
 		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendProcessStorageChallenge").Warn(err.Error())
 		return err
 	}

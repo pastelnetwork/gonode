@@ -299,12 +299,16 @@ func (s *Store) deleteRecord(key []byte) {
 }
 
 func (s *Store) storeDisabledKey(key []byte) error {
+	if len(key) == 0 {
+		return fmt.Errorf("key cannot be empty")
+	}
+
 	operation := func() error {
 		hkey := hex.EncodeToString(key)
 
 		now := time.Now().UTC()
 		r := DisabledKey{Key: hkey, CreatedAt: now}
-		res, err := s.db.NamedExec(`INSERT INTO disabled_keys(key, createdAt) values(:key, :createdat) ON CONFLICT(key) DO UPDATE SET createdAt=:createdAt`, r)
+		res, err := s.db.NamedExec(`INSERT INTO disabled_keys(key, createdAt) values(:key, :createdAt) ON CONFLICT(key) DO UPDATE SET createdAt=:createdAt`, r)
 		if err != nil {
 			return fmt.Errorf("cannot insert or update disabled key record with key %s: %w", hkey, err)
 		}

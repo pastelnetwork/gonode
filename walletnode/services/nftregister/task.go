@@ -962,7 +962,7 @@ func (task *NftRegistrationTask) checkDDServerAvailability(ctx context.Context) 
 		}
 	}
 
-	log.WithContext(ctx).Infof("pending requests for DD-server does not exceed than threshold, proceeding forward")
+	log.WithContext(ctx).Infof("All connected nodes' dd-services claim to be available, proceeding with image probing.")
 
 	return nil
 }
