@@ -12,17 +12,20 @@ const (
 	JPEG Format = iota
 	PNG
 	GIF
+	WEBP
 )
 
 var formatExts = map[string]Format{
 	"jpg":  JPEG,
 	"jpeg": JPEG,
 	"png":  PNG,
+	"webp": WEBP,
 }
 
 var formatNames = map[Format]string{
 	JPEG: "jpeg",
 	PNG:  "png",
+	WEBP: "webp",
 }
 
 // Format is an image file format.

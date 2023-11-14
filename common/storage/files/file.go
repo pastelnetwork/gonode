@@ -3,7 +3,6 @@ package files
 import (
 	"bytes"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/log"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -13,6 +12,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/log"
+
+	"github.com/kolesa-team/go-webp/decoder"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
 
 	"github.com/disintegration/imaging"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -202,8 +207,19 @@ func (file *File) LoadImage() (image.Image, error) {
 
 	img, _, err := image.Decode(f)
 	if err != nil {
-		return nil, errors.Errorf("decode image(%s): %w", f.Name(), err)
+		// Reset the reader to the beginning of the file
+		_, errSeek := f.Seek(0, io.SeekStart)
+		if errSeek != nil {
+			return nil, errors.Errorf("reset file reader: %w", errSeek)
+		}
+
+		var errWebp error
+		img, errWebp = webp.Decode(f, &decoder.Options{})
+		if errWebp != nil {
+			return nil, errors.Errorf("decode image(%s) - %w - tried webp as well: %w", f.Name(), err, errWebp)
+		}
 	}
+
 	return img, nil
 }
 
@@ -245,7 +261,18 @@ func (file *File) SaveImage(img image.Image) error {
 			return errors.Errorf("encode gif(%s): %w", f.Name(), err)
 		}
 		return nil
+	case WEBP:
+		opts, err := encoder.NewLosslessEncoderOptions(encoder.PresetDefault, 0)
+		if err != nil {
+			return errors.Errorf("create lossless encoder option %w", err)
+		}
+		if err := webp.Encode(f, img, opts); err != nil {
+			return errors.Errorf("encode webp(%s): %w", f.Name(), err)
+		}
+		return nil
+
 	}
+
 	return ErrUnsupportedFormat
 }
 
@@ -285,16 +312,28 @@ func (file *File) UpdateFormat() error {
 	}
 	defer f.Close()
 
+	// Try decoding with the standard library first
 	_, format, err := image.Decode(f)
 	if err != nil {
-		log.WithError(err).Error(fmt.Sprintf("Not able to decode:%s", err.Error()))
-		return errors.Errorf("decode image(%s): %w", file.Name(), err)
+		// If standard decoding fails, reset the reader and try WebP decoding
+		_, errSeek := f.Seek(0, io.SeekStart)
+		if errSeek != nil {
+			return errors.Errorf("reset file reader: %w", errSeek)
+		}
+
+		_, errWebp := webp.Decode(f, &decoder.Options{})
+		if errWebp != nil {
+			return errors.Errorf("decode image(%s) in updateFormat - tried webp as well: %w", f.Name(), errWebp)
+		}
+		format = "webp"
 	}
+
 	err = file.SetFormatFromExtension(format)
 	if err != nil {
 		log.WithError(err).Error(fmt.Sprintf("not able to set extension:%s", err.Error()))
 		return errors.Errorf("set file format(%s): %w", file.Name(), err)
 	}
+
 	return nil
 }
 
@@ -307,12 +346,12 @@ type Encoder interface {
 func (file *File) Encode(enc Encoder) error {
 	img, err := file.LoadImage()
 	if err != nil {
-		return err
+		return fmt.Errorf("load image: %w", err)
 	}
 
 	encImg, err := enc.Encode(img)
 	if err != nil {
-		return err
+		return fmt.Errorf("common encode image: %w", err)
 	}
 	return file.SaveImage(encImg)
 }
@@ -328,7 +367,11 @@ func (file *File) Decode(dec Decoder) error {
 	if err != nil {
 		return err
 	}
-	return dec.Decode(img)
+	if err := dec.Decode(img); err != nil {
+		return fmt.Errorf("common decode image: %w", err)
+	}
+
+	return nil
 }
 
 // NewFile returns a newFile File instance.
