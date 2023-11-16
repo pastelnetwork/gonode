@@ -18,7 +18,9 @@ func Test_StoreFileAfterSetFormat(t *testing.T) {
 	}{
 		{"test.jpeg", JPEG},
 		{"test.jpg", JPEG},
-		{"test.png", PNG}}
+		{"test.png", PNG},
+		{"test.webp", WEBP},
+	}
 
 	for _, file := range files {
 		f := storage.NewFile()
