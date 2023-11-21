@@ -67,6 +67,19 @@ func (service *selfHealingGRPCClient) Session(ctx context.Context, nodeID, sessI
 	return nil
 }
 
+func (service *selfHealingGRPCClient) Ping(ctx context.Context, pingRequest *pb.PingRequest) (*pb.PingResponse, error) {
+	ctx = contextWithLogPrefix(ctx, service.conn.id)
+	ctx = contextWithMDSessID(ctx, service.sessID)
+
+	res, err := service.client.Ping(ctx, pingRequest)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error sending request from ping and fetch node info worker")
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (service *selfHealingGRPCClient) ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) error {
 	ctx = contextWithLogPrefix(ctx, service.conn.id)
 	ctx = contextWithMDSessID(ctx, service.sessID)

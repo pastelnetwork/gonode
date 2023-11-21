@@ -118,6 +118,8 @@ type StorageChallengeInterface interface {
 type SelfHealingChallengeInterface interface {
 	SuperNodePeerAPIInterface
 
+	Ping(ctx context.Context, pingRequest *pb.PingRequest) (*pb.PingResponse, error)
+
 	ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) error
 
 	VerifySelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) (*pb.SelfHealingData, error)
