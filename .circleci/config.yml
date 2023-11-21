@@ -124,6 +124,10 @@ commands:
             export WINDOWS_ARTIFACT=$WORKING_DIR/<< parameters.package >>-windows-4.0-amd64.exe
             export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.package >>-linux-amd64
             
+            # Use the custom Docker image for xgo
+            docker run --rm -v $(pwd):/source jrafique/libwebpdependencyxgo /build.sh \
+            -go go-1.21.1 --targets=<< parameters.targets >> -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
+            
             cd ~/go/src/github.com/pastelnetwork/gonode
             export APP_VERSION=$(git describe --tag)
 
