@@ -16,6 +16,11 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
+const (
+	defaultTimerBlockCheckDuration    = 10 * time.Second
+	defaultFetchNodesPingInfoInterval = 60 * time.Second
+)
+
 // SHService keeps track of the supernode's nodeID and passes this, the pastel client,
 // and node client interfaces to the tasks it controls.  The run method contains a ticker timer
 // that will check for a new block and generate self-healing challenges as necessary if a new block
@@ -45,7 +50,21 @@ func (service *SHService) CheckNextBlockAvailable(ctx context.Context) bool {
 	return false
 }
 
-const defaultTimerBlockCheckDuration = 10 * time.Second
+// RunFetchNodesPingInfoWorker : This worker will periodically fetch and maintain the ping info about other SNs in the network
+func (service *SHService) RunFetchNodesPingInfoWorker(ctx context.Context) {
+	for {
+		select {
+		case <-time.After(defaultFetchNodesPingInfoInterval):
+			newCtx := context.Background()
+			task := service.NewSHTask()
+			task.FetchAndMaintainPingInfo(newCtx)
+
+		case <-ctx.Done():
+			log.Println("Context done being called in local keys fetch worker in service.go")
+			return
+		}
+	}
+}
 
 // Run : self-healing service will run continuously to generate self-healing.
 func (service *SHService) Run(ctx context.Context) error {
@@ -56,6 +75,8 @@ func (service *SHService) Run(ctx context.Context) error {
 			log.WithContext(ctx).WithError(err).Error("SelfHealingChallengeService:RunHelper")
 		}
 	}()
+
+	go service.RunFetchNodesPingInfoWorker(ctx)
 
 	for {
 		select {

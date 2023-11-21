@@ -10,8 +10,20 @@ import "common_sn.proto";
 
 service SelfHealing {
   rpc Session(stream SessionRequest) returns (stream SessionReply);
+  rpc Ping(PingRequest) returns (PingResponse);
   rpc ProcessSelfHealingChallenge(ProcessSelfHealingChallengeRequest) returns (ProcessSelfHealingChallengeReply);
   rpc VerifySelfHealingChallenge(VerifySelfHealingChallengeRequest) returns (VerifySelfHealingChallengeReply);
+}
+
+message PingRequest {
+  string sender_id = 1;
+}
+
+message PingResponse {
+  string sender_id = 1;
+  string receiver_id = 2;
+  string is_online = 3;
+  string responded_at = 4;
 }
 
 message SelfHealingData {
