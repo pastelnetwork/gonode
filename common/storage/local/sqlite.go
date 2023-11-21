@@ -69,6 +69,23 @@ const createSelfHealingChallenges string = `
   updated_at DATETIME NOT NULL                                                  
   );`
 
+const createPingHistory string = `
+  CREATE TABLE IF NOT EXISTS ping_history (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  supernode_id TEXT UNIQUE NOT NULL,
+  ip_address TEXT UNIQUE NOT NULL,
+  total_pings INTEGER NOT NULL,
+  total_successful_pings INTEGER NOT NULL,
+  avg_ping_response_time FLOAT NOT NULL,
+  is_online BOOLEAN NOT NULL,
+  is_on_watchlist BOOLEAN NOT NULL,
+  is_adjusted BOOLEAN NOT NULL,
+  cumulative_response_time FLOAT NOT NULL,
+  last_seen DATETIME NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL                                                  
+  );`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -151,6 +168,66 @@ func (s *SQLiteStore) InsertStorageChallengeMessage(challenge types.StorageChall
 	}
 
 	return nil
+}
+
+// UpsertPingHistory inserts/update ping information into the ping_history table
+func (s *SQLiteStore) UpsertPingHistory(pingInfo types.PingInfo) error {
+	now := time.Now().UTC()
+
+	const upsertQuery = `
+		INSERT INTO ping_history (
+			supernode_id, ip_address, total_pings, total_successful_pings, 
+			avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time,
+			created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(supernode_id, ip_address) 
+		DO UPDATE SET
+			total_pings = excluded.total_pings,
+			total_successful_pings = excluded.total_successful_pings,
+			avg_ping_response_time = excluded.avg_ping_response_time,
+			is_online = excluded.is_online,
+			is_on_watchlist = excluded.is_on_watchlist,
+			is_adjusted = excluded.is_adjusted,
+		    last_seen = excluded.last_seen
+		    cumulative_response_time = excluded.cumulative_response_time
+			updated_at = excluded.updated_at;`
+
+	_, err := s.db.Exec(upsertQuery,
+		pingInfo.SupernodeID, pingInfo.IPAddress, pingInfo.TotalPings,
+		pingInfo.TotalSuccessfulPings, pingInfo.AvgPingResponseTime,
+		pingInfo.IsOnline, pingInfo.IsOnWatchlist, pingInfo.IsAdjusted, pingInfo.LastSeen.Time, pingInfo.CumulativeResponseTime, now, now)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetPingInfoBySupernodeID retrieves a ping history record by supernode ID
+func (s *SQLiteStore) GetPingInfoBySupernodeID(supernodeID string) (*types.PingInfo, error) {
+	const selectQuery = `
+        SELECT id, supernode_id, ip_address, total_pings, total_successful_pings,
+               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen,
+               created_at, updated_at
+        FROM ping_history
+        WHERE supernode_id = ?;`
+
+	var pingInfo types.PingInfo
+	row := s.db.QueryRow(selectQuery, supernodeID)
+
+	// Scan the row into the PingInfo struct
+	err := row.Scan(
+		&pingInfo.ID, &pingInfo.SupernodeID, &pingInfo.IPAddress, &pingInfo.TotalPings,
+		&pingInfo.TotalSuccessfulPings, &pingInfo.AvgPingResponseTime,
+		&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen,
+		&pingInfo.CreatedAt, &pingInfo.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &pingInfo, nil
 }
 
 // InsertBroadcastMessage inserts broadcast storage challenge msg to db
@@ -260,6 +337,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createSelfHealingChallenges); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createPingHistory); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 

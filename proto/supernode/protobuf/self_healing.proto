@@ -22,7 +22,7 @@ message PingRequest {
 message PingResponse {
   string sender_id = 1;
   string receiver_id = 2;
-  string is_online = 3;
+  bool is_online = 3;
   string responded_at = 4;
 }
 
