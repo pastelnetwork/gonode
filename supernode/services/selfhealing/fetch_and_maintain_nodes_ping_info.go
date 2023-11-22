@@ -106,7 +106,7 @@ func (task *SHTask) pingNodes(ctx context.Context, nodesToPing pastel.MasterNode
 			pi := types.PingInfo{
 				SupernodeID:         node.ExtKey,
 				IPAddress:           node.ExtAddress,
-				IsOnline:            true,
+				IsOnline:            res.IsOnline,
 				IsAdjusted:          false,
 				AvgPingResponseTime: respondedAt.Sub(timeBeforePing).Seconds(),
 				LastSeen:            sql.NullTime{Time: respondedAt, Valid: true},

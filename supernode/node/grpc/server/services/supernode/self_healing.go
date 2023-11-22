@@ -89,6 +89,19 @@ func (service *SelfHealingChallengeGRPC) Desc() *grpc.ServiceDesc {
 	return &pb.SelfHealing_ServiceDesc
 }
 
+// Ping is the server side of self-healing challenge processing GRPC comms
+func (service *SelfHealingChallengeGRPC) Ping(ctx context.Context, pingReq *pb.PingRequest) (*pb.PingResponse, error) {
+	log.WithContext(ctx).WithField("req", pingReq).Info("ping request received at the server side")
+
+	task := service.NewSHTask()
+	res, err := task.Ping(ctx, pingReq)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error processing ping request")
+	}
+
+	return res, nil
+}
+
 // ProcessSelfHealingChallenge is the server side of self-healing challenge processing GRPC comms
 func (service *SelfHealingChallengeGRPC) ProcessSelfHealingChallenge(ctx context.Context, scRequest *pb.ProcessSelfHealingChallengeRequest) (*pb.ProcessSelfHealingChallengeReply, error) {
 	log.WithContext(ctx).WithField("req", scRequest).Info("Process self-healing challenge request received from gRpc client")
