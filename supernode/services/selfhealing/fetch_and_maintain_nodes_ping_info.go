@@ -2,7 +2,10 @@ package selfhealing
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 	"sync"
 	"time"
 
@@ -13,9 +16,12 @@ import (
 )
 
 // Define a timeout duration
-const timeoutDuration = 10 * time.Second
+const (
+	timeoutDuration = 10 * time.Second
+	UTCTimeLayout   = "2006-01-02T15:04:05Z"
+)
 
-//FetchAndMaintainPingInfo fetch and maintains the ping info in db for every node
+// FetchAndMaintainPingInfo fetch and maintains the ping info in db for every node
 func (task *SHTask) FetchAndMaintainPingInfo(ctx context.Context) error {
 	log.WithContext(ctx).Println("Self Healing Ping Nodes Worker invoked")
 
@@ -71,21 +77,44 @@ func (task *SHTask) pingNodes(ctx context.Context, nodesToPing pastel.MasterNode
 		go func() {
 			defer wg.Done()
 
-			_, err := task.ping(ctx, req, node.ExtAddress)
+			timeBeforePing := time.Now().UTC()
+			res, err := task.ping(ctx, req, node.ExtAddress)
 			if err != nil {
 				log.WithContext(ctx).WithField("sn_address", node.ExtAddress).WithError(err).
 					Error("error pinging sn")
-				return
 
-				//Ping Failed Response
-				//a) if a node didn’t respond, set is_online = false, increment total_pings
-				//a.1) Check if last_seen is before 20 minutes, if so, set is_on_watchlist field to true.
+				pi := types.PingInfo{
+					SupernodeID:         node.ExtKey,
+					IPAddress:           node.ExtAddress,
+					IsOnline:            false,
+					IsAdjusted:          false,
+					AvgPingResponseTime: 0.0,
+				}
+
+				if err := task.StorePingInfo(ctx, pi); err != nil {
+					log.WithContext(ctx).WithError(err).Error("error storing ping info")
+				}
+
+				return
 			}
 
-			//ping success scenario
-			// b) if a node responded, update last_seen to current time, increment total_pings and total_successful_pings and recalculate average_response_time (use total_successful_pings)
-			//  ===> also set is_on_watchlist to false.
+			respondedAt, err := time.Parse(UTCTimeLayout, res.RespondedAt)
+			if err != nil {
+				log.WithContext(ctx).WithError(err)
+			}
 
+			pi := types.PingInfo{
+				SupernodeID:         node.ExtKey,
+				IPAddress:           node.ExtAddress,
+				IsOnline:            true,
+				IsAdjusted:          false,
+				AvgPingResponseTime: respondedAt.Sub(timeBeforePing).Seconds(),
+				LastSeen:            sql.NullTime{Time: respondedAt, Valid: true},
+			}
+
+			if err := task.StorePingInfo(ctx, pi); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error storing ping info")
+			}
 		}()
 	}
 
@@ -125,4 +154,108 @@ func (task *SHTask) ping(ctx context.Context, req *pb.PingRequest, supernodeAddr
 	}
 
 	return pingResponse, nil
+}
+
+// StorePingInfo stores the ping info to db
+func (task *SHTask) StorePingInfo(ctx context.Context, info types.PingInfo) error {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return err
+	}
+
+	existedInfo, err := task.GetPingInfoFromDB(ctx, info.SupernodeID)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving existed ping info")
+		return err
+	}
+
+	inf := GetPingInfoToInsert(existedInfo, &info)
+
+	if store != nil && inf != nil {
+		defer store.CloseHistoryDB(ctx)
+
+		err = store.UpsertPingHistory(*inf)
+		if err != nil {
+			log.WithContext(ctx).
+				WithField("supernode_id", info.SupernodeID).
+				Error("error storing ping history")
+
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+// GetPingInfoFromDB get the ping info from db
+func (task *SHTask) GetPingInfoFromDB(ctx context.Context, supernodeID string) (*types.PingInfo, error) {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return nil, err
+	}
+
+	var info *types.PingInfo
+
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+
+		info, err = store.GetPingInfoBySupernodeID(supernodeID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return &types.PingInfo{}, nil
+			}
+
+			log.WithContext(ctx).
+				WithField("supernode_id", info.SupernodeID).
+				Error("error retrieving ping history")
+
+			return nil, err
+		}
+	}
+
+	return info, nil
+}
+
+// GetPingInfoToInsert finalise the ping info after comparing the existed and new info that needs to be inserted/updated
+func GetPingInfoToInsert(existedInfo, info *types.PingInfo) *types.PingInfo {
+	if existedInfo == nil {
+		return nil
+	}
+
+	info.TotalPings = existedInfo.TotalPings + 1
+
+	if !existedInfo.LastSeen.Valid { //for the first row
+		info.LastSeen = sql.NullTime{Time: time.Now().UTC(), Valid: true}
+	} else {
+		twentyMinutesAgo := time.Now().UTC().Add(-20 * time.Minute)
+
+		// Check if the timestamp is before 20 minutes ago
+		if existedInfo.LastSeen.Time.Before(twentyMinutesAgo) {
+			info.IsOnWatchlist = true
+		} else {
+			info.IsOnWatchlist = false
+		}
+	}
+
+	if info.IsOnline {
+		info.TotalSuccessfulPings = existedInfo.TotalSuccessfulPings + 1
+	}
+
+	if !info.IsOnline {
+		info.TotalSuccessfulPings = existedInfo.TotalSuccessfulPings
+		info.LastSeen = existedInfo.LastSeen
+	}
+
+	info.CumulativeResponseTime = existedInfo.CumulativeResponseTime + info.AvgPingResponseTime
+
+	var avgPingResponseTime float64
+	if info.TotalSuccessfulPings != 0 {
+		avgPingResponseTime = info.CumulativeResponseTime / float64(info.TotalSuccessfulPings)
+	}
+	info.AvgPingResponseTime = avgPingResponseTime
+
+	return info
 }
