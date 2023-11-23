@@ -75,7 +75,8 @@ func (service *SenseRegistrationService) GetTask(id string) *SenseRegistrationTa
 
 // ValidateUser validates the user by the given id and pass.
 func (service *SenseRegistrationService) ValidateUser(ctx context.Context, id string, pass string) bool {
-	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass)
+	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass) &&
+		common.IsPastelIDTicketRegistered(ctx, service.pastelHandler.PastelClient, id)
 }
 
 // AddTask create ticket request and start a new task with the given payload

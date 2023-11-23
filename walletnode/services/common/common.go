@@ -11,3 +11,9 @@ func ValidateUser(ctx context.Context, pc pastel.Client, id string, pass string)
 	_, err := pc.Sign(ctx, []byte("data"), id, pass, pastel.SignAlgorithmED448)
 	return err == nil
 }
+
+// IsPastelIDTicketRegistered validates if the user has a valid registered pastelID ticket
+func IsPastelIDTicketRegistered(ctx context.Context, pc pastel.Client, id string) bool {
+	idTicket, err := pc.FindTicketByID(ctx, id)
+	return err == nil && idTicket.PastelID == id
+}
