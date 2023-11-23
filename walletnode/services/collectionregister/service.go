@@ -68,7 +68,8 @@ func (service *CollectionRegistrationService) AddTask(p *collection.RegisterColl
 
 // ValidateUser validates user
 func (service *CollectionRegistrationService) ValidateUser(ctx context.Context, id string, pass string) bool {
-	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass)
+	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass) &&
+		common.IsPastelIDTicketRegistered(ctx, service.pastelHandler.PastelClient, id)
 }
 
 // NewService returns a new Service instance
