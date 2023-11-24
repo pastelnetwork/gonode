@@ -54,7 +54,8 @@ func (service *NftDownloadingService) Tasks() []*NftDownloadingTask {
 
 // ValidateUser validates the user by the given id and pass.
 func (service *NftDownloadingService) ValidateUser(ctx context.Context, id string, pass string) bool {
-	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass)
+	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass) &&
+		common.IsPastelIDTicketRegistered(ctx, service.pastelHandler.PastelClient, id)
 }
 
 // GetTask returns the task of the NFT downloading by the given id.

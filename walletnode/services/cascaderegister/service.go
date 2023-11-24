@@ -80,7 +80,8 @@ func (service *CascadeRegistrationService) GetTask(id string) *CascadeRegistrati
 
 // ValidateUser validates user
 func (service *CascadeRegistrationService) ValidateUser(ctx context.Context, id string, pass string) bool {
-	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass)
+	return common.ValidateUser(ctx, service.pastelHandler.PastelClient, id, pass) &&
+		common.IsPastelIDTicketRegistered(ctx, service.pastelHandler.PastelClient, id)
 }
 
 // AddTask create ticket request and start a new task with the given payload
