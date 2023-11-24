@@ -148,7 +148,7 @@ type Client interface {
 	// RegisterActTicket activates an registered NFT ticket
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
 	// Return txid of NFTActivateTicket
-	RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error)
+	ActivateNftTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string, spendableAddress string) (string, error)
 
 	// FindTicketByID returns the register ticket of pastelid
 	// Command `tickets find id <pastelid>`

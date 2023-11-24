@@ -544,6 +544,7 @@ func (client *client) ActivateActionTicket(ctx context.Context, request Activate
 	params = append(params, fmt.Sprint(request.Fee))
 	params = append(params, request.PastelID)
 	params = append(params, request.Passphrase)
+	params = append(params, request.SpendableAddress)
 
 	// command : tickets activate action "txid-of-action-reg-ticket" called_at_height-from_action-reg-ticket fee "PastelID-of-the-caller" "passphrase"
 	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
@@ -582,19 +583,24 @@ func (client *client) FindActByRegTxid(ctx context.Context, regTxid string) (*ID
 	return &ticket, nil
 }
 
-func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error) {
+func (client *client) ActivateNftTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64,
+	pastelID string, passphrase string,
+	spendableAddress string) (string, error) {
 	var txID struct {
 		TxID string `json:"txid"`
 	}
 
 	params := []interface{}{}
-	params = append(params, "register")
-	params = append(params, "act")
+	params = append(params, "activate")
+	params = append(params, "nft")
 	params = append(params, regTicketTxid)
 	params = append(params, fmt.Sprint(artistHeight))
 	params = append(params, fee)
 	params = append(params, pastelID)
 	params = append(params, passphrase)
+	if spendableAddress != "" {
+		params = append(params, spendableAddress)
+	}
 
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
 	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {

@@ -413,7 +413,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	// activate reg-nft ticket at previous step
 	// Send Activation ticket and Registration Fee (cNode API)
-	activateTxID, err := task.registerActTicket(ctx)
+	activateTxID, err := task.activateNftTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error registering act ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -857,13 +857,11 @@ func (task *NftRegistrationTask) sendSignedTicket(ctx context.Context) error {
 	return nil
 }
 
-func (task *NftRegistrationTask) registerActTicket(ctx context.Context) (string, error) {
-	return task.service.pastelHandler.PastelClient.RegisterActTicket(ctx,
-		task.regNFTTxid,
-		task.creatorBlockHeight,
+func (task *NftRegistrationTask) activateNftTicket(ctx context.Context) (string, error) {
+	return task.service.pastelHandler.PastelClient.ActivateNftTicket(ctx, task.regNFTTxid, task.creatorBlockHeight,
 		task.registrationFee,
-		task.Request.CreatorPastelID,
-		task.Request.CreatorPastelIDPassphrase)
+		task.Request.CreatorPastelID, task.Request.CreatorPastelIDPassphrase,
+		task.Request.SpendableAddress)
 }
 
 // Step 13 - 14

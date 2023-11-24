@@ -208,9 +208,10 @@ type RegisterActionRequest struct {
 
 // ActivateActionRequest - represents request to activate an action ticket
 type ActivateActionRequest struct {
-	RegTxID    string
-	BlockNum   int
-	Fee        int64
-	PastelID   string
-	Passphrase string
+	RegTxID          string
+	BlockNum         int
+	Fee              int64
+	PastelID         string
+	Passphrase       string
+	SpendableAddress string
 }

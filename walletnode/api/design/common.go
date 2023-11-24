@@ -162,6 +162,14 @@ var StartProcessingPayload = Type("StartProcessingPayload", func() {
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
+	Attribute("spendable_address", String, func() {
+		Description("Address to use for registration fee ")
+		Meta("struct:field:name", "SpendableAddress")
+		MinLength(35)
+		MaxLength(35)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j")
+	})
 	APIKey("api_key", "key", String, func() {
 		Description("Passphrase of the owner's PastelID")
 		Example("Basic abcdef12345")
