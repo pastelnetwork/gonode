@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultTimerBlockCheckDuration    = 10 * time.Second
+	defaultTimerBlockCheckDuration    = 5 * time.Minute
 	defaultFetchNodesPingInfoInterval = 60 * time.Second
 )
 
@@ -81,14 +81,11 @@ func (service *SHService) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-time.After(defaultTimerBlockCheckDuration):
+			newCtx := context.Background()
+			task := service.NewSHTask()
+			task.SelfHealingWorker(newCtx)
 
-			if service.CheckNextBlockAvailable(ctx) {
-				//newCtx := context.Background()
-				//task := service.NewSCTask()
-				//task.ExecuteFileHealingWorker(newCtx)
-
-				log.WithContext(ctx).Debug("Would normally invoke a self-healing worker")
-			}
+			log.WithContext(ctx).Debug("Would normally invoke a self-healing worker")
 		case <-ctx.Done():
 			log.Println("Context done being called in file-healing worker")
 			return nil
@@ -128,6 +125,12 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		pastelHandler:    mixins.NewPastelHandler(pastelClient),
 		historyDB:        historyDB,
 	}
+}
+
+// GetNClosestSupernodesToAGivenFileUsingKademlia : Wrapper for a utility function that accesses kademlia's distributed hash table to determine which nodes should be closest to a given string (hence hosting it)
+func (service *SHService) GetNClosestSupernodesToAGivenFileUsingKademlia(ctx context.Context, n int, comparisonString string, ignores ...string) []string {
+	log.WithContext(ctx).WithField("file_hash", comparisonString).Info("file_hash against which closest sns required")
+	return service.P2PClient.NClosestNodes(ctx, n, comparisonString, ignores...)
 }
 
 // MapSymbolFileKeysFromNFTAndActionTickets : Get an NFT and Action Ticket's associated raptor q ticket file id's and creates a map of them
