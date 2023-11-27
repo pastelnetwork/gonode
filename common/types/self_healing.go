@@ -21,3 +21,6 @@ type PingInfo struct {
 	CreatedAt              time.Time    `db:"created_at"`
 	UpdatedAt              time.Time    `db:"updated_at"`
 }
+
+// PingInfos represents array of ping info
+type PingInfos []PingInfo

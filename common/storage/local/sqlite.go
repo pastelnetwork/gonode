@@ -230,6 +230,42 @@ func (s *SQLiteStore) GetPingInfoBySupernodeID(supernodeID string) (*types.PingI
 	return &pingInfo, nil
 }
 
+// GetWatchlistPingInfo retrieves all the nodes that are on watchlist
+func (s *SQLiteStore) GetWatchlistPingInfo() ([]types.PingInfo, error) {
+	const selectQuery = `
+        SELECT id, supernode_id, ip_address, total_pings, total_successful_pings,
+               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen,
+               created_at, updated_at
+        FROM ping_history
+        WHERE is_on_watchlist = true AND is_adjusted = false;`
+
+	rows, err := s.db.Query(selectQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pingInfos types.PingInfos
+	for rows.Next() {
+		var pingInfo types.PingInfo
+		if err := rows.Scan(
+			&pingInfo.ID, &pingInfo.SupernodeID, &pingInfo.IPAddress, &pingInfo.TotalPings,
+			&pingInfo.TotalSuccessfulPings, &pingInfo.AvgPingResponseTime,
+			&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen,
+			&pingInfo.CreatedAt, &pingInfo.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		pingInfos = append(pingInfos, pingInfo)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return pingInfos, nil
+}
+
 // InsertBroadcastMessage inserts broadcast storage challenge msg to db
 func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage) error {
 	now := time.Now().UTC()
