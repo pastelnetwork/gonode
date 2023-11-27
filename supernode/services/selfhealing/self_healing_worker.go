@@ -46,7 +46,7 @@ func (task *SHTask) SelfHealingWorker(ctx context.Context) error {
 		return errors.Errorf("no of nodes on the watchlist are not sufficient for further processing")
 	}
 
-	keys, _, err := task.ListSymbolFileKeysFromNFTAndActionTickets(ctx)
+	keys, symbolFileKeyMap, err := task.ListSymbolFileKeysFromNFTAndActionTickets(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error retrieving symbol file keys from NFT & action tickets")
 		return errors.Errorf("error retrieving symbol file keys")
@@ -57,6 +57,9 @@ func (task *SHTask) SelfHealingWorker(ctx context.Context) error {
 		log.WithContext(ctx).Error("unable to create map of closest nodes against keys")
 	}
 
+	selfHealingTicketsMap := task.identifySelfHealingTickets(ctx, watchlistPingInfos, mapOfClosestNodesAgainstKeys, symbolFileKeyMap)
+
+	log.WithContext(ctx).WithField("self_healing_tickets", selfHealingTicketsMap).Info("self-healing tickets have been identified")
 	return nil
 }
 
@@ -195,4 +198,38 @@ func (task *SHTask) identifyClosestNodes(ctx context.Context, key string) []stri
 
 	logger.Info("closest nodes against the key has been retrieved")
 	return closestNodes
+}
+
+func (task *SHTask) identifySelfHealingTickets(ctx context.Context, watchlistPingInfos types.PingInfos, keyClosestNodesMap map[string][]string, symbolFileKeyMap map[string]SymbolFileKeyType) map[string]SymbolFileKeyType {
+	log.WithContext(ctx).Info("identifying tickets for self healing")
+	selfHealingTicketsMap := make(map[string]SymbolFileKeyType)
+
+	for key, closestNodes := range keyClosestNodesMap {
+		if task.requireSelfHealing(closestNodes, watchlistPingInfos) {
+			ticketDetails := symbolFileKeyMap[key]
+			selfHealingTicketsMap[ticketDetails.TicketTxID] = SymbolFileKeyType{TicketType: ticketDetails.TicketType}
+		}
+	}
+
+	return selfHealingTicketsMap
+}
+
+func (task *SHTask) requireSelfHealing(closestNodes []string, watchlistPingInfos types.PingInfos) bool {
+	for _, nodeID := range closestNodes {
+		if !task.isOnWatchlist(nodeID, watchlistPingInfos) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (task *SHTask) isOnWatchlist(nodeID string, watchlistPingInfos types.PingInfos) bool {
+	for _, info := range watchlistPingInfos {
+		if nodeID == info.SupernodeID {
+			return true
+		}
+	}
+
+	return false
 }
