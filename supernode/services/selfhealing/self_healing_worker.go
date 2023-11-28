@@ -3,6 +3,7 @@ package selfhealing
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/pastelnetwork/gonode/pastel"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -25,9 +26,11 @@ const (
 	nftTicketType
 )
 
-// SymbolFileKeyType is a struct represents the type of ticket and its txid
-type SymbolFileKeyType struct {
+// SymbolFileKeyDetails is a struct represents with all the symbol file key details
+type SymbolFileKeyDetails struct {
 	TicketTxID string
+	Keys       []string
+	DataHash   string
 	TicketType
 }
 
@@ -40,26 +43,36 @@ func (task *SHTask) SelfHealingWorker(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("retrieveWatchlistPingInfo")
 		return errors.Errorf("error retrieving watchlist ping info")
 	}
+	log.WithContext(ctx).Info("watchlist ping history has been retrieved")
 
 	if len(watchlistPingInfos) < watchlistThreshold {
 		log.WithContext(ctx).WithField("no_of_nodes_on_watchlist", len(watchlistPingInfos)).Info("not enough nodes on the watchlist, skipping further processing")
-		return errors.Errorf("no of nodes on the watchlist are not sufficient for further processing")
+		return nil
 	}
+	log.WithContext(ctx).Info("watchlist threshold has been reached, proceeding forward")
 
 	keys, symbolFileKeyMap, err := task.ListSymbolFileKeysFromNFTAndActionTickets(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error retrieving symbol file keys from NFT & action tickets")
 		return errors.Errorf("error retrieving symbol file keys")
 	}
+	log.WithContext(ctx).Info("all the keys from NFT and action tickets have been listed")
 
 	mapOfClosestNodesAgainstKeys := task.createClosestNodesMapAgainstKeys(ctx, keys)
 	if len(mapOfClosestNodesAgainstKeys) == 0 {
 		log.WithContext(ctx).Error("unable to create map of closest nodes against keys")
 	}
+	log.WithContext(ctx).Info("map of closest nodes against keys have been created")
 
 	selfHealingTicketsMap := task.identifySelfHealingTickets(ctx, watchlistPingInfos, mapOfClosestNodesAgainstKeys, symbolFileKeyMap)
-
 	log.WithContext(ctx).WithField("self_healing_tickets", selfHealingTicketsMap).Info("self-healing tickets have been identified")
+
+	challengeRecipientMap, err := task.identifyChallengeRecipients(ctx, selfHealingTicketsMap)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error identifying challenge recipients")
+	}
+	log.WithContext(ctx).WithField("challenge_recipients", challengeRecipientMap).Info("challenge recipients have been identified")
+
 	return nil
 }
 
@@ -92,9 +105,9 @@ func (task *SHTask) retrieveWatchlistPingInfo(ctx context.Context) (types.PingIn
 }
 
 // ListSymbolFileKeysFromNFTAndActionTickets : Get an NFT and Action Ticket's associated raptor q ticket file id's.
-func (service *SHService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.Context) ([]string, map[string]SymbolFileKeyType, error) {
+func (service *SHService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.Context) ([]string, map[string]SymbolFileKeyDetails, error) {
 	var keys = make([]string, 0)
-	symbolFileKeyMap := make(map[string]SymbolFileKeyType)
+	symbolFileKeyMap := make(map[string]SymbolFileKeyDetails)
 
 	regTickets, err := service.SuperNodeService.PastelClient.RegTickets(ctx)
 	if err != nil {
@@ -117,7 +130,7 @@ func (service *SHService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 		RQIDs := regTickets[i].RegTicketData.NFTTicketData.AppTicketData.RQIDs
 
 		for j := 0; j < len(RQIDs); j++ {
-			symbolFileKeyMap[RQIDs[j]] = SymbolFileKeyType{TicketTxID: regTickets[i].TXID, TicketType: nftTicketType}
+			symbolFileKeyMap[RQIDs[j]] = SymbolFileKeyDetails{TicketTxID: regTickets[i].TXID, TicketType: nftTicketType}
 			keys = append(keys, RQIDs[j])
 		}
 
@@ -151,7 +164,7 @@ func (service *SHService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 			}
 
 			for j := 0; j < len(cascadeTicket.RQIDs); j++ {
-				symbolFileKeyMap[cascadeTicket.RQIDs[j]] = SymbolFileKeyType{TicketTxID: actionTickets[i].TXID, TicketType: cascadeTicketType}
+				symbolFileKeyMap[cascadeTicket.RQIDs[j]] = SymbolFileKeyDetails{TicketTxID: actionTickets[i].TXID, TicketType: cascadeTicketType}
 				keys = append(keys, cascadeTicket.RQIDs[j])
 			}
 		case pastel.ActionTypeSense:
@@ -163,7 +176,7 @@ func (service *SHService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 			}
 
 			for j := 0; j < len(senseTicket.DDAndFingerprintsIDs); j++ {
-				symbolFileKeyMap[senseTicket.DDAndFingerprintsIDs[j]] = SymbolFileKeyType{TicketTxID: actionTickets[i].TXID, TicketType: senseTicketType}
+				symbolFileKeyMap[senseTicket.DDAndFingerprintsIDs[j]] = SymbolFileKeyDetails{TicketTxID: actionTickets[i].TXID, TicketType: senseTicketType}
 				keys = append(keys, senseTicket.DDAndFingerprintsIDs[j])
 			}
 		}
@@ -200,14 +213,22 @@ func (task *SHTask) identifyClosestNodes(ctx context.Context, key string) []stri
 	return closestNodes
 }
 
-func (task *SHTask) identifySelfHealingTickets(ctx context.Context, watchlistPingInfos types.PingInfos, keyClosestNodesMap map[string][]string, symbolFileKeyMap map[string]SymbolFileKeyType) map[string]SymbolFileKeyType {
+func (task *SHTask) identifySelfHealingTickets(ctx context.Context, watchlistPingInfos types.PingInfos, keyClosestNodesMap map[string][]string, symbolFileKeyMap map[string]SymbolFileKeyDetails) map[string]SymbolFileKeyDetails {
 	log.WithContext(ctx).Info("identifying tickets for self healing")
-	selfHealingTicketsMap := make(map[string]SymbolFileKeyType)
+	selfHealingTicketsMap := make(map[string]SymbolFileKeyDetails)
 
 	for key, closestNodes := range keyClosestNodesMap {
 		if task.requireSelfHealing(closestNodes, watchlistPingInfos) {
 			ticketDetails := symbolFileKeyMap[key]
-			selfHealingTicketsMap[ticketDetails.TicketTxID] = SymbolFileKeyType{TicketType: ticketDetails.TicketType}
+			selfHealingTicketsMap[ticketDetails.TicketTxID] = SymbolFileKeyDetails{
+				TicketType: ticketDetails.TicketType,
+			}
+
+			selfHealingTicketDetails := selfHealingTicketsMap[ticketDetails.TicketTxID]
+			selfHealingTicketDetails.Keys = append(selfHealingTicketDetails.Keys, key)
+			selfHealingTicketsMap[ticketDetails.TicketTxID] = selfHealingTicketDetails
+
+			log.WithContext(ctx).WithField("ticket_tx_id", ticketDetails.TicketTxID).Info("ticket added for self healing")
 		}
 	}
 
@@ -232,4 +253,156 @@ func (task *SHTask) isOnWatchlist(nodeID string, watchlistPingInfos types.PingIn
 	}
 
 	return false
+}
+
+func (task *SHTask) identifyChallengeRecipients(ctx context.Context, selfHealingTicketsMap map[string]SymbolFileKeyDetails) (map[string][]SymbolFileKeyDetails, error) {
+	challengeRecipientMap := make(map[string][]SymbolFileKeyDetails)
+	for txID, ticketDetails := range selfHealingTicketsMap {
+		logger := log.WithContext(ctx).WithField("TxID", txID)
+
+		nftTicket, cascadeTicket, senseTicket, err := task.getTicket(ctx, txID, ticketDetails.TicketType)
+		if err != nil {
+			logger.WithError(err).Error("unable to retrieve NFT or action ticket from ticket details")
+			continue
+		}
+
+		dataHash, err := task.getDataHash(nftTicket, cascadeTicket, senseTicket, ticketDetails.TicketType)
+		if err != nil {
+			logger.WithError(err).Error("unable to retrieve data hash from ticket details")
+			continue
+		}
+
+		challengeRecipients := task.SHService.GetNClosestSupernodeIDsToComparisonString(ctx, 1, string(dataHash), nil)
+		if len(challengeRecipients) < 1 {
+			log.WithContext(ctx).WithField("file_hash", dataHash).Info("no closest nodes have found against the file")
+			continue
+		}
+		recipient := challengeRecipients[0]
+
+		challengeRecipientMap[recipient] = append(challengeRecipientMap[recipient], SymbolFileKeyDetails{
+			TicketTxID: ticketDetails.TicketTxID,
+			TicketType: ticketDetails.TicketType,
+			Keys:       ticketDetails.Keys,
+			DataHash:   string(dataHash),
+		})
+	}
+
+	return challengeRecipientMap, nil
+}
+
+func (task *SHTask) getTicket(ctx context.Context, txID string, ticketType TicketType) (*pastel.NFTTicket, *pastel.APICascadeTicket, *pastel.APISenseTicket, error) {
+	logger := log.WithContext(ctx).WithField("TxID", txID)
+
+	switch ticketType {
+	case nftTicketType:
+		nftTicket, err := task.getNFTTicket(ctx, txID)
+		if err != nil {
+			logger.WithError(err).Error("error retrieving nft ticket")
+			return nil, nil, nil, err
+		}
+
+		return nftTicket, nil, nil, nil
+	case cascadeTicketType:
+		cascadeTicket, err := task.getCascadeTicket(ctx, txID)
+		if err != nil {
+			logger.WithError(err).Error("error retrieving cascade ticket")
+			return nil, nil, nil, err
+		}
+
+		return nil, cascadeTicket, nil, nil
+	case senseTicketType:
+		senseTicket, err := task.getSenseTicket(ctx, txID)
+		if err != nil {
+			logger.WithError(err).Error("error retrieving sense ticket")
+			return nil, nil, nil, err
+		}
+
+		return nil, nil, senseTicket, nil
+	}
+
+	return nil, nil, nil, errors.Errorf("not a valid NFT or action ticket")
+}
+
+func (task *SHTask) getSenseTicket(ctx context.Context, txID string) (*pastel.APISenseTicket, error) {
+	regTicket, err := task.pastelHandler.PastelClient.ActionRegTicket(ctx, txID)
+	if err != nil {
+		return nil, fmt.Errorf("not valid TxID for sense reg ticket")
+	}
+
+	if regTicket.ActionTicketData.ActionType != pastel.ActionTypeSense {
+		return nil, fmt.Errorf("not valid sense ticket")
+	}
+
+	decTicket, err := pastel.DecodeActionTicket(regTicket.ActionTicketData.ActionTicket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode reg sense ticket")
+	}
+
+	regTicket.ActionTicketData.ActionTicketData = *decTicket
+
+	senseTicket, err := regTicket.ActionTicketData.ActionTicketData.APISenseTicket()
+	if err != nil {
+		return nil, fmt.Errorf("failed to typecast sense ticket: %w", err)
+	}
+
+	return senseTicket, nil
+}
+
+func (task *SHTask) getCascadeTicket(ctx context.Context, txID string) (*pastel.APICascadeTicket, error) {
+	regTicket, err := task.pastelHandler.PastelClient.ActionRegTicket(ctx, txID)
+	if err != nil {
+		return nil, fmt.Errorf("not valid TxID for cascade reg ticket")
+	}
+
+	if regTicket.ActionTicketData.ActionType != pastel.ActionTypeCascade {
+		return nil, fmt.Errorf("not valid cascade ticket")
+	}
+
+	decTicket, err := pastel.DecodeActionTicket(regTicket.ActionTicketData.ActionTicket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode reg cascade ticket")
+	}
+
+	regTicket.ActionTicketData.ActionTicketData = *decTicket
+
+	cascadeTicket, err := regTicket.ActionTicketData.ActionTicketData.APICascadeTicket()
+	if err != nil {
+		return nil, fmt.Errorf("failed to typecast cascade ticket: %w", err)
+	}
+
+	return cascadeTicket, nil
+}
+
+func (task *SHTask) getNFTTicket(ctx context.Context, txID string) (*pastel.NFTTicket, error) {
+	regTicket, err := task.pastelHandler.PastelClient.RegTicket(ctx, txID)
+	if err != nil {
+		return nil, fmt.Errorf("not valid TxID for nft reg ticket")
+	}
+
+	decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode reg nft ticket")
+	}
+	regTicket.RegTicketData.NFTTicketData = *decTicket
+
+	return &regTicket.RegTicketData.NFTTicketData, nil
+}
+
+func (task *SHTask) getDataHash(nftTicket *pastel.NFTTicket, cascadeTicket *pastel.APICascadeTicket, senseTicket *pastel.APISenseTicket, ticketType TicketType) ([]byte, error) {
+	switch ticketType {
+	case nftTicketType:
+		if nftTicket != nil {
+			return nftTicket.AppTicketData.DataHash, nil
+		}
+	case cascadeTicketType:
+		if cascadeTicket != nil {
+			return cascadeTicket.DataHash, nil
+		}
+	case senseTicketType:
+		if senseTicket != nil {
+			return senseTicket.DataHash, nil
+		}
+	}
+
+	return nil, errors.Errorf("data hash cannot be found because of missing ticket details")
 }
