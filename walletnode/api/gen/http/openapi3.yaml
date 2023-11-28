@@ -1665,6 +1665,7 @@ paths:
                             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                             burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                             make_publicly_accessible: false
+                            spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
             responses:
                 "201":
                     description: Created response.
@@ -1995,6 +1996,7 @@ paths:
                             burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                             collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                             open_api_group_id: Aliquam quia ullam officia nihil repudiandae.
+                            spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
             responses:
                 "201":
                     description: Created response.
@@ -4614,10 +4616,18 @@ components:
                     description: To make it publicly accessible
                     default: false
                     example: false
+                spendable_address:
+                    type: string
+                    description: 'Address to use for registration fee '
+                    example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                    pattern: ^[a-zA-Z0-9]+$
+                    minLength: 35
+                    maxLength: 35
             example:
                 app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 make_publicly_accessible: false
+                spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
             required:
                 - burn_txid
                 - app_pastelid
@@ -4646,11 +4656,19 @@ components:
                     description: OpenAPI GroupID string
                     default: PASTEL
                     example: Consequuntur voluptas.
+                spendable_address:
+                    type: string
+                    description: 'Address to use for registration fee '
+                    example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                    pattern: ^[a-zA-Z0-9]+$
+                    minLength: 35
+                    maxLength: 35
             example:
                 app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                 burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 open_api_group_id: Quibusdam voluptatem quam itaque libero.
+                spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
             required:
                 - burn_txid
                 - app_pastelid

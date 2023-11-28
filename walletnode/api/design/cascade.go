@@ -203,6 +203,14 @@ var StartCascadeProcessingPayload = Type("StartCascadeProcessingPayload", func()
 		Default(false)
 
 	})
+	Attribute("spendable_address", String, func() {
+		Meta("struct:field:name", "SpendableAddress")
+		Description("Address to use for registration fee ")
+		MinLength(35)
+		MaxLength(35)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j")
+	})
 	APIKey("api_key", "key", String, func() {
 		Description("Passphrase of the owner's PastelID")
 		Example("Basic abcdef12345")

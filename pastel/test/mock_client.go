@@ -33,8 +33,8 @@ const (
 	// RegTicketMethod represent RegTicket name method
 	RegTicketMethod = "RegTicket"
 
-	// RegisterActTicketMethod is method name of act ticket register
-	RegisterActTicketMethod = "RegisterActTicket"
+	// ActivateNftTicketMethod is method name of act ticket register
+	ActivateNftTicketMethod = "ActivateNftTicket"
 
 	// RegTicketsMethod represent RegTickets name method
 	RegTicketsMethod = "RegTickets"
@@ -361,7 +361,7 @@ func (client *Client) ListenOnRegisterNftTicket(retID string, retErr error) *Cli
 
 // ListenOnRegisterActTicket listenes register art ticket & return id & err
 func (client *Client) ListenOnRegisterActTicket(retID string, retErr error) *Client {
-	client.On(RegisterActTicketMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+	client.On(ActivateNftTicketMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything).Return(retID, retErr)
 	return client
 }

@@ -492,11 +492,12 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 
 func (task *CascadeRegistrationTask) activateActionTicket(ctx context.Context) (string, error) {
 	request := pastel.ActivateActionRequest{
-		RegTxID:    task.regCascadeTxid,
-		BlockNum:   task.creatorBlockHeight,
-		Fee:        task.registrationFee,
-		PastelID:   task.Request.AppPastelID,
-		Passphrase: task.Request.AppPastelIDPassphrase,
+		RegTxID:          task.regCascadeTxid,
+		BlockNum:         task.creatorBlockHeight,
+		Fee:              task.registrationFee,
+		PastelID:         task.Request.AppPastelID,
+		Passphrase:       task.Request.AppPastelIDPassphrase,
+		SpendableAddress: task.Request.SpendableAddress,
 	}
 
 	return task.service.pastelHandler.PastelClient.ActivateActionTicket(ctx, request)

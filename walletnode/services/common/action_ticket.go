@@ -22,4 +22,6 @@ type ActionRegistrationRequest struct {
 	CollectionTxID string `json:"collection_txid"`
 	// GroupID to add it into the collection
 	GroupID string `json:"group_id"`
+	// SpendableAddress to use for registration fee
+	SpendableAddress string `json:"spendable_address"`
 }

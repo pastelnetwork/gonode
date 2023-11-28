@@ -15,8 +15,8 @@ replace (
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.2
-	github.com/google/uuid v1.3.1
-	github.com/gorilla/websocket v1.5.0
+	github.com/google/uuid v1.4.0
+	github.com/gorilla/websocket v1.5.1
 	github.com/json-iterator/go v1.1.12
 	github.com/pastelnetwork/gonode/bridge v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/common v0.0.0-20230829114806-701c926c0c44
@@ -26,11 +26,11 @@ require (
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-00010101000000-000000000000
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/stretchr/testify v1.8.4
-	goa.design/goa/v3 v3.13.1
+	goa.design/goa/v3 v3.14.0
 	goa.design/plugins/v3 v3.13.1
-	golang.org/x/crypto v0.13.0
-	golang.org/x/sync v0.3.0
-	google.golang.org/grpc v1.58.2
+	golang.org/x/crypto v0.15.0
+	golang.org/x/sync v0.5.0
+	google.golang.org/grpc v1.59.0
 )
 
 require (
@@ -81,14 +81,14 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/image v0.14.0 // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
-	golang.org/x/term v0.12.0 // indirect
+	golang.org/x/mod v0.14.0 // indirect
+	golang.org/x/net v0.18.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/term v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.13.0 // indirect
+	golang.org/x/tools v0.15.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect

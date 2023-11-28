@@ -12,5 +12,6 @@ func FromStartProcessingPayload(payload *cascade.StartProcessingPayload) *common
 		AppPastelID:            payload.AppPastelID,
 		AppPastelIDPassphrase:  payload.Key,
 		MakePubliclyAccessible: payload.MakePubliclyAccessible,
+		SpendableAddress:       *payload.SpendableAddress,
 	}
 }
