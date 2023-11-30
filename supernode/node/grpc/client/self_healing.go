@@ -80,7 +80,7 @@ func (service *selfHealingGRPCClient) Ping(ctx context.Context, pingRequest *pb.
 	return res, nil
 }
 
-func (service *selfHealingGRPCClient) ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) error {
+func (service *selfHealingGRPCClient) ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingMessage) error {
 	ctx = contextWithLogPrefix(ctx, service.conn.id)
 	ctx = contextWithMDSessID(ctx, service.sessID)
 	_, err := service.client.ProcessSelfHealingChallenge(ctx, &pb.ProcessSelfHealingChallengeRequest{

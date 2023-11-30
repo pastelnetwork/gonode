@@ -120,7 +120,7 @@ type SelfHealingChallengeInterface interface {
 
 	Ping(ctx context.Context, pingRequest *pb.PingRequest) (*pb.PingResponse, error)
 
-	ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) error
+	ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingMessage) error
 
 	VerifySelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) (*pb.SelfHealingData, error)
 }

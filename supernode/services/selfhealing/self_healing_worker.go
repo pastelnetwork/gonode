@@ -4,12 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/pastelnetwork/gonode/pastel"
+	"time"
 
+	"github.com/google/uuid"
+	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/pastel"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
 const (
@@ -31,7 +35,7 @@ type SymbolFileKeyDetails struct {
 	TicketTxID string
 	Keys       []string
 	DataHash   string
-	TicketType
+	TicketType TicketType
 }
 
 // SelfHealingWorker checks the ping info and decide self-healing files
@@ -72,6 +76,10 @@ func (task *SHTask) SelfHealingWorker(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error identifying challenge recipients")
 	}
 	log.WithContext(ctx).WithField("challenge_recipients", challengeRecipientMap).Info("challenge recipients have been identified")
+
+	if err := task.prepareAndSendSelfHealingMessage(ctx, challengeRecipientMap); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error sending self-healing messages")
+	}
 
 	return nil
 }
@@ -405,4 +413,144 @@ func (task *SHTask) getDataHash(nftTicket *pastel.NFTTicket, cascadeTicket *past
 	}
 
 	return nil, errors.Errorf("data hash cannot be found because of missing ticket details")
+}
+
+func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challengeRecipientMap map[string][]SymbolFileKeyDetails) error {
+	log.WithContext(ctx).WithField("method", "prepareAndSendSelfHealingMessage").Info("method has been invoked")
+
+	log.WithContext(ctx).Info("retrieving block no and verbose")
+	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("could not get current block count")
+		return err
+	}
+	blkVerbose1, err := task.SuperNodeService.PastelClient.GetBlockVerbose1(ctx, currentBlockCount)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("could not get current block verbose 1")
+		return err
+	}
+	merkleroot := blkVerbose1.MerkleRoot
+
+	for challengeRecipient, ticketsDetails := range challengeRecipientMap {
+		msgData := types.SelfHealingMessageData{
+			ChallengerID: task.nodeID,
+			RecipientID:  challengeRecipient,
+			Challenge: types.SelfHealingChallengeData{
+				Block:      currentBlockCount,
+				Merkelroot: merkleroot,
+				Timestamp:  time.Now().UTC(),
+				Tickets:    getTicketsForSelfHealingChallengeMessage(ticketsDetails),
+			},
+		}
+
+		shMsg := types.SelfHealingMessage{
+			ChallengeID:            uuid.NewString(),
+			MessageType:            types.SelfHealingChallengeMessage,
+			SelfHealingMessageData: msgData,
+			SenderID:               task.nodeID,
+		}
+
+		node, err := task.GetNodeToConnect(ctx, shMsg.SelfHealingMessageData.RecipientID)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error getting node to connect")
+			continue
+		}
+
+		if err := task.SendMessage(ctx, shMsg, node.ExtAddress); err != nil {
+			log.WithContext(ctx).WithField("challenge_id", shMsg.ChallengeID).WithError(err).Error("unable to send challenge msg")
+			continue
+		}
+	}
+	log.WithContext(ctx).Info("self-healing messages have been sent")
+
+	return nil
+}
+
+func getTicketsForSelfHealingChallengeMessage(ticketDetails []SymbolFileKeyDetails) []types.Ticket {
+	var challengeTickets []types.Ticket
+	for _, detail := range ticketDetails {
+		challengeTickets = append(challengeTickets, types.Ticket{
+			TxID:        detail.TicketTxID,
+			TicketType:  types.TicketType(detail.TicketType),
+			DataHash:    detail.DataHash,
+			MissingKeys: detail.Keys,
+		})
+	}
+
+	return challengeTickets
+}
+
+// SignMessage signs the message using sender's pastelID and passphrase
+func (task *SHTask) SignMessage(ctx context.Context, data types.SelfHealingMessageData) (sig []byte, dat []byte, err error) {
+	d, err := json.Marshal(data)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error marshaling the data")
+	}
+
+	signature, err := task.PastelClient.Sign(ctx, d, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		return nil, nil, errors.Errorf("error signing storage challenge message: %w", err)
+	}
+
+	return signature, d, nil
+}
+
+// GetNodeToConnect gets the node detail from the nodeID
+func (task *SHTask) GetNodeToConnect(ctx context.Context, nodeID string) (*pastel.MasterNode, error) {
+	supernodes, err := task.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithField("method", "FetchAndMaintainPingInfo").WithError(err).Warn("could not get Supernode extra: ", err.Error())
+		return nil, err
+	}
+
+	mapSupernodes := make(map[string]pastel.MasterNode)
+	for _, mn := range supernodes {
+		if mn.ExtAddress == "" || mn.ExtKey == "" {
+			log.WithContext(ctx).WithField("method", "FetchAndMaintainPingInfo").
+				WithField("node_id", mn.ExtKey).Warn("node address or node id is empty")
+
+			continue
+		}
+
+		mapSupernodes[mn.ExtKey] = mn
+	}
+
+	if masternode, ok := mapSupernodes[nodeID]; ok {
+		return &masternode, nil
+	}
+
+	log.WithContext(ctx).WithField("node_id", nodeID).WithError(err).Error("node address does not found")
+	return nil, errors.Errorf("node address not found")
+}
+
+// SendMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
+func (task *SHTask) SendMessage(ctx context.Context, challengeMessage types.SelfHealingMessage, processingSupernodeAddr string) error {
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Info("Sending self-healing challenge to processing supernode address: " + processingSupernodeAddr)
+
+	//Connect over grpc
+	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	if err != nil {
+		err = fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
+		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeID).WithField("method", "sendProcessStorageChallenge").Warn(err.Error())
+		return err
+	}
+	defer nodeClientConn.Close()
+
+	sig, data, err := task.SignMessage(ctx, challengeMessage.SelfHealingMessageData)
+	if err != nil {
+		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).WithError(err).
+			Error("error signing self-healing challenge msg")
+	}
+	challengeMessage.SenderSignature = sig
+
+	msg := &pb.SelfHealingMessage{
+		ChallengeId:     challengeMessage.ChallengeID,
+		MessageType:     pb.SelfHealingMessageMessageType(challengeMessage.MessageType),
+		SenderId:        challengeMessage.SenderID,
+		SenderSignature: challengeMessage.SenderSignature,
+		Data:            data,
+	}
+	selfHealingIF := nodeClientConn.SelfHealingChallenge()
+
+	return selfHealingIF.ProcessSelfHealingChallenge(ctx, msg)
 }

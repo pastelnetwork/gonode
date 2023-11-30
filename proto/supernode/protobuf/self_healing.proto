@@ -60,11 +60,11 @@ message SelfHealingData {
 }
 
 message ProcessSelfHealingChallengeRequest {
-  SelfHealingData data = 1;
+  SelfHealingMessage data = 1;
 }
 
 message ProcessSelfHealingChallengeReply {
-  SelfHealingData data = 1;
+  SelfHealingMessage data = 1;
 }
 
 message VerifySelfHealingChallengeRequest {
@@ -73,4 +73,17 @@ message VerifySelfHealingChallengeRequest {
 
 message VerifySelfHealingChallengeReply {
   SelfHealingData data = 1;
+}
+
+message SelfHealingMessage {
+  enum messageType {
+    MessageType_UNKNOWN = 0;
+    MessageType_SELF_HEALING_CHALLENGE_MESSAGE = 1;
+    MessageType_SELF_HEALING_RESPONSE_MESSAGE = 2;
+  }
+  messageType message_type = 1;
+  string challenge_id = 2;
+  bytes data = 3;
+  string sender_id = 4;
+  bytes sender_signature = 5;
 }
