@@ -12,7 +12,10 @@ func FromStartProcessingPayload(payload *sense.StartProcessingPayload) *common.A
 		AppPastelID:           payload.AppPastelID,
 		AppPastelIDPassphrase: payload.Key,
 		GroupID:               payload.OpenAPIGroupID,
-		SpendableAddress:      *payload.SpendableAddress,
+	}
+
+	if payload.SpendableAddress != nil {
+		req.SpendableAddress = *payload.SpendableAddress
 	}
 
 	if payload.CollectionActTxid != nil {
