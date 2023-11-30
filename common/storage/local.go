@@ -20,5 +20,6 @@ type LocalStoreInterface interface {
 	UpsertPingHistory(pingInfo types.PingInfo) error
 	GetPingInfoBySupernodeID(supernodeID string) (*types.PingInfo, error)
 	GetWatchlistPingInfo() ([]types.PingInfo, error)
+	UpdatePingInfo(supernodeID string) error
 	CloseHistoryDB(ctx context.Context)
 }

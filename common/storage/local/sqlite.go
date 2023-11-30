@@ -266,6 +266,23 @@ func (s *SQLiteStore) GetWatchlistPingInfo() ([]types.PingInfo, error) {
 	return pingInfos, nil
 }
 
+// UpdatePingInfo updates the ping info
+func (s *SQLiteStore) UpdatePingInfo(supernodeID string) error {
+	// Update query
+	const updateQuery = `
+UPDATE ping_history
+SET is_adjusted = true, is_on_watchlist = false
+WHERE supernode_id = ?;`
+
+	// Execute the update query
+	_, err := s.db.Exec(updateQuery, supernodeID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // InsertBroadcastMessage inserts broadcast storage challenge msg to db
 func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage) error {
 	now := time.Now().UTC()
