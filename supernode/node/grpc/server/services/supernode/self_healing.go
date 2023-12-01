@@ -107,7 +107,7 @@ func (service *SelfHealingChallengeGRPC) ProcessSelfHealingChallenge(ctx context
 	log.WithContext(ctx).WithField("req", scRequest).Info("Process self-healing challenge request received from gRpc client")
 
 	task := service.NewSHTask()
-	err := task.ProcessSelfHealingChallenge(ctx, scRequest.Data)
+	err := task.ProcessSelfHealingChallenge(ctx, &pb.SelfHealingData{})
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Processing Self-Healing Challenge from Server Side")
 	}

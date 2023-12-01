@@ -81,6 +81,11 @@ func (task *SHTask) SelfHealingWorker(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error sending self-healing messages")
 	}
 
+	if err := task.updateWatchlist(ctx, watchlistPingInfos); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error updating watchlist ping info")
+	}
+	log.WithContext(ctx).Info("watchlist has been adjusted")
+
 	return nil
 }
 
@@ -553,4 +558,28 @@ func (task *SHTask) SendMessage(ctx context.Context, challengeMessage types.Self
 	selfHealingIF := nodeClientConn.SelfHealingChallenge()
 
 	return selfHealingIF.ProcessSelfHealingChallenge(ctx, msg)
+}
+
+func (task *SHTask) updateWatchlist(ctx context.Context, watchlistPingInfos types.PingInfos) error {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return nil
+	}
+
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+
+		for _, info := range watchlistPingInfos {
+			err = store.UpdatePingInfo(info.SupernodeID)
+			if err != nil {
+				log.WithContext(ctx).WithField("supernode_id", info.SupernodeID).
+					Error("error updating watchlist ping info")
+
+				continue
+			}
+		}
+	}
+
+	return nil
 }
