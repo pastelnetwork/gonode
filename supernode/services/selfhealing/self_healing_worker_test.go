@@ -3,6 +3,7 @@ package selfhealing
 import (
 	"context"
 	json "github.com/json-iterator/go"
+	"github.com/pastelnetwork/gonode/common/types"
 	"golang.org/x/crypto/sha3"
 	"testing"
 
@@ -216,6 +217,87 @@ func TestCreateClosestNodeMapAgainstKeys(t *testing.T) {
 			closestNodesMap := task.createClosestNodesMapAgainstKeys(ctx, tt.keys)
 			// handle the test case's assertions with the provided func
 			tt.expect(t, closestNodesMap)
+		})
+	}
+
+}
+
+func TestCreateSelfHealingTicketsMap(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	config := NewConfig()
+	pastelClient := pastelMock.NewMockClient(t)
+	p2pClient := p2pMock.NewMockClient(t)
+	raptorQClient := rqmock.NewMockClient(t)
+	var nodeClient *shtest.Client
+
+	nodes := pastel.MasterNodes{}
+	nodes = append(nodes, pastel.MasterNode{ExtKey: "PrimaryID"})
+	nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
+	nodes = append(nodes, pastel.MasterNode{ExtKey: "B"})
+	nodes = append(nodes, pastel.MasterNode{ExtKey: "C"})
+	nodes = append(nodes, pastel.MasterNode{ExtKey: "D"})
+	nodes = append(nodes, pastel.MasterNode{ExtKey: "E"})
+
+	closestNodesMap := make(map[string][]string)
+	closestNodesMap["file-hash-to-challenge"] = []string{"A", "B", "C", "D", "E", "F"}
+	closestNodesMap["cascade-file-hash-to-challenge"] = []string{"G", "H", "I", "J", "K", "L"}
+	closestNodesMap["sense-file-hash-to-challenge"] = []string{"AG", "BH", "CI", "DJ", "EK", "FL"}
+
+	watchlistPingInfo := []types.PingInfo{
+		types.PingInfo{SupernodeID: "A"},
+		types.PingInfo{SupernodeID: "B"},
+		types.PingInfo{SupernodeID: "C"},
+		types.PingInfo{SupernodeID: "D"},
+		types.PingInfo{SupernodeID: "E"},
+		types.PingInfo{SupernodeID: "F"},
+	}
+
+	symbolFileKeyMap := make(map[string]SymbolFileKeyDetails)
+	symbolFileKeyMap["file-hash-to-challenge"] = SymbolFileKeyDetails{TicketTxID: "test-tx-id-nft", TicketType: nftTicketType}
+	symbolFileKeyMap["file-hash-to-challenge-cascade"] = SymbolFileKeyDetails{TicketTxID: "test-tx-id-nft", TicketType: cascadeTicketType}
+	symbolFileKeyMap["file-hash-to-challenge-sense"] = SymbolFileKeyDetails{TicketTxID: "test-tx-id-nft", TicketType: senseTicketType}
+
+	tests := []struct {
+		testcase string
+		keys     []string
+		setup    func()
+		expect   func(*testing.T, map[string]SymbolFileKeyDetails)
+	}{
+		{
+			testcase: "when all the closest nodes are on watchlist, should include the ticket for self-healing",
+			keys:     []string{"file-hash-to-challenge", "cascade-file-hash-to-challenge", "sense-file-hash-to-challenge"},
+			setup: func() {
+				p2pClient.ListenOnNClosestNodes([]string{"A", "B", "C", "D", "E", "F"}, nil)
+			},
+			expect: func(t *testing.T, selfHealingTicketsMap map[string]SymbolFileKeyDetails) {
+				require.Equal(t, len(selfHealingTicketsMap), 1)
+
+				ticketDetails := selfHealingTicketsMap["test-tx-id-nft"]
+				require.Equal(t, ticketDetails.TicketType, nftTicketType)
+				require.Equal(t, len(ticketDetails.Keys), 1)
+				require.Equal(t, ticketDetails.Keys[0], "file-hash-to-challenge")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.testcase, func(t *testing.T) {
+			// Run the setup for the testcase
+			tt.setup()
+
+			service := NewService(config, nil, pastelClient, nodeClient,
+				p2pClient, nil)
+			task := NewSHTask(service)
+			task.StorageHandler.RqClient = raptorQClient
+			// call the function to get return values
+			selfHealingTicketsMap := task.identifySelfHealingTickets(ctx, watchlistPingInfo, closestNodesMap, symbolFileKeyMap)
+			// handle the test case's assertions with the provided func
+			tt.expect(t, selfHealingTicketsMap)
 		})
 	}
 
