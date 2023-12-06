@@ -93,7 +93,7 @@ commands:
           name: "<< parameters.package >>: Validate existence of built binaries"
           command: |
             export WORKING_DIR=~/go/src/github.com/pastelnetwork/gonode/build
-            export MACOS_ARTIFACT=$WORKING_DIR/<< parameters.binaryName >>-darwin-10.14-amd64
+            export MACOS_ARTIFACT=$WORKING_DIR/<< parameters.binaryName >>-darwin-10.15-amd64
             export WINDOWS_ARTIFACT=$WORKING_DIR/<< parameters.binaryName >>-windows-4.0-amd64.exe
             export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.binaryName >>-linux-amd64
 
@@ -101,8 +101,8 @@ commands:
               echo "Check existence of linux/amd64 build"
               test -f $LINUX_ARTIFACT || (echo "$LINUX_ARTIFACT is not found" && exit 1)
             fi
-            if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
-              echo "Check existence of darwin-10.14/amd64 build"
+            if [[ "<< parameters.targets >>" == *"darwin-10.15/amd64,"* ]]; then
+              echo "Check existence of darwin-10.15/amd64 build"
               test -f $MACOS_ARTIFACT || (echo "$MACOS_ARTIFACT is not found" && exit 1)
             fi
             if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
@@ -120,7 +120,7 @@ commands:
           name: "<< parameters.package >>: xgo build for << parameters.targets >>"
           command: |
             export WORKING_DIR=~/go/src/github.com/pastelnetwork/gonode/build
-            export MACOS_ARTIFACT=$WORKING_DIR/<< parameters.package >>-darwin-10.14-amd64
+            export MACOS_ARTIFACT=$WORKING_DIR/<< parameters.package >>-darwin-10.15-amd64
             export WINDOWS_ARTIFACT=$WORKING_DIR/<< parameters.package >>-windows-4.0-amd64.exe
             export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.package >>-linux-amd64
             
@@ -135,33 +135,36 @@ commands:
             echo "APP_VERSION=$APP_VERSION"
             echo "APP_LDFLAGS=$APP_LDFLAGS"
 
-            xgo -go go-1.21.1 --targets=<< parameters.targets >> -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
-            
+            for TARGET in $(echo "<< parameters.targets >>" | tr ',' '\n'); do
+                echo "Building for target: $TARGET"
+                xgo -go go-1.21.1 --targets="$TARGET" --hooksdir=xgo -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
+            done
+
             mkdir -p build
-            if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
-              mv << parameters.package >>-darwin-10.14-amd64 build/
+            if [[ "<< parameters.targets >>" == *"darwin-10.15/amd64"* ]]; then
+              mv << parameters.package >>-darwin-10.15-amd64 build/
             fi
 
-            if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
+            if [[ "<< parameters.targets >>" == *"windows/amd64"* ]]; then
               mv << parameters.package >>-windows-4.0-amd64.exe build/
             fi
 
-            if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
+            if [[ "<< parameters.targets >>" == *"linux/amd64"* ]]; then
               mv << parameters.package >>-linux-amd64 build/
             fi
 
             cd build
             ls -a
 
-            if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
+            if [[ "<< parameters.targets >>" == *"linux/amd64"* ]]; then
               echo "Create sha256 checksum of linux/amd64 build"
               sha256sum "$LINUX_ARTIFACT" > "$LINUX_ARTIFACT.sha256"
             fi
-            if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
-              echo "Create sha256 checksum of darwin-10.14/amd64 build"
+            if [[ "<< parameters.targets >>" == *"darwin-10.15/amd64"* ]]; then
+              echo "Create sha256 checksum of darwin-10.15/amd64 build"
               sha256sum  "$MACOS_ARTIFACT" > "$MACOS_ARTIFACT.sha256"
             fi
-            if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
+            if [[ "<< parameters.targets >>" == *"windows/amd64"* ]]; then
               echo "Create sha256 checksum of windows/amd64 build"
               sha256sum "$WINDOWS_ARTIFACT" > "$WINDOWS_ARTIFACT.sha256"
             fi
@@ -192,11 +195,11 @@ commands:
           command: |
             rm hermes-linux-amd64.sha256
             rm supernode-linux-amd64.sha256
-            rm walletnode-darwin-10.14-amd64.sha256
+            rm walletnode-darwin-10.15-amd64.sha256
             rm walletnode-linux-amd64.sha256
             rm walletnode-windows-4.0-amd64.exe.sha256
             mv walletnode-windows-4.0-amd64.exe walletnode-win-amd64.exe
-            mv walletnode-darwin-10.14-amd64 walletnode-darwin-amd64
+            mv walletnode-darwin-10.15-amd64 walletnode-darwin-amd64
       - aws-cli/setup:
           aws-access-key-id: AWS_ACCESS_KEY_ID
           aws-secret-access-key: AWS_SECRET_ACCESS_KEY
@@ -223,7 +226,7 @@ commands:
           name: Upload << parameters.targets >> to << parameters.repo >> GitHub repo
           working_directory: << parameters.working_directory >>
           command: |
-            export MACOS_ARTIFACT=<< parameters.binaryName >>-darwin-10.14-amd64
+            export MACOS_ARTIFACT=<< parameters.binaryName >>-darwin-10.15-amd64
             export WINDOWS_ARTIFACT=<< parameters.binaryName >>-windows-4.0-amd64.exe
             export LINUX_ARTIFACT=<< parameters.binaryName >>-linux-amd64
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
@@ -232,11 +235,11 @@ commands:
               github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-linux-amd64 --file << parameters.binaryName >>-linux-amd64
               github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-linux-amd64.sha256 --file << parameters.binaryName >>-linux-amd64.sha256
             fi
-            if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
-              echo "Check existence of darwin-10.14/amd64 build and upload to GitHub"
+            if [[ "<< parameters.targets >>" == *"darwin-10.15/amd64,"* ]]; then
+              echo "Check existence of darwin-10.15/amd64 build and upload to GitHub"
               test -f $MACOS_ARTIFACT
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-darwin-amd64 --file << parameters.binaryName >>-darwin-10.14-amd64
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-darwin-amd64.sha256 --file << parameters.binaryName >>-darwin-10.14-amd64.sha256
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-darwin-amd64 --file << parameters.binaryName >>-darwin-10.15-amd64
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-darwin-amd64.sha256 --file << parameters.binaryName >>-darwin-10.15-amd64.sha256
             fi
             if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
               echo "Check existence of windows/amd64 build and upload to GitHub"
@@ -453,13 +456,13 @@ jobs:
             go install -v src.techknowlogick.com/xgo@latest
       - release:
           package: "walletnode"
-          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
+          targets: "linux/amd64,darwin-10.15/amd64,windows/amd64"
       - release:
           package: "supernode"
-          targets: "linux/amd64,"
+          targets: "linux/amd64"
       - release:
           package: "hermes"
-          targets: "linux/amd64,"
+          targets: "linux/amd64"
       - upload-s3:
           working_directory: "~/go/src/github.com/pastelnetwork/gonode/build"
 
@@ -481,7 +484,7 @@ jobs:
             go install -v src.techknowlogick.com/xgo@latest
       - build:
           package: "walletnode"
-          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
+          targets: "linux/amd64,darwin-10.15/amd64,windows/amd64,"
           binaryName: "walletnode"
       - build:
           package: "supernode"
