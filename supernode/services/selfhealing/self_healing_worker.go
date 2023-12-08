@@ -441,10 +441,10 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 			ChallengerID: task.nodeID,
 			RecipientID:  challengeRecipient,
 			Challenge: types.SelfHealingChallengeData{
-				Block:      currentBlockCount,
-				Merkelroot: merkleroot,
-				Timestamp:  time.Now().UTC(),
-				Tickets:    getTicketsForSelfHealingChallengeMessage(ticketsDetails),
+				Block:            currentBlockCount,
+				Merkelroot:       merkleroot,
+				Timestamp:        time.Now().UTC(),
+				ChallengeTickets: getTicketsForSelfHealingChallengeMessage(ticketsDetails),
 			},
 		}
 
@@ -471,10 +471,10 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 	return nil
 }
 
-func getTicketsForSelfHealingChallengeMessage(ticketDetails []SymbolFileKeyDetails) []types.Ticket {
-	var challengeTickets []types.Ticket
+func getTicketsForSelfHealingChallengeMessage(ticketDetails []SymbolFileKeyDetails) []types.ChallengeTicket {
+	var challengeTickets []types.ChallengeTicket
 	for _, detail := range ticketDetails {
-		challengeTickets = append(challengeTickets, types.Ticket{
+		challengeTickets = append(challengeTickets, types.ChallengeTicket{
 			TxID:        detail.TicketTxID,
 			TicketType:  types.TicketType(detail.TicketType),
 			DataHash:    detail.DataHash,

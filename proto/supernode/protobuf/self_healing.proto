@@ -68,11 +68,11 @@ message ProcessSelfHealingChallengeReply {
 }
 
 message VerifySelfHealingChallengeRequest {
-  SelfHealingData data = 1;
+  SelfHealingMessage data = 1;
 }
 
 message VerifySelfHealingChallengeReply {
-  SelfHealingData data = 1;
+  SelfHealingMessage data = 1;
 }
 
 message SelfHealingMessage {
