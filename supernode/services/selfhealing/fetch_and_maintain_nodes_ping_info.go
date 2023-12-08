@@ -84,11 +84,11 @@ func (task *SHTask) pingNodes(ctx context.Context, nodesToPing pastel.MasterNode
 					Error("error pinging sn")
 
 				pi := types.PingInfo{
-					SupernodeID:         node.ExtKey,
-					IPAddress:           node.ExtAddress,
-					IsOnline:            false,
-					IsAdjusted:          false,
-					AvgPingResponseTime: 0.0,
+					SupernodeID:      node.ExtKey,
+					IPAddress:        node.ExtAddress,
+					IsOnline:         false,
+					IsAdjusted:       false,
+					LastResponseTime: 0.0,
 				}
 
 				if err := task.StorePingInfo(ctx, pi); err != nil {
@@ -104,12 +104,12 @@ func (task *SHTask) pingNodes(ctx context.Context, nodesToPing pastel.MasterNode
 			}
 
 			pi := types.PingInfo{
-				SupernodeID:         node.ExtKey,
-				IPAddress:           node.ExtAddress,
-				IsOnline:            res.IsOnline,
-				IsAdjusted:          false,
-				AvgPingResponseTime: respondedAt.Sub(timeBeforePing).Seconds(),
-				LastSeen:            sql.NullTime{Time: respondedAt, Valid: true},
+				SupernodeID:      node.ExtKey,
+				IPAddress:        node.ExtAddress,
+				IsOnline:         res.IsOnline,
+				IsAdjusted:       false,
+				LastResponseTime: respondedAt.Sub(timeBeforePing).Seconds(),
+				LastSeen:         sql.NullTime{Time: respondedAt, Valid: true},
 			}
 
 			if err := task.StorePingInfo(ctx, pi); err != nil {
@@ -229,15 +229,6 @@ func GetPingInfoToInsert(existedInfo, info *types.PingInfo) *types.PingInfo {
 
 	if !existedInfo.LastSeen.Valid { //for the first row
 		info.LastSeen = sql.NullTime{Time: time.Now().UTC(), Valid: true}
-	} else {
-		twentyMinutesAgo := time.Now().UTC().Add(-20 * time.Minute)
-
-		// Check if the timestamp is before 20 minutes ago
-		if existedInfo.LastSeen.Time.Before(twentyMinutesAgo) {
-			info.IsOnWatchlist = true
-		} else {
-			info.IsOnWatchlist = false
-		}
 	}
 
 	if info.IsOnline {
@@ -249,7 +240,7 @@ func GetPingInfoToInsert(existedInfo, info *types.PingInfo) *types.PingInfo {
 		info.LastSeen = existedInfo.LastSeen
 	}
 
-	info.CumulativeResponseTime = existedInfo.CumulativeResponseTime + info.AvgPingResponseTime
+	info.CumulativeResponseTime = existedInfo.CumulativeResponseTime + info.LastResponseTime
 
 	var avgPingResponseTime float64
 	if info.TotalSuccessfulPings != 0 {

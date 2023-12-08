@@ -35,7 +35,7 @@ func TestGetInfoToInsert(t *testing.T) {
 		{
 			testCase:     "when node is offline, last seen should be the same as existed record",
 			existedInfo:  &types.PingInfo{TotalPings: 2, TotalSuccessfulPings: 2, LastSeen: sql.NullTime{Time: now, Valid: true}},
-			receivedInfo: &types.PingInfo{TotalPings: 0, IsOnline: false},
+			receivedInfo: &types.PingInfo{TotalPings: 0, IsOnline: false, LastResponseTime: 0},
 			expectedInfo: &types.PingInfo{TotalPings: 3, TotalSuccessfulPings: 2, IsOnline: false, LastSeen: sql.NullTime{Time: now, Valid: true}},
 		},
 		{
@@ -53,14 +53,8 @@ func TestGetInfoToInsert(t *testing.T) {
 		{
 			testCase:     "when node is online, cumulative response time should add the last ping time, and avg response time should be recalculated",
 			existedInfo:  &types.PingInfo{TotalPings: 2, TotalSuccessfulPings: 2, LastSeen: sql.NullTime{Time: now, Valid: true}, CumulativeResponseTime: 20 * time.Second.Seconds(), AvgPingResponseTime: 24},
-			receivedInfo: &types.PingInfo{TotalPings: 0, IsOnline: true, AvgPingResponseTime: 4.0, LastSeen: sql.NullTime{Time: now, Valid: true}},
-			expectedInfo: &types.PingInfo{TotalPings: 3, TotalSuccessfulPings: 3, IsOnline: true, AvgPingResponseTime: 8, LastSeen: sql.NullTime{Time: now, Valid: true}, CumulativeResponseTime: 24 * time.Second.Seconds()},
-		},
-		{
-			testCase:     "when node is offline for more than 20 minutes, is_on_watchlist should be true",
-			existedInfo:  &types.PingInfo{TotalPings: 2, TotalSuccessfulPings: 2, LastSeen: sql.NullTime{Time: now.Add(-21 * time.Minute), Valid: true}, CumulativeResponseTime: now.Sub(now.Add(-20 * time.Second)).Seconds(), AvgPingResponseTime: 24},
-			receivedInfo: &types.PingInfo{TotalPings: 0, IsOnline: false, AvgPingResponseTime: 0.0},
-			expectedInfo: &types.PingInfo{TotalPings: 3, TotalSuccessfulPings: 2, IsOnline: false, AvgPingResponseTime: 10, LastSeen: sql.NullTime{Time: now.Add(-21 * time.Minute), Valid: true}, CumulativeResponseTime: now.Sub(now.Add(-20 * time.Second)).Seconds(), IsOnWatchlist: true},
+			receivedInfo: &types.PingInfo{TotalPings: 0, IsOnline: true, LastResponseTime: 4.0, LastSeen: sql.NullTime{Time: now, Valid: true}},
+			expectedInfo: &types.PingInfo{TotalPings: 3, TotalSuccessfulPings: 3, IsOnline: true, AvgPingResponseTime: 8, LastSeen: sql.NullTime{Time: now, Valid: true}, CumulativeResponseTime: 24 * time.Second.Seconds(), LastResponseTime: 4},
 		},
 	}
 

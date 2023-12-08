@@ -19,6 +19,7 @@ import (
 const (
 	defaultTimerBlockCheckDuration    = 5 * time.Minute
 	defaultFetchNodesPingInfoInterval = 60 * time.Second
+	defaultUpdateWatchlistInterval    = 70 * time.Second
 )
 
 // SHService keeps track of the supernode's nodeID and passes this, the pastel client,
@@ -60,7 +61,23 @@ func (service *SHService) RunFetchNodesPingInfoWorker(ctx context.Context) {
 			task.FetchAndMaintainPingInfo(newCtx)
 
 		case <-ctx.Done():
-			log.Println("Context done being called in local keys fetch worker in service.go")
+			log.Println("Context done being called in fetch & maintain ping info worker")
+			return
+		}
+	}
+}
+
+// RunUpdateWatchlistWorker : This worker will periodically fetch and maintain the ping info and update watchlist field
+func (service *SHService) RunUpdateWatchlistWorker(ctx context.Context) {
+	for {
+		select {
+		case <-time.After(defaultUpdateWatchlistInterval):
+			newCtx := context.Background()
+			task := service.NewSHTask()
+			task.UpdateWatchlist(newCtx)
+
+		case <-ctx.Done():
+			log.Println("Context done being called in update watchlist worker")
 			return
 		}
 	}
@@ -77,6 +94,8 @@ func (service *SHService) Run(ctx context.Context) error {
 	}()
 
 	go service.RunFetchNodesPingInfoWorker(ctx)
+
+	go service.RunUpdateWatchlistWorker(ctx)
 
 	for {
 		select {
