@@ -2,6 +2,8 @@ package client
 
 import (
 	"context"
+	json "github.com/json-iterator/go"
+	"github.com/pastelnetwork/gonode/common/types"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -93,14 +95,30 @@ func (service *selfHealingGRPCClient) ProcessSelfHealingChallenge(ctx context.Co
 
 	return nil
 }
-func (service *selfHealingGRPCClient) VerifySelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) (*pb.SelfHealingData, error) {
+func (service *selfHealingGRPCClient) VerifySelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingMessage) (types.SelfHealingMessage, error) {
 	ctx = contextWithLogPrefix(ctx, service.conn.id)
 	ctx = contextWithMDSessID(ctx, service.sessID)
+
 	res, err := service.client.VerifySelfHealingChallenge(ctx, &pb.VerifySelfHealingChallengeRequest{
 		Data: challengeMessage,
 	})
+	if err != nil {
+		return types.SelfHealingMessage{}, err
+	}
 
-	return res.Data, err
+	msg := types.SelfHealingMessage{
+		ChallengeID:     res.Data.ChallengeId,
+		MessageType:     types.SelfHealingMessageType(res.Data.MessageType),
+		SenderID:        res.Data.SenderId,
+		SenderSignature: res.Data.SenderSignature,
+	}
+
+	if err := json.Unmarshal(res.Data.Data, &msg.SelfHealingMessageData); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error un-marshaling received challenge message")
+		return msg, errors.Errorf("error un-marshaling the received challenge message")
+	}
+
+	return msg, nil
 }
 
 func newSelfHealingGRPCClient(conn *clientConn) node.SelfHealingChallengeInterface {

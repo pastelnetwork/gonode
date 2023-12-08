@@ -2,6 +2,8 @@ package supernode
 
 import (
 	"context"
+	json "github.com/json-iterator/go"
+	"github.com/pastelnetwork/gonode/common/types"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -107,7 +109,20 @@ func (service *SelfHealingChallengeGRPC) ProcessSelfHealingChallenge(ctx context
 	log.WithContext(ctx).WithField("req", scRequest).Info("Process self-healing challenge request received from gRpc client")
 
 	task := service.NewSHTask()
-	err := task.ProcessSelfHealingChallenge(ctx, &pb.SelfHealingData{})
+
+	msg := types.SelfHealingMessage{
+		ChallengeID:     scRequest.Data.ChallengeId,
+		MessageType:     types.SelfHealingMessageType(scRequest.Data.MessageType),
+		SenderID:        scRequest.Data.SenderId,
+		SenderSignature: scRequest.Data.SenderSignature,
+	}
+
+	if err := json.Unmarshal(scRequest.Data.Data, &msg.SelfHealingMessageData); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error un-marshaling received challenge message")
+		return nil, errors.Errorf("error un-marshaling the received challenge message")
+	}
+
+	err := task.ProcessSelfHealingChallenge(ctx, msg)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Processing Self-Healing Challenge from Server Side")
 	}
@@ -120,12 +135,24 @@ func (service *SelfHealingChallengeGRPC) VerifySelfHealingChallenge(ctx context.
 	log.WithContext(ctx).WithField("req", scRequest).Debugf("Verify Self-Healing Request received from gRpc client")
 	task := service.NewSHTask()
 
-	data, err := task.VerifySelfHealingChallenge(ctx, scRequest.Data)
+	msg := types.SelfHealingMessage{
+		ChallengeID:     scRequest.Data.ChallengeId,
+		MessageType:     types.SelfHealingMessageType(scRequest.Data.MessageType),
+		SenderID:        scRequest.Data.SenderId,
+		SenderSignature: scRequest.Data.SenderSignature,
+	}
+
+	if err := json.Unmarshal(scRequest.Data.Data, &msg.SelfHealingMessageData); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error un-marshaling received challenge message")
+		return nil, errors.Errorf("error un-marshaling the received challenge message")
+	}
+
+	_, err := task.VerifySelfHealingChallenge(ctx, msg)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error verifying Self-Healing")
 	}
 
-	return &pb.VerifySelfHealingChallengeReply{Data: data}, nil
+	return &pb.VerifySelfHealingChallengeReply{}, nil
 }
 
 // NewSelfHealingChallengeGRPC returns a new SelfHealing instance.

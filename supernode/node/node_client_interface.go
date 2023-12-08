@@ -122,7 +122,7 @@ type SelfHealingChallengeInterface interface {
 
 	ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingMessage) error
 
-	VerifySelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingData) (*pb.SelfHealingData, error)
+	VerifySelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingMessage) (types.SelfHealingMessage, error)
 }
 
 // ProcessUserdataInterface represents an interaction stream with supernodes for sending userdata.

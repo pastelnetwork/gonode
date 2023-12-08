@@ -3,6 +3,7 @@ package selfhealing
 import (
 	"bytes"
 	"context"
+	"github.com/pastelnetwork/gonode/common/types"
 	"strconv"
 	"testing"
 
@@ -75,29 +76,31 @@ func TestProcessSelfHealingTest(t *testing.T) {
 
 	tests := []struct {
 		testcase string
-		message  *pb.SelfHealingData
+		message  types.SelfHealingMessage
 		setup    func()
 		expect   func(*testing.T, error)
 	}{
 		{
 			testcase: "when symbols do not mismatch, does not proceed self-healing",
-			message: &pb.SelfHealingData{
-				MessageId:                   "test-message-1",
-				MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
-				MerklerootWhenChallengeSent: "previous-block-hash",
-				ChallengingMasternodeId:     "challenging-node",
-				RespondingMasternodeId:      "respondong-node",
-				ChallengeFile: &pb.SelfHealingDataChallengeFile{
-					FileHashToChallenge: "file-hash-to-challenge",
-				},
-				ChallengeId: "test-challenge-1",
-				RegTicketId: "reg-ticket-tx-id",
-			},
+			message:  types.SelfHealingMessage{MessageType: types.SelfHealingChallengeMessage},
+			//	MessageId:                   "test-message-1",
+			//	MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
+			//	MerklerootWhenChallengeSent: "previous-block-hash",
+			//	ChallengingMasternodeId:     "challenging-node",
+			//	RespondingMasternodeId:      "respondong-node",
+			//	ChallengeFile: &pb.SelfHealingDataChallengeFile{
+			//		FileHashToChallenge: "file-hash-to-challenge",
+			//	},
+			//	ChallengeId: "test-challenge-1",
+			//	RegTicketId: "reg-ticket-tx-id",
+			//},
 			setup: func() {
+				pastelClient.ListenOnVerify(true, nil).ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
 				pastelClient.ListenOnRegTickets(tickets, nil).ListenOnActionTickets(nil, nil).ListenOnMasterNodesExtra(nodes, nil)
 				raptorQClient.ListenOnConnect(nil)
 				raptorQClient.ListenOnRaptorQ().ListenOnClose(nil)
 				pastelClient.On("RegTicket", mock.Anything, mock.Anything).Return(ticket, nil).Times(1)
+				pastelClient.ListenOnGetBlockCount(0, nil)
 				p2pClient.On(p2pMock.RetrieveMethod, mock.Anything, mock.Anything, mock.Anything).Return(rqIDsData, nil).Times(1)
 				p2pClient.On(p2pMock.RetrieveMethod, mock.Anything, mock.Anything, mock.Anything).Return(symbol, nil).Times(1)
 				raptorQClient.ListenOnClose(nil)
@@ -109,18 +112,19 @@ func TestProcessSelfHealingTest(t *testing.T) {
 		},
 		{
 			testcase: "when symbols mismatch, should self-heal",
-			message: &pb.SelfHealingData{
-				MessageId:                   "test-message-1",
-				MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
-				MerklerootWhenChallengeSent: "previous-block-hash",
-				ChallengingMasternodeId:     "challenging-node",
-				RespondingMasternodeId:      "respondong-node",
-				ChallengeFile: &pb.SelfHealingDataChallengeFile{
-					FileHashToChallenge: "file-hash-to-challenge",
-				},
-				ChallengeId: "test-challenge-1",
-				RegTicketId: "reg-ticket-tx-id",
-			},
+			message:  types.SelfHealingMessage{MessageType: types.SelfHealingChallengeMessage},
+			//message: &pb.SelfHealingData{
+			//	MessageId:                   "test-message-1",
+			//	MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
+			//	MerklerootWhenChallengeSent: "previous-block-hash",
+			//	ChallengingMasternodeId:     "challenging-node",
+			//	RespondingMasternodeId:      "respondong-node",
+			//	ChallengeFile: &pb.SelfHealingDataChallengeFile{
+			//		FileHashToChallenge: "file-hash-to-challenge",
+			//	},
+			//	ChallengeId: "test-challenge-1",
+			//	RegTicketId: "reg-ticket-tx-id",
+			//},
 			setup: func() {
 				pastelClient.ListenOnRegTickets(tickets, nil).ListenOnActionTickets(nil, nil).ListenOnMasterNodesExtra(nodes, nil)
 				raptorQClient.ListenOnConnect(nil)
@@ -149,18 +153,19 @@ func TestProcessSelfHealingTest(t *testing.T) {
 		},
 		{
 			testcase: "when self-healing verification failed, should not store symbols into P2P",
-			message: &pb.SelfHealingData{
-				MessageId:                   "test-message-1",
-				MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
-				MerklerootWhenChallengeSent: "previous-block-hash",
-				ChallengingMasternodeId:     "challenging-node",
-				RespondingMasternodeId:      "respondong-node",
-				ChallengeFile: &pb.SelfHealingDataChallengeFile{
-					FileHashToChallenge: "file-hash-to-challenge",
-				},
-				ChallengeId: "test-challenge-1",
-				RegTicketId: "reg-ticket-tx-id",
-			},
+			message:  types.SelfHealingMessage{},
+			//message: &pb.SelfHealingData{
+			//	MessageId:                   "test-message-1",
+			//	MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
+			//	MerklerootWhenChallengeSent: "previous-block-hash",
+			//	ChallengingMasternodeId:     "challenging-node",
+			//	RespondingMasternodeId:      "respondong-node",
+			//	ChallengeFile: &pb.SelfHealingDataChallengeFile{
+			//		FileHashToChallenge: "file-hash-to-challenge",
+			//	},
+			//	ChallengeId: "test-challenge-1",
+			//	RegTicketId: "reg-ticket-tx-id",
+			//},
 			setup: func() {
 				pastelClient.ListenOnRegTickets(tickets, nil).ListenOnMasterNodesExtra(nodes, nil)
 				raptorQClient.ListenOnConnect(nil)

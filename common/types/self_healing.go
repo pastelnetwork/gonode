@@ -13,6 +13,8 @@ const (
 	SelfHealingChallengeMessage SelfHealingMessageType = iota + 1
 	//SelfHealingResponseMessage represents the response message
 	SelfHealingResponseMessage
+	//SelfHealingVerificationMessage represents the verification message
+	SelfHealingVerificationMessage
 )
 
 // TicketType represents the type of ticket; nft, cascade, sense
@@ -58,33 +60,61 @@ type SelfHealingMessage struct {
 
 // SelfHealingMessageData represents the self-healing message data
 type SelfHealingMessageData struct {
-	ChallengerID string                   `json:"challenger_id"`
-	RecipientID  string                   `json:"recipient_id"`
-	Challenge    SelfHealingChallengeData `json:"challenge"`
-	Response     SelfHealingResponseData  `json:"response"`
+	ChallengerID string                      `json:"challenger_id"`
+	RecipientID  string                      `json:"recipient_id"`
+	Challenge    SelfHealingChallengeData    `json:"challenge"`
+	Response     SelfHealingResponseData     `json:"response"`
+	Verification SelfHealingVerificationData `json:"verification"`
 }
 
 // SelfHealingChallengeData represents the challenge data for self-healing sent by the challenger
 type SelfHealingChallengeData struct {
-	Block      int32     `json:"block"`
-	Merkelroot string    `json:"merkelroot"`
-	Timestamp  time.Time `json:"timestamp"`
-	Tickets    []Ticket  `json:"tickets"`
+	Block            int32             `json:"block"`
+	Merkelroot       string            `json:"merkelroot"`
+	Timestamp        time.Time         `json:"timestamp"`
+	ChallengeTickets []ChallengeTicket `json:"challenge_tickets"`
 }
 
-// Ticket represents the ticket details that require self-healing
-type Ticket struct {
+// ChallengeTicket represents the ticket details for self-healing challenge
+type ChallengeTicket struct {
+	TxID        string     `json:"tx_id"`
+	TicketType  TicketType `json:"ticket_type"`
+	MissingKeys []string   `json:"missing_keys"`
+	DataHash    string     `json:"data_hash"`
+}
+
+// RespondedTicket represents the details of ticket responded in a self-healing challenge
+type RespondedTicket struct {
 	TxID                  string     `json:"tx_id"`
 	TicketType            TicketType `json:"ticket_type"`
 	MissingKeys           []string   `json:"missing_keys"`
-	DataHash              string     `json:"data_hash"`
-	ReconstructedFileHash string     `json:"reconstructed_file_hash"`
+	ReconstructedFileHash []byte     `json:"reconstructed_file_hash"`
+	FileIDs               []string   `json:"sense_file_ids"`
 }
 
 // SelfHealingResponseData represents the response data for self-healing sent by the recipient
 type SelfHealingResponseData struct {
-	Block      int32     `json:"block"`
-	Merkelroot string    `json:"merkelroot"`
-	Timestamp  time.Time `json:"timestamp"`
-	Tickets    []Ticket  `json:"tickets"`
+	Block            int32             `json:"block"`
+	Merkelroot       string            `json:"merkelroot"`
+	Timestamp        time.Time         `json:"timestamp"`
+	RespondedTickets []RespondedTicket `json:"responded_tickets"`
+}
+
+// VerifiedTicket represents the details of ticket verified in self-healing challenge
+type VerifiedTicket struct {
+	TxID                  string     `json:"tx_id"`
+	TicketType            TicketType `json:"ticket_type"`
+	MissingKeys           []string   `json:"missing_keys"`
+	DataHash              string     `json:"data_hash"`
+	ReconstructedFileHash []byte     `json:"reconstructed_file_hash"`
+	FileIDs               []string   `json:"sense_file_ids"`
+	IsVerified            bool       `json:"is_verified"`
+}
+
+// SelfHealingVerificationData represents the verification data for self-healing challenge
+type SelfHealingVerificationData struct {
+	Block           int32            `json:"block"`
+	Merkelroot      string           `json:"merkelroot"`
+	Timestamp       time.Time        `json:"timestamp"`
+	VerifiedTickets []VerifiedTicket `json:"verified_tickets"`
 }
