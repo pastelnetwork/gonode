@@ -124,9 +124,6 @@ func (service *CascadeRegistrationService) CalculateFee(ctx context.Context, fil
 }
 
 // NewService returns a new Service instance
-//
-//	NB: Because NewNftApiHandler calls AddTask, a CascadeRegisterTask will actually
-//		be instantiated instead of a generic Task.
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface, db storage.KeyValue,
 	downloadService download.NftDownloadingService,

@@ -557,10 +557,12 @@ func (task *CascadeRegistrationTask) Download(ctx context.Context) error {
 func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common.ActionRegistrationRequest) *CascadeRegistrationTask {
 	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
 
+	checkMinBalance := true
 	fileBytes, _ := request.Image.Bytes()
 	fee, err := service.pastelHandler.GetEstimatedCascadeFee(context.TODO(), utils.GetFileSizeInMB(fileBytes))
 	if err != nil {
-		return nil
+		log.WithContext(context.Background()).WithError(err).Error("NewCascadeRegTask: error getting estimated fee")
+		checkMinBalance = false
 	}
 
 	meshHandlerOpts := common.MeshHandlerOpts{
@@ -577,7 +579,7 @@ func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common
 			PastelID:                      request.AppPastelID,
 			Passphrase:                    request.AppPastelIDPassphrase,
 			RequireSNAgreementOnMNTopList: true,
-			CheckMinBalance:               true,
+			CheckMinBalance:               checkMinBalance,
 			MinBalance:                    int64(fee),
 		},
 	}

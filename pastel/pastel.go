@@ -126,7 +126,7 @@ type Client interface {
 	GetActionFee(ctx context.Context, ImgSizeInMb int64) (*GetActionFeesResult, error)
 
 	// RegisterNFTTicket register an NFT ticket
-	// Refer https://pastel.wiki/en/Architectzure/Workflows/NewArtRegistration - step 18
+	// Refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 18
 	// Command `tickets register NFT ...`
 	// Return txid of transaction
 	RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error)

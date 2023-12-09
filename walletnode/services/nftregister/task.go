@@ -981,10 +981,12 @@ func (task *NftRegistrationTask) removeArtifacts() {
 func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistrationRequest) *NftRegistrationTask {
 	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
 
+	checkMinBalance := true
 	fileBytes, _ := request.Image.Bytes()
 	fee, err := service.pastelHandler.PastelClient.NFTStorageFee(context.TODO(), utils.GetFileSizeInMB(fileBytes))
 	if err != nil {
-		return nil
+		log.WithContext(context.Background()).WithError(err).Error("NewNFTRegTask: error getting nft storage fee")
+		checkMinBalance = false
 	}
 
 	meshHandlerOpts := common.MeshHandlerOpts{
@@ -1003,7 +1005,7 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 			CheckDDDatabaseHashes:         true,
 			HashCheckMaxRetries:           service.config.HashCheckMaxRetries,
 			RequireSNAgreementOnMNTopList: true,
-			CheckMinBalance:               true,
+			CheckMinBalance:               checkMinBalance,
 			MinBalance:                    int64(fee.EstimatedNftStorageFeeMax),
 		},
 	}
