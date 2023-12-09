@@ -135,12 +135,14 @@ type GetActionFeesResult struct {
 	CascadeFee float64 `json:"cascadefee"`
 }
 
+// GetTotalBalanceResponse ...
 type GetTotalBalanceResponse struct {
 	Transparent float64 `json:"transparent"`
 	Private     float64 `json:"private"`
 	Total       float64 `json:"total"`
 }
 
+// NFTStorageFeeEstimate ...
 type NFTStorageFeeEstimate struct {
 	EstimatedNftStorageFeeMin     float64 `json:"estimatedNftStorageFeeMin"`
 	EstimatedNftStorageFeeAverage float64 `json:"estimatedNftStorageFeeAverage"`
