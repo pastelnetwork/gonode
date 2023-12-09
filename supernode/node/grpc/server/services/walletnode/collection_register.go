@@ -206,8 +206,15 @@ func (service *RegisterCollection) GetTopMNs(ctx context.Context, req *pb.GetTop
 		mnList = append(mnList, mn.ExtAddress)
 	}
 
+	blnc, err := service.PastelClient.ZGetTotalBalance(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving balance on the SN")
+		blnc = &pastel.GetTotalBalanceResponse{}
+	}
+
 	resp := &pb.GetTopMNsReply{
-		MnTopList: mnList,
+		MnTopList:   mnList,
+		CurrBalance: int64(blnc.Total),
 	}
 
 	log.WithContext(ctx).WithField("mn-list", mnList).Debug("top mn-list has been returned")

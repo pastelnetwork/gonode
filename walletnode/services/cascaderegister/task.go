@@ -556,6 +556,13 @@ func (task *CascadeRegistrationTask) Download(ctx context.Context) error {
 // TODO: make config interface and pass it instead of individual items
 func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common.ActionRegistrationRequest) *CascadeRegistrationTask {
 	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
+
+	fileBytes, _ := request.Image.Bytes()
+	fee, err := service.pastelHandler.GetEstimatedCascadeFee(context.TODO(), utils.GetFileSizeInMB(fileBytes))
+	if err != nil {
+		return nil
+	}
+
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
 		NodeMaker:     &RegisterCascadeNodeMaker{},
@@ -570,6 +577,8 @@ func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common
 			PastelID:                      request.AppPastelID,
 			Passphrase:                    request.AppPastelIDPassphrase,
 			RequireSNAgreementOnMNTopList: true,
+			CheckMinBalance:               true,
+			MinBalance:                    int64(fee),
 		},
 	}
 

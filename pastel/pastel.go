@@ -126,7 +126,7 @@ type Client interface {
 	GetActionFee(ctx context.Context, ImgSizeInMb int64) (*GetActionFeesResult, error)
 
 	// RegisterNFTTicket register an NFT ticket
-	// Refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 18
+	// Refer https://pastel.wiki/en/Architectzure/Workflows/NewArtRegistration - step 18
 	// Command `tickets register NFT ...`
 	// Return txid of transaction
 	RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error)
@@ -231,4 +231,12 @@ type Client interface {
 
 	// BurnAddress ...
 	BurnAddress() string
+
+	//ZGetTotalBalance returns total balance
+	//Command `z_gettotalbalance`
+	ZGetTotalBalance(ctx context.Context) (*GetTotalBalanceResponse, error)
+
+	//NFTStorageFee returns the fee of NFT storage
+	//Command `tickets tools estimatenftstoragefee <sizeInMB>`
+	NFTStorageFee(ctx context.Context, sizeInMB float64) (*NFTStorageFeeEstimate, error)
 }

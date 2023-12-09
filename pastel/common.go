@@ -134,3 +134,15 @@ type GetActionFeesResult struct {
 	SenseFee   float64 `json:"sensefee"`
 	CascadeFee float64 `json:"cascadefee"`
 }
+
+type GetTotalBalanceResponse struct {
+	Transparent float64 `json:"transparent"`
+	Private     float64 `json:"private"`
+	Total       float64 `json:"total"`
+}
+
+type NFTStorageFeeEstimate struct {
+	EstimatedNftStorageFeeMin     float64 `json:"estimatedNftStorageFeeMin"`
+	EstimatedNftStorageFeeAverage float64 `json:"estimatedNftStorageFeeAverage"`
+	EstimatedNftStorageFeeMax     float64 `json:"estimatedNftStorageFeeMax"`
+}

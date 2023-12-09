@@ -270,7 +270,7 @@ func TestTaskRun(t *testing.T) {
 				ListenOnRegisterActTicket("txid-act", nil).
 				ListenOnGetRawMempoolMethod([]string{}, nil).
 				ListenOnGetInactiveActionTickets(pastel.ActTickets{}, nil).
-				ListenOnGetInactiveNFTTickets(pastel.RegTickets{}, nil)
+				ListenOnGetInactiveNFTTickets(pastel.RegTickets{}, nil).On("NFTStorageFee", mock.Anything, mock.Anything).Return(&pastel.NFTStorageFeeEstimate{}, nil)
 
 			rqClientMock := rqMock.NewMockClient(t)
 			rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)
