@@ -98,4 +98,5 @@ message GetTopMNsRequest {
 
 message GetTopMNsReply {
     repeated string mn_top_list = 1;
+    int64 curr_balance = 2;
 }

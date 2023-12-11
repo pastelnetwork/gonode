@@ -47,6 +47,8 @@ type MeshHandler struct {
 	checkDDDatabaseHashes         bool
 	HashCheckMaxRetries           int
 	requireSNAgreementOnMNTopList bool
+	checkMinBalance               bool
+	minBalance                    int64
 	logRequestID                  string
 }
 
@@ -87,6 +89,8 @@ type MeshHandlerConfig struct {
 	UseMaxNodes                   bool
 	CheckDDDatabaseHashes         bool
 	HashCheckMaxRetries           int
+	CheckMinBalance               bool
+	MinBalance                    int64
 	RequireSNAgreementOnMNTopList bool
 }
 
@@ -108,6 +112,8 @@ func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 		HashCheckMaxRetries:           opts.Configs.HashCheckMaxRetries,
 		requireSNAgreementOnMNTopList: opts.Configs.RequireSNAgreementOnMNTopList,
 		logRequestID:                  opts.LogRequestID,
+		checkMinBalance:               opts.Configs.CheckMinBalance,
+		minBalance:                    opts.Configs.MinBalance,
 	}
 }
 
@@ -217,6 +223,8 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 	topMap := make(map[string][]string)
 	hashes := make(map[string]string)
 	dataMap := make(map[string]DDStats)
+	balances := make(map[string]int64)
+
 	var err error
 
 	secInfo := &alts.SecInfo{
@@ -227,7 +235,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 
 	// Get WN top nodes list from all the candidate nodes
 	for _, someNode := range candidatesNodes {
-		top, hash, data, err := m.GetRequiredDataFromSN(ctx, *someNode, secInfo, block)
+		balance, top, hash, data, err := m.GetRequiredDataFromSN(ctx, *someNode, secInfo, block)
 		if err != nil {
 			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get required data from supernode - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 			continue
@@ -237,6 +245,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 		topMap[someNode.Address()] = top
 		hashes[someNode.Address()] = hash
 		dataMap[someNode.Address()] = data
+		balances[someNode.Address()] = balance
 	}
 
 	if len(WNTopNodesList) < n {
@@ -266,6 +275,15 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 	if len(WNTopNodesList) < n {
 		return WNTopNodesList, errors.New("failed to get enough nodes with matching top 10 list")
 	}
+
+	if m.checkMinBalance {
+		WNTopNodesList = m.filterByMinBalanceReq(ctx, WNTopNodesList, balances, 1000)
+		if len(WNTopNodesList) < n {
+			return WNTopNodesList, errors.New("failed to get enough nodes with minimum balance")
+		}
+	}
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("nodes count", len(candidatesNodes)).
+		Info("given nodes count after checking min req balance")
 
 	if m.checkDDDatabaseHashes {
 		WNTopNodesList, err = m.filterByDDHash(ctx, WNTopNodesList, hashes)
@@ -421,6 +439,21 @@ func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNo
 	}
 
 	return nodes
+}
+
+func (m *MeshHandler) filterByMinBalanceReq(ctx context.Context, WNTopNodesList SuperNodeList, balances map[string]int64, reqBalance int64) (retList SuperNodeList) {
+	retList = SuperNodeList{}
+	for _, someNode := range WNTopNodesList {
+		balance := balances[someNode.Address()]
+		if balance >= reqBalance {
+			retList = append(retList, someNode)
+		} else {
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("balance", balance).WithField("required balance", reqBalance).
+				Warnf("not enough balance %s", someNode.Address())
+		}
+	}
+
+	return retList
 }
 
 // filterByDDHash matches database hashes
@@ -654,12 +687,12 @@ func (m *MeshHandler) filterByTopNodesList(ctx context.Context, WNTopNodesList S
 }
 
 // GetRequiredDataFromSN retrieves the MN top list from the given SN, dd databse hash and dd-service stats if required
-func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNodeClient, secInfo *alts.SecInfo, block int) (top []string, hash string, data DDStats, err error) {
+func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNodeClient, secInfo *alts.SecInfo, block int) (balance int64, top []string, hash string, data DDStats, err error) {
 	logger := log.WithContext(ctx).WithField("address", someNode.Address())
 
 	if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
 		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-		return top, hash, data, err
+		return balance, top, hash, data, err
 	}
 
 	defer func() {
@@ -680,17 +713,18 @@ func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNo
 		resp, err := someNode.GetTopMNs(ctx, block)
 		if err != nil {
 			logger.WithError(err).Error("error getting top mns through gRPC call")
-			return top, hash, data, fmt.Errorf("error getting top mns through gRPC call: node: %s - err: %w", someNode.Address(), err)
+			return balance, top, hash, data, fmt.Errorf("error getting top mns through gRPC call: node: %s - err: %w", someNode.Address(), err)
 		}
 
 		top = resp.MnTopList
+		balance = resp.CurrBalance
 	}
 
 	if m.checkDDDatabaseHashes {
 		h, err := someNode.GetDupeDetectionDBHash(ctx)
 		if err != nil {
 			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get dd database hash - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-			return top, hash, data, fmt.Errorf("failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
+			return balance, top, hash, data, fmt.Errorf("failed to get dd database hash - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
 		}
 
 		hash = h
@@ -698,7 +732,7 @@ func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNo
 		s, err := someNode.GetDDServerStats(ctx)
 		if err != nil {
 			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get dd server stats - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-			return top, hash, data, fmt.Errorf("failed to get dd server stats - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
+			return balance, top, hash, data, fmt.Errorf("failed to get dd server stats - address: %s; pastelID: %s err: %s", someNode.Address(), someNode.PastelID(), err.Error())
 		}
 
 		data = DDStats{
@@ -712,7 +746,7 @@ func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNo
 		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("hash", hash).WithField("node", someNode.Address()).WithField("stats", data).Info("DD-service stats & hash for node has been received")
 	}
 
-	return top, hash, data, nil
+	return balance, top, hash, data, nil
 }
 
 // CloseSNsConnections closes connections to all nodes

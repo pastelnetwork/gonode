@@ -715,6 +715,14 @@ func (task *SenseRegistrationTask) IsValidForCollection(ctx context.Context) err
 // TODO: make config interface and pass it instead of individual items
 func NewSenseRegisterTask(service *SenseRegistrationService, request *common.ActionRegistrationRequest) *SenseRegistrationTask {
 	task := common.NewWalletNodeTask(logPrefix, service.historyDB)
+	fileBytes, _ := request.Image.Bytes()
+	checkMinBalance := true
+	fee, err := service.pastelHandler.GetEstimatedSenseFee(context.TODO(), utils.GetFileSizeInMB(fileBytes))
+	if err != nil {
+		log.WithContext(context.Background()).WithError(err).Error("NewSenseRegTask: error getting sense storage fee")
+		checkMinBalance = false
+	}
+
 	meshHandlerOpts := common.MeshHandlerOpts{
 		Task:          task,
 		NodeMaker:     &RegisterSenseNodeMaker{},
@@ -731,6 +739,8 @@ func NewSenseRegisterTask(service *SenseRegistrationService, request *common.Act
 			CheckDDDatabaseHashes:         true,
 			HashCheckMaxRetries:           service.config.HashCheckMaxRetries,
 			RequireSNAgreementOnMNTopList: true,
+			CheckMinBalance:               checkMinBalance,
+			MinBalance:                    int64(fee),
 		},
 	}
 

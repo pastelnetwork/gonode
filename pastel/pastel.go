@@ -231,4 +231,12 @@ type Client interface {
 
 	// BurnAddress ...
 	BurnAddress() string
+
+	//ZGetTotalBalance returns total balance
+	//Command `z_gettotalbalance`
+	ZGetTotalBalance(ctx context.Context) (*GetTotalBalanceResponse, error)
+
+	//NFTStorageFee returns the fee of NFT storage
+	//Command `tickets tools estimatenftstoragefee <sizeInMB>`
+	NFTStorageFee(ctx context.Context, sizeInMB float64) (*NFTStorageFeeEstimate, error)
 }

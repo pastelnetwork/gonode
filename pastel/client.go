@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"net"
 	"strconv"
 	"strings"
@@ -804,6 +805,30 @@ func (client *client) MasterNodesExtra(ctx context.Context) (MasterNodes, error)
 	}
 
 	return masterNodes, nil
+}
+
+// ZGetTotalBalance returns total balance
+// Command `z_gettotalbalance`
+func (client *client) ZGetTotalBalance(ctx context.Context) (*GetTotalBalanceResponse, error) {
+	resp := &GetTotalBalanceResponse{}
+
+	if err := client.callFor(ctx, &resp, "z_gettotalbalance"); err != nil {
+		return nil, errors.Errorf("failed to get total balance: %w", err)
+	}
+
+	return resp, nil
+}
+
+// NFTStorageFee returns the fee of NFT storage
+// Command `tickets tools estimatenftstoragefee <sizeInMB>`
+func (client *client) NFTStorageFee(ctx context.Context, sizeInMB float64) (*NFTStorageFeeEstimate, error) {
+	resp := &NFTStorageFeeEstimate{}
+
+	if err := client.callFor(ctx, &resp, "tickets", "tools", "estimatenftstoragefee", int(math.Ceil(sizeInMB))); err != nil {
+		return nil, errors.Errorf("failed to get estimated nft storage: %w", err)
+	}
+
+	return resp, nil
 }
 
 // GetRawMempool returns the list of in-progress transaction ids
