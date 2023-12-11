@@ -40,10 +40,11 @@ type PingInfo struct {
 	IsOnline               bool         `db:"is_online"`
 	IsOnWatchlist          bool         `db:"is_on_watchlist"`
 	IsAdjusted             bool         `db:"is_adjusted"`
-	CumulativeResponseTime float64      `json:"cumulative_response_time"`
+	CumulativeResponseTime float64      `db:"cumulative_response_time"`
 	LastSeen               sql.NullTime `db:"last_seen"`
 	CreatedAt              time.Time    `db:"created_at"`
 	UpdatedAt              time.Time    `db:"updated_at"`
+	LastResponseTime       float64
 }
 
 // PingInfos represents array of ping info

@@ -19,6 +19,7 @@ type LocalStoreInterface interface {
 	QuerySelfHealingChallenges() (challenges []types.SelfHealingChallenge, err error)
 	UpsertPingHistory(pingInfo types.PingInfo) error
 	GetPingInfoBySupernodeID(supernodeID string) (*types.PingInfo, error)
+	GetAllPingInfos() (types.PingInfos, error)
 	GetWatchlistPingInfo() ([]types.PingInfo, error)
 	UpdatePingInfo(supernodeID string) error
 	CloseHistoryDB(ctx context.Context)
