@@ -3,6 +3,7 @@ module github.com/pastelnetwork/gonode/hermes
 go 1.21
 
 replace (
+	github.com/kolesa-team/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/mixins => ../mixins
 	github.com/pastelnetwork/gonode/p2p => ../p2p

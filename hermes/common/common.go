@@ -55,9 +55,11 @@ func IsP2PServiceNotRunningError(errString string) bool {
 	return strings.Contains(errString, P2PServiceNotRunningError)
 }
 
-type thumbnailType int
+// ThumbnailType is thumbnail type
+type ThumbnailType int
 
-func CreateAndHashThumbnail(srcImg image.Image, thumbnail thumbnailType, rect *image.Rectangle, quality float32, targetFileSize int) ([]byte, error) {
+// CreateAndHashThumbnail creates a thumbnail from the given image and returns its hash.
+func CreateAndHashThumbnail(srcImg image.Image, _ ThumbnailType, rect *image.Rectangle, quality float32, targetFileSize int) ([]byte, error) {
 
 	var thumbnailImg image.Image
 	if rect != nil {

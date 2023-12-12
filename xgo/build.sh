@@ -18,6 +18,7 @@ install_linux() {
 
     # Install image processing libraries with automatic yes to prompts
     apt-get install -y libjpeg-dev libpng-dev libtiff-dev libgif-dev libwebp-dev
+    go get github.com/kolesa-team/go-webp
 
     echo "Installation for Linux completed successfully."
 }
