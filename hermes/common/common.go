@@ -3,11 +3,17 @@ package common
 import (
 	"context"
 	"fmt"
+	"image"
+	"io"
 	"strings"
 
+	"github.com/disintegration/imaging"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/hermes/service/node"
+	"golang.org/x/crypto/sha3"
 )
 
 // BlockMessage is block message
@@ -47,4 +53,34 @@ func IsP2PConnectionCloseError(errString string) bool {
 // IsP2PServiceNotRunningError checks if the passed errString is of p2p not running
 func IsP2PServiceNotRunningError(errString string) bool {
 	return strings.Contains(errString, P2PServiceNotRunningError)
+}
+
+type thumbnailType int
+
+func CreateAndHashThumbnail(srcImg image.Image, thumbnail thumbnailType, rect *image.Rectangle, quality float32, targetFileSize int) ([]byte, error) {
+
+	var thumbnailImg image.Image
+	if rect != nil {
+		thumbnailImg = imaging.Crop(srcImg, *rect)
+	} else {
+		thumbnailImg = srcImg
+	}
+
+	log.Debugf("Encode with target size %d and quality %f", targetFileSize, quality)
+	encoderOptions, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, quality)
+	if err != nil {
+		return nil, errors.Errorf("create lossless encoder option %w", err)
+	}
+	encoderOptions.TargetSize = targetFileSize
+
+	if err := webp.Encode(nil, thumbnailImg, encoderOptions); err != nil {
+		return nil, errors.Errorf("encode to webp format: %w", err)
+	}
+
+	hasher := sha3.New256()
+	if _, err := io.Copy(hasher, nil); err != nil {
+		return nil, errors.Errorf("hash failed: %w", err)
+	}
+
+	return hasher.Sum(nil), nil
 }

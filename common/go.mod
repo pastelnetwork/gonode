@@ -3,6 +3,7 @@ module github.com/pastelnetwork/gonode/common
 go 1.21
 
 replace (
+	github.com/kolesa-team/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/raptorq => ../raptorq
 	golang.org/x/crypto => github.com/golang/crypto v0.13.0
@@ -17,6 +18,7 @@ require (
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629
 	github.com/json-iterator/go v1.1.12
 	github.com/klauspost/compress v1.16.7
+	github.com/kolesa-team/go-webp v0.0.0-00010101000000-000000000000
 	github.com/makiuchi-d/gozxing v0.1.1
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/otrv4/ed448 v0.0.0-20221017120334-a33859724cfd
@@ -61,7 +63,7 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
+	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/term v0.12.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
