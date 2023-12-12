@@ -10,7 +10,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"math/big"
 	"net"
@@ -31,6 +30,7 @@ const (
 	semaphoreWeight              = 1
 	highCompressTimeout          = 30 * time.Minute
 	highCompressionLevel         = 4
+	iPCheckURL                   = "http://ipinfo.io/ip"
 )
 
 var sem = semaphore.NewWeighted(maxParallelHighCompressCalls)
@@ -114,20 +114,31 @@ func IsContextErr(err error) bool {
 
 // GetExternalIPAddress returns external IP address
 func GetExternalIPAddress() (externalIP string, err error) {
-
-	resp, err := http.Get("http://ipinfo.io/ip")
+	resp, err := http.Get(iPCheckURL)
 	if err != nil {
 		return "", err
 	}
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
+	ipString := normalizeString(string(body))
+	if net.ParseIP(ipString) == nil {
+		return "", errors.Errorf("invalid IP response from %s", iPCheckURL)
+	}
 
-	return string(body), nil
+	return ipString, nil
+}
+
+func normalizeString(s string) string {
+	stringWithoutEscapes := strings.Replace(s, "\n", "", -1)
+	stringWithoutEscapes = strings.Replace(stringWithoutEscapes, "\t", "", -1)
+	stringWithoutEscapes = strings.Replace(stringWithoutEscapes, "\r", "", -1)
+
+	return stringWithoutEscapes
 }
 
 // B64Encode base64 encodes
