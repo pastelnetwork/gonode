@@ -843,6 +843,7 @@ paths:
                                 - id: n6Qn6TFM
                                   status: Task Started
                                   ticket:
+                                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -869,6 +870,7 @@ paths:
                                 - id: n6Qn6TFM
                                   status: Task Started
                                   ticket:
+                                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -895,6 +897,7 @@ paths:
                                 - id: n6Qn6TFM
                                   status: Task Started
                                   ticket:
+                                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -921,6 +924,7 @@ paths:
                                 - id: n6Qn6TFM
                                   status: Task Started
                                   ticket:
+                                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -963,6 +967,7 @@ paths:
                         schema:
                             $ref: '#/components/schemas/RegisterRequestBody'
                         example:
+                            burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                             collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                             creator_name: Leonardo da Vinci
                             creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -1053,6 +1058,7 @@ paths:
                                       status: Task Started
                                 status: Task Started
                                 ticket:
+                                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                                     creator_name: Leonardo da Vinci
                                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -3683,6 +3689,12 @@ components:
         NftRegisterPayload:
             type: object
             properties:
+                burn_txid:
+                    type: string
+                    description: Burn transaction ID
+                    example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                    minLength: 64
+                    maxLength: 64
                 collection_act_txid:
                     type: string
                     description: 'Act Collection TxID to add given ticket in collection '
@@ -3774,6 +3786,7 @@ components:
                     maxLength: 128
             description: Request of the registration NFT
             example:
+                burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -4341,6 +4354,12 @@ components:
         RegisterRequestBody:
             type: object
             properties:
+                burn_txid:
+                    type: string
+                    description: Burn transaction ID
+                    example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                    minLength: 64
+                    maxLength: 64
                 collection_act_txid:
                     type: string
                     description: 'Act Collection TxID to add given ticket in collection '
@@ -4433,6 +4452,7 @@ components:
                     example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
                     maxLength: 128
             example:
+                burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                 creator_name: Leonardo da Vinci
                 creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -4568,6 +4588,7 @@ components:
                       status: Task Started
                 status: Task Started
                 ticket:
+                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -4787,6 +4808,7 @@ components:
                 id: n6Qn6TFM
                 status: Task Started
                 ticket:
+                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -4823,6 +4845,7 @@ components:
                 - id: n6Qn6TFM
                   status: Task Started
                   ticket:
+                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -4849,6 +4872,7 @@ components:
                 - id: n6Qn6TFM
                   status: Task Started
                   ticket:
+                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -4875,6 +4899,7 @@ components:
                 - id: n6Qn6TFM
                   status: Task Started
                   ticket:
+                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
@@ -4901,6 +4926,7 @@ components:
                 - id: n6Qn6TFM
                   status: Task Started
                   ticket:
+                    burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                     creator_name: Leonardo da Vinci
                     creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS

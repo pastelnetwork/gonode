@@ -127,6 +127,10 @@ func GetExternalIPAddress() (externalIP string, err error) {
 		return "", err
 	}
 
+	if net.ParseIP(string(body)) == nil {
+		return "", errors.Errorf("invalid IP response from %s", "ipconf.ip")
+	}
+
 	return string(body), nil
 }
 

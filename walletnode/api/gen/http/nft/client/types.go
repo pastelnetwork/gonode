@@ -55,6 +55,8 @@ type RegisterRequestBody struct {
 	CollectionActTxid *string `form:"collection_act_txid,omitempty" json:"collection_act_txid,omitempty" xml:"collection_act_txid,omitempty"`
 	// OpenAPI GroupID string
 	OpenAPIGroupID string `form:"open_api_group_id" json:"open_api_group_id" xml:"open_api_group_id"`
+	// Burn transaction ID
+	BurnTxid *string `form:"burn_txid,omitempty" json:"burn_txid,omitempty" xml:"burn_txid,omitempty"`
 }
 
 // UploadImageRequestBody is the type of the "nft" service "uploadImage"
@@ -860,6 +862,8 @@ type NftRegisterPayloadResponseBody struct {
 	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
 	// Passphrase of the owner's PastelID
 	Key *string `form:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
+	// Burn transaction ID
+	BurnTxid *string `form:"burn_txid,omitempty" json:"burn_txid,omitempty" xml:"burn_txid,omitempty"`
 }
 
 // ThumbnailcoordinateResponseBody is used to define fields on response body
@@ -935,6 +939,8 @@ type NftRegisterPayloadResponse struct {
 	OpenAPIGroupID *string `form:"open_api_group_id,omitempty" json:"open_api_group_id,omitempty" xml:"open_api_group_id,omitempty"`
 	// Passphrase of the owner's PastelID
 	Key *string `form:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
+	// Burn transaction ID
+	BurnTxid *string `form:"burn_txid,omitempty" json:"burn_txid,omitempty" xml:"burn_txid,omitempty"`
 }
 
 // ThumbnailcoordinateResponse is used to define fields on response body types.
@@ -1045,6 +1051,7 @@ func NewRegisterRequestBody(p *nft.RegisterPayload) *RegisterRequestBody {
 		MakePubliclyAccessible: p.MakePubliclyAccessible,
 		CollectionActTxid:      p.CollectionActTxid,
 		OpenAPIGroupID:         p.OpenAPIGroupID,
+		BurnTxid:               p.BurnTxid,
 	}
 	if p.ThumbnailCoordinate != nil {
 		body.ThumbnailCoordinate = marshalNftThumbnailcoordinateToThumbnailcoordinateRequestBody(p.ThumbnailCoordinate)
@@ -2709,6 +2716,16 @@ func ValidateNftRegisterPayloadResponseBody(body *NftRegisterPayloadResponseBody
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	if body.BurnTxid != nil {
+		if utf8.RuneCountInString(*body.BurnTxid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, true))
+		}
+	}
+	if body.BurnTxid != nil {
+		if utf8.RuneCountInString(*body.BurnTxid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, false))
+		}
+	}
 	return
 }
 
@@ -2897,6 +2914,16 @@ func ValidateNftRegisterPayloadResponse(body *NftRegisterPayloadResponse) (err e
 	if body.ThumbnailCoordinate != nil {
 		if err2 := ValidateThumbnailcoordinateResponse(body.ThumbnailCoordinate); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.BurnTxid != nil {
+		if utf8.RuneCountInString(*body.BurnTxid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, true))
+		}
+	}
+	if body.BurnTxid != nil {
+		if utf8.RuneCountInString(*body.BurnTxid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, false))
 		}
 	}
 	return

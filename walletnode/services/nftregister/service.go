@@ -108,12 +108,12 @@ func (service *NftRegistrationService) CalculateFee(ctx context.Context, fileID 
 	}
 
 	fileDataInMb := utils.GetFileSizeInMB(fileData)
-	unitFee, err := service.pastelHandler.PastelClient.GetNetworkFeePerMB(ctx)
+	fee, err := service.pastelHandler.PastelClient.NFTStorageFee(ctx, int(fileDataInMb))
 	if err != nil {
 		return 0.0, fmt.Errorf("get network fee failure: %w", err)
 	}
 
-	return float64(unitFee) * fileDataInMb, nil
+	return fee.EstimatedNftStorageFeeMax * 0.1, nil
 }
 
 // ValidateUser validates user credentials

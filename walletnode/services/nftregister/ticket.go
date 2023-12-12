@@ -27,6 +27,7 @@ type NftRegistrationRequest struct {
 	CollectionTxID            string                    `json:"collection_txid"`
 	OpenAPIGroupID            string                    `json:"open_api_group_id"`
 	FileName                  string                    `json:"file_name"`
+	BurnTxID                  *string                   `json:"burn_tx_id"`
 }
 
 // FromNftRegisterPayload converts from one to another
@@ -56,6 +57,7 @@ func FromNftRegisterPayload(payload *nft.RegisterPayload) *NftRegistrationReques
 		Thumbnail:                 thumbnail,
 		MakePubliclyAccessible:    payload.MakePubliclyAccessible,
 		OpenAPIGroupID:            payload.OpenAPIGroupID,
+		BurnTxID:                  payload.BurnTxid,
 	}
 
 	if payload.CollectionActTxid != nil {

@@ -1394,6 +1394,7 @@ func unmarshalNftRegisterPayloadResponseBodyToNftviewsNftRegisterPayloadView(v *
 		CollectionActTxid:      v.CollectionActTxid,
 		OpenAPIGroupID:         v.OpenAPIGroupID,
 		Key:                    v.Key,
+		BurnTxid:               v.BurnTxid,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseBodyToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
@@ -1474,6 +1475,7 @@ func unmarshalNftRegisterPayloadResponseToNftviewsNftRegisterPayloadView(v *NftR
 		CollectionActTxid:      v.CollectionActTxid,
 		OpenAPIGroupID:         v.OpenAPIGroupID,
 		Key:                    v.Key,
+		BurnTxid:               v.BurnTxid,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)

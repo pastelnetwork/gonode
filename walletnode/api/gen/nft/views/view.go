@@ -111,6 +111,8 @@ type NftRegisterPayloadView struct {
 	OpenAPIGroupID *string
 	// Passphrase of the owner's PastelID
 	Key *string
+	// Burn transaction ID
+	BurnTxid *string
 }
 
 // ThumbnailcoordinateView is a type that runs validations on a projected type.
@@ -482,6 +484,16 @@ func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) 
 	if result.ThumbnailCoordinate != nil {
 		if err2 := ValidateThumbnailcoordinateView(result.ThumbnailCoordinate); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if result.BurnTxid != nil {
+		if utf8.RuneCountInString(*result.BurnTxid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.burn_txid", *result.BurnTxid, utf8.RuneCountInString(*result.BurnTxid), 64, true))
+		}
+	}
+	if result.BurnTxid != nil {
+		if utf8.RuneCountInString(*result.BurnTxid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.burn_txid", *result.BurnTxid, utf8.RuneCountInString(*result.BurnTxid), 64, false))
 		}
 	}
 	return
