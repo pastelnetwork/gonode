@@ -102,7 +102,7 @@ func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 	res = &nft.ImageRes{
 		ImageID:      id,
 		ExpiresIn:    expiry,
-		EstimatedFee: fee + (fee * 0.1),
+		EstimatedFee: fee,
 	}
 
 	return res, nil

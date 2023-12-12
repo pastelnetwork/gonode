@@ -238,5 +238,5 @@ type Client interface {
 
 	//NFTStorageFee returns the fee of NFT storage
 	//Command `tickets tools estimatenftstoragefee <sizeInMB>`
-	NFTStorageFee(ctx context.Context, sizeInMB float64) (*NFTStorageFeeEstimate, error)
+	NFTStorageFee(ctx context.Context, sizeInMB int) (*NFTStorageFeeEstimate, error)
 }

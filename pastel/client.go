@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"math"
 	"net"
 	"strconv"
 	"strings"
@@ -821,10 +820,10 @@ func (client *client) ZGetTotalBalance(ctx context.Context) (*GetTotalBalanceRes
 
 // NFTStorageFee returns the fee of NFT storage
 // Command `tickets tools estimatenftstoragefee <sizeInMB>`
-func (client *client) NFTStorageFee(ctx context.Context, sizeInMB float64) (*NFTStorageFeeEstimate, error) {
+func (client *client) NFTStorageFee(ctx context.Context, sizeInMB int) (*NFTStorageFeeEstimate, error) {
 	resp := &NFTStorageFeeEstimate{}
 
-	if err := client.callFor(ctx, &resp, "tickets", "tools", "estimatenftstoragefee", int(math.Ceil(sizeInMB))); err != nil {
+	if err := client.callFor(ctx, &resp, "tickets", "tools", "estimatenftstoragefee", sizeInMB); err != nil {
 		return nil, errors.Errorf("failed to get estimated nft storage: %w", err)
 	}
 

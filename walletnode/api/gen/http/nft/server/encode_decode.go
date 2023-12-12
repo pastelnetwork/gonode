@@ -1387,6 +1387,7 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponseBody(v *nf
 		Green:             v.Green,
 		CollectionActTxid: v.CollectionActTxid,
 		Key:               *v.Key,
+		BurnTxid:          v.BurnTxid,
 	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
@@ -1459,6 +1460,7 @@ func marshalNftviewsNftRegisterPayloadViewToNftRegisterPayloadResponse(v *nftvie
 		Green:             v.Green,
 		CollectionActTxid: v.CollectionActTxid,
 		Key:               *v.Key,
+		BurnTxid:          v.BurnTxid,
 	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible

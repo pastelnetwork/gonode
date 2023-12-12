@@ -868,11 +868,18 @@ func (task *NftRegistrationTask) activateNftTicket(ctx context.Context) (string,
 // WalletNode - Burn 10% of Registration fee
 // WalletNode - Upload txid of burned transaction to the SuperNode’s 1, 2 and 3
 func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context.Context) error {
-	burnAmount := float64(task.registrationFee) / float64(10)
+	var burnTxid string
+	var err error
 
-	burnTxid, err := task.service.pastelHandler.PastelClient.SendToAddress(ctx, task.service.pastelHandler.GetBurnAddress(), int64(burnAmount))
-	if err != nil {
-		return fmt.Errorf("burn some coins: %w", err)
+	if task.Request.BurnTxID == nil {
+		burnAmount := float64(task.registrationFee) / float64(10)
+
+		burnTxid, err = task.service.pastelHandler.PastelClient.SendToAddress(ctx, task.service.pastelHandler.GetBurnAddress(), int64(burnAmount))
+		if err != nil {
+			return fmt.Errorf("burn some coins: %w", err)
+		}
+	} else {
+		burnTxid = *task.Request.BurnTxID
 	}
 
 	log.WithContext(ctx).Info("validating burn transaction")
@@ -983,7 +990,7 @@ func NewNFTRegistrationTask(service *NftRegistrationService, request *NftRegistr
 
 	checkMinBalance := true
 	fileBytes, _ := request.Image.Bytes()
-	fee, err := service.pastelHandler.PastelClient.NFTStorageFee(context.TODO(), utils.GetFileSizeInMB(fileBytes))
+	fee, err := service.pastelHandler.PastelClient.NFTStorageFee(context.TODO(), int(utils.GetFileSizeInMB(fileBytes)))
 	if err != nil {
 		log.WithContext(context.Background()).WithError(err).Error("NewNFTRegTask: error getting nft storage fee")
 		checkMinBalance = false

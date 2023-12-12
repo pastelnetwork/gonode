@@ -381,6 +381,8 @@ type NftRegisterPayload struct {
 	OpenAPIGroupID string
 	// Passphrase of the owner's PastelID
 	Key string
+	// Burn transaction ID
+	BurnTxid *string
 }
 
 // NftSearchPayload is the payload type of the nft service nftSearch method.
@@ -511,6 +513,8 @@ type RegisterPayload struct {
 	OpenAPIGroupID string
 	// Passphrase of the owner's PastelID
 	Key string
+	// Burn transaction ID
+	BurnTxid *string
 }
 
 // RegisterResult is the result type of the nft service register method.
@@ -917,6 +921,7 @@ func transformNftviewsNftRegisterPayloadViewToNftRegisterPayload(v *nftviews.Nft
 		Green:             v.Green,
 		CollectionActTxid: v.CollectionActTxid,
 		Key:               *v.Key,
+		BurnTxid:          v.BurnTxid,
 	}
 	if v.MakePubliclyAccessible != nil {
 		res.MakePubliclyAccessible = *v.MakePubliclyAccessible
@@ -990,6 +995,7 @@ func transformNftRegisterPayloadToNftviewsNftRegisterPayloadView(v *NftRegisterP
 		CollectionActTxid:      v.CollectionActTxid,
 		OpenAPIGroupID:         &v.OpenAPIGroupID,
 		Key:                    &v.Key,
+		BurnTxid:               v.BurnTxid,
 	}
 	if v.ThumbnailCoordinate != nil {
 		res.ThumbnailCoordinate = transformThumbnailcoordinateToNftviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
