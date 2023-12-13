@@ -806,16 +806,45 @@ func (client *client) MasterNodesExtra(ctx context.Context) (MasterNodes, error)
 	return masterNodes, nil
 }
 
+type ParsedGetTotalBalanceResponse struct {
+	Transparent string `json:"transparent"`
+	Private     string `json:"private"`
+	Total       string `json:"total"`
+}
+
+func (resp *ParsedGetTotalBalanceResponse) Parse() (*GetTotalBalanceResponse, error) {
+	transparent, err := strconv.ParseFloat(resp.Transparent, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing transparent balance: %w", err)
+	}
+
+	private, err := strconv.ParseFloat(resp.Private, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing private balance: %w", err)
+	}
+
+	total, err := strconv.ParseFloat(resp.Total, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing total balance: %w", err)
+	}
+
+	return &GetTotalBalanceResponse{
+		Transparent: transparent,
+		Private:     private,
+		Total:       total,
+	}, nil
+}
+
 // ZGetTotalBalance returns total balance
 // Command `z_gettotalbalance`
 func (client *client) ZGetTotalBalance(ctx context.Context) (*GetTotalBalanceResponse, error) {
-	resp := &GetTotalBalanceResponse{}
+	resp := &ParsedGetTotalBalanceResponse{}
 
 	if err := client.callFor(ctx, &resp, "z_gettotalbalance"); err != nil {
-		return nil, errors.Errorf("failed to get total balance: %w", err)
+		return nil, fmt.Errorf("failed to get total balance: %w", err)
 	}
 
-	return resp, nil
+	return resp.Parse()
 }
 
 // NFTStorageFee returns the fee of NFT storage

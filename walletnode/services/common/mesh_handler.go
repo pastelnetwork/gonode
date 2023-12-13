@@ -277,7 +277,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 	}
 
 	if m.checkMinBalance {
-		WNTopNodesList = m.filterByMinBalanceReq(ctx, WNTopNodesList, balances, 1000)
+		WNTopNodesList = m.filterByMinBalanceReq(ctx, WNTopNodesList, balances, m.minBalance)
 		if len(WNTopNodesList) < n {
 			return WNTopNodesList, errors.New("failed to get enough nodes with minimum balance")
 		}
