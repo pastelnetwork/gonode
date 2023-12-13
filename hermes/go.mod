@@ -3,6 +3,7 @@ module github.com/pastelnetwork/gonode/hermes
 go 1.21
 
 replace (
+	github.com/kolesa-team/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/mixins => ../mixins
 	github.com/pastelnetwork/gonode/p2p => ../p2p
@@ -14,9 +15,11 @@ replace (
 require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/bxcodec/faker/v4 v4.0.0-beta.3
+	github.com/disintegration/imaging v1.6.2
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/json-iterator/go v1.1.12
+	github.com/kolesa-team/go-webp v1.0.4
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/pastelnetwork/gonode/common v0.0.0-20230829114806-701c926c0c44
 	github.com/pastelnetwork/gonode/mixins v0.0.0-20230829114806-701c926c0c44
@@ -30,7 +33,6 @@ require (
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
