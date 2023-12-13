@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	watchlistThreshold  = 6
-	defaultClosestNodes = 6
+	minNodesOnWatchlistThreshold = 6
+	minTimeForWatchlistNodes     = 30 //in minutes
+	defaultClosestNodes          = 6
 )
 
 // TicketType will identify the type of ticket
@@ -38,8 +39,8 @@ type SymbolFileKeyDetails struct {
 	TicketType TicketType
 }
 
-// SelfHealingWorker checks the ping info and decide self-healing files
-func (task *SHTask) SelfHealingWorker(ctx context.Context) error {
+// GenerateSelfHealingChallenge worker checks the ping info and identify self-healing tickets and their recipients
+func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 	log.WithContext(ctx).Infoln("Self Healing Worker has been invoked")
 
 	watchlistPingInfos, err := task.retrieveWatchlistPingInfo(ctx)
@@ -49,11 +50,12 @@ func (task *SHTask) SelfHealingWorker(ctx context.Context) error {
 	}
 	log.WithContext(ctx).Info("watchlist ping history has been retrieved")
 
-	if len(watchlistPingInfos) < watchlistThreshold {
+	shouldTrigger, watchlistPingInfos := task.shouldTriggerSelfHealing(watchlistPingInfos)
+	if !shouldTrigger {
 		log.WithContext(ctx).WithField("no_of_nodes_on_watchlist", len(watchlistPingInfos)).Info("not enough nodes on the watchlist, skipping further processing")
 		return nil
 	}
-	log.WithContext(ctx).Info("watchlist threshold has been reached, proceeding forward")
+	log.WithContext(ctx).Info("self-healing has been triggered, proceeding with the identification of files & recipients")
 
 	keys, symbolFileKeyMap, err := task.ListSymbolFileKeysFromNFTAndActionTickets(ctx)
 	if err != nil {
@@ -115,6 +117,23 @@ func (task *SHTask) retrieveWatchlistPingInfo(ctx context.Context) (types.PingIn
 	}
 
 	return infos, nil
+}
+
+func (task *SHTask) shouldTriggerSelfHealing(infos types.PingInfos) (bool, types.PingInfos) {
+	var filteredPings types.PingInfos
+	for _, ping := range infos {
+		if ping.LastSeen.Valid {
+			if time.Since(ping.LastSeen.Time).Minutes() <= minTimeForWatchlistNodes {
+				filteredPings = append(filteredPings, ping)
+			}
+		}
+	}
+
+	if len(filteredPings) < minNodesOnWatchlistThreshold {
+		return false, filteredPings
+	}
+
+	return true, filteredPings
 }
 
 // ListSymbolFileKeysFromNFTAndActionTickets : Get an NFT and Action Ticket's associated raptor q ticket file id's.
@@ -285,7 +304,12 @@ func (task *SHTask) identifyChallengeRecipients(ctx context.Context, selfHealing
 			continue
 		}
 
-		challengeRecipients := task.SHService.GetNClosestSupernodeIDsToComparisonString(ctx, 1, string(dataHash), nil)
+		listOfSupernodes, err := task.getListOfSupernode(ctx)
+		if err != nil {
+			logger.WithError(err).Error("unable to retrieve list of supernodes")
+		}
+
+		challengeRecipients := task.SHService.GetNClosestSupernodeIDsToComparisonString(ctx, 1, string(dataHash), listOfSupernodes)
 		if len(challengeRecipients) < 1 {
 			log.WithContext(ctx).WithField("file_hash", dataHash).Info("no closest nodes have found against the file")
 			continue
@@ -571,7 +595,7 @@ func (task *SHTask) updateWatchlist(ctx context.Context, watchlistPingInfos type
 		defer store.CloseHistoryDB(ctx)
 
 		for _, info := range watchlistPingInfos {
-			err = store.UpdatePingInfo(info.SupernodeID)
+			err = store.UpdatePingInfo(info.SupernodeID, false, true)
 			if err != nil {
 				log.WithContext(ctx).WithField("supernode_id", info.SupernodeID).
 					Error("error updating watchlist ping info")
@@ -582,4 +606,18 @@ func (task *SHTask) updateWatchlist(ctx context.Context, watchlistPingInfos type
 	}
 
 	return nil
+}
+
+func (service *SHService) getListOfSupernode(ctx context.Context) ([]string, error) {
+	var ret = make([]string, 0)
+	listMN, err := service.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
+	if err != nil {
+		return ret, err
+	}
+
+	for _, node := range listMN {
+		ret = append(ret, node.ExtKey)
+	}
+
+	return ret, nil
 }

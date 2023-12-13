@@ -9,7 +9,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
 // VerifySelfHealingChallenge verifies the self-healing challenge
@@ -41,20 +40,6 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 	}
 	merkleroot := blkVerbose1.MerkleRoot
 
-	log.WithContext(ctx).Info("establishing connection with rq service")
-	var rqConnection rqnode.Connection
-	rqConnection, err = task.StorageHandler.RqClient.Connect(ctx, task.config.RaptorQServiceAddress)
-	if err != nil {
-		log.WithContext(ctx).Error("Error establishing RQ connection")
-	}
-	defer rqConnection.Close()
-
-	rqNodeConfig := &rqnode.Config{
-		RqFilesDir: task.config.RqFilesDir,
-	}
-	rqService := rqConnection.RaptorQ(rqNodeConfig)
-	log.WithContext(ctx).Info("connection established with rq service")
-
 	verificationMsg := &types.SelfHealingMessage{
 		ChallengeID: incomingResponseMessage.ChallengeID,
 		SenderID:    task.nodeID,
@@ -80,15 +65,11 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 		},
 	}
 
-	//Checking Process
-	//1. false, nil, err    - should not update the challenge to completed, so that it can be retried again
-	//2. false, nil, nil    - reconstruction not required
-	//3. true, symbols, nil - reconstruction required
-
 	var reconstructedFileHash []byte
 	respondedTickets := incomingResponseMessage.SelfHealingMessageData.Response.RespondedTickets
 
 	if respondedTickets == nil {
+		log.WithContext(ctx).Info("no tickets have been responded by the recipient")
 		return nil, nil
 	}
 
@@ -100,43 +81,37 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 		log.WithContext(ctx).WithField("challenge_id", incomingResponseMessage.ChallengeID).Info("reg ticket has been retrieved")
 
 		if cascadeTicket != nil || nftTicket != nil {
-			for _, challengeFileHash := range ticket.MissingKeys {
-				isReconstructionReq, availableSymbols, err := task.checkingProcess(ctx, challengeFileHash)
-
-				if err != nil && !isReconstructionReq {
-					log.WithContext(ctx).WithError(err).WithField("failed_challenge_id", incomingResponseMessage.ChallengeID).Error("Error in checking process")
-					//responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
-					//shChallenge.Status = types.FailedSelfHealingStatus
-					//storeLogs(ctx, store, shChallenge)
-					//return responseMessage, err
-				}
-
-				if !isReconstructionReq && availableSymbols == nil {
-					log.WithContext(ctx).WithField("failed_challenge_id", incomingResponseMessage.ChallengeID).Info(fmt.Sprintf("Reconstruction is not required for file: %s", challengeFileHash))
-					//responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
-					//shChallenge.Status = types.FailedSelfHealingStatus
-					//storeLogs(ctx, store, shChallenge)
-					//return responseMessage, nil
-				}
-
-				_, reconstructedFileHash, err = task.selfHealing(ctx, rqService, incomingResponseMessage, nftTicket, cascadeTicket, availableSymbols)
-				if err != nil {
-					log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
-				}
-				log.WithContext(ctx).WithField("failed_challenge_id", incomingResponseMessage.ChallengeID).Info("File has been reconstructed")
-
-				log.WithContext(ctx).WithField("failed_challenge_id", incomingResponseMessage.ChallengeID).Info("Comparing hashes")
-				if !bytes.Equal(reconstructedFileHash, ticket.ReconstructedFileHash) {
-					log.WithContext(ctx).WithField("failed_challenge_id", incomingResponseMessage.ChallengeID).Info("reconstructed file hash does not match with the verifier reconstructed file")
-
-					//responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
-					//shChallenge.Status = types.FailedSelfHealingStatus
-					//shChallenge.ReconstructedFileHash = reconstructedFileHash
-					//storeLogs(ctx, store, shChallenge)
-					//return responseMessage, nil
-				}
-				log.WithContext(ctx).WithField("failed_challenge_id", incomingResponseMessage.ChallengeID).Info("hashes have been matched of the responder and verifiers")
+			isReconstructionReq := task.isReconstructionRequired(ctx, ticket.MissingKeys)
+			{
+				log.WithContext(ctx).WithField("txid", ticket.TxID).Info("Reconstruction is not required for ticket")
+				continue
 			}
+
+			if !isReconstructionReq {
+				log.WithContext(ctx).WithError(err).WithField("failed_challenge_id", incomingResponseMessage.ChallengeID).Error("Error in checking process")
+				//responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+				//shChallenge.Status = types.FailedSelfHealingStatus
+				//storeLogs(ctx, store, shChallenge)
+				//return responseMessage, err
+			}
+
+			_, reconstructedFileHash, err = task.selfHealing(ctx, ticket.TxID, nftTicket, cascadeTicket)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
+			}
+
+			log.WithContext(ctx).WithField("failed_challenge_id", incomingResponseMessage.ChallengeID).Info("Comparing hashes")
+			if !bytes.Equal(reconstructedFileHash, ticket.ReconstructedFileHash) {
+				log.WithContext(ctx).WithField("txid", ticket.TxID).Info("reconstructed file hash does not match with the verifier reconstructed file")
+
+				//responseMessage.ChallengeStatus = pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE
+				//shChallenge.Status = types.FailedSelfHealingStatus
+				//shChallenge.ReconstructedFileHash = reconstructedFileHash
+				//storeLogs(ctx, store, shChallenge)
+				//return responseMessage, nil
+			}
+			log.WithContext(ctx).WithField("txid", ticket.TxID).Info("reconstructed file hash matched")
+
 		} else if senseTicket != nil {
 			reqSelfHealing, mostCommonFile := task.senseCheckingProcess(ctx, senseTicket.DDAndFingerprintsIDs)
 			if err != nil {

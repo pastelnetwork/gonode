@@ -87,7 +87,6 @@ func (task *SHTask) pingNodes(ctx context.Context, nodesToPing pastel.MasterNode
 					SupernodeID:      node.ExtKey,
 					IPAddress:        node.ExtAddress,
 					IsOnline:         false,
-					IsAdjusted:       false,
 					LastResponseTime: 0.0,
 				}
 
@@ -107,7 +106,6 @@ func (task *SHTask) pingNodes(ctx context.Context, nodesToPing pastel.MasterNode
 				SupernodeID:      node.ExtKey,
 				IPAddress:        node.ExtAddress,
 				IsOnline:         res.IsOnline,
-				IsAdjusted:       false,
 				LastResponseTime: respondedAt.Sub(timeBeforePing).Seconds(),
 				LastSeen:         sql.NullTime{Time: respondedAt, Valid: true},
 			}
@@ -233,11 +231,15 @@ func GetPingInfoToInsert(existedInfo, info *types.PingInfo) *types.PingInfo {
 
 	if info.IsOnline {
 		info.TotalSuccessfulPings = existedInfo.TotalSuccessfulPings + 1
+		info.IsOnWatchlist = false
+		info.IsAdjusted = false
 	}
 
 	if !info.IsOnline {
 		info.TotalSuccessfulPings = existedInfo.TotalSuccessfulPings
 		info.LastSeen = existedInfo.LastSeen
+		info.IsOnWatchlist = existedInfo.IsOnWatchlist
+		info.IsAdjusted = existedInfo.IsAdjusted
 	}
 
 	info.CumulativeResponseTime = existedInfo.CumulativeResponseTime + info.LastResponseTime

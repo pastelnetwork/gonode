@@ -2,6 +2,7 @@ package selfhealing
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"sync"
 
 	json "github.com/json-iterator/go"
@@ -32,6 +33,7 @@ type SHTask struct {
 
 	//response message mutex to avoid race conditions
 	responseMessageMu sync.Mutex
+	downloadTask      download.NftDownloadingTask
 }
 
 // Run : RunHelper's cleanup function is currently nil as WIP will determine what needs to be cleaned.

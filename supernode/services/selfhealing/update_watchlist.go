@@ -23,6 +23,7 @@ func (task *SHTask) UpdateWatchlist(ctx context.Context) error {
 
 		if task.shouldUpdateWatchlistField(info) {
 			info.IsOnWatchlist = true
+			info.IsAdjusted = false
 
 			if err := task.UpsertPingHistory(ctx, info); err != nil {
 				log.WithContext(ctx).
@@ -92,6 +93,10 @@ func (task *SHTask) UpsertPingHistory(ctx context.Context, info types.PingInfo) 
 }
 
 func (task *SHTask) shouldUpdateWatchlistField(info types.PingInfo) bool {
+	if info.IsAdjusted || info.IsOnWatchlist {
+		return false
+	}
+
 	twentyMinutesAgo := time.Now().UTC().Add(-20 * time.Minute)
 
 	// Check if the timestamp is before 20 minutes ago

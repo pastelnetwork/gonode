@@ -179,7 +179,8 @@ func (task *NftDownloadingTask) getSymbolIDsFromMetadataFile(ctx context.Context
 	return symbolIDs, nil
 }
 
-func (task *NftDownloadingTask) restoreFile(ctx context.Context, rqID []string, rqOti []byte, dataHash []byte, txid string) ([]byte, error) {
+// RestoreFile restores the file using the available rq-ids
+func (task *NftDownloadingTask) RestoreFile(ctx context.Context, rqID []string, rqOti []byte, dataHash []byte, txid string) ([]byte, error) {
 	var file []byte
 	var lastErr error
 	var err error

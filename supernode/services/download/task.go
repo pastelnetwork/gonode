@@ -382,7 +382,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		// Get the list of "symbols/chunks" from Kademlia by using symbol identifiers from file
 		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_oti)
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-		file, err = task.restoreFile(ctx, info.rqIDs, info.rqOti, info.dataHash, txid)
+		file, err = task.RestoreFile(ctx, info.rqIDs, info.rqOti, info.dataHash, txid)
 		if err != nil {
 			log.WithContext(ctx).WithField("txid", txid).Error("restore file failed")
 			err = errors.Errorf("restore file: %w", err)
