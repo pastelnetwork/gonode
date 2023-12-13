@@ -35,6 +35,7 @@ type SHService struct {
 	nodeClient        node.ClientInterface
 	currentBlockCount int32
 	historyDB         storage.LocalStoreInterface
+	ticketsMap        map[string]bool
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -51,8 +52,8 @@ func (service *SHService) CheckNextBlockAvailable(ctx context.Context) bool {
 	return false
 }
 
-// RunFetchNodesPingInfoWorker : This worker will periodically fetch and maintain the ping info about other SNs in the network
-func (service *SHService) RunFetchNodesPingInfoWorker(ctx context.Context) {
+// PingNodes : This worker will periodically ping SNs and maintain their ping history
+func (service *SHService) PingNodes(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(defaultFetchNodesPingInfoInterval):
@@ -93,7 +94,7 @@ func (service *SHService) Run(ctx context.Context) error {
 		}
 	}()
 
-	go service.RunFetchNodesPingInfoWorker(ctx)
+	go service.PingNodes(ctx)
 
 	go service.RunUpdateWatchlistWorker(ctx)
 
@@ -102,7 +103,7 @@ func (service *SHService) Run(ctx context.Context) error {
 		case <-time.After(defaultTimerBlockCheckDuration):
 			newCtx := context.Background()
 			task := service.NewSHTask()
-			task.SelfHealingWorker(newCtx)
+			task.GenerateSelfHealingChallenge(newCtx)
 
 			log.WithContext(ctx).Debug("Would normally invoke a self-healing worker")
 		case <-ctx.Done():
@@ -143,6 +144,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		nodeID:           config.PastelID,
 		pastelHandler:    mixins.NewPastelHandler(pastelClient),
 		historyDB:        historyDB,
+		ticketsMap:       make(map[string]bool),
 	}
 }
 

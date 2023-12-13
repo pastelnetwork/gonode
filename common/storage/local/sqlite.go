@@ -267,15 +267,15 @@ func (s *SQLiteStore) GetWatchlistPingInfo() ([]types.PingInfo, error) {
 }
 
 // UpdatePingInfo updates the ping info
-func (s *SQLiteStore) UpdatePingInfo(supernodeID string) error {
+func (s *SQLiteStore) UpdatePingInfo(supernodeID string, isOnWatchlist, isAdjusted bool) error {
 	// Update query
 	const updateQuery = `
 UPDATE ping_history
-SET is_adjusted = true, is_on_watchlist = false
+SET is_adjusted = ?, is_on_watchlist = ?
 WHERE supernode_id = ?;`
 
 	// Execute the update query
-	_, err := s.db.Exec(updateQuery, supernodeID)
+	_, err := s.db.Exec(updateQuery, isAdjusted, isOnWatchlist, supernodeID)
 	if err != nil {
 		return err
 	}

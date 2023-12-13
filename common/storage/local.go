@@ -21,6 +21,6 @@ type LocalStoreInterface interface {
 	GetPingInfoBySupernodeID(supernodeID string) (*types.PingInfo, error)
 	GetAllPingInfos() (types.PingInfos, error)
 	GetWatchlistPingInfo() ([]types.PingInfo, error)
-	UpdatePingInfo(supernodeID string) error
+	UpdatePingInfo(supernodeID string, isOnWatchlist, isAdjusted bool) error
 	CloseHistoryDB(ctx context.Context)
 }

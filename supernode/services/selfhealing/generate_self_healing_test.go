@@ -2,12 +2,13 @@ package selfhealing
 
 import (
 	"context"
-	json "github.com/json-iterator/go"
-	"github.com/pastelnetwork/gonode/common/types"
-	"golang.org/x/crypto/sha3"
+	"database/sql"
 	"testing"
+	"time"
 
 	fuzz "github.com/google/gofuzz"
+	json "github.com/json-iterator/go"
+	"github.com/pastelnetwork/gonode/common/types"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -16,6 +17,7 @@ import (
 	rqmock "github.com/pastelnetwork/gonode/raptorq/node/test"
 	shtest "github.com/pastelnetwork/gonode/supernode/node/test/self_healing"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/sha3"
 )
 
 func TestListSymbolFileKeysForNFTAndActionTickets(t *testing.T) {
@@ -298,6 +300,78 @@ func TestCreateSelfHealingTicketsMap(t *testing.T) {
 			selfHealingTicketsMap := task.identifySelfHealingTickets(ctx, watchlistPingInfo, closestNodesMap, symbolFileKeyMap)
 			// handle the test case's assertions with the provided func
 			tt.expect(t, selfHealingTicketsMap)
+		})
+	}
+
+}
+
+func TestShouldTriggerSelfHealing(t *testing.T) {
+	t.Parallel()
+
+	config := NewConfig()
+	pastelClient := pastelMock.NewMockClient(t)
+	p2pClient := p2pMock.NewMockClient(t)
+	raptorQClient := rqmock.NewMockClient(t)
+	var nodeClient *shtest.Client
+
+	tests := []struct {
+		testcase string
+		infos    types.PingInfos
+		expect   func(*testing.T, bool, types.PingInfos)
+	}{
+		{
+			testcase: "when more than 6 nodes that are on watchlist, have last_seen within 30 min time span",
+			infos: []types.PingInfo{
+				types.PingInfo{SupernodeID: "A", LastSeen: sql.NullTime{Time: time.Now().Add(-5 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "B", LastSeen: sql.NullTime{Time: time.Now().Add(-10 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "C", LastSeen: sql.NullTime{Time: time.Now().Add(-15 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "D", LastSeen: sql.NullTime{Time: time.Now().Add(-45 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "E", LastSeen: sql.NullTime{Time: time.Now().Add(-50 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "F", LastSeen: sql.NullTime{Time: time.Now().Add(-75 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "G", LastSeen: sql.NullTime{Time: time.Now().Add(-100 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "H", LastSeen: sql.NullTime{Time: time.Now().Add(-25 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "I", LastSeen: sql.NullTime{Time: time.Now().Add(-29 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "J", LastSeen: sql.NullTime{Time: time.Now().Add(-22 * time.Minute), Valid: true}},
+			},
+			expect: func(t *testing.T, shouldTrigger bool, infos types.PingInfos) {
+				require.Equal(t, len(infos), 6)
+				require.Equal(t, shouldTrigger, true)
+			},
+		},
+		{
+			testcase: "when less than 6 nodes that are on watchlist, have last_seen within 30 min time span",
+			infos: []types.PingInfo{
+				types.PingInfo{SupernodeID: "A", LastSeen: sql.NullTime{Time: time.Now().Add(-55 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "B", LastSeen: sql.NullTime{Time: time.Now().Add(-90 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "C", LastSeen: sql.NullTime{Time: time.Now().Add(-45 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "D", LastSeen: sql.NullTime{Time: time.Now().Add(-45 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "E", LastSeen: sql.NullTime{Time: time.Now().Add(-50 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "F", LastSeen: sql.NullTime{Time: time.Now().Add(-75 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "G", LastSeen: sql.NullTime{Time: time.Now().Add(-100 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "H", LastSeen: sql.NullTime{Time: time.Now().Add(-75 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "I", LastSeen: sql.NullTime{Time: time.Now().Add(-29 * time.Minute), Valid: true}},
+				types.PingInfo{SupernodeID: "J", LastSeen: sql.NullTime{Time: time.Now().Add(-22 * time.Minute), Valid: true}},
+			},
+			expect: func(t *testing.T, shouldTrigger bool, infos types.PingInfos) {
+				require.Equal(t, len(infos), 2)
+				require.Equal(t, shouldTrigger, false)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.testcase, func(t *testing.T) {
+			// Run the setup for the testcase
+			service := NewService(config, nil, pastelClient, nodeClient,
+				p2pClient, nil)
+			task := NewSHTask(service)
+			task.StorageHandler.RqClient = raptorQClient
+			// call the function to get return values
+			shouldTrigger, filteredPings := task.shouldTriggerSelfHealing(tt.infos)
+			// handle the test case's assertions with the provided func
+			tt.expect(t, shouldTrigger, filteredPings)
 		})
 	}
 
