@@ -62,3 +62,13 @@ func (kwt KeysWithTimestamp) FindFirstAfter(t time.Time) int {
 	// return -1 if no such element is found
 	return -1
 }
+
+// DelKey is a key that could be deleted
+type DelKey struct {
+	Key       string    `json:"key"`
+	CreatedAt time.Time `json:"createdAt"`
+	Count     int       `json:"count"`
+}
+
+// DisabledKeys is the list for disabled keys
+type DelKeys []DelKey

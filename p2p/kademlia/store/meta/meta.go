@@ -12,6 +12,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 
+	"database/sql"
+
 	"github.com/cenkalti/backoff"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
@@ -133,6 +135,21 @@ func (s *Store) migrate() error {
     `
 	if _, err := s.db.Exec(query); err != nil {
 		return fmt.Errorf("failed to create table 'disabled_keys': %w", err)
+	}
+
+	return nil
+}
+
+func (s *Store) migrateToDelKeys() error {
+	query := `
+    CREATE TABLE IF NOT EXISTS del_keys(
+        key TEXT PRIMARY KEY,
+		count INTEGER NOT NULL DEFAULT 0,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    `
+	if _, err := s.db.Exec(query); err != nil {
+		return fmt.Errorf("failed to create table 'del_keys': %w", err)
 	}
 
 	return nil
@@ -336,7 +353,7 @@ func (s *Store) storeDisabledKey(key []byte) error {
 // GetDisabledKeys returns all disabled keys
 func (s *Store) GetDisabledKeys(from time.Time) (retKeys domain.DisabledKeys, err error) {
 	var keys []DisabledKey
-	if err := s.db.Select(&keys, "SELECT * FROM disabled_keys where createdAt > from", from); err != nil {
+	if err := s.db.Select(&keys, "SELECT * FROM disabled_keys where createdAt > ?", from); err != nil {
 		return nil, fmt.Errorf("error reading disabled keys from database: %w", err)
 	}
 
@@ -351,4 +368,81 @@ func (s *Store) GetDisabledKeys(from time.Time) (retKeys domain.DisabledKeys, er
 	}
 
 	return retKeys, nil
+}
+
+// DelKey represents the todel  key
+type DelKey struct {
+	Key       string    `db:"key"`
+	CreatedAt time.Time `db:"createdAt"`
+	Count     int       `db:"count"`
+}
+
+// toDomain converts DelKey to domain.DelKey
+func (r *DelKey) toDomain() (domain.DelKey, error) {
+	return domain.DelKey{
+		Key:       r.Key,
+		CreatedAt: r.CreatedAt,
+		Count:     r.Count,
+	}, nil
+}
+
+// fromDomain converts a domain.DelKey to a DelKey
+func fromDomain(dk domain.DelKey) DelKey {
+	return DelKey{
+		Key:       dk.Key,
+		CreatedAt: dk.CreatedAt,
+		Count:     dk.Count,
+	}
+}
+
+// GetAllToDelKeys returns all dormant keys
+func (s *Store) GetAllToDelKeys(count int) (retKeys domain.DelKeys, err error) {
+	var keys []DelKey
+	if err := s.db.Select(&keys, "SELECT * FROM del_keys where count >= ?", count); err != nil {
+		return nil, fmt.Errorf("error reading del keys from database: %w", err)
+	}
+
+	retKeys = make(domain.DelKeys, 0, len(keys))
+
+	for _, key := range keys {
+		domainKey, err := key.toDomain()
+		if err != nil {
+			return nil, fmt.Errorf("error converting disabled key to domain: %w", err)
+		}
+		retKeys = append(retKeys, domainKey)
+	}
+
+	return retKeys, nil
+}
+
+// BatchInsertDelKeys inserts or updates multiple DelKey records in a single transaction
+func (s *Store) BatchInsertDelKeys(ctx context.Context, delKeys domain.DelKeys) error {
+	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+	if err != nil {
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+
+	// Preparing the statement for upsert
+	stmt, err := tx.PreparexContext(ctx, `
+        INSERT INTO del_keys (key, createdAt, count)
+        VALUES (?, ?, ?)
+        ON CONFLICT(key) 
+        DO UPDATE SET count = count + EXCLUDED.count
+    `)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error preparing statement: %w", err)
+	}
+	defer stmt.Close()
+
+	for _, dk := range delKeys {
+		delKey := fromDomain(dk)
+		_, err := stmt.ExecContext(ctx, delKey.Key, delKey.CreatedAt, delKey.Count)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error executing insert or update: %w", err)
+		}
+	}
+
+	return tx.Commit()
 }
