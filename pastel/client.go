@@ -806,12 +806,14 @@ func (client *client) MasterNodesExtra(ctx context.Context) (MasterNodes, error)
 	return masterNodes, nil
 }
 
+// ParsedGetTotalBalanceResponse is the parsed response from the `z_gettotalbalance` command
 type ParsedGetTotalBalanceResponse struct {
 	Transparent string `json:"transparent"`
 	Private     string `json:"private"`
 	Total       string `json:"total"`
 }
 
+// Parse parses the response into a GetTotalBalanceResponse
 func (resp *ParsedGetTotalBalanceResponse) Parse() (*GetTotalBalanceResponse, error) {
 	transparent, err := strconv.ParseFloat(resp.Transparent, 64)
 	if err != nil {
