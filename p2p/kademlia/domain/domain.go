@@ -71,5 +71,5 @@ type DelKey struct {
 	Count     int       `json:"count"`
 }
 
-// DisabledKeys is the list for disabled keys
+// DelKeys is the list for disabled keys
 type DelKeys []DelKey
