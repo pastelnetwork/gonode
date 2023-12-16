@@ -96,6 +96,10 @@ func NewStore(ctx context.Context, dataDir string) (*Store, error) {
 		}
 	}
 
+	if err := s.migrateToDelKeys(); err != nil {
+		log.P2P().WithContext(ctx).Errorf("cannot create to-del-keys table in sqlite database: %s", err.Error())
+	}
+
 	pragmas := []string{
 		"PRAGMA journal_mode=WAL;",
 		"PRAGMA synchronous=NORMAL;",
@@ -145,6 +149,7 @@ func (s *Store) migrateToDelKeys() error {
     CREATE TABLE IF NOT EXISTS del_keys(
         key TEXT PRIMARY KEY,
 		count INTEGER NOT NULL DEFAULT 0,
+		nodes TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     `
@@ -374,6 +379,7 @@ func (s *Store) GetDisabledKeys(from time.Time) (retKeys domain.DisabledKeys, er
 type DelKey struct {
 	Key       string    `db:"key"`
 	CreatedAt time.Time `db:"createdAt"`
+	Nodes     string    `db:"nodes"`
 	Count     int       `db:"count"`
 }
 
@@ -382,6 +388,7 @@ func (r *DelKey) toDomain() (domain.DelKey, error) {
 	return domain.DelKey{
 		Key:       r.Key,
 		CreatedAt: r.CreatedAt,
+		Nodes:     r.Nodes,
 		Count:     r.Count,
 	}, nil
 }
@@ -390,6 +397,7 @@ func (r *DelKey) toDomain() (domain.DelKey, error) {
 func fromDomain(dk domain.DelKey) DelKey {
 	return DelKey{
 		Key:       dk.Key,
+		Nodes:     dk.Nodes,
 		CreatedAt: dk.CreatedAt,
 		Count:     dk.Count,
 	}

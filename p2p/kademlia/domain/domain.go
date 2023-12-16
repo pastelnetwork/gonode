@@ -67,6 +67,7 @@ func (kwt KeysWithTimestamp) FindFirstAfter(t time.Time) int {
 type DelKey struct {
 	Key       string    `json:"key"`
 	CreatedAt time.Time `json:"createdAt"`
+	Nodes     string    `json:"nodes"`
 	Count     int       `json:"count"`
 }
 

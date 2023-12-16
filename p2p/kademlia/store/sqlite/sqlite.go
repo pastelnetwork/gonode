@@ -665,3 +665,41 @@ func (s *Store) GetLocalKeys(from time.Time, to time.Time) ([]string, error) {
 
 	return keys, nil
 }
+
+// BatchDeleteRecords deletes a batch of records identified by their keys
+func (s *Store) BatchDeleteRecords(keys []string) error {
+	if len(keys) == 0 {
+		log.P2P().Info("no keys provided for batch delete")
+		return nil
+	}
+
+	// Create a parameter string for SQL query (?, ?, ?, ...)
+	paramStr := strings.Repeat("?,", len(keys)-1) + "?"
+
+	// Create the SQL statement
+	query := fmt.Sprintf("DELETE FROM data WHERE key IN (%s)", paramStr)
+
+	// Execute the query
+	res, err := s.db.Exec(query, stringArgsToInterface(keys)...)
+	if err != nil {
+		return fmt.Errorf("cannot batch delete records: %w", err)
+	}
+
+	// Optionally check rows affected
+	if rowsAffected, err := res.RowsAffected(); err != nil {
+		return fmt.Errorf("failed to get rows affected for batch delete: %w", err)
+	} else if rowsAffected == 0 {
+		return fmt.Errorf("no rows affected for batch delete")
+	}
+
+	return nil
+}
+
+// stringArgsToInterface converts a slice of strings to a slice of interface{}
+func stringArgsToInterface(args []string) []interface{} {
+	iargs := make([]interface{}, len(args))
+	for i, v := range args {
+		iargs[i] = v
+	}
+	return iargs
+}

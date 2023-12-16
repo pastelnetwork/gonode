@@ -5,6 +5,9 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"os/exec"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -28,6 +32,10 @@ var (
 	defaultPingTime                      = time.Second * 10
 	defaultCleanupInterval               = time.Minute * 2
 	defaultDisabledKeyExpirationInterval = time.Minute * 30
+	defaultRedundantDataCleanupInterval  = 12 * time.Hour
+	defaultDeleteDataInterval            = 12 * time.Hour
+	delKeysCountThreshold                = 10
+	lowSpaceThreshold                    = 50 // GB
 )
 
 const maxIterations = 5
@@ -157,6 +165,8 @@ func (s *DHT) Start(ctx context.Context) error {
 
 	go s.StartReplicationWorker(ctx)
 	go s.startDisabledKeysCleanupWorker(ctx)
+	go s.startCleanupRedundantDataWorker(ctx)
+	go s.startDeleteDataWorker(ctx)
 
 	return nil
 }
@@ -912,4 +922,159 @@ func (s *DHT) removeNode(ctx context.Context, node *Node) {
 	} else {
 		log.P2P().WithContext(ctx).Infof("removed node %s from bucket %d success", node.String(), index)
 	}
+}
+
+func (s *DHT) startCleanupRedundantDataWorker(ctx context.Context) {
+	log.P2P().WithContext(ctx).Info("redundant data cleanup worker started")
+
+	for {
+		select {
+		case <-time.After(defaultRedundantDataCleanupInterval):
+			s.cleanupRedundantDataWorker(ctx)
+		case <-ctx.Done():
+			log.P2P().WithContext(ctx).Error("closing disabled keys cleanup worker")
+			return
+		}
+	}
+}
+
+func (s *DHT) cleanupRedundantDataWorker(ctx context.Context) {
+	from := time.Now().AddDate(-5, 0, 0) // 5 years ago
+
+	log.P2P().WithContext(ctx).WithField("from", from).Info("getting all possible replication keys past five years")
+	to := time.Now().UTC()
+	replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
+
+	ignores := s.ignorelist.ToNodeList()
+	self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
+	closestContactsMap := make(map[string][][]byte)
+
+	for i := 0; i < len(replicationKeys); i++ {
+		decKey, _ := hex.DecodeString(replicationKeys[i].Key)
+		closestContactsMap[replicationKeys[i].Key] = s.ht.closestContactsWithInlcudingNode(Alpha, decKey, ignores, self).NodeIDs()
+	}
+
+	insertKeys := make([]domain.DelKey, 0)
+	for key, closestContacts := range closestContactsMap {
+		if len(closestContacts) < Alpha {
+			log.P2P().WithContext(ctx).WithField("key", key).WithField("closest contacts", closestContacts).Info("not enough contacts to replicate")
+			continue
+		}
+
+		found := false
+		for _, contact := range closestContacts {
+			if bytes.Equal(contact, self.ID) {
+				found = true
+			}
+		}
+
+		if !found {
+			delKey := domain.DelKey{
+				Key:       key,
+				CreatedAt: time.Now(),
+				Count:     1,
+			}
+
+			insertKeys = append(insertKeys, delKey)
+		}
+	}
+
+	if len(insertKeys) > 0 {
+		if err := s.metaStore.BatchInsertDelKeys(ctx, insertKeys); err != nil {
+			log.P2P().WithContext(ctx).WithError(err).Error("insert keys failed")
+			return
+		}
+
+		log.P2P().WithContext(ctx).WithField("count-del-keys", len(insertKeys)).Info("insert del keys success")
+	} else {
+		log.P2P().WithContext(ctx).Info("No redundant key found to be stored in the storage")
+	}
+}
+
+func (s *DHT) startDeleteDataWorker(ctx context.Context) {
+	log.P2P().WithContext(ctx).Info("start delete data worker")
+
+	for {
+		select {
+		case <-time.After(defaultDeleteDataInterval):
+			s.deleteRedundantData(ctx)
+		case <-ctx.Done():
+			log.P2P().WithContext(ctx).Error("closing delete data worker")
+			return
+		}
+	}
+}
+
+func (s *DHT) deleteRedundantData(ctx context.Context) {
+	const batchSize = 100
+
+	delKeys, err := s.metaStore.GetAllToDelKeys(delKeysCountThreshold)
+	if err != nil {
+		log.P2P().WithContext(ctx).WithError(err).Error("get all to delete keys failed")
+		return
+	}
+
+	for len(delKeys) > 0 {
+		// Check the available disk space
+		isLow, err := CheckDiskSpace()
+		if err != nil {
+			log.P2P().WithContext(ctx).WithError(err).Error("check disk space failed")
+			break
+		}
+
+		if !isLow {
+			// Disk space is sufficient, stop deletion
+			break
+		}
+
+		// Determine the size of the next batch
+		batchEnd := batchSize
+		if len(delKeys) < batchSize {
+			batchEnd = len(delKeys)
+		}
+
+		// Prepare the batch for deletion
+		keysToDelete := make([]string, 0, batchEnd)
+		for _, delKey := range delKeys[:batchEnd] {
+			keysToDelete = append(keysToDelete, delKey.Key)
+		}
+
+		// Perform the deletion
+		if err := s.store.BatchDeleteRecords(keysToDelete); err != nil {
+			log.P2P().WithContext(ctx).WithError(err).Error("batch delete records failed")
+			break
+		}
+
+		// Update the remaining keys to be deleted
+		delKeys = delKeys[batchEnd:]
+	}
+}
+
+// CheckDiskSpace checks if the available space on the disk is less than 50 GB
+func CheckDiskSpace() (bool, error) {
+	// Define the command and its arguments
+	cmd := exec.Command("bash", "-c", "df -BG --output=source,fstype,avail | egrep 'ext4|xfs' | sort -rn -k3 | awk 'NR==1 {print $3}'")
+
+	// Execute the command
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return false, fmt.Errorf("failed to execute command: %w", err)
+	}
+
+	// Process the output
+	output := strings.TrimSpace(out.String())
+	if len(output) < 2 {
+		return false, errors.New("invalid output from disk space check")
+	}
+
+	// Convert the available space to an integer
+	availSpace, err := strconv.Atoi(output[:len(output)-1])
+	if err != nil {
+		return false, fmt.Errorf("failed to parse available space: %w", err)
+	}
+
+	// Check if the available space is less than 50 GB
+	return availSpace < lowSpaceThreshold, nil
 }
