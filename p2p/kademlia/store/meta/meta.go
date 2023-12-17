@@ -149,7 +149,7 @@ func (s *Store) migrateToDelKeys() error {
     CREATE TABLE IF NOT EXISTS del_keys(
         key TEXT PRIMARY KEY,
 		count INTEGER NOT NULL DEFAULT 0,
-		nodes TEXT,
+		nodes TEXT NOT NULL DEFAULT "",
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     `
