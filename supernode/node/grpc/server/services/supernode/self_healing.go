@@ -93,8 +93,6 @@ func (service *SelfHealingChallengeGRPC) Desc() *grpc.ServiceDesc {
 
 // Ping is the server side of self-healing challenge processing GRPC comms
 func (service *SelfHealingChallengeGRPC) Ping(ctx context.Context, pingReq *pb.PingRequest) (*pb.PingResponse, error) {
-	log.WithContext(ctx).WithField("req", pingReq).Info("ping request received at the server side")
-
 	task := service.NewSHTask()
 	res, err := task.Ping(ctx, pingReq)
 	if err != nil {
@@ -132,7 +130,7 @@ func (service *SelfHealingChallengeGRPC) ProcessSelfHealingChallenge(ctx context
 
 // VerifySelfHealingChallenge is the server side of self-healing challenge verification GRPC comms
 func (service *SelfHealingChallengeGRPC) VerifySelfHealingChallenge(ctx context.Context, scRequest *pb.VerifySelfHealingChallengeRequest) (*pb.VerifySelfHealingChallengeReply, error) {
-	log.WithContext(ctx).WithField("req", scRequest).Debugf("Verify Self-Healing Request received from gRpc client")
+	log.WithContext(ctx).WithField("req", scRequest).Info("Verify Self-Healing Request received from gRpc client")
 	task := service.NewSHTask()
 
 	msg := types.SelfHealingMessage{
@@ -147,12 +145,12 @@ func (service *SelfHealingChallengeGRPC) VerifySelfHealingChallenge(ctx context.
 		return nil, errors.Errorf("error un-marshaling the received challenge message")
 	}
 
-	_, err := task.VerifySelfHealingChallenge(ctx, msg)
+	res, err := task.VerifySelfHealingChallenge(ctx, msg)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error verifying Self-Healing")
 	}
 
-	return &pb.VerifySelfHealingChallengeReply{}, nil
+	return &pb.VerifySelfHealingChallengeReply{Data: res}, nil
 }
 
 // NewSelfHealingChallengeGRPC returns a new SelfHealing instance.

@@ -10,7 +10,7 @@ import (
 
 // Ping acknowledges the received message and return with the timestamp
 func (task *SHTask) Ping(ctx context.Context, _ *pb.PingRequest) (*pb.PingResponse, error) {
-	log.WithContext(ctx).WithField("node_id", task.nodeID).Println("ping request received at the server")
+	log.WithContext(ctx).WithField("node_id", task.nodeID).Debug("ping request received at the server")
 
 	return &pb.PingResponse{
 		ReceiverId:  task.nodeID,

@@ -26,39 +26,6 @@ message PingResponse {
   string responded_at = 4;
 }
 
-message SelfHealingData {
-  string message_id = 1;
-  enum messageType {
-    MessageType_UNKNOWN = 0;
-    MessageType_SELF_HEALING_ISSUANCE_MESSAGE = 1;
-    MessageType_SELF_HEALING_RESPONSE_MESSAGE = 2;
-    MessageType_SELF_HEALING_VERIFICATION_MESSAGE = 3;
-  }
-  messageType message_type = 2;
-  enum status {
-    Status_UNKNOWN = 0;
-    Status_PENDING = 1;
-    Status_RESPONDED = 2;
-    Status_SUCCEEDED = 3;
-    Status_FAILED_TIMEOUT = 4;
-    Status_FAILED_INCORRECT_RESPONSE = 5;
-  }
-  status challenge_status = 3;
-  string merkleroot_when_challenge_sent = 4;
-  string challenging_masternode_id = 5;
-  string responding_masternode_id = 6;
-  message challengeFile {
-    string file_hash_to_challenge = 1;
-  }
-  bytes reconstructed_file_hash = 7;
-  challengeFile challenge_file = 8;
-  string challenge_id = 9;
-  string reg_ticket_id = 10;
-  string action_ticket_id = 11;
-  bool is_sense_ticket = 12;
-  repeated string senseFileIds = 13;
-}
-
 message ProcessSelfHealingChallengeRequest {
   SelfHealingMessage data = 1;
 }
@@ -80,6 +47,7 @@ message SelfHealingMessage {
     MessageType_UNKNOWN = 0;
     MessageType_SELF_HEALING_CHALLENGE_MESSAGE = 1;
     MessageType_SELF_HEALING_RESPONSE_MESSAGE = 2;
+    MessageType_SELF_HEALING_VERIFICATION_MESSAGE = 3;
   }
   messageType message_type = 1;
   string challenge_id = 2;

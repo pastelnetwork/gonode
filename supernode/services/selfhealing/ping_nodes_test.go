@@ -22,9 +22,9 @@ func TestGetInfoToInsert(t *testing.T) {
 	}{
 		{
 			testCase:     "when node is offline, should increment total ping only",
-			existedInfo:  &types.PingInfo{TotalPings: 2, TotalSuccessfulPings: 2},
+			existedInfo:  &types.PingInfo{TotalPings: 2, TotalSuccessfulPings: 2, LastSeen: sql.NullTime{Time: now, Valid: true}},
 			receivedInfo: &types.PingInfo{TotalPings: 0, IsOnline: false},
-			expectedInfo: &types.PingInfo{TotalPings: 3, TotalSuccessfulPings: 2, IsOnline: false},
+			expectedInfo: &types.PingInfo{TotalPings: 3, TotalSuccessfulPings: 2, IsOnline: false, LastSeen: sql.NullTime{Time: now, Valid: true}},
 		},
 		{
 			testCase:     "when node is online, should increment total ping & total successful pings",

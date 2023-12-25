@@ -14,6 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 )
 
 const (
@@ -35,6 +36,7 @@ type SHService struct {
 	nodeClient        node.ClientInterface
 	currentBlockCount int32
 	historyDB         storage.LocalStoreInterface
+	downloadService   *download.NftDownloaderService
 	ticketsMap        map[string]bool
 }
 
@@ -136,7 +138,7 @@ func (service *SHService) Task(id string) *SHTask {
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastel-client, p2p, and rqClient.
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client,
-	historyDB storage.LocalStoreInterface) *SHService {
+	historyDB storage.LocalStoreInterface, downloadService *download.NftDownloaderService) *SHService {
 	return &SHService{
 		config:           config,
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2p),
@@ -145,12 +147,12 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		pastelHandler:    mixins.NewPastelHandler(pastelClient),
 		historyDB:        historyDB,
 		ticketsMap:       make(map[string]bool),
+		downloadService:  downloadService,
 	}
 }
 
 // GetNClosestSupernodesToAGivenFileUsingKademlia : Wrapper for a utility function that accesses kademlia's distributed hash table to determine which nodes should be closest to a given string (hence hosting it)
 func (service *SHService) GetNClosestSupernodesToAGivenFileUsingKademlia(ctx context.Context, n int, comparisonString string, ignores ...string) []string {
-	log.WithContext(ctx).WithField("file_hash", comparisonString).Info("file_hash against which closest sns required")
 	return service.P2PClient.NClosestNodes(ctx, n, comparisonString, ignores...)
 }
 

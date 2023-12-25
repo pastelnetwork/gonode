@@ -3,6 +3,7 @@ package selfhealing
 import (
 	"context"
 	"database/sql"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"testing"
 	"time"
 
@@ -109,6 +110,9 @@ func TestListSymbolFileKeysForNFTAndActionTickets(t *testing.T) {
 	encodeResp.Symbols = make(map[string][]byte)
 	encodeResp.Symbols["GfzPCcSwyyvz5faMjrjPk9rnL5QcSbW1MV1FSPuWXvS3"] = bytes
 
+	configD := download.Config{}
+	downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
+
 	tests := []struct {
 		testcase string
 		setup    func()
@@ -147,7 +151,7 @@ func TestListSymbolFileKeysForNFTAndActionTickets(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil)
+				p2pClient, nil, downloadService)
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
@@ -177,6 +181,9 @@ func TestCreateClosestNodeMapAgainstKeys(t *testing.T) {
 	nodes = append(nodes, pastel.MasterNode{ExtKey: "C"})
 	nodes = append(nodes, pastel.MasterNode{ExtKey: "D"})
 	nodes = append(nodes, pastel.MasterNode{ExtKey: "E"})
+
+	configD := download.Config{}
+	downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
 
 	tests := []struct {
 		testcase string
@@ -212,7 +219,7 @@ func TestCreateClosestNodeMapAgainstKeys(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil)
+				p2pClient, nil, downloadService)
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
@@ -262,6 +269,9 @@ func TestCreateSelfHealingTicketsMap(t *testing.T) {
 	symbolFileKeyMap["file-hash-to-challenge-cascade"] = SymbolFileKeyDetails{TicketTxID: "test-tx-id-nft", TicketType: cascadeTicketType}
 	symbolFileKeyMap["file-hash-to-challenge-sense"] = SymbolFileKeyDetails{TicketTxID: "test-tx-id-nft", TicketType: senseTicketType}
 
+	configD := download.Config{}
+	downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
+
 	tests := []struct {
 		testcase string
 		keys     []string
@@ -293,7 +303,7 @@ func TestCreateSelfHealingTicketsMap(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil)
+				p2pClient, nil, downloadService)
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
@@ -313,6 +323,9 @@ func TestShouldTriggerSelfHealing(t *testing.T) {
 	p2pClient := p2pMock.NewMockClient(t)
 	raptorQClient := rqmock.NewMockClient(t)
 	var nodeClient *shtest.Client
+
+	configD := download.Config{}
+	downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
 
 	tests := []struct {
 		testcase string
@@ -365,7 +378,7 @@ func TestShouldTriggerSelfHealing(t *testing.T) {
 		t.Run(tt.testcase, func(t *testing.T) {
 			// Run the setup for the testcase
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil)
+				p2pClient, nil, downloadService)
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values

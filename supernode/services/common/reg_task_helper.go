@@ -248,9 +248,9 @@ func (h *RegTaskHelper) verifyTxn(ctx context.Context,
 	txn *pastel.GetRawTransactionVerbose1Result, totalAmt float64, percent float64) error {
 	inRange := func(val float64, reqVal float64, slackPercent float64) bool {
 		lower := reqVal - (reqVal * slackPercent / 100)
-		upper := reqVal + (reqVal * slackPercent / 100)
+		//upper := reqVal + (reqVal * slackPercent / 100)
 
-		return val >= lower && val <= upper
+		return val >= lower
 	}
 
 	log.WithContext(ctx).Debug("Verifying Burn Txn")
