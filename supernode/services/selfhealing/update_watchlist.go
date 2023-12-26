@@ -25,6 +25,7 @@ func (task *SHTask) UpdateWatchlist(ctx context.Context) error {
 			info.IsOnWatchlist = true
 			info.IsAdjusted = false
 
+			log.WithContext(ctx).WithField("supernode_id", info.SupernodeID).Info("updating watchlist flag")
 			if err := task.UpsertPingHistory(ctx, info); err != nil {
 				log.WithContext(ctx).
 					WithField("supernode_id", info.SupernodeID).

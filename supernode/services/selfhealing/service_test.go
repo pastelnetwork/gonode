@@ -3,6 +3,7 @@ package selfhealing
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"testing"
 	"time"
 
@@ -37,6 +38,9 @@ func TestNewService(t *testing.T) {
 	nodeClient := &nodeMock.ClientInterface{}
 	raptorQClient := rqmock.NewMockClient(t)
 
+	configD := download.Config{}
+	downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
+
 	testCases := []struct {
 		args args
 		want *SHService
@@ -56,6 +60,7 @@ func TestNewService(t *testing.T) {
 					P2PClient:    p2pClient.Client,
 					Worker:       task.NewWorker(),
 				},
+				downloadService: downloadService,
 			},
 		},
 	}
@@ -67,7 +72,7 @@ func TestNewService(t *testing.T) {
 			t.Parallel()
 
 			service := NewService(testCase.args.config, nil, testCase.args.pastelClient, testCase.args.nodeClient,
-				testCase.args.p2pClient, nil)
+				testCase.args.p2pClient, nil, nil)
 			assert.Equal(t, testCase.want.config, service.config)
 			// assert.Equal(t, testCase.want.PastelClient, service.pclient)
 			//test repository separately
@@ -110,6 +115,9 @@ func TestServiceRun(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			p2pClient := p2pMock.NewMockClient(t)
 
+			configD := download.Config{}
+			downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
+
 			service := &SHService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
@@ -118,6 +126,7 @@ func TestServiceRun(t *testing.T) {
 					Worker:       task.NewWorker(),
 					Storage:      files.NewStorage(nil),
 				},
+				downloadService: downloadService,
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
@@ -158,6 +167,9 @@ func TestServiceNewTask(t *testing.T) {
 			pastelClient := pastelMock.NewMockClient(t)
 			p2pClient := p2pMock.NewMockClient(t)
 
+			configD := download.Config{}
+			downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
+
 			service := &SHService{
 				config: config,
 				SuperNodeService: &common.SuperNodeService{
@@ -165,6 +177,7 @@ func TestServiceNewTask(t *testing.T) {
 					P2PClient:    p2pClient.Client,
 					Worker:       task.NewWorker(),
 				},
+				downloadService: downloadService,
 			}
 			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()

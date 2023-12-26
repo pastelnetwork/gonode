@@ -44,7 +44,7 @@ type PingInfo struct {
 	LastSeen               sql.NullTime `db:"last_seen"`
 	CreatedAt              time.Time    `db:"created_at"`
 	UpdatedAt              time.Time    `db:"updated_at"`
-	LastResponseTime       float64
+	LastResponseTime       float64      `db:"-"`
 }
 
 // PingInfos represents array of ping info
@@ -81,16 +81,18 @@ type ChallengeTicket struct {
 	TxID        string     `json:"tx_id"`
 	TicketType  TicketType `json:"ticket_type"`
 	MissingKeys []string   `json:"missing_keys"`
-	DataHash    string     `json:"data_hash"`
+	DataHash    []byte     `json:"data_hash"`
 }
 
 // RespondedTicket represents the details of ticket responded in a self-healing challenge
 type RespondedTicket struct {
-	TxID                  string     `json:"tx_id"`
-	TicketType            TicketType `json:"ticket_type"`
-	MissingKeys           []string   `json:"missing_keys"`
-	ReconstructedFileHash []byte     `json:"reconstructed_file_hash"`
-	FileIDs               []string   `json:"sense_file_ids"`
+	TxID                     string     `json:"tx_id"`
+	TicketType               TicketType `json:"ticket_type"`
+	MissingKeys              []string   `json:"missing_keys"`
+	ReconstructedFileHash    []byte     `json:"reconstructed_file_hash"`
+	FileIDs                  []string   `json:"sense_file_ids"`
+	RaptorQSymbols           []byte     `json:"raptor_q_symbols"`
+	IsReconstructionRequired bool       `json:"is_reconstruction_required"`
 }
 
 // SelfHealingResponseData represents the response data for self-healing sent by the recipient
@@ -103,13 +105,14 @@ type SelfHealingResponseData struct {
 
 // VerifiedTicket represents the details of ticket verified in self-healing challenge
 type VerifiedTicket struct {
-	TxID                  string     `json:"tx_id"`
-	TicketType            TicketType `json:"ticket_type"`
-	MissingKeys           []string   `json:"missing_keys"`
-	DataHash              string     `json:"data_hash"`
-	ReconstructedFileHash []byte     `json:"reconstructed_file_hash"`
-	FileIDs               []string   `json:"sense_file_ids"`
-	IsVerified            bool       `json:"is_verified"`
+	TxID                     string     `json:"tx_id"`
+	TicketType               TicketType `json:"ticket_type"`
+	MissingKeys              []string   `json:"missing_keys"`
+	DataHash                 string     `json:"data_hash"`
+	ReconstructedFileHash    []byte     `json:"reconstructed_file_hash"`
+	IsReconstructionRequired bool       `json:"is_reconstruction_required"`
+	IsVerified               bool       `json:"is_verified"`
+	Message                  string     `json:"message"`
 }
 
 // SelfHealingVerificationData represents the verification data for self-healing challenge
@@ -118,4 +121,16 @@ type SelfHealingVerificationData struct {
 	Merkelroot      string           `json:"merkelroot"`
 	Timestamp       time.Time        `json:"timestamp"`
 	VerifiedTickets []VerifiedTicket `json:"verified_tickets"`
+}
+
+// SelfHealingLogMessage represents the message log to be stored in the DB
+type SelfHealingLogMessage struct {
+	ID              int       `db:"id"`
+	MessageType     int       `db:"message_type"`
+	ChallengeID     string    `db:"challenge_id"`
+	Data            []byte    `db:"data"`
+	SenderID        string    `db:"sender_id"`
+	SenderSignature []byte    `db:"sender_signature"`
+	CreatedAt       time.Time `db:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at"`
 }

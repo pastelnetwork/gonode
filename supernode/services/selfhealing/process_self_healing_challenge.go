@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"golang.org/x/crypto/sha3"
 	"os"
 	"sync"
 	"time"
@@ -16,12 +17,15 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	common "github.com/pastelnetwork/gonode/supernode/services/common"
-	"golang.org/x/crypto/sha3"
 )
 
 // ProcessSelfHealingChallenge is called from grpc server, which processes the self-healing challenge,
 // and will execute the reconstruction work.
 func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingChallengeMessage types.SelfHealingMessage) error {
+	logger := log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID)
+
+	logger.WithField("challenge", incomingChallengeMessage).Info("ProcessSelfHealingChallenge has been invoked")
+
 	// wait if test env so tests can mock the p2p
 	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
 		time.Sleep(10 * time.Second)
@@ -32,6 +36,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 		log.WithContext(ctx).WithError(err).Error("Error validating self-healing challenge incoming data: ")
 		return err
 	}
+	logger.Info("self healing challenge message has been validated")
 
 	log.WithContext(ctx).Info("retrieving block no and verbose")
 	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
@@ -45,6 +50,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 		return err
 	}
 	merkleroot := blkVerbose1.MerkleRoot
+	logger.Info("block count & merkelroot has been retrieved")
 
 	responseMsg := types.SelfHealingMessage{
 		ChallengeID: incomingChallengeMessage.ChallengeID,
@@ -74,98 +80,132 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 	challengeTickets := incomingChallengeMessage.SelfHealingMessageData.Challenge.ChallengeTickets
 
 	if challengeTickets == nil {
-		log.WithContext(ctx).Info("no tickets found to challenge")
+		logger.Info("no tickets found to challenge")
 		return nil
 	}
 
 	for _, ticket := range challengeTickets {
 		if task.SHService.ticketsMap[ticket.TxID] {
+			log.WithContext(ctx).WithField("txid", ticket.TxID).Info("ticket processing is already in progress")
 			continue
 		}
 		task.SHService.ticketsMap[ticket.TxID] = true
 
+		logger.WithField("ticket_txid", ticket.TxID).Info("checking process going to initiate")
+
 		nftTicket, cascadeTicket, senseTicket, err = task.getTicket(ctx, ticket.TxID, TicketType(ticket.TicketType))
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error getRelevantTicketFromMsg")
+			logger.WithError(err).Error("Error getRelevantTicketFromMsg")
 		}
-		log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID).Info("reg ticket has been retrieved")
+		logger.WithField("challenge_id", incomingChallengeMessage.ChallengeID).Info("reg ticket has been retrieved")
 
 		if nftTicket != nil || cascadeTicket != nil {
 			if !task.isReconstructionRequired(ctx, ticket.MissingKeys) {
-				log.WithContext(ctx).WithField("txid", ticket.TxID).Info("Reconstruction is not required for ticket")
+				logger.WithField("txid", ticket.TxID).Info("Reconstruction is not required for ticket")
+
+				responseMsg.SelfHealingMessageData.Response.RespondedTickets = append(responseMsg.SelfHealingMessageData.Response.RespondedTickets,
+					types.RespondedTicket{
+						TxID:                     ticket.TxID,
+						TicketType:               ticket.TicketType,
+						MissingKeys:              ticket.MissingKeys,
+						ReconstructedFileHash:    nil,
+						RaptorQSymbols:           nil,
+						IsReconstructionRequired: false,
+					})
 				continue
 			}
+			logger.WithField("ticket_txid", ticket.TxID).Info("self-healing required for this ticket")
 
 			file, reconstructedFileHash, err := task.selfHealing(ctx, ticket.TxID, nftTicket, cascadeTicket)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
-				return err
+				logger.WithError(err).Error("Error self-healing the file")
+				continue
 			}
 			task.RaptorQSymbols = file
+			logger.WithField("ticket_txid", ticket.TxID).Info("file has been reconstructed")
 
 			if err := task.StorageHandler.StoreRaptorQSymbolsIntoP2P(ctx, task.RaptorQSymbols, ""); err != nil {
-				log.WithContext(ctx).WithField("failed_challenge_id", incomingChallengeMessage.ChallengeID).WithError(err).Error("Error storing symbols to P2P")
-				return err
+				logger.WithError(err).Error("Error storing symbols to P2P")
+				continue
 			}
+			logger.WithField("ticket_txid", ticket.TxID).Info("raptor q symbols have been stored")
 
 			responseMsg.SelfHealingMessageData.Response.RespondedTickets = append(responseMsg.SelfHealingMessageData.Response.RespondedTickets,
 				types.RespondedTicket{
-					TxID:                  ticket.TxID,
-					TicketType:            ticket.TicketType,
-					MissingKeys:           ticket.MissingKeys,
-					ReconstructedFileHash: reconstructedFileHash,
+					TxID:                     ticket.TxID,
+					TicketType:               ticket.TicketType,
+					MissingKeys:              ticket.MissingKeys,
+					ReconstructedFileHash:    reconstructedFileHash,
+					RaptorQSymbols:           task.RaptorQSymbols,
+					IsReconstructionRequired: true,
 				})
 		} else if senseTicket != nil {
 			reqSelfHealing, mostCommonFile := task.senseCheckingProcess(ctx, senseTicket.DDAndFingerprintsIDs)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Error in checking process for sense action ticket")
+				logger.WithField("ticket_txid", ticket.TxID).WithError(err).Error("Error in checking process for sense action ticket")
+				continue
 			}
 
 			if !reqSelfHealing {
-				log.WithContext(ctx).WithError(err).Error("self-healing not required for sense action ticket")
-				return nil
+				logger.WithField("ticket_txid", ticket.TxID).WithError(err).Error("self-healing not required for sense action ticket")
+				responseMsg.SelfHealingMessageData.Response.RespondedTickets = append(responseMsg.SelfHealingMessageData.Response.RespondedTickets,
+					types.RespondedTicket{
+						TxID:                     ticket.TxID,
+						TicketType:               ticket.TicketType,
+						MissingKeys:              ticket.MissingKeys,
+						ReconstructedFileHash:    nil,
+						RaptorQSymbols:           nil,
+						FileIDs:                  nil,
+						IsReconstructionRequired: false,
+					})
+
+				continue
 			}
 
+			logger.WithField("ticket_txid", ticket.TxID).Info("self-healing required for sense ticket")
 			ids, idFiles, err := task.senseSelfHealing(ctx, senseTicket, mostCommonFile)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("self-healing not required for sense action ticket")
-				return err
+				logger.WithField("ticket_txid", ticket.TxID).WithError(err).Error("self-healing not required for sense action ticket")
+				continue
 			}
 			task.IDFiles = idFiles
+			logger.WithField("ticket_txid", ticket.TxID).Info("sense ticket has been healed")
 
 			if err := task.StorageHandler.StoreBatch(ctx, task.IDFiles, common.P2PDataDDMetadata); err != nil {
-				log.WithContext(ctx).WithField("failed_challenge_id", incomingChallengeMessage.ChallengeID).WithError(err).Error("Error storing id files to P2P")
-				return err
+				logger.WithError(err).Error("Error storing id files to P2P")
+				continue
 			}
+			logger.WithField("ticket_txid", ticket.TxID).Info("DD & FP ids have been stored")
 
 			fileBytes, err := json.Marshal(mostCommonFile)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error(err)
+				logger.WithError(err).Error(err)
 			}
 
 			fileHash, err := utils.Sha3256hash(fileBytes)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error(err)
+				logger.WithError(err).Error(err)
 			}
 
 			responseMsg.SelfHealingMessageData.Response.RespondedTickets = append(responseMsg.SelfHealingMessageData.Response.RespondedTickets,
 				types.RespondedTicket{
-					TxID:                  ticket.TxID,
-					TicketType:            ticket.TicketType,
-					MissingKeys:           ticket.MissingKeys,
-					ReconstructedFileHash: fileHash,
-					FileIDs:               ids,
+					TxID:                     ticket.TxID,
+					TicketType:               ticket.TicketType,
+					MissingKeys:              ticket.MissingKeys,
+					ReconstructedFileHash:    fileHash,
+					FileIDs:                  ids,
+					IsReconstructionRequired: true,
 				})
 		}
 	}
 
-	_, err = task.getVerifications(ctx, responseMsg)
+	verifications, err := task.getVerifications(ctx, responseMsg)
 	if err != nil {
-		log.WithContext(ctx).WithField("failed_challenge_id", incomingChallengeMessage.ChallengeID).WithError(err)
-		return err
+		log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID).WithError(err)
 	}
+	logger.WithField("verifications", len(verifications)).Info("verifications have been received")
 
-	log.WithContext(ctx).WithField("failed_challenge_id", incomingChallengeMessage.ChallengeID).Info("Self-healing completed")
+	logger.Info("self-healing completed")
 
 	return nil
 }
@@ -220,6 +260,8 @@ func (task *SHTask) checkingProcess(ctx context.Context, fileHash string) (requi
 func (task *SHTask) selfHealing(ctx context.Context, txid string, regTicket *pastel.NFTTicket, cascadeTicket *pastel.APICascadeTicket) (file, reconstructedFileHash []byte, err error) {
 	log.WithContext(ctx).WithField("txid", txid).Info("Self-healing initiated")
 	if regTicket != nil {
+		log.WithContext(ctx).WithField("txid", txid).WithField("reg_ticket", regTicket).Debug("going to self heal reg ticket")
+
 		file, err = task.downloadTask.RestoreFile(ctx, regTicket.AppTicketData.RQIDs, regTicket.AppTicketData.RQOti, regTicket.AppTicketData.DataHash, txid)
 		if err != nil {
 			log.WithContext(ctx).WithField("txid", txid).WithError(err).Error("Unable to restore file")
@@ -230,6 +272,8 @@ func (task *SHTask) selfHealing(ctx context.Context, txid string, regTicket *pas
 		log.WithContext(ctx).WithField("txid", txid).Info("file has been restored")
 		reconstructedFileHash = fileHash[:]
 	} else if cascadeTicket != nil {
+		log.WithContext(ctx).WithField("txid", txid).WithField("cascade_ticket", cascadeTicket).Debug("going to self heal cascade ticket")
+
 		file, err = task.downloadTask.RestoreFile(ctx, cascadeTicket.RQIDs, cascadeTicket.RQOti, cascadeTicket.DataHash, txid)
 		if err != nil {
 			log.WithContext(ctx).WithField("txid", txid).WithError(err).Error("Unable to restore file")
@@ -239,6 +283,10 @@ func (task *SHTask) selfHealing(ctx context.Context, txid string, regTicket *pas
 		fileHash := sha3.Sum256(file)
 		log.WithContext(ctx).WithField("txid", txid).Info("file has been restored")
 		reconstructedFileHash = fileHash[:]
+	} else {
+		log.WithContext(ctx).WithField("txid", txid).Info("not a valid ticket")
+
+		return file, reconstructedFileHash, errors.Errorf("not a valid cascade or NFT ticket")
 	}
 
 	return file, reconstructedFileHash, nil
@@ -367,11 +415,16 @@ func (task *SHTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 	logger := log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).
 		WithField("message_type", challengeMessage.MessageType).WithField("node_id", task.nodeID)
 
+	listOfSupernodes, err := task.getListOfOnlineSupernodes(ctx)
+	if err != nil {
+		logger.WithError(err).Error("error getting list of online supernodes")
+	}
+
 	switch challengeMessage.MessageType {
 	case types.SelfHealingResponseMessage:
 
 		//Finding 5 closest nodes to previous block hash
-		sliceOfSupernodesClosestToPreviousBlockHash := task.GetNClosestSupernodeIDsToComparisonString(ctx, 5, challengeMessage.SelfHealingMessageData.Challenge.Merkelroot, []string{task.nodeID})
+		sliceOfSupernodesClosestToPreviousBlockHash := task.GetNClosestSupernodeIDsToComparisonString(ctx, 5, challengeMessage.SelfHealingMessageData.Challenge.Merkelroot, listOfSupernodes, task.nodeID)
 		log.WithContext(ctx).Info(fmt.Sprintf("sliceOfSupernodesClosestToPreviousBlockHash:%s", sliceOfSupernodesClosestToPreviousBlockHash))
 
 		for _, verifier := range sliceOfSupernodesClosestToPreviousBlockHash {
@@ -396,11 +449,10 @@ func (task *SHTask) prepareResponseMessage(ctx context.Context, responseMessage 
 	}
 	responseMessage.SenderSignature = signature
 
-	//if err := task.StoreChallengeMessage(ctx, challengeMessage); err != nil {
-	//	log.WithContext(ctx).WithError(err).Error("error storing evaluation report message")
-	//	return pb.StorageChallengeMessage{}, err
-	//}
-	//
+	if err := task.StoreSelfHealingMessage(ctx, responseMessage); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error storing evaluation report message")
+		return pb.SelfHealingMessage{}, err
+	}
 
 	return pb.SelfHealingMessage{
 		MessageType:     pb.SelfHealingMessageMessageType(responseMessage.MessageType),
@@ -461,7 +513,7 @@ func (task *SHTask) processSelfHealingVerifications(ctx context.Context, nodesTo
 // sendSelfHealingResponseMessage establish a connection with the processingSupernodeAddr and sends response msg to
 // receive verification upon it
 func (task *SHTask) sendSelfHealingResponseMessage(ctx context.Context, challengeMessage *pb.SelfHealingMessage, processingSupernodeAddr string) (*types.SelfHealingMessage, error) {
-	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending response message to supernode address: " + processingSupernodeAddr)
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending self-healing response message to supernode address: " + processingSupernodeAddr)
 
 	//Connect over grpc
 	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
@@ -469,7 +521,7 @@ func (task *SHTask) sendSelfHealingResponseMessage(ctx context.Context, challeng
 		err = fmt.Errorf("Could not use node client to connect to: " + processingSupernodeAddr)
 		log.WithContext(ctx).
 			WithField("challengeID", challengeMessage.ChallengeId).
-			WithField("method", "sendEvaluationMessage").
+			WithField("method", "sendSelfHealingResponseMsg").
 			WithField("node_address", processingSupernodeAddr).
 			Warn(err.Error())
 		return nil, err
@@ -482,7 +534,7 @@ func (task *SHTask) sendSelfHealingResponseMessage(ctx context.Context, challeng
 	if err != nil {
 		log.WithContext(ctx).
 			WithField("challengeID", challengeMessage.ChallengeId).
-			WithField("method", "sendEvaluationMessage").
+			WithField("method", "sendSelfHealingResponseMsg").
 			WithField("node_address", processingSupernodeAddr).
 			Warn(err.Error())
 		return nil, err

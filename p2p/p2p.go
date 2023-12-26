@@ -188,7 +188,7 @@ func (s *p2p) NClosestNodes(ctx context.Context, n int, key string, ignores ...s
 
 	log.WithContext(ctx).WithField("no_of_closest_nodes", n).WithField("file_hash", key).
 		WithField("closest_nodes", ret).
-		Info("closest nodes retrieved")
+		Debug("closest nodes retrieved")
 	return ret
 }
 

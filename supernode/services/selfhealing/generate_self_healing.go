@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,7 +36,7 @@ const (
 type SymbolFileKeyDetails struct {
 	TicketTxID string
 	Keys       []string
-	DataHash   string
+	DataHash   []byte
 	TicketType TicketType
 }
 
@@ -71,9 +72,19 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 	log.WithContext(ctx).Info("map of closest nodes against keys have been created")
 
 	selfHealingTicketsMap := task.identifySelfHealingTickets(ctx, watchlistPingInfos, mapOfClosestNodesAgainstKeys, symbolFileKeyMap)
+
+	if len(selfHealingTicketsMap) == 0 {
+		log.WithContext(ctx).Info("no tickets required self-healing")
+
+		if err := task.updateWatchlist(ctx, watchlistPingInfos); err != nil {
+			log.WithContext(ctx).WithError(err).Error("error updating watchlist ping info")
+		}
+
+		return nil
+	}
 	log.WithContext(ctx).WithField("self_healing_tickets", selfHealingTicketsMap).Info("self-healing tickets have been identified")
 
-	challengeRecipientMap, err := task.identifyChallengeRecipients(ctx, selfHealingTicketsMap)
+	challengeRecipientMap, err := task.identifyChallengeRecipients(ctx, selfHealingTicketsMap, watchlistPingInfos)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error identifying challenge recipients")
 	}
@@ -233,15 +244,11 @@ func (task *SHTask) createClosestNodesMapAgainstKeys(ctx context.Context, keys [
 // identifyClosestNodes find closest nodes against the given key
 func (task *SHTask) identifyClosestNodes(ctx context.Context, key string) []string {
 	logger := log.WithContext(ctx).WithField("key", key)
-	logger.Info("identifying closest nodes against the key")
+	logger.Debug("identifying closest nodes against the key")
 
 	closestNodes := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, defaultClosestNodes, key, "")
-	if len(closestNodes) < 1 {
-		log.WithContext(ctx).WithField("file_hash", key).Info("no closest nodes have found against the file")
-		return nil
-	}
 
-	logger.Info("closest nodes against the key has been retrieved")
+	logger.Debug("closest nodes against the key has been retrieved")
 	return closestNodes
 }
 
@@ -253,6 +260,7 @@ func (task *SHTask) identifySelfHealingTickets(ctx context.Context, watchlistPin
 		if task.requireSelfHealing(closestNodes, watchlistPingInfos) {
 			ticketDetails := symbolFileKeyMap[key]
 			selfHealingTicketsMap[ticketDetails.TicketTxID] = SymbolFileKeyDetails{
+				TicketTxID: ticketDetails.TicketTxID,
 				TicketType: ticketDetails.TicketType,
 			}
 
@@ -287,7 +295,7 @@ func (task *SHTask) isOnWatchlist(nodeID string, watchlistPingInfos types.PingIn
 	return false
 }
 
-func (task *SHTask) identifyChallengeRecipients(ctx context.Context, selfHealingTicketsMap map[string]SymbolFileKeyDetails) (map[string][]SymbolFileKeyDetails, error) {
+func (task *SHTask) identifyChallengeRecipients(ctx context.Context, selfHealingTicketsMap map[string]SymbolFileKeyDetails, watchlist types.PingInfos) (map[string][]SymbolFileKeyDetails, error) {
 	challengeRecipientMap := make(map[string][]SymbolFileKeyDetails)
 	for txID, ticketDetails := range selfHealingTicketsMap {
 		logger := log.WithContext(ctx).WithField("TxID", txID)
@@ -304,12 +312,12 @@ func (task *SHTask) identifyChallengeRecipients(ctx context.Context, selfHealing
 			continue
 		}
 
-		listOfSupernodes, err := task.getListOfSupernode(ctx)
+		listOfSupernodes, err := task.getListOfOnlineSupernodes(ctx)
 		if err != nil {
 			logger.WithError(err).Error("unable to retrieve list of supernodes")
 		}
 
-		challengeRecipients := task.SHService.GetNClosestSupernodeIDsToComparisonString(ctx, 1, string(dataHash), listOfSupernodes)
+		challengeRecipients := task.SHService.GetNClosestSupernodeIDsToComparisonString(ctx, 1, string(dataHash), task.filterWatchlistAndCurrentNode(watchlist, listOfSupernodes))
 		if len(challengeRecipients) < 1 {
 			log.WithContext(ctx).WithField("file_hash", dataHash).Info("no closest nodes have found against the file")
 			continue
@@ -320,7 +328,7 @@ func (task *SHTask) identifyChallengeRecipients(ctx context.Context, selfHealing
 			TicketTxID: ticketDetails.TicketTxID,
 			TicketType: ticketDetails.TicketType,
 			Keys:       ticketDetails.Keys,
-			DataHash:   string(dataHash),
+			DataHash:   dataHash,
 		})
 	}
 
@@ -554,7 +562,12 @@ func (task *SHTask) GetNodeToConnect(ctx context.Context, nodeID string) (*paste
 
 // SendMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
 func (task *SHTask) SendMessage(ctx context.Context, challengeMessage types.SelfHealingMessage, processingSupernodeAddr string) error {
-	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Info("Sending self-healing challenge to processing supernode address: " + processingSupernodeAddr)
+	logger := log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID)
+
+	logger.Info("sending self-healing challenge to processing supernode address: " + processingSupernodeAddr)
+
+	ctx, cancel := context.WithTimeout(ctx, timeoutDuration)
+	defer cancel()
 
 	//Connect over grpc
 	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
@@ -571,6 +584,11 @@ func (task *SHTask) SendMessage(ctx context.Context, challengeMessage types.Self
 			Error("error signing self-healing challenge msg")
 	}
 	challengeMessage.SenderSignature = sig
+
+	if err := task.StoreSelfHealingMessage(ctx, challengeMessage); err != nil {
+		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).WithError(err).
+			Error("error storing self-healing challenge msg")
+	}
 
 	msg := &pb.SelfHealingMessage{
 		ChallengeId:     challengeMessage.ChallengeID,
@@ -608,16 +626,82 @@ func (task *SHTask) updateWatchlist(ctx context.Context, watchlistPingInfos type
 	return nil
 }
 
-func (service *SHService) getListOfSupernode(ctx context.Context) ([]string, error) {
-	var ret = make([]string, 0)
-	listMN, err := service.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
+func (task *SHTask) getListOfOnlineSupernodes(ctx context.Context) ([]string, error) {
+	pingInfos, err := task.GetAllPingInfo(ctx)
 	if err != nil {
-		return ret, err
+		log.WithContext(ctx).WithError(err).Error("Unable to retrieve ping infos")
 	}
 
-	for _, node := range listMN {
-		ret = append(ret, node.ExtKey)
+	var ret []string
+	for _, info := range pingInfos {
+
+		if info.IsOnline {
+			ret = append(ret, info.SupernodeID)
+		}
 	}
 
 	return ret, nil
+}
+
+func (task *SHTask) filterWatchlistAndCurrentNode(watchList types.PingInfos, listOfSupernodes []string) []string {
+	var filteredList []string
+
+	for _, nodeID := range listOfSupernodes {
+		if task.isOnWatchlist(nodeID, watchList) {
+			continue
+		}
+
+		if task.nodeID == nodeID {
+			continue
+		}
+
+		filteredList = append(filteredList, nodeID)
+	}
+
+	return filteredList
+}
+
+// StoreSelfHealingMessage stores the self-healing challenge message to db for further verification
+func (task *SHTask) StoreSelfHealingMessage(ctx context.Context, msg types.SelfHealingMessage) error {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	data, err := json.Marshal(msg.SelfHealingMessageData)
+	if err != nil {
+		return err
+	}
+
+	if store != nil {
+		log.WithContext(ctx).Info("store")
+		storageChallengeLog := types.SelfHealingLogMessage{
+			ChallengeID:     msg.ChallengeID,
+			MessageType:     int(msg.MessageType),
+			Data:            data,
+			SenderID:        msg.SenderID,
+			SenderSignature: msg.SenderSignature,
+		}
+
+		err = store.InsertSelfHealingChallenge(storageChallengeLog)
+		if err != nil {
+			if strings.Contains(err.Error(), ErrUniqueConstraint.Error()) {
+				log.WithContext(ctx).WithField("challenge_id", msg.ChallengeID).
+					WithField("message_type", msg.MessageType).
+					WithField("sender_id", msg.SenderID).
+					Debug("message already exists, not updating")
+
+				return nil
+			}
+
+			log.WithContext(ctx).WithError(err).Error("Error storing challenge message to DB")
+			return err
+		}
+	}
+
+	return nil
 }

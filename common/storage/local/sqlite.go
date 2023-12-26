@@ -6,9 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	json "github.com/json-iterator/go"
-
 	"github.com/jmoiron/sqlx"
+	json "github.com/json-iterator/go"
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -85,6 +84,26 @@ const createPingHistory string = `
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL                                                  
   );`
+
+const createPingHistoryUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS ping_history_unique ON ping_history(supernode_id, ip_address);
+`
+
+const createSelfHealingMessages string = `
+  CREATE TABLE IF NOT EXISTS self_healing_messages (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  challenge_id TEXT NOT NULL,
+  message_type INTEGER NOT NULL,
+  data BLOB NOT NULL,
+  sender_id TEXT NOT NULL,
+  sender_signature BLOB NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+);`
+
+const createSelfHealingMessagesUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS self_healing_messages_unique ON self_healing_messages(challenge_id, message_type, sender_id);
+`
 
 const (
 	historyDBName = "history.db"
@@ -188,8 +207,8 @@ func (s *SQLiteStore) UpsertPingHistory(pingInfo types.PingInfo) error {
 			is_online = excluded.is_online,
 			is_on_watchlist = excluded.is_on_watchlist,
 			is_adjusted = excluded.is_adjusted,
-		    last_seen = excluded.last_seen
-		    cumulative_response_time = excluded.cumulative_response_time
+		    last_seen = excluded.last_seen,
+		    cumulative_response_time = excluded.cumulative_response_time,
 			updated_at = excluded.updated_at;`
 
 	_, err := s.db.Exec(upsertQuery,
@@ -207,7 +226,7 @@ func (s *SQLiteStore) UpsertPingHistory(pingInfo types.PingInfo) error {
 func (s *SQLiteStore) GetPingInfoBySupernodeID(supernodeID string) (*types.PingInfo, error) {
 	const selectQuery = `
         SELECT id, supernode_id, ip_address, total_pings, total_successful_pings,
-               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen,
+               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time,
                created_at, updated_at
         FROM ping_history
         WHERE supernode_id = ?;`
@@ -219,7 +238,7 @@ func (s *SQLiteStore) GetPingInfoBySupernodeID(supernodeID string) (*types.PingI
 	err := row.Scan(
 		&pingInfo.ID, &pingInfo.SupernodeID, &pingInfo.IPAddress, &pingInfo.TotalPings,
 		&pingInfo.TotalSuccessfulPings, &pingInfo.AvgPingResponseTime,
-		&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen,
+		&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen, &pingInfo.CumulativeResponseTime,
 		&pingInfo.CreatedAt, &pingInfo.UpdatedAt,
 	)
 
@@ -234,7 +253,7 @@ func (s *SQLiteStore) GetPingInfoBySupernodeID(supernodeID string) (*types.PingI
 func (s *SQLiteStore) GetWatchlistPingInfo() ([]types.PingInfo, error) {
 	const selectQuery = `
         SELECT id, supernode_id, ip_address, total_pings, total_successful_pings,
-               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen,
+               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time,
                created_at, updated_at
         FROM ping_history
         WHERE is_on_watchlist = true AND is_adjusted = false;`
@@ -251,7 +270,7 @@ func (s *SQLiteStore) GetWatchlistPingInfo() ([]types.PingInfo, error) {
 		if err := rows.Scan(
 			&pingInfo.ID, &pingInfo.SupernodeID, &pingInfo.IPAddress, &pingInfo.TotalPings,
 			&pingInfo.TotalSuccessfulPings, &pingInfo.AvgPingResponseTime,
-			&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen,
+			&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen, &pingInfo.CumulativeResponseTime,
 			&pingInfo.CreatedAt, &pingInfo.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -341,28 +360,23 @@ func (s *SQLiteStore) QuerySelfHealingChallenges() (challenges []types.SelfHeali
 }
 
 // InsertSelfHealingChallenge inserts self-healing challenge
-func (s *SQLiteStore) InsertSelfHealingChallenge(challenge types.SelfHealingChallenge) (hID int, err error) {
+func (s *SQLiteStore) InsertSelfHealingChallenge(challenge types.SelfHealingLogMessage) error {
 	now := time.Now().UTC()
-	const insertQuery = "INSERT INTO self_healing_challenges(id, challenge_id, merkleroot, file_hash, challenging_node, responding_node, verifying_node, reconstructed_file_hash, status, created_at, updated_at) VALUES(NULL,$1,$2,$3,$4,$5,$6,$7,$8,$9,$9);"
+	const insertQuery = "INSERT INTO self_healing_messages(id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,$1,$2,$3,$4,$5,$6,$7);"
 
-	res, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MerkleRoot, challenge.FileHash, challenge.ChallengingNode, challenge.RespondingNode, challenge.VerifyingNode, challenge.ReconstructedFileHash, challenge.Status, now)
+	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.SenderID, challenge.SenderSignature, now, now)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	var id int64
-	if id, err = res.LastInsertId(); err != nil {
-		return 0, err
-	}
-
-	return int(id), nil
+	return nil
 }
 
 // GetAllPingInfos retrieves all ping infos
 func (s *SQLiteStore) GetAllPingInfos() (types.PingInfos, error) {
 	const selectQuery = `
         SELECT id, supernode_id, ip_address, total_pings, total_successful_pings,
-               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen,
+               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time,
                created_at, updated_at
         FROM ping_history
         `
@@ -379,7 +393,7 @@ func (s *SQLiteStore) GetAllPingInfos() (types.PingInfos, error) {
 		if err := rows.Scan(
 			&pingInfo.ID, &pingInfo.SupernodeID, &pingInfo.IPAddress, &pingInfo.TotalPings,
 			&pingInfo.TotalSuccessfulPings, &pingInfo.AvgPingResponseTime,
-			&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen,
+			&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen, &pingInfo.CumulativeResponseTime,
 			&pingInfo.CreatedAt, &pingInfo.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -430,6 +444,18 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createPingHistory); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createPingHistoryUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createSelfHealingMessages); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createSelfHealingMessagesUniqueIndex); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 

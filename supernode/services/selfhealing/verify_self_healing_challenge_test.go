@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"github.com/pastelnetwork/gonode/common/types"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"testing"
 
 	json "github.com/json-iterator/go"
@@ -66,11 +68,14 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 	encodeResp.Symbols = make(map[string][]byte)
 	encodeResp.Symbols["GfzPCcSwyyvz5faMjrjPk9rnL5QcSbW1MV1FSPuWXvS3"] = bytes
 
+	configD := download.Config{}
+	downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
+
 	tests := []struct {
 		testcase string
 		message  types.SelfHealingMessage
 		setup    func()
-		expect   func(*testing.T, *types.SelfHealingMessage, error)
+		expect   func(*testing.T, *pb.SelfHealingMessage, error)
 	}{
 		{
 			testcase: "when reconstruction is not required, should fail verification",
@@ -98,7 +103,7 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 				p2pClient.On(p2pMock.RetrieveMethod, mock.Anything, mock.Anything, mock.Anything).Return(symbol, nil).Times(1)
 				raptorQClient.ListenOnDone()
 			},
-			expect: func(t *testing.T, data *types.SelfHealingMessage, err error) {
+			expect: func(t *testing.T, msg *pb.SelfHealingMessage, err error) {
 				require.Nil(t, err)
 
 				//require.Equal(t, data.MessageType, pb.SelfHealingData_MessageType_SELF_HEALING_RESPONSE_MESSAGE)
@@ -135,7 +140,7 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 
 				raptorQClient.ListenOnDone()
 			},
-			expect: func(t *testing.T, data *types.SelfHealingMessage, err error) {
+			expect: func(t *testing.T, data *pb.SelfHealingMessage, err error) {
 				require.Nil(t, err)
 				//require.Equal(t, data.ChallengeStatus, pb.SelfHealingData_Status_SUCCEEDED)
 				//require.Equal(t, data.MessageType, pb.SelfHealingData_MessageType_SELF_HEALING_RESPONSE_MESSAGE)
@@ -152,7 +157,7 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil)
+				p2pClient, nil, downloadService)
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values

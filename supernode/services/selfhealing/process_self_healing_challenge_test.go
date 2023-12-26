@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"strconv"
 	"testing"
 
@@ -73,6 +74,9 @@ func TestProcessSelfHealingTest(t *testing.T) {
 	var encodeResp rqnode.Encode
 	encodeResp.Symbols = make(map[string][]byte)
 	encodeResp.Symbols["GfzPCcSwyyvz5faMjrjPk9rnL5QcSbW1MV1FSPuWXvS3"] = bytes
+
+	configD := download.Config{}
+	downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
 
 	tests := []struct {
 		testcase string
@@ -197,7 +201,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil)
+				p2pClient, nil, downloadService)
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values

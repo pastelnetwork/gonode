@@ -33,7 +33,7 @@ type SHTask struct {
 
 	//response message mutex to avoid race conditions
 	responseMessageMu sync.Mutex
-	downloadTask      download.NftDownloadingTask
+	downloadTask      *download.NftDownloadingTask
 }
 
 // Run : RunHelper's cleanup function is currently nil as WIP will determine what needs to be cleaned.
@@ -53,6 +53,7 @@ func NewSHTask(service *SHService) *SHTask {
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
 		SHService:           service,
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
+		downloadTask:        download.NewNftDownloadingTask(service.downloadService),
 	}
 
 	return task
