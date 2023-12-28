@@ -4,76 +4,41 @@
 
 GoNode comprises two primary applications, `walletnode` and `supernode`. They are engineered to facilitate NFT registration on the [Pastel](https://docs.pastel.network/introduction/pastel-overview) blockchain. Neither `walletnode` nor `supernode` directly interface with the blockchain. Instead, they employ Pastel's RPC API to interact with Pastel's [cNode](https://github.com/pastelnetwork/pastel), which manages the blockchain itself.
 
-## Getting started
+## Build
+
 - Begin with [`golang`](https://go.dev/doc/) and install the latest version.
 - To generate mocks, install [`mockery`](https://github.com/vektra/mockery).
 - For proto generation, install the protoc compiler, protoc-gen-go, and protoc-gen-go-grpc:
-
 ```
  go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 ```
 
-## Walletnode
+Run `make gen-mocks` if want to build and run unit tests
 
-[`walletnode`](walletnode/README.md) operates as an API server, providing REST APIs on the client-side. The APIs enable users to search, view, and download NFTs, as well as register their own NFTs. Additionally, it allows end-users and other applications to utilize the Pastel Network's duplication detection system for images and a storage system. By default, it operates on port :8080. Configurations can be modified via `walletnode.yml` in the Pastel configuration directory.
-
-It offers the following Workflow APIs. The list below provides a high-level overview. For detailed API information, please refer to the swagger docs at `localhost:8080/swagger`
-
-#### NFT Register & Search
-Use this workflow to register a new NFT as an artist/creator. You'll need your PastelID registered on the network. The steps to achieve this are detailed in the Testing Section of this document.
-
-  - `http://localhost:8080/nfts/register/upload`: Upload the image and receive a file_id.
-  - `http://localhost:8080/nfts/register`: Initiate NFT register task. It returns a task_id in response.
-  - `ws://127.0.0.1:8080/nfts/register/<<task_id>>/state`: Connect to this Websocket URL to monitor the status of the NFT register task. A successful registration will display the Task Completed status. NFT registration can take between 20 and 60 minutes.
-  - `http://localhost:8080/nfts/<<task_id>>/history`: View task status history and details.
-  - `http://localhost:8080/nfts/download?pid=<<pastel_id>>L&txid=<<tx_id>>`: Download the NFT. Only the current owner can download the original NFT.
-  - `ws://localhost:8080/nfts/search?query=<<query>>&creator_name=true&art_title=true`: Search for an NFT. This WS provides various filters. Please consult the swagger docs for details.
-
-#### Cascade Register
-Cascade facilitates secure and reliable file storage for other applications or users through Pastel's storage layer.
-
-1. Use `http://127.0.0.1:8080/openapi/cascade/upload` to upload a file and retrieve `file_id` and `estimated_fee`.
-2. Initiate the Cascade register task by burning 20% of the `estimated_fee`. Find the burn address in `walletnode.yml` and send 20% of the estimated fee to this address from your address (the one used to register your PastelID).
-3. Use `http://localhost:8080/openapi/cascade/start/<<file_id>>` to start the Cascade register task, which will return a `task_id` in the response.
-4. Monitor the status of the Cascade register task by connecting to this Websocket URL: `ws://127.0.0.1:8080/openapi/cascade/start/<<task_id>>/state`. A successful register will display a `Task Completed` status. Note that the registration process may take between 20 - 60 minutes.
-5. Use `http://localhost:8080/openapi/cascade/<<task_id>>/history` to view the task status history and details.
-
-#### Sense Register
-Sense provides other applications or users access to Pastel's state-of-the-art Duplication Detection service in exchange for a small fee.
-
-1. Use `http://127.0.0.1:8080/openapi/sense/upload` to upload a file and retrieve `file_id` and `estimated_fee`.
-2. Initiate the Sense register task by burning 20% of the `estimated_fee`. Find the burn address in `walletnode.yml` and send 20% of the estimated fee to this address from your address (the one used to register your PastelID).
-3. Use `http://localhost:8080/openapi/sense/start/<<file_id>>` to start the Sense register task, which will return a `task_id` in the response.
-4. Monitor the status of the Sense register task by connecting to this Websocket URL: `ws://127.0.0.1:8080/openapi/sense/start/<<task_id>>/state`. A successful register will display a `Task Completed` status. Note that the registration process may take between 20 - 60 minutes.
-5. Use `http://localhost:8080/openapi/sense/<<task_id>>/history` to view the task status history and details.
-
-#### Cascade & Sense Download 
-- To download the original file, use `http://localhost:8080/openapi/cascade/download?pid=<<pastel_id>>L&txid=<<tx_id>>`. Only the owner can download the file.
-- To download the duplication detection results for the provided image, use `http://localhost:8080/openapi/sense/download?pid=<<pastel_id>>L&txid=<<tx_id>>`.
-
-## Supernode
-
-[`supernode`](supernode/README.md) is a server application for `walletnode`. It handles communication with the blockchain, duplication detection server, storage, and other services.
-
-## Bridge
-
-The Bridge service functions as a conduit, enabling `walletnode` to quickly download files through `supernode`. A handshake process is required for `walletnode` to connect with `supernode`, which can be time-consuming. The Bridge service mitigates this delay by maintaining connections with the top 10 nodes, facilitating immediate file downloads from `supernode` upon request.
-## Hermes
-
-Hermes has two primary roles:
-
-- Cleans up inactive tickets: If Registration or Action (Sense\Cascade) tickets aren't activated after a specified block height (configurable), Hermes will remove the data from the local SQLite Database. This process helps maintain a manageable database size and eliminates unnecessary data.
-
-- Stores fingerprints of Registration and Action ticket files in the fingerprints Database.
-
-## Integration Tests
-
-Integration tests ensure API contracts are upheld and the APIs function as anticipated. These tests launch supernode containers and emulate CNode, RaptorQ & Duplication Detection services. These mock services are located in `/fakes`. For more information about Integration Tests, refer to the README in the `/integration` directory.
+```
+make build
+```
 
 ## Testing
 
 There are multiple methods and tools available to test the functionality of gonode. However, since the entire system relies on cNode and a collection of remote SuperNodes, setting up such an environment can be challenging.
+
+### Unit Tests
+```shell
+make sn-unit-tests
+make wn-unit-tests
+```
+
+### Integration Tests
+
+Integration tests ensure API contracts are upheld and the APIs function as anticipated. These tests launch supernode containers and emulate CNode, RaptorQ & Duplication Detection services. These mock services are located in `/fakes`. 
+
+```shell
+make integration-tests
+```
+
+For more information about Integration Tests, refer to the README in the `/integration` directory.
 
 ### Testing on Testnet
 
@@ -126,8 +91,65 @@ Follow these steps:
 - If any Masternode(s) failed to start due to metadab, remove the respective folder(s) at `~/.pastel/supernode/metadb-444*`.
 - If any Masternode(s) failed to start due to kamedila, remove the respective folder(s) at `~/.pastel/supernode/p2p-localnet-600*`.
 
-## Makefile tool
+## Components
 
+### Walletnode
+[`walletnode`](walletnode/README.md) operates as an API server, providing REST APIs on the client-side. The APIs enable users to search, view, and download NFTs, as well as register their own NFTs. Additionally, it allows end-users and other applications to utilize the Pastel Network's duplication detection system for images and a storage system. By default, it operates on port :8080. Configurations can be modified via `walletnode.yml` in the Pastel configuration directory.
+
+It offers the following Workflow APIs. The list below provides a high-level overview. For detailed API information, please refer to the swagger docs at `localhost:8080/swagger`
+
+#### NFT Register & Search
+Use this workflow to register a new NFT as an artist/creator. You'll need your PastelID registered on the network. The steps to achieve this are detailed in the Testing Section of this document.
+
+  - `http://localhost:8080/nfts/register/upload`: Upload the image and receive a file_id.
+  - `http://localhost:8080/nfts/register`: Initiate NFT register task. It returns a task_id in response.
+  - `ws://127.0.0.1:8080/nfts/register/<<task_id>>/state`: Connect to this Websocket URL to monitor the status of the NFT register task. A successful registration will display the Task Completed status. NFT registration can take between 20 and 60 minutes.
+  - `http://localhost:8080/nfts/<<task_id>>/history`: View task status history and details.
+  - `http://localhost:8080/nfts/download?pid=<<pastel_id>>L&txid=<<tx_id>>`: Download the NFT. Only the current owner can download the original NFT.
+  - `ws://localhost:8080/nfts/search?query=<<query>>&creator_name=true&art_title=true`: Search for an NFT. This WS provides various filters. Please consult the swagger docs for details.
+
+#### Cascade Register
+Cascade facilitates secure and reliable file storage for other applications or users through Pastel's storage layer.
+
+1. Use `http://127.0.0.1:8080/openapi/cascade/upload` to upload a file and retrieve `file_id` and `estimated_fee`.
+2. Initiate the Cascade register task by burning 20% of the `estimated_fee`. Find the burn address in `walletnode.yml` and send 20% of the estimated fee to this address from your address (the one used to register your PastelID).
+3. Use `http://localhost:8080/openapi/cascade/start/<<file_id>>` to start the Cascade register task, which will return a `task_id` in the response.
+4. Monitor the status of the Cascade register task by connecting to this Websocket URL: `ws://127.0.0.1:8080/openapi/cascade/start/<<task_id>>/state`. A successful register will display a `Task Completed` status. Note that the registration process may take between 20 - 60 minutes.
+5. Use `http://localhost:8080/openapi/cascade/<<task_id>>/history` to view the task status history and details.
+
+#### Sense Register
+Sense provides other applications or users access to Pastel's state-of-the-art Duplication Detection service in exchange for a small fee.
+
+1. Use `http://127.0.0.1:8080/openapi/sense/upload` to upload a file and retrieve `file_id` and `estimated_fee`.
+2. Initiate the Sense register task by burning 20% of the `estimated_fee`. Find the burn address in `walletnode.yml` and send 20% of the estimated fee to this address from your address (the one used to register your PastelID).
+3. Use `http://localhost:8080/openapi/sense/start/<<file_id>>` to start the Sense register task, which will return a `task_id` in the response.
+4. Monitor the status of the Sense register task by connecting to this Websocket URL: `ws://127.0.0.1:8080/openapi/sense/start/<<task_id>>/state`. A successful register will display a `Task Completed` status. Note that the registration process may take between 20 - 60 minutes.
+5. Use `http://localhost:8080/openapi/sense/<<task_id>>/history` to view the task status history and details.
+
+#### Cascade & Sense Download 
+- To download the original file, use `http://localhost:8080/openapi/cascade/download?pid=<<pastel_id>>L&txid=<<tx_id>>`. Only the owner can download the file.
+- To download the duplication detection results for the provided image, use `http://localhost:8080/openapi/sense/download?pid=<<pastel_id>>L&txid=<<tx_id>>`.
+
+### Supernode
+[`supernode`](supernode/README.md) is a server application for `walletnode`. It handles communication with the blockchain, duplication detection server, storage, and other services.
+
+### Bridge
+The Bridge service functions as a conduit, enabling `walletnode` to quickly download files through `supernode`. A handshake process is required for `walletnode` to connect with `supernode`, which can be time-consuming. The Bridge service mitigates this delay by maintaining connections with the top 10 nodes, facilitating immediate file downloads from `supernode` upon request.
+
+### Hermes
+Hermes has two primary roles:
+
+- Cleans up inactive tickets: If Registration or Action (Sense\Cascade) tickets aren't activated after a specified block height (configurable), Hermes will remove the data from the local SQLite Database. This process helps maintain a manageable database size and eliminates unnecessary data.
+
+- Stores fingerprints of Registration and Action ticket files in the fingerprints Database.
+
+
+## More information
+
+[Pastel Network Docs](https://docs.pastel.network/introduction/pastel-overview)
+
+
+## Makefile tool
 - `make sn-unit-tests`: Execute sn unit tests, including relevant packages.
 - `make wn-unit-tests`: Execute wn unit tests, including relevant packages.
 - `make integration-tests`: Execute integration tests.
@@ -136,19 +158,3 @@ Follow these steps:
 - `make gen-proto`: Generate all protobuf models & services.
 - `make clean-proto`: Remove all protobuf models & services.
 
-## Contribution 
-
-- Create a new branch from the latest master. The branch name should include the assigned ticket number, for example, *[PSL-XX]_Fix-xyz*.
-- Run the following commands to ensure everything is set up correctly: 
-
-
-```
-make build
-make sn-unit-tests
-make wn-unit-tests
-make integration-tests
-```
-Feel free to use `make gen-mocks` and/or `make gen-proto` as necessary. 
-
-- Open a PR and monitor the CircleCI pipelines to ensure everything runs smoothly. 
-- Await at least two approvals before merging. 
