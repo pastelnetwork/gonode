@@ -766,6 +766,15 @@ func (s *DHT) NClosestNodes(_ context.Context, n int, key string, ignores ...*No
 	return nodeList.Nodes
 }
 
+// NClosestNodesWithIncludingNodelist get n closest nodes to a key string with including node list
+func (s *DHT) NClosestNodesWithIncludingNodelist(_ context.Context, n int, key string, ignores, includeNodeList []*Node) []*Node {
+	list := s.ignorelist.ToNodeList()
+	ignores = append(ignores, list...)
+	nodeList := s.ht.closestContactsWithIncludingNodeList(n, base58.Decode(key), ignores, includeNodeList)
+
+	return nodeList.Nodes
+}
+
 // LocalStore the data into the network
 func (s *DHT) LocalStore(ctx context.Context, key string, data []byte) (string, error) {
 	decoded := base58.Decode(key)

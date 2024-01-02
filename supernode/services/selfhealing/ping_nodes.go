@@ -151,10 +151,10 @@ func (task *SHTask) ping(ctx context.Context, req *pb.PingRequest, supernodeAddr
 	// Use the timeout context for the ping operation
 	pingResponse, err := selfHealingIF.Ping(pingCtx, req)
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			log.WithContext(ctx).Warnf("Ping to %s timed out", supernodeAddr)
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) || errors.Is(pingCtx.Err(), context.DeadlineExceeded) {
+			log.WithContext(ctx).Debugf("Ping to %s timed out", supernodeAddr)
 		} else {
-			log.WithContext(ctx).Warn(err.Error())
+			log.WithContext(ctx).Debug(err.Error())
 		}
 		return nil, err
 	}

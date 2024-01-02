@@ -17,6 +17,9 @@ const (
 	//NClosestMethod mocks getting the n closest nodes to a given string
 	NClosestMethod = "NClosestNodes"
 
+	// NClosestNodesWithIncludingNodeListMethod mocks getting the n closest nodes to a given string with including node list
+	NClosestNodesWithIncludingNodeListMethod = "NClosestNodesWithIncludingNodeList"
+
 	//StoreBatch mocks storing in batch
 	StoreBatch = "StoreBatch"
 
@@ -77,6 +80,14 @@ func (client *Client) ListenOnStore(id string, err error) *Client {
 func (client *Client) ListenOnNClosestNodes(retArr []string, err error) *Client {
 
 	client.On(NClosestMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(retArr, err)
+	return client
+}
+
+// ListenOnNClosestNodesWithIncludingNodelist returns retArr and error from args
+func (client *Client) ListenOnNClosestNodesWithIncludingNodelist(retArr []string, err error) *Client {
+
+	client.On(NClosestNodesWithIncludingNodeListMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(retArr, err)
 	return client
 }
 

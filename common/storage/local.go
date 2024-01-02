@@ -16,6 +16,7 @@ type LocalStoreInterface interface {
 	CleanupStorageChallenges() (err error)
 	CleanupSelfHealingChallenges() (err error)
 	InsertSelfHealingChallenge(challenge types.SelfHealingLogMessage) error
+	InsertSelfHealingMetrics(metrics types.SelfHealingMetrics) error
 	QuerySelfHealingChallenges() (challenges []types.SelfHealingChallenge, err error)
 	UpsertPingHistory(pingInfo types.PingInfo) error
 	GetPingInfoBySupernodeID(supernodeID string) (*types.PingInfo, error)

@@ -21,15 +21,21 @@ const (
 	logPrefix = "self-healing-task"
 )
 
+type signatures struct {
+	SNSignature1 []byte
+	SNSignature2 []byte
+	SNSignature3 []byte
+}
+
 // SHTask : Self healing task will manage response to self healing challenges requests
 type SHTask struct {
 	FingerprintsHandler *mixins.FingerprintsHandler
 	*common.SuperNodeTask
 	*common.StorageHandler
 	*SHService
-	RaptorQSymbols []byte
-	IDFiles        [][]byte
-	SNsSignatures  [][]byte
+	RaptorQSymbols   []byte
+	IDFiles          [][]byte
+	KeySignaturesMap map[string]signatures
 
 	//response message mutex to avoid race conditions
 	responseMessageMu sync.Mutex
@@ -54,6 +60,7 @@ func NewSHTask(service *SHService) *SHTask {
 		SHService:           service,
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 		downloadTask:        download.NewNftDownloadingTask(service.downloadService),
+		KeySignaturesMap:    make(map[string]signatures),
 	}
 
 	return task

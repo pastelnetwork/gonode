@@ -192,6 +192,29 @@ func (s *p2p) NClosestNodes(ctx context.Context, n int, key string, ignores ...s
 	return ret
 }
 
+func (s *p2p) NClosestNodesWithIncludingNodeList(ctx context.Context, n int, key string, ignores, nodesToInclude []string) []string {
+	var ret = make([]string, 0)
+	var ignoreNodes = make([]*kademlia.Node, len(ignores))
+	for idx, node := range ignores {
+		ignoreNodes[idx] = &kademlia.Node{ID: []byte(node)}
+	}
+
+	var includeNodeList = make([]*kademlia.Node, len(nodesToInclude))
+	for idx, node := range nodesToInclude {
+		includeNodeList[idx] = &kademlia.Node{ID: []byte(node)}
+	}
+
+	nodes := s.dht.NClosestNodesWithIncludingNodelist(ctx, n, key, ignoreNodes, includeNodeList)
+	for _, node := range nodes {
+		ret = append(ret, string(node.ID))
+	}
+
+	log.WithContext(ctx).WithField("no_of_closest_nodes", n).WithField("file_hash", key).
+		WithField("closest_nodes", ret).
+		Debug("closest nodes retrieved")
+	return ret
+}
+
 // configure the distributed hash table for p2p service
 func (s *p2p) configure(ctx context.Context) error {
 	// new the local storage
