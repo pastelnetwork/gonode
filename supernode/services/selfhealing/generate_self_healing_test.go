@@ -195,7 +195,7 @@ func TestCreateClosestNodeMapAgainstKeys(t *testing.T) {
 			testcase: "when keys are listed, should create a closestNodes map against the keys",
 			keys:     []string{"file-hash-to-challenge", "cascade-file-hash-to-challenge", "sense-file-hash-to-challenge"},
 			setup: func() {
-				p2pClient.ListenOnNClosestNodes([]string{"A", "B", "C", "D", "E", "F"}, nil)
+				p2pClient.ListenOnNClosestNodesWithIncludingNodelist([]string{"A", "B", "C", "D", "E", "F"}, nil)
 			},
 			expect: func(t *testing.T, closestNodesMap map[string][]string) {
 				require.Equal(t, len(closestNodesMap), 3)
@@ -223,7 +223,7 @@ func TestCreateClosestNodeMapAgainstKeys(t *testing.T) {
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
-			closestNodesMap := task.createClosestNodesMapAgainstKeys(ctx, tt.keys)
+			closestNodesMap := task.createClosestNodesMapAgainstKeys(ctx, tt.keys, nil)
 			// handle the test case's assertions with the provided func
 			tt.expect(t, closestNodesMap)
 		})

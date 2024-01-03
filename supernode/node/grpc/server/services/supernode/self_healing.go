@@ -104,7 +104,7 @@ func (service *SelfHealingChallengeGRPC) Ping(ctx context.Context, pingReq *pb.P
 
 // ProcessSelfHealingChallenge is the server side of self-healing challenge processing GRPC comms
 func (service *SelfHealingChallengeGRPC) ProcessSelfHealingChallenge(ctx context.Context, scRequest *pb.ProcessSelfHealingChallengeRequest) (*pb.ProcessSelfHealingChallengeReply, error) {
-	log.WithContext(ctx).WithField("req", scRequest).Info("Process self-healing challenge request received from gRpc client")
+	log.WithContext(ctx).WithField("req", scRequest).Debug("Process self-healing challenge request received from gRpc client")
 
 	task := service.NewSHTask()
 
@@ -130,7 +130,7 @@ func (service *SelfHealingChallengeGRPC) ProcessSelfHealingChallenge(ctx context
 
 // VerifySelfHealingChallenge is the server side of self-healing challenge verification GRPC comms
 func (service *SelfHealingChallengeGRPC) VerifySelfHealingChallenge(ctx context.Context, scRequest *pb.VerifySelfHealingChallengeRequest) (*pb.VerifySelfHealingChallengeReply, error) {
-	log.WithContext(ctx).WithField("req", scRequest).Info("Verify Self-Healing Request received from gRpc client")
+	log.WithContext(ctx).WithField("req", scRequest).Debug("Verify Self-Healing Request received from gRpc client")
 	task := service.NewSHTask()
 
 	msg := types.SelfHealingMessage{

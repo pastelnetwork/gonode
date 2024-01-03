@@ -320,6 +320,50 @@ func (ht *HashTable) closestContactsWithInlcudingNode(num int, target []byte, ig
 	return nl
 }
 
+func (ht *HashTable) closestContactsWithIncludingNodeList(num int, target []byte, ignoredNodes []*Node, nodesToInclude []*Node) *NodeList {
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
+	// Convert ignoredNodes slice to a map for faster lookup
+	ignoredMap := make(map[string]bool)
+	for _, node := range ignoredNodes {
+		ignoredMap[hex.EncodeToString(node.ID)] = true
+	}
+
+	nl := &NodeList{
+		Comparator: target,
+	}
+
+	// Flatten the routeTable and add nodes to nl if they're not in the ignoredMap
+	counter := 0
+	for _, bucket := range ht.routeTable {
+		for _, node := range bucket {
+			if !ignoredMap[string(node.ID)] {
+				counter++
+				nl.AddNodes([]*Node{node})
+			}
+		}
+	}
+
+	// Add the included node (if any) to the list
+	var includeNodeList []*Node
+	if nodesToInclude != nil {
+		for _, node := range nodesToInclude {
+			if !nl.exists(node) {
+				includeNodeList = append(includeNodeList, node)
+			}
+		}
+
+		nl.AddNodes(includeNodeList)
+	}
+
+	// Sort the node list and get the top 'num' nodes
+	nl.Sort()
+	nl.TopN(num)
+
+	return nl
+}
+
 // RemoveNode removes node from bucket
 func (ht *HashTable) RemoveNode(index int, id []byte) bool {
 	ht.mutex.Lock()

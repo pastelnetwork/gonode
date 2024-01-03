@@ -2,6 +2,7 @@ package selfhealing
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/types"
 	"sync/atomic"
 	"time"
 
@@ -32,12 +33,13 @@ type SHService struct {
 	config        *Config
 	pastelHandler *mixins.PastelHandler
 
-	nodeID            string
-	nodeClient        node.ClientInterface
-	currentBlockCount int32
-	historyDB         storage.LocalStoreInterface
-	downloadService   *download.NftDownloaderService
-	ticketsMap        map[string]bool
+	nodeID                string
+	nodeClient            node.ClientInterface
+	currentBlockCount     int32
+	historyDB             storage.LocalStoreInterface
+	downloadService       *download.NftDownloaderService
+	ticketsMap            map[string]bool
+	SelfHealingMetricsMap map[string]types.SelfHealingMetrics
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -140,20 +142,21 @@ func (service *SHService) Task(id string) *SHTask {
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client,
 	historyDB storage.LocalStoreInterface, downloadService *download.NftDownloaderService) *SHService {
 	return &SHService{
-		config:           config,
-		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2p),
-		nodeClient:       nodeClient,
-		nodeID:           config.PastelID,
-		pastelHandler:    mixins.NewPastelHandler(pastelClient),
-		historyDB:        historyDB,
-		ticketsMap:       make(map[string]bool),
-		downloadService:  downloadService,
+		config:                config,
+		SuperNodeService:      common.NewSuperNodeService(fileStorage, pastelClient, p2p),
+		nodeClient:            nodeClient,
+		nodeID:                config.PastelID,
+		pastelHandler:         mixins.NewPastelHandler(pastelClient),
+		historyDB:             historyDB,
+		ticketsMap:            make(map[string]bool),
+		SelfHealingMetricsMap: make(map[string]types.SelfHealingMetrics),
+		downloadService:       downloadService,
 	}
 }
 
 // GetNClosestSupernodesToAGivenFileUsingKademlia : Wrapper for a utility function that accesses kademlia's distributed hash table to determine which nodes should be closest to a given string (hence hosting it)
-func (service *SHService) GetNClosestSupernodesToAGivenFileUsingKademlia(ctx context.Context, n int, comparisonString string, ignores ...string) []string {
-	return service.P2PClient.NClosestNodes(ctx, n, comparisonString, ignores...)
+func (service *SHService) GetNClosestSupernodesToAGivenFileUsingKademlia(ctx context.Context, n int, comparisonString string, ignores, includingNodes []string) []string {
+	return service.P2PClient.NClosestNodesWithIncludingNodeList(ctx, n, comparisonString, ignores, includingNodes)
 }
 
 // MapSymbolFileKeysFromNFTAndActionTickets : Get an NFT and Action Ticket's associated raptor q ticket file id's and creates a map of them

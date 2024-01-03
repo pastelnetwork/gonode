@@ -105,6 +105,21 @@ const createSelfHealingMessagesUniqueIndex string = `
 CREATE UNIQUE INDEX IF NOT EXISTS self_healing_messages_unique ON self_healing_messages(challenge_id, message_type, sender_id);
 `
 
+const createSelfHealingMetricsTable string = `
+	CREATE TABLE IF NOT EXISTS self_healing_metrics (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	challenge_id TEXT NOT NULL,
+	sent_tickets_for_self_healing INTEGER,
+	estimated_missing_keys INTEGER,
+	tickets_in_progress INTEGER,
+	tickets_required_self_healing INTEGER,
+	successfully_self_healed_tickets INTEGER,
+	successfully_verified_tickets INTEGER,
+	created_at DATETIME,
+	updated_at DATETIME
+);
+`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -408,6 +423,43 @@ func (s *SQLiteStore) GetAllPingInfos() (types.PingInfos, error) {
 	return pingInfos, nil
 }
 
+// InsertSelfHealingMetrics inserts the self-healing metrics against challenge
+func (s *SQLiteStore) InsertSelfHealingMetrics(metrics types.SelfHealingMetrics) error {
+	now := time.Now().UTC()
+	const insertQuery = `
+        INSERT INTO self_healing_metrics(
+            challenge_id,
+            sent_tickets_for_self_healing,
+            estimated_missing_keys,
+            tickets_in_progress,
+            tickets_required_self_healing,
+            successfully_self_healed_tickets,
+            successfully_verified_tickets,
+            created_at,
+            updated_at
+        )
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9);
+    `
+
+	_, err := s.db.Exec(
+		insertQuery,
+		metrics.ChallengeID,
+		metrics.SentTicketsForSelfHealing,
+		metrics.EstimatedMissingKeys,
+		metrics.TicketsInProgress,
+		metrics.TicketsRequiredSelfHealing,
+		metrics.SuccessfullySelfHealedTickets,
+		metrics.SuccessfullyVerifiedTickets,
+		now,
+		now,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CleanupSelfHealingChallenges cleans up self-healing challenges stored in DB for inspection
 func (s *SQLiteStore) CleanupSelfHealingChallenges() (err error) {
 	const delQuery = "DELETE FROM self_healing_challenges"
@@ -456,6 +508,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createSelfHealingMessagesUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createSelfHealingMetricsTable); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 

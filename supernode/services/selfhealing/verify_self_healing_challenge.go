@@ -24,7 +24,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 		log.WithContext(ctx).WithError(err).Error("Error validating self-healing challenge incoming data: ")
 		return nil, err
 	}
-	logger.WithField("challenge", incomingResponseMessage).Info("self healing response message has been validated")
+	logger.Info("self healing response message has been validated")
 
 	var (
 		nftTicket     *pastel.NFTTicket
@@ -59,10 +59,10 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 				Timestamp:        incomingResponseMessage.SelfHealingMessageData.Challenge.Timestamp,
 			},
 			Response: types.SelfHealingResponseData{
-				Block:            incomingResponseMessage.SelfHealingMessageData.Response.Block,
-				Merkelroot:       incomingResponseMessage.SelfHealingMessageData.Response.Merkelroot,
-				Timestamp:        incomingResponseMessage.SelfHealingMessageData.Response.Timestamp,
-				RespondedTickets: incomingResponseMessage.SelfHealingMessageData.Response.RespondedTickets,
+				Block:           incomingResponseMessage.SelfHealingMessageData.Response.Block,
+				Merkelroot:      incomingResponseMessage.SelfHealingMessageData.Response.Merkelroot,
+				Timestamp:       incomingResponseMessage.SelfHealingMessageData.Response.Timestamp,
+				RespondedTicket: incomingResponseMessage.SelfHealingMessageData.Response.RespondedTicket,
 			},
 			Verification: types.SelfHealingVerificationData{
 				Block:      currentBlockCount,
@@ -70,166 +70,157 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 			},
 		},
 	}
+	ticket := incomingResponseMessage.SelfHealingMessageData.Response.RespondedTicket
 
-	respondedTickets := incomingResponseMessage.SelfHealingMessageData.Response.RespondedTickets
-
-	if respondedTickets == nil {
-		logger.Info("no tickets have been responded by the recipient")
+	if ticket.TxID == "" {
 		return nil, nil
 	}
 
-	for _, ticket := range respondedTickets {
-		nftTicket, cascadeTicket, senseTicket, err = task.getTicket(ctx, ticket.TxID, TicketType(ticket.TicketType))
+	logger.WithField("ticket_txid", ticket.TxID).Info("starting self-healing verification for the ticket")
+	nftTicket, cascadeTicket, senseTicket, err = task.getTicket(ctx, ticket.TxID, TicketType(ticket.TicketType))
+	if err != nil {
+		logger.WithError(err).Error("Error getRelevantTicketFromMsg")
+	}
+	logger.Info("reg ticket has been retrieved for verification")
+
+	if cascadeTicket != nil || nftTicket != nil {
+		isReconstructionReq := task.isReconstructionRequired(ctx, ticket.MissingKeys)
+		if !isReconstructionReq {
+			logger.WithField("ticket_txid", ticket.TxID).Error("reconstruction is not required for ticket")
+
+			if !ticket.IsReconstructionRequired {
+				logger.WithField("ticket_txid", ticket.TxID).
+					Info("is reconstruction required set to false by both recipient and verifier")
+
+				verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
+					TxID:                     ticket.TxID,
+					TicketType:               ticket.TicketType,
+					MissingKeys:              ticket.MissingKeys,
+					ReconstructedFileHash:    nil,
+					IsReconstructionRequired: false,
+					IsVerified:               true,
+					Message:                  "is reconstruction required set to false by both recipient and verifier",
+				}
+			} else {
+				logger.WithField("ticket_txid", ticket.TxID).
+					Info("is reconstruction required set to true by recipient but false by verifier")
+
+				verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
+					TxID:                     ticket.TxID,
+					TicketType:               ticket.TicketType,
+					MissingKeys:              ticket.MissingKeys,
+					ReconstructedFileHash:    nil,
+					IsReconstructionRequired: false,
+					IsVerified:               false,
+					Message:                  "is reconstruction required set to true by recipient but false by verifier",
+				}
+			}
+
+			return task.prepareAndSendVerificationMsg(ctx, *verificationMsg)
+		}
+
+		_, reconstructedFileHash, err := task.selfHealing(ctx, ticket.TxID, nftTicket, cascadeTicket)
 		if err != nil {
-			logger.WithError(err).Error("Error getRelevantTicketFromMsg")
+			log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
 		}
-		logger.Info("reg ticket has been retrieved for verification")
 
-		if cascadeTicket != nil || nftTicket != nil {
-			isReconstructionReq := task.isReconstructionRequired(ctx, ticket.MissingKeys)
-			if !isReconstructionReq {
-				logger.WithField("ticket_txid", ticket.TxID).Error("reconstruction is not required for ticket")
-
-				if !ticket.IsReconstructionRequired {
-					logger.WithField("ticket_txid", ticket.TxID).
-						Info("is reconstruction required set to false by both recipient and verifier")
-
-					verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets = append(verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets,
-						types.VerifiedTicket{
-							TxID:                     ticket.TxID,
-							TicketType:               ticket.TicketType,
-							MissingKeys:              ticket.MissingKeys,
-							ReconstructedFileHash:    nil,
-							IsReconstructionRequired: false,
-							IsVerified:               true,
-							Message:                  "is reconstruction required set to false by both recipient and verifier",
-						})
-				} else {
-					logger.WithField("ticket_txid", ticket.TxID).
-						Info("is reconstruction required set to true by recipient but false by verifier")
-
-					verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets = append(verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets,
-						types.VerifiedTicket{
-							TxID:                     ticket.TxID,
-							TicketType:               ticket.TicketType,
-							MissingKeys:              ticket.MissingKeys,
-							ReconstructedFileHash:    nil,
-							IsReconstructionRequired: false,
-							IsVerified:               false,
-							Message:                  "is reconstruction required set to true by recipient but false by verifier",
-						})
-				}
-
-				continue
+		logger.Info("comparing data hashes")
+		if !bytes.Equal(reconstructedFileHash, ticket.ReconstructedFileHash) {
+			logger.WithContext(ctx).WithField("txid", ticket.TxID).Info("reconstructed file hash does not match with the verifier reconstructed file")
+			verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
+				TxID:                     ticket.TxID,
+				TicketType:               ticket.TicketType,
+				MissingKeys:              ticket.MissingKeys,
+				ReconstructedFileHash:    nil,
+				IsReconstructionRequired: false,
+				IsVerified:               false,
+				Message:                  "reconstructed file hash mismatched",
+			}
+		} else {
+			logger.WithContext(ctx).WithField("txid", ticket.TxID).Info("reconstructed file hash matched")
+			verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
+				TxID:                     ticket.TxID,
+				TicketType:               ticket.TicketType,
+				MissingKeys:              ticket.MissingKeys,
+				ReconstructedFileHash:    nil,
+				IsReconstructionRequired: false,
+				IsVerified:               true,
+				Message:                  "reconstructed file hash matched",
 			}
 
-			_, reconstructedFileHash, err := task.selfHealing(ctx, ticket.TxID, nftTicket, cascadeTicket)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
-			}
+		}
 
-			logger.Info("comparing data hashes")
-			if !bytes.Equal(reconstructedFileHash, ticket.ReconstructedFileHash) {
-				log.WithContext(ctx).WithField("txid", ticket.TxID).Info("reconstructed file hash does not match with the verifier reconstructed file")
+		return task.prepareAndSendVerificationMsg(ctx, *verificationMsg)
+	} else if senseTicket != nil {
+		reqSelfHealing, mostCommonFile, sigs := task.senseCheckingProcess(ctx, senseTicket.DDAndFingerprintsIDs)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error in checking process for sense action ticket")
+		}
 
-				verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets = append(verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets,
-					types.VerifiedTicket{
-						TxID:                     ticket.TxID,
-						TicketType:               ticket.TicketType,
-						MissingKeys:              ticket.MissingKeys,
-						ReconstructedFileHash:    nil,
-						IsReconstructionRequired: false,
-						IsVerified:               false,
-						Message:                  "reconstructed file hash mismatched",
-					})
-			}
+		if !reqSelfHealing {
+			if !ticket.IsReconstructionRequired {
+				logger.WithField("ticket_txid", ticket.TxID).
+					Info("is reconstruction required set to false by both recipient and verifier for sense ticket")
 
-			verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets = append(verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets,
-				types.VerifiedTicket{
+				verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
 					TxID:                     ticket.TxID,
 					TicketType:               ticket.TicketType,
 					MissingKeys:              ticket.MissingKeys,
 					ReconstructedFileHash:    nil,
 					IsReconstructionRequired: false,
 					IsVerified:               true,
-					Message:                  "reconstructed file hash matched",
-				})
-			log.WithContext(ctx).WithField("txid", ticket.TxID).Info("reconstructed file hash matched")
-		} else if senseTicket != nil {
-			reqSelfHealing, mostCommonFile := task.senseCheckingProcess(ctx, senseTicket.DDAndFingerprintsIDs)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("Error in checking process for sense action ticket")
-			}
-
-			if !reqSelfHealing {
-				if !ticket.IsReconstructionRequired {
-					logger.WithField("ticket_txid", ticket.TxID).
-						Info("is reconstruction required set to false by both recipient and verifier for sense ticket")
-
-					verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets = append(verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets,
-						types.VerifiedTicket{
-							TxID:                     ticket.TxID,
-							TicketType:               ticket.TicketType,
-							MissingKeys:              ticket.MissingKeys,
-							ReconstructedFileHash:    nil,
-							IsReconstructionRequired: false,
-							IsVerified:               true,
-							Message:                  "is reconstruction required set to false by both recipient and verifier",
-						})
-				} else {
-					logger.WithField("ticket_txid", ticket.TxID).
-						Info("is reconstruction required set to true by recipient but false by verifier")
-
-					verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets = append(verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets,
-						types.VerifiedTicket{
-							TxID:                     ticket.TxID,
-							TicketType:               ticket.TicketType,
-							MissingKeys:              ticket.MissingKeys,
-							ReconstructedFileHash:    nil,
-							IsReconstructionRequired: false,
-							IsVerified:               false,
-							Message:                  "is reconstruction required set to true by recipient but false by verifier",
-						})
+					Message:                  "is reconstruction required set to false by both recipient and verifier",
 				}
+			} else {
+				logger.WithField("ticket_txid", ticket.TxID).
+					Info("is reconstruction required set to true by recipient but false by verifier")
 
-				continue
+				verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
+					TxID:                     ticket.TxID,
+					TicketType:               ticket.TicketType,
+					MissingKeys:              ticket.MissingKeys,
+					ReconstructedFileHash:    nil,
+					IsReconstructionRequired: false,
+					IsVerified:               false,
+					Message:                  "is reconstruction required set to true by recipient but false by verifier",
+				}
 			}
+			return task.prepareAndSendVerificationMsg(ctx, *verificationMsg)
+		}
 
-			ids, _, err := task.senseSelfHealing(ctx, senseTicket, mostCommonFile)
-			if err != nil {
-				logger.WithField("ticket_txid", ticket.TxID).Info("error self-healing sense ticket")
+		ids, _, err := task.senseSelfHealing(ctx, senseTicket, mostCommonFile, sigs)
+		if err != nil {
+			logger.WithField("ticket_txid", ticket.TxID).Info("error self-healing sense ticket")
+		}
+
+		if ok := compareFileIDs(ids, ticket.FileIDs); !ok {
+			logger.WithField("ticket_txid", ticket.TxID).Info("sense file hash mismatched")
+			verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
+				TxID:                     ticket.TxID,
+				TicketType:               ticket.TicketType,
+				MissingKeys:              ticket.MissingKeys,
+				ReconstructedFileHash:    nil,
+				IsReconstructionRequired: false,
+				IsVerified:               false,
+				Message:                  "reconstructed file hash mismatched",
 			}
-
-			if ok := compareFileIDs(ids, ticket.FileIDs); !ok {
-				logger.WithField("ticket_txid", ticket.TxID).Info("sense file hash mismatched")
-				verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets = append(verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets,
-					types.VerifiedTicket{
-						TxID:                     ticket.TxID,
-						TicketType:               ticket.TicketType,
-						MissingKeys:              ticket.MissingKeys,
-						ReconstructedFileHash:    nil,
-						IsReconstructionRequired: false,
-						IsVerified:               false,
-						Message:                  "reconstructed file hash mismatched",
-					})
-				continue
-			}
-
+		} else {
 			logger.WithField("ticket_txid", ticket.TxID).Info("sense file hash matched")
-			verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets = append(verificationMsg.SelfHealingMessageData.Verification.VerifiedTickets,
-				types.VerifiedTicket{
-					TxID:                     ticket.TxID,
-					TicketType:               ticket.TicketType,
-					MissingKeys:              ticket.MissingKeys,
-					ReconstructedFileHash:    nil,
-					IsReconstructionRequired: false,
-					IsVerified:               true,
-					Message:                  "reconstructed file hash matched",
-				})
+			verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
+				TxID:                     ticket.TxID,
+				TicketType:               ticket.TicketType,
+				MissingKeys:              ticket.MissingKeys,
+				ReconstructedFileHash:    nil,
+				IsReconstructionRequired: false,
+				IsVerified:               true,
+				Message:                  "reconstructed file hash matched",
+			}
 		}
+
+		logger.Info("sending verification back to the recipient")
+		return task.prepareAndSendVerificationMsg(ctx, *verificationMsg)
 	}
 
-	logger.Info("sending verification back to the recipient")
 	return task.prepareAndSendVerificationMsg(ctx, *verificationMsg)
 }
 

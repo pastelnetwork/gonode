@@ -65,7 +65,7 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 	}
 	log.WithContext(ctx).Info("all the keys from NFT and action tickets have been listed")
 
-	mapOfClosestNodesAgainstKeys := task.createClosestNodesMapAgainstKeys(ctx, keys)
+	mapOfClosestNodesAgainstKeys := task.createClosestNodesMapAgainstKeys(ctx, keys, watchlistPingInfos)
 	if len(mapOfClosestNodesAgainstKeys) == 0 {
 		log.WithContext(ctx).Error("unable to create map of closest nodes against keys")
 	}
@@ -82,13 +82,13 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 
 		return nil
 	}
-	log.WithContext(ctx).WithField("self_healing_tickets", selfHealingTicketsMap).Info("self-healing tickets have been identified")
+	log.WithContext(ctx).WithField("self_healing_tickets", len(selfHealingTicketsMap)).Info("self-healing tickets have been identified")
 
 	challengeRecipientMap, err := task.identifyChallengeRecipients(ctx, selfHealingTicketsMap, watchlistPingInfos)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error identifying challenge recipients")
 	}
-	log.WithContext(ctx).WithField("challenge_recipients", challengeRecipientMap).Info("challenge recipients have been identified")
+	log.WithContext(ctx).WithField("challenge_recipients", len(challengeRecipientMap)).Info("challenge recipients have been identified")
 
 	if err := task.prepareAndSendSelfHealingMessage(ctx, challengeRecipientMap); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error sending self-healing messages")
@@ -229,11 +229,16 @@ func (service *SHService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 }
 
 // FindClosestNodesAgainstKeys
-func (task *SHTask) createClosestNodesMapAgainstKeys(ctx context.Context, keys []string) map[string][]string {
+func (task *SHTask) createClosestNodesMapAgainstKeys(ctx context.Context, keys []string, infos types.PingInfos) map[string][]string {
 	mapOfClosestNodesAgainstKeys := make(map[string][]string, len(keys))
+	var sliceOfNodesOnWatchlist []string
+
+	for _, info := range infos {
+		sliceOfNodesOnWatchlist = append(sliceOfNodesOnWatchlist, info.SupernodeID)
+	}
 
 	for _, key := range keys {
-		closestNodes := task.identifyClosestNodes(ctx, key)
+		closestNodes := task.identifyClosestNodes(ctx, key, sliceOfNodesOnWatchlist)
 
 		mapOfClosestNodesAgainstKeys[key] = append(mapOfClosestNodesAgainstKeys[key], closestNodes...)
 	}
@@ -242,11 +247,11 @@ func (task *SHTask) createClosestNodesMapAgainstKeys(ctx context.Context, keys [
 }
 
 // identifyClosestNodes find closest nodes against the given key
-func (task *SHTask) identifyClosestNodes(ctx context.Context, key string) []string {
+func (task *SHTask) identifyClosestNodes(ctx context.Context, key string, nodesOnWatchlist []string) []string {
 	logger := log.WithContext(ctx).WithField("key", key)
 	logger.Debug("identifying closest nodes against the key")
 
-	closestNodes := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, defaultClosestNodes, key, "")
+	closestNodes := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, defaultClosestNodes, key, []string{}, nodesOnWatchlist)
 
 	logger.Debug("closest nodes against the key has been retrieved")
 	return closestNodes
@@ -259,13 +264,12 @@ func (task *SHTask) identifySelfHealingTickets(ctx context.Context, watchlistPin
 	for key, closestNodes := range keyClosestNodesMap {
 		if task.requireSelfHealing(closestNodes, watchlistPingInfos) {
 			ticketDetails := symbolFileKeyMap[key]
-			selfHealingTicketsMap[ticketDetails.TicketTxID] = SymbolFileKeyDetails{
-				TicketTxID: ticketDetails.TicketTxID,
-				TicketType: ticketDetails.TicketType,
-			}
-
 			selfHealingTicketDetails := selfHealingTicketsMap[ticketDetails.TicketTxID]
+
+			selfHealingTicketDetails.TicketTxID = ticketDetails.TicketTxID
+			selfHealingTicketDetails.TicketType = ticketDetails.TicketType
 			selfHealingTicketDetails.Keys = append(selfHealingTicketDetails.Keys, key)
+
 			selfHealingTicketsMap[ticketDetails.TicketTxID] = selfHealingTicketDetails
 
 			log.WithContext(ctx).WithField("ticket_tx_id", ticketDetails.TicketTxID).Info("ticket added for self healing")
@@ -340,7 +344,7 @@ func (task *SHTask) getTicket(ctx context.Context, txID string, ticketType Ticke
 
 	switch ticketType {
 	case nftTicketType:
-		nftTicket, err := task.getNFTTicket(ctx, txID)
+		nftTicket, err := task.getNFTTicket(txID)
 		if err != nil {
 			logger.WithError(err).Error("error retrieving nft ticket")
 			return nil, nil, nil, err
@@ -348,7 +352,7 @@ func (task *SHTask) getTicket(ctx context.Context, txID string, ticketType Ticke
 
 		return nftTicket, nil, nil, nil
 	case cascadeTicketType:
-		cascadeTicket, err := task.getCascadeTicket(ctx, txID)
+		cascadeTicket, err := task.getCascadeTicket(txID)
 		if err != nil {
 			logger.WithError(err).Error("error retrieving cascade ticket")
 			return nil, nil, nil, err
@@ -356,7 +360,7 @@ func (task *SHTask) getTicket(ctx context.Context, txID string, ticketType Ticke
 
 		return nil, cascadeTicket, nil, nil
 	case senseTicketType:
-		senseTicket, err := task.getSenseTicket(ctx, txID)
+		senseTicket, err := task.getSenseTicket(txID)
 		if err != nil {
 			logger.WithError(err).Error("error retrieving sense ticket")
 			return nil, nil, nil, err
@@ -368,10 +372,10 @@ func (task *SHTask) getTicket(ctx context.Context, txID string, ticketType Ticke
 	return nil, nil, nil, errors.Errorf("not a valid NFT or action ticket")
 }
 
-func (task *SHTask) getSenseTicket(ctx context.Context, txID string) (*pastel.APISenseTicket, error) {
-	regTicket, err := task.pastelHandler.PastelClient.ActionRegTicket(ctx, txID)
+func (task *SHTask) getSenseTicket(txID string) (*pastel.APISenseTicket, error) {
+	regTicket, err := task.pastelHandler.PastelClient.ActionRegTicket(context.Background(), txID)
 	if err != nil {
-		return nil, fmt.Errorf("not valid TxID for sense reg ticket")
+		return nil, fmt.Errorf("unable to get sense reg ticket %s:%s", txID, err.Error())
 	}
 
 	if regTicket.ActionTicketData.ActionType != pastel.ActionTypeSense {
@@ -393,10 +397,10 @@ func (task *SHTask) getSenseTicket(ctx context.Context, txID string) (*pastel.AP
 	return senseTicket, nil
 }
 
-func (task *SHTask) getCascadeTicket(ctx context.Context, txID string) (*pastel.APICascadeTicket, error) {
-	regTicket, err := task.pastelHandler.PastelClient.ActionRegTicket(ctx, txID)
+func (task *SHTask) getCascadeTicket(txID string) (*pastel.APICascadeTicket, error) {
+	regTicket, err := task.pastelHandler.PastelClient.ActionRegTicket(context.Background(), txID)
 	if err != nil {
-		return nil, fmt.Errorf("not valid TxID for cascade reg ticket")
+		return nil, fmt.Errorf("unable to get cascade reg ticket %s: %s", txID, err.Error())
 	}
 
 	if regTicket.ActionTicketData.ActionType != pastel.ActionTypeCascade {
@@ -418,10 +422,10 @@ func (task *SHTask) getCascadeTicket(ctx context.Context, txID string) (*pastel.
 	return cascadeTicket, nil
 }
 
-func (task *SHTask) getNFTTicket(ctx context.Context, txID string) (*pastel.NFTTicket, error) {
-	regTicket, err := task.pastelHandler.PastelClient.RegTicket(ctx, txID)
+func (task *SHTask) getNFTTicket(txID string) (*pastel.NFTTicket, error) {
+	regTicket, err := task.pastelHandler.PastelClient.RegTicket(context.Background(), txID)
 	if err != nil {
-		return nil, fmt.Errorf("not valid TxID for nft reg ticket")
+		return nil, fmt.Errorf("unable to get nft reg ticket by txid %s:%s", txID, err.Error())
 	}
 
 	decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
@@ -678,7 +682,6 @@ func (task *SHTask) StoreSelfHealingMessage(ctx context.Context, msg types.SelfH
 	}
 
 	if store != nil {
-		log.WithContext(ctx).Info("store")
 		storageChallengeLog := types.SelfHealingLogMessage{
 			ChallengeID:     msg.ChallengeID,
 			MessageType:     int(msg.MessageType),
@@ -699,6 +702,28 @@ func (task *SHTask) StoreSelfHealingMessage(ctx context.Context, msg types.SelfH
 			}
 
 			log.WithContext(ctx).WithError(err).Error("Error storing challenge message to DB")
+			return err
+		}
+	}
+
+	return nil
+}
+
+// StoreSelfHealingMetrics stores the self-healing challenge metrics in db for further verification
+func (task *SHTask) StoreSelfHealingMetrics(ctx context.Context, metrics types.SelfHealingMetrics) error {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	if store != nil {
+		err = store.InsertSelfHealingMetrics(metrics)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error storing self-healing metrics to DB")
 			return err
 		}
 	}
