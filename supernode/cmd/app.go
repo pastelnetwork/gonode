@@ -37,6 +37,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/supernode/services/download"
+	"github.com/pastelnetwork/gonode/supernode/services/metrics"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/selfhealing"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
@@ -268,6 +269,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, fileStorage, pastelClient, nodeClient, p2p, hDB)
 	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, nil, hDB)
 	selfHealing := selfhealing.NewService(&config.SelfHealingChallenge, fileStorage, pastelClient, nodeClient, p2p, hDB, nftDownload)
+	metricsService := metrics.NewService(hDB)
 	// // ----Userdata Services----
 	// userdataNodeClient := client.New(pastelClient, secInfo)
 	// userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
@@ -292,6 +294,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterCollection(collectionRegister),
 		supernode.NewRegisterCollection(collectionRegister),
 		walletnode.NewDownloadNft(nftDownload),
+		walletnode.NewMetricsService(metricsService),
 		bridge.NewDownloadData(nftDownload),
 		supernode.NewStorageChallengeGRPC(storageChallenger),
 		supernode.NewSelfHealingChallengeGRPC(selfHealing),

@@ -28,6 +28,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/walletnode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
+	"github.com/pastelnetwork/gonode/walletnode/services/metrics"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
@@ -246,6 +247,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, nftDownload, db, hDB)
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload, hDB)
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient, hDB)
+	metricsService := metrics.NewService(pastelClient, nodeClient, hDB)
 
 	fileMappings := &sync.Map{}
 	server := api.NewAPIServer(config.API, fileMappings, pastelClient,
@@ -254,6 +256,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		services.NewSenseAPIHandler(apiSrcvConf, senseRegister, nftDownload),
 		services.NewCascadeAPIHandler(apiSrcvConf, fileMappings, cascadeRegister, nftDownload),
 		services.NewCollectionAPIIHandler(apiSrcvConf, collectionRegister),
+		services.NewMetricsAPIHandler(apiSrcvConf, metricsService),
 		services.NewSwagger(apiSrcvConf),
 	)
 

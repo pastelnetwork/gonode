@@ -6,6 +6,7 @@
 //go:generate mockery --name=RegisterNftInterface
 //go:generate mockery --name=DownloadNftInterface
 //go:generate mockery --name=ProcessUserdataInterface
+//go:generate mockery --name=MetricsInterface
 
 package node
 
@@ -42,6 +43,8 @@ type ConnectionInterface interface {
 	RegisterCascade() RegisterCascadeInterface
 	// RegisterCollection returns new RegisterCollection stream
 	RegisterCollection() RegisterCollectionInterface
+	//MetricsInterface returns new metric stream
+	MetricsInterface() MetricsInterface
 }
 
 // SuperNodeAPIInterface base API interface
@@ -140,4 +143,10 @@ type ProcessUserdataInterface interface {
 	SendUserdata(ctx context.Context, request *userdata.ProcessRequestSigned) (*userdata.ProcessResult, error)
 	// RetrieveUserdata get user specified data from supernode
 	RetrieveUserdata(ctx context.Context, userpastelid string) (*userdata.ProcessRequest, error)
+}
+
+// MetricsInterface contains methods to get self-healing and storage challenge metrics from SNs
+type MetricsInterface interface {
+	//SelfHealing gets the self-healing metrics from other SNs
+	SelfHealing(ctx context.Context) (*types.SelfHealingMetrics, error)
 }

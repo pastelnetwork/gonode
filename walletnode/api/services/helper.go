@@ -343,3 +343,12 @@ type AlternativeNSFWScores struct {
 	// neutral nsfw score
 	Neutral *float32 `json:"neutral"`
 }
+
+// SelfHealingMetrics represents the response returned to self-healing metrics endpoint
+type SelfHealingMetrics struct {
+	TotalTicketsSendForSelfHealing int
+	EstimatedMissingKeys           int
+	TicketsRequiredSelfHealing     int
+	TicketsSelfHealedSuccessfully  int
+	TicketsVerifiedSuccessfully    int
+}

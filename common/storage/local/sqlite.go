@@ -2,6 +2,7 @@ package local
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -118,6 +119,10 @@ const createSelfHealingMetricsTable string = `
 	created_at DATETIME,
 	updated_at DATETIME
 );
+`
+
+const createSelfHealingMetricsUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS self_healing_metrics_unique ON self_healing_metrics(challenge_id);
 `
 
 const (
@@ -438,7 +443,16 @@ func (s *SQLiteStore) InsertSelfHealingMetrics(metrics types.SelfHealingMetrics)
             created_at,
             updated_at
         )
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9);
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ON CONFLICT(challenge_id) 
+		DO UPDATE SET
+			sent_tickets_for_self_healing = excluded.sent_tickets_for_self_healing,
+			estimated_missing_keys = excluded.estimated_missing_keys,
+			tickets_in_progress = excluded.tickets_in_progress,
+			tickets_required_self_healing = excluded.tickets_required_self_healing,
+			successfully_self_healed_tickets = excluded.successfully_self_healed_tickets,
+			successfully_verified_tickets = excluded.successfully_verified_tickets,
+			updated_at = excluded.updated_at;
     `
 
 	_, err := s.db.Exec(
@@ -458,6 +472,64 @@ func (s *SQLiteStore) InsertSelfHealingMetrics(metrics types.SelfHealingMetrics)
 	}
 
 	return nil
+}
+
+// GetSelfHealingMetrics returns the sum of self-healing metrics of all challenges stored in DB
+func (s *SQLiteStore) GetSelfHealingMetrics() (types.SelfHealingMetrics, error) {
+	query := `
+    SELECT
+        SUM(sent_tickets_for_self_healing) AS sent_tickets_for_self_healing,
+        SUM(estimated_missing_keys) AS estimated_missing_keys,
+        SUM(tickets_in_progress) AS tickets_in_progress,
+        SUM(tickets_required_self_healing) AS tickets_required_self_healing,
+        SUM(successfully_self_healed_tickets) AS successfully_self_healed_tickets,
+        SUM(successfully_verified_tickets) AS successfully_verified_tickets
+    FROM self_healing_metrics;
+    `
+
+	var metrics types.SelfHealingMetrics
+	var nullMetrics struct {
+		SentTicketsForSelfHealing     sql.NullInt64
+		EstimatedMissingKeys          sql.NullInt64
+		TicketsInProgress             sql.NullInt64
+		TicketsRequiredSelfHealing    sql.NullInt64
+		SuccessfullySelfHealedTickets sql.NullInt64
+		SuccessfullyVerifiedTickets   sql.NullInt64
+	}
+
+	err := s.db.QueryRow(query).Scan(
+		&nullMetrics.SentTicketsForSelfHealing,
+		&nullMetrics.EstimatedMissingKeys,
+		&nullMetrics.TicketsInProgress,
+		&nullMetrics.TicketsRequiredSelfHealing,
+		&nullMetrics.SuccessfullySelfHealedTickets,
+		&nullMetrics.SuccessfullyVerifiedTickets,
+	)
+	if err != nil {
+		return metrics, err
+	}
+
+	// Assign values if they are not NULL
+	if nullMetrics.SentTicketsForSelfHealing.Valid {
+		metrics.SentTicketsForSelfHealing = int(nullMetrics.SentTicketsForSelfHealing.Int64)
+	}
+	if nullMetrics.EstimatedMissingKeys.Valid {
+		metrics.EstimatedMissingKeys = int(nullMetrics.EstimatedMissingKeys.Int64)
+	}
+	if nullMetrics.TicketsInProgress.Valid {
+		metrics.TicketsInProgress = int(nullMetrics.TicketsInProgress.Int64)
+	}
+	if nullMetrics.TicketsRequiredSelfHealing.Valid {
+		metrics.TicketsRequiredSelfHealing = int(nullMetrics.TicketsRequiredSelfHealing.Int64)
+	}
+	if nullMetrics.SuccessfullySelfHealedTickets.Valid {
+		metrics.SuccessfullySelfHealedTickets = int(nullMetrics.SuccessfullySelfHealedTickets.Int64)
+	}
+	if nullMetrics.SuccessfullyVerifiedTickets.Valid {
+		metrics.SuccessfullyVerifiedTickets = int(nullMetrics.SuccessfullyVerifiedTickets.Int64)
+	}
+
+	return metrics, nil
 }
 
 // CleanupSelfHealingChallenges cleans up self-healing challenges stored in DB for inspection
@@ -512,6 +584,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createSelfHealingMetricsTable); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createSelfHealingMetricsUniqueIndex); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 

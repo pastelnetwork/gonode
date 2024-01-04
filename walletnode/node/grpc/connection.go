@@ -48,6 +48,11 @@ func (conn *clientConn) RegisterCollection() node.RegisterCollectionInterface {
 	return newRegisterCollection(conn)
 }
 
+// MetricsInterface implements node.ConnectionInterface.MetricsInterface()
+func (conn *clientConn) MetricsInterface() node.MetricsInterface {
+	return newMetricsInterface(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.ConnectionInterface {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

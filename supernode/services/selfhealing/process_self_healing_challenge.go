@@ -279,16 +279,14 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 			}
 		}
 
+		err = task.StoreSelfHealingMetrics(context.Background(), selfHealingMetrics)
+		if err != nil {
+			logger.WithError(err).Error("error storing self-healing metrics")
+		}
 		logger.WithField("self_healing_metrics", selfHealingMetrics).Info("self-healing metrics have been updated")
 	}
 
 	task.SHService.SelfHealingMetricsMap[incomingChallengeMessage.ChallengeID] = selfHealingMetrics
-
-	err = task.StoreSelfHealingMetrics(context.Background(), task.SHService.SelfHealingMetricsMap[incomingChallengeMessage.ChallengeID])
-	if err != nil {
-		logger.WithError(err).Error("error storing self-healing metrics")
-	}
-
 	logger.WithField("self_healing_metrics", task.SHService.SelfHealingMetricsMap[incomingChallengeMessage.ChallengeID]).
 		Info("self-healing completed")
 

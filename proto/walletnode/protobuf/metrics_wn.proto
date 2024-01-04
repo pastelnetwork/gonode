@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
+
+package walletnode;
+
+// this proto defines GRPC methods that WN uses to talk to SNs during Collection Registration
+
+service Metrics {
+  //GetTopMNs return top MNs list from the SN
+  rpc SelfHealing(SelfHealingMetricsRequest) returns (SelfHealingMetricsReply);
+}
+
+message SelfHealingMetricsRequest {}
+
+message SelfHealingMetricsReply {
+  int64 sent_tickets_for_self_healing = 1;
+  int64  estimated_missing_keys = 2;
+  int64 tickets_required_self_healing = 3;
+  int64 successfully_self_healed_tickets = 4;
+  int64 successfully_verified_tickets = 5;
+}
