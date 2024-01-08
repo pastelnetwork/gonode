@@ -10,7 +10,7 @@ replace (
 )
 
 require (
-	github.com/cloudflare/circl v1.3.3
+	github.com/cloudflare/circl v1.3.7
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/go-errors/errors v1.4.2
@@ -30,9 +30,9 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
-	golang.org/x/crypto v0.11.0
+	golang.org/x/crypto v0.17.0
 	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.12.0
+	golang.org/x/sys v0.15.0
 	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
