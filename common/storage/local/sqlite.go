@@ -533,3 +533,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 		db: db,
 	}, nil
 }
+
+// QueryMetrics queries metrics
+func (s *SQLiteStore) QueryMetrics(_ time.Time, _ *time.Time) (m storage.Metrics, err error) {
+	// TODO: implement
+
+	return m, nil
+}

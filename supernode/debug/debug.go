@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -12,17 +13,19 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/p2p"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 )
 
 const (
-	defaultListenAddr         = "0.0.0.0"
-	defaultPollDuration       = 10 * time.Minute
-	defaultP2PExpiresDuration = 15 * time.Minute
-	defaultP2PLimit           = 10
-	defaultP2PMaxLimit        = 100
+	defaultListenAddr           = "0.0.0.0"
+	defaultPollDuration         = 10 * time.Minute
+	defaultP2PExpiresDuration   = 15 * time.Minute
+	defaultP2PLimit             = 10
+	defaultP2PMaxLimit          = 100
+	rateLimitMaxRequestsPerHour = 7
 )
 
 // contains http service providing debug services to user
@@ -61,21 +64,24 @@ type StoreReply struct {
 
 // Service is main point of debug service
 type Service struct {
-	config       *Config
-	p2pClient    p2p.Client
-	httpServer   *http.Server
-	cleanTracker *CleanTracker
-	scService    *storagechallenge.SCService
-	trackedCon   map[string][]*server.TrackedConn
+	config        *Config
+	p2pClient     p2p.Client
+	httpServer    *http.Server
+	metricsServer *http.Server
+	cleanTracker  *CleanTracker
+	scService     *storagechallenge.SCService
+	trackedCon    map[string][]*server.TrackedConn
+	rateLimiter   *RateLimiter
 }
 
 // NewService returns debug service
 func NewService(config *Config, p2pClient p2p.Client, srvc *storagechallenge.SCService, openCons map[string][]*server.TrackedConn) *Service {
 	service := &Service{
-		config:     config,
-		p2pClient:  p2pClient,
-		scService:  srvc,
-		trackedCon: openCons,
+		config:      config,
+		p2pClient:   p2pClient,
+		scService:   srvc,
+		trackedCon:  openCons,
+		rateLimiter: NewRateLimiter(rateLimitMaxRequestsPerHour, time.Hour),
 	}
 
 	router := mux.NewRouter()
@@ -98,6 +104,14 @@ func NewService(config *Config, p2pClient p2p.Client, srvc *storagechallenge.SCS
 		Handler: router,
 	}
 	service.cleanTracker = NewCleanTracker(p2pClient)
+
+	metricsRouter := mux.NewRouter()
+
+	router.HandleFunc("/metrics", service.metrics).Methods(http.MethodGet)
+	service.metricsServer = &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.MetricsPort),
+		Handler: metricsRouter,
+	}
 
 	return service
 }
@@ -338,4 +352,116 @@ func (service *Service) p2pDelete(writer http.ResponseWriter, request *http.Requ
 	responseWithJSON(writer, http.StatusOK, &StoreReply{
 		Key: delRequest.Key,
 	})
+}
+
+func (service *Service) metrics(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+
+	// 1. Retrieve Authorization Header (Passphrase)
+	passphrase := request.Header.Get("Authorization")
+
+	// 2. Retrieve Pastel ID from Query Param
+	pid := request.URL.Query().Get("pid")
+	if pid == "" {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Missing pid parameter"})
+		return
+	}
+
+	_, err := service.scService.PastelClient.Sign(ctx, []byte{1, 2, 3}, pid, passphrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		responseWithJSON(writer, http.StatusUnauthorized, map[string]string{"error": "Invalid pid/passphrase"})
+		return
+	}
+
+	// Rate Limit Check for pid
+	if !service.rateLimiter.CheckRateLimit(pid) {
+		responseWithJSON(writer, http.StatusTooManyRequests, map[string]string{"error": "Rate limit exceeded, Please try again later."})
+		return
+	}
+
+	// 3. Get 'From' Time from Query Param
+	fromStr := request.URL.Query().Get("start")
+	var from time.Time
+	if fromStr == "" {
+		from = time.Now().UTC().Add(-time.Hour * 24 * 7) // Default to 1 week ago
+	} else {
+		var err error
+		from, err = time.Parse(time.RFC3339, fromStr)
+		if err != nil {
+			responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Invalid start time format"})
+			return
+		}
+	}
+
+	// 4. Get 'To' Time from Query Param
+	toStr := request.URL.Query().Get("end")
+	var to *time.Time
+	if toStr != "" {
+		parsedTo, err := time.Parse(time.RFC3339, toStr)
+		if err != nil {
+			responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Invalid end time format"})
+			return
+		}
+		to = &parsedTo
+	}
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return
+	}
+	defer store.CloseHistoryDB(ctx)
+
+	metrics, err := store.QueryMetrics(from, to)
+	if err != nil {
+		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+
+	responseWithJSON(writer, http.StatusOK, metrics)
+}
+
+// RateLimiter is a simple rate limiter that limits the number of requests per hour
+type RateLimiter struct {
+	mutex       sync.Mutex
+	requests    map[string][]time.Time
+	maxRequests int
+	interval    time.Duration
+}
+
+// NewRateLimiter creates a new rate limiter
+func NewRateLimiter(maxRequests int, interval time.Duration) *RateLimiter {
+	return &RateLimiter{
+		requests:    make(map[string][]time.Time),
+		maxRequests: maxRequests,
+		interval:    interval,
+	}
+}
+
+// CheckRateLimit checks if the rate limit has been reached for the given pid
+func (rl *RateLimiter) CheckRateLimit(pid string) bool {
+	rl.mutex.Lock()
+	defer rl.mutex.Unlock()
+
+	now := time.Now()
+
+	// Clean up old requests that are out of the interval
+	if reqs, found := rl.requests[pid]; found {
+		var updatedReqs []time.Time
+		for _, t := range reqs {
+			if now.Sub(t) < rl.interval {
+				updatedReqs = append(updatedReqs, t)
+			}
+		}
+		rl.requests[pid] = updatedReqs
+	}
+
+	// Check if the rate limit has been reached
+	if len(rl.requests[pid]) >= rl.maxRequests {
+		return false
+	}
+
+	// Add the new request
+	rl.requests[pid] = append(rl.requests[pid], now)
+	return true
 }

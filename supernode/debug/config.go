@@ -5,13 +5,15 @@ import (
 )
 
 const (
-	defaultPort = 9090
+	defaultPort        = 9090
+	defaultMetricsPort = 9089
 )
 
 // Config contains configuration of debug service
 type Config struct {
 	// HTTPPort the local port to listen for connections on
-	HTTPPort int `mapstructure:"http-port" json:"http-port,omitempty"`
+	HTTPPort    int `mapstructure:"http-port" json:"http-port,omitempty"`
+	MetricsPort int `mapstructure:"metrics-port" json:"metrics-port,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -24,6 +26,7 @@ func (config *Config) String() string {
 // NewConfig returns a new Config instance
 func NewConfig() *Config {
 	return &Config{
-		HTTPPort: defaultPort,
+		HTTPPort:    defaultPort,
+		MetricsPort: defaultMetricsPort,
 	}
 }
