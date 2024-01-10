@@ -143,7 +143,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 				raptorQClient.RaptorQ.On(rqmock.DecodeMethod, mock.Anything, mock.Anything).Return(rqDecode, nil)
 
 				nodeClient = shtest.NewMockClient(t)
-				nodeClient.ListenOnConnect("", nil).ListenOnSelfHealingChallengeInterface().ListenOnVerifySelfHealingChallengeFunc(&pb.SelfHealingData{ChallengeStatus: pb.SelfHealingData_Status_SUCCEEDED}, nil).
+				nodeClient.ListenOnConnect("", nil).ListenOnSelfHealingChallengeInterface().ListenOnVerifySelfHealingChallengeFunc(&pb.SelfHealingMessage{}, nil).
 					ConnectionInterface.On("Close").Return(nil)
 				raptorQClient.RaptorQ.On(rqmock.EncodeMethod, mock.Anything, mock.Anything).Return(&encodeResp, nil)
 
@@ -183,7 +183,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 				p2pClient.On(p2pMock.RetrieveMethod, mock.Anything, mock.Anything, mock.Anything).Return(symbol, nil).Times(1)
 				raptorQClient.RaptorQ.On(rqmock.DecodeMethod, mock.Anything, mock.Anything).Return(rqDecode, nil)
 				nodeClient = shtest.NewMockClient(t)
-				nodeClient.ListenOnConnect("", nil).ListenOnSelfHealingChallengeInterface().ListenOnVerifySelfHealingChallengeFunc(&pb.SelfHealingData{ChallengeStatus: pb.SelfHealingData_Status_FAILED_INCORRECT_RESPONSE}, nil).
+				nodeClient.ListenOnConnect("", nil).ListenOnSelfHealingChallengeInterface().ListenOnVerifySelfHealingChallengeFunc(&pb.SelfHealingMessage{}, nil).
 					ConnectionInterface.On("Close").Return(nil)
 				raptorQClient.ListenOnClose(nil)
 			},

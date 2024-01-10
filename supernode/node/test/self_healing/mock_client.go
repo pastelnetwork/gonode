@@ -83,7 +83,7 @@ func (client *Client) ListenOnProcessSelfHealingChallengeFunc(returnErr error) *
 }
 
 // ListenOnVerifySelfHealingChallengeFunc returns returnErr
-func (client *Client) ListenOnVerifySelfHealingChallengeFunc(data *pb.SelfHealingData, returnErr error) *Client {
+func (client *Client) ListenOnVerifySelfHealingChallengeFunc(data *pb.SelfHealingMessage, returnErr error) *Client {
 	client.SelfHealingChallengeInterface.On(VerifySelfHealingChallengeMethod, mock.Anything, mock.Anything).Return(data, returnErr).Times(5)
 
 	return client

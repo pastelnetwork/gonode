@@ -15,7 +15,8 @@ import (
 
 // VerifySelfHealingChallenge verifies the self-healing challenge
 func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResponseMessage types.SelfHealingMessage) (*pb.SelfHealingMessage, error) {
-	logger := log.WithContext(ctx).WithField("challenge_id", incomingResponseMessage.ChallengeID)
+	logger := log.WithContext(ctx).WithField("trigger_id", incomingResponseMessage.TriggerID).
+		WithField("challenge_id", incomingResponseMessage.SelfHealingMessageData.Response.ChallengeID)
 
 	logger.Info("VerifySelfHealingChallenge has been invoked")
 
@@ -47,7 +48,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 	logger.Info("block count & merkelroot has been retrieved")
 
 	verificationMsg := &types.SelfHealingMessage{
-		ChallengeID: incomingResponseMessage.ChallengeID,
+		TriggerID:   incomingResponseMessage.TriggerID,
 		SenderID:    task.nodeID,
 		MessageType: types.SelfHealingVerificationMessage,
 		SelfHealingMessageData: types.SelfHealingMessageData{
@@ -57,16 +58,19 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 				Merkelroot:       incomingResponseMessage.SelfHealingMessageData.Challenge.Merkelroot,
 				ChallengeTickets: incomingResponseMessage.SelfHealingMessageData.Challenge.ChallengeTickets,
 				Timestamp:        incomingResponseMessage.SelfHealingMessageData.Challenge.Timestamp,
+				NodesOnWatchlist: incomingResponseMessage.SelfHealingMessageData.Challenge.NodesOnWatchlist,
 			},
 			Response: types.SelfHealingResponseData{
+				ChallengeID:     incomingResponseMessage.SelfHealingMessageData.Response.ChallengeID,
 				Block:           incomingResponseMessage.SelfHealingMessageData.Response.Block,
 				Merkelroot:      incomingResponseMessage.SelfHealingMessageData.Response.Merkelroot,
 				Timestamp:       incomingResponseMessage.SelfHealingMessageData.Response.Timestamp,
 				RespondedTicket: incomingResponseMessage.SelfHealingMessageData.Response.RespondedTicket,
 			},
 			Verification: types.SelfHealingVerificationData{
-				Block:      currentBlockCount,
-				Merkelroot: merkleroot,
+				ChallengeID: incomingResponseMessage.SelfHealingMessageData.Response.ChallengeID,
+				Block:       currentBlockCount,
+				Merkelroot:  merkleroot,
 			},
 		},
 	}
@@ -261,6 +265,9 @@ func (task *SHTask) validateSelfHealingResponseIncomingData(ctx context.Context,
 }
 
 func (task *SHTask) prepareAndSendVerificationMsg(ctx context.Context, verificationMsg types.SelfHealingMessage) (*pb.SelfHealingMessage, error) {
+	logger := log.WithContext(ctx).WithField("trigger_id", verificationMsg.TriggerID).
+		WithField("challenge_id", verificationMsg.SelfHealingMessageData.Verification.ChallengeID)
+
 	verificationMsg.SelfHealingMessageData.Verification.Timestamp = time.Now().UTC()
 
 	signature, data, err := task.SignMessage(ctx, verificationMsg.SelfHealingMessageData)
@@ -268,15 +275,10 @@ func (task *SHTask) prepareAndSendVerificationMsg(ctx context.Context, verificat
 		log.WithContext(ctx).WithError(err).Error("error signing the self-healing verification msg")
 	}
 	verificationMsg.SenderSignature = signature
-	log.WithContext(ctx).WithField("challenge_id", verificationMsg.ChallengeID).Info("verification msg has been signed")
-
-	if err := task.StoreSelfHealingMessage(ctx, verificationMsg); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error storing the self-healing verification msg")
-	}
-	log.WithContext(ctx).WithField("challenge_id", verificationMsg.ChallengeID).Info("verification msg has been stored")
+	logger.Info("verification msg has been signed")
 
 	msg := &pb.SelfHealingMessage{
-		ChallengeId:     verificationMsg.ChallengeID,
+		TriggerId:       verificationMsg.TriggerID,
 		MessageType:     pb.SelfHealingMessageMessageType(verificationMsg.MessageType),
 		SenderId:        verificationMsg.SenderID,
 		SenderSignature: signature,

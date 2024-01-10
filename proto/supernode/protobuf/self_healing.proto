@@ -50,7 +50,7 @@ message SelfHealingMessage {
     MessageType_SELF_HEALING_VERIFICATION_MESSAGE = 3;
   }
   messageType message_type = 1;
-  string challenge_id = 2;
+  string trigger_id = 2;
   bytes data = 3;
   string sender_id = 4;
   bytes sender_signature = 5;

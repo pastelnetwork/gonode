@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
@@ -38,6 +38,7 @@ type SymbolFileKeyDetails struct {
 	Keys       []string
 	DataHash   []byte
 	TicketType TicketType
+	Recipient  string
 }
 
 // GenerateSelfHealingChallenge worker checks the ping info and identify self-healing tickets and their recipients
@@ -49,6 +50,7 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("retrieveWatchlistPingInfo")
 		return errors.Errorf("error retrieving watchlist ping info")
 	}
+	nodesOnWatchlist := getNodesOnWatchList(watchlistPingInfos)
 	log.WithContext(ctx).Info("watchlist ping history has been retrieved")
 
 	shouldTrigger, watchlistPingInfos := task.shouldTriggerSelfHealing(watchlistPingInfos)
@@ -72,7 +74,6 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 	log.WithContext(ctx).Info("map of closest nodes against keys have been created")
 
 	selfHealingTicketsMap := task.identifySelfHealingTickets(ctx, watchlistPingInfos, mapOfClosestNodesAgainstKeys, symbolFileKeyMap)
-
 	if len(selfHealingTicketsMap) == 0 {
 		log.WithContext(ctx).Info("no tickets required self-healing")
 
@@ -90,8 +91,18 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 	}
 	log.WithContext(ctx).WithField("challenge_recipients", len(challengeRecipientMap)).Info("challenge recipients have been identified")
 
-	if err := task.prepareAndSendSelfHealingMessage(ctx, challengeRecipientMap); err != nil {
+	triggerID := getTriggerID(watchlistPingInfos, selfHealingTicketsMap)
+	if err := task.prepareAndSendSelfHealingMessage(ctx, challengeRecipientMap, triggerID, nodesOnWatchlist); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error sending self-healing messages")
+	}
+
+	generationMetrics, err := task.getSelfHealingGenerationMetrics(ctx, triggerID, nodesOnWatchlist, challengeRecipientMap)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error getting generation metrics")
+	}
+
+	if generationMetrics != nil {
+		task.StoreSelfHealingGenerationMetrics(ctx, *generationMetrics)
 	}
 
 	if err := task.updateWatchlist(ctx, watchlistPingInfos); err != nil {
@@ -456,9 +467,10 @@ func (task *SHTask) getDataHash(nftTicket *pastel.NFTTicket, cascadeTicket *past
 	return nil, errors.Errorf("data hash cannot be found because of missing ticket details")
 }
 
-func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challengeRecipientMap map[string][]SymbolFileKeyDetails) error {
+func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challengeRecipientMap map[string][]SymbolFileKeyDetails, triggerID string, nodesOnWatchlist string) error {
 	log.WithContext(ctx).WithField("method", "prepareAndSendSelfHealingMessage").Info("method has been invoked")
 
+	var err error
 	log.WithContext(ctx).Info("retrieving block no and verbose")
 	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
@@ -480,12 +492,13 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 				Block:            currentBlockCount,
 				Merkelroot:       merkleroot,
 				Timestamp:        time.Now().UTC(),
-				ChallengeTickets: getTicketsForSelfHealingChallengeMessage(ticketsDetails),
+				ChallengeTickets: getTicketsForSelfHealingChallengeMessage(ticketsDetails, challengeRecipient),
+				NodesOnWatchlist: nodesOnWatchlist,
 			},
 		}
 
 		shMsg := types.SelfHealingMessage{
-			ChallengeID:            uuid.NewString(),
+			TriggerID:              triggerID,
 			MessageType:            types.SelfHealingChallengeMessage,
 			SelfHealingMessageData: msgData,
 			SenderID:               task.nodeID,
@@ -498,7 +511,7 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 		}
 
 		if err := task.SendMessage(ctx, shMsg, node.ExtAddress); err != nil {
-			log.WithContext(ctx).WithField("challenge_id", shMsg.ChallengeID).WithError(err).Error("unable to send challenge msg")
+			log.WithContext(ctx).WithField("trigger_id", shMsg.TriggerID).WithError(err).Error("unable to send sh challenge msg")
 			continue
 		}
 	}
@@ -507,7 +520,7 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 	return nil
 }
 
-func getTicketsForSelfHealingChallengeMessage(ticketDetails []SymbolFileKeyDetails) []types.ChallengeTicket {
+func getTicketsForSelfHealingChallengeMessage(ticketDetails []SymbolFileKeyDetails, recipientID string) []types.ChallengeTicket {
 	var challengeTickets []types.ChallengeTicket
 	for _, detail := range ticketDetails {
 		challengeTickets = append(challengeTickets, types.ChallengeTicket{
@@ -515,6 +528,7 @@ func getTicketsForSelfHealingChallengeMessage(ticketDetails []SymbolFileKeyDetai
 			TicketType:  types.TicketType(detail.TicketType),
 			DataHash:    detail.DataHash,
 			MissingKeys: detail.Keys,
+			Recipient:   recipientID,
 		})
 	}
 
@@ -566,7 +580,7 @@ func (task *SHTask) GetNodeToConnect(ctx context.Context, nodeID string) (*paste
 
 // SendMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
 func (task *SHTask) SendMessage(ctx context.Context, challengeMessage types.SelfHealingMessage, processingSupernodeAddr string) error {
-	logger := log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID)
+	logger := log.WithContext(ctx).WithField("trigger_id", challengeMessage.TriggerID)
 
 	logger.Info("sending self-healing challenge to processing supernode address: " + processingSupernodeAddr)
 
@@ -577,25 +591,20 @@ func (task *SHTask) SendMessage(ctx context.Context, challengeMessage types.Self
 	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
 	if err != nil {
 		err = fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
-		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeID).WithField("method", "sendProcessStorageChallenge").Warn(err.Error())
+		log.WithContext(ctx).WithField("trigger_id", challengeMessage.TriggerID).WithField("method", "sendProcessStorageChallenge").Warn(err.Error())
 		return err
 	}
 	defer nodeClientConn.Close()
 
 	sig, data, err := task.SignMessage(ctx, challengeMessage.SelfHealingMessageData)
 	if err != nil {
-		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).WithError(err).
+		log.WithContext(ctx).WithField("trigger_id", challengeMessage.TriggerID).WithError(err).
 			Error("error signing self-healing challenge msg")
 	}
 	challengeMessage.SenderSignature = sig
 
-	if err := task.StoreSelfHealingMessage(ctx, challengeMessage); err != nil {
-		log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).WithError(err).
-			Error("error storing self-healing challenge msg")
-	}
-
 	msg := &pb.SelfHealingMessage{
-		ChallengeId:     challengeMessage.ChallengeID,
+		TriggerId:       challengeMessage.TriggerID,
 		MessageType:     pb.SelfHealingMessageMessageType(challengeMessage.MessageType),
 		SenderId:        challengeMessage.SenderID,
 		SenderSignature: challengeMessage.SenderSignature,
@@ -665,8 +674,8 @@ func (task *SHTask) filterWatchlistAndCurrentNode(watchList types.PingInfos, lis
 	return filteredList
 }
 
-// StoreSelfHealingMessage stores the self-healing challenge message to db for further verification
-func (task *SHTask) StoreSelfHealingMessage(ctx context.Context, msg types.SelfHealingMessage) error {
+// StoreSelfHealingGenerationMetrics stores the self-healing generation metrics to db for further verification
+func (task *SHTask) StoreSelfHealingGenerationMetrics(ctx context.Context, metricLog types.SelfHealingGenerationMetric) error {
 	store, err := local.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
@@ -676,32 +685,19 @@ func (task *SHTask) StoreSelfHealingMessage(ctx context.Context, msg types.SelfH
 		defer store.CloseHistoryDB(ctx)
 	}
 
-	data, err := json.Marshal(msg.SelfHealingMessageData)
-	if err != nil {
-		return err
-	}
-
 	if store != nil {
-		storageChallengeLog := types.SelfHealingLogMessage{
-			ChallengeID:     msg.ChallengeID,
-			MessageType:     int(msg.MessageType),
-			Data:            data,
-			SenderID:        msg.SenderID,
-			SenderSignature: msg.SenderSignature,
-		}
-
-		err = store.InsertSelfHealingChallenge(storageChallengeLog)
+		err = store.InsertSelfHealingGenerationMetrics(metricLog)
 		if err != nil {
 			if strings.Contains(err.Error(), ErrUniqueConstraint.Error()) {
-				log.WithContext(ctx).WithField("challenge_id", msg.ChallengeID).
-					WithField("message_type", msg.MessageType).
-					WithField("sender_id", msg.SenderID).
-					Debug("message already exists, not updating")
+				log.WithContext(ctx).WithField("trigger_id", metricLog.TriggerID).
+					WithField("message_type", metricLog.MessageType).
+					WithField("sender_id", metricLog.SenderID).
+					Debug("message already exists, not storing")
 
 				return nil
 			}
 
-			log.WithContext(ctx).WithError(err).Error("Error storing challenge message to DB")
+			log.WithContext(ctx).WithError(err).Error("error storing self-healing generation metrics to DB")
 			return err
 		}
 	}
@@ -709,8 +705,8 @@ func (task *SHTask) StoreSelfHealingMessage(ctx context.Context, msg types.SelfH
 	return nil
 }
 
-// StoreSelfHealingMetrics stores the self-healing challenge metrics in db for further verification
-func (task *SHTask) StoreSelfHealingMetrics(ctx context.Context, metrics types.SelfHealingMetrics) error {
+// StoreSelfHealingExecutionMetrics stores the self-healing execution metrics to db for further verification
+func (task *SHTask) StoreSelfHealingExecutionMetrics(ctx context.Context, executionMetricsLog types.SelfHealingExecutionMetric) error {
 	store, err := local.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
@@ -721,12 +717,90 @@ func (task *SHTask) StoreSelfHealingMetrics(ctx context.Context, metrics types.S
 	}
 
 	if store != nil {
-		err = store.InsertSelfHealingMetrics(metrics)
+		err = store.InsertSelfHealingExecutionMetrics(executionMetricsLog)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error storing self-healing metrics to DB")
+			log.WithContext(ctx).WithError(err).Error("error storing execution metrics to DB")
 			return err
 		}
 	}
 
 	return nil
+}
+
+func getTriggerID(infos types.PingInfos, selfHealingTickets map[string]SymbolFileKeyDetails) string {
+	var triggerID string
+	var nodeIDs []string
+	var txids []string
+
+	for _, info := range infos {
+		nodeIDs = append(nodeIDs, info.SupernodeID)
+	}
+
+	triggerID = strings.Join(nodeIDs, ":")
+
+	for txid := range selfHealingTickets {
+		txids = append(txids, txid)
+	}
+
+	triggerID = triggerID + "-"
+
+	triggerID = strings.Join(txids, ":")
+
+	return utils.GetHashFromString(triggerID)
+}
+
+func getNodesOnWatchList(infos types.PingInfos) string {
+	var nodeIDs []string
+	for _, info := range infos {
+		nodeIDs = append(nodeIDs, info.SupernodeID+":"+info.IPAddress)
+	}
+
+	return strings.Join(nodeIDs, "-")
+}
+
+func (task *SHTask) getSelfHealingGenerationMetrics(ctx context.Context, triggerID, nodesOnWatchlist string, challengeRecipientMap map[string][]SymbolFileKeyDetails) (*types.SelfHealingGenerationMetric, error) {
+	var challengeTickets []types.ChallengeTicket
+
+	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(context.Background())
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("could not get current block count")
+		return nil, err
+	}
+	blkVerbose1, err := task.SuperNodeService.PastelClient.GetBlockVerbose1(context.Background(), currentBlockCount)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("could not get current block verbose 1")
+		return nil, err
+	}
+	merkleroot := blkVerbose1.MerkleRoot
+
+	for challengeRecipient, ticketDetails := range challengeRecipientMap {
+		challengeTicketsForRecipient := getTicketsForSelfHealingChallengeMessage(ticketDetails, challengeRecipient)
+		challengeTickets = append(challengeTickets, challengeTicketsForRecipient...)
+	}
+
+	data := types.SelfHealingMessageData{
+		ChallengerID: task.nodeID,
+		Challenge: types.SelfHealingChallengeData{
+			Block:            currentBlockCount,
+			Merkelroot:       merkleroot,
+			Timestamp:        time.Now(),
+			NodesOnWatchlist: nodesOnWatchlist,
+			ChallengeTickets: challengeTickets,
+		},
+	}
+
+	sig, dBytes, err := task.SignMessage(context.Background(), data)
+	if err != nil {
+		return nil, err
+	}
+
+	m := &types.SelfHealingGenerationMetric{
+		TriggerID:       triggerID,
+		MessageType:     int(types.ChallengeMessageType),
+		Data:            dBytes,
+		SenderID:        task.nodeID,
+		SenderSignature: sig,
+	}
+
+	return m, nil
 }
