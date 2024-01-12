@@ -52,7 +52,7 @@ type PingInfos []PingInfo
 
 // SelfHealingMessage represents the self-healing message
 type SelfHealingMessage struct {
-	ChallengeID            string                 `json:"challenge_id"`
+	TriggerID              string                 `json:"trigger_id"`
 	MessageType            SelfHealingMessageType `json:"message_type"`
 	SelfHealingMessageData SelfHealingMessageData `json:"data"`
 	SenderID               string                 `json:"sender_id"`
@@ -74,6 +74,7 @@ type SelfHealingChallengeData struct {
 	Merkelroot       string            `json:"merkelroot"`
 	Timestamp        time.Time         `json:"timestamp"`
 	ChallengeTickets []ChallengeTicket `json:"challenge_tickets"`
+	NodesOnWatchlist string            `json:"nodes_on_watchlist"`
 }
 
 // ChallengeTicket represents the ticket details for self-healing challenge
@@ -82,6 +83,7 @@ type ChallengeTicket struct {
 	TicketType  TicketType `json:"ticket_type"`
 	MissingKeys []string   `json:"missing_keys"`
 	DataHash    []byte     `json:"data_hash"`
+	Recipient   string     `json:"recipient"`
 }
 
 // RespondedTicket represents the details of ticket responded in a self-healing challenge
@@ -97,6 +99,7 @@ type RespondedTicket struct {
 
 // SelfHealingResponseData represents the response data for self-healing sent by the recipient
 type SelfHealingResponseData struct {
+	ChallengeID     string          `json:"challenge_id"`
 	Block           int32           `json:"block"`
 	Merkelroot      string          `json:"merkelroot"`
 	Timestamp       time.Time       `json:"timestamp"`
@@ -118,23 +121,31 @@ type VerifiedTicket struct {
 
 // SelfHealingVerificationData represents the verification data for self-healing challenge
 type SelfHealingVerificationData struct {
-	Block          int32          `json:"block"`
-	Merkelroot     string         `json:"merkelroot"`
-	Timestamp      time.Time      `json:"timestamp"`
-	VerifiedTicket VerifiedTicket `json:"verified_ticket"`
-	Verifiers      []string       `json:"verifiers"`
+	ChallengeID    string            `json:"challenge_id"`
+	Block          int32             `json:"block"`
+	Merkelroot     string            `json:"merkelroot"`
+	Timestamp      time.Time         `json:"timestamp"`
+	VerifiedTicket VerifiedTicket    `json:"verified_ticket"`
+	VerifiersData  map[string][]byte `json:"verifiers_data"`
 }
 
-// SelfHealingLogMessage represents the message log to be stored in the DB
-type SelfHealingLogMessage struct {
-	ID              int       `db:"id"`
-	MessageType     int       `db:"message_type"`
-	ChallengeID     string    `db:"challenge_id"`
-	Data            []byte    `db:"data"`
-	SenderID        string    `db:"sender_id"`
-	SenderSignature []byte    `db:"sender_signature"`
-	CreatedAt       time.Time `db:"created_at"`
-	UpdatedAt       time.Time `db:"updated_at"`
+// SelfHealingGenerationMetric represents the self-healing generation metrics for trigger events
+type SelfHealingGenerationMetric struct {
+	TriggerID       string `db:"trigger_id"`
+	MessageType     int    `db:"message_type"`
+	Data            []byte `db:"data"`
+	SenderID        string `db:"sender_id"`
+	SenderSignature []byte `db:"sender_signature"`
+}
+
+// SelfHealingExecutionMetric represents the self-healing execution metrics for trigger events
+type SelfHealingExecutionMetric struct {
+	TriggerID       string `db:"trigger_id"`
+	ChallengeID     string `db:"challenge_id"`
+	MessageType     int    `db:"message_type"`
+	Data            []byte `db:"data"`
+	SenderID        string `db:"sender_id"`
+	SenderSignature []byte `db:"sender_signature"`
 }
 
 // SelfHealingMetrics represents the self-healing metrics for each challenge

@@ -109,7 +109,7 @@ func (service *SelfHealingChallengeGRPC) ProcessSelfHealingChallenge(ctx context
 	task := service.NewSHTask()
 
 	msg := types.SelfHealingMessage{
-		ChallengeID:     scRequest.Data.ChallengeId,
+		TriggerID:       scRequest.Data.TriggerId,
 		MessageType:     types.SelfHealingMessageType(scRequest.Data.MessageType),
 		SenderID:        scRequest.Data.SenderId,
 		SenderSignature: scRequest.Data.SenderSignature,
@@ -134,7 +134,7 @@ func (service *SelfHealingChallengeGRPC) VerifySelfHealingChallenge(ctx context.
 	task := service.NewSHTask()
 
 	msg := types.SelfHealingMessage{
-		ChallengeID:     scRequest.Data.ChallengeId,
+		TriggerID:       scRequest.Data.TriggerId,
 		MessageType:     types.SelfHealingMessageType(scRequest.Data.MessageType),
 		SenderID:        scRequest.Data.SenderId,
 		SenderSignature: scRequest.Data.SenderSignature,

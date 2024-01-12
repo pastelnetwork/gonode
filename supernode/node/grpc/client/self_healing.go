@@ -107,7 +107,7 @@ func (service *selfHealingGRPCClient) VerifySelfHealingChallenge(ctx context.Con
 	}
 
 	msg := types.SelfHealingMessage{
-		ChallengeID:     res.Data.ChallengeId,
+		TriggerID:       res.Data.TriggerId,
 		MessageType:     types.SelfHealingMessageType(res.Data.MessageType),
 		SenderID:        res.Data.SenderId,
 		SenderSignature: res.Data.SenderSignature,

@@ -35,11 +35,13 @@ type SHService struct {
 
 	nodeID                string
 	nodeClient            node.ClientInterface
-	currentBlockCount     int32
 	historyDB             storage.LocalStoreInterface
 	downloadService       *download.NftDownloaderService
 	ticketsMap            map[string]bool
 	SelfHealingMetricsMap map[string]types.SelfHealingMetrics
+
+	currentBlockCount int32
+	merkelroot        string
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -148,8 +150,8 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		nodeID:                config.PastelID,
 		pastelHandler:         mixins.NewPastelHandler(pastelClient),
 		historyDB:             historyDB,
-		ticketsMap:            make(map[string]bool),
 		SelfHealingMetricsMap: make(map[string]types.SelfHealingMetrics),
+		ticketsMap:            make(map[string]bool),
 		downloadService:       downloadService,
 	}
 }
