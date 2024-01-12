@@ -29,7 +29,10 @@ type LocalStoreInterface interface {
 	UpsertPingHistory(pingInfo types.PingInfo) error
 	GetPingInfoBySupernodeID(supernodeID string) (*types.PingInfo, error)
 	GetAllPingInfos() (types.PingInfos, error)
+	GetSelfHealingGenerationMetrics(timestamp time.Time) ([]types.SelfHealingGenerationMetric, error)
+	GetSelfHealingExecutionMetrics(timestamp time.Time) ([]types.SelfHealingExecutionMetric, error)
 	GetWatchlistPingInfo() ([]types.PingInfo, error)
+	GetAllPingInfoForOnlineNodes() (types.PingInfos, error)
 	UpdatePingInfo(supernodeID string, isOnWatchlist, isAdjusted bool) error
 	CloseHistoryDB(ctx context.Context)
 	QueryMetrics(from time.Time, to *time.Time) (m Metrics, err error)

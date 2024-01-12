@@ -26,6 +26,7 @@ type SelfHealingClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	ProcessSelfHealingChallenge(ctx context.Context, in *ProcessSelfHealingChallengeRequest, opts ...grpc.CallOption) (*ProcessSelfHealingChallengeReply, error)
 	VerifySelfHealingChallenge(ctx context.Context, in *VerifySelfHealingChallengeRequest, opts ...grpc.CallOption) (*VerifySelfHealingChallengeReply, error)
+	BroadcastSelfHealingMetrics(ctx context.Context, in *BroadcastSelfHealingMetricsRequest, opts ...grpc.CallOption) (*BroadcastSelfHealingMetricsReply, error)
 }
 
 type selfHealingClient struct {
@@ -94,6 +95,15 @@ func (c *selfHealingClient) VerifySelfHealingChallenge(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *selfHealingClient) BroadcastSelfHealingMetrics(ctx context.Context, in *BroadcastSelfHealingMetricsRequest, opts ...grpc.CallOption) (*BroadcastSelfHealingMetricsReply, error) {
+	out := new(BroadcastSelfHealingMetricsReply)
+	err := c.cc.Invoke(ctx, "/supernode.SelfHealing/BroadcastSelfHealingMetrics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SelfHealingServer is the server API for SelfHealing service.
 // All implementations must embed UnimplementedSelfHealingServer
 // for forward compatibility
@@ -102,6 +112,7 @@ type SelfHealingServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	ProcessSelfHealingChallenge(context.Context, *ProcessSelfHealingChallengeRequest) (*ProcessSelfHealingChallengeReply, error)
 	VerifySelfHealingChallenge(context.Context, *VerifySelfHealingChallengeRequest) (*VerifySelfHealingChallengeReply, error)
+	BroadcastSelfHealingMetrics(context.Context, *BroadcastSelfHealingMetricsRequest) (*BroadcastSelfHealingMetricsReply, error)
 	mustEmbedUnimplementedSelfHealingServer()
 }
 
@@ -120,6 +131,9 @@ func (UnimplementedSelfHealingServer) ProcessSelfHealingChallenge(context.Contex
 }
 func (UnimplementedSelfHealingServer) VerifySelfHealingChallenge(context.Context, *VerifySelfHealingChallengeRequest) (*VerifySelfHealingChallengeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifySelfHealingChallenge not implemented")
+}
+func (UnimplementedSelfHealingServer) BroadcastSelfHealingMetrics(context.Context, *BroadcastSelfHealingMetricsRequest) (*BroadcastSelfHealingMetricsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BroadcastSelfHealingMetrics not implemented")
 }
 func (UnimplementedSelfHealingServer) mustEmbedUnimplementedSelfHealingServer() {}
 
@@ -214,6 +228,24 @@ func _SelfHealing_VerifySelfHealingChallenge_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SelfHealing_BroadcastSelfHealingMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BroadcastSelfHealingMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SelfHealingServer).BroadcastSelfHealingMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/supernode.SelfHealing/BroadcastSelfHealingMetrics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SelfHealingServer).BroadcastSelfHealingMetrics(ctx, req.(*BroadcastSelfHealingMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SelfHealing_ServiceDesc is the grpc.ServiceDesc for SelfHealing service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -232,6 +264,10 @@ var SelfHealing_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifySelfHealingChallenge",
 			Handler:    _SelfHealing_VerifySelfHealingChallenge_Handler,
+		},
+		{
+			MethodName: "BroadcastSelfHealingMetrics",
+			Handler:    _SelfHealing_BroadcastSelfHealingMetrics_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

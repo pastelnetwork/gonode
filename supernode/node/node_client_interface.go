@@ -118,11 +118,14 @@ type StorageChallengeInterface interface {
 type SelfHealingChallengeInterface interface {
 	SuperNodePeerAPIInterface
 
+	// Ping other nodes to check their availability
 	Ping(ctx context.Context, pingRequest *pb.PingRequest) (*pb.PingResponse, error)
-
+	// ProcessSelfHealingChallenge sends self-healing challenge request to recipient for processing
 	ProcessSelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingMessage) error
-
+	// VerifySelfHealingChallenge sends verify self-healing challenge request to recipients for verifications
 	VerifySelfHealingChallenge(ctx context.Context, challengeMessage *pb.SelfHealingMessage) (types.SelfHealingMessage, error)
+	// BroadcastSelfHealingMetrics broadcast the self-healing metrics to the entire network
+	BroadcastSelfHealingMetrics(ctx context.Context, req types.ProcessBroadcastMetricsRequest) error
 }
 
 // ProcessUserdataInterface represents an interaction stream with supernodes for sending userdata.

@@ -109,7 +109,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 		}
 		logger.Info("reg ticket has been retrieved")
 
-		challengeID := utils.GetHashFromString(ticket.TxID)
+		challengeID := utils.GetHashFromString(ticket.TxID + responseMsg.TriggerID)
 		responseMsg.SelfHealingMessageData.Response.ChallengeID = challengeID
 
 		if nftTicket != nil || cascadeTicket != nil {
@@ -474,11 +474,11 @@ func (task *SHTask) getVerifications(ctx context.Context, msg types.SelfHealingM
 		return nil, errors.Errorf("error preparing response message")
 	}
 
-	verifications := task.processSelfHealingVerifications(ctx, nodesToConnect, &responseMsg)
+	successfulVerifications, allVerifications := task.processSelfHealingVerifications(ctx, nodesToConnect, &responseMsg)
 
-	verificationExecMetrics, err := task.getVerificationExecMetrics(msg, verifications)
+	verificationExecMetrics, err := task.getVerificationExecMetrics(msg, allVerifications)
 	if err != nil {
-		return verifications, nil
+		return successfulVerifications, nil
 	}
 
 	if verificationExecMetrics != nil {
@@ -495,7 +495,7 @@ func (task *SHTask) getVerifications(ctx context.Context, msg types.SelfHealingM
 		WithField("challenge_id", msg.SelfHealingMessageData.Response.ChallengeID).
 		Info("verification execution metrics have been stored")
 
-	return verifications, nil
+	return successfulVerifications, nil
 }
 
 // GetNodesAddressesToConnect basically retrieves the masternode address against the pastel-id from the list and return that
@@ -554,6 +554,7 @@ func (task *SHTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 
 		//Finding 5 closest nodes to previous block hash
 		sliceOfSupernodesClosestToPreviousBlockHash := task.GetNClosestSupernodeIDsToComparisonString(ctx, 5, merkleroot, listOfSupernodes, task.nodeID)
+		challengeMessage.SelfHealingMessageData.Response.Verifiers = sliceOfSupernodesClosestToPreviousBlockHash
 		log.WithContext(ctx).Info(fmt.Sprintf("sliceOfSupernodesClosestToPreviousBlockHash:%s", sliceOfSupernodesClosestToPreviousBlockHash))
 
 		for _, verifier := range sliceOfSupernodesClosestToPreviousBlockHash {
@@ -606,8 +607,9 @@ func (task *SHTask) prepareResponseMessage(ctx context.Context, responseMessage 
 }
 
 // processSelfHealingVerifications simply sends a response msg, to receive verifications
-func (task *SHTask) processSelfHealingVerifications(ctx context.Context, nodesToConnect []pastel.MasterNode, responseMsg *pb.SelfHealingMessage) (verifications map[string]types.SelfHealingMessage) {
-	verifications = make(map[string]types.SelfHealingMessage)
+func (task *SHTask) processSelfHealingVerifications(ctx context.Context, nodesToConnect []pastel.MasterNode, responseMsg *pb.SelfHealingMessage) (successfulVerifications map[string]types.SelfHealingMessage, allVerifications map[string]types.SelfHealingMessage) {
+	successfulVerifications = make(map[string]types.SelfHealingMessage)
+	allVerifications = make(map[string]types.SelfHealingMessage)
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -634,9 +636,13 @@ func (task *SHTask) processSelfHealingVerifications(ctx context.Context, nodesTo
 						Info("affirmation message has been received verified")
 
 					mu.Lock()
-					verifications[verificationMsg.SenderID] = *verificationMsg
+					successfulVerifications[verificationMsg.SenderID] = *verificationMsg
 					mu.Unlock()
 				}
+
+				mu.Lock()
+				allVerifications[verificationMsg.SenderID] = *verificationMsg
+				mu.Unlock()
 
 				log.WithContext(ctx).WithField("node_address", node.ExtAddress).
 					Info("affirmation message has been stored")
@@ -646,7 +652,7 @@ func (task *SHTask) processSelfHealingVerifications(ctx context.Context, nodesTo
 
 	wg.Wait()
 
-	return verifications
+	return successfulVerifications, allVerifications
 }
 
 // sendSelfHealingResponseMessage establish a connection with the processingSupernodeAddr and sends response msg to
@@ -760,186 +766,76 @@ func (task *SHTask) DownloadDDAndFingerprints(ctx context.Context, DDAndFingerpr
 }
 
 func (task *SHTask) getVerificationExecMetrics(responseMsg types.SelfHealingMessage, verifications map[string]types.SelfHealingMessage) (*types.SelfHealingExecutionMetric, error) {
-	if len(verifications) == 0 {
-		verificationMsg := types.SelfHealingMessage{
-			TriggerID:   responseMsg.TriggerID,
-			MessageType: types.SelfHealingVerificationMessage,
-			SelfHealingMessageData: types.SelfHealingMessageData{
-				ChallengerID: responseMsg.SelfHealingMessageData.ChallengerID,
-				RecipientID:  responseMsg.SelfHealingMessageData.RecipientID,
-				Challenge: types.SelfHealingChallengeData{
-					Block:            responseMsg.SelfHealingMessageData.Challenge.Block,
-					Merkelroot:       responseMsg.SelfHealingMessageData.Challenge.Merkelroot,
-					Timestamp:        responseMsg.SelfHealingMessageData.Challenge.Timestamp,
-					NodesOnWatchlist: responseMsg.SelfHealingMessageData.Challenge.NodesOnWatchlist,
-					ChallengeTickets: responseMsg.SelfHealingMessageData.Challenge.ChallengeTickets,
-				},
-				Response: types.SelfHealingResponseData{
-					ChallengeID:     responseMsg.SelfHealingMessageData.Response.ChallengeID,
-					Block:           responseMsg.SelfHealingMessageData.Response.Block,
-					Merkelroot:      responseMsg.SelfHealingMessageData.Response.Merkelroot,
-					Timestamp:       responseMsg.SelfHealingMessageData.Response.Timestamp,
-					RespondedTicket: responseMsg.SelfHealingMessageData.Response.RespondedTicket,
-				},
-				Verification: types.SelfHealingVerificationData{
-					ChallengeID: responseMsg.SelfHealingMessageData.Response.ChallengeID,
-					Block:       responseMsg.SelfHealingMessageData.Response.Block,
-					Merkelroot:  responseMsg.SelfHealingMessageData.Response.Merkelroot,
-					Timestamp:   responseMsg.SelfHealingMessageData.Response.Timestamp,
-					VerifiedTicket: types.VerifiedTicket{
-						IsVerified: false,
-						Message:    "no verifications received from verifiers",
-					},
-				},
-			},
+	var vmsgs []types.SelfHealingMessage
+
+	if len(verifications) > 0 {
+		for _, verificationMsg := range verifications {
+			vmsgs = append(vmsgs, verificationMsg)
+		}
+
+		vBytes, err := json.Marshal(vmsgs)
+		if err != nil {
+			return nil, errors.Errorf("error marshaling verifcation msgs")
+		}
+
+		return &types.SelfHealingExecutionMetric{
+			TriggerID:       responseMsg.TriggerID,
+			ChallengeID:     responseMsg.SelfHealingMessageData.Response.ChallengeID,
+			MessageType:     int(types.SelfHealingVerificationMessage),
 			SenderID:        responseMsg.SenderID,
 			SenderSignature: responseMsg.SenderSignature,
-		}
-
-		vBytes, err := json.Marshal(verificationMsg)
-		if err != nil {
-			return nil, errors.Errorf("error marshaling verification msg")
-		}
-
-		return &types.SelfHealingExecutionMetric{
-			TriggerID:       verificationMsg.TriggerID,
-			ChallengeID:     verificationMsg.SelfHealingMessageData.Verification.ChallengeID,
-			MessageType:     int(verificationMsg.MessageType),
-			SenderID:        verificationMsg.SenderID,
-			SenderSignature: verificationMsg.SenderSignature,
 			Data:            vBytes,
 		}, nil
 	}
 
-	if len(verifications) < verifyThreshold {
-		verificationMsg := types.SelfHealingMessage{
-			TriggerID:   responseMsg.TriggerID,
-			MessageType: types.SelfHealingVerificationMessage,
-			SelfHealingMessageData: types.SelfHealingMessageData{
-				ChallengerID: responseMsg.SelfHealingMessageData.ChallengerID,
-				RecipientID:  responseMsg.SelfHealingMessageData.RecipientID,
-				Challenge: types.SelfHealingChallengeData{
-					Block:            responseMsg.SelfHealingMessageData.Challenge.Block,
-					Merkelroot:       responseMsg.SelfHealingMessageData.Challenge.Merkelroot,
-					Timestamp:        responseMsg.SelfHealingMessageData.Challenge.Timestamp,
-					NodesOnWatchlist: responseMsg.SelfHealingMessageData.Challenge.NodesOnWatchlist,
-					ChallengeTickets: responseMsg.SelfHealingMessageData.Challenge.ChallengeTickets,
-				},
-				Response: types.SelfHealingResponseData{
-					ChallengeID:     responseMsg.SelfHealingMessageData.Response.ChallengeID,
-					Block:           responseMsg.SelfHealingMessageData.Response.Block,
-					Merkelroot:      responseMsg.SelfHealingMessageData.Response.Merkelroot,
-					Timestamp:       responseMsg.SelfHealingMessageData.Response.Timestamp,
-					RespondedTicket: responseMsg.SelfHealingMessageData.Response.RespondedTicket,
-				},
-				Verification: types.SelfHealingVerificationData{
-					ChallengeID: responseMsg.SelfHealingMessageData.Response.ChallengeID,
-					VerifiedTicket: types.VerifiedTicket{
-						IsVerified: false,
-						Message:    "verify threshold has not been met",
-					},
+	verificationMsg := types.SelfHealingMessage{
+		TriggerID:   responseMsg.TriggerID,
+		MessageType: types.SelfHealingVerificationMessage,
+		SelfHealingMessageData: types.SelfHealingMessageData{
+			ChallengerID: responseMsg.SelfHealingMessageData.ChallengerID,
+			RecipientID:  responseMsg.SelfHealingMessageData.RecipientID,
+			Challenge: types.SelfHealingChallengeData{
+				Block:            responseMsg.SelfHealingMessageData.Challenge.Block,
+				Merkelroot:       responseMsg.SelfHealingMessageData.Challenge.Merkelroot,
+				Timestamp:        responseMsg.SelfHealingMessageData.Challenge.Timestamp,
+				NodesOnWatchlist: responseMsg.SelfHealingMessageData.Challenge.NodesOnWatchlist,
+				ChallengeTickets: responseMsg.SelfHealingMessageData.Challenge.ChallengeTickets,
+			},
+			Response: types.SelfHealingResponseData{
+				ChallengeID:     responseMsg.SelfHealingMessageData.Response.ChallengeID,
+				Block:           responseMsg.SelfHealingMessageData.Response.Block,
+				Merkelroot:      responseMsg.SelfHealingMessageData.Response.Merkelroot,
+				Timestamp:       responseMsg.SelfHealingMessageData.Response.Timestamp,
+				RespondedTicket: responseMsg.SelfHealingMessageData.Response.RespondedTicket,
+				Verifiers:       responseMsg.SelfHealingMessageData.Response.Verifiers,
+			},
+			Verification: types.SelfHealingVerificationData{
+				ChallengeID: responseMsg.SelfHealingMessageData.Response.ChallengeID,
+				Block:       responseMsg.SelfHealingMessageData.Response.Block,
+				Merkelroot:  responseMsg.SelfHealingMessageData.Response.Merkelroot,
+				Timestamp:   responseMsg.SelfHealingMessageData.Response.Timestamp,
+				VerifiedTicket: types.VerifiedTicket{
+					IsVerified: false,
+					Message:    "no successful verifications from verifiers",
 				},
 			},
-		}
-		verificationMsg.SelfHealingMessageData.Verification.VerifiersData = make(map[string][]byte)
-
-		var senderID string
-		var senderSignature []byte
-		for nodeID, vMsg := range verifications {
-			msgBytes, err := json.Marshal(vMsg)
-			if err != nil {
-				continue
-			}
-			verificationMsg.SelfHealingMessageData.Verification.VerifiersData[nodeID] = msgBytes
-
-			if senderID == "" {
-				senderID = vMsg.SenderID
-			}
-
-			if len(senderSignature) == 0 {
-				senderSignature = vMsg.SenderSignature
-			}
-		}
-
-		vBytes, err := json.Marshal(verificationMsg)
-		if err != nil {
-			return nil, errors.Errorf("error marshaling verification msg")
-		}
-
-		return &types.SelfHealingExecutionMetric{
-			TriggerID:       verificationMsg.TriggerID,
-			ChallengeID:     verificationMsg.SelfHealingMessageData.Verification.ChallengeID,
-			MessageType:     int(verificationMsg.MessageType),
-			SenderID:        senderID,
-			SenderSignature: senderSignature,
-			Data:            vBytes,
-		}, nil
+		},
+		SenderID:        responseMsg.SenderID,
+		SenderSignature: responseMsg.SenderSignature,
 	}
 
-	if len(verifications) >= verifyThreshold {
-		verificationMsg := types.SelfHealingMessage{
-			TriggerID:   responseMsg.TriggerID,
-			MessageType: types.SelfHealingVerificationMessage,
-			SelfHealingMessageData: types.SelfHealingMessageData{
-				ChallengerID: responseMsg.SelfHealingMessageData.ChallengerID,
-				RecipientID:  responseMsg.SelfHealingMessageData.RecipientID,
-				Challenge: types.SelfHealingChallengeData{
-					Block:            responseMsg.SelfHealingMessageData.Challenge.Block,
-					Merkelroot:       responseMsg.SelfHealingMessageData.Challenge.Merkelroot,
-					Timestamp:        responseMsg.SelfHealingMessageData.Challenge.Timestamp,
-					NodesOnWatchlist: responseMsg.SelfHealingMessageData.Challenge.NodesOnWatchlist,
-					ChallengeTickets: responseMsg.SelfHealingMessageData.Challenge.ChallengeTickets,
-				},
-				Response: types.SelfHealingResponseData{
-					ChallengeID:     responseMsg.SelfHealingMessageData.Response.ChallengeID,
-					Block:           responseMsg.SelfHealingMessageData.Response.Block,
-					Merkelroot:      responseMsg.SelfHealingMessageData.Response.Merkelroot,
-					Timestamp:       responseMsg.SelfHealingMessageData.Response.Timestamp,
-					RespondedTicket: responseMsg.SelfHealingMessageData.Response.RespondedTicket,
-				},
-				Verification: types.SelfHealingVerificationData{
-					ChallengeID: responseMsg.SelfHealingMessageData.Response.ChallengeID,
-					VerifiedTicket: types.VerifiedTicket{
-						IsVerified: true,
-					},
-				},
-			},
-		}
-
-		var senderID string
-		var senderSignature []byte
-		for nodeID, vMsg := range verifications {
-			msgBytes, err := json.Marshal(vMsg)
-			if err != nil {
-				continue
-			}
-			verificationMsg.SelfHealingMessageData.Verification.VerifiersData[nodeID] = msgBytes
-
-			verificationMsg.SelfHealingMessageData.Verification.VerifiersData[nodeID] = msgBytes
-
-			if senderID == "" {
-				senderID = vMsg.SenderID
-			}
-
-			if len(senderSignature) == 0 {
-				senderSignature = vMsg.SenderSignature
-			}
-		}
-
-		vBytes, err := json.Marshal(verificationMsg)
-		if err != nil {
-			return nil, errors.Errorf("error marshaling verification msg")
-		}
-
-		return &types.SelfHealingExecutionMetric{
-			TriggerID:       verificationMsg.TriggerID,
-			ChallengeID:     verificationMsg.SelfHealingMessageData.Verification.ChallengeID,
-			MessageType:     int(verificationMsg.MessageType),
-			SenderID:        senderID,
-			SenderSignature: senderSignature,
-			Data:            vBytes,
-		}, nil
+	vmsgs = append(vmsgs, verificationMsg)
+	vBytes, err := json.Marshal(vmsgs)
+	if err != nil {
+		return nil, errors.Errorf("error marshaling verification msg")
 	}
 
-	return nil, nil
+	return &types.SelfHealingExecutionMetric{
+		TriggerID:       verificationMsg.TriggerID,
+		ChallengeID:     verificationMsg.SelfHealingMessageData.Verification.ChallengeID,
+		MessageType:     int(verificationMsg.MessageType),
+		SenderID:        verificationMsg.SenderID,
+		SenderSignature: verificationMsg.SenderSignature,
+		Data:            vBytes,
+	}, nil
 }

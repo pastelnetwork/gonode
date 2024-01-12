@@ -118,6 +118,9 @@ const createSelfHealingExecutionMetrics string = `
   updated_at DATETIME NOT NULL
 );`
 
+const alterTablePingHistory = `ALTER TABLE ping_history
+ADD COLUMN metrics_last_broadcast_at DATETIME NULL;`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -433,6 +436,95 @@ func (s *SQLiteStore) GetAllPingInfos() (types.PingInfos, error) {
 	return pingInfos, nil
 }
 
+// GetAllPingInfoForOnlineNodes retrieves all ping infos for nodes that are online
+func (s *SQLiteStore) GetAllPingInfoForOnlineNodes() (types.PingInfos, error) {
+	const selectQuery = `
+        SELECT id, supernode_id, ip_address, total_pings, total_successful_pings,
+               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time, metrics_last_broadcast_at,
+               created_at, updated_at
+        WHERE is_online = true
+        FROM ping_history
+        `
+	rows, err := s.db.Query(selectQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pingInfos types.PingInfos
+	for rows.Next() {
+
+		var pingInfo types.PingInfo
+		if err := rows.Scan(
+			&pingInfo.ID, &pingInfo.SupernodeID, &pingInfo.IPAddress, &pingInfo.TotalPings,
+			&pingInfo.TotalSuccessfulPings, &pingInfo.AvgPingResponseTime,
+			&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen, &pingInfo.CumulativeResponseTime,
+			&pingInfo.MetricsLastBroadcastAt, &pingInfo.CreatedAt, &pingInfo.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		pingInfos = append(pingInfos, pingInfo)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return pingInfos, nil
+}
+
+// GetSelfHealingExecutionMetrics retrieves all self_healing_execution_metrics records created after the specified timestamp.
+func (s *SQLiteStore) GetSelfHealingExecutionMetrics(timestamp time.Time) ([]types.SelfHealingExecutionMetric, error) {
+	const query = `
+    SELECT id, trigger_id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at
+    FROM self_healing_execution_metrics
+    WHERE created_at > ?
+    `
+
+	rows, err := s.db.Query(query, timestamp)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.SelfHealingExecutionMetric
+	for rows.Next() {
+		var m types.SelfHealingExecutionMetric
+		if err := rows.Scan(&m.ID, &m.TriggerID, &m.ChallengeID, &m.MessageType, &m.Data, &m.SenderID, &m.SenderSignature, &m.CreatedAt, &m.UpdatedAt); err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
+}
+
+// GetSelfHealingGenerationMetrics retrieves all self_healing_generation_metrics records created after the specified timestamp.
+func (s *SQLiteStore) GetSelfHealingGenerationMetrics(timestamp time.Time) ([]types.SelfHealingGenerationMetric, error) {
+	const query = `
+    SELECT id, trigger_id, message_type, data, sender_id, sender_signature, created_at, updated_at
+    FROM self_healing_generation_metrics
+    WHERE created_at > ?
+    `
+
+	rows, err := s.db.Query(query, timestamp)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.SelfHealingGenerationMetric
+	for rows.Next() {
+		var m types.SelfHealingGenerationMetric
+		if err := rows.Scan(&m.ID, &m.TriggerID, &m.MessageType, &m.Data, &m.SenderID, &m.SenderSignature, &m.CreatedAt, &m.UpdatedAt); err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
+}
+
 // CleanupSelfHealingChallenges cleans up self-healing challenges stored in DB for inspection
 func (s *SQLiteStore) CleanupSelfHealingChallenges() (err error) {
 	const delQuery = "DELETE FROM self_healing_challenges"
@@ -489,6 +581,8 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}
 
 	_, _ = db.Exec(alterTaskHistory)
+
+	_, _ = db.Exec(alterTablePingHistory)
 
 	pragmas := []string{
 		"PRAGMA synchronous=NORMAL;",

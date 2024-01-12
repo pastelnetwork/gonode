@@ -41,9 +41,10 @@ type PingInfo struct {
 	IsOnWatchlist          bool         `db:"is_on_watchlist"`
 	IsAdjusted             bool         `db:"is_adjusted"`
 	CumulativeResponseTime float64      `db:"cumulative_response_time"`
-	LastSeen               sql.NullTime `db:"last_seen"`
 	CreatedAt              time.Time    `db:"created_at"`
 	UpdatedAt              time.Time    `db:"updated_at"`
+	LastSeen               sql.NullTime `db:"last_seen"`
+	MetricsLastBroadcastAt sql.NullTime `json:"metrics_last_broadcast_at"`
 	LastResponseTime       float64      `db:"-"`
 }
 
@@ -104,6 +105,7 @@ type SelfHealingResponseData struct {
 	Merkelroot      string          `json:"merkelroot"`
 	Timestamp       time.Time       `json:"timestamp"`
 	RespondedTicket RespondedTicket `json:"responded_ticket"`
+	Verifiers       []string        `json:"verifiers"`
 }
 
 // VerifiedTicket represents the details of ticket verified in self-healing challenge
@@ -131,21 +133,40 @@ type SelfHealingVerificationData struct {
 
 // SelfHealingGenerationMetric represents the self-healing generation metrics for trigger events
 type SelfHealingGenerationMetric struct {
-	TriggerID       string `db:"trigger_id"`
-	MessageType     int    `db:"message_type"`
-	Data            []byte `db:"data"`
-	SenderID        string `db:"sender_id"`
-	SenderSignature []byte `db:"sender_signature"`
+	ID              int       `db:"id"`
+	TriggerID       string    `db:"trigger_id"`
+	MessageType     int       `db:"message_type"`
+	Data            []byte    `db:"data"`
+	SenderID        string    `db:"sender_id"`
+	SenderSignature []byte    `db:"sender_signature"`
+	CreatedAt       time.Time `db:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at"`
 }
 
 // SelfHealingExecutionMetric represents the self-healing execution metrics for trigger events
 type SelfHealingExecutionMetric struct {
-	TriggerID       string `db:"trigger_id"`
-	ChallengeID     string `db:"challenge_id"`
-	MessageType     int    `db:"message_type"`
-	Data            []byte `db:"data"`
-	SenderID        string `db:"sender_id"`
-	SenderSignature []byte `db:"sender_signature"`
+	ID              int       `db:"id"`
+	TriggerID       string    `db:"trigger_id"`
+	ChallengeID     string    `db:"challenge_id"`
+	MessageType     int       `db:"message_type"`
+	Data            []byte    `db:"data"`
+	SenderID        string    `db:"sender_id"`
+	SenderSignature []byte    `db:"sender_signature"`
+	CreatedAt       time.Time `db:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at"`
+}
+
+// SelfHealingCombinedMetrics is the combined struct for generation & execution metric
+type SelfHealingCombinedMetrics struct {
+	GenerationMetrics []SelfHealingGenerationMetric `json:"generation_metrics"`
+	ExecutionMetrics  []SelfHealingExecutionMetric  `json:"execution_metrics"`
+}
+
+// ProcessBroadcastMetricsRequest represents the request for broadcasting metrics
+type ProcessBroadcastMetricsRequest struct {
+	Data            []byte `json:"data"`
+	SenderID        string `json:"sender_id"`
+	SenderSignature []byte `json:"sender_signature"`
 }
 
 // SelfHealingMetrics represents the self-healing metrics for each challenge
