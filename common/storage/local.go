@@ -2,9 +2,17 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/types"
 )
+
+// Metrics is the struct for metrics
+type Metrics struct {
+	SCMetrics          []byte
+	SHTriggerMetrics   []byte
+	SHExecutionMetrics []byte
+}
 
 // LocalStoreInterface is interface for local sqlite store
 type LocalStoreInterface interface {
@@ -24,4 +32,5 @@ type LocalStoreInterface interface {
 	GetWatchlistPingInfo() ([]types.PingInfo, error)
 	UpdatePingInfo(supernodeID string, isOnWatchlist, isAdjusted bool) error
 	CloseHistoryDB(ctx context.Context)
+	QueryMetrics(from time.Time, to *time.Time) (m Metrics, err error)
 }
