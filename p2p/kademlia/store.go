@@ -82,6 +82,9 @@ type Store interface {
 	RecordExists(nodeID string) (bool, error)
 
 	GetLocalKeys(from time.Time, to time.Time) ([]string, error)
+
+	// BatchDeleteRecords deletes multiple records in a single transaction
+	BatchDeleteRecords(keys []string) error
 }
 
 // MetaStore is the interface for implementing the storage mechanism for the DHT
@@ -100,4 +103,10 @@ type MetaStore interface {
 
 	// GetDisabledKeys returns all disabled keys
 	GetDisabledKeys(from time.Time) (retKeys domain.DisabledKeys, err error)
+
+	// GetAllToDelKeys returns all keys that need to be deleted
+	GetAllToDelKeys(count int) (retKeys domain.DelKeys, err error)
+
+	// BatchInsertDelKeys inserts or updates multiple DelKey records in a single transaction
+	BatchInsertDelKeys(ctx context.Context, delKeys domain.DelKeys) error
 }

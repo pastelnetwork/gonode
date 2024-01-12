@@ -202,3 +202,8 @@ func (s *Store) RecordExists(_ string) (bool, error) {
 func (s *Store) GetLocalKeys(_ time.Time, _ time.Time) ([]string, error) {
 	return nil, nil
 }
+
+// BatchDeleteRecords deletes a batch of records
+func (s *Store) BatchDeleteRecords(_ []string) error {
+	return nil
+}
