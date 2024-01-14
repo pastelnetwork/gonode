@@ -13,6 +13,7 @@ service SelfHealing {
   rpc Ping(PingRequest) returns (PingResponse);
   rpc ProcessSelfHealingChallenge(ProcessSelfHealingChallengeRequest) returns (ProcessSelfHealingChallengeReply);
   rpc VerifySelfHealingChallenge(VerifySelfHealingChallengeRequest) returns (VerifySelfHealingChallengeReply);
+  rpc BroadcastSelfHealingMetrics(BroadcastSelfHealingMetricsRequest) returns (BroadcastSelfHealingMetricsReply);
 }
 
 message PingRequest {
@@ -55,3 +56,11 @@ message SelfHealingMessage {
   string sender_id = 4;
   bytes sender_signature = 5;
 }
+
+message BroadcastSelfHealingMetricsRequest {
+  bytes data = 1;
+  string sender_id = 2;
+  bytes sender_signature = 3;
+}
+
+message BroadcastSelfHealingMetricsReply {}

@@ -121,6 +121,19 @@ func (service *selfHealingGRPCClient) VerifySelfHealingChallenge(ctx context.Con
 	return msg, nil
 }
 
+func (service *selfHealingGRPCClient) BroadcastSelfHealingMetrics(ctx context.Context, req types.ProcessBroadcastMetricsRequest) error {
+	_, err := service.client.BroadcastSelfHealingMetrics(ctx, &pb.BroadcastSelfHealingMetricsRequest{
+		Data:            req.Data,
+		SenderSignature: req.SenderSignature,
+		SenderId:        req.SenderID,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func newSelfHealingGRPCClient(conn *clientConn) node.SelfHealingChallengeInterface {
 	return &selfHealingGRPCClient{
 		conn:   conn,

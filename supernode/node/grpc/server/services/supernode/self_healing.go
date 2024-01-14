@@ -153,6 +153,26 @@ func (service *SelfHealingChallengeGRPC) VerifySelfHealingChallenge(ctx context.
 	return &pb.VerifySelfHealingChallengeReply{Data: res}, nil
 }
 
+// BroadcastSelfHealingMetrics is the server side of broadcast self-healing metrics
+func (service *SelfHealingChallengeGRPC) BroadcastSelfHealingMetrics(ctx context.Context, m *pb.BroadcastSelfHealingMetricsRequest) (*pb.BroadcastSelfHealingMetricsReply, error) {
+	log.WithContext(ctx).WithField("req", m).Debug("Broadcast Self-Healing Metrics Request received from gRpc client")
+	task := service.NewSHTask()
+
+	req := types.ProcessBroadcastMetricsRequest{
+		Data:            m.Data,
+		SenderID:        m.SenderId,
+		SenderSignature: m.SenderSignature,
+	}
+
+	err := task.ProcessBroadcastedSelfHealingMetrics(ctx, req)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error processing self-healing metrics")
+		return nil, err
+	}
+
+	return &pb.BroadcastSelfHealingMetricsReply{}, nil
+}
+
 // NewSelfHealingChallengeGRPC returns a new SelfHealing instance.
 func NewSelfHealingChallengeGRPC(service *selfhealing.SHService) *SelfHealingChallengeGRPC {
 	return &SelfHealingChallengeGRPC{
