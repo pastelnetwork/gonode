@@ -15,6 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 )
 
+const minVerifications = 3
 const createTaskHistory string = `
   CREATE TABLE IF NOT EXISTS task_history (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -601,9 +602,138 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}, nil
 }
 
+// SHChallengeMetric represents the self-healing challenge metric
+type SHChallengeMetric struct {
+	ChallengeID string
+	IsAccepted  bool
+	IsVerified  bool
+	IsHealed    bool
+}
+
+// GetSHExecutionMetrics retrieves self-healing execution metrics
+func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time) (storage.SHExecutionMetrics, error) {
+	m := storage.SHExecutionMetrics{}
+	rows, err := s.GetSelfHealingExecutionMetrics(from)
+	if err != nil {
+		return m, err
+	}
+	log.WithContext(ctx).WithField("rows", len(rows)).Info("self-healing execution metrics row count")
+
+	challenges := make(map[string]SHChallengeMetric)
+	for _, row := range rows {
+		if _, ok := challenges[row.ChallengeID]; !ok {
+			challenges[row.ChallengeID] = SHChallengeMetric{
+				ChallengeID: row.ChallengeID,
+			}
+		}
+
+		if row.MessageType == int(types.SelfHealingVerificationMessage) {
+			messages := types.SelfHealingMessages{}
+			if err := json.Unmarshal(row.Data, &messages); err != nil {
+				return m, fmt.Errorf("cannot unmarshal self healing execution message type 3: %w", err)
+			}
+
+			verificationCount := 0
+			for _, message := range messages {
+				if message.SelfHealingMessageData.Verification.VerifiedTicket.IsVerified {
+					verificationCount++
+				}
+			}
+
+			if verificationCount >= minVerifications {
+				ch := challenges[row.ChallengeID]
+				ch.IsVerified = true
+				challenges[row.ChallengeID] = ch
+			}
+		} else {
+			data := types.SelfHealingMessageData{}
+			if err := json.Unmarshal(row.Data, &data); err != nil {
+				return m, fmt.Errorf("cannot unmarshal self healing execution message (2,4): %w", err)
+			}
+
+			if row.MessageType == int(types.SelfHealingResponseMessage) {
+				ch := challenges[row.ChallengeID]
+				ch.IsAccepted = data.Response.RespondedTicket.IsReconstructionRequired
+				challenges[row.ChallengeID] = ch
+			}
+
+			if row.MessageType == 4 {
+				ch := challenges[row.ChallengeID]
+				ch.IsHealed = true
+				challenges[row.ChallengeID] = ch
+			}
+		}
+	}
+
+	log.WithContext(ctx).WithField("challenges", len(challenges)).Info("self-healing execution metrics challenges count")
+
+	for _, challenge := range challenges {
+		log.WithContext(ctx).WithField("challenge-id", challenge.ChallengeID).WithField("is-accepted", challenge.IsAccepted).
+			WithField("is-verified", challenge.IsVerified).WithField("is-healed", challenge.IsHealed).
+			Info("self-healing challenge metric")
+
+		if challenge.IsAccepted {
+			m.TotalChallengesAccepted++
+		}
+
+		if challenge.IsVerified {
+			m.TotalChallengesSuccessful++
+		}
+
+		if challenge.IsHealed {
+			m.TotalFilesHealed++
+		}
+	}
+
+	return m, nil
+}
+
 // QueryMetrics queries metrics
-func (s *SQLiteStore) QueryMetrics(_ time.Time, _ *time.Time) (m storage.Metrics, err error) {
-	// TODO: implement
+func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.Time) (m storage.Metrics, err error) {
+	genMetric, err := s.GetSelfHealingGenerationMetrics(from)
+	if err != nil {
+		return storage.Metrics{}, err
+	}
+
+	te := storage.SHTriggerMetrics{}
+	challengesIssued := 0
+	for _, metric := range genMetric {
+		t := storage.SHTriggerMetric{}
+		data := types.SelfHealingMessageData{}
+		json.Unmarshal(metric.Data, &data)
+
+		t.TriggerID = metric.TriggerID
+		t.ListOfNodes = data.Challenge.NodesOnWatchlist
+		t.TotalTicketsIdentified = len(data.Challenge.ChallengeTickets)
+
+		for _, ticket := range data.Challenge.ChallengeTickets {
+			t.TotalFilesIdentified += len(ticket.MissingKeys)
+		}
+
+		challengesIssued += t.TotalTicketsIdentified
+
+		te = append(te, t)
+	}
+
+	em, err := s.GetSHExecutionMetrics(ctx, from)
+	if err != nil {
+		return storage.Metrics{}, fmt.Errorf("cannot get self healing execution metrics: %w", err)
+	}
+
+	em.TotalChallengesIssued = challengesIssued
+	em.TotalChallengesRejected = challengesIssued - em.TotalChallengesAccepted
+	em.TotalChallengesFailed = em.TotalChallengesAccepted - em.TotalChallengesSuccessful
+	em.TotalFileHealingFailed = em.TotalChallengesSuccessful - em.TotalFilesHealed
+
+	m.SHTriggerMetrics, err = json.Marshal(te)
+	if err != nil {
+		return storage.Metrics{}, err
+	}
+
+	m.SHExecutionMetrics, err = json.Marshal(em)
+	if err != nil {
+		return storage.Metrics{}, err
+	}
 
 	return m, nil
 }
