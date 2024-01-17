@@ -51,6 +51,9 @@ type PingInfo struct {
 // PingInfos represents array of ping info
 type PingInfos []PingInfo
 
+// SelfHealingMessages represents the self-healing metrics for each challenge = message_type = 3
+type SelfHealingMessages []SelfHealingMessage
+
 // SelfHealingMessage represents the self-healing message
 type SelfHealingMessage struct {
 	TriggerID              string                 `json:"trigger_id"`
@@ -60,7 +63,7 @@ type SelfHealingMessage struct {
 	SenderSignature        []byte                 `json:"sender_signature"`
 }
 
-// SelfHealingMessageData represents the self-healing message data
+// SelfHealingMessageData represents the self-healing message data == message_type = 2
 type SelfHealingMessageData struct {
 	ChallengerID string                      `json:"challenger_id"`
 	RecipientID  string                      `json:"recipient_id"`

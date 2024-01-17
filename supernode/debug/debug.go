@@ -108,6 +108,8 @@ func NewService(config *Config, p2pClient p2p.Client, srvc *storagechallenge.SCS
 	metricsRouter := mux.NewRouter()
 
 	router.HandleFunc("/metrics", service.metrics).Methods(http.MethodGet)
+	router.HandleFunc("/sh_trigger", service.shTrigger).Methods(http.MethodGet)
+	router.HandleFunc("/sh_challenge", service.shChallenge).Methods(http.MethodGet)
 	service.metricsServer = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.MetricsPort),
 		Handler: metricsRouter,
@@ -354,6 +356,102 @@ func (service *Service) p2pDelete(writer http.ResponseWriter, request *http.Requ
 	})
 }
 
+func (service *Service) shChallenge(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+
+	// 1. Retrieve Authorization Header (Passphrase)
+	passphrase := request.Header.Get("Authorization")
+
+	// 2. Retrieve Pastel ID from Query Param
+	pid := request.URL.Query().Get("pid")
+	if pid == "" {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Missing pid parameter"})
+		return
+	}
+
+	_, err := service.scService.PastelClient.Sign(ctx, []byte{1, 2, 3}, pid, passphrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		responseWithJSON(writer, http.StatusUnauthorized, map[string]string{"error": "Invalid pid/passphrase"})
+		return
+	}
+
+	chID := request.URL.Query().Get("challenge_id")
+	if chID == "" {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Missing challenge_id query parameter"})
+		return
+	}
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return
+	}
+	defer store.CloseHistoryDB(ctx)
+
+	metrics, err := store.GetSelfHealingExecutionMetrics(time.Now().AddDate(20, 0, 0))
+	if err != nil {
+		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+
+	for row := range metrics {
+		if metrics[row].ChallengeID == chID {
+			responseWithJSON(writer, http.StatusOK, metrics[row])
+			return
+		}
+	}
+
+	responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": fmt.Sprintf("No metrics found for challenge_id %s", chID)})
+}
+
+func (service *Service) shTrigger(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+
+	// 1. Retrieve Authorization Header (Passphrase)
+	passphrase := request.Header.Get("Authorization")
+
+	// 2. Retrieve Pastel ID from Query Param
+	pid := request.URL.Query().Get("pid")
+	if pid == "" {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Missing pid parameter"})
+		return
+	}
+
+	_, err := service.scService.PastelClient.Sign(ctx, []byte{1, 2, 3}, pid, passphrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		responseWithJSON(writer, http.StatusUnauthorized, map[string]string{"error": "Invalid pid/passphrase"})
+		return
+	}
+
+	triggerID := request.URL.Query().Get("trigger_id")
+	if triggerID == "" {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Missing trigger_id query parameter"})
+		return
+	}
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return
+	}
+	defer store.CloseHistoryDB(ctx)
+
+	metrics, err := store.GetSelfHealingGenerationMetrics(time.Now().AddDate(20, 0, 0))
+	if err != nil {
+		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+
+	for row := range metrics {
+		if metrics[row].TriggerID == triggerID {
+			responseWithJSON(writer, http.StatusOK, metrics[row])
+			return
+		}
+	}
+
+	responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": fmt.Sprintf("No metrics found for trigger_id %s", triggerID)})
+}
+
 func (service *Service) metrics(writer http.ResponseWriter, request *http.Request) {
 	ctx := service.contextWithLogPrefix(request.Context())
 
@@ -412,7 +510,7 @@ func (service *Service) metrics(writer http.ResponseWriter, request *http.Reques
 	}
 	defer store.CloseHistoryDB(ctx)
 
-	metrics, err := store.QueryMetrics(from, to)
+	metrics, err := store.QueryMetrics(ctx, from, to)
 	if err != nil {
 		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
 		return
