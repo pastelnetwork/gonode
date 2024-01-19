@@ -3,6 +3,7 @@ package storagechallenge
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/mixins"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -38,6 +39,7 @@ type SCService struct {
 
 	nodeID                        string
 	nodeClient                    node.ClientInterface
+	pastelHandler                 *mixins.PastelHandler
 	storageChallengeExpiredBlocks int32
 	numberOfChallengeReplicas     int
 	numberOfVerifyingNodes        int

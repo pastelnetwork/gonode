@@ -154,3 +154,22 @@ type BroadcastLogMessage struct {
 	Observers   string `db:"observers"`
 	Data        []byte `db:"data"`
 }
+
+// BroadcastMessageMetrics is the struct for broadcast message metrics
+type BroadcastMessageMetrics struct {
+	ID          int       `db:"id"`
+	ChallengeID string    `db:"challenge_id"`
+	Challenger  string    `db:"challenger"`
+	Recipient   string    `db:"recipient"`
+	Observers   string    `db:"observers"`
+	Data        []byte    `db:"data"`
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
+}
+
+// ProcessBroadcastChallengeMetricsRequest represents the request for broadcasting metrics
+type ProcessBroadcastChallengeMetricsRequest struct {
+	Data            []byte `json:"data"`
+	SenderID        string `json:"sender_id"`
+	SenderSignature []byte `json:"sender_signature"`
+}

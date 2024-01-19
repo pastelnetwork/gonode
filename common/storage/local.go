@@ -43,6 +43,7 @@ type LocalStoreInterface interface {
 	QueryTaskHistory(taskID string) (history []types.TaskHistory, err error)
 	InsertStorageChallengeMessage(challenge types.StorageChallengeLogMessage) error
 	InsertBroadcastMessage(challenge types.BroadcastLogMessage) error
+	GetBroadcastMessageMetrics(timestamp time.Time) ([]types.BroadcastMessageMetrics, error)
 	QueryStorageChallengeMessage(challengeID string, messageType int) (challenge types.StorageChallengeLogMessage, err error)
 	CleanupStorageChallenges() (err error)
 	CleanupSelfHealingChallenges() (err error)

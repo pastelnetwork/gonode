@@ -331,6 +331,31 @@ func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage
 	return nil
 }
 
+func (s *SQLiteStore) GetBroadcastMessageMetrics(timestamp time.Time) ([]types.BroadcastMessageMetrics, error) {
+	const query = `
+    SELECT id, challenge_id, data, challenger, recipient, observers, created_at, updated_at
+    FROM broadcast_challenge_messages
+    WHERE created_at > ?
+    `
+
+	rows, err := s.db.Query(query, timestamp)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.BroadcastMessageMetrics
+	for rows.Next() {
+		var m types.BroadcastMessageMetrics
+		if err := rows.Scan(&m.ID, &m.ChallengeID, &m.Data, &m.Challenger, &m.Recipient, &m.Observers, &m.CreatedAt, &m.UpdatedAt); err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
+}
+
 // QueryStorageChallengeMessage retrieves storage challenge message against challengeID and messageType
 func (s *SQLiteStore) QueryStorageChallengeMessage(challengeID string, messageType int) (challengeMessage types.StorageChallengeLogMessage, err error) {
 	const selectQuery = "SELECT * FROM storage_challenge_messages WHERE challenge_id=? AND message_type=?"

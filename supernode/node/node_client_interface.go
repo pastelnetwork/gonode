@@ -112,6 +112,9 @@ type StorageChallengeInterface interface {
 
 	//BroadcastStorageChallengeResult broadcast the result to all SNs
 	BroadcastStorageChallengeResult(ctx context.Context, req *pb.BroadcastStorageChallengeRequest) error
+
+	//BroadcastStorageChallengeMetrics broadcast the storage-challenge metrics to the entire network
+	BroadcastStorageChallengeMetrics(ctx context.Context, req types.ProcessBroadcastChallengeMetricsRequest) error
 }
 
 // SelfHealingChallengeInterface represents an interaction stream with supernodes for self-healing challenge communications
