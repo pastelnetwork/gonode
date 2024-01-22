@@ -2,6 +2,8 @@ package selfhealing
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/pastelnetwork/gonode/common/types"
 	"sync/atomic"
 	"time"
@@ -22,6 +24,7 @@ const (
 	defaultTimerBlockCheckDuration    = 5 * time.Minute
 	defaultFetchNodesPingInfoInterval = 60 * time.Second
 	defaultUpdateWatchlistInterval    = 70 * time.Second
+	broadcastMetricRegularInterval    = 60 * time.Minute
 )
 
 // SHService keeps track of the supernode's nodeID and passes this, the pastel client,
@@ -74,6 +77,40 @@ func (service *SHService) PingNodes(ctx context.Context) {
 	}
 }
 
+// BroadcastSelfHealingMetricsWorker broadcast the self-healing metrics to the entire network
+func (service *SHService) BroadcastSelfHealingMetricsWorker(ctx context.Context) {
+	log.WithContext(ctx).Info("self-healing-metric worker func has been invoked")
+
+	startTime := calculateStartTime(service.nodeID)
+	log.WithContext(ctx).WithField("start_time", startTime).
+		Info("self-healing-metric service will execute on the mentioned time")
+
+	// Wait until the start time
+	time.Sleep(2 * time.Minute)
+
+	// Run the first task immediately
+	service.executeMetricsBroadcastTask(ctx)
+
+	for {
+		select {
+		case <-time.After(broadcastMetricRegularInterval):
+			service.executeMetricsBroadcastTask(context.Background())
+		case <-ctx.Done():
+			log.Println("Context done being called in file-healing worker")
+			return
+		}
+	}
+}
+
+// executeTask executes the self-healing metric task.
+func (service *SHService) executeMetricsBroadcastTask(ctx context.Context) {
+	newCtx := context.Background()
+	task := service.NewSHTask()
+	task.BroadcastSelfHealingMetrics(newCtx)
+
+	log.WithContext(ctx).Debug("self-healing metric broadcasted")
+}
+
 // RunUpdateWatchlistWorker : This worker will periodically fetch and maintain the ping info and update watchlist field
 func (service *SHService) RunUpdateWatchlistWorker(ctx context.Context) {
 	for {
@@ -103,6 +140,8 @@ func (service *SHService) Run(ctx context.Context) error {
 	go service.PingNodes(ctx)
 
 	go service.RunUpdateWatchlistWorker(ctx)
+
+	go service.BroadcastSelfHealingMetricsWorker(ctx)
 
 	for {
 		select {
@@ -228,4 +267,13 @@ func (service *SHService) MapSymbolFileKeysFromNFTAndActionTickets(ctx context.C
 // GetNClosestSupernodeIDsToComparisonString : Wrapper for a utility function that does xor string comparison to a list of strings and returns the smallest distance.
 func (service *SHService) GetNClosestSupernodeIDsToComparisonString(_ context.Context, n int, comparisonString string, listSupernodes []string, ignores ...string) []string {
 	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, listSupernodes, ignores...)
+}
+
+// calculateStartTime calculates the start time for the periodic task based on the hash of the PastelID.
+func calculateStartTime(pastelID string) time.Time {
+	hash := sha256.Sum256([]byte(pastelID))
+	hashString := hex.EncodeToString(hash[:])
+	delayMinutes := int(hashString[0]) % 60 // simplistic hash-based delay calculation
+
+	return time.Now().Add(time.Duration(delayMinutes) * time.Minute)
 }

@@ -119,6 +119,10 @@ const createSelfHealingExecutionMetrics string = `
   updated_at DATETIME NOT NULL
 );`
 
+const createSelfHealingExecutionMetricsUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS self_healing_execution_metrics_unique ON self_healing_execution_metrics(trigger_id, challenge_id, message_type);
+`
+
 const alterTablePingHistory = `ALTER TABLE ping_history
 ADD COLUMN metrics_last_broadcast_at DATETIME NULL;`
 
@@ -319,6 +323,23 @@ WHERE supernode_id = ?;`
 	return nil
 }
 
+// UpdateMetricsBroadcastTimestamp updates the ping info metrics_last_broadcast_at
+func (s *SQLiteStore) UpdateMetricsBroadcastTimestamp(nodeID string) error {
+	// Update query
+	const updateQuery = `
+UPDATE ping_history
+SET metrics_last_broadcast_at = ?
+WHERE supernode_id = ?;`
+
+	// Execute the update query
+	_, err := s.db.Exec(updateQuery, time.Now().UTC(), nodeID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // InsertBroadcastMessage inserts broadcast storage challenge msg to db
 func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage) error {
 	now := time.Now().UTC()
@@ -379,7 +400,7 @@ func (s *SQLiteStore) QuerySelfHealingChallenges() (challenges []types.SelfHeali
 // InsertSelfHealingGenerationMetrics inserts self-healing generation metrics
 func (s *SQLiteStore) InsertSelfHealingGenerationMetrics(metrics types.SelfHealingGenerationMetric) error {
 	now := time.Now().UTC()
-	const insertQuery = "INSERT INTO self_healing_generation_metrics(id, trigger_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?);"
+	const insertQuery = "INSERT INTO self_healing_generation_metrics(id, trigger_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"
 	_, err := s.db.Exec(insertQuery, metrics.TriggerID, metrics.MessageType, metrics.Data, metrics.SenderID, metrics.SenderSignature, now, now)
 	if err != nil {
 		return err
@@ -391,7 +412,7 @@ func (s *SQLiteStore) InsertSelfHealingGenerationMetrics(metrics types.SelfHeali
 // InsertSelfHealingExecutionMetrics inserts self-healing execution metrics
 func (s *SQLiteStore) InsertSelfHealingExecutionMetrics(metrics types.SelfHealingExecutionMetric) error {
 	now := time.Now().UTC()
-	const insertQuery = "INSERT INTO self_healing_execution_metrics(id, trigger_id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?,?);"
+	const insertQuery = "INSERT INTO self_healing_execution_metrics(id, trigger_id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"
 
 	_, err := s.db.Exec(insertQuery, metrics.TriggerID, metrics.ChallengeID, metrics.MessageType, metrics.Data, metrics.SenderID, metrics.SenderSignature, now, now)
 	if err != nil {
@@ -443,8 +464,9 @@ func (s *SQLiteStore) GetAllPingInfoForOnlineNodes() (types.PingInfos, error) {
         SELECT id, supernode_id, ip_address, total_pings, total_successful_pings,
                avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time, metrics_last_broadcast_at,
                created_at, updated_at
-        WHERE is_online = true
         FROM ping_history
+        WHERE is_online = true
+
         `
 	rows, err := s.db.Query(selectQuery)
 	if err != nil {
@@ -578,6 +600,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createSelfHealingExecutionMetrics); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createSelfHealingExecutionMetricsUniqueIndex); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
