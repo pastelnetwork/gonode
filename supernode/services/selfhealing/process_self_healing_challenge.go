@@ -184,6 +184,25 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 					continue
 				}
 				logger.WithField("ticket_txid", ticket.TxID).Info("raptor q symbols have been stored")
+
+				sig, d, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
+				if err != nil {
+					logger.WithError(err).Error("error storing completion execution metric")
+					continue
+				}
+
+				if err := task.StoreSelfHealingExecutionMetrics(ctx, types.SelfHealingExecutionMetric{
+					TriggerID:       responseMsg.TriggerID,
+					ChallengeID:     responseMsg.SelfHealingMessageData.ChallengerID,
+					MessageType:     int(types.SelfHealingCompletionMessage),
+					SenderID:        task.nodeID,
+					Data:            d,
+					SenderSignature: sig,
+				}); err != nil {
+					logger.WithError(err).Error("error storing self-healing completion execution metric")
+				}
+
+				continue
 			}
 
 			logger.WithField("ticket_txid", ticket.TxID).Info("verify threshold does not meet, not saving symbols")
@@ -276,6 +295,25 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 					continue
 				}
 				logger.WithField("ticket_txid", ticket.TxID).Info("dd & fp ids have been stored")
+
+				sig, d, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
+				if err != nil {
+					logger.WithError(err).Error("error storing completion execution metric")
+					continue
+				}
+
+				if err := task.StoreSelfHealingExecutionMetrics(ctx, types.SelfHealingExecutionMetric{
+					TriggerID:       responseMsg.TriggerID,
+					ChallengeID:     responseMsg.SelfHealingMessageData.ChallengerID,
+					MessageType:     int(types.SelfHealingCompletionMessage),
+					SenderID:        task.nodeID,
+					Data:            d,
+					SenderSignature: sig,
+				}); err != nil {
+					logger.WithError(err).Error("error storing self-healing completion execution metric")
+				}
+
+				continue
 			}
 		}
 
@@ -593,7 +631,7 @@ func (task *SHTask) prepareResponseMessage(ctx context.Context, responseMessage 
 		SenderID:        task.nodeID,
 		SenderSignature: signature,
 	}); err != nil {
-		logger.WithError(err).Error("error storing execution metric")
+		logger.WithError(err).Error("error storing response execution metric")
 	}
 	logger.Info("response execution metric has been stored")
 
@@ -778,12 +816,17 @@ func (task *SHTask) getVerificationExecMetrics(responseMsg types.SelfHealingMess
 			return nil, errors.Errorf("error marshaling verifcation msgs")
 		}
 
+		sig, err := task.SignBroadcastMessage(context.Background(), vBytes)
+		if err != nil {
+			return nil, errors.Errorf("Error signing message")
+		}
+
 		return &types.SelfHealingExecutionMetric{
 			TriggerID:       responseMsg.TriggerID,
 			ChallengeID:     responseMsg.SelfHealingMessageData.Response.ChallengeID,
 			MessageType:     int(types.SelfHealingVerificationMessage),
-			SenderID:        responseMsg.SenderID,
-			SenderSignature: responseMsg.SenderSignature,
+			SenderID:        task.nodeID,
+			SenderSignature: sig,
 			Data:            vBytes,
 		}, nil
 	}
@@ -825,17 +868,23 @@ func (task *SHTask) getVerificationExecMetrics(responseMsg types.SelfHealingMess
 	}
 
 	vmsgs = append(vmsgs, verificationMsg)
+
 	vBytes, err := json.Marshal(vmsgs)
 	if err != nil {
 		return nil, errors.Errorf("error marshaling verification msg")
+	}
+
+	sig, err := task.SignBroadcastMessage(context.Background(), vBytes)
+	if err != nil {
+		return nil, errors.Errorf("Error signing message")
 	}
 
 	return &types.SelfHealingExecutionMetric{
 		TriggerID:       verificationMsg.TriggerID,
 		ChallengeID:     verificationMsg.SelfHealingMessageData.Verification.ChallengeID,
 		MessageType:     int(verificationMsg.MessageType),
-		SenderID:        verificationMsg.SenderID,
-		SenderSignature: verificationMsg.SenderSignature,
+		SenderID:        task.nodeID,
+		SenderSignature: sig,
 		Data:            vBytes,
 	}, nil
 }

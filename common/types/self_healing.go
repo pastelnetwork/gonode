@@ -9,12 +9,14 @@ import (
 type SelfHealingMessageType int
 
 const (
-	//SelfHealingChallengeMessage represents the challenge message
+	// SelfHealingChallengeMessage represents the challenge message
 	SelfHealingChallengeMessage SelfHealingMessageType = iota + 1
-	//SelfHealingResponseMessage represents the response message
+	// SelfHealingResponseMessage represents the response message
 	SelfHealingResponseMessage
-	//SelfHealingVerificationMessage represents the verification message
+	// SelfHealingVerificationMessage represents the verification message
 	SelfHealingVerificationMessage
+	// SelfHealingCompletionMessage represents the challenge message processed successfully
+	SelfHealingCompletionMessage
 )
 
 // TicketType represents the type of ticket; nft, cascade, sense
