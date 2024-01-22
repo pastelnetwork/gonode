@@ -169,7 +169,6 @@ type BroadcastMessageMetrics struct {
 
 // ProcessBroadcastChallengeMetricsRequest represents the request for broadcasting metrics
 type ProcessBroadcastChallengeMetricsRequest struct {
-	Data            []byte `json:"data"`
-	SenderID        string `json:"sender_id"`
-	SenderSignature []byte `json:"sender_signature"`
+	Data     []byte `json:"data"`
+	SenderID string `json:"sender_id"`
 }

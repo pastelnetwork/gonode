@@ -206,9 +206,8 @@ func (service *StorageChallengeGRPC) BroadcastStorageChallengeMetrics(ctx contex
 	task := service.NewSCTask()
 
 	req := types.ProcessBroadcastChallengeMetricsRequest{
-		Data:            m.Data,
-		SenderID:        m.SenderId,
-		SenderSignature: m.SenderSignature,
+		Data:     m.Data,
+		SenderID: m.SenderId,
 	}
 
 	err := task.ProcessBroadcastedStorageChallengeMetrics(ctx, req)

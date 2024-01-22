@@ -105,6 +105,9 @@ const createSelfHealingGenerationMetrics string = `
 const createSelfHealingGenerationMetricsUniqueIndex string = `
 CREATE UNIQUE INDEX IF NOT EXISTS self_healing_generation_metrics_unique ON self_healing_generation_metrics(trigger_id);
 `
+const createBroadcastChallengeMetricsUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS broadcast_challenge_message_metrics_unique ON broadcast_challenge_messages(challenge_id);
+`
 
 const createSelfHealingExecutionMetrics string = `
   CREATE TABLE IF NOT EXISTS self_healing_execution_metrics (
@@ -121,6 +124,9 @@ const createSelfHealingExecutionMetrics string = `
 
 const alterTablePingHistory = `ALTER TABLE ping_history
 ADD COLUMN metrics_last_broadcast_at DATETIME NULL;`
+
+const alterTablePingHistoryAddField = `ALTER TABLE ping_history
+ADD COLUMN sc_metrics_last_broadcast_at DATETIME NULL;`
 
 const (
 	historyDBName = "history.db"
@@ -319,10 +325,27 @@ WHERE supernode_id = ?;`
 	return nil
 }
 
+// UpdateSCMetricsBroadcastTimestamp updates the ping info sc_metrics_last_broadcast_at
+func (s *SQLiteStore) UpdateSCMetricsBroadcastTimestamp(nodeID string) error {
+	// Update query
+	const updateQuery = `
+	UPDATE ping_history
+	SET sc_metrics_last_broadcast_at = ?
+	WHERE supernode_id = ?;`
+
+	// Execute the update query
+	_, err := s.db.Exec(updateQuery, time.Now().UTC(), nodeID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // InsertBroadcastMessage inserts broadcast storage challenge msg to db
 func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage) error {
 	now := time.Now().UTC()
-	const insertQuery = "INSERT INTO broadcast_challenge_messages(id, challenge_id, data, challenger, recipient, observers, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?);"
+	const insertQuery = "INSERT INTO broadcast_challenge_messages(id, challenge_id, data, challenger, recipient, observers, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"
 	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.Data, challenge.Challenger, challenge.Recipient, challenge.Observers, now, now)
 	if err != nil {
 		return err
@@ -467,7 +490,7 @@ func (s *SQLiteStore) GetAllPingInfoForOnlineNodes() (types.PingInfos, error) {
 	const selectQuery = `
         SELECT id, supernode_id, ip_address, total_pings, total_successful_pings,
                avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time, metrics_last_broadcast_at,
-               created_at, updated_at
+               sc_metrics_last_broadcast_at, created_at, updated_at
         WHERE is_online = true
         FROM ping_history
         `
@@ -485,7 +508,7 @@ func (s *SQLiteStore) GetAllPingInfoForOnlineNodes() (types.PingInfos, error) {
 			&pingInfo.ID, &pingInfo.SupernodeID, &pingInfo.IPAddress, &pingInfo.TotalPings,
 			&pingInfo.TotalSuccessfulPings, &pingInfo.AvgPingResponseTime,
 			&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen, &pingInfo.CumulativeResponseTime,
-			&pingInfo.MetricsLastBroadcastAt, &pingInfo.CreatedAt, &pingInfo.UpdatedAt,
+			&pingInfo.MetricsLastBroadcastAt, &pingInfo.SCMetricsLastBroadcastAt, &pingInfo.CreatedAt, &pingInfo.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -606,9 +629,15 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
+	if _, err := db.Exec(createBroadcastChallengeMetricsUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create unique index broadcast_challenge_message_metrics_unique on broadcast_challenge_messages table: %w", err)
+	}
+
 	_, _ = db.Exec(alterTaskHistory)
 
 	_, _ = db.Exec(alterTablePingHistory)
+
+	_, _ = db.Exec(alterTablePingHistoryAddField)
 
 	pragmas := []string{
 		"PRAGMA synchronous=NORMAL;",

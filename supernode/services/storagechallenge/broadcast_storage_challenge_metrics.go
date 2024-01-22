@@ -5,13 +5,16 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/pastel"
+	"io"
 	"time"
 
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/pastel"
+
+	"sync"
 )
 
 // BroadcastStorageChallengeMetrics worker broadcasts the metrics to the entire network
@@ -24,30 +27,44 @@ func (task *MetricTask) BroadcastStorageChallengeMetrics(ctx context.Context) er
 		return errors.Errorf("error retrieving ping info")
 	}
 
+	var wg sync.WaitGroup
 	for _, nodeInfo := range pingInfos {
-		logger := log.WithContext(ctx).WithField("node_address", nodeInfo.IPAddress)
+		nodeInfo := nodeInfo
 
-		metrics, err := task.getBroadcastMessageMetrics(nodeInfo)
-		if err != nil {
-			logger.Error("error retrieving metrics for node")
-			continue
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			logger := log.WithContext(ctx).WithField("node_address", nodeInfo.IPAddress)
 
-		dataBytes, signature, err := task.compressData(metrics)
-		if err != nil {
-			logger.Error("error compressing metrics for node")
-			continue
-		}
+			metrics, err := task.getBroadcastMessageMetrics(nodeInfo)
+			if err != nil {
+				logger.Error("error retrieving metrics for node")
+				return
+			}
 
-		msg := types.ProcessBroadcastChallengeMetricsRequest{
-			Data:            dataBytes,
-			SenderID:        task.nodeID,
-			SenderSignature: signature,
-		}
+			dataBytes, err := task.compressData(metrics)
+			if err != nil {
+				logger.Error("error compressing metrics for node")
+				return
+			}
 
-		if err := task.SendMessage(ctx, msg, nodeInfo.IPAddress); err != nil {
-			logger.Error("error broadcasting message")
-			continue
+			msg := types.ProcessBroadcastChallengeMetricsRequest{
+				Data:     dataBytes,
+				SenderID: task.nodeID,
+			}
+
+			if err := task.SendMessage(ctx, msg, nodeInfo.IPAddress); err != nil {
+				logger.Error("error broadcasting metrics")
+				return
+			}
+		}()
+	}
+	wg.Wait()
+
+	for _, nodeInfo := range pingInfos {
+		if err := task.historyDB.UpdateSCMetricsBroadcastTimestamp(nodeInfo.SupernodeID); err != nil {
+			log.WithContext(ctx).WithField("node_id", nodeInfo.SupernodeID).
+				Error("error updating SCMetricsLastBroadcastAt timestamp")
 		}
 	}
 
@@ -67,7 +84,7 @@ func (task *MetricTask) getBroadcastMessageMetrics(nodeInfo types.PingInfo) ([]t
 			return nil, err
 		}
 	} else {
-		metrics, err = task.historyDB.GetBroadcastMessageMetrics(nodeInfo.MetricsLastBroadcastAt.Time)
+		metrics, err = task.historyDB.GetBroadcastMessageMetrics(nodeInfo.SCMetricsLastBroadcastAt.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -77,32 +94,27 @@ func (task *MetricTask) getBroadcastMessageMetrics(nodeInfo types.PingInfo) ([]t
 }
 
 // compressData compresses Storage-Challenge metrics data using gzip.
-func (task *MetricTask) compressData(metrics []types.BroadcastMessageMetrics) (data []byte, signature []byte, err error) {
+func (task *MetricTask) compressData(metrics []types.BroadcastMessageMetrics) (data []byte, err error) {
 	if metrics == nil {
-		return nil, nil, errors.Errorf("storage metrics is nil")
+		return nil, errors.Errorf("storage metrics is nil")
 	}
 
 	jsonData, err := json.Marshal(metrics)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	sig, data, err := task.SignMessage(context.Background(), jsonData)
-	if err != nil {
-		return nil, nil, errors.Errorf("error signing data")
+		return nil, err
 	}
 
 	// Compress using gzip
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	if _, err = gz.Write(jsonData); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if err = gz.Close(); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return buf.Bytes(), sig, nil
+	return buf.Bytes(), nil
 }
 
 // SendMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
@@ -140,4 +152,28 @@ func (task *MetricTask) SignMessage(ctx context.Context, d []byte) (sig []byte, 
 	}
 
 	return signature, d, nil
+}
+
+// decompressData decompresses the received data using gzip.
+func (task *SCTask) decompressData(compressedData []byte) ([]types.BroadcastMessageMetrics, error) {
+	var broadcatMessageMetrics []types.BroadcastMessageMetrics
+
+	// Decompress using gzip
+	gz, err := gzip.NewReader(bytes.NewBuffer(compressedData))
+	if err != nil {
+		return nil, err
+	}
+	defer gz.Close()
+
+	decompressedData, err := io.ReadAll(gz)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize JSON back to data structure
+	if err = json.Unmarshal(decompressedData, &broadcatMessageMetrics); err != nil {
+		return nil, err
+	}
+
+	return broadcatMessageMetrics, nil
 }

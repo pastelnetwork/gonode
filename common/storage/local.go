@@ -58,6 +58,7 @@ type LocalStoreInterface interface {
 	GetWatchlistPingInfo() ([]types.PingInfo, error)
 	GetAllPingInfoForOnlineNodes() (types.PingInfos, error)
 	UpdatePingInfo(supernodeID string, isOnWatchlist, isAdjusted bool) error
+	UpdateSCMetricsBroadcastTimestamp(nodeID string) error
 	CloseHistoryDB(ctx context.Context)
 	QueryMetrics(ctx context.Context, from time.Time, to *time.Time) (m Metrics, err error)
 }
