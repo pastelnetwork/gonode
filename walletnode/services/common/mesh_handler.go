@@ -192,14 +192,6 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 		return nil, fmt.Errorf("unable to find enough Supernodes: required: %d - found: %d - err: %w", n, len(candidateNodes), err)
 	}
 
-	if len(sortKey) > 0 {
-		log.WithContext(ctx).WithField("before sort", candidateNodes).Info("candidate nodes before sorting")
-		candidateNodes.Sort(sortKey)
-		log.WithContext(ctx).WithField("after sort", candidateNodes).Info("candidate nodes after sorting")
-	} else {
-		log.WithContext(ctx).Info("no sort key provided")
-	}
-
 	// Connect to top nodes to find 3SN and validate their info
 	foundNodes, err := m.connectToAndValidateSuperNodes(ctx, candidateNodes, n, m.HashCheckMaxRetries, skipNodes)
 	if err != nil {
@@ -208,6 +200,15 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 		return nil, errors.Errorf("validate MNs info: %v", err)
 	}
 	log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Found %d valid Supernodes", len(foundNodes))
+
+	if len(sortKey) > 0 {
+		log.WithContext(ctx).WithField("before sort", foundNodes).Info("nodes before sorting")
+		foundNodes.Sort(sortKey)
+		log.WithContext(ctx).WithField("after sort", foundNodes).Info("nodes after sorting")
+	} else {
+		log.WithContext(ctx).Info("no sort key provided")
+	}
+
 	return foundNodes, nil
 }
 
@@ -219,39 +220,66 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 
 	log.WithContext(ctx).WithField("given nodes", len(candidatesNodes)).Info("GetCandidateNodes Starting...")
 
+	type result struct {
+		node    *SuperNodeClient
+		balance int64
+		top     []string
+		hash    string
+		data    DDStats
+		err     error
+	}
+
+	// Creating a buffered channel to collect results
+	resultsChan := make(chan *result, len(candidatesNodes))
+
 	WNTopNodesList := SuperNodeList{}
 	topMap := make(map[string][]string)
 	hashes := make(map[string]string)
 	dataMap := make(map[string]DDStats)
 	balances := make(map[string]int64)
 
-	var err error
-
+	var wg sync.WaitGroup
 	secInfo := &alts.SecInfo{
 		PastelID:   m.callersPastelID,
 		PassPhrase: m.passphrase,
 		Algorithm:  pastel.SignAlgorithmED448,
 	}
 
-	// Get WN top nodes list from all the candidate nodes
+	// Start a goroutine for each node
 	for _, someNode := range candidatesNodes {
-		balance, top, hash, data, err := m.GetRequiredDataFromSN(ctx, *someNode, secInfo, block)
-		if err != nil {
-			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("failed to get required data from supernode - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+		wg.Add(1)
+		go func(node *SuperNodeClient) {
+			defer wg.Done()
+			balance, top, hash, data, err := m.GetRequiredDataFromSN(ctx, *node, secInfo, block)
+			resultsChan <- &result{node, balance, top, hash, data, err}
+		}(someNode)
+	}
+
+	// Close the channel once all goroutines are done
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	// Process results as they come in
+	for res := range resultsChan {
+		if res.err != nil {
+			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(res.err).Errorf("failed to get required data from supernode - address: %s; pastelID: %s ", res.node.String(), res.node.PastelID())
 			continue
 		}
 
-		WNTopNodesList.Add(someNode)
-		topMap[someNode.Address()] = top
-		hashes[someNode.Address()] = hash
-		dataMap[someNode.Address()] = data
-		balances[someNode.Address()] = balance
+		WNTopNodesList.Add(res.node)
+		topMap[res.node.Address()] = res.top
+		hashes[res.node.Address()] = res.hash
+		dataMap[res.node.Address()] = res.data
+		balances[res.node.Address()] = res.balance
 	}
 
 	if len(WNTopNodesList) < n {
 		return WNTopNodesList, errors.New("failed to get required data from enough candidate nodes")
 	}
 
+	var err error
 	if m.requireSNAgreementOnMNTopList {
 
 		// Filter out nodes with different top MNs list
@@ -412,31 +440,40 @@ func (m *MeshHandler) connectToAndValidateSuperNodesWithoutHashCheck(ctx context
 	return nodes, nil
 }
 
-func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNodeList, n int, secInfo *alts.SecInfo, skipNodes []string) SuperNodeList {
-	nodes := SuperNodeList{}
+func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNodeList, _ int, secInfo *alts.SecInfo, skipNodes []string) SuperNodeList {
+	var nodes SuperNodeList
+	var mutex sync.Mutex
+	var wg sync.WaitGroup
 
-	for _, someNode := range nodesToConnect {
-		skip := false
-		for i := 0; i < len(skipNodes); i++ {
-			if skipNodes[i] == someNode.PastelID() {
-				skip = true
-				break
+	shouldSkip := func(node *SuperNodeClient) bool {
+		for _, skipNode := range skipNodes {
+			if skipNode == node.PastelID() {
+				return true
 			}
 		}
-		if skip {
-			continue
-		}
-
-		if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
-			log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
-			continue
-		}
-
-		nodes = append(nodes, someNode)
-		if len(nodes) == n && !m.UseMaxNodes {
-			break
-		}
+		return false
 	}
+
+	for _, someNode := range nodesToConnect {
+		if shouldSkip(someNode) {
+			continue
+		}
+
+		wg.Add(1)
+		go func(node *SuperNodeClient) {
+			defer wg.Done()
+
+			if err := node.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
+				log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", node.String(), node.PastelID())
+			} else {
+				mutex.Lock()
+				nodes = append(nodes, node)
+				mutex.Unlock()
+			}
+		}(someNode)
+	}
+
+	wg.Wait()
 
 	return nodes
 }
