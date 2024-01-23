@@ -5,11 +5,13 @@ import (
 )
 
 const (
-	defaultHostname        = "localhost"
-	defaultMainnetPort     = 9932
-	defaultTestnetPort     = 19932
-	defaultBurnAddressTest = "tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
-	defaultBurnAddressMain = "PtpasteLBurnAddressXXXXXXXXXXbJ5ndd"
+	defaultHostname          = "localhost"
+	defaultMainnetPort       = 9932
+	defaultTestnetPort       = 19932
+	defaultBurnAddressTest   = "tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
+	defaultBurnAddressMain   = "PtpasteLBurnAddressXXXXXXXXXXbJ5ndd"
+	defaultBurnAddressDevnet = "44oUgmZSL997veFEQDq569wv5tsT6KXf9QY7"
+	defaultDevnetPort        = 29932
 )
 
 // Config Represents the structure of the `pastel.conf` file.
@@ -19,6 +21,7 @@ type Config struct {
 	Username string `mapstructure:"rpcuser"`
 	Password string `mapstructure:"rpcpassword"`
 	Testnet  int    `mapstructure:"testnet"`
+	Devnet   int    `mapstructure:"devnet"`
 }
 
 // MarshalJSON returns the JSON encoding.
@@ -48,6 +51,10 @@ func (config *Config) port() int {
 		return defaultTestnetPort
 	}
 
+	if config.Devnet == 1 {
+		return defaultDevnetPort
+	}
+
 	return defaultMainnetPort
 }
 
@@ -55,6 +62,10 @@ func (config *Config) port() int {
 func (config *Config) BurnAddress() string {
 	if config.Testnet == 1 {
 		return defaultBurnAddressTest
+	}
+
+	if config.Devnet == 1 {
+		return defaultBurnAddressDevnet
 	}
 
 	return defaultBurnAddressMain
