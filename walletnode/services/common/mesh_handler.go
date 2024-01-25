@@ -422,7 +422,7 @@ func (m *MeshHandler) connectToAndValidateSuperNodesWithoutHashCheck(ctx context
 	return nodes, nil
 }
 
-func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNodeList, n int, secInfo *alts.SecInfo, skipNodes []string) SuperNodeList {
+func (m *MeshHandler) connectToNodes(ctx context.Context, nodesToConnect SuperNodeList, _ int, secInfo *alts.SecInfo, skipNodes []string) SuperNodeList {
 	var nodes SuperNodeList
 	var mutex sync.Mutex
 	var wg sync.WaitGroup

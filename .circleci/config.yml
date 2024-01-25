@@ -279,10 +279,6 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - run:
-          name: Detect not merged code
-          command: |
-            ./scripts/merge_master.sh
       - install_go
       - setup
       - run:
