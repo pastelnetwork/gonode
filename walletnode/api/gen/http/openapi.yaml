@@ -4545,7 +4545,7 @@ definitions:
                 example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                 pattern: ^[a-zA-Z0-9]+$
                 minLength: 35
-                maxLength: 35
+                maxLength: 36
             thumbnail_coordinate:
                 $ref: '#/definitions/ThumbnailcoordinateResponse'
             youtube_url:
@@ -4676,7 +4676,7 @@ definitions:
                 example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                 pattern: ^[a-zA-Z0-9]+$
                 minLength: 35
-                maxLength: 35
+                maxLength: 36
             thumbnail_coordinate:
                 $ref: '#/definitions/ThumbnailcoordinateResponseBody'
             youtube_url:
@@ -4809,7 +4809,7 @@ definitions:
                 example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                 pattern: ^[a-zA-Z0-9]+$
                 minLength: 35
-                maxLength: 35
+                maxLength: 36
             thumbnail_coordinate:
                 $ref: '#/definitions/ThumbnailcoordinateRequestBody'
             youtube_url:

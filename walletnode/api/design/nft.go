@@ -338,7 +338,7 @@ var NftRegisterPayload = Type("NftRegisterPayload", func() {
 	Attribute("spendable_address", String, func() {
 		Description("Spendable address")
 		MinLength(35)
-		MaxLength(35)
+		MaxLength(36)
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j")
 	})

@@ -80,8 +80,8 @@ func BuildRegisterPayload(nftRegisterBody string, nftRegisterKey string) (*nft.R
 		if utf8.RuneCountInString(body.SpendableAddress) < 35 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", body.SpendableAddress, utf8.RuneCountInString(body.SpendableAddress), 35, true))
 		}
-		if utf8.RuneCountInString(body.SpendableAddress) > 35 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", body.SpendableAddress, utf8.RuneCountInString(body.SpendableAddress), 35, false))
+		if utf8.RuneCountInString(body.SpendableAddress) > 36 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", body.SpendableAddress, utf8.RuneCountInString(body.SpendableAddress), 36, false))
 		}
 		if body.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", body.MaximumFee, 1e-05, true))
