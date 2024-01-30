@@ -467,8 +467,8 @@ func ValidateNftRegisterPayloadView(result *NftRegisterPayloadView) (err error) 
 		}
 	}
 	if result.SpendableAddress != nil {
-		if utf8.RuneCountInString(*result.SpendableAddress) > 35 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.spendable_address", *result.SpendableAddress, utf8.RuneCountInString(*result.SpendableAddress), 35, false))
+		if utf8.RuneCountInString(*result.SpendableAddress) > 36 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.spendable_address", *result.SpendableAddress, utf8.RuneCountInString(*result.SpendableAddress), 36, false))
 		}
 	}
 	if result.MaximumFee != nil {

@@ -1834,8 +1834,8 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 		}
 	}
 	if body.SpendableAddress != nil {
-		if utf8.RuneCountInString(*body.SpendableAddress) > 35 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, false))
+		if utf8.RuneCountInString(*body.SpendableAddress) > 36 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 36, false))
 		}
 	}
 	if body.MaximumFee != nil {
