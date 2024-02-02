@@ -112,14 +112,14 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 
 	var grpcServer *grpc.Server
 	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
-		grpcServer = grpc.NewServer(middleware.UnaryInterceptor(), middleware.StreamInterceptor(), grpc.MaxSendMsgSize(35000000),
-			grpc.MaxRecvMsgSize(35000000), grpc.KeepaliveParams(kaParams), // Use the keep-alive parameters
+		grpcServer = grpc.NewServer(middleware.UnaryInterceptor(), middleware.StreamInterceptor(), grpc.MaxSendMsgSize(100000000),
+			grpc.MaxRecvMsgSize(100000000), grpc.KeepaliveParams(kaParams), // Use the keep-alive parameters
 			grpc.KeepaliveEnforcementPolicy(kaPolicy))
 	} else {
 
 		grpcServer = grpc.NewServer(middleware.UnaryInterceptor(), middleware.StreamInterceptor(),
-			middleware.AltsCredential(server.secClient, server.secInfo), grpc.MaxSendMsgSize(35000000),
-			grpc.MaxRecvMsgSize(35000000), grpc.KeepaliveParams(kaParams), // Use the keep-alive parameters
+			middleware.AltsCredential(server.secClient, server.secInfo), grpc.MaxSendMsgSize(100000000),
+			grpc.MaxRecvMsgSize(100000000), grpc.KeepaliveParams(kaParams), // Use the keep-alive parameters
 			grpc.KeepaliveEnforcementPolicy(kaPolicy))
 	}
 

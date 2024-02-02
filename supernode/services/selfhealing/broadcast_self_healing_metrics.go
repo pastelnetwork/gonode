@@ -10,7 +10,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
-	"io"
 	"sync"
 	"time"
 )
@@ -27,6 +26,7 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 	log.WithContext(ctx).WithField("total_node_infos", len(pingInfos)).
 		Info("online node info has been retrieved for metrics broadcast")
 
+	sem := make(chan struct{}, 5) // Limit set to 10
 	var wg sync.WaitGroup
 	for _, nodeInfo := range pingInfos {
 		nodeInfo := nodeInfo
@@ -39,30 +39,57 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 		go func() {
 			defer wg.Done()
 
+			sem <- struct{}{}
+			defer func() { <-sem }() // Release the token back into the channel
+
 			logger := log.WithContext(ctx).WithField("node_address", nodeInfo.IPAddress)
 
 			executionMetrics, generationMetrics, err := task.getExecutionAndGenerationMetrics(nodeInfo)
 			if err != nil {
-				logger.Error("error retrieving execution & generation metrics for node")
+				logger.WithError(err).Error("error retrieving execution & generation metrics for node")
 				return
 			}
 
-			dataBytes, err := task.compressData(executionMetrics, generationMetrics)
-			if err != nil {
-				logger.WithError(err).Error("error compressing data")
-				return
-			}
-			logger.Info("execution & generation metrics have been compressed")
+			generationMetricBatches := splitSelfHealingGenerationMetrics(generationMetrics, 50)
+			executionMetricBatches := splitSelfHealingExecutionMetrics(executionMetrics, 50)
 
-			msg := types.ProcessBroadcastMetricsRequest{
-				Data:            dataBytes,
-				SenderID:        task.nodeID,
-				SenderSignature: nil,
+			// Now you can iterate over these batches and process/send them
+			for _, batch := range generationMetricBatches {
+				dataBytes, err := task.compressGenerationMetricsData(batch)
+				if err != nil {
+					logger.WithError(err).Error("error compressing generation metrics data")
+					return
+				}
+
+				msg := types.ProcessBroadcastMetricsRequest{
+					Type:     types.GenerationSelfHealingMetricType,
+					Data:     dataBytes,
+					SenderID: task.nodeID,
+				}
+
+				if err := task.SendBroadcastMessage(ctx, msg, nodeInfo.IPAddress); err != nil {
+					logger.WithError(err).Error("error broadcasting generation metrics")
+					return
+				}
 			}
 
-			if err := task.SendBroadcastMessage(ctx, msg, nodeInfo.IPAddress); err != nil {
-				logger.Error("error broadcasting metrics")
-				return
+			for _, batch := range executionMetricBatches {
+				dataBytes, err := task.compressExecutionMetricsData(batch)
+				if err != nil {
+					logger.WithError(err).Error("error compressing execution metrics data")
+					return
+				}
+
+				msg := types.ProcessBroadcastMetricsRequest{
+					Type:     types.ExecutionSelfHealingMetricType,
+					Data:     dataBytes,
+					SenderID: task.nodeID,
+				}
+
+				if err := task.SendBroadcastMessage(ctx, msg, nodeInfo.IPAddress); err != nil {
+					logger.WithError(err).Error("error broadcasting execution metrics")
+					return
+				}
 			}
 
 			if err := task.historyDB.UpdateMetricsBroadcastTimestamp(nodeInfo.SupernodeID); err != nil {
@@ -82,9 +109,9 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 func (task *SHTask) getExecutionAndGenerationMetrics(nodeInfo types.PingInfo) ([]types.SelfHealingExecutionMetric, []types.SelfHealingGenerationMetric, error) {
 	var (
 		zeroTime          time.Time
+		err               error
 		executionMetrics  []types.SelfHealingExecutionMetric
 		generationMetrics []types.SelfHealingGenerationMetric
-		err               error
 	)
 	if !nodeInfo.MetricsLastBroadcastAt.Valid {
 		executionMetrics, err = task.historyDB.GetSelfHealingExecutionMetrics(zeroTime)
@@ -97,12 +124,12 @@ func (task *SHTask) getExecutionAndGenerationMetrics(nodeInfo types.PingInfo) ([
 			return nil, nil, err
 		}
 	} else {
-		executionMetrics, err = task.historyDB.GetSelfHealingExecutionMetrics(nodeInfo.MetricsLastBroadcastAt.Time)
+		executionMetrics, err = task.historyDB.GetSelfHealingExecutionMetrics(nodeInfo.MetricsLastBroadcastAt.Time.UTC())
 		if err != nil {
 			return nil, nil, err
 		}
 
-		generationMetrics, err = task.historyDB.GetSelfHealingGenerationMetrics(nodeInfo.MetricsLastBroadcastAt.Time)
+		generationMetrics, err = task.historyDB.GetSelfHealingGenerationMetrics(nodeInfo.MetricsLastBroadcastAt.Time.UTC())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -111,18 +138,13 @@ func (task *SHTask) getExecutionAndGenerationMetrics(nodeInfo types.PingInfo) ([
 	return executionMetrics, generationMetrics, nil
 }
 
-// compressData compresses Self-Healing metrics data using gzip.
-func (task *SHTask) compressData(executionMetrics []types.SelfHealingExecutionMetric, generationMetrics []types.SelfHealingGenerationMetric) (data []byte, err error) {
-	if executionMetrics == nil && generationMetrics == nil {
-		return nil, errors.Errorf("no new execution and generation metrics")
+// compressExecutionMetricsData compresses Self-Healing metrics data using gzip.
+func (task *SHTask) compressExecutionMetricsData(executionMetrics []types.SelfHealingExecutionMetric) (data []byte, err error) {
+	if executionMetrics == nil {
+		return nil, errors.Errorf("no new execution metrics")
 	}
 
-	combinedMetrics := types.SelfHealingCombinedMetrics{
-		ExecutionMetrics:  executionMetrics,
-		GenerationMetrics: generationMetrics,
-	}
-
-	jsonData, err := json.Marshal(combinedMetrics)
+	jsonData, err := json.Marshal(executionMetrics)
 	if err != nil {
 		return nil, err
 	}
@@ -140,41 +162,36 @@ func (task *SHTask) compressData(executionMetrics []types.SelfHealingExecutionMe
 	return buf.Bytes(), nil
 }
 
-// decompressData decompresses the received data using gzip.
-func (task *SHTask) decompressData(compressedData []byte) ([]types.SelfHealingExecutionMetric, []types.SelfHealingGenerationMetric, error) {
-	var combinedMetrics struct {
-		ExecutionMetrics  []types.SelfHealingExecutionMetric
-		GenerationMetrics []types.SelfHealingGenerationMetric
+// compressExecutionMetricsData compresses Self-Healing metrics data using gzip.
+func (task *SHTask) compressGenerationMetricsData(generationMetrics []types.SelfHealingGenerationMetric) (data []byte, err error) {
+	if generationMetrics == nil {
+		return nil, errors.Errorf("no new generation metrics")
 	}
 
-	// Decompress using gzip
-	gz, err := gzip.NewReader(bytes.NewBuffer(compressedData))
+	jsonData, err := json.Marshal(generationMetrics)
 	if err != nil {
-		return nil, nil, err
-	}
-	defer gz.Close()
-
-	decompressedData, err := io.ReadAll(gz)
-	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	// Deserialize JSON back to data structure
-	if err = json.Unmarshal(decompressedData, &combinedMetrics); err != nil {
-		return nil, nil, err
+	// Compress using gzip
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	if _, err = gz.Write(jsonData); err != nil {
+		return nil, err
+	}
+	if err = gz.Close(); err != nil {
+		return nil, err
 	}
 
-	return combinedMetrics.ExecutionMetrics, combinedMetrics.GenerationMetrics, nil
+	return buf.Bytes(), nil
 }
 
 // SendBroadcastMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
 func (task *SHTask) SendBroadcastMessage(ctx context.Context, msg types.ProcessBroadcastMetricsRequest, processingSupernodeAddr string) error {
 	logger := log.WithContext(ctx).WithField("node_address", processingSupernodeAddr)
 
-	logger.Info("broadcasting self-healing metrics")
-
 	//Connect over grpc
-	newCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	newCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	nodeClientConn, err := task.nodeClient.Connect(newCtx, processingSupernodeAddr)
@@ -202,4 +219,22 @@ func (task *SHTask) SignBroadcastMessage(ctx context.Context, d []byte) (sig []b
 	}
 
 	return signature, nil
+}
+
+func splitSelfHealingExecutionMetrics(metrics []types.SelfHealingExecutionMetric, batchSize int) [][]types.SelfHealingExecutionMetric {
+	var batches [][]types.SelfHealingExecutionMetric
+	for batchSize < len(metrics) {
+		metrics, batches = metrics[batchSize:], append(batches, metrics[0:batchSize:batchSize])
+	}
+	batches = append(batches, metrics)
+	return batches
+}
+
+func splitSelfHealingGenerationMetrics(metrics []types.SelfHealingGenerationMetric, batchSize int) [][]types.SelfHealingGenerationMetric {
+	var batches [][]types.SelfHealingGenerationMetric
+	for batchSize < len(metrics) {
+		metrics, batches = metrics[batchSize:], append(batches, metrics[0:batchSize:batchSize])
+	}
+	batches = append(batches, metrics)
+	return batches
 }

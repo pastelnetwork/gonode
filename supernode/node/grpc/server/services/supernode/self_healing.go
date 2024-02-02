@@ -159,6 +159,7 @@ func (service *SelfHealingChallengeGRPC) BroadcastSelfHealingMetrics(ctx context
 	task := service.NewSHTask()
 
 	req := types.ProcessBroadcastMetricsRequest{
+		Type:            types.SelfHealingMetricType(m.Type),
 		Data:            m.Data,
 		SenderID:        m.SenderId,
 		SenderSignature: m.SenderSignature,

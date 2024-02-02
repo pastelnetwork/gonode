@@ -61,6 +61,7 @@ message BroadcastSelfHealingMetricsRequest {
   bytes data = 1;
   string sender_id = 2;
   bytes sender_signature = 3;
+  int64 type = 4;
 }
 
 message BroadcastSelfHealingMetricsReply {}

@@ -22,7 +22,6 @@ require (
 
 require (
 	github.com/btcsuite/btcutil v1.0.2 // indirect
-	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

@@ -86,7 +86,7 @@ func (service *SHService) BroadcastSelfHealingMetricsWorker(ctx context.Context)
 		Info("self-healing-metric service will execute on the mentioned time")
 
 	// Wait until the start time
-	time.Sleep(2 * time.Minute)
+	time.Sleep(time.Until(startTime))
 
 	// Run the first task immediately
 	service.executeMetricsBroadcastTask(ctx)
