@@ -148,6 +148,12 @@ type SelfHealingGenerationMetric struct {
 	UpdatedAt       time.Time `db:"updated_at"`
 }
 
+// CombinedSelfHealingMetrics represents the combination of generation and execution metrics
+type CombinedSelfHealingMetrics struct {
+	GenerationMetrics []SelfHealingGenerationMetric
+	ExecutionMetrics  []SelfHealingExecutionMetric
+}
+
 // SelfHealingExecutionMetric represents the self-healing execution metrics for trigger events
 type SelfHealingExecutionMetric struct {
 	ID              int       `db:"id"`
@@ -161,17 +167,22 @@ type SelfHealingExecutionMetric struct {
 	UpdatedAt       time.Time `db:"updated_at"`
 }
 
-// SelfHealingCombinedMetrics is the combined struct for generation & execution metric
-type SelfHealingCombinedMetrics struct {
-	GenerationMetrics []SelfHealingGenerationMetric `json:"generation_metrics"`
-	ExecutionMetrics  []SelfHealingExecutionMetric  `json:"execution_metrics"`
-}
+// SelfHealingMetricType represents the type of self-healing metric
+type SelfHealingMetricType int
+
+const (
+	// GenerationSelfHealingMetricType represents the generation metric for self-healing
+	GenerationSelfHealingMetricType SelfHealingMetricType = 1
+	// ExecutionSelfHealingMetricType represents the execution metric for self-healing
+	ExecutionSelfHealingMetricType SelfHealingMetricType = 2
+)
 
 // ProcessBroadcastMetricsRequest represents the request for broadcasting metrics
 type ProcessBroadcastMetricsRequest struct {
-	Data            []byte `json:"data"`
-	SenderID        string `json:"sender_id"`
-	SenderSignature []byte `json:"sender_signature"`
+	Data            []byte                `json:"data"`
+	Type            SelfHealingMetricType `json:"type"`
+	SenderID        string                `json:"sender_id"`
+	SenderSignature []byte                `json:"sender_signature"`
 }
 
 // SelfHealingMetrics represents the self-healing metrics for each challenge

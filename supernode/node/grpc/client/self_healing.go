@@ -123,6 +123,7 @@ func (service *selfHealingGRPCClient) VerifySelfHealingChallenge(ctx context.Con
 
 func (service *selfHealingGRPCClient) BroadcastSelfHealingMetrics(ctx context.Context, req types.ProcessBroadcastMetricsRequest) error {
 	_, err := service.client.BroadcastSelfHealingMetrics(ctx, &pb.BroadcastSelfHealingMetricsRequest{
+		Type:            int64(req.Type),
 		Data:            req.Data,
 		SenderSignature: req.SenderSignature,
 		SenderId:        req.SenderID,

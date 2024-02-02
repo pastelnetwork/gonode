@@ -65,11 +65,12 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error retrieving symbol file keys from NFT & action tickets")
 		return errors.Errorf("error retrieving symbol file keys")
 	}
-	log.WithContext(ctx).Info("all the keys from NFT and action tickets have been listed")
+	log.WithContext(ctx).WithField("total_keys", len(keys)).Info("all the keys from NFT and action tickets have been listed")
 
 	mapOfClosestNodesAgainstKeys := task.createClosestNodesMapAgainstKeys(ctx, keys, watchlistPingInfos)
 	if len(mapOfClosestNodesAgainstKeys) == 0 {
 		log.WithContext(ctx).Error("unable to create map of closest nodes against keys")
+		return nil
 	}
 	log.WithContext(ctx).Info("map of closest nodes against keys have been created")
 
@@ -143,9 +144,12 @@ func (task *SHTask) retrieveWatchlistPingInfo(ctx context.Context) (types.PingIn
 
 func (task *SHTask) shouldTriggerSelfHealing(infos types.PingInfos) (bool, types.PingInfos) {
 	var filteredPings types.PingInfos
+	currentTime := time.Now().UTC()
+
 	for _, ping := range infos {
 		if ping.LastSeen.Valid {
-			if time.Since(ping.LastSeen.Time).Minutes() <= minTimeForWatchlistNodes {
+			// Calculate the difference in minutes between the current UTC time and the LastSeen UTC time
+			if currentTime.Sub(ping.LastSeen.Time).Minutes() <= minTimeForWatchlistNodes {
 				filteredPings = append(filteredPings, ping)
 			}
 		}
@@ -166,10 +170,6 @@ func (service *SHService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 	regTickets, err := service.SuperNodeService.PastelClient.RegTickets(ctx)
 	if err != nil {
 		return keys, symbolFileKeyMap, err
-	}
-	if len(regTickets) == 0 {
-		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no reg tickets retrieved")
-		return keys, symbolFileKeyMap, nil
 	}
 	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Reg tickets retrieved")
 
@@ -719,7 +719,16 @@ func (task *SHTask) StoreSelfHealingExecutionMetrics(ctx context.Context, execut
 	if store != nil {
 		err = store.InsertSelfHealingExecutionMetrics(executionMetricsLog)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("error storing execution metrics to DB")
+			if strings.Contains(err.Error(), ErrUniqueConstraint.Error()) {
+				log.WithContext(ctx).WithField("trigger_id", executionMetricsLog.TriggerID).
+					WithField("message_type", executionMetricsLog.MessageType).
+					WithField("sender_id", executionMetricsLog.SenderID).
+					Debug("message already exists, not storing")
+
+				return nil
+			}
+
+			log.WithContext(ctx).WithError(err).Error("error storing self-healing execution metric to DB")
 			return err
 		}
 	}
