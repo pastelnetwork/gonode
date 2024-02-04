@@ -13,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils/metrics"
 )
 
 const minVerifications = 3
@@ -637,8 +638,8 @@ type SHChallengeMetric struct {
 }
 
 // GetSHExecutionMetrics retrieves self-healing execution metrics
-func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time) (storage.SHExecutionMetrics, error) {
-	m := storage.SHExecutionMetrics{}
+func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time) (metrics.SHExecutionMetrics, error) {
+	m := metrics.SHExecutionMetrics{}
 	rows, err := s.GetSelfHealingExecutionMetrics(from)
 	if err != nil {
 		return m, err
@@ -715,16 +716,16 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 }
 
 // QueryMetrics queries metrics
-func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.Time) (m storage.Metrics, err error) {
+func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.Time) (m metrics.Metrics, err error) {
 	genMetric, err := s.GetSelfHealingGenerationMetrics(from)
 	if err != nil {
-		return storage.Metrics{}, err
+		return metrics.Metrics{}, err
 	}
 
-	te := storage.SHTriggerMetrics{}
+	te := metrics.SHTriggerMetrics{}
 	challengesIssued := 0
 	for _, metric := range genMetric {
-		t := storage.SHTriggerMetric{}
+		t := metrics.SHTriggerMetric{}
 		data := types.SelfHealingMessageData{}
 		json.Unmarshal(metric.Data, &data)
 
@@ -743,7 +744,7 @@ func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.
 
 	em, err := s.GetSHExecutionMetrics(ctx, from)
 	if err != nil {
-		return storage.Metrics{}, fmt.Errorf("cannot get self healing execution metrics: %w", err)
+		return metrics.Metrics{}, fmt.Errorf("cannot get self healing execution metrics: %w", err)
 	}
 
 	em.TotalChallengesIssued = challengesIssued
@@ -751,15 +752,9 @@ func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.
 	em.TotalChallengesFailed = em.TotalChallengesAccepted - em.TotalChallengesSuccessful
 	em.TotalFileHealingFailed = em.TotalChallengesSuccessful - em.TotalFilesHealed
 
-	m.SHTriggerMetrics, err = json.Marshal(te)
-	if err != nil {
-		return storage.Metrics{}, err
-	}
+	m.SHTriggerMetrics = te
 
-	m.SHExecutionMetrics, err = json.Marshal(em)
-	if err != nil {
-		return storage.Metrics{}, err
-	}
+	m.SHExecutionMetrics = em
 
 	return m, nil
 }
