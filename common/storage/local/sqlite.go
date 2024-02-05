@@ -126,6 +126,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS self_healing_execution_metrics_unique ON self_
 const alterTablePingHistory = `ALTER TABLE ping_history
 ADD COLUMN metrics_last_broadcast_at DATETIME NULL;`
 
+const alterTablePingHistoryGenerationMetrics = `ALTER TABLE ping_history
+ADD COLUMN generation_metrics_last_broadcast_at DATETIME NULL;`
+
+const alterTablePingHistoryExecutionMetrics = `ALTER TABLE ping_history
+ADD COLUMN execution_metrics_last_broadcast_at DATETIME NULL;`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -340,6 +346,40 @@ WHERE supernode_id = ?;`
 	return nil
 }
 
+// UpdateGenerationMetricsBroadcastTimestamp updates the ping info generation_metrics_last_broadcast_at
+func (s *SQLiteStore) UpdateGenerationMetricsBroadcastTimestamp(nodeID string) error {
+	// Update query
+	const updateQuery = `
+UPDATE ping_history
+SET generation_metrics_last_broadcast_at = ?
+WHERE supernode_id = ?;`
+
+	// Execute the update query
+	_, err := s.db.Exec(updateQuery, time.Now().UTC(), nodeID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateExecutionMetricsBroadcastTimestamp updates the ping info execution_metrics_last_broadcast_at
+func (s *SQLiteStore) UpdateExecutionMetricsBroadcastTimestamp(nodeID string) error {
+	// Update query
+	const updateQuery = `
+UPDATE ping_history
+SET execution_metrics_last_broadcast_at = ?
+WHERE supernode_id = ?;`
+
+	// Execute the update query
+	_, err := s.db.Exec(updateQuery, time.Now().UTC(), nodeID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // InsertBroadcastMessage inserts broadcast storage challenge msg to db
 func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage) error {
 	now := time.Now().UTC()
@@ -437,7 +477,8 @@ func (s *SQLiteStore) GetAllPingInfos() (types.PingInfos, error) {
 func (s *SQLiteStore) GetAllPingInfoForOnlineNodes() (types.PingInfos, error) {
 	const selectQuery = `
         SELECT id, supernode_id, ip_address, total_pings, total_successful_pings,
-               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time, metrics_last_broadcast_at,
+               avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time, 
+               metrics_last_broadcast_at, generation_metrics_last_broadcast_at, execution_metrics_last_broadcast_at,
                created_at, updated_at
         FROM ping_history
         WHERE is_online = true
@@ -457,7 +498,8 @@ func (s *SQLiteStore) GetAllPingInfoForOnlineNodes() (types.PingInfos, error) {
 			&pingInfo.ID, &pingInfo.SupernodeID, &pingInfo.IPAddress, &pingInfo.TotalPings,
 			&pingInfo.TotalSuccessfulPings, &pingInfo.AvgPingResponseTime,
 			&pingInfo.IsOnline, &pingInfo.IsOnWatchlist, &pingInfo.IsAdjusted, &pingInfo.LastSeen, &pingInfo.CumulativeResponseTime,
-			&pingInfo.MetricsLastBroadcastAt, &pingInfo.CreatedAt, &pingInfo.UpdatedAt,
+			&pingInfo.MetricsLastBroadcastAt, &pingInfo.GenerationMetricsLastBroadcastAt, &pingInfo.ExecutionMetricsLastBroadcastAt,
+			&pingInfo.CreatedAt, &pingInfo.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -533,6 +575,10 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	_, _ = db.Exec(alterTaskHistory)
 
 	_, _ = db.Exec(alterTablePingHistory)
+
+	_, _ = db.Exec(alterTablePingHistoryGenerationMetrics)
+
+	_, _ = db.Exec(alterTablePingHistoryExecutionMetrics)
 
 	pragmas := []string{
 		"PRAGMA synchronous=NORMAL;",

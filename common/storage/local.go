@@ -29,6 +29,8 @@ type LocalStoreInterface interface {
 	GetAllPingInfoForOnlineNodes() (types.PingInfos, error)
 	UpdatePingInfo(supernodeID string, isOnWatchlist, isAdjusted bool) error
 	UpdateMetricsBroadcastTimestamp(nodeID string) error
+	UpdateGenerationMetricsBroadcastTimestamp(nodeID string) error
+	UpdateExecutionMetricsBroadcastTimestamp(nodeID string) error
 	CloseHistoryDB(ctx context.Context)
 	QueryMetrics(ctx context.Context, from time.Time, to *time.Time) (m metrics.Metrics, err error)
 
