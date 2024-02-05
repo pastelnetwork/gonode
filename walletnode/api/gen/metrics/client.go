@@ -15,14 +15,33 @@ import (
 
 // Client is the "metrics" service client.
 type Client struct {
-	GetMetricsEndpoint goa.Endpoint
+	GetChallengeReportsEndpoint goa.Endpoint
+	GetMetricsEndpoint          goa.Endpoint
 }
 
 // NewClient initializes a "metrics" service client given the endpoints.
-func NewClient(getMetrics goa.Endpoint) *Client {
+func NewClient(getChallengeReports, getMetrics goa.Endpoint) *Client {
 	return &Client{
-		GetMetricsEndpoint: getMetrics,
+		GetChallengeReportsEndpoint: getChallengeReports,
+		GetMetricsEndpoint:          getMetrics,
 	}
+}
+
+// GetChallengeReports calls the "getChallengeReports" endpoint of the
+// "metrics" service.
+// GetChallengeReports may return the following errors:
+//   - "Unauthorized" (type *goa.ServiceError)
+//   - "BadRequest" (type *goa.ServiceError)
+//   - "NotFound" (type *goa.ServiceError)
+//   - "InternalServerError" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) GetChallengeReports(ctx context.Context, p *GetChallengeReportsPayload) (res *SelfHealingChallengeReports, err error) {
+	var ires any
+	ires, err = c.GetChallengeReportsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*SelfHealingChallengeReports), nil
 }
 
 // GetMetrics calls the "getMetrics" endpoint of the "metrics" service.

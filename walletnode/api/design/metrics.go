@@ -23,6 +23,46 @@ var _ = Service("metrics", func() {
 	Error("NotFound", ErrorResult)
 	Error("InternalServerError", ErrorResult)
 
+	Method("getChallengeReports", func() {
+		Description("Fetches self-healing challenge reports")
+		Meta("swagger:summary", "Fetches self-healing challenge reports")
+
+		Security(APIKeyAuth)
+
+		Payload(func() {
+			Attribute("pid", String, "PastelID of the user to fetch challenge reports for", func() {
+				Example("jXYJud3rm...")
+			})
+			Attribute("challenge_id", String, "Specific challenge ID to fetch reports for", func() {
+				Example("Challenge123")
+			})
+			Attribute("count", Int, "Number of reports to fetch", func() {
+				Example(10)
+			})
+			APIKey("api_key", "key", String, func() {
+				Description("Passphrase of the owner's PastelID")
+				Example("Basic abcdef12345")
+			})
+
+			Required("pid", "key")
+		})
+
+		Result(SelfHealingChallengeReports)
+
+		HTTP(func() {
+			GET("/self_healing_challenges")
+			Param("pid")
+			Param("challenge_id")
+			Param("count")
+
+			Response("Unauthorized", StatusUnauthorized)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
 	Method("getMetrics", func() {
 		Description("Fetches metrics data over a specified time range")
 		Meta("swagger:summary", "Fetches metrics data")
@@ -53,7 +93,7 @@ var _ = Service("metrics", func() {
 			Required("pid", "key")
 		})
 
-		Result(MetricsResult) // Define MetricsResult based on your metrics data structure
+		Result(MetricsResult)
 
 		HTTP(func() {
 			GET("/")
@@ -106,4 +146,95 @@ var SHExecutionMetrics = Type("SHExecutionMetrics", func() {
 	Attribute("total_file_healing_failed", Int, "Total number of file healings that failed")
 
 	Required("total_challenges_issued", "total_challenges_rejected", "total_challenges_accepted", "total_challenges_failed", "total_challenges_successful", "total_files_healed", "total_file_healing_failed")
+})
+
+var SelfHealingChallengeReports = Type("SelfHealingChallengeReports", func() {
+	Description("Self-healing challenge reports")
+	Attribute("reports", ArrayOf(SelfHealingChallengeReportKV), "Map of challenge ID to SelfHealingChallengeReport")
+})
+
+var SelfHealingChallengeReportKV = Type("SelfHealingChallengeReportKV", func() {
+	Attribute("challenge_id", String, "Challenge ID")
+	Attribute("report", SelfHealingChallengeReport, "Self-healing challenge report")
+})
+
+var SelfHealingChallengeReport = Type("SelfHealingChallengeReport", func() {
+	Attribute("messages", ArrayOf(SelfHealingMessageKV), "Map of message type to SelfHealingMessages")
+})
+
+var SelfHealingMessageKV = Type("SelfHealingMessageKV", func() {
+	Attribute("message_type", String, "Message type")
+	Attribute("messages", ArrayOf(SelfHealingMessage), "Self-healing messages")
+})
+
+var SelfHealingMessage = Type("SelfHealingMessage", func() {
+	Attribute("trigger_id", String)
+	Attribute("message_type", String)
+	Attribute("data", SelfHealingMessageData)
+	Attribute("sender_id", String)
+	Attribute("sender_signature", Bytes)
+})
+
+var SelfHealingMessageData = Type("SelfHealingMessageData", func() {
+	Attribute("challenger_id", String)
+	Attribute("recipient_id", String)
+	Attribute("challenge", SelfHealingChallengeData)
+	Attribute("response", SelfHealingResponseData)
+	Attribute("verification", SelfHealingVerificationData)
+})
+
+var SelfHealingChallengeData = Type("SelfHealingChallengeData", func() {
+	Attribute("block", Int32)
+	Attribute("merkelroot", String)
+	Attribute("timestamp", String) // Goa does not directly support time.Time, use string and format as RFC3339
+	Attribute("challenge_tickets", ArrayOf(ChallengeTicket))
+	Attribute("nodes_on_watchlist", String)
+})
+
+var ChallengeTicket = Type("ChallengeTicket", func() {
+	Attribute("tx_id", String)
+	Attribute("ticket_type", String) // Assuming TicketType is an enum or similar in Go, represented as String here
+	Attribute("missing_keys", ArrayOf(String))
+	Attribute("data_hash", Bytes)
+	Attribute("recipient", String)
+})
+
+var SelfHealingResponseData = Type("SelfHealingResponseData", func() {
+	Attribute("challenge_id", String)
+	Attribute("block", Int32)
+	Attribute("merkelroot", String)
+	Attribute("timestamp", String) // Use string for time.Time
+	Attribute("responded_ticket", RespondedTicket)
+	Attribute("verifiers", ArrayOf(String))
+})
+
+var RespondedTicket = Type("RespondedTicket", func() {
+	Attribute("tx_id", String)
+	Attribute("ticket_type", String) // Assuming TicketType is an enum or similar in Go
+	Attribute("missing_keys", ArrayOf(String))
+	Attribute("reconstructed_file_hash", Bytes)
+	Attribute("sense_file_ids", ArrayOf(String))
+	Attribute("raptor_q_symbols", Bytes)
+	Attribute("is_reconstruction_required", Boolean)
+})
+
+var SelfHealingVerificationData = Type("SelfHealingVerificationData", func() {
+	Attribute("challenge_id", String)
+	Attribute("block", Int32)
+	Attribute("merkelroot", String)
+	Attribute("timestamp", String) // Use string for time.Time
+	Attribute("verified_ticket", VerifiedTicket)
+	Attribute("verifiers_data", MapOf(String, Bytes)) // Goa supports MapOf for simple key-value pairs
+})
+
+var VerifiedTicket = Type("VerifiedTicket", func() {
+	Attribute("tx_id", String)
+	Attribute("ticket_type", String)
+	Attribute("missing_keys", ArrayOf(String))
+	Attribute("reconstructed_file_hash", Bytes)
+	Attribute("is_reconstruction_required", Boolean)
+	Attribute("raptor_q_symbols", Bytes)
+	Attribute("sense_file_ids", ArrayOf(String))
+	Attribute("is_verified", Boolean)
+	Attribute("message", String)
 })

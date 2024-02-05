@@ -17,6 +17,10 @@ import (
 
 // Client lists the metrics service endpoint HTTP clients.
 type Client struct {
+	// GetChallengeReports Doer is the HTTP client used to make requests to the
+	// getChallengeReports endpoint.
+	GetChallengeReportsDoer goahttp.Doer
+
 	// GetMetrics Doer is the HTTP client used to make requests to the getMetrics
 	// endpoint.
 	GetMetricsDoer goahttp.Doer
@@ -44,13 +48,38 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
-		GetMetricsDoer:      doer,
-		CORSDoer:            doer,
-		RestoreResponseBody: restoreBody,
-		scheme:              scheme,
-		host:                host,
-		decoder:             dec,
-		encoder:             enc,
+		GetChallengeReportsDoer: doer,
+		GetMetricsDoer:          doer,
+		CORSDoer:                doer,
+		RestoreResponseBody:     restoreBody,
+		scheme:                  scheme,
+		host:                    host,
+		decoder:                 dec,
+		encoder:                 enc,
+	}
+}
+
+// GetChallengeReports returns an endpoint that makes HTTP requests to the
+// metrics service getChallengeReports server.
+func (c *Client) GetChallengeReports() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetChallengeReportsRequest(c.encoder)
+		decodeResponse = DecodeGetChallengeReportsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetChallengeReportsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetChallengeReportsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("metrics", "getChallengeReports", err)
+		}
+		return decodeResponse(resp)
 	}
 }
 

@@ -11,12 +11,142 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
+	metrics "github.com/pastelnetwork/gonode/walletnode/api/gen/metrics"
 	metricsviews "github.com/pastelnetwork/gonode/walletnode/api/gen/metrics/views"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
+
+// EncodeGetChallengeReportsResponse returns an encoder for responses returned
+// by the metrics getChallengeReports endpoint.
+func EncodeGetChallengeReportsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*metrics.SelfHealingChallengeReports)
+		enc := encoder(ctx, w)
+		body := NewGetChallengeReportsResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetChallengeReportsRequest returns a decoder for requests sent to the
+// metrics getChallengeReports endpoint.
+func DecodeGetChallengeReportsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+	return func(r *http.Request) (any, error) {
+		var (
+			pid         string
+			challengeID *string
+			count       *int
+			key         string
+			err         error
+		)
+		pid = r.URL.Query().Get("pid")
+		if pid == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("pid", "query string"))
+		}
+		challengeIDRaw := r.URL.Query().Get("challenge_id")
+		if challengeIDRaw != "" {
+			challengeID = &challengeIDRaw
+		}
+		{
+			countRaw := r.URL.Query().Get("count")
+			if countRaw != "" {
+				v, err2 := strconv.ParseInt(countRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("count", countRaw, "integer"))
+				}
+				pv := int(v)
+				count = &pv
+			}
+		}
+		key = r.Header.Get("Authorization")
+		if key == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("key", "header"))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetChallengeReportsPayload(pid, challengeID, count, key)
+		if strings.Contains(payload.Key, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Key, " ", 2)[1]
+			payload.Key = cred
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeGetChallengeReportsError returns an encoder for errors returned by the
+// getChallengeReports metrics endpoint.
+func EncodeGetChallengeReportsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "Unauthorized":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetChallengeReportsUnauthorizedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		case "BadRequest":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetChallengeReportsBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetChallengeReportsNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetChallengeReportsInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
 
 // EncodeGetMetricsResponse returns an encoder for responses returned by the
 // metrics getMetrics endpoint.
@@ -143,6 +273,267 @@ func EncodeGetMetricsError(encoder func(context.Context, http.ResponseWriter) go
 			return encodeError(ctx, w, v)
 		}
 	}
+}
+
+// marshalMetricsSelfHealingChallengeReportKVToSelfHealingChallengeReportKVResponseBody
+// builds a value of type *SelfHealingChallengeReportKVResponseBody from a
+// value of type *metrics.SelfHealingChallengeReportKV.
+func marshalMetricsSelfHealingChallengeReportKVToSelfHealingChallengeReportKVResponseBody(v *metrics.SelfHealingChallengeReportKV) *SelfHealingChallengeReportKVResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &SelfHealingChallengeReportKVResponseBody{
+		ChallengeID: v.ChallengeID,
+	}
+	if v.Report != nil {
+		res.Report = marshalMetricsSelfHealingChallengeReportToSelfHealingChallengeReportResponseBody(v.Report)
+	}
+
+	return res
+}
+
+// marshalMetricsSelfHealingChallengeReportToSelfHealingChallengeReportResponseBody
+// builds a value of type *SelfHealingChallengeReportResponseBody from a value
+// of type *metrics.SelfHealingChallengeReport.
+func marshalMetricsSelfHealingChallengeReportToSelfHealingChallengeReportResponseBody(v *metrics.SelfHealingChallengeReport) *SelfHealingChallengeReportResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &SelfHealingChallengeReportResponseBody{}
+	if v.Messages != nil {
+		res.Messages = make([]*SelfHealingMessageKVResponseBody, len(v.Messages))
+		for i, val := range v.Messages {
+			res.Messages[i] = marshalMetricsSelfHealingMessageKVToSelfHealingMessageKVResponseBody(val)
+		}
+	}
+
+	return res
+}
+
+// marshalMetricsSelfHealingMessageKVToSelfHealingMessageKVResponseBody builds
+// a value of type *SelfHealingMessageKVResponseBody from a value of type
+// *metrics.SelfHealingMessageKV.
+func marshalMetricsSelfHealingMessageKVToSelfHealingMessageKVResponseBody(v *metrics.SelfHealingMessageKV) *SelfHealingMessageKVResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &SelfHealingMessageKVResponseBody{
+		MessageType: v.MessageType,
+	}
+	if v.Messages != nil {
+		res.Messages = make([]*SelfHealingMessageResponseBody, len(v.Messages))
+		for i, val := range v.Messages {
+			res.Messages[i] = marshalMetricsSelfHealingMessageToSelfHealingMessageResponseBody(val)
+		}
+	}
+
+	return res
+}
+
+// marshalMetricsSelfHealingMessageToSelfHealingMessageResponseBody builds a
+// value of type *SelfHealingMessageResponseBody from a value of type
+// *metrics.SelfHealingMessage.
+func marshalMetricsSelfHealingMessageToSelfHealingMessageResponseBody(v *metrics.SelfHealingMessage) *SelfHealingMessageResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &SelfHealingMessageResponseBody{
+		TriggerID:       v.TriggerID,
+		MessageType:     v.MessageType,
+		SenderID:        v.SenderID,
+		SenderSignature: v.SenderSignature,
+	}
+	if v.Data != nil {
+		res.Data = marshalMetricsSelfHealingMessageDataToSelfHealingMessageDataResponseBody(v.Data)
+	}
+
+	return res
+}
+
+// marshalMetricsSelfHealingMessageDataToSelfHealingMessageDataResponseBody
+// builds a value of type *SelfHealingMessageDataResponseBody from a value of
+// type *metrics.SelfHealingMessageData.
+func marshalMetricsSelfHealingMessageDataToSelfHealingMessageDataResponseBody(v *metrics.SelfHealingMessageData) *SelfHealingMessageDataResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &SelfHealingMessageDataResponseBody{
+		ChallengerID: v.ChallengerID,
+		RecipientID:  v.RecipientID,
+	}
+	if v.Challenge != nil {
+		res.Challenge = marshalMetricsSelfHealingChallengeDataToSelfHealingChallengeDataResponseBody(v.Challenge)
+	}
+	if v.Response != nil {
+		res.Response = marshalMetricsSelfHealingResponseDataToSelfHealingResponseDataResponseBody(v.Response)
+	}
+	if v.Verification != nil {
+		res.Verification = marshalMetricsSelfHealingVerificationDataToSelfHealingVerificationDataResponseBody(v.Verification)
+	}
+
+	return res
+}
+
+// marshalMetricsSelfHealingChallengeDataToSelfHealingChallengeDataResponseBody
+// builds a value of type *SelfHealingChallengeDataResponseBody from a value of
+// type *metrics.SelfHealingChallengeData.
+func marshalMetricsSelfHealingChallengeDataToSelfHealingChallengeDataResponseBody(v *metrics.SelfHealingChallengeData) *SelfHealingChallengeDataResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &SelfHealingChallengeDataResponseBody{
+		Block:            v.Block,
+		Merkelroot:       v.Merkelroot,
+		Timestamp:        v.Timestamp,
+		NodesOnWatchlist: v.NodesOnWatchlist,
+	}
+	if v.ChallengeTickets != nil {
+		res.ChallengeTickets = make([]*ChallengeTicketResponseBody, len(v.ChallengeTickets))
+		for i, val := range v.ChallengeTickets {
+			res.ChallengeTickets[i] = marshalMetricsChallengeTicketToChallengeTicketResponseBody(val)
+		}
+	}
+
+	return res
+}
+
+// marshalMetricsChallengeTicketToChallengeTicketResponseBody builds a value of
+// type *ChallengeTicketResponseBody from a value of type
+// *metrics.ChallengeTicket.
+func marshalMetricsChallengeTicketToChallengeTicketResponseBody(v *metrics.ChallengeTicket) *ChallengeTicketResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &ChallengeTicketResponseBody{
+		TxID:       v.TxID,
+		TicketType: v.TicketType,
+		DataHash:   v.DataHash,
+		Recipient:  v.Recipient,
+	}
+	if v.MissingKeys != nil {
+		res.MissingKeys = make([]string, len(v.MissingKeys))
+		for i, val := range v.MissingKeys {
+			res.MissingKeys[i] = val
+		}
+	}
+
+	return res
+}
+
+// marshalMetricsSelfHealingResponseDataToSelfHealingResponseDataResponseBody
+// builds a value of type *SelfHealingResponseDataResponseBody from a value of
+// type *metrics.SelfHealingResponseData.
+func marshalMetricsSelfHealingResponseDataToSelfHealingResponseDataResponseBody(v *metrics.SelfHealingResponseData) *SelfHealingResponseDataResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &SelfHealingResponseDataResponseBody{
+		ChallengeID: v.ChallengeID,
+		Block:       v.Block,
+		Merkelroot:  v.Merkelroot,
+		Timestamp:   v.Timestamp,
+	}
+	if v.RespondedTicket != nil {
+		res.RespondedTicket = marshalMetricsRespondedTicketToRespondedTicketResponseBody(v.RespondedTicket)
+	}
+	if v.Verifiers != nil {
+		res.Verifiers = make([]string, len(v.Verifiers))
+		for i, val := range v.Verifiers {
+			res.Verifiers[i] = val
+		}
+	}
+
+	return res
+}
+
+// marshalMetricsRespondedTicketToRespondedTicketResponseBody builds a value of
+// type *RespondedTicketResponseBody from a value of type
+// *metrics.RespondedTicket.
+func marshalMetricsRespondedTicketToRespondedTicketResponseBody(v *metrics.RespondedTicket) *RespondedTicketResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &RespondedTicketResponseBody{
+		TxID:                     v.TxID,
+		TicketType:               v.TicketType,
+		ReconstructedFileHash:    v.ReconstructedFileHash,
+		RaptorQSymbols:           v.RaptorQSymbols,
+		IsReconstructionRequired: v.IsReconstructionRequired,
+	}
+	if v.MissingKeys != nil {
+		res.MissingKeys = make([]string, len(v.MissingKeys))
+		for i, val := range v.MissingKeys {
+			res.MissingKeys[i] = val
+		}
+	}
+	if v.SenseFileIds != nil {
+		res.SenseFileIds = make([]string, len(v.SenseFileIds))
+		for i, val := range v.SenseFileIds {
+			res.SenseFileIds[i] = val
+		}
+	}
+
+	return res
+}
+
+// marshalMetricsSelfHealingVerificationDataToSelfHealingVerificationDataResponseBody
+// builds a value of type *SelfHealingVerificationDataResponseBody from a value
+// of type *metrics.SelfHealingVerificationData.
+func marshalMetricsSelfHealingVerificationDataToSelfHealingVerificationDataResponseBody(v *metrics.SelfHealingVerificationData) *SelfHealingVerificationDataResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &SelfHealingVerificationDataResponseBody{
+		ChallengeID: v.ChallengeID,
+		Block:       v.Block,
+		Merkelroot:  v.Merkelroot,
+		Timestamp:   v.Timestamp,
+	}
+	if v.VerifiedTicket != nil {
+		res.VerifiedTicket = marshalMetricsVerifiedTicketToVerifiedTicketResponseBody(v.VerifiedTicket)
+	}
+	if v.VerifiersData != nil {
+		res.VerifiersData = make(map[string][]byte, len(v.VerifiersData))
+		for key, val := range v.VerifiersData {
+			tk := key
+			tv := val
+			res.VerifiersData[tk] = tv
+		}
+	}
+
+	return res
+}
+
+// marshalMetricsVerifiedTicketToVerifiedTicketResponseBody builds a value of
+// type *VerifiedTicketResponseBody from a value of type
+// *metrics.VerifiedTicket.
+func marshalMetricsVerifiedTicketToVerifiedTicketResponseBody(v *metrics.VerifiedTicket) *VerifiedTicketResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &VerifiedTicketResponseBody{
+		TxID:                     v.TxID,
+		TicketType:               v.TicketType,
+		ReconstructedFileHash:    v.ReconstructedFileHash,
+		IsReconstructionRequired: v.IsReconstructionRequired,
+		RaptorQSymbols:           v.RaptorQSymbols,
+		IsVerified:               v.IsVerified,
+		Message:                  v.Message,
+	}
+	if v.MissingKeys != nil {
+		res.MissingKeys = make([]string, len(v.MissingKeys))
+		for i, val := range v.MissingKeys {
+			res.MissingKeys[i] = val
+		}
+	}
+	if v.SenseFileIds != nil {
+		res.SenseFileIds = make([]string, len(v.SenseFileIds))
+		for i, val := range v.SenseFileIds {
+			res.SenseFileIds[i] = val
+		}
+	}
+
+	return res
 }
 
 // marshalMetricsviewsSHTriggerMetricViewToSHTriggerMetricResponseBody builds a

@@ -19,9 +19,10 @@ import (
 
 // Server lists the metrics service endpoint HTTP handlers.
 type Server struct {
-	Mounts     []*MountPoint
-	GetMetrics http.Handler
-	CORS       http.Handler
+	Mounts              []*MountPoint
+	GetChallengeReports http.Handler
+	GetMetrics          http.Handler
+	CORS                http.Handler
 }
 
 // MountPoint holds information about the mounted endpoints.
@@ -51,11 +52,14 @@ func New(
 ) *Server {
 	return &Server{
 		Mounts: []*MountPoint{
+			{"GetChallengeReports", "GET", "/metrics/self_healing_challenges"},
 			{"GetMetrics", "GET", "/metrics"},
+			{"CORS", "OPTIONS", "/metrics/self_healing_challenges"},
 			{"CORS", "OPTIONS", "/metrics"},
 		},
-		GetMetrics: NewGetMetricsHandler(e.GetMetrics, mux, decoder, encoder, errhandler, formatter),
-		CORS:       NewCORSHandler(),
+		GetChallengeReports: NewGetChallengeReportsHandler(e.GetChallengeReports, mux, decoder, encoder, errhandler, formatter),
+		GetMetrics:          NewGetMetricsHandler(e.GetMetrics, mux, decoder, encoder, errhandler, formatter),
+		CORS:                NewCORSHandler(),
 	}
 }
 
@@ -64,6 +68,7 @@ func (s *Server) Service() string { return "metrics" }
 
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
+	s.GetChallengeReports = m(s.GetChallengeReports)
 	s.GetMetrics = m(s.GetMetrics)
 	s.CORS = m(s.CORS)
 }
@@ -73,6 +78,7 @@ func (s *Server) MethodNames() []string { return metrics.MethodNames[:] }
 
 // Mount configures the mux to serve the metrics endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
+	MountGetChallengeReportsHandler(mux, h.GetChallengeReports)
 	MountGetMetricsHandler(mux, h.GetMetrics)
 	MountCORSHandler(mux, h.CORS)
 }
@@ -80,6 +86,57 @@ func Mount(mux goahttp.Muxer, h *Server) {
 // Mount configures the mux to serve the metrics endpoints.
 func (s *Server) Mount(mux goahttp.Muxer) {
 	Mount(mux, s)
+}
+
+// MountGetChallengeReportsHandler configures the mux to serve the "metrics"
+// service "getChallengeReports" endpoint.
+func MountGetChallengeReportsHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := HandleMetricsOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/metrics/self_healing_challenges", f)
+}
+
+// NewGetChallengeReportsHandler creates a HTTP handler which loads the HTTP
+// request and calls the "metrics" service "getChallengeReports" endpoint.
+func NewGetChallengeReportsHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetChallengeReportsRequest(mux, decoder)
+		encodeResponse = EncodeGetChallengeReportsResponse(encoder)
+		encodeError    = EncodeGetChallengeReportsError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "getChallengeReports")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "metrics")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
 }
 
 // MountGetMetricsHandler configures the mux to serve the "metrics" service
@@ -137,6 +194,7 @@ func NewGetMetricsHandler(
 // service metrics.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	h = HandleMetricsOrigin(h)
+	mux.Handle("OPTIONS", "/metrics/self_healing_challenges", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/metrics", h.ServeHTTP)
 }
 

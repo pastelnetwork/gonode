@@ -7,6 +7,11 @@
 
 package client
 
+// GetChallengeReportsMetricsPath returns the URL path to the metrics service getChallengeReports HTTP endpoint.
+func GetChallengeReportsMetricsPath() string {
+	return "/metrics/self_healing_challenges"
+}
+
 // GetMetricsMetricsPath returns the URL path to the metrics service getMetrics HTTP endpoint.
 func GetMetricsMetricsPath() string {
 	return "/metrics"
