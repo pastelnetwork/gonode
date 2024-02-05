@@ -71,6 +71,11 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 					logger.WithError(err).Error("error broadcasting generation metrics")
 					return
 				}
+
+				if err := task.historyDB.UpdateGenerationMetricsBroadcastTimestamp(nodeInfo.SupernodeID); err != nil {
+					log.WithContext(ctx).WithField("node_id", nodeInfo.SupernodeID).
+						Error("error updating generation metrics broadcastAt timestamp")
+				}
 			}
 
 			for _, batch := range executionMetricBatches {
@@ -92,9 +97,9 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 				}
 			}
 
-			if err := task.historyDB.UpdateMetricsBroadcastTimestamp(nodeInfo.SupernodeID); err != nil {
+			if err := task.historyDB.UpdateExecutionMetricsBroadcastTimestamp(nodeInfo.SupernodeID); err != nil {
 				log.WithContext(ctx).WithField("node_id", nodeInfo.SupernodeID).
-					Error("error updating broadcastAt timestamp")
+					Error("error updating execution metrics broadcast at timestamp")
 			}
 		}()
 	}
@@ -113,23 +118,25 @@ func (task *SHTask) getExecutionAndGenerationMetrics(nodeInfo types.PingInfo) ([
 		executionMetrics  []types.SelfHealingExecutionMetric
 		generationMetrics []types.SelfHealingGenerationMetric
 	)
-	if !nodeInfo.MetricsLastBroadcastAt.Valid {
+	if !nodeInfo.ExecutionMetricsLastBroadcastAt.Valid {
 		executionMetrics, err = task.historyDB.GetSelfHealingExecutionMetrics(zeroTime)
 		if err != nil {
 			return nil, nil, err
 		}
+	} else {
+		executionMetrics, err = task.historyDB.GetSelfHealingExecutionMetrics(nodeInfo.ExecutionMetricsLastBroadcastAt.Time.UTC())
+		if err != nil {
+			return nil, nil, err
+		}
+	}
 
+	if !nodeInfo.GenerationMetricsLastBroadcastAt.Valid {
 		generationMetrics, err = task.historyDB.GetSelfHealingGenerationMetrics(zeroTime)
 		if err != nil {
 			return nil, nil, err
 		}
 	} else {
-		executionMetrics, err = task.historyDB.GetSelfHealingExecutionMetrics(nodeInfo.MetricsLastBroadcastAt.Time.UTC())
-		if err != nil {
-			return nil, nil, err
-		}
-
-		generationMetrics, err = task.historyDB.GetSelfHealingGenerationMetrics(nodeInfo.MetricsLastBroadcastAt.Time.UTC())
+		generationMetrics, err = task.historyDB.GetSelfHealingGenerationMetrics(nodeInfo.GenerationMetricsLastBroadcastAt.Time.UTC())
 		if err != nil {
 			return nil, nil, err
 		}

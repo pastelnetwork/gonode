@@ -185,10 +185,18 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 				}
 				logger.WithField("ticket_txid", ticket.TxID).Info("raptor q symbols have been stored")
 
-				sig, d, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
+				sig, _, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
 				if err != nil {
 					logger.WithError(err).Error("error storing completion execution metric")
 					continue
+				}
+
+				completionMsg := []types.SelfHealingMessage{
+					responseMsg,
+				}
+				completionMsgBytes, err := json.Marshal(completionMsg)
+				if err != nil {
+					logger.WithError(err).Error("error converting the completion msg to bytes for metrics")
 				}
 
 				if err := task.StoreSelfHealingExecutionMetrics(ctx, types.SelfHealingExecutionMetric{
@@ -196,7 +204,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 					ChallengeID:     responseMsg.SelfHealingMessageData.ChallengerID,
 					MessageType:     int(types.SelfHealingCompletionMessage),
 					SenderID:        task.nodeID,
-					Data:            d,
+					Data:            completionMsgBytes,
 					SenderSignature: sig,
 				}); err != nil {
 					logger.WithError(err).Error("error storing self-healing completion execution metric")
@@ -296,10 +304,18 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 				}
 				logger.WithField("ticket_txid", ticket.TxID).Info("dd & fp ids have been stored")
 
-				sig, d, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
+				sig, _, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
 				if err != nil {
 					logger.WithError(err).Error("error storing completion execution metric")
 					continue
+				}
+
+				completionMsg := []types.SelfHealingMessage{
+					responseMsg,
+				}
+				completionMsgBytes, err := json.Marshal(completionMsg)
+				if err != nil {
+					logger.WithError(err).Error("error converting the completion msg to bytes for metrics")
 				}
 
 				if err := task.StoreSelfHealingExecutionMetrics(ctx, types.SelfHealingExecutionMetric{
@@ -307,7 +323,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 					ChallengeID:     responseMsg.SelfHealingMessageData.ChallengerID,
 					MessageType:     int(types.SelfHealingCompletionMessage),
 					SenderID:        task.nodeID,
-					Data:            d,
+					Data:            completionMsgBytes,
 					SenderSignature: sig,
 				}); err != nil {
 					logger.WithError(err).Error("error storing self-healing completion execution metric")
@@ -623,11 +639,20 @@ func (task *SHTask) prepareResponseMessage(ctx context.Context, responseMessage 
 	}
 	responseMessage.SenderSignature = signature
 
+	responseExecutionMetric := []types.SelfHealingMessage{
+		responseMessage,
+	}
+
+	responseMetricBytes, err := json.Marshal(responseExecutionMetric)
+	if err != nil {
+		return pb.SelfHealingMessage{}, err
+	}
+
 	if err := task.StoreSelfHealingExecutionMetrics(ctx, types.SelfHealingExecutionMetric{
 		TriggerID:       responseMessage.TriggerID,
 		ChallengeID:     responseMessage.SelfHealingMessageData.Response.ChallengeID,
 		MessageType:     int(responseMessage.MessageType),
-		Data:            data,
+		Data:            responseMetricBytes,
 		SenderID:        task.nodeID,
 		SenderSignature: signature,
 	}); err != nil {

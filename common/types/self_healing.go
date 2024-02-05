@@ -33,21 +33,23 @@ const (
 
 // PingInfo represents the structure of data to be inserted into the ping_history table
 type PingInfo struct {
-	ID                     int          `db:"id"`
-	SupernodeID            string       `db:"supernode_id"`
-	IPAddress              string       `db:"ip_address"`
-	TotalPings             int          `db:"total_pings"`
-	TotalSuccessfulPings   int          `db:"total_successful_pings"`
-	AvgPingResponseTime    float64      `db:"avg_ping_response_time"`
-	IsOnline               bool         `db:"is_online"`
-	IsOnWatchlist          bool         `db:"is_on_watchlist"`
-	IsAdjusted             bool         `db:"is_adjusted"`
-	CumulativeResponseTime float64      `db:"cumulative_response_time"`
-	CreatedAt              time.Time    `db:"created_at"`
-	UpdatedAt              time.Time    `db:"updated_at"`
-	LastSeen               sql.NullTime `db:"last_seen"`
-	MetricsLastBroadcastAt sql.NullTime `json:"metrics_last_broadcast_at"`
-	LastResponseTime       float64      `db:"-"`
+	ID                               int          `db:"id"`
+	SupernodeID                      string       `db:"supernode_id"`
+	IPAddress                        string       `db:"ip_address"`
+	TotalPings                       int          `db:"total_pings"`
+	TotalSuccessfulPings             int          `db:"total_successful_pings"`
+	AvgPingResponseTime              float64      `db:"avg_ping_response_time"`
+	IsOnline                         bool         `db:"is_online"`
+	IsOnWatchlist                    bool         `db:"is_on_watchlist"`
+	IsAdjusted                       bool         `db:"is_adjusted"`
+	CumulativeResponseTime           float64      `db:"cumulative_response_time"`
+	CreatedAt                        time.Time    `db:"created_at"`
+	UpdatedAt                        time.Time    `db:"updated_at"`
+	LastSeen                         sql.NullTime `db:"last_seen"`
+	MetricsLastBroadcastAt           sql.NullTime `db:"metrics_last_broadcast_at"`
+	GenerationMetricsLastBroadcastAt sql.NullTime `db:"generation_metrics_last_broadcast_at"`
+	ExecutionMetricsLastBroadcastAt  sql.NullTime `db:"execution_metrics_last_broadcast_at"`
+	LastResponseTime                 float64      `db:"-"`
 }
 
 // PingInfos represents array of ping info

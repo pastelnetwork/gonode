@@ -798,15 +798,32 @@ func (task *SHTask) getSelfHealingGenerationMetrics(ctx context.Context, trigger
 		},
 	}
 
-	sig, dBytes, err := task.SignMessage(context.Background(), data)
+	sig, _, err := task.SignMessage(context.Background(), data)
 	if err != nil {
 		return nil, err
+	}
+
+	metricMsg := types.SelfHealingMessage{
+		TriggerID:              triggerID,
+		MessageType:            types.SelfHealingChallengeMessage,
+		SelfHealingMessageData: data,
+		SenderID:               task.nodeID,
+		SenderSignature:        sig,
+	}
+
+	generationMetricMessage := []types.SelfHealingMessage{
+		metricMsg,
+	}
+
+	generationMetricMsgBytes, err := json.Marshal(generationMetricMessage)
+	if err != nil {
+		return nil, errors.Errorf("error converting to bytes")
 	}
 
 	m := &types.SelfHealingGenerationMetric{
 		TriggerID:       triggerID,
 		MessageType:     int(types.ChallengeMessageType),
-		Data:            dBytes,
+		Data:            generationMetricMsgBytes,
 		SenderID:        task.nodeID,
 		SenderSignature: sig,
 	}
