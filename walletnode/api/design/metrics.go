@@ -110,6 +110,7 @@ var _ = Service("metrics", func() {
 	})
 })
 
+// MetricsResult is the result type for the getMetrics method
 var MetricsResult = ResultType("application/vnd.metrics.result", func() {
 	Description("Structure representing the metrics data")
 
@@ -122,6 +123,7 @@ var MetricsResult = ResultType("application/vnd.metrics.result", func() {
 	Required("sc_metrics", "sh_trigger_metrics", "sh_execution_metrics")
 })
 
+// SHTriggerMetric is the result type for the self-healing trigger metrics
 var SHTriggerMetric = Type("SHTriggerMetric", func() {
 	Description("Self-healing trigger metric")
 
@@ -134,6 +136,7 @@ var SHTriggerMetric = Type("SHTriggerMetric", func() {
 	Required("trigger_id", "nodes_offline", "list_of_nodes", "total_files_identified", "total_tickets_identified")
 })
 
+// SHExecutionMetrics is the result type for the self-healing execution metrics
 var SHExecutionMetrics = Type("SHExecutionMetrics", func() {
 	Description("Self-healing execution metrics")
 
@@ -148,25 +151,30 @@ var SHExecutionMetrics = Type("SHExecutionMetrics", func() {
 	Required("total_challenges_issued", "total_challenges_rejected", "total_challenges_accepted", "total_challenges_failed", "total_challenges_successful", "total_files_healed", "total_file_healing_failed")
 })
 
+// SelfHealingChallengeReports is the result type for the getChallengeReports method
 var SelfHealingChallengeReports = Type("SelfHealingChallengeReports", func() {
 	Description("Self-healing challenge reports")
 	Attribute("reports", ArrayOf(SelfHealingChallengeReportKV), "Map of challenge ID to SelfHealingChallengeReport")
 })
 
+// SelfHealingChallengeReportKV is the result type for the self-healing challenge report
 var SelfHealingChallengeReportKV = Type("SelfHealingChallengeReportKV", func() {
 	Attribute("challenge_id", String, "Challenge ID")
 	Attribute("report", SelfHealingChallengeReport, "Self-healing challenge report")
 })
 
+// SelfHealingChallengeReport is the result type for the self-healing challenge report
 var SelfHealingChallengeReport = Type("SelfHealingChallengeReport", func() {
 	Attribute("messages", ArrayOf(SelfHealingMessageKV), "Map of message type to SelfHealingMessages")
 })
 
+// SelfHealingMessageKV is the result type for the self-healing message
 var SelfHealingMessageKV = Type("SelfHealingMessageKV", func() {
 	Attribute("message_type", String, "Message type")
 	Attribute("messages", ArrayOf(SelfHealingMessage), "Self-healing messages")
 })
 
+// SelfHealingMessage is the result type for the self-healing message
 var SelfHealingMessage = Type("SelfHealingMessage", func() {
 	Attribute("trigger_id", String)
 	Attribute("message_type", String)
@@ -175,6 +183,7 @@ var SelfHealingMessage = Type("SelfHealingMessage", func() {
 	Attribute("sender_signature", Bytes)
 })
 
+// SelfHealingMessageData is the result type for the self-healing message data
 var SelfHealingMessageData = Type("SelfHealingMessageData", func() {
 	Attribute("challenger_id", String)
 	Attribute("recipient_id", String)
@@ -183,6 +192,7 @@ var SelfHealingMessageData = Type("SelfHealingMessageData", func() {
 	Attribute("verification", SelfHealingVerificationData)
 })
 
+// SelfHealingChallengeData is the result type for the self-healing challenge data
 var SelfHealingChallengeData = Type("SelfHealingChallengeData", func() {
 	Attribute("block", Int32)
 	Attribute("merkelroot", String)
@@ -191,6 +201,7 @@ var SelfHealingChallengeData = Type("SelfHealingChallengeData", func() {
 	Attribute("nodes_on_watchlist", String)
 })
 
+// ChallengeTicket is the result type for the challenge ticket
 var ChallengeTicket = Type("ChallengeTicket", func() {
 	Attribute("tx_id", String)
 	Attribute("ticket_type", String) // Assuming TicketType is an enum or similar in Go, represented as String here
@@ -199,6 +210,7 @@ var ChallengeTicket = Type("ChallengeTicket", func() {
 	Attribute("recipient", String)
 })
 
+// SelfHealingResponseData is the result type for the self-healing response data
 var SelfHealingResponseData = Type("SelfHealingResponseData", func() {
 	Attribute("challenge_id", String)
 	Attribute("block", Int32)
@@ -208,6 +220,7 @@ var SelfHealingResponseData = Type("SelfHealingResponseData", func() {
 	Attribute("verifiers", ArrayOf(String))
 })
 
+// RespondedTicket is the result type for the responded ticket
 var RespondedTicket = Type("RespondedTicket", func() {
 	Attribute("tx_id", String)
 	Attribute("ticket_type", String) // Assuming TicketType is an enum or similar in Go
@@ -218,6 +231,7 @@ var RespondedTicket = Type("RespondedTicket", func() {
 	Attribute("is_reconstruction_required", Boolean)
 })
 
+// SelfHealingVerificationData is the result type for the self-healing verification data
 var SelfHealingVerificationData = Type("SelfHealingVerificationData", func() {
 	Attribute("challenge_id", String)
 	Attribute("block", Int32)
@@ -227,6 +241,7 @@ var SelfHealingVerificationData = Type("SelfHealingVerificationData", func() {
 	Attribute("verifiers_data", MapOf(String, Bytes)) // Goa supports MapOf for simple key-value pairs
 })
 
+// VerifiedTicket is the result type for the verified ticket
 var VerifiedTicket = Type("VerifiedTicket", func() {
 	Attribute("tx_id", String)
 	Attribute("ticket_type", String)

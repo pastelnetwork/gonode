@@ -18,7 +18,7 @@ import (
 // MetricsAPIHandler - MetricsAPIHandler service
 type MetricsAPIHandler struct {
 	*Common
-	metricsService *metricsregister.MetricsService
+	metricsService *metricsregister.Service
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
@@ -47,6 +47,7 @@ func (service *MetricsAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 	return ctx, nil
 }
 
+// GetChallengeReports returns the self-healing challenge reports
 func (service *MetricsAPIHandler) GetChallengeReports(ctx context.Context, p *metrics.GetChallengeReportsPayload) (*metrics.SelfHealingChallengeReports, error) {
 	if p.Count == nil && p.ChallengeID == nil {
 		return nil, metrics.MakeBadRequest(fmt.Errorf("count or challenge_id is required"))
@@ -77,6 +78,7 @@ func (service *MetricsAPIHandler) GetChallengeReports(ctx context.Context, p *me
 	return toSHChallengeReport(reports), nil
 }
 
+// GetMetrics returns the metrics data over a specified time range
 func (service *MetricsAPIHandler) GetMetrics(ctx context.Context, p *metrics.GetMetricsPayload) (*metrics.MetricsResult, error) {
 	var from, to *time.Time
 
@@ -97,7 +99,7 @@ func (service *MetricsAPIHandler) GetMetrics(ctx context.Context, p *metrics.Get
 		to = &toTime
 	}
 
-	req := metricsregister.MetricsRequest{
+	req := metricsregister.GetMetricsRequest{
 		From:       from,
 		To:         to,
 		PastelID:   p.Pid,
@@ -138,7 +140,7 @@ func (service *MetricsAPIHandler) GetMetrics(ctx context.Context, p *metrics.Get
 }
 
 // NewMetricsAPIHandler returns the swagger OpenAPI implementation.
-func NewMetricsAPIHandler(config *Config, srvc *metricsregister.MetricsService) *MetricsAPIHandler {
+func NewMetricsAPIHandler(config *Config, srvc *metricsregister.Service) *MetricsAPIHandler {
 	return &MetricsAPIHandler{
 		Common:         NewCommon(config),
 		metricsService: srvc,

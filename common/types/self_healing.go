@@ -223,6 +223,7 @@ type SelfHealingMetrics struct {
 	SuccessfullyVerifiedTickets   int    `db:"successfully_verified_tickets"`
 }
 
+// Hash returns the hash of the self-healing challenge reports
 func (s SelfHealingChallengeReports) Hash() string {
 	data, _ := json.Marshal(s)
 	hash, _ := utils.Sha3256hash(data)

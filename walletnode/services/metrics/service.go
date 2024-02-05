@@ -21,13 +21,15 @@ const (
 	metricsPort = 9089
 )
 
-type MetricsRequest struct {
+// GetMetricsRequest represents the request for the GetMetrics method.
+type GetMetricsRequest struct {
 	From       *time.Time
 	To         *time.Time
 	PastelID   string
 	Passphrase string
 }
 
+// SHChallengesRequest represents the request for the GetSelfHealingChallengeReports method.
 type SHChallengesRequest struct {
 	Count       int
 	ChallengeID string
@@ -35,14 +37,14 @@ type SHChallengesRequest struct {
 	Passphrase  string
 }
 
-// MetricsService represents a service for the SN metrics
-type MetricsService struct {
+// Service represents a service for the SN metrics
+type Service struct {
 	pastelHandler *mixins.PastelHandler
 	client        http.Client
 }
 
 // GetMetrics returns the metrics for the given PastelID, fetching them concurrently from all nodes.
-func (service *MetricsService) GetMetrics(ctx context.Context, req MetricsRequest) (metrics.Metrics, error) {
+func (service *Service) GetMetrics(ctx context.Context, req GetMetricsRequest) (metrics.Metrics, error) {
 	topNodes, err := service.pastelHandler.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get top nodes")
@@ -121,7 +123,7 @@ func (service *MetricsService) GetMetrics(ctx context.Context, req MetricsReques
 }
 
 // fetchMetricsFromNode makes an HTTP GET request to the node's metrics endpoint and returns the metrics.
-func (service *MetricsService) fetchMetricsFromNode(addr, pid, passphrase string, from, to *time.Time) (data metrics.Metrics, err error) {
+func (service *Service) fetchMetricsFromNode(addr, pid, passphrase string, from, to *time.Time) (data metrics.Metrics, err error) {
 	// Construct the URL with query parameters
 	url := fmt.Sprintf("http://%s:%d/metrics?pid=%s", addr, metricsPort, pid)
 	if from != nil {
@@ -167,7 +169,7 @@ func (service *MetricsService) fetchMetricsFromNode(addr, pid, passphrase string
 }
 
 // GetSelfHealingChallengeReports returns the metrics for the given PastelID, fetching them concurrently from all nodes.
-func (service *MetricsService) GetSelfHealingChallengeReports(ctx context.Context, req SHChallengesRequest) (report types.SelfHealingChallengeReports, err error) {
+func (service *Service) GetSelfHealingChallengeReports(ctx context.Context, req SHChallengesRequest) (report types.SelfHealingChallengeReports, err error) {
 	report = types.SelfHealingChallengeReports{}
 	topNodes, err := service.pastelHandler.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
@@ -246,7 +248,7 @@ func (service *MetricsService) GetSelfHealingChallengeReports(ctx context.Contex
 }
 
 // fetchMetricsFromNode makes an HTTP GET request to the node's metrics endpoint and returns the metrics.
-func (service *MetricsService) fetchSHChallengesFromNode(addr, pid, passphrase string, count int, challengeID string) (data types.SelfHealingChallengeReports, err error) {
+func (service *Service) fetchSHChallengesFromNode(addr, pid, passphrase string, count int, challengeID string) (data types.SelfHealingChallengeReports, err error) {
 	data = types.SelfHealingChallengeReports{}
 	// Construct the URL with query parameters
 	url := fmt.Sprintf("http://%s:%d/sh_challenges?pid=%s", addr, metricsPort, pid)
@@ -292,8 +294,8 @@ func (service *MetricsService) fetchSHChallengesFromNode(addr, pid, passphrase s
 }
 
 // NewMetricsService returns a new Service instance.
-func NewMetricsService(pastelClient pastel.Client) *MetricsService {
-	return &MetricsService{
+func NewMetricsService(pastelClient pastel.Client) *Service {
+	return &Service{
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
 		client:        http.Client{Timeout: time.Duration(5) * time.Second},
 	}

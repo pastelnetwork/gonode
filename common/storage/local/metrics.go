@@ -227,7 +227,7 @@ func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.
 	return m, nil
 }
 
-// GetLastNSHChallenges
+// GetLastNSHChallenges ...
 func (s *SQLiteStore) GetLastNSHChallenges(ctx context.Context, n int) (types.SelfHealingChallengeReports, error) {
 	challenges := types.SelfHealingChallengeReports{}
 	rows, err := s.GetSelfHealingExecutionMetrics(oneYearAgo)
