@@ -31,4 +31,7 @@ type LocalStoreInterface interface {
 	UpdateMetricsBroadcastTimestamp(nodeID string) error
 	CloseHistoryDB(ctx context.Context)
 	QueryMetrics(ctx context.Context, from time.Time, to *time.Time) (m metrics.Metrics, err error)
+
+	GetLastNSHChallenges(ctx context.Context, n int) (types.SelfHealingChallengeReports, error)
+	GetSHChallengeReport(ctx context.Context, challengeID string) (types.SelfHealingChallengeReports, error)
 }

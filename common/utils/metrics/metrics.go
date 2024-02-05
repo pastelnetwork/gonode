@@ -36,6 +36,7 @@ type SHExecutionMetrics struct {
 	TotalFileHealingFailed    int `json:"total_file_healing_failed"`   // message_type !=4
 }
 
+// Hash returns the hash of the metrics
 func (m *Metrics) Hash() string {
 	data, _ := json.Marshal(m)
 	hash, _ := utils.Sha3256hash(data)

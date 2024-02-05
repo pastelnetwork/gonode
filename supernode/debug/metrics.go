@@ -4,18 +4,21 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
 // processSHChallenge encapsulates the core logic for self-healing challenge processing.
-func (service *Service) processSHChallenge(ctx context.Context, pid string, passphrase string, challengeID string) (interface{}, error) {
-	_, err := service.scService.PastelClient.Sign(ctx, []byte{1, 2, 3}, pid, passphrase, pastel.SignAlgorithmED448)
+func (service *Service) processSHChallenge(ctx context.Context, pid string, passphrase string, challengeID string, count int) (reports types.SelfHealingChallengeReports, err error) {
+	_, err = service.scService.PastelClient.Sign(ctx, []byte{1, 2, 3}, pid, passphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return nil, fmt.Errorf("invalid pid/passphrase: %w", err)
 	}
+	reports = make(types.SelfHealingChallengeReports)
 
 	store, err := local.OpenHistoryDB()
 	if err != nil {
@@ -23,18 +26,23 @@ func (service *Service) processSHChallenge(ctx context.Context, pid string, pass
 	}
 	defer store.CloseHistoryDB(ctx)
 
-	metrics, err := store.GetSelfHealingExecutionMetrics(time.Now().AddDate(20, 0, 0))
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving metrics: %w", err)
-	}
-
-	for _, metric := range metrics {
-		if metric.ChallengeID == challengeID {
-			return metric, nil
+	if challengeID != "" {
+		reports, err = store.GetSHChallengeReport(ctx, challengeID)
+		if err != nil {
+			return reports, fmt.Errorf("error retrieving report: %w", err)
 		}
+
+		return reports, nil
+
 	}
 
-	return nil, fmt.Errorf("no metrics found for challenge_id %s", challengeID)
+	reports, err = store.GetLastNSHChallenges(ctx, count)
+	if err != nil {
+		return reports, fmt.Errorf("error retrieving report: %w", err)
+	}
+
+	return reports, nil
+
 }
 
 // shChallenge is the HTTP handler for self-healing challenges.
@@ -49,12 +57,19 @@ func (service *Service) shChallenge(writer http.ResponseWriter, request *http.Re
 	}
 
 	challengeID := request.URL.Query().Get("challenge_id")
-	if challengeID == "" {
-		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Missing challenge_id query parameter"})
-		return
+	// Parse the optional count parameter
+	countStr := request.URL.Query().Get("count")
+	count := 10 // Default value of 10 if count is not provided or invalid
+	if countStr != "" {
+		var err error
+		count, err = strconv.Atoi(countStr)
+		if err != nil {
+			responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Invalid count parameter"})
+			return
+		}
 	}
 
-	result, err := service.processSHChallenge(ctx, pid, passphrase, challengeID)
+	result, err := service.processSHChallenge(ctx, pid, passphrase, challengeID, count)
 	if err != nil {
 		var statusCode int
 		switch err.Error() {
@@ -73,7 +88,7 @@ func (service *Service) shChallenge(writer http.ResponseWriter, request *http.Re
 }
 
 // processSHTrigger encapsulates the core logic for self-healing trigger processing.
-func (service *Service) processSHTrigger(ctx context.Context, pid string, passphrase string, triggerID string) (interface{}, error) {
+func (service *Service) processSHTrigger(ctx context.Context, pid string, passphrase string, triggerID string, count int) ([]types.SelfHealingGenerationMetric, error) {
 	_, err := service.scService.PastelClient.Sign(ctx, []byte{1, 2, 3}, pid, passphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return nil, fmt.Errorf("invalid pid/passphrase: %w", err)
@@ -90,9 +105,17 @@ func (service *Service) processSHTrigger(ctx context.Context, pid string, passph
 		return nil, fmt.Errorf("error retrieving metrics: %w", err)
 	}
 
+	if triggerID == "" {
+		if len(metrics) > count {
+			return metrics[:count], nil
+		}
+
+		return metrics, nil
+	}
+
 	for _, metric := range metrics {
 		if metric.TriggerID == triggerID {
-			return metric, nil
+			return []types.SelfHealingGenerationMetric{metric}, nil
 		}
 	}
 
@@ -111,12 +134,20 @@ func (service *Service) shTrigger(writer http.ResponseWriter, request *http.Requ
 	}
 
 	triggerID := request.URL.Query().Get("trigger_id")
-	if triggerID == "" {
-		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Missing trigger_id query parameter"})
-		return
+
+	// Parse the optional count parameter
+	countStr := request.URL.Query().Get("count")
+	count := 10 // Default value of 10 if count is not provided or invalid
+	if countStr != "" {
+		var err error
+		count, err = strconv.Atoi(countStr)
+		if err != nil {
+			responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Invalid count parameter"})
+			return
+		}
 	}
 
-	result, err := service.processSHTrigger(ctx, pid, passphrase, triggerID)
+	result, err := service.processSHTrigger(ctx, pid, passphrase, triggerID, count)
 	if err != nil {
 		var statusCode int
 		switch err.Error() {

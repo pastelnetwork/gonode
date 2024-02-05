@@ -10,6 +10,8 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/metrics"
 )
 
 func toNftStates(statuses []*state.Status) []*nft.TaskState {
@@ -342,4 +344,141 @@ type AlternativeNSFWScores struct {
 	Porn *float32 `json:"porn"`
 	// neutral nsfw score
 	Neutral *float32 `json:"neutral"`
+}
+
+func toSHChallengeReport(data types.SelfHealingChallengeReports) *metrics.SelfHealingChallengeReports {
+	reports := &metrics.SelfHealingChallengeReports{
+		Reports: make([]*metrics.SelfHealingChallengeReportKV, 0, len(data)),
+	}
+
+	for challengeID, report := range data {
+		reportKV := &metrics.SelfHealingChallengeReportKV{
+			ChallengeID: &challengeID,
+			Report:      toSHChallengeReportStruct(report),
+		}
+		reports.Reports = append(reports.Reports, reportKV)
+	}
+
+	return reports
+}
+
+func toSHChallengeReportStruct(report types.SelfHealingChallengeReport) *metrics.SelfHealingChallengeReport {
+	messages := make([]*metrics.SelfHealingMessageKV, 0, len(report))
+	for messageType, msgs := range report {
+		msgKV := &metrics.SelfHealingMessageKV{
+			MessageType: &messageType,
+			Messages:    toSHMessages(msgs),
+		}
+		messages = append(messages, msgKV)
+	}
+	return &metrics.SelfHealingChallengeReport{Messages: messages}
+}
+
+func toSHMessages(msgs types.SelfHealingMessages) []*metrics.SelfHealingMessage {
+	messages := make([]*metrics.SelfHealingMessage, 0, len(msgs))
+
+	for _, msg := range msgs {
+		msgType := msg.MessageType.String()
+		message := &metrics.SelfHealingMessage{
+			TriggerID:       &msg.TriggerID,
+			MessageType:     &msgType,
+			Data:            toSHMessageData(msg.SelfHealingMessageData),
+			SenderID:        &msg.SenderID,
+			SenderSignature: msg.SenderSignature,
+		}
+		messages = append(messages, message)
+	}
+	return messages
+}
+
+func toSHMessageData(data types.SelfHealingMessageData) *metrics.SelfHealingMessageData {
+	return &metrics.SelfHealingMessageData{
+		ChallengerID: &data.ChallengerID,
+		RecipientID:  &data.RecipientID,
+		Challenge:    toSHChallengeData(data.Challenge),
+		Response:     toSHResponseData(data.Response),
+		Verification: toSHVerificationData(data.Verification),
+	}
+}
+
+func toSHChallengeData(data types.SelfHealingChallengeData) *metrics.SelfHealingChallengeData {
+	timestamp := data.Timestamp.Format(time.RFC3339)
+	return &metrics.SelfHealingChallengeData{
+		Block:            &data.Block,
+		Merkelroot:       &data.Merkelroot,
+		Timestamp:        &timestamp,
+		ChallengeTickets: toChallengeTickets(data.ChallengeTickets),
+		NodesOnWatchlist: &data.NodesOnWatchlist,
+	}
+}
+
+func toChallengeTickets(tickets []types.ChallengeTicket) []*metrics.ChallengeTicket {
+	mTickets := make([]*metrics.ChallengeTicket, 0, len(tickets))
+	for _, ticket := range tickets {
+		tType := ticket.TicketType.String()
+
+		mTicket := &metrics.ChallengeTicket{
+			TxID:        &ticket.TxID,
+			TicketType:  &tType,
+			MissingKeys: ticket.MissingKeys,
+			DataHash:    ticket.DataHash,
+			Recipient:   &ticket.Recipient,
+		}
+		mTickets = append(mTickets, mTicket)
+	}
+	return mTickets
+}
+
+func toSHResponseData(data types.SelfHealingResponseData) *metrics.SelfHealingResponseData {
+	timestamp := data.Timestamp.Format(time.RFC3339)
+	return &metrics.SelfHealingResponseData{
+		ChallengeID:     &data.ChallengeID,
+		Block:           &data.Block,
+		Merkelroot:      &data.Merkelroot,
+		Timestamp:       &timestamp,
+		RespondedTicket: toRespondedTicket(data.RespondedTicket),
+		Verifiers:       data.Verifiers,
+	}
+}
+
+func toRespondedTicket(ticket types.RespondedTicket) *metrics.RespondedTicket {
+	tType := ticket.TicketType.String()
+
+	return &metrics.RespondedTicket{
+		TxID:                     &ticket.TxID,
+		TicketType:               &tType,
+		MissingKeys:              ticket.MissingKeys,
+		ReconstructedFileHash:    ticket.ReconstructedFileHash,
+		SenseFileIds:             ticket.FileIDs,
+		RaptorQSymbols:           ticket.RaptorQSymbols,
+		IsReconstructionRequired: &ticket.IsReconstructionRequired,
+	}
+}
+
+func toSHVerificationData(data types.SelfHealingVerificationData) *metrics.SelfHealingVerificationData {
+	timestamp := data.Timestamp.Format(time.RFC3339)
+	return &metrics.SelfHealingVerificationData{
+		ChallengeID:    &data.ChallengeID,
+		Block:          &data.Block,
+		Merkelroot:     &data.Merkelroot,
+		Timestamp:      &timestamp,
+		VerifiedTicket: toVerifiedTicket(data.VerifiedTicket),
+		VerifiersData:  data.VerifiersData,
+	}
+}
+
+func toVerifiedTicket(ticket types.VerifiedTicket) *metrics.VerifiedTicket {
+	tType := ticket.TicketType.String()
+
+	return &metrics.VerifiedTicket{
+		TxID:                     &ticket.TxID,
+		TicketType:               &tType,
+		MissingKeys:              ticket.MissingKeys,
+		ReconstructedFileHash:    ticket.ReconstructedFileHash,
+		IsReconstructionRequired: &ticket.IsReconstructionRequired,
+		RaptorQSymbols:           ticket.RaptorQSymbols,
+		SenseFileIds:             ticket.FileIDs,
+		IsVerified:               &ticket.IsVerified,
+		Message:                  &ticket.Message,
+	}
 }

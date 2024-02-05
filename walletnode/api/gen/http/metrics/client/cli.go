@@ -8,9 +8,51 @@
 package client
 
 import (
+	"fmt"
+	"strconv"
+
 	metrics "github.com/pastelnetwork/gonode/walletnode/api/gen/metrics"
 	goa "goa.design/goa/v3/pkg"
 )
+
+// BuildGetChallengeReportsPayload builds the payload for the metrics
+// getChallengeReports endpoint from CLI flags.
+func BuildGetChallengeReportsPayload(metricsGetChallengeReportsPid string, metricsGetChallengeReportsChallengeID string, metricsGetChallengeReportsCount string, metricsGetChallengeReportsKey string) (*metrics.GetChallengeReportsPayload, error) {
+	var err error
+	var pid string
+	{
+		pid = metricsGetChallengeReportsPid
+	}
+	var challengeID *string
+	{
+		if metricsGetChallengeReportsChallengeID != "" {
+			challengeID = &metricsGetChallengeReportsChallengeID
+		}
+	}
+	var count *int
+	{
+		if metricsGetChallengeReportsCount != "" {
+			var v int64
+			v, err = strconv.ParseInt(metricsGetChallengeReportsCount, 10, strconv.IntSize)
+			val := int(v)
+			count = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for count, must be INT")
+			}
+		}
+	}
+	var key string
+	{
+		key = metricsGetChallengeReportsKey
+	}
+	v := &metrics.GetChallengeReportsPayload{}
+	v.Pid = pid
+	v.ChallengeID = challengeID
+	v.Count = count
+	v.Key = key
+
+	return v, nil
+}
 
 // BuildGetMetricsPayload builds the payload for the metrics getMetrics
 // endpoint from CLI flags.

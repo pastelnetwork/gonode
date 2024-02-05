@@ -2,7 +2,10 @@ package types
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 // SelfHealingMessageType represents the type of message sent in the self-healing process
@@ -19,6 +22,15 @@ const (
 	SelfHealingCompletionMessage
 )
 
+func (s SelfHealingMessageType) String() string {
+	messages := [...]string{"", "challenge", "response", "verification", "completion"}
+	if s < 1 || int(s) >= len(messages) {
+		return "unknown"
+	}
+
+	return messages[s]
+}
+
 // TicketType represents the type of ticket; nft, cascade, sense
 type TicketType int
 
@@ -30,6 +42,15 @@ const (
 	// TicketTypeNFT represents the NFT ticket type
 	TicketTypeNFT
 )
+
+func (t TicketType) String() string {
+	tickets := [...]string{"", "cascade", "sense", "nft"}
+	if t < 1 || int(t) >= len(tickets) {
+		return "unknown"
+	}
+
+	return tickets[t]
+}
 
 // PingInfo represents the structure of data to be inserted into the ping_history table
 type PingInfo struct {
@@ -52,6 +73,12 @@ type PingInfo struct {
 
 // PingInfos represents array of ping info
 type PingInfos []PingInfo
+
+// SelfHealingChallengeReports represents the self-healing metrics for each challenge
+type SelfHealingChallengeReports map[string]SelfHealingChallengeReport
+
+// SelfHealingChallengeReport represents the self-healing challenges
+type SelfHealingChallengeReport map[string]SelfHealingMessages
 
 // SelfHealingMessages represents the self-healing metrics for each challenge = message_type = 3
 type SelfHealingMessages []SelfHealingMessage
@@ -194,4 +221,12 @@ type SelfHealingMetrics struct {
 	TicketsRequiredSelfHealing    int    `db:"tickets_required_self_healing"`
 	SuccessfullySelfHealedTickets int    `db:"successfully_self_healed_tickets"`
 	SuccessfullyVerifiedTickets   int    `db:"successfully_verified_tickets"`
+}
+
+// Hash returns the hash of the self-healing challenge reports
+func (s SelfHealingChallengeReports) Hash() string {
+	data, _ := json.Marshal(s)
+	hash, _ := utils.Sha3256hash(data)
+
+	return string(hash)
 }

@@ -17,6 +17,8 @@ import (
 
 // Metrics service for fetching data over a specified time range
 type Service interface {
+	// Fetches self-healing challenge reports
+	GetChallengeReports(context.Context, *GetChallengeReportsPayload) (res *SelfHealingChallengeReports, err error)
 	// Fetches metrics data over a specified time range
 	GetMetrics(context.Context, *GetMetricsPayload) (res *MetricsResult, err error)
 }
@@ -35,7 +37,28 @@ const ServiceName = "metrics"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [1]string{"getMetrics"}
+var MethodNames = [2]string{"getChallengeReports", "getMetrics"}
+
+type ChallengeTicket struct {
+	TxID        *string
+	TicketType  *string
+	MissingKeys []string
+	DataHash    []byte
+	Recipient   *string
+}
+
+// GetChallengeReportsPayload is the payload type of the metrics service
+// getChallengeReports method.
+type GetChallengeReportsPayload struct {
+	// PastelID of the user to fetch challenge reports for
+	Pid string
+	// Specific challenge ID to fetch reports for
+	ChallengeID *string
+	// Number of reports to fetch
+	Count *int
+	// Passphrase of the owner's PastelID
+	Key string
+}
 
 // GetMetricsPayload is the payload type of the metrics service getMetrics
 // method.
@@ -58,6 +81,16 @@ type MetricsResult struct {
 	ShTriggerMetrics []*SHTriggerMetric
 	// Self-healing execution metrics
 	ShExecutionMetrics *SHExecutionMetrics
+}
+
+type RespondedTicket struct {
+	TxID                     *string
+	TicketType               *string
+	MissingKeys              []string
+	ReconstructedFileHash    []byte
+	SenseFileIds             []string
+	RaptorQSymbols           []byte
+	IsReconstructionRequired *bool
 }
 
 // Self-healing execution metrics
@@ -90,6 +123,86 @@ type SHTriggerMetric struct {
 	TotalFilesIdentified int
 	// Total number of tickets identified for self-healing
 	TotalTicketsIdentified int
+}
+
+type SelfHealingChallengeData struct {
+	Block            *int32
+	Merkelroot       *string
+	Timestamp        *string
+	ChallengeTickets []*ChallengeTicket
+	NodesOnWatchlist *string
+}
+
+type SelfHealingChallengeReport struct {
+	// Map of message type to SelfHealingMessages
+	Messages []*SelfHealingMessageKV
+}
+
+type SelfHealingChallengeReportKV struct {
+	// Challenge ID
+	ChallengeID *string
+	// Self-healing challenge report
+	Report *SelfHealingChallengeReport
+}
+
+// SelfHealingChallengeReports is the result type of the metrics service
+// getChallengeReports method.
+type SelfHealingChallengeReports struct {
+	// Map of challenge ID to SelfHealingChallengeReport
+	Reports []*SelfHealingChallengeReportKV
+}
+
+type SelfHealingMessage struct {
+	TriggerID       *string
+	MessageType     *string
+	Data            *SelfHealingMessageData
+	SenderID        *string
+	SenderSignature []byte
+}
+
+type SelfHealingMessageData struct {
+	ChallengerID *string
+	RecipientID  *string
+	Challenge    *SelfHealingChallengeData
+	Response     *SelfHealingResponseData
+	Verification *SelfHealingVerificationData
+}
+
+type SelfHealingMessageKV struct {
+	// Message type
+	MessageType *string
+	// Self-healing messages
+	Messages []*SelfHealingMessage
+}
+
+type SelfHealingResponseData struct {
+	ChallengeID     *string
+	Block           *int32
+	Merkelroot      *string
+	Timestamp       *string
+	RespondedTicket *RespondedTicket
+	Verifiers       []string
+}
+
+type SelfHealingVerificationData struct {
+	ChallengeID    *string
+	Block          *int32
+	Merkelroot     *string
+	Timestamp      *string
+	VerifiedTicket *VerifiedTicket
+	VerifiersData  map[string][]byte
+}
+
+type VerifiedTicket struct {
+	TxID                     *string
+	TicketType               *string
+	MissingKeys              []string
+	ReconstructedFileHash    []byte
+	IsReconstructionRequired *bool
+	RaptorQSymbols           []byte
+	SenseFileIds             []string
+	IsVerified               *bool
+	Message                  *string
 }
 
 // MakeUnauthorized builds a goa.ServiceError from an error.

@@ -16,7 +16,8 @@ import (
 
 // Endpoints wraps the "metrics" service endpoints.
 type Endpoints struct {
-	GetMetrics goa.Endpoint
+	GetChallengeReports goa.Endpoint
+	GetMetrics          goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "metrics" service with endpoints.
@@ -24,13 +25,34 @@ func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		GetMetrics: NewGetMetricsEndpoint(s, a.APIKeyAuth),
+		GetChallengeReports: NewGetChallengeReportsEndpoint(s, a.APIKeyAuth),
+		GetMetrics:          NewGetMetricsEndpoint(s, a.APIKeyAuth),
 	}
 }
 
 // Use applies the given middleware to all the "metrics" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
+	e.GetChallengeReports = m(e.GetChallengeReports)
 	e.GetMetrics = m(e.GetMetrics)
+}
+
+// NewGetChallengeReportsEndpoint returns an endpoint function that calls the
+// method "getChallengeReports" of service "metrics".
+func NewGetChallengeReportsEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetChallengeReportsPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetChallengeReports(ctx, p)
+	}
 }
 
 // NewGetMetricsEndpoint returns an endpoint function that calls the method

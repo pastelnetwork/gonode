@@ -8,9 +8,17 @@
 package client
 
 import (
+	metrics "github.com/pastelnetwork/gonode/walletnode/api/gen/metrics"
 	metricsviews "github.com/pastelnetwork/gonode/walletnode/api/gen/metrics/views"
 	goa "goa.design/goa/v3/pkg"
 )
+
+// GetChallengeReportsResponseBody is the type of the "metrics" service
+// "getChallengeReports" endpoint HTTP response body.
+type GetChallengeReportsResponseBody struct {
+	// Map of challenge ID to SelfHealingChallengeReport
+	Reports []*SelfHealingChallengeReportKVResponseBody `form:"reports,omitempty" json:"reports,omitempty" xml:"reports,omitempty"`
+}
 
 // GetMetricsResponseBody is the type of the "metrics" service "getMetrics"
 // endpoint HTTP response body.
@@ -21,6 +29,81 @@ type GetMetricsResponseBody struct {
 	ShTriggerMetrics []*SHTriggerMetricResponseBody `form:"sh_trigger_metrics,omitempty" json:"sh_trigger_metrics,omitempty" xml:"sh_trigger_metrics,omitempty"`
 	// Self-healing execution metrics
 	ShExecutionMetrics *SHExecutionMetricsResponseBody `form:"sh_execution_metrics,omitempty" json:"sh_execution_metrics,omitempty" xml:"sh_execution_metrics,omitempty"`
+}
+
+// GetChallengeReportsUnauthorizedResponseBody is the type of the "metrics"
+// service "getChallengeReports" endpoint HTTP response body for the
+// "Unauthorized" error.
+type GetChallengeReportsUnauthorizedResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetChallengeReportsBadRequestResponseBody is the type of the "metrics"
+// service "getChallengeReports" endpoint HTTP response body for the
+// "BadRequest" error.
+type GetChallengeReportsBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetChallengeReportsNotFoundResponseBody is the type of the "metrics" service
+// "getChallengeReports" endpoint HTTP response body for the "NotFound" error.
+type GetChallengeReportsNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetChallengeReportsInternalServerErrorResponseBody is the type of the
+// "metrics" service "getChallengeReports" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetChallengeReportsInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
 // GetMetricsUnauthorizedResponseBody is the type of the "metrics" service
@@ -96,6 +179,116 @@ type GetMetricsInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// SelfHealingChallengeReportKVResponseBody is used to define fields on
+// response body types.
+type SelfHealingChallengeReportKVResponseBody struct {
+	// Challenge ID
+	ChallengeID *string `form:"challenge_id,omitempty" json:"challenge_id,omitempty" xml:"challenge_id,omitempty"`
+	// Self-healing challenge report
+	Report *SelfHealingChallengeReportResponseBody `form:"report,omitempty" json:"report,omitempty" xml:"report,omitempty"`
+}
+
+// SelfHealingChallengeReportResponseBody is used to define fields on response
+// body types.
+type SelfHealingChallengeReportResponseBody struct {
+	// Map of message type to SelfHealingMessages
+	Messages []*SelfHealingMessageKVResponseBody `form:"messages,omitempty" json:"messages,omitempty" xml:"messages,omitempty"`
+}
+
+// SelfHealingMessageKVResponseBody is used to define fields on response body
+// types.
+type SelfHealingMessageKVResponseBody struct {
+	// Message type
+	MessageType *string `form:"message_type,omitempty" json:"message_type,omitempty" xml:"message_type,omitempty"`
+	// Self-healing messages
+	Messages []*SelfHealingMessageResponseBody `form:"messages,omitempty" json:"messages,omitempty" xml:"messages,omitempty"`
+}
+
+// SelfHealingMessageResponseBody is used to define fields on response body
+// types.
+type SelfHealingMessageResponseBody struct {
+	TriggerID       *string                             `form:"trigger_id,omitempty" json:"trigger_id,omitempty" xml:"trigger_id,omitempty"`
+	MessageType     *string                             `form:"message_type,omitempty" json:"message_type,omitempty" xml:"message_type,omitempty"`
+	Data            *SelfHealingMessageDataResponseBody `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
+	SenderID        *string                             `form:"sender_id,omitempty" json:"sender_id,omitempty" xml:"sender_id,omitempty"`
+	SenderSignature []byte                              `form:"sender_signature,omitempty" json:"sender_signature,omitempty" xml:"sender_signature,omitempty"`
+}
+
+// SelfHealingMessageDataResponseBody is used to define fields on response body
+// types.
+type SelfHealingMessageDataResponseBody struct {
+	ChallengerID *string                                  `form:"challenger_id,omitempty" json:"challenger_id,omitempty" xml:"challenger_id,omitempty"`
+	RecipientID  *string                                  `form:"recipient_id,omitempty" json:"recipient_id,omitempty" xml:"recipient_id,omitempty"`
+	Challenge    *SelfHealingChallengeDataResponseBody    `form:"challenge,omitempty" json:"challenge,omitempty" xml:"challenge,omitempty"`
+	Response     *SelfHealingResponseDataResponseBody     `form:"response,omitempty" json:"response,omitempty" xml:"response,omitempty"`
+	Verification *SelfHealingVerificationDataResponseBody `form:"verification,omitempty" json:"verification,omitempty" xml:"verification,omitempty"`
+}
+
+// SelfHealingChallengeDataResponseBody is used to define fields on response
+// body types.
+type SelfHealingChallengeDataResponseBody struct {
+	Block            *int32                         `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	Merkelroot       *string                        `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	Timestamp        *string                        `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	ChallengeTickets []*ChallengeTicketResponseBody `form:"challenge_tickets,omitempty" json:"challenge_tickets,omitempty" xml:"challenge_tickets,omitempty"`
+	NodesOnWatchlist *string                        `form:"nodes_on_watchlist,omitempty" json:"nodes_on_watchlist,omitempty" xml:"nodes_on_watchlist,omitempty"`
+}
+
+// ChallengeTicketResponseBody is used to define fields on response body types.
+type ChallengeTicketResponseBody struct {
+	TxID        *string  `form:"tx_id,omitempty" json:"tx_id,omitempty" xml:"tx_id,omitempty"`
+	TicketType  *string  `form:"ticket_type,omitempty" json:"ticket_type,omitempty" xml:"ticket_type,omitempty"`
+	MissingKeys []string `form:"missing_keys,omitempty" json:"missing_keys,omitempty" xml:"missing_keys,omitempty"`
+	DataHash    []byte   `form:"data_hash,omitempty" json:"data_hash,omitempty" xml:"data_hash,omitempty"`
+	Recipient   *string  `form:"recipient,omitempty" json:"recipient,omitempty" xml:"recipient,omitempty"`
+}
+
+// SelfHealingResponseDataResponseBody is used to define fields on response
+// body types.
+type SelfHealingResponseDataResponseBody struct {
+	ChallengeID     *string                      `form:"challenge_id,omitempty" json:"challenge_id,omitempty" xml:"challenge_id,omitempty"`
+	Block           *int32                       `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	Merkelroot      *string                      `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	Timestamp       *string                      `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	RespondedTicket *RespondedTicketResponseBody `form:"responded_ticket,omitempty" json:"responded_ticket,omitempty" xml:"responded_ticket,omitempty"`
+	Verifiers       []string                     `form:"verifiers,omitempty" json:"verifiers,omitempty" xml:"verifiers,omitempty"`
+}
+
+// RespondedTicketResponseBody is used to define fields on response body types.
+type RespondedTicketResponseBody struct {
+	TxID                     *string  `form:"tx_id,omitempty" json:"tx_id,omitempty" xml:"tx_id,omitempty"`
+	TicketType               *string  `form:"ticket_type,omitempty" json:"ticket_type,omitempty" xml:"ticket_type,omitempty"`
+	MissingKeys              []string `form:"missing_keys,omitempty" json:"missing_keys,omitempty" xml:"missing_keys,omitempty"`
+	ReconstructedFileHash    []byte   `form:"reconstructed_file_hash,omitempty" json:"reconstructed_file_hash,omitempty" xml:"reconstructed_file_hash,omitempty"`
+	SenseFileIds             []string `form:"sense_file_ids,omitempty" json:"sense_file_ids,omitempty" xml:"sense_file_ids,omitempty"`
+	RaptorQSymbols           []byte   `form:"raptor_q_symbols,omitempty" json:"raptor_q_symbols,omitempty" xml:"raptor_q_symbols,omitempty"`
+	IsReconstructionRequired *bool    `form:"is_reconstruction_required,omitempty" json:"is_reconstruction_required,omitempty" xml:"is_reconstruction_required,omitempty"`
+}
+
+// SelfHealingVerificationDataResponseBody is used to define fields on response
+// body types.
+type SelfHealingVerificationDataResponseBody struct {
+	ChallengeID    *string                     `form:"challenge_id,omitempty" json:"challenge_id,omitempty" xml:"challenge_id,omitempty"`
+	Block          *int32                      `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	Merkelroot     *string                     `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	Timestamp      *string                     `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	VerifiedTicket *VerifiedTicketResponseBody `form:"verified_ticket,omitempty" json:"verified_ticket,omitempty" xml:"verified_ticket,omitempty"`
+	VerifiersData  map[string][]byte           `form:"verifiers_data,omitempty" json:"verifiers_data,omitempty" xml:"verifiers_data,omitempty"`
+}
+
+// VerifiedTicketResponseBody is used to define fields on response body types.
+type VerifiedTicketResponseBody struct {
+	TxID                     *string  `form:"tx_id,omitempty" json:"tx_id,omitempty" xml:"tx_id,omitempty"`
+	TicketType               *string  `form:"ticket_type,omitempty" json:"ticket_type,omitempty" xml:"ticket_type,omitempty"`
+	MissingKeys              []string `form:"missing_keys,omitempty" json:"missing_keys,omitempty" xml:"missing_keys,omitempty"`
+	ReconstructedFileHash    []byte   `form:"reconstructed_file_hash,omitempty" json:"reconstructed_file_hash,omitempty" xml:"reconstructed_file_hash,omitempty"`
+	IsReconstructionRequired *bool    `form:"is_reconstruction_required,omitempty" json:"is_reconstruction_required,omitempty" xml:"is_reconstruction_required,omitempty"`
+	RaptorQSymbols           []byte   `form:"raptor_q_symbols,omitempty" json:"raptor_q_symbols,omitempty" xml:"raptor_q_symbols,omitempty"`
+	SenseFileIds             []string `form:"sense_file_ids,omitempty" json:"sense_file_ids,omitempty" xml:"sense_file_ids,omitempty"`
+	IsVerified               *bool    `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
+	Message                  *string  `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // SHTriggerMetricResponseBody is used to define fields on response body types.
 type SHTriggerMetricResponseBody struct {
 	// Unique identifier for the trigger
@@ -127,6 +320,80 @@ type SHExecutionMetricsResponseBody struct {
 	TotalFilesHealed *int `form:"total_files_healed,omitempty" json:"total_files_healed,omitempty" xml:"total_files_healed,omitempty"`
 	// Total number of file healings that failed
 	TotalFileHealingFailed *int `form:"total_file_healing_failed,omitempty" json:"total_file_healing_failed,omitempty" xml:"total_file_healing_failed,omitempty"`
+}
+
+// NewGetChallengeReportsSelfHealingChallengeReportsOK builds a "metrics"
+// service "getChallengeReports" endpoint result from a HTTP "OK" response.
+func NewGetChallengeReportsSelfHealingChallengeReportsOK(body *GetChallengeReportsResponseBody) *metrics.SelfHealingChallengeReports {
+	v := &metrics.SelfHealingChallengeReports{}
+	if body.Reports != nil {
+		v.Reports = make([]*metrics.SelfHealingChallengeReportKV, len(body.Reports))
+		for i, val := range body.Reports {
+			v.Reports[i] = unmarshalSelfHealingChallengeReportKVResponseBodyToMetricsSelfHealingChallengeReportKV(val)
+		}
+	}
+
+	return v
+}
+
+// NewGetChallengeReportsUnauthorized builds a metrics service
+// getChallengeReports endpoint Unauthorized error.
+func NewGetChallengeReportsUnauthorized(body *GetChallengeReportsUnauthorizedResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetChallengeReportsBadRequest builds a metrics service
+// getChallengeReports endpoint BadRequest error.
+func NewGetChallengeReportsBadRequest(body *GetChallengeReportsBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetChallengeReportsNotFound builds a metrics service getChallengeReports
+// endpoint NotFound error.
+func NewGetChallengeReportsNotFound(body *GetChallengeReportsNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetChallengeReportsInternalServerError builds a metrics service
+// getChallengeReports endpoint InternalServerError error.
+func NewGetChallengeReportsInternalServerError(body *GetChallengeReportsInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
 }
 
 // NewGetMetricsMetricsResultOK builds a "metrics" service "getMetrics"
@@ -202,6 +469,102 @@ func NewGetMetricsInternalServerError(body *GetMetricsInternalServerErrorRespons
 	}
 
 	return v
+}
+
+// ValidateGetChallengeReportsUnauthorizedResponseBody runs the validations
+// defined on getChallengeReports_Unauthorized_response_body
+func ValidateGetChallengeReportsUnauthorizedResponseBody(body *GetChallengeReportsUnauthorizedResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetChallengeReportsBadRequestResponseBody runs the validations
+// defined on getChallengeReports_BadRequest_response_body
+func ValidateGetChallengeReportsBadRequestResponseBody(body *GetChallengeReportsBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetChallengeReportsNotFoundResponseBody runs the validations defined
+// on getChallengeReports_NotFound_response_body
+func ValidateGetChallengeReportsNotFoundResponseBody(body *GetChallengeReportsNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetChallengeReportsInternalServerErrorResponseBody runs the
+// validations defined on getChallengeReports_InternalServerError_response_body
+func ValidateGetChallengeReportsInternalServerErrorResponseBody(body *GetChallengeReportsInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
 }
 
 // ValidateGetMetricsUnauthorizedResponseBody runs the validations defined on
