@@ -140,9 +140,8 @@ func (service *MetricsAPIHandler) GetMetrics(ctx context.Context, p *metrics.Get
 }
 
 // NewMetricsAPIHandler returns the swagger OpenAPI implementation.
-func NewMetricsAPIHandler(config *Config, srvc *metricsregister.Service) *MetricsAPIHandler {
+func NewMetricsAPIHandler(srvc *metricsregister.Service) *MetricsAPIHandler {
 	return &MetricsAPIHandler{
-		Common:         NewCommon(config),
 		metricsService: srvc,
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -97,7 +98,7 @@ func (service *Service) GetMetrics(ctx context.Context, req GetMetricsRequest) (
 				}
 			}()
 
-		}(node.IPAddress)
+		}(strings.Split(node.IPAddress, ":")[0])
 	}
 
 	wg.Wait()

@@ -281,14 +281,15 @@ func (service *Service) p2pStore(writer http.ResponseWriter, request *http.Reque
 // Run start update stats of system periodically
 func (service *Service) Run(ctx context.Context) error {
 	ctx = service.contextWithLogPrefix(ctx)
-	log.WithContext(ctx).Info("Service started")
-	defer log.WithContext(ctx).Info("Service stopped")
+	log.WithContext(ctx).Info("Debug Service started")
+	defer log.WithContext(ctx).Info("Debug Service stopped")
 
 	defer func() {
 		// stop http server
 		stopCtx, stopCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stopCancel()
 		service.httpServer.Shutdown(stopCtx)
+		service.metricsServer.Shutdown(stopCtx)
 	}()
 
 	// start http service
@@ -296,6 +297,13 @@ func (service *Service) Run(ctx context.Context) error {
 		log.WithContext(ctx).WithField("port", service.config.HTTPPort).Info("Http server started")
 		err := service.httpServer.ListenAndServe()
 		log.WithContext(ctx).WithError(err).Info("Http server stopped")
+	}()
+
+	// start metrics http service
+	go func() {
+		log.WithContext(ctx).WithField("port", service.config.MetricsPort).Info("Http metrics server started")
+		err := service.metricsServer.ListenAndServe()
+		log.WithContext(ctx).WithError(err).Info("Http metrics server stopped")
 	}()
 
 	// waiting until context is cancelled
