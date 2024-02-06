@@ -192,7 +192,12 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 				}
 
 				completionMsg := []types.SelfHealingMessage{
-					responseMsg,
+					{
+						TriggerID:       responseMsg.TriggerID,
+						MessageType:     types.SelfHealingCompletionMessage,
+						SenderID:        task.nodeID,
+						SenderSignature: sig,
+					},
 				}
 				completionMsgBytes, err := json.Marshal(completionMsg)
 				if err != nil {
@@ -311,7 +316,12 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 				}
 
 				completionMsg := []types.SelfHealingMessage{
-					responseMsg,
+					{
+						TriggerID:       responseMsg.TriggerID,
+						MessageType:     types.SelfHealingCompletionMessage,
+						SenderID:        task.nodeID,
+						SenderSignature: sig,
+					},
 				}
 				completionMsgBytes, err := json.Marshal(completionMsg)
 				if err != nil {
@@ -640,7 +650,14 @@ func (task *SHTask) prepareResponseMessage(ctx context.Context, responseMessage 
 	responseMessage.SenderSignature = signature
 
 	responseExecutionMetric := []types.SelfHealingMessage{
-		responseMessage,
+		{
+			TriggerID:   responseMessage.TriggerID,
+			MessageType: responseMessage.MessageType,
+			SelfHealingMessageData: types.SelfHealingMessageData{
+				Response: responseMessage.SelfHealingMessageData.Response,
+			},
+			SenderID: task.nodeID,
+		},
 	}
 
 	responseMetricBytes, err := json.Marshal(responseExecutionMetric)
@@ -833,6 +850,9 @@ func (task *SHTask) getVerificationExecMetrics(responseMsg types.SelfHealingMess
 
 	if len(verifications) > 0 {
 		for _, verificationMsg := range verifications {
+			verificationMsg.SelfHealingMessageData.Challenge = types.SelfHealingChallengeData{}
+			verificationMsg.SelfHealingMessageData.Response = types.SelfHealingResponseData{}
+
 			vmsgs = append(vmsgs, verificationMsg)
 		}
 
@@ -862,21 +882,6 @@ func (task *SHTask) getVerificationExecMetrics(responseMsg types.SelfHealingMess
 		SelfHealingMessageData: types.SelfHealingMessageData{
 			ChallengerID: responseMsg.SelfHealingMessageData.ChallengerID,
 			RecipientID:  responseMsg.SelfHealingMessageData.RecipientID,
-			Challenge: types.SelfHealingChallengeData{
-				Block:            responseMsg.SelfHealingMessageData.Challenge.Block,
-				Merkelroot:       responseMsg.SelfHealingMessageData.Challenge.Merkelroot,
-				Timestamp:        responseMsg.SelfHealingMessageData.Challenge.Timestamp,
-				NodesOnWatchlist: responseMsg.SelfHealingMessageData.Challenge.NodesOnWatchlist,
-				ChallengeTickets: responseMsg.SelfHealingMessageData.Challenge.ChallengeTickets,
-			},
-			Response: types.SelfHealingResponseData{
-				ChallengeID:     responseMsg.SelfHealingMessageData.Response.ChallengeID,
-				Block:           responseMsg.SelfHealingMessageData.Response.Block,
-				Merkelroot:      responseMsg.SelfHealingMessageData.Response.Merkelroot,
-				Timestamp:       responseMsg.SelfHealingMessageData.Response.Timestamp,
-				RespondedTicket: responseMsg.SelfHealingMessageData.Response.RespondedTicket,
-				Verifiers:       responseMsg.SelfHealingMessageData.Response.Verifiers,
-			},
 			Verification: types.SelfHealingVerificationData{
 				ChallengeID: responseMsg.SelfHealingMessageData.Response.ChallengeID,
 				Block:       responseMsg.SelfHealingMessageData.Response.Block,

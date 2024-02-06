@@ -238,7 +238,7 @@ func GetPingInfoToInsert(existedInfo, info *types.PingInfo) *types.PingInfo {
 	info.TotalPings = existedInfo.TotalPings + 1
 
 	if existedInfo.LastSeen.Time.IsZero() || !(existedInfo.LastSeen.Valid) { //for the first row
-		info.LastSeen = sql.NullTime{Time: time.Now().UTC(), Valid: true}
+		info.LastSeen = sql.NullTime{Time: time.Time{}, Valid: true}
 	}
 
 	if info.IsOnline {
@@ -253,7 +253,7 @@ func GetPingInfoToInsert(existedInfo, info *types.PingInfo) *types.PingInfo {
 		info.IsAdjusted = existedInfo.IsAdjusted
 
 		if existedInfo.LastSeen.Time.IsZero() || !(existedInfo.LastSeen.Valid) { //for the first row
-			info.LastSeen = sql.NullTime{Time: time.Now().UTC(), Valid: true}
+			info.LastSeen = sql.NullTime{Time: time.Time{}, Valid: true}
 		} else {
 			info.LastSeen = existedInfo.LastSeen
 		}
