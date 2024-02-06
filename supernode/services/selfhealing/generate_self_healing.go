@@ -50,7 +50,6 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("retrieveWatchlistPingInfo")
 		return errors.Errorf("error retrieving watchlist ping info")
 	}
-	nodesOnWatchlist := getNodesOnWatchList(watchlistPingInfos)
 	log.WithContext(ctx).Info("watchlist ping history has been retrieved")
 
 	shouldTrigger, watchlistPingInfos := task.shouldTriggerSelfHealing(watchlistPingInfos)
@@ -59,6 +58,8 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 		return nil
 	}
 	log.WithContext(ctx).Info("self-healing has been triggered, proceeding with the identification of files & recipients")
+
+	nodesOnWatchlist := getNodesOnWatchList(watchlistPingInfos)
 
 	keys, symbolFileKeyMap, err := task.ListSymbolFileKeysFromNFTAndActionTickets(ctx)
 	if err != nil {
@@ -822,7 +823,7 @@ func (task *SHTask) getSelfHealingGenerationMetrics(ctx context.Context, trigger
 
 	m := &types.SelfHealingGenerationMetric{
 		TriggerID:       triggerID,
-		MessageType:     int(types.ChallengeMessageType),
+		MessageType:     int(types.SelfHealingChallengeMessage),
 		Data:            generationMetricMsgBytes,
 		SenderID:        task.nodeID,
 		SenderSignature: sig,
