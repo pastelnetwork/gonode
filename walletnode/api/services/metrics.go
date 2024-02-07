@@ -128,13 +128,20 @@ func (service *MetricsAPIHandler) GetMetrics(ctx context.Context, p *metrics.Get
 		ScMetrics:        res.SCMetrics,
 		ShTriggerMetrics: shTriggerMetrics,
 		ShExecutionMetrics: &metrics.SHExecutionMetrics{
-			TotalChallengesIssued:     res.SHExecutionMetrics.TotalChallengesIssued,
-			TotalChallengesRejected:   res.SHExecutionMetrics.TotalChallengesRejected,
-			TotalChallengesAccepted:   res.SHExecutionMetrics.TotalChallengesAccepted,
-			TotalChallengesFailed:     res.SHExecutionMetrics.TotalChallengesFailed,
-			TotalChallengesSuccessful: res.SHExecutionMetrics.TotalChallengesSuccessful,
-			TotalFilesHealed:          res.SHExecutionMetrics.TotalFilesHealed,
-			TotalFileHealingFailed:    res.SHExecutionMetrics.TotalFileHealingFailed,
+			TotalChallengesAcknowledged: res.SHExecutionMetrics.TotalChallengesAcknowledged,
+			TotalChallengesIssued:       res.SHExecutionMetrics.TotalChallengesIssued,
+			TotalChallengesRejected:     res.SHExecutionMetrics.TotalChallengesRejected,
+			TotalChallengesAccepted:     res.SHExecutionMetrics.TotalChallengesAccepted,
+
+			TotalChallengeEvaluationsVerified:                     res.SHExecutionMetrics.TotalChallengeEvaluationsVerified,
+			TotalReconstructionRequiredEvaluationsApproved:        res.SHExecutionMetrics.TotalReconstructionsApproved,
+			TotalReconstructionNotRequiredEvaluationsApproved:     res.SHExecutionMetrics.TotalReconstructionsNotRquiredApproved,
+			TotalChallengeEvaluationsUnverified:                   res.SHExecutionMetrics.TotalChallengeEvaluationsUnverified,
+			TotalReconstructionRequiredEvaluationsNotApproved:     res.SHExecutionMetrics.TotalReconstructionsNotApproved,
+			TotalReconstructionsNotRequiredEvaluationsNotApproved: res.SHExecutionMetrics.TotalReconstructionsNotRequiredEvaluationNotApproved,
+
+			TotalFilesHealed:       res.SHExecutionMetrics.TotalFilesHealed,
+			TotalFileHealingFailed: res.SHExecutionMetrics.TotalFileHealingFailed,
 		},
 	}, nil
 }

@@ -13,11 +13,16 @@ import (
 )
 
 // processSHChallenge encapsulates the core logic for self-healing challenge processing.
-func (service *Service) processSHChallenge(ctx context.Context, pid string, passphrase string, challengeID string, count int) (reports types.SelfHealingChallengeReports, err error) {
-	_, err = service.scService.PastelClient.Sign(ctx, []byte{1, 2, 3}, pid, passphrase, pastel.SignAlgorithmED448)
+func (service *Service) processSHChallenge(ctx context.Context, pid string, signature string, challengeID string, count int) (reports types.SelfHealingChallengeReports, err error) {
+	ok, err := service.scService.PastelClient.Verify(ctx, []byte(pid), signature, pid, pastel.SignAlgorithmED448)
 	if err != nil {
-		return nil, fmt.Errorf("invalid pid/passphrase: %w", err)
+		return nil, fmt.Errorf("failed to verify pid/passphrase: %w", err)
 	}
+
+	if !ok {
+		return nil, fmt.Errorf("invalid pid/passphrase")
+	}
+
 	reports = make(types.SelfHealingChallengeReports)
 
 	store, err := local.OpenHistoryDB()
@@ -78,7 +83,7 @@ func (service *Service) shChallenge(writer http.ResponseWriter, request *http.Re
 		case "error opening DB", "error retrieving metrics":
 			statusCode = http.StatusNotFound
 		default:
-			statusCode = http.StatusNotFound // For "no metrics found for challenge_id"
+			statusCode = http.StatusInternalServerError
 		}
 		responseWithJSON(writer, statusCode, map[string]string{"error": err.Error()})
 		return
@@ -88,10 +93,14 @@ func (service *Service) shChallenge(writer http.ResponseWriter, request *http.Re
 }
 
 // processSHTrigger encapsulates the core logic for self-healing trigger processing.
-func (service *Service) processSHTrigger(ctx context.Context, pid string, passphrase string, triggerID string, count int) ([]types.SelfHealingGenerationMetric, error) {
-	_, err := service.scService.PastelClient.Sign(ctx, []byte{1, 2, 3}, pid, passphrase, pastel.SignAlgorithmED448)
+func (service *Service) processSHTrigger(ctx context.Context, pid string, signature string, triggerID string, count int) ([]types.SelfHealingGenerationMetric, error) {
+	ok, err := service.scService.PastelClient.Verify(ctx, []byte(pid), signature, pid, pastel.SignAlgorithmED448)
 	if err != nil {
-		return nil, fmt.Errorf("invalid pid/passphrase: %w", err)
+		return nil, fmt.Errorf("failed to verify pid/passphrase: %w", err)
+	}
+
+	if !ok {
+		return nil, fmt.Errorf("invalid pid/passphrase")
 	}
 
 	store, err := local.OpenHistoryDB()
@@ -166,10 +175,14 @@ func (service *Service) shTrigger(writer http.ResponseWriter, request *http.Requ
 }
 
 // processMetrics handles the core logic separately.
-func (service *Service) processMetrics(ctx context.Context, pid string, passphrase string, from time.Time, to *time.Time) (interface{}, error) {
-	_, err := service.scService.PastelClient.Sign(ctx, []byte{1, 2, 3}, pid, passphrase, pastel.SignAlgorithmED448)
+func (service *Service) processMetrics(ctx context.Context, pid string, signature string, from time.Time, to *time.Time) (interface{}, error) {
+	ok, err := service.scService.PastelClient.Verify(ctx, []byte(pid), signature, pid, pastel.SignAlgorithmED448)
 	if err != nil {
-		return nil, fmt.Errorf("invalid pid/passphrase: %w", err)
+		return nil, fmt.Errorf("failed to verify pid/passphrase: %w", err)
+	}
+
+	if !ok {
+		return nil, fmt.Errorf("invalid pid/passphrase")
 	}
 
 	// Rate Limit Check for pid

@@ -308,14 +308,27 @@ type SHTriggerMetricResponseBody struct {
 type SHExecutionMetricsResponseBody struct {
 	// Total number of challenges issued
 	TotalChallengesIssued int `form:"total_challenges_issued" json:"total_challenges_issued" xml:"total_challenges_issued"`
-	// Total number of challenges rejected
+	// Total number of challenges acknowledged by the healer node
+	TotalChallengesAcknowledged int `form:"total_challenges_acknowledged" json:"total_challenges_acknowledged" xml:"total_challenges_acknowledged"`
+	// Total number of challenges rejected (healer node evaluated that
+	// reconstruction is not required)
 	TotalChallengesRejected int `form:"total_challenges_rejected" json:"total_challenges_rejected" xml:"total_challenges_rejected"`
-	// Total number of challenges accepted
+	// Total number of challenges accepted (healer node evaluated that
+	// reconstruction is required)
 	TotalChallengesAccepted int `form:"total_challenges_accepted" json:"total_challenges_accepted" xml:"total_challenges_accepted"`
-	// Total number of challenges failed
-	TotalChallengesFailed int `form:"total_challenges_failed" json:"total_challenges_failed" xml:"total_challenges_failed"`
-	// Total number of challenges successful
-	TotalChallengesSuccessful int `form:"total_challenges_successful" json:"total_challenges_successful" xml:"total_challenges_successful"`
+	// Total number of challenges verified
+	TotalChallengeEvaluationsVerified int `form:"total_challenge_evaluations_verified" json:"total_challenge_evaluations_verified" xml:"total_challenge_evaluations_verified"`
+	// Total number of reconstructions approved by verifier nodes
+	TotalReconstructionRequiredEvaluationsApproved int `form:"total_reconstruction_required_evaluations_approved" json:"total_reconstruction_required_evaluations_approved" xml:"total_reconstruction_required_evaluations_approved"`
+	// Total number of reconstructions not required approved by verifier nodes
+	TotalReconstructionNotRequiredEvaluationsApproved int `form:"total_reconstruction_not_required_evaluations_approved" json:"total_reconstruction_not_required_evaluations_approved" xml:"total_reconstruction_not_required_evaluations_approved"`
+	// Total number of challenge evaluations unverified by verifier nodes
+	TotalChallengeEvaluationsUnverified int `form:"total_challenge_evaluations_unverified" json:"total_challenge_evaluations_unverified" xml:"total_challenge_evaluations_unverified"`
+	// Total number of reconstructions not approved by verifier nodes
+	TotalReconstructionRequiredEvaluationsNotApproved int `form:"total_reconstruction_required_evaluations_not_approved" json:"total_reconstruction_required_evaluations_not_approved" xml:"total_reconstruction_required_evaluations_not_approved"`
+	// Total number of reconstructions not required evaluation not approved by
+	// verifier nodes
+	TotalReconstructionsNotRequiredEvaluationsNotApproved int `form:"total_reconstructions_not_required_evaluations_not_approved" json:"total_reconstructions_not_required_evaluations_not_approved" xml:"total_reconstructions_not_required_evaluations_not_approved"`
 	// Total number of files healed
 	TotalFilesHealed int `form:"total_files_healed" json:"total_files_healed" xml:"total_files_healed"`
 	// Total number of file healings that failed

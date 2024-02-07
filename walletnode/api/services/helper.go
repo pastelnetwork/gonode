@@ -382,7 +382,7 @@ func toSHMessages(msgs types.SelfHealingMessages) []*metrics.SelfHealingMessage 
 		message := &metrics.SelfHealingMessage{
 			TriggerID:       &msg.TriggerID,
 			MessageType:     &msgType,
-			Data:            toSHMessageData(msg.SelfHealingMessageData),
+			Data:            toSHMessageData(msg.SelfHealingMessageData, msg.MessageType),
 			SenderID:        &msg.SenderID,
 			SenderSignature: msg.SenderSignature,
 		}
@@ -391,14 +391,21 @@ func toSHMessages(msgs types.SelfHealingMessages) []*metrics.SelfHealingMessage 
 	return messages
 }
 
-func toSHMessageData(data types.SelfHealingMessageData) *metrics.SelfHealingMessageData {
-	return &metrics.SelfHealingMessageData{
+func toSHMessageData(data types.SelfHealingMessageData, msgType types.SelfHealingMessageType) *metrics.SelfHealingMessageData {
+	ret := &metrics.SelfHealingMessageData{
 		ChallengerID: &data.ChallengerID,
 		RecipientID:  &data.RecipientID,
-		Challenge:    toSHChallengeData(data.Challenge),
-		Response:     toSHResponseData(data.Response),
-		Verification: toSHVerificationData(data.Verification),
 	}
+
+	if msgType == types.SelfHealingChallengeMessage {
+		ret.Challenge = toSHChallengeData(data.Challenge)
+	} else if msgType == types.SelfHealingResponseMessage {
+		ret.Response = toSHResponseData(data.Response)
+	} else if msgType == types.SelfHealingVerificationMessage {
+		ret.Verification = toSHVerificationData(data.Verification)
+	}
+
+	return ret
 }
 
 func toSHChallengeData(data types.SelfHealingChallengeData) *metrics.SelfHealingChallengeData {

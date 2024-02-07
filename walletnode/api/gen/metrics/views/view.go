@@ -47,14 +47,27 @@ type SHTriggerMetricView struct {
 type SHExecutionMetricsView struct {
 	// Total number of challenges issued
 	TotalChallengesIssued *int
-	// Total number of challenges rejected
+	// Total number of challenges acknowledged by the healer node
+	TotalChallengesAcknowledged *int
+	// Total number of challenges rejected (healer node evaluated that
+	// reconstruction is not required)
 	TotalChallengesRejected *int
-	// Total number of challenges accepted
+	// Total number of challenges accepted (healer node evaluated that
+	// reconstruction is required)
 	TotalChallengesAccepted *int
-	// Total number of challenges failed
-	TotalChallengesFailed *int
-	// Total number of challenges successful
-	TotalChallengesSuccessful *int
+	// Total number of challenges verified
+	TotalChallengeEvaluationsVerified *int
+	// Total number of reconstructions approved by verifier nodes
+	TotalReconstructionRequiredEvaluationsApproved *int
+	// Total number of reconstructions not required approved by verifier nodes
+	TotalReconstructionNotRequiredEvaluationsApproved *int
+	// Total number of challenge evaluations unverified by verifier nodes
+	TotalChallengeEvaluationsUnverified *int
+	// Total number of reconstructions not approved by verifier nodes
+	TotalReconstructionRequiredEvaluationsNotApproved *int
+	// Total number of reconstructions not required evaluation not approved by
+	// verifier nodes
+	TotalReconstructionsNotRequiredEvaluationsNotApproved *int
 	// Total number of files healed
 	TotalFilesHealed *int
 	// Total number of file healings that failed
@@ -139,17 +152,32 @@ func ValidateSHExecutionMetricsView(result *SHExecutionMetricsView) (err error) 
 	if result.TotalChallengesIssued == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_issued", "result"))
 	}
+	if result.TotalChallengesAcknowledged == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_acknowledged", "result"))
+	}
 	if result.TotalChallengesRejected == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_rejected", "result"))
 	}
 	if result.TotalChallengesAccepted == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_accepted", "result"))
 	}
-	if result.TotalChallengesFailed == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_failed", "result"))
+	if result.TotalChallengeEvaluationsVerified == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenge_evaluations_verified", "result"))
 	}
-	if result.TotalChallengesSuccessful == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_successful", "result"))
+	if result.TotalReconstructionRequiredEvaluationsApproved == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_required_evaluations_approved", "result"))
+	}
+	if result.TotalReconstructionNotRequiredEvaluationsApproved == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_not_required_evaluations_approved", "result"))
+	}
+	if result.TotalChallengeEvaluationsUnverified == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenge_evaluations_unverified", "result"))
+	}
+	if result.TotalReconstructionRequiredEvaluationsNotApproved == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_required_evaluations_not_approved", "result"))
+	}
+	if result.TotalReconstructionsNotRequiredEvaluationsNotApproved == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstructions_not_required_evaluations_not_approved", "result"))
 	}
 	if result.TotalFilesHealed == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_files_healed", "result"))
