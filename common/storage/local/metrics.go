@@ -18,9 +18,23 @@ var (
 // SHChallengeMetric represents the self-healing challenge metric
 type SHChallengeMetric struct {
 	ChallengeID string
-	IsAccepted  bool
-	IsVerified  bool
-	IsHealed    bool
+
+	// healer node
+	IsAck      bool
+	IsAccepted bool
+	IsRejected bool
+
+	// verifier nodes
+	HasMinVerifications                    bool
+	IsVerified                             bool
+	IsReconstructionRequiredVerified       bool
+	IsReconstructionNotRequiredVerified    bool
+	IsUnverified                           bool
+	IsReconstructionRequiredNotVerified    bool
+	IsReconstructionNotRequiredNotVerified bool
+	IsReconstructionRequiredHashMismatch   bool
+
+	IsHealed bool
 }
 
 // InsertSelfHealingGenerationMetrics inserts self-healing generation metrics
@@ -123,19 +137,65 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 				return m, fmt.Errorf("cannot unmarshal self healing execution message type 3: %w - row ID: %d", err, row.ID)
 			}
 
-			verificationCount := 0
+			if len(messages) >= minVerifications {
+				ch := challenges[row.ChallengeID]
+				ch.HasMinVerifications = true
+				challenges[row.ChallengeID] = ch
+			}
+
+			reconReqVerified := 0
+			reconNotReqVerified := 0
+			reconReqUnverified := 0
+			reconNotReqUnverified := 0
+			reconReqHashMismatch := 0
+
 			for _, message := range messages {
-				if message.SelfHealingMessageData.Verification.VerifiedTicket.IsVerified {
-					verificationCount++
+				if message.SelfHealingMessageData.Verification.VerifiedTicket.IsReconstructionRequired {
+					if message.SelfHealingMessageData.Verification.VerifiedTicket.IsReconstructionRequiredByHealer {
+						if message.SelfHealingMessageData.Verification.VerifiedTicket.IsVerified {
+							reconReqVerified++
+						} else {
+							reconReqHashMismatch++
+						}
+					} else {
+						reconNotReqUnverified++
+					}
+				} else {
+					if message.SelfHealingMessageData.Verification.VerifiedTicket.IsReconstructionRequiredByHealer {
+						reconReqUnverified++
+					} else {
+						reconNotReqVerified++
+					}
 				}
 			}
 
-			if verificationCount >= minVerifications {
+			if reconReqVerified >= minVerifications {
 				ch := challenges[row.ChallengeID]
 				ch.IsVerified = true
+				ch.IsReconstructionRequiredVerified = true
+				challenges[row.ChallengeID] = ch
+			} else if reconNotReqVerified >= minVerifications {
+				ch := challenges[row.ChallengeID]
+				ch.IsVerified = true
+				ch.IsReconstructionNotRequiredVerified = true
+				challenges[row.ChallengeID] = ch
+			} else if reconReqUnverified >= minVerifications {
+				ch := challenges[row.ChallengeID]
+				ch.IsUnverified = true
+				ch.IsReconstructionRequiredNotVerified = true
+				challenges[row.ChallengeID] = ch
+			} else if reconNotReqUnverified >= minVerifications {
+				ch := challenges[row.ChallengeID]
+				ch.IsUnverified = true
+				ch.IsReconstructionNotRequiredNotVerified = true
+				challenges[row.ChallengeID] = ch
+			} else if reconReqHashMismatch >= minVerifications {
+				ch := challenges[row.ChallengeID]
+				ch.IsReconstructionRequiredHashMismatch = true
 				challenges[row.ChallengeID] = ch
 			}
-		} else {
+
+		} else if row.MessageType == int(types.SelfHealingResponseMessage) {
 			messages := types.SelfHealingMessages{}
 			if err := json.Unmarshal(row.Data, &messages); err != nil {
 				return m, fmt.Errorf("cannot unmarshal self healing execution message type 3: %w - row ID: %d", err, row.ID)
@@ -146,17 +206,19 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 
 			data := messages[0].SelfHealingMessageData
 
-			if row.MessageType == int(types.SelfHealingResponseMessage) {
-				ch := challenges[row.ChallengeID]
-				ch.IsAccepted = data.Response.RespondedTicket.IsReconstructionRequired
-				challenges[row.ChallengeID] = ch
+			ch := challenges[row.ChallengeID]
+			if data.Response.RespondedTicket.IsReconstructionRequired {
+				ch.IsAccepted = true
+			} else {
+				ch.IsRejected = true
 			}
+			ch.IsAck = true
+			challenges[row.ChallengeID] = ch
 
-			if row.MessageType == 4 {
-				ch := challenges[row.ChallengeID]
-				ch.IsHealed = true
-				challenges[row.ChallengeID] = ch
-			}
+		} else if row.MessageType == int(types.SelfHealingCompletionMessage) {
+			ch := challenges[row.ChallengeID]
+			ch.IsHealed = true
+			challenges[row.ChallengeID] = ch
 		}
 	}
 
@@ -167,12 +229,44 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 			WithField("is-verified", challenge.IsVerified).WithField("is-healed", challenge.IsHealed).
 			Info("self-healing challenge metric")
 
+		if challenge.IsAck {
+			m.TotalChallengesAcknowledged++
+		}
+
 		if challenge.IsAccepted {
 			m.TotalChallengesAccepted++
 		}
 
+		if challenge.IsRejected {
+			m.TotalChallengesRejected++
+		}
+
 		if challenge.IsVerified {
-			m.TotalChallengesSuccessful++
+			m.TotalChallengeEvaluationsVerified++
+		}
+
+		if challenge.IsReconstructionRequiredVerified {
+			m.TotalReconstructionsApproved++
+		}
+
+		if challenge.IsReconstructionNotRequiredVerified {
+			m.TotalReconstructionsNotRquiredApproved++
+		}
+
+		if challenge.IsUnverified {
+			m.TotalChallengeEvaluationsUnverified++
+		}
+
+		if challenge.IsReconstructionRequiredNotVerified {
+			m.TotalReconstructionsNotApproved++
+		}
+
+		if challenge.IsReconstructionNotRequiredNotVerified {
+			m.TotalReconstructionsNotRequiredEvaluationNotApproved++
+		}
+
+		if challenge.IsReconstructionRequiredHashMismatch {
+			m.TotalReconstructionRequiredHashMismatch++
 		}
 
 		if challenge.IsHealed {
@@ -194,14 +288,20 @@ func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.
 	challengesIssued := 0
 	for _, metric := range genMetric {
 		t := metrics.SHTriggerMetric{}
-		data := types.SelfHealingMessageData{}
-		json.Unmarshal(metric.Data, &data)
+		data := types.SelfHealingMessages{}
+		if err := json.Unmarshal(metric.Data, &data); err != nil {
+			return metrics.Metrics{}, fmt.Errorf("cannot unmarshal self healing generation message type 3: %w", err)
+		}
+
+		if len(data) < 1 {
+			return metrics.Metrics{}, fmt.Errorf("len of selfhealing messages data JSON should not be 0")
+		}
 
 		t.TriggerID = metric.TriggerID
-		t.ListOfNodes = data.Challenge.NodesOnWatchlist
-		t.TotalTicketsIdentified = len(data.Challenge.ChallengeTickets)
+		t.ListOfNodes = data[0].SelfHealingMessageData.Challenge.NodesOnWatchlist
+		t.TotalTicketsIdentified = len(data[0].SelfHealingMessageData.Challenge.ChallengeTickets)
 
-		for _, ticket := range data.Challenge.ChallengeTickets {
+		for _, ticket := range data[0].SelfHealingMessageData.Challenge.ChallengeTickets {
 			t.TotalFilesIdentified += len(ticket.MissingKeys)
 		}
 
@@ -216,9 +316,7 @@ func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.
 	}
 
 	em.TotalChallengesIssued = challengesIssued
-	em.TotalChallengesRejected = challengesIssued - em.TotalChallengesAccepted
-	em.TotalChallengesFailed = em.TotalChallengesAccepted - em.TotalChallengesSuccessful
-	em.TotalFileHealingFailed = em.TotalChallengesSuccessful - em.TotalFilesHealed
+	em.TotalFileHealingFailed = em.TotalReconstructionsApproved - em.TotalFilesHealed
 
 	m.SHTriggerMetrics = te
 

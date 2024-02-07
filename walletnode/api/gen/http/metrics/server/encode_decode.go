@@ -556,13 +556,19 @@ func marshalMetricsviewsSHTriggerMetricViewToSHTriggerMetricResponseBody(v *metr
 // *metricsviews.SHExecutionMetricsView.
 func marshalMetricsviewsSHExecutionMetricsViewToSHExecutionMetricsResponseBody(v *metricsviews.SHExecutionMetricsView) *SHExecutionMetricsResponseBody {
 	res := &SHExecutionMetricsResponseBody{
-		TotalChallengesIssued:     *v.TotalChallengesIssued,
-		TotalChallengesRejected:   *v.TotalChallengesRejected,
-		TotalChallengesAccepted:   *v.TotalChallengesAccepted,
-		TotalChallengesFailed:     *v.TotalChallengesFailed,
-		TotalChallengesSuccessful: *v.TotalChallengesSuccessful,
-		TotalFilesHealed:          *v.TotalFilesHealed,
-		TotalFileHealingFailed:    *v.TotalFileHealingFailed,
+		TotalChallengesIssued:                                 *v.TotalChallengesIssued,
+		TotalChallengesAcknowledged:                           *v.TotalChallengesAcknowledged,
+		TotalChallengesRejected:                               *v.TotalChallengesRejected,
+		TotalChallengesAccepted:                               *v.TotalChallengesAccepted,
+		TotalChallengeEvaluationsVerified:                     *v.TotalChallengeEvaluationsVerified,
+		TotalReconstructionRequiredEvaluationsApproved:        *v.TotalReconstructionRequiredEvaluationsApproved,
+		TotalReconstructionNotRequiredEvaluationsApproved:     *v.TotalReconstructionNotRequiredEvaluationsApproved,
+		TotalChallengeEvaluationsUnverified:                   *v.TotalChallengeEvaluationsUnverified,
+		TotalReconstructionRequiredEvaluationsNotApproved:     *v.TotalReconstructionRequiredEvaluationsNotApproved,
+		TotalReconstructionsNotRequiredEvaluationsNotApproved: *v.TotalReconstructionsNotRequiredEvaluationsNotApproved,
+		TotalReconstructionRequiredHashMismatch:               v.TotalReconstructionRequiredHashMismatch,
+		TotalFilesHealed:                                      *v.TotalFilesHealed,
+		TotalFileHealingFailed:                                *v.TotalFileHealingFailed,
 	}
 
 	return res

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -51,6 +52,15 @@ func (service *Service) GetMetrics(ctx context.Context, req GetMetricsRequest) (
 		return metrics.Metrics{}, err
 	}
 
+	if len(topNodes) < 3 {
+		return metrics.Metrics{}, fmt.Errorf("no top nodes found")
+	}
+
+	signature, err := service.pastelHandler.PastelClient.Sign(ctx, []byte(req.PastelID), req.PastelID, req.Passphrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		return metrics.Metrics{}, fmt.Errorf("invalid pid/passphrase: %w", err)
+	}
+
 	var wg sync.WaitGroup
 	var mutex sync.Mutex // Mutex to protect access to the results map
 	results := make(map[string]metrics.Metrics)
@@ -66,7 +76,8 @@ func (service *Service) GetMetrics(ctx context.Context, req GetMetricsRequest) (
 		go func(ip string) {
 			defer wg.Done()
 
-			data, err := service.fetchMetricsFromNode(ip, req.PastelID, req.Passphrase, req.From, req.To)
+			data, err := service.fetchMetricsFromNode(ip, req.PastelID, string(signature), req.From, req.To)
+			log.WithContext(ctx).Infof("Metrics response: %v", data)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch metrics from node")
 
@@ -97,7 +108,7 @@ func (service *Service) GetMetrics(ctx context.Context, req GetMetricsRequest) (
 				}
 			}()
 
-		}(node.IPAddress)
+		}(strings.Split(node.IPAddress, ":")[0])
 	}
 
 	wg.Wait()
@@ -114,12 +125,7 @@ func (service *Service) GetMetrics(ctx context.Context, req GetMetricsRequest) (
 		}
 	}
 
-	// Verify the metrics
-	if len(topNodes) > 0 {
-		return results[topNodes[0].IPAddress], nil
-	}
-
-	return metrics.Metrics{}, nil
+	return mostCommon, nil
 }
 
 // fetchMetricsFromNode makes an HTTP GET request to the node's metrics endpoint and returns the metrics.
@@ -155,6 +161,8 @@ func (service *Service) fetchMetricsFromNode(addr, pid, passphrase string, from,
 		return data, err
 	}
 
+	log.WithContext(context.Background()).Infof("Metrics response: %s", string(body))
+
 	// Check for non-200 status codes
 	if resp.StatusCode != http.StatusOK {
 		return data, fmt.Errorf("received non-200 status code: %d", resp.StatusCode)
@@ -177,6 +185,15 @@ func (service *Service) GetSelfHealingChallengeReports(ctx context.Context, req 
 		return report, fmt.Errorf("failed to get top nodes: %w", err)
 	}
 
+	if len(topNodes) < 3 {
+		return report, fmt.Errorf("no top nodes found")
+	}
+
+	signature, err := service.pastelHandler.PastelClient.Sign(ctx, []byte(req.PastelID), req.PastelID, req.Passphrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		return report, fmt.Errorf("invalid pid/passphrase: %w", err)
+	}
+
 	var wg sync.WaitGroup
 	var mutex sync.Mutex // Mutex to protect access to the results map
 	results := make(map[string]types.SelfHealingChallengeReports)
@@ -192,7 +209,8 @@ func (service *Service) GetSelfHealingChallengeReports(ctx context.Context, req 
 		go func(ip string) {
 			defer wg.Done()
 
-			data, err := service.fetchSHChallengesFromNode(ip, req.PastelID, req.Passphrase, req.Count, req.ChallengeID)
+			data, err := service.fetchSHChallengesFromNode(ip, req.PastelID, string(signature), req.Count, req.ChallengeID)
+
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch metrics from node")
 
@@ -223,7 +241,7 @@ func (service *Service) GetSelfHealingChallengeReports(ctx context.Context, req 
 				}
 			}()
 
-		}(node.IPAddress)
+		}(strings.Split(node.IPAddress, ":")[0])
 	}
 
 	wg.Wait()
@@ -240,18 +258,14 @@ func (service *Service) GetSelfHealingChallengeReports(ctx context.Context, req 
 		}
 	}
 
-	if len(topNodes) > 0 {
-		return results[topNodes[0].IPAddress], nil
-	}
-
-	return report, nil
+	return mostCommon, nil
 }
 
 // fetchMetricsFromNode makes an HTTP GET request to the node's metrics endpoint and returns the metrics.
 func (service *Service) fetchSHChallengesFromNode(addr, pid, passphrase string, count int, challengeID string) (data types.SelfHealingChallengeReports, err error) {
 	data = types.SelfHealingChallengeReports{}
 	// Construct the URL with query parameters
-	url := fmt.Sprintf("http://%s:%d/sh_challenges?pid=%s", addr, metricsPort, pid)
+	url := fmt.Sprintf("http://%s:%d/sh_challenge?pid=%s", addr, metricsPort, pid)
 	if count != 0 {
 		url += "&count=" + fmt.Sprintf("%d", count)
 	} else if challengeID != "" {
@@ -297,6 +311,6 @@ func (service *Service) fetchSHChallengesFromNode(addr, pid, passphrase string, 
 func NewMetricsService(pastelClient pastel.Client) *Service {
 	return &Service{
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
-		client:        http.Client{Timeout: time.Duration(5) * time.Second},
+		client:        http.Client{Timeout: time.Duration(30) * time.Second},
 	}
 }

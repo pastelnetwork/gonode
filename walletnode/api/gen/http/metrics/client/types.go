@@ -308,14 +308,29 @@ type SHTriggerMetricResponseBody struct {
 type SHExecutionMetricsResponseBody struct {
 	// Total number of challenges issued
 	TotalChallengesIssued *int `form:"total_challenges_issued,omitempty" json:"total_challenges_issued,omitempty" xml:"total_challenges_issued,omitempty"`
-	// Total number of challenges rejected
+	// Total number of challenges acknowledged by the healer node
+	TotalChallengesAcknowledged *int `form:"total_challenges_acknowledged,omitempty" json:"total_challenges_acknowledged,omitempty" xml:"total_challenges_acknowledged,omitempty"`
+	// Total number of challenges rejected (healer node evaluated that
+	// reconstruction is not required)
 	TotalChallengesRejected *int `form:"total_challenges_rejected,omitempty" json:"total_challenges_rejected,omitempty" xml:"total_challenges_rejected,omitempty"`
-	// Total number of challenges accepted
+	// Total number of challenges accepted (healer node evaluated that
+	// reconstruction is required)
 	TotalChallengesAccepted *int `form:"total_challenges_accepted,omitempty" json:"total_challenges_accepted,omitempty" xml:"total_challenges_accepted,omitempty"`
-	// Total number of challenges failed
-	TotalChallengesFailed *int `form:"total_challenges_failed,omitempty" json:"total_challenges_failed,omitempty" xml:"total_challenges_failed,omitempty"`
-	// Total number of challenges successful
-	TotalChallengesSuccessful *int `form:"total_challenges_successful,omitempty" json:"total_challenges_successful,omitempty" xml:"total_challenges_successful,omitempty"`
+	// Total number of challenges verified
+	TotalChallengeEvaluationsVerified *int `form:"total_challenge_evaluations_verified,omitempty" json:"total_challenge_evaluations_verified,omitempty" xml:"total_challenge_evaluations_verified,omitempty"`
+	// Total number of reconstructions approved by verifier nodes
+	TotalReconstructionRequiredEvaluationsApproved *int `form:"total_reconstruction_required_evaluations_approved,omitempty" json:"total_reconstruction_required_evaluations_approved,omitempty" xml:"total_reconstruction_required_evaluations_approved,omitempty"`
+	// Total number of reconstructions not required approved by verifier nodes
+	TotalReconstructionNotRequiredEvaluationsApproved *int `form:"total_reconstruction_not_required_evaluations_approved,omitempty" json:"total_reconstruction_not_required_evaluations_approved,omitempty" xml:"total_reconstruction_not_required_evaluations_approved,omitempty"`
+	// Total number of challenge evaluations unverified by verifier nodes
+	TotalChallengeEvaluationsUnverified *int `form:"total_challenge_evaluations_unverified,omitempty" json:"total_challenge_evaluations_unverified,omitempty" xml:"total_challenge_evaluations_unverified,omitempty"`
+	// Total number of reconstructions not approved by verifier nodes
+	TotalReconstructionRequiredEvaluationsNotApproved *int `form:"total_reconstruction_required_evaluations_not_approved,omitempty" json:"total_reconstruction_required_evaluations_not_approved,omitempty" xml:"total_reconstruction_required_evaluations_not_approved,omitempty"`
+	// Total number of reconstructions not required evaluation not approved by
+	// verifier nodes
+	TotalReconstructionsNotRequiredEvaluationsNotApproved *int `form:"total_reconstructions_not_required_evaluations_not_approved,omitempty" json:"total_reconstructions_not_required_evaluations_not_approved,omitempty" xml:"total_reconstructions_not_required_evaluations_not_approved,omitempty"`
+	// Total number of reconstructions required with hash mismatch
+	TotalReconstructionRequiredHashMismatch *int `form:"total_reconstruction_required_hash_mismatch,omitempty" json:"total_reconstruction_required_hash_mismatch,omitempty" xml:"total_reconstruction_required_hash_mismatch,omitempty"`
 	// Total number of files healed
 	TotalFilesHealed *int `form:"total_files_healed,omitempty" json:"total_files_healed,omitempty" xml:"total_files_healed,omitempty"`
 	// Total number of file healings that failed
@@ -690,17 +705,32 @@ func ValidateSHExecutionMetricsResponseBody(body *SHExecutionMetricsResponseBody
 	if body.TotalChallengesIssued == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_issued", "body"))
 	}
+	if body.TotalChallengesAcknowledged == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_acknowledged", "body"))
+	}
 	if body.TotalChallengesRejected == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_rejected", "body"))
 	}
 	if body.TotalChallengesAccepted == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_accepted", "body"))
 	}
-	if body.TotalChallengesFailed == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_failed", "body"))
+	if body.TotalChallengeEvaluationsVerified == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenge_evaluations_verified", "body"))
 	}
-	if body.TotalChallengesSuccessful == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_successful", "body"))
+	if body.TotalReconstructionRequiredEvaluationsApproved == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_required_evaluations_approved", "body"))
+	}
+	if body.TotalReconstructionNotRequiredEvaluationsApproved == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_not_required_evaluations_approved", "body"))
+	}
+	if body.TotalChallengeEvaluationsUnverified == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenge_evaluations_unverified", "body"))
+	}
+	if body.TotalReconstructionRequiredEvaluationsNotApproved == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_required_evaluations_not_approved", "body"))
+	}
+	if body.TotalReconstructionsNotRequiredEvaluationsNotApproved == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstructions_not_required_evaluations_not_approved", "body"))
 	}
 	if body.TotalFilesHealed == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_files_healed", "body"))

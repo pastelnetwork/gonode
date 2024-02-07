@@ -97,14 +97,29 @@ type RespondedTicket struct {
 type SHExecutionMetrics struct {
 	// Total number of challenges issued
 	TotalChallengesIssued int
-	// Total number of challenges rejected
+	// Total number of challenges acknowledged by the healer node
+	TotalChallengesAcknowledged int
+	// Total number of challenges rejected (healer node evaluated that
+	// reconstruction is not required)
 	TotalChallengesRejected int
-	// Total number of challenges accepted
+	// Total number of challenges accepted (healer node evaluated that
+	// reconstruction is required)
 	TotalChallengesAccepted int
-	// Total number of challenges failed
-	TotalChallengesFailed int
-	// Total number of challenges successful
-	TotalChallengesSuccessful int
+	// Total number of challenges verified
+	TotalChallengeEvaluationsVerified int
+	// Total number of reconstructions approved by verifier nodes
+	TotalReconstructionRequiredEvaluationsApproved int
+	// Total number of reconstructions not required approved by verifier nodes
+	TotalReconstructionNotRequiredEvaluationsApproved int
+	// Total number of challenge evaluations unverified by verifier nodes
+	TotalChallengeEvaluationsUnverified int
+	// Total number of reconstructions not approved by verifier nodes
+	TotalReconstructionRequiredEvaluationsNotApproved int
+	// Total number of reconstructions not required evaluation not approved by
+	// verifier nodes
+	TotalReconstructionsNotRequiredEvaluationsNotApproved int
+	// Total number of reconstructions required with hash mismatch
+	TotalReconstructionRequiredHashMismatch *int
 	// Total number of files healed
 	TotalFilesHealed int
 	// Total number of file healings that failed
@@ -301,13 +316,19 @@ func transformMetricsviewsSHExecutionMetricsViewToSHExecutionMetrics(v *metricsv
 		return nil
 	}
 	res := &SHExecutionMetrics{
-		TotalChallengesIssued:     *v.TotalChallengesIssued,
-		TotalChallengesRejected:   *v.TotalChallengesRejected,
-		TotalChallengesAccepted:   *v.TotalChallengesAccepted,
-		TotalChallengesFailed:     *v.TotalChallengesFailed,
-		TotalChallengesSuccessful: *v.TotalChallengesSuccessful,
-		TotalFilesHealed:          *v.TotalFilesHealed,
-		TotalFileHealingFailed:    *v.TotalFileHealingFailed,
+		TotalChallengesIssued:                                 *v.TotalChallengesIssued,
+		TotalChallengesAcknowledged:                           *v.TotalChallengesAcknowledged,
+		TotalChallengesRejected:                               *v.TotalChallengesRejected,
+		TotalChallengesAccepted:                               *v.TotalChallengesAccepted,
+		TotalChallengeEvaluationsVerified:                     *v.TotalChallengeEvaluationsVerified,
+		TotalReconstructionRequiredEvaluationsApproved:        *v.TotalReconstructionRequiredEvaluationsApproved,
+		TotalReconstructionNotRequiredEvaluationsApproved:     *v.TotalReconstructionNotRequiredEvaluationsApproved,
+		TotalChallengeEvaluationsUnverified:                   *v.TotalChallengeEvaluationsUnverified,
+		TotalReconstructionRequiredEvaluationsNotApproved:     *v.TotalReconstructionRequiredEvaluationsNotApproved,
+		TotalReconstructionsNotRequiredEvaluationsNotApproved: *v.TotalReconstructionsNotRequiredEvaluationsNotApproved,
+		TotalReconstructionRequiredHashMismatch:               v.TotalReconstructionRequiredHashMismatch,
+		TotalFilesHealed:                                      *v.TotalFilesHealed,
+		TotalFileHealingFailed:                                *v.TotalFileHealingFailed,
 	}
 
 	return res
@@ -332,13 +353,19 @@ func transformSHTriggerMetricToMetricsviewsSHTriggerMetricView(v *SHTriggerMetri
 // *SHExecutionMetrics.
 func transformSHExecutionMetricsToMetricsviewsSHExecutionMetricsView(v *SHExecutionMetrics) *metricsviews.SHExecutionMetricsView {
 	res := &metricsviews.SHExecutionMetricsView{
-		TotalChallengesIssued:     &v.TotalChallengesIssued,
-		TotalChallengesRejected:   &v.TotalChallengesRejected,
-		TotalChallengesAccepted:   &v.TotalChallengesAccepted,
-		TotalChallengesFailed:     &v.TotalChallengesFailed,
-		TotalChallengesSuccessful: &v.TotalChallengesSuccessful,
-		TotalFilesHealed:          &v.TotalFilesHealed,
-		TotalFileHealingFailed:    &v.TotalFileHealingFailed,
+		TotalChallengesIssued:                                 &v.TotalChallengesIssued,
+		TotalChallengesAcknowledged:                           &v.TotalChallengesAcknowledged,
+		TotalChallengesRejected:                               &v.TotalChallengesRejected,
+		TotalChallengesAccepted:                               &v.TotalChallengesAccepted,
+		TotalChallengeEvaluationsVerified:                     &v.TotalChallengeEvaluationsVerified,
+		TotalReconstructionRequiredEvaluationsApproved:        &v.TotalReconstructionRequiredEvaluationsApproved,
+		TotalReconstructionNotRequiredEvaluationsApproved:     &v.TotalReconstructionNotRequiredEvaluationsApproved,
+		TotalChallengeEvaluationsUnverified:                   &v.TotalChallengeEvaluationsUnverified,
+		TotalReconstructionRequiredEvaluationsNotApproved:     &v.TotalReconstructionRequiredEvaluationsNotApproved,
+		TotalReconstructionsNotRequiredEvaluationsNotApproved: &v.TotalReconstructionsNotRequiredEvaluationsNotApproved,
+		TotalReconstructionRequiredHashMismatch:               v.TotalReconstructionRequiredHashMismatch,
+		TotalFilesHealed:                                      &v.TotalFilesHealed,
+		TotalFileHealingFailed:                                &v.TotalFileHealingFailed,
 	}
 
 	return res

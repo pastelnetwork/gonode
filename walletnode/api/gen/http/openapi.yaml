@@ -1314,34 +1314,34 @@ definitions:
             drawings:
                 type: number
                 description: drawings nsfw score
-                example: 0.8430283
+                example: 0.796205
                 format: float
             hentai:
                 type: number
                 description: hentai nsfw score
-                example: 0.13690437
+                example: 0.9641886
                 format: float
             neutral:
                 type: number
                 description: neutral nsfw score
-                example: 0.48728812
+                example: 0.0014832737
                 format: float
             porn:
                 type: number
                 description: porn nsfw score
-                example: 0.123649776
+                example: 0.23884374
                 format: float
             sexy:
                 type: number
                 description: sexy nsfw score
-                example: 0.9125995
+                example: 0.53498507
                 format: float
         example:
-            drawings: 0.8288851
-            hentai: 0.20182692
-            neutral: 0.07579831
-            porn: 0.4258447
-            sexy: 0.7226982
+            drawings: 0.6140164
+            hentai: 0.52491164
+            neutral: 0.78482246
+            porn: 0.98354656
+            sexy: 0.6262957
     CascadeDownloadInternalServerErrorResponseBody:
         title: 'Mediatype identifier: application/vnd.goa.error; view=default'
         type: object
@@ -2749,7 +2749,7 @@ definitions:
             field_type:
                 type: string
                 description: Field that is matched
-                example: art_title
+                example: creator_name
                 enum:
                     - creator_name
                     - art_title
@@ -2760,30 +2760,30 @@ definitions:
                 type: array
                 items:
                     type: integer
-                    example: 2538028446540163721
+                    example: 2033245154047828846
                     format: int64
                 description: The indexes of matched characters. Useful for highlighting matches
                 example:
-                    - 2042368004124588249
-                    - 5501240507906568326
-                    - 3418773617150040758
-                    - 3907170493130738674
+                    - 8941717931971263621
+                    - 6941708240591237955
+                    - 1646096438339149454
+                    - 3321737245780176126
             score:
                 type: integer
                 description: Score used to rank matches
-                example: 1204042960045336986
+                example: 1120610147915681633
                 format: int64
             str:
                 type: string
                 description: String that is matched
-                example: Velit aut nihil voluptas et.
+                example: Et vitae velit neque dolor fuga ut.
         example:
             field_type: series
             matched_indexes:
-                - 6759473166231968142
-                - 2509188830771493756
-            score: 5074050674867572111
-            str: Nam ullam quia repellendus cupiditate.
+                - 6632147447148319452
+                - 8794145390208267881
+            score: 2962877908640228347
+            str: Fugit est laborum fugiat earum inventore.
     InternetRarenessResponseBody:
         title: InternetRarenessResponseBody
         type: object
@@ -2791,30 +2791,30 @@ definitions:
             alternative_rare_on_internet_dict_as_json_compressed_b64:
                 type: string
                 description: Base64 Compressed Json of Alternative Rare On Internet Dict
-                example: Possimus quam dicta.
+                example: Dolorem ipsa ut itaque neque.
             earliest_available_date_of_internet_results:
                 type: string
                 description: Earliest Available Date of Internet Results
-                example: Ut eum eius omnis autem veniam.
+                example: Hic qui enim est aut.
             min_number_of_exact_matches_in_page:
                 type: integer
                 description: Minimum Number of Exact Matches on Page
-                example: 2537101631
+                example: 435768334
                 format: int32
             rare_on_internet_graph_json_compressed_b64:
                 type: string
                 description: Base64 Compressed JSON of Rare On Internet Graph
-                example: Enim assumenda et ullam ad.
+                example: Illo dolores.
             rare_on_internet_summary_table_as_json_compressed_b64:
                 type: string
                 description: Base64 Compressed JSON Table of Rare On Internet Summary
-                example: Placeat beatae est ipsam.
+                example: Voluptatem sint.
         example:
-            alternative_rare_on_internet_dict_as_json_compressed_b64: Dolorem ipsa ut itaque neque.
-            earliest_available_date_of_internet_results: Hic qui enim est aut.
-            min_number_of_exact_matches_in_page: 435768334
-            rare_on_internet_graph_json_compressed_b64: Illo dolores.
-            rare_on_internet_summary_table_as_json_compressed_b64: Voluptatem sint.
+            alternative_rare_on_internet_dict_as_json_compressed_b64: Quia possimus delectus.
+            earliest_available_date_of_internet_results: Officia ratione voluptatem quae porro facilis eius.
+            min_number_of_exact_matches_in_page: 4209372370
+            rare_on_internet_graph_json_compressed_b64: Corporis quas et tempore saepe.
+            rare_on_internet_summary_table_as_json_compressed_b64: Occaecati accusamus.
     MetricsGetChallengeReportsBadRequestResponseBody:
         title: 'Mediatype identifier: application/vnd.goa.error; view=default'
         type: object
@@ -21733,14 +21733,14 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: getMetrics_BadRequest_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
@@ -21803,7 +21803,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -21823,15 +21823,15 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: getMetrics_NotFound_response_body result type (default view)
         example:
             fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
-            timeout: false
+            temporary: false
+            timeout: true
         required:
             - name
             - id
@@ -21885,60 +21885,45 @@ definitions:
         description: GetMetricsResponseBody result type (default view)
         example:
             sc_metrics:
-                - 68
-                - 101
-                - 108
-                - 101
-                - 110
-                - 105
+                - 69
                 - 116
-                - 105
                 - 32
-                - 111
-                - 109
-                - 110
-                - 105
-                - 115
-                - 32
-                - 109
-                - 97
-                - 105
-                - 111
-                - 114
-                - 101
-                - 115
-                - 32
-                - 100
-                - 111
-                - 108
-                - 111
-                - 114
-                - 101
-                - 109
-                - 32
-                - 113
                 - 117
-                - 111
-                - 100
-                - 32
-                - 109
-                - 111
                 - 108
-                - 101
-                - 115
-                - 116
-                - 105
+                - 108
                 - 97
+                - 109
+                - 32
+                - 111
+                - 102
+                - 102
+                - 105
+                - 99
+                - 105
+                - 105
                 - 115
+                - 32
+                - 108
+                - 105
+                - 98
+                - 101
+                - 114
+                - 111
                 - 46
             sh_execution_metrics:
-                total_challenges_accepted: 4361441127564409240
-                total_challenges_failed: 4553163751436229208
+                total_challenge_evaluations_unverified: 1963553125687838608
+                total_challenge_evaluations_verified: 901295744388932295
+                total_challenges_accepted: 4553163751436229208
+                total_challenges_acknowledged: 2702846823020679702
                 total_challenges_issued: 6112910206192644187
-                total_challenges_rejected: 2702846823020679702
-                total_challenges_successful: 901295744388932295
-                total_file_healing_failed: 5380544163144150463
-                total_files_healed: 7448926771938662964
+                total_challenges_rejected: 4361441127564409240
+                total_file_healing_failed: 2645836295020972479
+                total_files_healed: 1119748422636600622
+                total_reconstruction_not_required_evaluations_approved: 5380544163144150463
+                total_reconstruction_required_evaluations_approved: 7448926771938662964
+                total_reconstruction_required_evaluations_not_approved: 5314878489053803599
+                total_reconstruction_required_hash_mismatch: 9196978591094611049
+                total_reconstructions_not_required_evaluations_not_approved: 4868531919834842943
             sh_trigger_metrics:
                 - list_of_nodes: Dolorum ex.
                   nodes_offline: 56720280906975326
@@ -21966,7 +21951,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -21982,11 +21967,11 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: getMetrics_Unauthorized_response_body result type (default view)
         example:
             fault: true
@@ -22009,7 +21994,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -22032,11 +22017,11 @@ definitions:
                 example: true
         description: ddServiceOutputFileDetail_InternalServerError_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: false
         required:
             - name
@@ -22052,7 +22037,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -22068,19 +22053,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: false
         description: ddServiceOutputFileDetail_NotFound_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
-            timeout: false
+            temporary: false
+            timeout: true
         required:
             - name
             - id
@@ -22097,68 +22082,68 @@ definitions:
             candidate_image_thumbnail_webp_as_base64_string:
                 type: string
                 description: candidate image thumbnail as base64 string
-                example: Neque inventore est laudantium.
+                example: Assumenda et ullam ad.
             child_probability:
                 type: number
                 description: child probability
-                example: 0.9306412
+                example: 0.1122022
                 format: float
             collection_name_string:
                 type: string
                 description: name of the collection
-                example: Suscipit non amet voluptatem commodi aut.
+                example: Aspernatur id et.
             cp_probability:
                 type: number
                 description: probability of CP
-                example: 0.969385
+                example: 0.71102273
                 format: float
             creator_name:
                 type: string
                 description: name of the creator
-                example: Possimus delectus sapiente error.
+                example: Commodi laudantium a nobis eaque.
             creator_website:
                 type: string
                 description: website of creator
-                example: Ratione voluptatem quae porro.
+                example: Minus ullam recusandae et magni incidunt facere.
             creator_written_statement:
                 type: string
                 description: written statement of creator
-                example: Eius quia dolor.
+                example: Aut velit.
             does_not_impact_the_following_collection_strings:
                 type: string
                 description: does not impact collection strings
-                example: Eveniet molestiae rerum ut ut porro.
+                example: Possimus quam dicta.
             dupe_detection_system_version:
                 type: string
                 description: system version of dupe detection
-                example: Harum voluptas perferendis accusantium quidem.
+                example: Amet voluptatem commodi.
             file_type:
                 type: string
                 description: type of the file
-                example: Debitis aut odio.
+                example: Possimus sed velit consequuntur unde libero harum.
             group_rareness_score:
                 type: number
                 description: rareness score of the group
-                example: 0.4379008
+                example: 0.42739064
                 format: float
             hash_of_candidate_image_file:
                 type: string
                 description: hash of candidate image file
-                example: Qui nisi.
+                example: Et qui eaque.
             image_file_path:
                 type: string
                 description: file path of the image
-                example: Aspernatur id et.
+                example: Eius omnis autem veniam.
             image_fingerprint_of_candidate_image_file:
                 type: array
                 items:
                     type: number
-                    example: 0.8787087050073663
+                    example: 0.8591490028677876
                     format: double
                 description: Image fingerprint of candidate image file
                 example:
-                    - 0.5730955702534185
-                    - 0.8084062432366803
+                    - 0.22020594122264722
+                    - 0.23982088267414406
             internet_rareness:
                 $ref: '#/definitions/InternetRarenessResponseBody'
             is_likely_dupe:
@@ -22176,135 +22161,105 @@ definitions:
             max_permitted_open_nsfw_score:
                 type: number
                 description: max permitted open NSFW score
-                example: 0.04824207381240202
+                example: 0.24996065391125694
                 format: double
             nft_creation_video_youtube_url:
                 type: string
                 description: nft creation video youtube url
-                example: Eaque labore minus ullam.
+                example: Nisi debitis aut odio et omnis impedit.
             nft_keyword_set:
                 type: string
                 description: keywords for NFT
-                example: Et magni incidunt.
+                example: Libero et.
             nft_series_name:
                 type: string
                 description: series name of NFT
-                example: Temporibus adipisci tenetur commodi laudantium a.
+                example: Quis necessitatibus inventore.
             nft_title:
                 type: string
                 description: title of NFT
-                example: Facilis reprehenderit officiis a.
+                example: Nihil mollitia voluptatem placeat.
             open_api_group_id_string:
                 type: string
                 description: open api group id string
-                example: In optio.
+                example: Placeat beatae est ipsam.
             open_nsfw_score:
                 type: number
                 description: open nsfw score
-                example: 0.8930021
+                example: 0.2889629
                 format: float
             original_file_size_in_bytes:
                 type: integer
                 description: original file size in bytes
-                example: 2709460486483343096
+                example: 8501314074383002967
                 format: int64
             overall_rareness_score:
                 type: number
                 description: pastel rareness score
-                example: 0.23145881
+                example: 0.78219354
                 format: float
             pastel_block_hash_when_request_submitted:
                 type: string
                 description: block hash when request submitted
-                example: Animi amet aperiam sed quam qui nobis.
+                example: Eos voluptate.
             pastel_block_height_when_request_submitted:
                 type: string
                 description: block Height when request submitted
-                example: Laborum neque amet eum nisi quia.
+                example: Eaque molestiae sunt explicabo deserunt ducimus voluptate.
             pastel_id_of_registering_supernode_1:
                 type: string
                 description: pastel id of registering SN1
-                example: Iusto ut non consectetur soluta itaque.
+                example: Et porro dolores est.
             pastel_id_of_registering_supernode_2:
                 type: string
                 description: pastel id of registering SN2
-                example: Occaecati eos voluptate.
+                example: Consequatur possimus.
             pastel_id_of_registering_supernode_3:
                 type: string
                 description: pastel id of registering SN3
-                example: Eaque molestiae sunt explicabo deserunt ducimus voluptate.
+                example: A recusandae iste qui nisi dolore.
             pastel_id_of_submitter:
                 type: string
                 description: pastel id of the submitter
-                example: Non cum distinctio rem.
+                example: Perferendis accusantium quidem accusamus.
             pct_of_top_10_most_similar_with_dupe_prob_above_25pct:
                 type: number
                 description: PCT of top 10 most similar with dupe probe above 25 PCT
-                example: 0.40305766
+                example: 0.056721486
                 format: float
             pct_of_top_10_most_similar_with_dupe_prob_above_33pct:
                 type: number
                 description: PCT of top 10 most similar with dupe probe above 33 PCT
-                example: 0.84147155
+                example: 0.63756895
                 format: float
             pct_of_top_10_most_similar_with_dupe_prob_above_50pct:
                 type: number
                 description: PCT of top 10 most similar with dupe probe above 50 PCT
-                example: 0.45409536
+                example: 0.44176885
                 format: float
             preview_hash:
                 type: string
                 description: preview hash of NFT
                 example:
-                    - 65
-                    - 117
-                    - 116
-                    - 32
-                    - 118
+                    - 84
                     - 101
-                    - 108
-                    - 105
-                    - 116
-                    - 46
-                format: byte
-            rareness_scores_table_json_compressed_b64:
-                type: string
-                description: rareness scores table json compressed b64
-                example: Est occaecati.
-            similarity_score_to_first_entry_in_collection:
-                type: number
-                description: similarity score to first entry in collection
-                example: 0.5269614
-                format: float
-            thumbnail1_hash:
-                type: string
-                description: thumbnail1 hash of NFT
-                example:
-                    - 78
-                    - 105
-                    - 104
-                    - 105
-                    - 108
-                    - 32
                     - 109
-                    - 111
-                    - 108
-                    - 108
-                    - 105
-                    - 116
-                    - 105
-                    - 97
-                    - 32
-                    - 118
-                    - 111
-                    - 108
-                    - 117
                     - 112
-                    - 116
-                    - 97
-                    - 116
+                    - 111
+                    - 114
                     - 101
-                    - 109
+                    - 32
+                    - 105
+                    - 100
+                    - 32
+                    - 101
+                    - 108
+                    - 105
+                    - 103
+                    - 101
+                    - 110
+                    - 100
+                    - 105
                     - 32
                     - 112
                     - 108
@@ -22313,52 +22268,117 @@ definitions:
                     - 101
                     - 97
                     - 116
+                    - 32
+                    - 100
+                    - 111
+                    - 108
+                    - 111
+                    - 114
+                    - 46
+                format: byte
+            rareness_scores_table_json_compressed_b64:
+                type: string
+                description: rareness scores table json compressed b64
+                example: Labore neque inventore est laudantium facere.
+            similarity_score_to_first_entry_in_collection:
+                type: number
+                description: similarity score to first entry in collection
+                example: 0.590715
+                format: float
+            thumbnail1_hash:
+                type: string
+                description: thumbnail1 hash of NFT
+                example:
+                    - 79
+                    - 100
+                    - 105
+                    - 111
+                    - 32
+                    - 118
+                    - 111
+                    - 108
+                    - 117
+                    - 112
+                    - 116
+                    - 97
+                    - 116
+                    - 101
+                    - 32
+                    - 101
+                    - 110
+                    - 105
+                    - 109
+                    - 32
+                    - 111
+                    - 99
+                    - 99
+                    - 97
+                    - 101
+                    - 99
+                    - 97
+                    - 116
+                    - 105
+                    - 32
+                    - 99
+                    - 117
+                    - 112
+                    - 105
+                    - 100
+                    - 105
+                    - 116
+                    - 97
+                    - 116
+                    - 101
+                    - 32
+                    - 114
+                    - 101
+                    - 114
+                    - 117
+                    - 109
                     - 46
                 format: byte
             thumbnail2_hash:
                 type: string
                 description: thumbnail2 hash of NFT
                 example:
-                    - 81
-                    - 117
+                    - 77
+                    - 111
+                    - 108
+                    - 101
+                    - 115
+                    - 116
                     - 105
+                    - 97
                     - 115
                     - 32
-                    - 110
-                    - 101
-                    - 99
-                    - 101
-                    - 115
-                    - 115
+                    - 100
                     - 105
+                    - 99
                     - 116
                     - 97
-                    - 116
-                    - 105
-                    - 98
-                    - 117
-                    - 115
                     - 32
+                    - 115
+                    - 97
+                    - 112
                     - 105
-                    - 110
-                    - 118
                     - 101
                     - 110
                     - 116
-                    - 111
-                    - 114
                     - 101
+                    - 32
+                    - 117
+                    - 116
                     - 46
                 format: byte
             total_copies:
                 type: integer
                 description: total copies of NFT
-                example: 4700312784399350733
+                example: 8828856352472268057
                 format: int64
             utc_timestamp_when_request_submitted:
                 type: string
                 description: timestamp of request when submitted
-                example: Voluptatem velit sed ab necessitatibus ut.
+                example: Ipsum harum.
         example:
             alternative_nsfw_scores:
                 drawings: 0.81849986
@@ -22366,23 +22386,22 @@ definitions:
                 neutral: 0.62538576
                 porn: 0.077375285
                 sexy: 0.24964634
-            candidate_image_thumbnail_webp_as_base64_string: Rerum quia repellat.
-            child_probability: 0.7653316
-            collection_name_string: Commodi illo quia.
-            cp_probability: 0.99505514
-            creator_name: Temporibus commodi beatae nesciunt suscipit.
-            creator_website: Distinctio magni.
-            creator_written_statement: Reiciendis et et ducimus velit.
-            does_not_impact_the_following_collection_strings: Atque distinctio.
-            dupe_detection_system_version: Autem quidem officia facilis autem eos excepturi.
-            file_type: Officia nam rerum aut qui necessitatibus.
-            group_rareness_score: 0.04150051
-            hash_of_candidate_image_file: Consequuntur soluta magni incidunt unde consequatur.
-            image_file_path: Omnis quis.
+            candidate_image_thumbnail_webp_as_base64_string: Quam cum deserunt quibusdam excepturi inventore.
+            child_probability: 0.93758124
+            collection_name_string: Quis nulla temporibus commodi beatae nesciunt.
+            cp_probability: 0.17956862
+            creator_name: Iste nobis.
+            creator_website: Voluptatem fugiat cum distinctio aut.
+            creator_written_statement: Ratione molestiae deserunt consequuntur ut.
+            does_not_impact_the_following_collection_strings: Beatae sint.
+            dupe_detection_system_version: Quia velit fuga.
+            file_type: Aut in vel consequuntur doloremque perferendis eos.
+            group_rareness_score: 0.8223527
+            hash_of_candidate_image_file: Necessitatibus maxime quia.
+            image_file_path: Facere sunt dolor.
             image_fingerprint_of_candidate_image_file:
-                - 0.16467979140304337
-                - 0.9717812449303089
-                - 0.4116090577251966
+                - 0.7069039740713412
+                - 0.27091796579103034
             internet_rareness:
                 alternative_rare_on_internet_dict_as_json_compressed_b64: Incidunt alias.
                 earliest_available_date_of_internet_results: Qui vel enim aperiam molestias.
@@ -22390,28 +22409,64 @@ definitions:
                 rare_on_internet_graph_json_compressed_b64: Sed eveniet qui qui soluta.
                 rare_on_internet_summary_table_as_json_compressed_b64: Sed error exercitationem velit possimus consequatur perspiciatis.
             is_likely_dupe: false
-            is_pastel_openapi_request: true
+            is_pastel_openapi_request: false
             is_rare_on_internet: false
-            max_permitted_open_nsfw_score: 0.27401478392376205
-            nft_creation_video_youtube_url: Sunt dolor ab.
-            nft_keyword_set: Nobis incidunt voluptatem fugiat cum.
-            nft_series_name: Quia beatae sint perspiciatis autem eos velit.
-            nft_title: Cum deserunt quibusdam excepturi.
-            open_api_group_id_string: Fuga non tenetur odio est minus.
-            open_nsfw_score: 0.20086072
-            original_file_size_in_bytes: 3816255446133596778
-            overall_rareness_score: 0.18948564
-            pastel_block_hash_when_request_submitted: Impedit rerum libero et quis.
-            pastel_block_height_when_request_submitted: Tempore id eligendi placeat dolor.
-            pastel_id_of_registering_supernode_1: Ad possimus sed velit consequuntur.
-            pastel_id_of_registering_supernode_2: Libero harum quod.
-            pastel_id_of_registering_supernode_3: Ipsum maxime.
-            pastel_id_of_submitter: Molestias dicta sapiente ut.
-            pct_of_top_10_most_similar_with_dupe_prob_above_25pct: 0.6471025
-            pct_of_top_10_most_similar_with_dupe_prob_above_33pct: 0.28727865
-            pct_of_top_10_most_similar_with_dupe_prob_above_50pct: 0.5025023
+            max_permitted_open_nsfw_score: 0.3654683026203056
+            nft_creation_video_youtube_url: Animi sit officia nam.
+            nft_keyword_set: Aut qui necessitatibus a et esse.
+            nft_series_name: Consequatur qui at.
+            nft_title: Nesciunt nihil.
+            open_api_group_id_string: Ratione distinctio magni commodi reiciendis et et.
+            open_nsfw_score: 0.84764487
+            original_file_size_in_bytes: 107716731496886286
+            overall_rareness_score: 0.24598186
+            pastel_block_hash_when_request_submitted: Ipsum maxime.
+            pastel_block_height_when_request_submitted: Laborum autem quidem officia.
+            pastel_id_of_registering_supernode_1: Nihil nobis sequi porro.
+            pastel_id_of_registering_supernode_2: Praesentium sunt consequuntur soluta.
+            pastel_id_of_registering_supernode_3: Incidunt unde consequatur et.
+            pastel_id_of_submitter: Et enim voluptatem alias minima id commodi.
+            pct_of_top_10_most_similar_with_dupe_prob_above_25pct: 0.15974036
+            pct_of_top_10_most_similar_with_dupe_prob_above_33pct: 0.42008358
+            pct_of_top_10_most_similar_with_dupe_prob_above_50pct: 0.9013702
             preview_hash:
-                - 83
+                - 67
+                - 111
+                - 110
+                - 115
+                - 101
+                - 113
+                - 117
+                - 97
+                - 116
+                - 117
+                - 114
+                - 32
+                - 118
+                - 111
+                - 108
+                - 117
+                - 112
+                - 116
+                - 97
+                - 116
+                - 101
+                - 115
+                - 32
+                - 98
+                - 101
+                - 97
+                - 116
+                - 97
+                - 101
+                - 32
+                - 115
+                - 101
+                - 113
+                - 117
+                - 105
+                - 32
+                - 115
                 - 105
                 - 109
                 - 105
@@ -22421,79 +22476,98 @@ definitions:
                 - 117
                 - 101
                 - 32
-                - 114
-                - 97
-                - 116
-                - 105
-                - 111
-                - 110
-                - 101
-                - 32
-                - 109
-                - 111
-                - 108
-                - 101
-                - 115
-                - 116
-                - 105
-                - 97
-                - 101
-                - 32
                 - 100
                 - 101
-                - 115
+                - 108
                 - 101
-                - 114
+                - 99
+                - 116
                 - 117
+                - 115
+                - 32
                 - 110
+                - 101
+                - 99
+                - 101
+                - 115
+                - 115
+                - 105
                 - 116
+                - 97
+                - 116
+                - 105
+                - 98
+                - 117
+                - 115
                 - 46
-            rareness_scores_table_json_compressed_b64: Minima id commodi optio nihil.
-            similarity_score_to_first_entry_in_collection: 0.5191441
+            rareness_scores_table_json_compressed_b64: Quia vel rerum quia.
+            similarity_score_to_first_entry_in_collection: 0.5240544
             thumbnail1_hash:
-                - 85
-                - 116
+                - 79
+                - 100
+                - 105
+                - 111
+                - 32
+                - 99
+                - 111
+                - 109
+                - 109
+                - 111
+                - 100
+                - 105
                 - 32
                 - 97
-                - 98
-                - 32
-                - 110
+                - 117
+                - 116
                 - 101
+                - 109
+                - 32
+                - 117
+                - 108
+                - 108
+                - 97
+                - 109
+                - 32
                 - 115
-                - 99
-                - 105
                 - 117
                 - 110
                 - 116
                 - 46
             thumbnail2_hash:
-                - 85
-                - 116
-                - 32
-                - 99
-                - 111
-                - 110
+                - 69
+                - 115
                 - 115
                 - 101
-                - 113
+                - 32
+                - 118
+                - 111
+                - 108
                 - 117
-                - 97
+                - 112
                 - 116
-                - 117
-                - 114
+                - 97
+                - 115
                 - 32
                 - 113
                 - 117
                 - 105
                 - 32
-                - 97
+                - 115
+                - 105
+                - 110
                 - 116
                 - 32
-                - 117
+                - 109
+                - 111
+                - 108
+                - 108
+                - 105
                 - 116
+                - 105
+                - 97
                 - 46
-            total_copies: 8878638343673164156
-            utc_timestamp_when_request_submitted: Odio voluptate enim occaecati cupiditate rerum.
+            total_copies: 750768695105262717
+            utc_timestamp_when_request_submitted: Autem eos excepturi.
         required:
             - creator_name
             - creator_website
@@ -22532,7 +22606,7 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
@@ -22543,7 +22617,7 @@ definitions:
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: false
         required:
             - name
@@ -22575,14 +22649,14 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: ddServiceOutputFile_InternalServerError_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
@@ -22602,7 +22676,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -22622,15 +22696,15 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: ddServiceOutputFile_NotFound_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
-            timeout: true
+            temporary: true
+            timeout: false
         required:
             - name
             - id
@@ -22645,9 +22719,9 @@ definitions:
             file:
                 type: string
                 description: File downloaded
-                example: Voluptas qui sint mollitia voluptates labore.
+                example: Est eos ea eos dolores.
         example:
-            file: In vel consequuntur.
+            file: Aliquid doloremque consequuntur quia non.
         required:
             - file
     NftDdServiceOutputFileUnAuthorizedResponseBody:
@@ -22673,19 +22747,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: ddServiceOutputFile_UnAuthorized_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
-            timeout: false
+            temporary: false
+            timeout: true
         required:
             - name
             - id
@@ -22700,7 +22774,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -22723,7 +22797,7 @@ definitions:
                 example: false
         description: download_InternalServerError_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
@@ -22759,14 +22833,14 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: false
         description: download_NotFound_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
@@ -22786,9 +22860,9 @@ definitions:
             file_id:
                 type: string
                 description: File path
-                example: Consequatur molestias blanditiis.
+                example: Amet aperiam sed quam qui nobis corrupti.
         example:
-            file_id: Totam porro et dolorem.
+            file_id: Neque amet eum nisi quia odio voluptatem.
         required:
             - file_id
     NftDownloadUnAuthorizedResponseBody:
@@ -22798,7 +22872,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -22814,7 +22888,7 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
@@ -22841,7 +22915,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -22869,7 +22943,7 @@ definitions:
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: true
-            timeout: true
+            timeout: false
         required:
             - name
             - id
@@ -22884,7 +22958,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -22904,14 +22978,14 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: getTaskHistory_NotFound_response_body result type (default view)
         example:
             fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: false
         required:
             - name
@@ -22927,7 +23001,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -22943,14 +23017,14 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: false
         description: nftGet_BadRequest_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
@@ -23040,8 +23114,8 @@ definitions:
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
-            timeout: false
+            temporary: true
+            timeout: true
         required:
             - name
             - id
@@ -23056,7 +23130,7 @@ definitions:
             alt_rare_on_internet_dict_json_b64:
                 type: string
                 description: Base64 Compressed Json of Alternative Rare On Internet Dict
-                example: Qui voluptatem placeat.
+                example: Deleniti quae natus.
             copies:
                 type: integer
                 description: Number of copies
@@ -23095,7 +23169,7 @@ definitions:
             earliest_date_of_results:
                 type: string
                 description: Earliest Available Date of Internet Results
-                example: Veritatis consequatur odit ad soluta quasi.
+                example: Vel praesentium similique nesciunt.
             green_address:
                 type: boolean
                 description: Green address
@@ -23122,7 +23196,7 @@ definitions:
             min_num_exact_matches_on_page:
                 type: integer
                 description: Minimum Number of Exact Matches on Page
-                example: 1904301416
+                example: 566252152
                 format: int32
             neutral_nsfw_score:
                 type: number
@@ -23146,51 +23220,51 @@ definitions:
                 type: string
                 description: Preview Image
                 example:
-                    - 68
-                    - 111
-                    - 108
-                    - 111
-                    - 114
-                    - 105
-                    - 98
-                    - 117
-                    - 115
-                    - 32
-                    - 118
+                    - 83
                     - 111
                     - 108
                     - 117
-                    - 112
                     - 116
                     - 97
-                    - 116
+                    - 32
+                    - 113
+                    - 117
+                    - 97
+                    - 115
+                    - 105
+                    - 32
                     - 101
                     - 115
-                    - 32
-                    - 112
-                    - 114
-                    - 111
-                    - 118
-                    - 105
-                    - 100
+                    - 115
                     - 101
-                    - 110
-                    - 116
                     - 32
-                    - 111
+                    - 115
+                    - 101
                     - 100
+                    - 32
+                    - 113
+                    - 117
                     - 105
-                    - 111
+                    - 32
+                    - 105
+                    - 112
+                    - 115
+                    - 97
+                    - 109
+                    - 32
+                    - 97
+                    - 117
+                    - 116
                     - 46
                 format: byte
             rare_on_internet_graph_json_b64:
                 type: string
                 description: Base64 Compressed JSON of Rare On Internet Graph
-                example: Suscipit mollitia laboriosam vel dolor.
+                example: Qui ut ut ea.
             rare_on_internet_summary_table_json_b64:
                 type: string
                 description: Base64 Compressed JSON Table of Rare On Internet Summary
-                example: Rerum nam.
+                example: Delectus voluptatem voluptatem.
             rareness_score:
                 type: number
                 description: Average pastel rareness score
@@ -23200,7 +23274,7 @@ definitions:
             royalty:
                 type: number
                 description: how much artist should get on all future resales
-                example: 0.37759238195388367
+                example: 0.3113124442869262
                 format: double
             series_name:
                 type: string
@@ -23222,78 +23296,54 @@ definitions:
                 type: string
                 description: Thumbnail_1 image
                 example:
-                    - 83
-                    - 101
-                    - 100
-                    - 32
-                    - 113
-                    - 117
+                    - 76
+                    - 97
+                    - 98
+                    - 111
+                    - 114
                     - 105
-                    - 32
-                    - 105
-                    - 112
+                    - 111
                     - 115
                     - 97
                     - 109
+                    - 32
+                    - 118
+                    - 111
+                    - 108
+                    - 117
+                    - 112
+                    - 116
+                    - 97
+                    - 116
+                    - 101
+                    - 109
+                    - 32
+                    - 101
+                    - 115
+                    - 116
                     - 46
                 format: byte
             thumbnail_2:
                 type: string
                 description: Thumbnail_2 image
                 example:
-                    - 77
-                    - 111
-                    - 108
-                    - 101
-                    - 115
-                    - 116
-                    - 105
-                    - 97
-                    - 101
-                    - 32
-                    - 100
-                    - 101
-                    - 108
+                    - 82
                     - 101
                     - 99
-                    - 116
                     - 117
                     - 115
+                    - 97
+                    - 110
+                    - 100
+                    - 97
+                    - 101
                     - 32
-                    - 118
-                    - 111
-                    - 108
-                    - 117
-                    - 112
-                    - 116
                     - 97
                     - 116
-                    - 101
-                    - 109
                     - 32
-                    - 118
+                    - 101
                     - 111
-                    - 108
-                    - 117
-                    - 112
-                    - 116
-                    - 97
-                    - 116
-                    - 101
-                    - 109
-                    - 32
                     - 115
-                    - 101
-                    - 113
-                    - 117
-                    - 105
-                    - 32
-                    - 113
-                    - 117
-                    - 105
-                    - 32
-                    - 117
-                    - 116
                     - 46
                 format: byte
             title:
@@ -23318,88 +23368,115 @@ definitions:
                 example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
                 maxLength: 128
         example:
-            alt_rare_on_internet_dict_json_b64: Est nisi recusandae at eos voluptatem beatae.
+            alt_rare_on_internet_dict_json_b64: Quis officia blanditiis.
             copies: 1
             creator_name: Leonardo da Vinci
             creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             creator_website_url: https://www.leonardodavinci.net
             description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
             drawing_nsfw_score: 1
-            earliest_date_of_results: Sed ipsa dolores cupiditate.
-            green_address: true
+            earliest_date_of_results: Atque eaque deleniti quibusdam sequi et.
+            green_address: false
             hentai_nsfw_score: 1
             is_likely_dupe: false
             is_rare_on_internet: false
             keywords: Renaissance, sfumato, portrait
-            min_num_exact_matches_on_page: 3294314482
+            min_num_exact_matches_on_page: 3714978582
             neutral_nsfw_score: 1
             nsfw_score: 1
             porn_nsfw_score: 1
             preview_thumbnail:
-                - 68
-                - 101
-                - 108
+                - 73
+                - 110
+                - 118
                 - 101
                 - 110
-                - 105
                 - 116
-                - 105
-                - 32
-                - 113
-                - 117
-                - 97
+                - 111
+                - 114
                 - 101
                 - 32
-                - 110
-                - 97
-                - 116
-                - 117
                 - 115
+                - 101
+                - 100
+                - 32
+                - 105
+                - 112
+                - 115
+                - 97
+                - 32
+                - 100
+                - 111
+                - 108
+                - 111
+                - 114
+                - 101
+                - 115
+                - 32
+                - 99
+                - 117
+                - 112
+                - 105
+                - 100
+                - 105
+                - 116
+                - 97
+                - 116
+                - 101
+                - 32
+                - 98
+                - 108
+                - 97
+                - 110
+                - 100
+                - 105
+                - 116
+                - 105
+                - 105
+                - 115
+                - 32
+                - 101
+                - 110
+                - 105
+                - 109
                 - 46
-            rare_on_internet_graph_json_b64: Amet laboriosam.
-            rare_on_internet_summary_table_json_b64: Explicabo vel praesentium similique.
+            rare_on_internet_graph_json_b64: Quas molestias accusamus numquam quidem nobis.
+            rare_on_internet_summary_table_json_b64: Vel vel dicta harum.
             rareness_score: 1
-            royalty: 0.8289939667330373
+            royalty: 0.21993529630836392
             series_name: Famous artist
             sexy_nsfw_score: 1
             storage_fee: 100
             thumbnail_1:
-                - 69
-                - 110
-                - 105
+                - 78
+                - 117
+                - 109
+                - 113
+                - 117
+                - 97
                 - 109
                 - 32
-                - 118
-                - 111
-                - 108
-                - 117
-                - 112
-                - 116
-                - 97
-                - 115
-                - 32
-                - 118
+                - 114
                 - 101
-                - 108
-                - 32
-                - 118
-                - 101
-                - 108
-                - 46
-            thumbnail_2:
-                - 72
-                - 97
                 - 114
                 - 117
                 - 109
                 - 32
-                - 101
-                - 120
+                - 97
+                - 117
+                - 116
                 - 32
+                - 99
+                - 111
+                - 110
+                - 115
+                - 101
                 - 113
                 - 117
                 - 97
-                - 115
+                - 116
+                - 117
+                - 114
                 - 32
                 - 109
                 - 111
@@ -23411,14 +23488,43 @@ definitions:
                 - 97
                 - 115
                 - 32
+                - 98
+                - 108
                 - 97
-                - 99
-                - 99
-                - 117
+                - 110
+                - 100
+                - 105
+                - 116
+                - 105
+                - 105
                 - 115
-                - 97
+                - 32
+                - 115
+                - 105
+                - 110
+                - 116
+                - 46
+            thumbnail_2:
+                - 80
+                - 111
+                - 114
+                - 114
+                - 111
+                - 32
+                - 101
+                - 116
+                - 32
+                - 100
+                - 111
+                - 108
+                - 111
+                - 114
+                - 101
                 - 109
+                - 32
+                - 113
                 - 117
+                - 97
                 - 115
                 - 46
             title: Mona Lisa
@@ -23463,15 +23569,15 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: nftSearch_BadRequest_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
-            timeout: false
+            temporary: true
+            timeout: true
         required:
             - name
             - id
@@ -23486,7 +23592,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -23502,18 +23608,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: nftSearch_InternalServerError_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: true
         required:
             - name
@@ -23529,7 +23635,7 @@ definitions:
             match_index:
                 type: integer
                 description: Sort index of the match based on score.This must be used to sort results on UI.
-                example: 1732677450694874582
+                example: 8011300754954124430
                 format: int64
             matches:
                 type: array
@@ -23537,53 +23643,43 @@ definitions:
                     $ref: '#/definitions/FuzzyMatchResponseBody'
                 description: Match result details
                 example:
-                    - field_type: art_title
+                    - field_type: series
                       matched_indexes:
-                        - 3957126575947631301
-                        - 7025023116561204473
-                        - 723427956426832737
-                      score: 6362297468347181432
-                      str: Repellendus aut.
-                    - field_type: art_title
+                        - 7775216442122843110
+                        - 3415134396818559252
+                        - 6270568938189334981
+                        - 3027278083568556006
+                      score: 5798902011707166025
+                      str: Aut minima nam a delectus.
+                    - field_type: series
                       matched_indexes:
-                        - 3957126575947631301
-                        - 7025023116561204473
-                        - 723427956426832737
-                      score: 6362297468347181432
-                      str: Repellendus aut.
-                    - field_type: art_title
-                      matched_indexes:
-                        - 3957126575947631301
-                        - 7025023116561204473
-                        - 723427956426832737
-                      score: 6362297468347181432
-                      str: Repellendus aut.
+                        - 7775216442122843110
+                        - 3415134396818559252
+                        - 6270568938189334981
+                        - 3027278083568556006
+                      score: 5798902011707166025
+                      str: Aut minima nam a delectus.
             nft:
                 $ref: '#/definitions/NftSummaryResponseBody'
         example:
-            match_index: 5322444104487957345
+            match_index: 5621801573893303944
             matches:
-                - field_type: art_title
+                - field_type: series
                   matched_indexes:
-                    - 3957126575947631301
-                    - 7025023116561204473
-                    - 723427956426832737
-                  score: 6362297468347181432
-                  str: Repellendus aut.
-                - field_type: art_title
+                    - 7775216442122843110
+                    - 3415134396818559252
+                    - 6270568938189334981
+                    - 3027278083568556006
+                  score: 5798902011707166025
+                  str: Aut minima nam a delectus.
+                - field_type: series
                   matched_indexes:
-                    - 3957126575947631301
-                    - 7025023116561204473
-                    - 723427956426832737
-                  score: 6362297468347181432
-                  str: Repellendus aut.
-                - field_type: art_title
-                  matched_indexes:
-                    - 3957126575947631301
-                    - 7025023116561204473
-                    - 723427956426832737
-                  score: 6362297468347181432
-                  str: Repellendus aut.
+                    - 7775216442122843110
+                    - 3415134396818559252
+                    - 6270568938189334981
+                    - 3027278083568556006
+                  score: 5798902011707166025
+                  str: Aut minima nam a delectus.
             nft:
                 copies: 1
                 creator_name: Leonardo da Vinci
@@ -23596,29 +23692,7 @@ definitions:
                 rareness_score: 1
                 series_name: Famous artist
                 thumbnail_1:
-                    - 65
-                    - 117
-                    - 116
-                    - 32
-                    - 100
-                    - 105
-                    - 103
-                    - 110
-                    - 105
-                    - 115
-                    - 115
-                    - 105
-                    - 109
-                    - 111
-                    - 115
-                    - 32
-                    - 97
-                    - 117
-                    - 116
-                    - 101
-                    - 109
-                    - 32
-                    - 117
+                    - 85
                     - 116
                     - 32
                     - 118
@@ -23634,20 +23708,16 @@ definitions:
                     - 105
                     - 100
                     - 101
+                    - 110
+                    - 116
+                    - 32
+                    - 115
+                    - 105
                     - 110
                     - 116
                     - 46
                 thumbnail_2:
-                    - 86
-                    - 111
-                    - 108
-                    - 117
-                    - 112
-                    - 116
-                    - 97
-                    - 115
-                    - 32
-                    - 97
+                    - 65
                     - 115
                     - 112
                     - 101
@@ -23657,6 +23727,16 @@ definitions:
                     - 114
                     - 101
                     - 115
+                    - 32
+                    - 115
+                    - 105
+                    - 109
+                    - 105
+                    - 108
+                    - 105
+                    - 113
+                    - 117
+                    - 101
                     - 46
                 title: Mona Lisa
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -23688,19 +23768,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: true
         description: register_BadRequest_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
-            timeout: true
+            temporary: false
+            timeout: false
         required:
             - name
             - id
@@ -23731,19 +23811,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: register_InternalServerError_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
-            timeout: false
+            temporary: false
+            timeout: true
         required:
             - name
             - id
@@ -23825,7 +23905,7 @@ definitions:
                 type: string
                 description: OpenAPI GroupID string
                 default: PASTEL
-                example: Voluptatum qui sit nemo accusamus.
+                example: Quos non dignissimos.
             royalty:
                 type: number
                 description: Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT
@@ -23865,7 +23945,7 @@ definitions:
             make_publicly_accessible: false
             maximum_fee: 100
             name: Mona Lisa
-            open_api_group_id: Ut quibusdam.
+            open_api_group_id: Rerum saepe consequuntur voluptas commodi.
             royalty: 12
             series_name: Famous artist
             spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -23956,7 +24036,7 @@ definitions:
                 type: string
                 description: OpenAPI GroupID string
                 default: PASTEL
-                example: Asperiores pariatur et dolor dolore qui cum.
+                example: Id rem omnis iste eveniet eligendi veniam.
             royalty:
                 type: number
                 description: Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT
@@ -23996,7 +24076,7 @@ definitions:
             make_publicly_accessible: false
             maximum_fee: 100
             name: Mona Lisa
-            open_api_group_id: Ea id rem.
+            open_api_group_id: Voluptatibus commodi iure ut unde voluptatum.
             royalty: 12
             series_name: Famous artist
             spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -24089,7 +24169,7 @@ definitions:
                 type: string
                 description: OpenAPI GroupID string
                 default: PASTEL
-                example: Pariatur quos iusto accusantium qui.
+                example: Repellendus labore.
             royalty:
                 type: number
                 description: Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT
@@ -24128,7 +24208,7 @@ definitions:
             make_publicly_accessible: false
             maximum_fee: 100
             name: Mona Lisa
-            open_api_group_id: Voluptas officiis ut.
+            open_api_group_id: Sit quidem deserunt rem dolore.
             royalty: 12
             series_name: Famous artist
             spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -24167,7 +24247,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -24183,18 +24263,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: false
         description: registerTask_InternalServerError_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
+            temporary: false
             timeout: false
         required:
             - name
@@ -24233,12 +24313,12 @@ definitions:
                 example: false
         description: registerTask_NotFound_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
-            timeout: true
+            temporary: true
+            timeout: false
         required:
             - name
             - id
@@ -24262,8 +24342,6 @@ definitions:
                     $ref: '#/definitions/TaskStateResponseBody'
                 description: List of states from the very beginning of the process
                 example:
-                    - date: 2006-01-02T15:04:05Z07:00
-                      status: Task Started
                     - date: 2006-01-02T15:04:05Z07:00
                       status: Task Started
                     - date: 2006-01-02T15:04:05Z07:00
@@ -24338,6 +24416,10 @@ definitions:
                   status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
                   status: Task Started
+                - date: 2006-01-02T15:04:05Z07:00
+                  status: Task Started
+                - date: 2006-01-02T15:04:05Z07:00
+                  status: Task Started
             status: Task Started
             ticket:
                 burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -24353,7 +24435,7 @@ definitions:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Asperiores et ea.
+                open_api_group_id: Qui corrupti neque quod omnis.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -24391,7 +24473,7 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
@@ -24402,8 +24484,8 @@ definitions:
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
-            timeout: true
+            temporary: false
+            timeout: false
         required:
             - name
             - id
@@ -24434,18 +24516,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: true
         description: registerTaskState_NotFound_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: false
         required:
             - name
@@ -24527,7 +24609,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -24547,10 +24629,10 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: registerTasks_InternalServerError_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
@@ -24586,19 +24668,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: register_UnAuthorized_response_body result type (default view)
         example:
             fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
-            timeout: false
+            temporary: true
+            timeout: true
         required:
             - name
             - id
@@ -24669,69 +24751,82 @@ definitions:
                 type: string
                 description: Thumbnail_1 image
                 example:
-                    - 69
-                    - 116
-                    - 32
-                    - 109
-                    - 105
-                    - 110
-                    - 105
-                    - 109
-                    - 97
-                    - 32
-                    - 109
+                    - 68
                     - 111
-                    - 100
-                    - 105
-                    - 32
+                    - 108
+                    - 111
+                    - 114
                     - 101
+                    - 32
+                    - 100
+                    - 111
+                    - 108
+                    - 111
+                    - 114
+                    - 101
+                    - 32
+                    - 97
                     - 108
                     - 105
-                    - 103
-                    - 101
-                    - 110
-                    - 100
-                    - 105
-                    - 32
-                    - 113
-                    - 117
-                    - 111
+                    - 97
                     - 115
+                    - 32
+                    - 117
+                    - 116
+                    - 32
+                    - 108
+                    - 105
+                    - 98
+                    - 101
+                    - 114
+                    - 111
+                    - 32
+                    - 97
+                    - 100
+                    - 32
+                    - 110
+                    - 117
+                    - 108
+                    - 108
+                    - 97
                     - 46
                 format: byte
             thumbnail_2:
                 type: string
                 description: Thumbnail_2 image
                 example:
-                    - 83
-                    - 97
-                    - 112
-                    - 105
-                    - 101
-                    - 110
+                    - 65
+                    - 117
                     - 116
-                    - 101
                     - 32
-                    - 111
-                    - 109
                     - 110
                     - 105
-                    - 115
-                    - 32
-                    - 111
-                    - 109
-                    - 110
+                    - 104
                     - 105
-                    - 115
+                    - 108
                     - 32
-                    - 99
+                    - 118
                     - 111
-                    - 114
-                    - 114
+                    - 108
                     - 117
                     - 112
                     - 116
+                    - 97
+                    - 115
+                    - 32
+                    - 101
+                    - 116
+                    - 32
+                    - 97
+                    - 108
                     - 105
+                    - 113
+                    - 117
+                    - 105
+                    - 100
+                    - 32
+                    - 97
+                    - 98
                     - 46
                 format: byte
             title:
@@ -24763,8 +24858,9 @@ definitions:
             rareness_score: 1
             series_name: Famous artist
             thumbnail_1:
-                - 69
-                - 116
+                - 81
+                - 117
+                - 105
                 - 32
                 - 100
                 - 111
@@ -24772,24 +24868,53 @@ definitions:
                 - 111
                 - 114
                 - 101
-                - 32
-                - 100
-                - 111
-                - 108
-                - 111
-                - 114
-                - 101
+                - 115
                 - 46
             thumbnail_2:
-                - 85
+                - 65
+                - 117
                 - 116
                 - 32
-                - 108
-                - 105
-                - 98
+                - 118
                 - 101
+                - 108
+                - 32
+                - 97
+                - 99
+                - 99
+                - 117
+                - 115
+                - 97
+                - 109
+                - 117
+                - 115
+                - 32
+                - 110
+                - 97
+                - 109
+                - 32
+                - 117
+                - 108
+                - 108
+                - 97
+                - 109
+                - 32
+                - 113
+                - 117
+                - 105
+                - 97
+                - 32
                 - 114
-                - 111
+                - 101
+                - 112
+                - 101
+                - 108
+                - 108
+                - 101
+                - 110
+                - 100
+                - 117
+                - 115
                 - 46
             title: Mona Lisa
             txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -24816,6 +24941,8 @@ definitions:
                   status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
                   status: Task Started
+                - date: 2006-01-02T15:04:05Z07:00
+                  status: Task Started
               status: Task Started
               ticket:
                 burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -24831,7 +24958,7 @@ definitions:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Asperiores et ea.
+                open_api_group_id: Qui corrupti neque quod omnis.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -24850,38 +24977,6 @@ definitions:
                   status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
                   status: Task Started
-              status: Task Started
-              ticket:
-                burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-                collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-                creator_name: Leonardo da Vinci
-                creator_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                creator_website_url: https://www.leonardodavinci.net
-                description: The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.
-                green: false
-                issued_copies: 1
-                key: Basic abcdef12345
-                keywords: Renaissance, sfumato, portrait
-                make_publicly_accessible: false
-                maximum_fee: 100
-                name: Mona Lisa
-                open_api_group_id: Asperiores et ea.
-                royalty: 12
-                series_name: Famous artist
-                spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
-                thumbnail_coordinate:
-                    bottom_right_x: 640
-                    bottom_right_y: 480
-                    top_left_x: 0
-                    top_left_y: 0
-                youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-              txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-            - id: n6Qn6TFM
-              states:
-                - date: 2006-01-02T15:04:05Z07:00
-                  status: Task Started
-                - date: 2006-01-02T15:04:05Z07:00
-                  status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
                   status: Task Started
               status: Task Started
@@ -24899,7 +24994,7 @@ definitions:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Asperiores et ea.
+                open_api_group_id: Qui corrupti neque quod omnis.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -24917,7 +25012,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -24976,19 +25071,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: uploadImage_InternalServerError_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
-            timeout: false
+            temporary: true
+            timeout: true
         required:
             - name
             - id
@@ -25004,44 +25099,50 @@ definitions:
                 type: string
                 description: File to upload
                 example:
-                    - 83
+                    - 70
+                    - 117
+                    - 103
                     - 105
+                    - 97
                     - 116
                     - 32
                     - 101
-                    - 117
-                    - 109
-                    - 32
-                    - 108
-                    - 97
-                    - 117
-                    - 100
-                    - 97
-                    - 110
                     - 116
-                    - 105
-                    - 117
+                    - 32
                     - 109
+                    - 105
+                    - 110
+                    - 105
+                    - 109
+                    - 97
+                    - 32
+                    - 109
+                    - 111
+                    - 100
+                    - 105
+                    - 32
+                    - 101
+                    - 108
+                    - 105
+                    - 103
+                    - 101
+                    - 110
+                    - 100
+                    - 105
                     - 32
                     - 113
                     - 117
                     - 111
+                    - 115
                     - 32
-                    - 105
-                    - 112
                     - 115
                     - 97
-                    - 109
-                    - 32
-                    - 101
-                    - 97
-                    - 32
-                    - 118
+                    - 112
+                    - 105
                     - 101
                     - 110
-                    - 105
-                    - 97
-                    - 109
+                    - 116
+                    - 101
                     - 46
                 format: byte
             filename:
@@ -25049,36 +25150,29 @@ definitions:
                 description: For internal use
         example:
             file:
-                - 69
-                - 115
-                - 115
-                - 101
-                - 32
-                - 101
-                - 115
-                - 116
-                - 32
-                - 118
-                - 101
+                - 79
+                - 109
                 - 110
                 - 105
-                - 97
-                - 109
+                - 115
                 - 32
-                - 102
-                - 117
-                - 103
+                - 111
+                - 109
+                - 110
                 - 105
-                - 97
-                - 116
+                - 115
                 - 32
-                - 116
-                - 101
-                - 109
-                - 112
+                - 99
                 - 111
                 - 114
-                - 97
+                - 114
+                - 117
+                - 112
+                - 116
+                - 105
+                - 32
+                - 101
+                - 116
                 - 46
         required:
             - file
@@ -25270,15 +25364,25 @@ definitions:
         title: SHExecutionMetricsResponseBody
         type: object
         properties:
+            total_challenge_evaluations_unverified:
+                type: integer
+                description: Total number of challenge evaluations unverified by verifier nodes
+                example: 1034563120967647902
+                format: int64
+            total_challenge_evaluations_verified:
+                type: integer
+                description: Total number of challenges verified
+                example: 2302239154475916268
+                format: int64
             total_challenges_accepted:
                 type: integer
-                description: Total number of challenges accepted
-                example: 7207022517687867537
-                format: int64
-            total_challenges_failed:
-                type: integer
-                description: Total number of challenges failed
+                description: Total number of challenges accepted (healer node evaluated that reconstruction is required)
                 example: 1190891930288065656
+                format: int64
+            total_challenges_acknowledged:
+                type: integer
+                description: Total number of challenges acknowledged by the healer node
+                example: 4243586745498356336
                 format: int64
             total_challenges_issued:
                 type: integer
@@ -25287,39 +25391,70 @@ definitions:
                 format: int64
             total_challenges_rejected:
                 type: integer
-                description: Total number of challenges rejected
-                example: 4243586745498356336
-                format: int64
-            total_challenges_successful:
-                type: integer
-                description: Total number of challenges successful
-                example: 2302239154475916268
+                description: Total number of challenges rejected (healer node evaluated that reconstruction is not required)
+                example: 7207022517687867537
                 format: int64
             total_file_healing_failed:
                 type: integer
                 description: Total number of file healings that failed
-                example: 5684178765315339874
+                example: 2155799510189898023
                 format: int64
             total_files_healed:
                 type: integer
                 description: Total number of files healed
+                example: 6914694141052474753
+                format: int64
+            total_reconstruction_not_required_evaluations_approved:
+                type: integer
+                description: Total number of reconstructions not required approved by verifier nodes
+                example: 5684178765315339874
+                format: int64
+            total_reconstruction_required_evaluations_approved:
+                type: integer
+                description: Total number of reconstructions approved by verifier nodes
                 example: 2691546284328657829
+                format: int64
+            total_reconstruction_required_evaluations_not_approved:
+                type: integer
+                description: Total number of reconstructions not approved by verifier nodes
+                example: 2520491575623451850
+                format: int64
+            total_reconstruction_required_hash_mismatch:
+                type: integer
+                description: Total number of reconstructions required with hash mismatch
+                example: 5679952899284538445
+                format: int64
+            total_reconstructions_not_required_evaluations_not_approved:
+                type: integer
+                description: Total number of reconstructions not required evaluation not approved by verifier nodes
+                example: 3250569817065211363
                 format: int64
         description: Self-healing execution metrics
         example:
-            total_challenges_accepted: 3250569817065211363
-            total_challenges_failed: 5679952899284538445
-            total_challenges_issued: 1034563120967647902
-            total_challenges_rejected: 2520491575623451850
-            total_challenges_successful: 6914694141052474753
-            total_file_healing_failed: 8699173442738436396
-            total_files_healed: 2155799510189898023
+            total_challenge_evaluations_unverified: 681193275487869851
+            total_challenge_evaluations_verified: 8480833337195299588
+            total_challenges_accepted: 4310670538426966647
+            total_challenges_acknowledged: 6257794960149211926
+            total_challenges_issued: 8699173442738436396
+            total_challenges_rejected: 8683844824442833795
+            total_file_healing_failed: 8917569224466883041
+            total_files_healed: 1362782358179080945
+            total_reconstruction_not_required_evaluations_approved: 8747435481573499502
+            total_reconstruction_required_evaluations_approved: 3506274740358940894
+            total_reconstruction_required_evaluations_not_approved: 4971281876739619732
+            total_reconstruction_required_hash_mismatch: 6285852628941175332
+            total_reconstructions_not_required_evaluations_not_approved: 4052619752839989947
         required:
             - total_challenges_issued
+            - total_challenges_acknowledged
             - total_challenges_rejected
             - total_challenges_accepted
-            - total_challenges_failed
-            - total_challenges_successful
+            - total_challenge_evaluations_verified
+            - total_reconstruction_required_evaluations_approved
+            - total_reconstruction_not_required_evaluations_approved
+            - total_challenge_evaluations_unverified
+            - total_reconstruction_required_evaluations_not_approved
+            - total_reconstructions_not_required_evaluations_not_approved
             - total_files_healed
             - total_file_healing_failed
     SHTriggerMetricResponseBody:
@@ -39557,19 +39692,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: true
         description: download_InternalServerError_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
-            timeout: true
+            temporary: false
+            timeout: false
         required:
             - name
             - id
@@ -39584,7 +39719,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -39600,18 +39735,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: download_NotFound_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
+            temporary: false
             timeout: true
         required:
             - name
@@ -39628,73 +39763,34 @@ definitions:
                 type: string
                 description: File downloaded
                 example:
-                    - 67
+                    - 78
                     - 111
-                    - 109
-                    - 109
-                    - 111
+                    - 110
+                    - 32
                     - 100
-                    - 105
-                    - 32
-                    - 108
-                    - 97
-                    - 98
-                    - 111
-                    - 114
-                    - 105
-                    - 111
-                    - 115
-                    - 97
-                    - 109
-                    - 32
-                    - 97
-                    - 115
-                    - 112
-                    - 101
-                    - 114
-                    - 105
-                    - 111
-                    - 114
                     - 101
                     - 115
-                    - 32
-                    - 97
-                    - 98
-                    - 32
-                    - 109
-                    - 111
-                    - 108
                     - 101
-                    - 115
+                    - 114
+                    - 117
+                    - 110
                     - 116
-                    - 105
-                    - 97
-                    - 101
                     - 46
                 format: byte
         example:
             file:
-                - 69
-                - 120
-                - 112
+                - 65
+                - 117
+                - 116
+                - 32
                 - 101
+                - 108
+                - 105
+                - 103
+                - 101
+                - 110
                 - 100
                 - 105
-                - 116
-                - 97
-                - 32
-                - 101
-                - 120
-                - 99
-                - 101
-                - 112
-                - 116
-                - 117
-                - 114
-                - 105
-                - 32
-                - 117
-                - 116
                 - 46
         required:
             - file
@@ -39705,7 +39801,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -39728,11 +39824,11 @@ definitions:
                 example: true
         description: download_UnAuthorized_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: true
         required:
             - name
@@ -39764,11 +39860,11 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: getTaskHistory_InternalServerError_response_body result type (default view)
         example:
             fault: false
@@ -39776,7 +39872,7 @@ definitions:
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: true
-            timeout: true
+            timeout: false
         required:
             - name
             - id
@@ -39811,14 +39907,14 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: getTaskHistory_NotFound_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: true
         required:
             - name
@@ -39834,7 +39930,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -39850,18 +39946,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: registerTaskState_InternalServerError_response_body result type (default view)
         example:
             fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: true
         required:
             - name
@@ -39877,7 +39973,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -39893,18 +39989,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: registerTaskState_NotFound_response_body result type (default view)
         example:
             fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
+            temporary: false
             timeout: true
         required:
             - name
@@ -39986,7 +40082,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -40013,7 +40109,7 @@ definitions:
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
+            temporary: false
             timeout: true
         required:
             - name
@@ -40029,7 +40125,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -40057,7 +40153,7 @@ definitions:
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: false
-            timeout: false
+            timeout: true
         required:
             - name
             - id
@@ -40090,7 +40186,7 @@ definitions:
                 type: string
                 description: OpenAPI GroupID string
                 default: PASTEL
-                example: Quos magni quibusdam illo aut dolorum omnis.
+                example: Distinctio id et nam commodi laboriosam asperiores.
             spendable_address:
                 type: string
                 description: 'Address to use for registration fee '
@@ -40102,7 +40198,7 @@ definitions:
             app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
             collection_act_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-            open_api_group_id: Molestiae inventore.
+            open_api_group_id: Molestiae exercitationem expedita excepturi ut.
             spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         required:
             - burn_txid
@@ -40145,18 +40241,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: startProcessing_UnAuthorized_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: true
         required:
             - name
@@ -40195,11 +40291,11 @@ definitions:
                 example: true
         description: uploadImage_BadRequest_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
+            temporary: false
             timeout: false
         required:
             - name
@@ -40215,7 +40311,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -40238,11 +40334,11 @@ definitions:
                 example: false
         description: uploadImage_InternalServerError_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
+            temporary: false
             timeout: true
         required:
             - name
@@ -40259,45 +40355,13 @@ definitions:
                 type: string
                 description: File to upload
                 example:
-                    - 67
+                    - 73
+                    - 108
+                    - 108
                     - 111
-                    - 110
-                    - 115
-                    - 101
-                    - 113
-                    - 117
-                    - 117
-                    - 110
-                    - 116
-                    - 117
-                    - 114
                     - 32
-                    - 113
-                    - 117
-                    - 105
                     - 97
-                    - 32
-                    - 110
-                    - 111
-                    - 110
-                    - 32
-                    - 111
-                    - 109
-                    - 110
-                    - 105
-                    - 115
-                    - 32
-                    - 101
-                    - 110
-                    - 105
-                    - 109
-                    - 32
-                    - 113
                     - 117
-                    - 97
-                    - 101
-                    - 114
-                    - 97
                     - 116
                     - 46
                 format: byte
@@ -40306,40 +40370,56 @@ definitions:
                 description: For internal use
         example:
             file:
-                - 84
-                - 101
+                - 79
                 - 109
-                - 112
-                - 111
-                - 114
+                - 110
                 - 105
-                - 98
-                - 117
                 - 115
                 - 32
-                - 115
                 - 97
+                - 115
                 - 112
+                - 101
+                - 114
+                - 110
+                - 97
+                - 116
+                - 117
+                - 114
+                - 32
+                - 109
+                - 111
+                - 108
+                - 101
+                - 115
+                - 116
                 - 105
+                - 97
+                - 101
+                - 32
+                - 105
+                - 110
+                - 118
                 - 101
                 - 110
                 - 116
+                - 111
+                - 114
                 - 101
                 - 32
-                - 105
-                - 112
-                - 115
                 - 97
-                - 109
-                - 32
-                - 109
-                - 111
                 - 100
                 - 105
-                - 32
-                - 101
+                - 112
+                - 105
                 - 115
-                - 116
+                - 99
+                - 105
+                - 32
+                - 113
+                - 117
+                - 111
+                - 100
                 - 46
         required:
             - file
@@ -40497,7 +40577,7 @@ definitions:
                 make_publicly_accessible: false
                 maximum_fee: 100
                 name: Mona Lisa
-                open_api_group_id: Quo reiciendis corrupti reiciendis est ut quam.
+                open_api_group_id: Quam beatae libero rerum mollitia veritatis accusantium.
                 royalty: 12
                 series_name: Famous artist
                 spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
@@ -40758,19 +40838,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: createUserdata_BadRequest_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: true
-            timeout: false
+            timeout: true
         required:
             - name
             - id
@@ -40801,18 +40881,18 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: createUserdata_InternalServerError_response_body result type (default view)
         example:
             fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
+            temporary: false
             timeout: true
         required:
             - name
@@ -41003,14 +41083,14 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: getUserdata_BadRequest_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
@@ -41030,7 +41110,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -41053,11 +41133,11 @@ definitions:
                 example: true
         description: getUserdata_InternalServerError_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: false
+            temporary: true
             timeout: true
         required:
             - name
@@ -41093,15 +41173,15 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: getUserdata_NotFound_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
-            timeout: true
+            temporary: false
+            timeout: false
         required:
             - name
             - id
@@ -41215,15 +41295,15 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: updateUserdata_BadRequest_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: true
-            timeout: true
+            timeout: false
         required:
             - name
             - id
@@ -41238,7 +41318,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -41258,15 +41338,15 @@ definitions:
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: false
+                example: true
         description: updateUserdata_InternalServerError_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: false
-            timeout: true
+            timeout: false
         required:
             - name
             - id
