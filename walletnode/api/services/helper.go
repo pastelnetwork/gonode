@@ -352,8 +352,9 @@ func toSHChallengeReport(data types.SelfHealingChallengeReports) *metrics.SelfHe
 	}
 
 	for challengeID, report := range data {
+		chlngID := challengeID
 		reportKV := &metrics.SelfHealingChallengeReportKV{
-			ChallengeID: &challengeID,
+			ChallengeID: &chlngID,
 			Report:      toSHChallengeReportStruct(report),
 		}
 		reports.Reports = append(reports.Reports, reportKV)
@@ -365,8 +366,9 @@ func toSHChallengeReport(data types.SelfHealingChallengeReports) *metrics.SelfHe
 func toSHChallengeReportStruct(report types.SelfHealingChallengeReport) *metrics.SelfHealingChallengeReport {
 	messages := make([]*metrics.SelfHealingMessageKV, 0, len(report))
 	for messageType, msgs := range report {
+		msgTyp := messageType
 		msgKV := &metrics.SelfHealingMessageKV{
-			MessageType: &messageType,
+			MessageType: &msgTyp,
 			Messages:    toSHMessages(msgs),
 		}
 		messages = append(messages, msgKV)

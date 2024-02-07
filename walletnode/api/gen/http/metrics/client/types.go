@@ -329,6 +329,8 @@ type SHExecutionMetricsResponseBody struct {
 	// Total number of reconstructions not required evaluation not approved by
 	// verifier nodes
 	TotalReconstructionsNotRequiredEvaluationsNotApproved *int `form:"total_reconstructions_not_required_evaluations_not_approved,omitempty" json:"total_reconstructions_not_required_evaluations_not_approved,omitempty" xml:"total_reconstructions_not_required_evaluations_not_approved,omitempty"`
+	// Total number of reconstructions required with hash mismatch
+	TotalReconstructionRequiredHashMismatch *int `form:"total_reconstruction_required_hash_mismatch,omitempty" json:"total_reconstruction_required_hash_mismatch,omitempty" xml:"total_reconstruction_required_hash_mismatch,omitempty"`
 	// Total number of files healed
 	TotalFilesHealed *int `form:"total_files_healed,omitempty" json:"total_files_healed,omitempty" xml:"total_files_healed,omitempty"`
 	// Total number of file healings that failed

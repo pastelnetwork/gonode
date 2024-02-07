@@ -42,6 +42,8 @@ type SHExecutionMetrics struct {
 
 	TotalFilesHealed       int `json:"total_files_healed"`        // message_type = 4
 	TotalFileHealingFailed int `json:"total_file_healing_failed"` // message_type !=4
+
+	TotalReconstructionRequiredHashMismatch int `json:"total_reconstruction_required_hash_mismatch"` // message_type = 3 and is_reconsrcution_req = true
 }
 
 // Hash returns the hash of the metrics

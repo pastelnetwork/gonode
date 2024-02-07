@@ -32,6 +32,7 @@ type SHChallengeMetric struct {
 	IsUnverified                           bool
 	IsReconstructionRequiredNotVerified    bool
 	IsReconstructionNotRequiredNotVerified bool
+	IsReconstructionRequiredHashMismatch   bool
 
 	IsHealed bool
 }
@@ -146,19 +147,24 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 			reconNotReqVerified := 0
 			reconReqUnverified := 0
 			reconNotReqUnverified := 0
+			reconReqHashMismatch := 0
 
 			for _, message := range messages {
-				if message.SelfHealingMessageData.Verification.VerifiedTicket.IsVerified {
-					if message.SelfHealingMessageData.Verification.VerifiedTicket.IsReconstructionRequired {
-						reconReqVerified++
-					} else {
-						reconNotReqVerified++
-					}
-				} else {
-					if message.SelfHealingMessageData.Verification.VerifiedTicket.IsReconstructionRequired {
-						reconReqUnverified++
+				if message.SelfHealingMessageData.Verification.VerifiedTicket.IsReconstructionRequired {
+					if message.SelfHealingMessageData.Verification.VerifiedTicket.IsReconstructionRequiredByHealer {
+						if message.SelfHealingMessageData.Verification.VerifiedTicket.IsVerified {
+							reconReqVerified++
+						} else {
+							reconReqHashMismatch++
+						}
 					} else {
 						reconNotReqUnverified++
+					}
+				} else {
+					if message.SelfHealingMessageData.Verification.VerifiedTicket.IsReconstructionRequiredByHealer {
+						reconReqUnverified++
+					} else {
+						reconNotReqVerified++
 					}
 				}
 			}
@@ -182,6 +188,10 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 				ch := challenges[row.ChallengeID]
 				ch.IsUnverified = true
 				ch.IsReconstructionNotRequiredNotVerified = true
+				challenges[row.ChallengeID] = ch
+			} else if reconReqHashMismatch >= minVerifications {
+				ch := challenges[row.ChallengeID]
+				ch.IsReconstructionRequiredHashMismatch = true
 				challenges[row.ChallengeID] = ch
 			}
 
@@ -253,6 +263,10 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 
 		if challenge.IsReconstructionNotRequiredNotVerified {
 			m.TotalReconstructionsNotRequiredEvaluationNotApproved++
+		}
+
+		if challenge.IsReconstructionRequiredHashMismatch {
+			m.TotalReconstructionRequiredHashMismatch++
 		}
 
 		if challenge.IsHealed {

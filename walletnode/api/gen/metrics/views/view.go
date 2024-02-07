@@ -68,6 +68,8 @@ type SHExecutionMetricsView struct {
 	// Total number of reconstructions not required evaluation not approved by
 	// verifier nodes
 	TotalReconstructionsNotRequiredEvaluationsNotApproved *int
+	// Total number of reconstructions required with hash mismatch
+	TotalReconstructionRequiredHashMismatch *int
 	// Total number of files healed
 	TotalFilesHealed *int
 	// Total number of file healings that failed

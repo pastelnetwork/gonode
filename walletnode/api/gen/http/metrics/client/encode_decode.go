@@ -594,6 +594,7 @@ func unmarshalSHExecutionMetricsResponseBodyToMetricsviewsSHExecutionMetricsView
 		TotalChallengeEvaluationsUnverified:                   v.TotalChallengeEvaluationsUnverified,
 		TotalReconstructionRequiredEvaluationsNotApproved:     v.TotalReconstructionRequiredEvaluationsNotApproved,
 		TotalReconstructionsNotRequiredEvaluationsNotApproved: v.TotalReconstructionsNotRequiredEvaluationsNotApproved,
+		TotalReconstructionRequiredHashMismatch:               v.TotalReconstructionRequiredHashMismatch,
 		TotalFilesHealed:                                      v.TotalFilesHealed,
 		TotalFileHealingFailed:                                v.TotalFileHealingFailed,
 	}

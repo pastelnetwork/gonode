@@ -118,6 +118,8 @@ type SHExecutionMetrics struct {
 	// Total number of reconstructions not required evaluation not approved by
 	// verifier nodes
 	TotalReconstructionsNotRequiredEvaluationsNotApproved int
+	// Total number of reconstructions required with hash mismatch
+	TotalReconstructionRequiredHashMismatch *int
 	// Total number of files healed
 	TotalFilesHealed int
 	// Total number of file healings that failed
@@ -324,6 +326,7 @@ func transformMetricsviewsSHExecutionMetricsViewToSHExecutionMetrics(v *metricsv
 		TotalChallengeEvaluationsUnverified:                   *v.TotalChallengeEvaluationsUnverified,
 		TotalReconstructionRequiredEvaluationsNotApproved:     *v.TotalReconstructionRequiredEvaluationsNotApproved,
 		TotalReconstructionsNotRequiredEvaluationsNotApproved: *v.TotalReconstructionsNotRequiredEvaluationsNotApproved,
+		TotalReconstructionRequiredHashMismatch:               v.TotalReconstructionRequiredHashMismatch,
 		TotalFilesHealed:                                      *v.TotalFilesHealed,
 		TotalFileHealingFailed:                                *v.TotalFileHealingFailed,
 	}
@@ -360,6 +363,7 @@ func transformSHExecutionMetricsToMetricsviewsSHExecutionMetricsView(v *SHExecut
 		TotalChallengeEvaluationsUnverified:                   &v.TotalChallengeEvaluationsUnverified,
 		TotalReconstructionRequiredEvaluationsNotApproved:     &v.TotalReconstructionRequiredEvaluationsNotApproved,
 		TotalReconstructionsNotRequiredEvaluationsNotApproved: &v.TotalReconstructionsNotRequiredEvaluationsNotApproved,
+		TotalReconstructionRequiredHashMismatch:               v.TotalReconstructionRequiredHashMismatch,
 		TotalFilesHealed:                                      &v.TotalFilesHealed,
 		TotalFileHealingFailed:                                &v.TotalFileHealingFailed,
 	}

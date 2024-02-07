@@ -151,7 +151,7 @@ var SHExecutionMetrics = Type("SHExecutionMetrics", func() {
 	Attribute("total_challenge_evaluations_unverified", Int, "Total number of challenge evaluations unverified by verifier nodes")
 	Attribute("total_reconstruction_required_evaluations_not_approved", Int, "Total number of reconstructions not approved by verifier nodes")
 	Attribute("total_reconstructions_not_required_evaluations_not_approved", Int, "Total number of reconstructions not required evaluation not approved by verifier nodes")
-
+	Attribute("total_reconstruction_required_hash_mismatch", Int, "Total number of reconstructions required with hash mismatch")
 	Attribute("total_files_healed", Int, "Total number of files healed")
 	Attribute("total_file_healing_failed", Int, "Total number of file healings that failed")
 
