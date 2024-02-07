@@ -142,6 +142,8 @@ func (service *MetricsAPIHandler) GetMetrics(ctx context.Context, p *metrics.Get
 
 			TotalFilesHealed:       res.SHExecutionMetrics.TotalFilesHealed,
 			TotalFileHealingFailed: res.SHExecutionMetrics.TotalFileHealingFailed,
+
+			TotalReconstructionRequiredHashMismatch: &res.SHExecutionMetrics.TotalReconstructionRequiredHashMismatch,
 		},
 	}, nil
 }
