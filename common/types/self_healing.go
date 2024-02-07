@@ -144,15 +144,16 @@ type SelfHealingResponseData struct {
 
 // VerifiedTicket represents the details of ticket verified in self-healing challenge
 type VerifiedTicket struct {
-	TxID                     string     `json:"tx_id"`
-	TicketType               TicketType `json:"ticket_type"`
-	MissingKeys              []string   `json:"missing_keys"`
-	ReconstructedFileHash    []byte     `json:"reconstructed_file_hash"`
-	IsReconstructionRequired bool       `json:"is_reconstruction_required"`
-	RaptorQSymbols           []byte     `json:"raptor_q_symbols"`
-	FileIDs                  []string   `json:"sense_file_ids"`
-	IsVerified               bool       `json:"is_verified"`
-	Message                  string     `json:"message"`
+	TxID                             string     `json:"tx_id"`
+	TicketType                       TicketType `json:"ticket_type"`
+	MissingKeys                      []string   `json:"missing_keys"`
+	ReconstructedFileHash            []byte     `json:"reconstructed_file_hash"`
+	IsReconstructionRequired         bool       `json:"is_reconstruction_required"`
+	IsReconstructionRequiredByHealer bool       `json:"is_reconstruction_required_by_healer"`
+	RaptorQSymbols                   []byte     `json:"raptor_q_symbols"`
+	FileIDs                          []string   `json:"sense_file_ids"`
+	IsVerified                       bool       `json:"is_verified"`
+	Message                          string     `json:"message"`
 }
 
 // SelfHealingVerificationData represents the verification data for self-healing challenge
