@@ -105,7 +105,7 @@ func (task *NftRegistrationTask) ProbeImage(ctx context.Context, file *files.Fil
 
 // validates RQIDs and DdFp IDs file and its IDs
 // Step 11.B.3 - 11.B.4
-func (task *NftRegistrationTask) validateRqIDsAndDdFpIds(ctx context.Context, rq []byte, dd []byte) error {
+func (task *NftRegistrationTask) validateRqIDsAndDdFpIDs(ctx context.Context, rq []byte, dd []byte) error {
 	var err error
 
 	pastelIDs := task.NetworkHandler.MeshedNodesPastelID()
@@ -178,7 +178,7 @@ func (task *NftRegistrationTask) GetNftRegistrationFee(_ context.Context,
 			return nil
 		}
 
-		if err := task.validateRqIDsAndDdFpIds(ctx, rqidFile, ddFpFile); err != nil {
+		if err := task.validateRqIDsAndDdFpIDs(ctx, rqidFile, ddFpFile); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("validate rq & dd id files")
 			err = errors.Errorf("validate rq & dd id files %w", err)
 			return nil

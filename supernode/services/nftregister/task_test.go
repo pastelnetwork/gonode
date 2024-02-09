@@ -1203,7 +1203,7 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 	}
 }
 
-func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
+func TestTaskValidateRqIDsAndDdFpIDs(t *testing.T) {
 	type args struct {
 		status common.Status
 		fg     *pastel.DDAndFingerprints
@@ -1342,7 +1342,7 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 
 			assert.Nil(t, err)
 
-			err = task.validateRqIDsAndDdFpIds(context.Background(), rq, dd)
+			err = task.validateRqIDsAndDdFpIDs(context.Background(), rq, dd)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

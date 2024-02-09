@@ -93,7 +93,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
 	)
 
-	app.SetActionFunc(func(ctx context.Context, args []string) error {
+	app.SetActionFunc(func(ctx context.Context, _ []string) error {
 		ctx = log.ContextWithPrefix(ctx, "app")
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
