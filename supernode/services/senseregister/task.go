@@ -155,7 +155,7 @@ func (task *SenseRegistrationTask) ProbeImage(ctx context.Context, file *files.F
 		task.ActionTicketRegMetadata.BlockHash, task.ActionTicketRegMetadata.BlockHeight, task.ActionTicketRegMetadata.Timestamp, task.ActionTicketRegMetadata.CreatorPastelID, &tasker{})
 }
 
-func (task *SenseRegistrationTask) validateDdFpIds(ctx context.Context, dd []byte) error {
+func (task *SenseRegistrationTask) validateDdFpIDs(ctx context.Context, dd []byte) error {
 
 	pastelIDs := task.NetworkHandler.MeshedNodesPastelID()
 
@@ -211,7 +211,7 @@ func (task *SenseRegistrationTask) validateSignedTicketFromWN(ctx context.Contex
 		return err
 	}
 
-	if err := task.validateDdFpIds(ctx, ddFpFile); err != nil {
+	if err := task.validateDdFpIDs(ctx, ddFpFile); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("validate rq & dd id files")
 
 		return errors.Errorf("validate rq & dd id files %w", err)

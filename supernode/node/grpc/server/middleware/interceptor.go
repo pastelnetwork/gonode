@@ -12,7 +12,7 @@ import (
 
 // UnaryInterceptor returns a ServerOption that sets the UnaryServerInterceptor for the server.
 func UnaryInterceptor() grpc.ServerOption {
-	return grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer errors.Recover(func(recErr error) {
 			err = status.Error(codes.Internal, fmt.Sprintf("internal server error: %s", recErr.Error()))
 		})
@@ -26,7 +26,7 @@ func UnaryInterceptor() grpc.ServerOption {
 
 // StreamInterceptor returns a ServerOption that sets the StreamServerInterceptor for the server.
 func StreamInterceptor() grpc.ServerOption {
-	return grpc.StreamInterceptor(func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
+	return grpc.StreamInterceptor(func(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 		defer errors.Recover(func(recErr error) {
 			err = status.Error(codes.Internal, fmt.Sprintf("internal server error: %s", recErr.Error()))
 		})

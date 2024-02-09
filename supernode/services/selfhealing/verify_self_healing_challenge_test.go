@@ -3,10 +3,11 @@ package selfhealing
 import (
 	"context"
 	"encoding/base64"
+	"testing"
+
 	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/services/download"
-	"testing"
 
 	json "github.com/json-iterator/go"
 
@@ -103,7 +104,7 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 				p2pClient.On(p2pMock.RetrieveMethod, mock.Anything, mock.Anything, mock.Anything).Return(symbol, nil).Times(1)
 				raptorQClient.ListenOnDone()
 			},
-			expect: func(t *testing.T, msg *pb.SelfHealingMessage, err error) {
+			expect: func(t *testing.T, _ *pb.SelfHealingMessage, err error) {
 				require.Nil(t, err)
 
 				//require.Equal(t, data.MessageType, pb.SelfHealingData_MessageType_SELF_HEALING_RESPONSE_MESSAGE)
@@ -140,7 +141,7 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 
 				raptorQClient.ListenOnDone()
 			},
-			expect: func(t *testing.T, data *pb.SelfHealingMessage, err error) {
+			expect: func(t *testing.T, _ *pb.SelfHealingMessage, err error) {
 				require.Nil(t, err)
 				//require.Equal(t, data.ChallengeStatus, pb.SelfHealingData_Status_SUCCEEDED)
 				//require.Equal(t, data.MessageType, pb.SelfHealingData_MessageType_SELF_HEALING_RESPONSE_MESSAGE)

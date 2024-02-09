@@ -149,14 +149,14 @@ func TestTaskGetSymbolIDs(t *testing.T) {
 
 	testCases := []struct {
 		args        args
-		returnRqIDS []string
+		returnRqIDs []string
 		assertion   assert.ErrorAssertionFunc
 	}{
 		{
 			args: args{
 				rqIDsData: rqIDsData,
 			},
-			returnRqIDS: haveRqIDs,
+			returnRqIDs: haveRqIDs,
 			assertion:   assert.NoError,
 		},
 	}

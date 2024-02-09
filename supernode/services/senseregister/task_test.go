@@ -816,7 +816,7 @@ func TestTaskAddPeerSenseTicketSignature(t *testing.T) {
 	}
 }
 
-func TestTaskValidateDdFpIds(t *testing.T) {
+func TestTaskValidateDdFpIDs(t *testing.T) {
 	type args struct {
 		status common.Status
 		fg     *pastel.DDAndFingerprints
@@ -928,7 +928,7 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 
 			assert.Nil(t, err)
 
-			err = task.validateDdFpIds(context.Background(), dd)
+			err = task.validateDdFpIDs(context.Background(), dd)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
