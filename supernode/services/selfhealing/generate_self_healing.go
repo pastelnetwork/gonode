@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -284,7 +285,7 @@ func (task *SHTask) identifySelfHealingTickets(ctx context.Context, watchlistPin
 
 			selfHealingTicketsMap[ticketDetails.TicketTxID] = selfHealingTicketDetails
 
-			log.WithContext(ctx).WithField("ticket_tx_id", ticketDetails.TicketTxID).Info("ticket added for self healing")
+			log.WithContext(ctx).WithField("ticket_tx_id", ticketDetails.TicketTxID).Debug("ticket added for self healing")
 		}
 	}
 
@@ -486,6 +487,11 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 	merkleroot := blkVerbose1.MerkleRoot
 
 	for challengeRecipient, ticketsDetails := range challengeRecipientMap {
+		challengeTickets := getTicketsForSelfHealingChallengeMessage(ticketsDetails, challengeRecipient)
+
+		log.WithContext(ctx).WithField("recipient_id", challengeRecipient).
+			WithField("total_tickets", len(challengeTickets)).Info("sending for self-healing")
+
 		msgData := types.SelfHealingMessageData{
 			ChallengerID: task.nodeID,
 			RecipientID:  challengeRecipient,
@@ -493,7 +499,7 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 				Block:            currentBlockCount,
 				Merkelroot:       merkleroot,
 				Timestamp:        time.Now().UTC(),
-				ChallengeTickets: getTicketsForSelfHealingChallengeMessage(ticketsDetails, challengeRecipient),
+				ChallengeTickets: challengeTickets,
 				NodesOnWatchlist: nodesOnWatchlist,
 			},
 		}
@@ -746,6 +752,7 @@ func getTriggerID(infos types.PingInfos, selfHealingTickets map[string]SymbolFil
 		nodeIDs = append(nodeIDs, info.SupernodeID)
 	}
 
+	sort.Strings(nodeIDs)
 	triggerID = strings.Join(nodeIDs, ":")
 
 	for txid := range selfHealingTickets {
@@ -754,6 +761,7 @@ func getTriggerID(infos types.PingInfos, selfHealingTickets map[string]SymbolFil
 
 	triggerID = triggerID + "-"
 
+	sort.Strings(txids)
 	triggerID = strings.Join(txids, ":")
 
 	return utils.GetHashFromString(triggerID)

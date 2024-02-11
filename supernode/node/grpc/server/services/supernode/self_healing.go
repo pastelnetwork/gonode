@@ -120,7 +120,7 @@ func (service *SelfHealingChallengeGRPC) ProcessSelfHealingChallenge(ctx context
 		return nil, errors.Errorf("error un-marshaling the received challenge message")
 	}
 
-	err := task.ProcessSelfHealingChallenge(ctx, msg)
+	err := task.AcknowledgeAndStoreChallengeTickets(ctx, msg)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Processing Self-Healing Challenge from Server Side")
 	}

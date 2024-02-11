@@ -20,6 +20,8 @@ const (
 	SelfHealingVerificationMessage
 	// SelfHealingCompletionMessage represents the challenge message processed successfully
 	SelfHealingCompletionMessage
+	// SelfHealingAcknowledgementMessage represents the acknowledgement message
+	SelfHealingAcknowledgementMessage
 )
 
 func (s SelfHealingMessageType) String() string {
@@ -158,6 +160,8 @@ type VerifiedTicket struct {
 
 // SelfHealingVerificationData represents the verification data for self-healing challenge
 type SelfHealingVerificationData struct {
+	NodeID         string            `json:"node_id"`
+	NodeAddress    string            `json:"node_address"`
 	ChallengeID    string            `json:"challenge_id"`
 	Block          int32             `json:"block"`
 	Merkelroot     string            `json:"merkelroot"`
@@ -224,6 +228,20 @@ type SelfHealingMetrics struct {
 	TicketsRequiredSelfHealing    int    `db:"tickets_required_self_healing"`
 	SuccessfullySelfHealedTickets int    `db:"successfully_self_healed_tickets"`
 	SuccessfullyVerifiedTickets   int    `db:"successfully_verified_tickets"`
+}
+
+// SelfHealingChallengeEvent represents the challenge event that needs to be healed.
+type SelfHealingChallengeEvent struct {
+	ID          int64
+	TriggerID   string
+	ChallengeID string
+	TicketID    string
+	Data        []byte
+	SenderID    string
+	IsProcessed bool
+	ExecMetric  SelfHealingExecutionMetric
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // Hash returns the hash of the self-healing challenge reports

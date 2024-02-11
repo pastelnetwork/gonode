@@ -328,7 +328,7 @@ func (s *DHT) GetBatchValuesFromNode(ctx context.Context, keys []string, n *Node
 	bo.Multiplier = 1
 
 	if err := backoff.Retry(operation, bo); err != nil {
-		log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
+		log.P2P().WithContext(ctx).WithError(err).Debugf("network call request %s failed", request.String())
 		return false, nil, nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)
 	}
 

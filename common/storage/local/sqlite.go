@@ -119,6 +119,24 @@ const createSelfHealingExecutionMetrics string = `
   updated_at DATETIME NOT NULL
 );`
 
+const createSelfHealingChallengeTickets string = `
+  CREATE TABLE IF NOT EXISTS self_healing_challenge_events (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  trigger_id TEXT NOT NULL,
+  ticket_id TEXT NOT NULL,
+  challenge_id TEXT NOT NULL,
+  data BLOB NOT NULL,
+  sender_id TEXT NOT NULL,
+  is_processed BOOLEAN NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+);
+`
+
+const createSelfHealingChallengeTicketsUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS self_healing_challenge_events_unique ON self_healing_challenge_events(trigger_id, ticket_id, challenge_id);
+`
+
 const createSelfHealingExecutionMetricsUniqueIndex string = `
 CREATE UNIQUE INDEX IF NOT EXISTS self_healing_execution_metrics_unique ON self_healing_execution_metrics(trigger_id, challenge_id, message_type);
 `
@@ -513,6 +531,93 @@ func (s *SQLiteStore) GetAllPingInfoForOnlineNodes() (types.PingInfos, error) {
 	return pingInfos, nil
 }
 
+func (s *SQLiteStore) BatchInsertSelfHealingChallengeEvents(ctx context.Context, eventsBatch []types.SelfHealingChallengeEvent) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+        INSERT OR IGNORE INTO self_healing_challenge_events
+        (trigger_id, ticket_id, challenge_id, data, sender_id, is_processed, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	stmt2, err := tx.Prepare(`
+		INSERT OR IGNORE INTO self_healing_execution_metrics(id, trigger_id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) 
+		       VALUES(NULL,?,?,?,?,?,?,?,?);
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt2.Close()
+
+	for _, event := range eventsBatch {
+		now := time.Now().UTC()
+
+		_, err = stmt.Exec(event.TriggerID, event.TicketID, event.ChallengeID, event.Data, event.SenderID, false, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		_, err = stmt2.Exec(event.ExecMetric.TriggerID, event.ExecMetric.ChallengeID, event.ExecMetric.MessageType, event.ExecMetric.Data, event.ExecMetric.SenderID, event.ExecMetric.SenderSignature, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// GetSelfHealingChallengeEvents retrieves the challenge events from DB
+func (s *SQLiteStore) GetSelfHealingChallengeEvents() ([]types.SelfHealingChallengeEvent, error) {
+	const selectQuery = `
+        SELECT trigger_id, ticket_id, challenge_id, data, sender_id, is_processed, created_at, updated_at
+        FROM self_healing_challenge_events
+        WHERE is_processed = false
+    `
+	rows, err := s.db.Query(selectQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []types.SelfHealingChallengeEvent
+
+	for rows.Next() {
+		var event types.SelfHealingChallengeEvent
+		if err := rows.Scan(
+			&event.TriggerID, &event.TicketID, &event.ChallengeID, &event.Data, &event.SenderID, &event.IsProcessed,
+			&event.CreatedAt, &event.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
+// UpdateSHChallengeEventProcessed updates the is_processed flag of an event
+func (s *SQLiteStore) UpdateSHChallengeEventProcessed(challengeID string, isProcessed bool) error {
+	const updateQuery = `
+        UPDATE self_healing_challenge_events
+        SET is_processed = ?
+        WHERE challenge_id = ?
+    `
+	_, err := s.db.Exec(updateQuery, isProcessed, challengeID)
+	return err
+}
+
 // CleanupSelfHealingChallenges cleans up self-healing challenges stored in DB for inspection
 func (s *SQLiteStore) CleanupSelfHealingChallenges() (err error) {
 	const delQuery = "DELETE FROM self_healing_challenges"
@@ -570,6 +675,14 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 
 	if _, err := db.Exec(createSelfHealingExecutionMetricsUniqueIndex); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createSelfHealingChallengeTickets); err != nil {
+		return nil, fmt.Errorf("cannot create createSelfHealingChallengeTickets: %w", err)
+	}
+
+	if _, err := db.Exec(createSelfHealingChallengeTicketsUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create createSelfHealingChallengeTicketsUniqueIndex: %w", err)
 	}
 
 	_, _ = db.Exec(alterTaskHistory)

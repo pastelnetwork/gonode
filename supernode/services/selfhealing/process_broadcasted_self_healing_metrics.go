@@ -1,14 +1,11 @@
 package selfhealing
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
 	json "github.com/json-iterator/go"
-	"io"
-
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 // ProcessBroadcastedSelfHealingMetrics worker process the broadcasted metrics received from other SNs
@@ -60,14 +57,7 @@ func (task *SHTask) ProcessBroadcastedSelfHealingMetrics(ctx context.Context, re
 func (task *SHTask) decompressGenerationMetricsData(compressedData []byte) ([]types.SelfHealingGenerationMetric, error) {
 	var generationMetrics []types.SelfHealingGenerationMetric
 
-	// Decompress using gzip
-	gz, err := gzip.NewReader(bytes.NewBuffer(compressedData))
-	if err != nil {
-		return nil, err
-	}
-	defer gz.Close()
-
-	decompressedData, err := io.ReadAll(gz)
+	decompressedData, err := utils.Decompress(compressedData)
 	if err != nil {
 		return nil, err
 	}
@@ -84,14 +74,7 @@ func (task *SHTask) decompressGenerationMetricsData(compressedData []byte) ([]ty
 func (task *SHTask) decompressExecutionMetricsData(compressedData []byte) ([]types.SelfHealingExecutionMetric, error) {
 	var executionMetrics []types.SelfHealingExecutionMetric
 
-	// Decompress using gzip
-	gz, err := gzip.NewReader(bytes.NewBuffer(compressedData))
-	if err != nil {
-		return nil, err
-	}
-	defer gz.Close()
-
-	decompressedData, err := io.ReadAll(gz)
+	decompressedData, err := utils.Decompress(compressedData)
 	if err != nil {
 		return nil, err
 	}
