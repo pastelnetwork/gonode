@@ -3,9 +3,10 @@ package selfhealing
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"golang.org/x/crypto/sha3"
-	"os"
 	"sync"
 	"time"
 
@@ -23,60 +24,49 @@ const (
 	verifyThreshold = 2
 )
 
-// ProcessSelfHealingChallenge is called from grpc server, which processes the self-healing challenge,
-// and will execute the reconstruction work.
-func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingChallengeMessage types.SelfHealingMessage) error {
-	logger := log.WithContext(ctx).WithField("trigger_id", incomingChallengeMessage.TriggerID)
-
+// ProcessSelfHealingChallenge is called from service.Run to process the stored events.
+func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, event types.SelfHealingChallengeEvent) error {
+	logger := log.WithContext(ctx).WithField("trigger_id", event.TriggerID).WithField("ticket_txid", event.TicketID)
 	logger.Info("ProcessSelfHealingChallenge has been invoked")
 
-	// wait if test env so tests can mock the p2p
-	if os.Getenv("INTEGRATION_TEST_ENV") == "true" {
-		time.Sleep(10 * time.Second)
+	if task.SHService.ticketsMap[event.TicketID] {
+		log.WithContext(ctx).Info("ticket processing is already in progress")
+		return nil
 	}
-
-	selfHealingMetrics := task.SelfHealingMetricsMap[incomingChallengeMessage.TriggerID]
-	selfHealingMetrics.ChallengeID = incomingChallengeMessage.TriggerID
-
-	// incoming challenge message validation
-	if err := task.validateSelfHealingChallengeIncomingData(ctx, incomingChallengeMessage); err != nil {
-		log.WithContext(ctx).WithError(err).Error("Error validating self-healing challenge incoming data: ")
-		return err
-	}
-	logger.Info("self healing challenge message has been validated")
+	task.SHService.ticketsMap[event.TicketID] = true
 
 	log.WithContext(ctx).Info("retrieving block no and verbose")
 	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not get current block count")
+		logger.WithError(err).Error("could not get current block count")
 		return err
 	}
 	blkVerbose1, err := task.SuperNodeService.PastelClient.GetBlockVerbose1(ctx, currentBlockCount)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not get current block verbose 1")
+		logger.WithError(err).Error("could not get current block verbose 1")
 		return err
 	}
 	merkleroot := blkVerbose1.MerkleRoot
 	logger.Info("block count & merkelroot has been retrieved")
 
 	responseMsg := types.SelfHealingMessage{
-		TriggerID:   incomingChallengeMessage.TriggerID,
+		TriggerID:   event.TriggerID,
 		SenderID:    task.nodeID,
 		MessageType: types.SelfHealingResponseMessage,
 		SelfHealingMessageData: types.SelfHealingMessageData{
-			ChallengerID: incomingChallengeMessage.SelfHealingMessageData.ChallengerID,
-			Challenge: types.SelfHealingChallengeData{
-				Block:            incomingChallengeMessage.SelfHealingMessageData.Challenge.Block,
-				Merkelroot:       incomingChallengeMessage.SelfHealingMessageData.Challenge.Merkelroot,
-				ChallengeTickets: incomingChallengeMessage.SelfHealingMessageData.Challenge.ChallengeTickets,
-				Timestamp:        incomingChallengeMessage.SelfHealingMessageData.Challenge.Timestamp,
-				NodesOnWatchlist: incomingChallengeMessage.SelfHealingMessageData.Challenge.NodesOnWatchlist,
-			},
 			Response: types.SelfHealingResponseData{
-				Block:      currentBlockCount,
-				Merkelroot: merkleroot,
+				ChallengeID: event.ChallengeID,
+				Block:       currentBlockCount,
+				Merkelroot:  merkleroot,
 			},
 		},
+	}
+
+	var ticket types.ChallengeTicket
+	if err := json.Unmarshal(event.Data, &ticket); err != nil {
+		logger.WithError(err).Error("error un-marshaling the challenge event data")
+
+		return err
 	}
 
 	var (
@@ -85,270 +75,219 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, incomingCha
 		senseTicket   *pastel.APISenseTicket
 	)
 
-	challengeTickets := incomingChallengeMessage.SelfHealingMessageData.Challenge.ChallengeTickets
-	if challengeTickets == nil {
-		logger.Info("no tickets found to challenge")
-		return nil
+	logger.Info("going to initiate checking process")
+	nftTicket, cascadeTicket, senseTicket, err = task.getTicket(ctx, ticket.TxID, TicketType(ticket.TicketType))
+	if err != nil {
+		logger.WithError(err).Error("Error getRelevantTicketFromMsg")
 	}
+	logger.Info("ticket has been retrieved")
 
-	selfHealingMetrics.SentTicketsForSelfHealing = len(challengeTickets)
+	if nftTicket != nil || cascadeTicket != nil {
+		newCtx := context.Background()
+		if !task.isReconstructionRequired(newCtx, ticket.MissingKeys) {
+			logger.Info("reconstruction is not required for ticket")
 
-	for _, ticket := range challengeTickets {
-		if task.SHService.ticketsMap[ticket.TxID] {
-			log.WithContext(ctx).WithField("txid", ticket.TxID).Info("ticket processing is already in progress")
-			selfHealingMetrics.TicketsInProgress++
-			continue
+			responseMsg.SelfHealingMessageData.Response.RespondedTicket = types.RespondedTicket{
+				TxID:                     ticket.TxID,
+				TicketType:               ticket.TicketType,
+				MissingKeys:              ticket.MissingKeys,
+				ReconstructedFileHash:    nil,
+				RaptorQSymbols:           nil,
+				IsReconstructionRequired: false,
+			}
+			logger.Info("sending response for verification")
+
+			newCtx = context.Background()
+			verifications, err := task.getVerifications(newCtx, responseMsg)
+			if err != nil {
+				logger.WithError(err).Debug("unable to get verifications")
+			}
+			logger.WithField("verifications", len(verifications)).
+				Info("verifications have been evaluated")
+
+			if len(verifications) >= verifyThreshold {
+				logger.Info("self-healing not required for this ticket, verified by verifiers")
+			}
+
+			return nil
 		}
-		task.SHService.ticketsMap[ticket.TxID] = true
-		selfHealingMetrics.EstimatedMissingKeys = selfHealingMetrics.EstimatedMissingKeys + len(ticket.MissingKeys)
 
-		logger.WithField("ticket_txid", ticket.TxID).Info("going to initiate checking process")
-		nftTicket, cascadeTicket, senseTicket, err = task.getTicket(ctx, ticket.TxID, TicketType(ticket.TicketType))
+		logger.Info("going to initiate self-healing")
+
+		newCtx = context.Background()
+		raptorQSymbols, reconstructedFileHash, err := task.selfHealing(newCtx, ticket.TxID, nftTicket, cascadeTicket)
 		if err != nil {
-			logger.WithError(err).Error("Error getRelevantTicketFromMsg")
+			logger.WithError(err).Error("Error self-healing the file")
+			return err
 		}
-		logger.Info("reg ticket has been retrieved")
+		logger.Info("file has been reconstructed")
 
-		challengeID := utils.GetHashFromString(ticket.TxID + responseMsg.TriggerID)
-		responseMsg.SelfHealingMessageData.Response.ChallengeID = challengeID
+		responseMsg.SelfHealingMessageData.Response.RespondedTicket = types.RespondedTicket{
+			TxID:                     ticket.TxID,
+			TicketType:               ticket.TicketType,
+			MissingKeys:              ticket.MissingKeys,
+			ReconstructedFileHash:    reconstructedFileHash,
+			RaptorQSymbols:           task.RaptorQSymbols,
+			IsReconstructionRequired: true,
+		}
+		logger.Info("sending response for verification")
 
-		if nftTicket != nil || cascadeTicket != nil {
-			newCtx := context.Background()
-			if !task.isReconstructionRequired(newCtx, ticket.MissingKeys) {
-				logger.WithField("txid", ticket.TxID).Info("reconstruction is not required for ticket")
+		newCtx = context.Background()
+		verifications, err := task.getVerifications(newCtx, responseMsg)
+		if err != nil {
+			logger.WithError(err).Debug("unable to get verifications")
+		}
+		logger.WithField("verifications", len(verifications)).Info("verifications have been evaluated")
 
-				responseMsg.SelfHealingMessageData.Response.RespondedTicket = types.RespondedTicket{
-					TxID:                     ticket.TxID,
-					TicketType:               ticket.TicketType,
-					MissingKeys:              ticket.MissingKeys,
-					ReconstructedFileHash:    nil,
-					RaptorQSymbols:           nil,
-					IsReconstructionRequired: false,
-				}
-
-				newCtx = context.Background()
-
-				logger.WithField("txid", ticket.TxID).Info("sending response for verification")
-				verifications, err := task.getVerifications(newCtx, responseMsg)
-				if err != nil {
-					logger.WithField("txid", ticket.TxID).Info("unable to get verifications")
-				}
-				logger.WithField("txid", ticket.TxID).WithField("verifications", len(verifications)).
-					Info("verifications have been evaluated")
-
-				if len(verifications) >= verifyThreshold {
-					selfHealingMetrics.SuccessfullyVerifiedTickets++
-
-					logger.WithField("txid", ticket.TxID).Info("self-healing not required for this ticket, " +
-						"verified by verifiers")
-				}
-
-				continue
-			}
-			selfHealingMetrics.TicketsRequiredSelfHealing++
-			logger.WithField("ticket_txid", ticket.TxID).Info("going to initiate self-healing")
-
+		if len(verifications) >= verifyThreshold {
 			newCtx = context.Background()
-			raptorQSymbols, reconstructedFileHash, err := task.selfHealing(newCtx, ticket.TxID, nftTicket, cascadeTicket)
-			if err != nil {
-				logger.WithError(err).Error("Error self-healing the file")
-				continue
+			if err := task.StorageHandler.StoreRaptorQSymbolsIntoP2P(newCtx, raptorQSymbols, ""); err != nil {
+				logger.WithError(err).Error("Error storing symbols to P2P")
+				return err
 			}
-			logger.WithField("ticket_txid", ticket.TxID).Info("file has been reconstructed")
+			logger.Info("raptor q symbols have been stored")
 
+			sig, _, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
+			if err != nil {
+				logger.WithError(err).Error("error storing completion execution metric")
+				return err
+			}
+
+			completionMsg := []types.SelfHealingMessage{
+				{
+					TriggerID:       responseMsg.TriggerID,
+					MessageType:     types.SelfHealingCompletionMessage,
+					SenderID:        task.nodeID,
+					SenderSignature: sig,
+				},
+			}
+			completionMsgBytes, err := json.Marshal(completionMsg)
+			if err != nil {
+				logger.WithError(err).Error("error converting the completion msg to bytes for metrics")
+			}
+
+			if err := task.StoreSelfHealingExecutionMetrics(ctx, types.SelfHealingExecutionMetric{
+				TriggerID:       responseMsg.TriggerID,
+				ChallengeID:     responseMsg.SelfHealingMessageData.Response.ChallengeID,
+				MessageType:     int(types.SelfHealingCompletionMessage),
+				SenderID:        task.nodeID,
+				Data:            completionMsgBytes,
+				SenderSignature: sig,
+			}); err != nil {
+				logger.WithError(err).Error("error storing self-healing completion execution metric")
+			}
+
+			return nil
+		}
+
+		logger.Info("verify threshold does not meet, not saving symbols")
+	} else if senseTicket != nil {
+		newCtx := context.Background()
+		reqSelfHealing, mostCommonFile, sigs := task.senseCheckingProcess(newCtx, senseTicket.DDAndFingerprintsIDs)
+		if !reqSelfHealing {
+			logger.Info("self-healing not required for sense ticket")
 			responseMsg.SelfHealingMessageData.Response.RespondedTicket = types.RespondedTicket{
 				TxID:                     ticket.TxID,
 				TicketType:               ticket.TicketType,
 				MissingKeys:              ticket.MissingKeys,
-				ReconstructedFileHash:    reconstructedFileHash,
-				RaptorQSymbols:           task.RaptorQSymbols,
-				IsReconstructionRequired: true,
+				ReconstructedFileHash:    nil,
+				RaptorQSymbols:           nil,
+				FileIDs:                  nil,
+				IsReconstructionRequired: false,
 			}
-			selfHealingMetrics.SuccessfullySelfHealedTickets++
+			logger.Info("sending response for verification")
 
 			newCtx = context.Background()
-			logger.WithField("txid", ticket.TxID).Info("sending response for verification")
 			verifications, err := task.getVerifications(newCtx, responseMsg)
 			if err != nil {
-				logger.WithField("txid", ticket.TxID).Info("unable to get verifications")
+				logger.WithError(err).Debug("unable to get verifications")
 			}
-			logger.WithField("txid", ticket.TxID).WithField("verifications", len(verifications)).
+			logger.WithField("verifications", len(verifications)).
 				Info("verifications have been evaluated")
 
 			if len(verifications) >= verifyThreshold {
-				selfHealingMetrics.SuccessfullyVerifiedTickets++
-
-				newCtx = context.Background()
-				if err := task.StorageHandler.StoreRaptorQSymbolsIntoP2P(newCtx, raptorQSymbols, ""); err != nil {
-					logger.WithError(err).Error("Error storing symbols to P2P")
-					continue
-				}
-				logger.WithField("ticket_txid", ticket.TxID).Info("raptor q symbols have been stored")
-
-				sig, _, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
-				if err != nil {
-					logger.WithError(err).Error("error storing completion execution metric")
-					continue
-				}
-
-				completionMsg := []types.SelfHealingMessage{
-					{
-						TriggerID:       responseMsg.TriggerID,
-						MessageType:     types.SelfHealingCompletionMessage,
-						SenderID:        task.nodeID,
-						SenderSignature: sig,
-					},
-				}
-				completionMsgBytes, err := json.Marshal(completionMsg)
-				if err != nil {
-					logger.WithError(err).Error("error converting the completion msg to bytes for metrics")
-				}
-
-				if err := task.StoreSelfHealingExecutionMetrics(ctx, types.SelfHealingExecutionMetric{
-					TriggerID:       responseMsg.TriggerID,
-					ChallengeID:     responseMsg.SelfHealingMessageData.ChallengerID,
-					MessageType:     int(types.SelfHealingCompletionMessage),
-					SenderID:        task.nodeID,
-					Data:            completionMsgBytes,
-					SenderSignature: sig,
-				}); err != nil {
-					logger.WithError(err).Error("error storing self-healing completion execution metric")
-				}
-
-				continue
+				logger.Info("self-healing not required for this sense ticket, verified by verifiers")
 			}
 
-			logger.WithField("ticket_txid", ticket.TxID).Info("verify threshold does not meet, not saving symbols")
-		} else if senseTicket != nil {
-			newCtx := context.Background()
-			reqSelfHealing, mostCommonFile, sigs := task.senseCheckingProcess(newCtx, senseTicket.DDAndFingerprintsIDs)
-			if err != nil {
-				logger.WithField("ticket_txid", ticket.TxID).WithError(err).Error("Error in checking process for sense action ticket")
-				continue
-			}
+			return nil
+		}
+		logger.Info("going to initiate sense self-healing")
 
-			if !reqSelfHealing {
-				logger.WithField("ticket_txid", ticket.TxID).WithError(err).Error("self-healing not required for sense ticket")
-				responseMsg.SelfHealingMessageData.Response.RespondedTicket = types.RespondedTicket{
-					TxID:                     ticket.TxID,
-					TicketType:               ticket.TicketType,
-					MissingKeys:              ticket.MissingKeys,
-					ReconstructedFileHash:    nil,
-					RaptorQSymbols:           nil,
-					FileIDs:                  nil,
-					IsReconstructionRequired: false,
-				}
+		ids, idFiles, err := task.senseSelfHealing(ctx, senseTicket, mostCommonFile, sigs)
+		if err != nil {
+			logger.WithError(err).Error("self-healing failed for sense ticket")
+			return err
+		}
+		task.IDFiles = idFiles
+		logger.Info("sense ticket has been reconstructed")
 
-				newCtx = context.Background()
-
-				logger.WithField("txid", ticket.TxID).Info("sending response for verification")
-				verifications, err := task.getVerifications(newCtx, responseMsg)
-				if err != nil {
-					logger.WithField("txid", ticket.TxID).Info("unable to get verifications")
-				}
-				logger.WithField("txid", ticket.TxID).WithField("verifications", len(verifications)).
-					Info("verifications have been evaluated")
-
-				if len(verifications) >= verifyThreshold {
-					selfHealingMetrics.SuccessfullyVerifiedTickets++
-
-					logger.WithField("txid", ticket.TxID).Info("self-healing not required for this sense ticket, " +
-						"verified by verifiers")
-				}
-
-				continue
-			}
-
-			selfHealingMetrics.TicketsRequiredSelfHealing++
-			logger.WithField("txid", ticket.TxID).Info("going to initiate sense self-healing")
-
-			ids, idFiles, err := task.senseSelfHealing(ctx, senseTicket, mostCommonFile, sigs)
-			if err != nil {
-				logger.WithField("ticket_txid", ticket.TxID).WithError(err).Error("self-healing not required for sense action ticket")
-				continue
-			}
-			task.IDFiles = idFiles
-			logger.WithField("ticket_txid", ticket.TxID).Info("sense ticket has been reconstructed")
-
-			fileBytes, err := json.Marshal(mostCommonFile)
-			if err != nil {
-				logger.WithError(err).Error(err)
-			}
-
-			fileHash, err := utils.Sha3256hash(fileBytes)
-			if err != nil {
-				logger.WithError(err).Error(err)
-			}
-
-			responseMsg.SelfHealingMessageData.Response.RespondedTicket = types.RespondedTicket{
-				TxID:                     ticket.TxID,
-				TicketType:               ticket.TicketType,
-				MissingKeys:              ticket.MissingKeys,
-				ReconstructedFileHash:    fileHash,
-				FileIDs:                  ids,
-				IsReconstructionRequired: true,
-			}
-			selfHealingMetrics.SuccessfullySelfHealedTickets++
-
-			newCtx = context.Background()
-			logger.WithField("txid", ticket.TxID).Info("sending response for verification")
-			verifications, err := task.getVerifications(newCtx, responseMsg)
-			if err != nil {
-				logger.WithField("txid", ticket.TxID).Info("unable to get verifications")
-			}
-			logger.WithField("txid", ticket.TxID).WithField("verifications", len(verifications)).
-				Info("verifications have been evaluated")
-
-			if len(verifications) >= verifyThreshold {
-				selfHealingMetrics.SuccessfullyVerifiedTickets++
-
-				newCtx = context.Background()
-				if err := task.StorageHandler.StoreBatch(newCtx, idFiles, common.P2PDataDDMetadata); err != nil {
-					logger.WithError(err).Error("Error storing symbols to P2P")
-					continue
-				}
-				logger.WithField("ticket_txid", ticket.TxID).Info("dd & fp ids have been stored")
-
-				sig, _, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
-				if err != nil {
-					logger.WithError(err).Error("error storing completion execution metric")
-					continue
-				}
-
-				completionMsg := []types.SelfHealingMessage{
-					{
-						TriggerID:       responseMsg.TriggerID,
-						MessageType:     types.SelfHealingCompletionMessage,
-						SenderID:        task.nodeID,
-						SenderSignature: sig,
-					},
-				}
-				completionMsgBytes, err := json.Marshal(completionMsg)
-				if err != nil {
-					logger.WithError(err).Error("error converting the completion msg to bytes for metrics")
-				}
-
-				if err := task.StoreSelfHealingExecutionMetrics(ctx, types.SelfHealingExecutionMetric{
-					TriggerID:       responseMsg.TriggerID,
-					ChallengeID:     responseMsg.SelfHealingMessageData.ChallengerID,
-					MessageType:     int(types.SelfHealingCompletionMessage),
-					SenderID:        task.nodeID,
-					Data:            completionMsgBytes,
-					SenderSignature: sig,
-				}); err != nil {
-					logger.WithError(err).Error("error storing self-healing completion execution metric")
-				}
-
-				continue
-			}
+		fileBytes, err := json.Marshal(mostCommonFile)
+		if err != nil {
+			logger.WithError(err).Error(err)
 		}
 
-		logger.WithField("self_healing_metrics", selfHealingMetrics).Info("self-healing metrics have been updated")
+		fileHash, err := utils.Sha3256hash(fileBytes)
+		if err != nil {
+			logger.WithError(err).Error(err)
+		}
+
+		responseMsg.SelfHealingMessageData.Response.RespondedTicket = types.RespondedTicket{
+			TxID:                     ticket.TxID,
+			TicketType:               ticket.TicketType,
+			MissingKeys:              ticket.MissingKeys,
+			ReconstructedFileHash:    fileHash,
+			FileIDs:                  ids,
+			IsReconstructionRequired: true,
+		}
+		logger.Info("sending response for verification")
+
+		newCtx = context.Background()
+		verifications, err := task.getVerifications(newCtx, responseMsg)
+		if err != nil {
+			logger.WithError(err).Debug("unable to get verifications")
+		}
+		logger.WithField("verifications", len(verifications)).Info("verifications have been evaluated")
+
+		if len(verifications) >= verifyThreshold {
+			newCtx = context.Background()
+			if err := task.StorageHandler.StoreBatch(newCtx, idFiles, common.P2PDataDDMetadata); err != nil {
+				logger.WithError(err).Error("Error storing symbols to P2P")
+				return err
+			}
+			logger.Info("dd & fp ids have been stored")
+
+			sig, _, err := task.SignMessage(context.Background(), responseMsg.SelfHealingMessageData)
+			if err != nil {
+				logger.WithError(err).Error("error storing completion execution metric")
+			}
+
+			completionMsg := []types.SelfHealingMessage{
+				{
+					TriggerID:       responseMsg.TriggerID,
+					MessageType:     types.SelfHealingCompletionMessage,
+					SenderID:        task.nodeID,
+					SenderSignature: sig,
+				},
+			}
+			completionMsgBytes, err := json.Marshal(completionMsg)
+			if err != nil {
+				logger.WithError(err).Error("error converting the completion msg to bytes for metrics")
+			}
+
+			if err := task.StoreSelfHealingExecutionMetrics(ctx, types.SelfHealingExecutionMetric{
+				TriggerID:       responseMsg.TriggerID,
+				ChallengeID:     responseMsg.SelfHealingMessageData.Response.ChallengeID,
+				MessageType:     int(types.SelfHealingCompletionMessage),
+				SenderID:        task.nodeID,
+				Data:            completionMsgBytes,
+				SenderSignature: sig,
+			}); err != nil {
+				logger.WithError(err).Error("error storing self-healing completion execution metric")
+			}
+		}
 	}
 
-	task.SHService.SelfHealingMetricsMap[incomingChallengeMessage.TriggerID] = selfHealingMetrics
-	logger.WithField("self_healing_metrics", task.SHService.SelfHealingMetricsMap[incomingChallengeMessage.TriggerID]).
-		Info("self-healing completed")
+	logger.Info("self-healing processing completed for the given ticket")
 
 	return nil
 }
@@ -386,14 +325,31 @@ func (task *SHTask) VerifyMessageSignature(ctx context.Context, msg types.SelfHe
 }
 
 func (task *SHTask) checkingProcess(ctx context.Context, fileHash string) (requiredReconstruction bool) {
+	logger := log.WithContext(ctx).WithField("SymbolIDsFileId", fileHash)
+
+	decoded := base58.Decode(fileHash)
+	if len(decoded) != 256/8 {
+		logger.Error("error decoding file hash to db key")
+		return false
+	}
+
+	dbKey := hex.EncodeToString(decoded)
+
+	logger.WithField("db_key", dbKey).Info("checking file in p2p db")
 	rqIDsData, err := task.P2PClient.Retrieve(ctx, fileHash, false)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("SymbolIDsFileId", fileHash).Info("Retrieve compressed symbol IDs file from P2P failed")
+		logger.WithField("db_key", dbKey).
+			WithError(err).Error("Retrieve compressed symbol IDs file from P2P failed")
+		return true
+	}
+
+	if rqIDsData == nil {
+		logger.WithField("db_key", dbKey).Info("Retrieved rq-data is empty")
 		return true
 	}
 
 	if len(rqIDsData) == 0 {
-		log.WithContext(ctx).WithField("SymbolIDsFileId", fileHash).Info("Retrieve compressed symbol IDs file from P2P is empty")
+		logger.WithField("db_key", dbKey).Info("Retrieved rq-data is empty")
 		return true
 	}
 

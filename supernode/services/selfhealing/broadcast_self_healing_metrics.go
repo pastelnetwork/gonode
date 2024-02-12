@@ -1,14 +1,13 @@
 package selfhealing
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	"sync"
 	"time"
@@ -156,17 +155,12 @@ func (task *SHTask) compressExecutionMetricsData(executionMetrics []types.SelfHe
 		return nil, err
 	}
 
-	// Compress using gzip
-	var buf bytes.Buffer
-	gz := gzip.NewWriter(&buf)
-	if _, err = gz.Write(jsonData); err != nil {
-		return nil, err
-	}
-	if err = gz.Close(); err != nil {
+	data, err = utils.Compress(jsonData, 1)
+	if err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	return data, nil
 }
 
 // compressExecutionMetricsData compresses Self-Healing metrics data using gzip.
@@ -180,17 +174,12 @@ func (task *SHTask) compressGenerationMetricsData(generationMetrics []types.Self
 		return nil, err
 	}
 
-	// Compress using gzip
-	var buf bytes.Buffer
-	gz := gzip.NewWriter(&buf)
-	if _, err = gz.Write(jsonData); err != nil {
-		return nil, err
-	}
-	if err = gz.Close(); err != nil {
+	data, err = utils.Compress(jsonData, 1)
+	if err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	return data, nil
 }
 
 // SendBroadcastMessage establish a connection with the processingSupernodeAddr and sends the given message to it.

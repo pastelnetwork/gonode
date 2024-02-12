@@ -365,7 +365,7 @@ func (s *DHT) GetValueFromNode(ctx context.Context, target []byte, n *Node) ([]b
 
 	response, err := s.network.Call(cctx, request, false)
 	if err != nil {
-		log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
+		log.P2P().WithContext(ctx).WithError(err).Debugf("network call request %s failed", request.String())
 		return nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)
 	}
 
@@ -426,7 +426,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 				// send the request and receive the response
 				response, err := s.network.Call(ctx, request, false)
 				if err != nil {
-					log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
+					log.P2P().WithContext(ctx).WithError(err).Debugf("network call request %s failed", request.String())
 					// node is unreachable, remove the node
 					//removedNodes = append(removedNodes, receiver)
 					return

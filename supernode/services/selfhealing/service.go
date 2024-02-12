@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/pastelnetwork/gonode/common/types"
 	"sync/atomic"
 	"time"
 
@@ -25,6 +24,7 @@ const (
 	defaultFetchNodesPingInfoInterval = 60 * time.Second
 	defaultUpdateWatchlistInterval    = 70 * time.Second
 	broadcastMetricRegularInterval    = 60 * time.Minute
+	processSelfHealingWorkerInterval  = 5 * time.Minute
 )
 
 // SHService keeps track of the supernode's nodeID and passes this, the pastel client,
@@ -36,12 +36,13 @@ type SHService struct {
 	config        *Config
 	pastelHandler *mixins.PastelHandler
 
-	nodeID                string
-	nodeClient            node.ClientInterface
-	historyDB             storage.LocalStoreInterface
-	downloadService       *download.NftDownloaderService
-	ticketsMap            map[string]bool
-	SelfHealingMetricsMap map[string]types.SelfHealingMetrics
+	nodeID                    string
+	nodeAddress               string
+	nodeClient                node.ClientInterface
+	historyDB                 storage.LocalStoreInterface
+	downloadService           *download.NftDownloaderService
+	ticketsMap                map[string]bool
+	triggerAcknowledgementMap map[string]bool
 
 	currentBlockCount int32
 	merkelroot        string
@@ -102,6 +103,21 @@ func (service *SHService) BroadcastSelfHealingMetricsWorker(ctx context.Context)
 	}
 }
 
+// ProcessSelfHealingEventsWorker process the events stored in DB
+func (service *SHService) ProcessSelfHealingEventsWorker(ctx context.Context) {
+	log.WithContext(ctx).Info("process-self-healing run worker func has been invoked")
+
+	for {
+		select {
+		case <-time.After(processSelfHealingWorkerInterval):
+			service.processSelfHealingEvents(ctx)
+		case <-ctx.Done():
+			log.Println("Context done being called in file-healing worker")
+			return
+		}
+	}
+}
+
 // executeTask executes the self-healing metric task.
 func (service *SHService) executeMetricsBroadcastTask(ctx context.Context) {
 	newCtx := context.Background()
@@ -109,6 +125,36 @@ func (service *SHService) executeMetricsBroadcastTask(ctx context.Context) {
 	task.BroadcastSelfHealingMetrics(newCtx)
 
 	log.WithContext(ctx).Debug("self-healing metric broadcasted")
+}
+
+// processSelfHealingEvents executes the self-healing events.
+func (service *SHService) processSelfHealingEvents(ctx context.Context) {
+	newCtx := context.Background()
+	task := service.NewSHTask()
+
+	events, err := task.historyDB.GetSelfHealingChallengeEvents()
+	if err != nil {
+		return
+	}
+
+	for i := 0; i < len(events); i++ {
+		event := events[i]
+		err = task.ProcessSelfHealingChallenge(newCtx, event)
+		if err != nil {
+			log.WithContext(ctx).
+				WithField("trigger_id", event.TriggerID).
+				WithField("ticket_id", event.TicketID).
+				WithField("challenge_id", event.ChallengeID).
+				WithError(err).Error("error processing self-healing event")
+		}
+
+		err = task.historyDB.UpdateSHChallengeEventProcessed(event.ChallengeID, true)
+		if err != nil {
+			return
+		}
+	}
+
+	log.WithContext(ctx).Debug("self-healing events have been processed")
 }
 
 // RunUpdateWatchlistWorker : This worker will periodically fetch and maintain the ping info and update watchlist field
@@ -142,6 +188,8 @@ func (service *SHService) Run(ctx context.Context) error {
 	go service.RunUpdateWatchlistWorker(ctx)
 
 	go service.BroadcastSelfHealingMetricsWorker(ctx)
+
+	go service.ProcessSelfHealingEventsWorker(ctx)
 
 	for {
 		select {
@@ -183,15 +231,16 @@ func (service *SHService) Task(id string) *SHTask {
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client,
 	historyDB storage.LocalStoreInterface, downloadService *download.NftDownloaderService) *SHService {
 	return &SHService{
-		config:                config,
-		SuperNodeService:      common.NewSuperNodeService(fileStorage, pastelClient, p2p),
-		nodeClient:            nodeClient,
-		nodeID:                config.PastelID,
-		pastelHandler:         mixins.NewPastelHandler(pastelClient),
-		historyDB:             historyDB,
-		SelfHealingMetricsMap: make(map[string]types.SelfHealingMetrics),
-		ticketsMap:            make(map[string]bool),
-		downloadService:       downloadService,
+		config:                    config,
+		SuperNodeService:          common.NewSuperNodeService(fileStorage, pastelClient, p2p),
+		nodeClient:                nodeClient,
+		nodeID:                    config.PastelID,
+		nodeAddress:               config.NodeAddress,
+		pastelHandler:             mixins.NewPastelHandler(pastelClient),
+		historyDB:                 historyDB,
+		ticketsMap:                make(map[string]bool),
+		triggerAcknowledgementMap: make(map[string]bool),
+		downloadService:           downloadService,
 	}
 }
 

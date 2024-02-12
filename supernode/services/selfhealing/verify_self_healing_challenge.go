@@ -52,14 +52,6 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 		SenderID:    task.nodeID,
 		MessageType: types.SelfHealingVerificationMessage,
 		SelfHealingMessageData: types.SelfHealingMessageData{
-			ChallengerID: incomingResponseMessage.SelfHealingMessageData.ChallengerID,
-			Challenge: types.SelfHealingChallengeData{
-				Block:            incomingResponseMessage.SelfHealingMessageData.Challenge.Block,
-				Merkelroot:       incomingResponseMessage.SelfHealingMessageData.Challenge.Merkelroot,
-				ChallengeTickets: incomingResponseMessage.SelfHealingMessageData.Challenge.ChallengeTickets,
-				Timestamp:        incomingResponseMessage.SelfHealingMessageData.Challenge.Timestamp,
-				NodesOnWatchlist: incomingResponseMessage.SelfHealingMessageData.Challenge.NodesOnWatchlist,
-			},
 			Response: types.SelfHealingResponseData{
 				ChallengeID:     incomingResponseMessage.SelfHealingMessageData.Response.ChallengeID,
 				Block:           incomingResponseMessage.SelfHealingMessageData.Response.Block,
@@ -68,6 +60,8 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 				RespondedTicket: incomingResponseMessage.SelfHealingMessageData.Response.RespondedTicket,
 			},
 			Verification: types.SelfHealingVerificationData{
+				NodeID:      task.nodeID,
+				NodeAddress: task.nodeAddress,
 				ChallengeID: incomingResponseMessage.SelfHealingMessageData.Response.ChallengeID,
 				Block:       currentBlockCount,
 				Merkelroot:  merkleroot,

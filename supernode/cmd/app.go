@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"io"
 	"os"
 	"path/filepath"
@@ -247,11 +248,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		return errors.Errorf("could not create dd-temp-file-dir %q, %w", config.DDServer.DDFilesDir, err)
 	}
 
+	ip, _ := utils.GetExternalIPAddress()
 	// business logic services
 	config.NftDownload.RaptorQServiceAddress = rqAddr
 	config.NftDownload.RqFilesDir = config.RqFilesDir
 	config.SelfHealingChallenge.RaptorQServiceAddress = rqAddr
 	config.SelfHealingChallenge.RqFilesDir = config.RqFilesDir
+	config.SelfHealingChallenge.NodeAddress = ip
 
 	//Initialize History DB
 	hDB, err := local.OpenHistoryDB()

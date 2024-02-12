@@ -78,15 +78,24 @@ func TestProcessSelfHealingTest(t *testing.T) {
 	configD := download.Config{}
 	downloadService := download.NewService(&configD, pastelClient, p2pClient, nil)
 
+	challengeTicket := types.ChallengeTicket{
+		TxID:        "test-tx-id",
+		TicketType:  types.TicketTypeNFT,
+		MissingKeys: []string{"7UkvUJG4oDX8TvC8tnfhmGPxhNLip3coJq458WLxr7BB"},
+	}
+
+	ticketBytes, err := json.Marshal(challengeTicket)
+	require.NoError(t, err)
+
 	tests := []struct {
 		testcase string
-		message  types.SelfHealingMessage
+		message  types.SelfHealingChallengeEvent
 		setup    func()
 		expect   func(*testing.T, error)
 	}{
 		{
 			testcase: "when symbols do not mismatch, does not proceed self-healing",
-			message:  types.SelfHealingMessage{MessageType: types.SelfHealingChallengeMessage},
+			message:  types.SelfHealingChallengeEvent{TicketID: "test-tx-id", Data: ticketBytes},
 			//	MessageId:                   "test-message-1",
 			//	MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
 			//	MerklerootWhenChallengeSent: "previous-block-hash",
@@ -116,7 +125,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 		},
 		{
 			testcase: "when symbols mismatch, should self-heal",
-			message:  types.SelfHealingMessage{MessageType: types.SelfHealingChallengeMessage},
+			message:  types.SelfHealingChallengeEvent{TicketID: "test-tx-id", Data: ticketBytes},
 			//message: &pb.SelfHealingData{
 			//	MessageId:                   "test-message-1",
 			//	MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
@@ -157,7 +166,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 		},
 		{
 			testcase: "when self-healing verification failed, should not store symbols into P2P",
-			message:  types.SelfHealingMessage{},
+			message:  types.SelfHealingChallengeEvent{TicketID: "test-tx-id", Data: ticketBytes},
 			//message: &pb.SelfHealingData{
 			//	MessageId:                   "test-message-1",
 			//	MessageType:                 pb.SelfHealingData_MessageType_SELF_HEALING_ISSUANCE_MESSAGE,
@@ -188,7 +197,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 				raptorQClient.ListenOnClose(nil)
 			},
 			expect: func(t *testing.T, err error) {
-				require.NotNil(t, err)
+				require.Nil(t, err)
 			},
 		},
 	}
