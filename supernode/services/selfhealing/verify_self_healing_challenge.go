@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
@@ -154,11 +156,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 
 		return task.prepareAndSendVerificationMsg(ctx, *verificationMsg)
 	} else if senseTicket != nil {
-		reqSelfHealing, mostCommonFile, sigs := task.senseCheckingProcess(ctx, senseTicket.DDAndFingerprintsIDs)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error in checking process for sense action ticket")
-		}
-
+		reqSelfHealing, sortedFiles := task.senseCheckingProcess(ctx, senseTicket.DDAndFingerprintsIDs)
 		if !reqSelfHealing {
 			if !ticket.IsReconstructionRequired {
 				logger.WithField("ticket_txid", ticket.TxID).
@@ -189,41 +187,43 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 					Message:                          "is reconstruction required set to true by recipient but false by verifier",
 				}
 			}
+
 			return task.prepareAndSendVerificationMsg(ctx, *verificationMsg)
 		}
 
-		ids, _, err := task.senseSelfHealing(ctx, senseTicket, mostCommonFile, sigs)
+		var fileHash []byte
+		fileHash, err = task.getReconstructedFileHashForVerification(ctx, sortedFiles)
 		if err != nil {
-			logger.WithField("ticket_txid", ticket.TxID).Info("error self-healing sense ticket")
+			logger.WithField("ticket_txid", ticket.TxID).Info("error getting reconstructed sense file hash")
 		}
 
-		if ok := compareFileIDs(ids, ticket.FileIDs); !ok {
-			logger.WithField("ticket_txid", ticket.TxID).Info("sense file hash mismatched")
+		if bytes.Equal(fileHash, incomingResponseMessage.SelfHealingMessageData.Response.RespondedTicket.ReconstructedFileHash) {
+			logger.WithField("ticket_txid", ticket.TxID).Info("reconstructed sense file hash matched")
 			verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
 				TxID:                             ticket.TxID,
 				TicketType:                       ticket.TicketType,
 				MissingKeys:                      ticket.MissingKeys,
 				IsReconstructionRequiredByHealer: ticket.IsReconstructionRequired,
-				ReconstructedFileHash:            nil,
-				IsReconstructionRequired:         true,
-				IsVerified:                       false,
-				Message:                          "reconstructed fileIDs mismatched",
-			}
-		} else {
-			logger.WithField("ticket_txid", ticket.TxID).Info("sense file hash matched")
-			verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
-				TxID:                             ticket.TxID,
-				TicketType:                       ticket.TicketType,
-				MissingKeys:                      ticket.MissingKeys,
-				IsReconstructionRequiredByHealer: ticket.IsReconstructionRequired,
-				ReconstructedFileHash:            nil,
+				ReconstructedFileHash:            fileHash,
 				IsReconstructionRequired:         true,
 				IsVerified:                       true,
-				Message:                          "reconstructed fileIDs matched",
+				Message:                          "reconstructed sense file hash matched",
+			}
+		} else {
+			logger.WithField("ticket_txid", ticket.TxID).Info("reconstructed sense file hash mismatched")
+			verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
+				TxID:                             ticket.TxID,
+				TicketType:                       ticket.TicketType,
+				MissingKeys:                      ticket.MissingKeys,
+				IsReconstructionRequiredByHealer: ticket.IsReconstructionRequired,
+				ReconstructedFileHash:            fileHash,
+				IsReconstructionRequired:         true,
+				IsVerified:                       false,
+				Message:                          "reconstructed sense file hash mismatched",
 			}
 		}
 
-		logger.Info("sending verification back to the recipient")
+		logger.Debug("sending verification back to the recipient")
 		return task.prepareAndSendVerificationMsg(ctx, *verificationMsg)
 	}
 
@@ -288,4 +288,68 @@ func (task *SHTask) prepareAndSendVerificationMsg(ctx context.Context, verificat
 	}
 
 	return msg, nil
+}
+
+func (task *SHTask) getReconstructedFileHashForVerification(ctx context.Context, sortedFiles [][]byte) ([]byte, error) {
+	if sortedFiles == nil {
+		return []byte{}, errors.Errorf("empty list of sorted files")
+	}
+
+	if len(sortedFiles) == 0 {
+		return []byte{}, errors.Errorf("empty list of sorted files")
+	}
+
+	var (
+		ddAndFingerprintFile pastel.DDAndFingerprints
+		data                 []byte
+	)
+
+	for i := 0; i < len(sortedFiles); i++ {
+		file := sortedFiles[i]
+
+		decompressedData, err := utils.Decompress(file)
+		if err != nil {
+			continue
+		}
+		log.WithContext(ctx).Debug("file has been decompressed")
+
+		if len(decompressedData) == 0 {
+			continue
+		}
+
+		splits := bytes.Split(decompressedData, []byte{pastel.SeparatorByte})
+		if len(splits) < 4 {
+			continue
+		}
+
+		dataToJSONDecode, err := utils.B64Decode(splits[0])
+		if err != nil {
+			continue
+		}
+
+		if len(dataToJSONDecode) == 0 {
+			continue
+		}
+
+		err = json.Unmarshal(dataToJSONDecode, &ddAndFingerprintFile)
+		if err != nil {
+			continue
+		}
+
+		data, err = json.Marshal(ddAndFingerprintFile)
+		if err != nil {
+			continue
+		}
+
+		fileHash, err := utils.Sha3256hash(data)
+		if err != nil {
+			continue
+		}
+
+		log.WithContext(ctx).Info("sense reconstructed file hash has been generated for verification")
+
+		return fileHash, nil
+	}
+
+	return []byte{}, nil
 }

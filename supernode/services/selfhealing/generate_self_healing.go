@@ -94,7 +94,19 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 	}
 	log.WithContext(ctx).WithField("challenge_recipients", len(challengeRecipientMap)).Info("challenge recipients have been identified")
 
-	triggerID := getTriggerID(watchlistPingInfos, selfHealingTicketsMap)
+	blockNum, err := task.PastelClient.GetBlockCount(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving block count")
+		return err
+	}
+
+	blockVerbose, err := task.PastelClient.GetBlockVerbose1(ctx, blockNum)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving block verbose")
+		return err
+	}
+
+	triggerID := getTriggerID(watchlistPingInfos, blockNum, blockVerbose.MerkleRoot)
 	if err := task.prepareAndSendSelfHealingMessage(ctx, challengeRecipientMap, triggerID, nodesOnWatchlist); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error sending self-healing messages")
 	}
@@ -743,10 +755,9 @@ func (task *SHTask) StoreSelfHealingExecutionMetrics(ctx context.Context, execut
 	return nil
 }
 
-func getTriggerID(infos types.PingInfos, selfHealingTickets map[string]SymbolFileKeyDetails) string {
+func getTriggerID(infos types.PingInfos, blockNum int32, merkelroot string) string {
 	var triggerID string
 	var nodeIDs []string
-	var txids []string
 
 	for _, info := range infos {
 		nodeIDs = append(nodeIDs, info.SupernodeID)
@@ -755,14 +766,7 @@ func getTriggerID(infos types.PingInfos, selfHealingTickets map[string]SymbolFil
 	sort.Strings(nodeIDs)
 	triggerID = strings.Join(nodeIDs, ":")
 
-	for txid := range selfHealingTickets {
-		txids = append(txids, txid)
-	}
-
-	triggerID = triggerID + "-"
-
-	sort.Strings(txids)
-	triggerID = strings.Join(txids, ":")
+	triggerID = triggerID + "-" + string(blockNum) + "-" + merkelroot
 
 	return utils.GetHashFromString(triggerID)
 }

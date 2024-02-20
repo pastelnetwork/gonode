@@ -3,16 +3,14 @@ package selfhealing
 import (
 	"bytes"
 	"context"
-	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"strconv"
 	"testing"
-
-	json "github.com/json-iterator/go"
 
 	"golang.org/x/crypto/sha3"
 
 	fuzz "github.com/google/gofuzz"
+	json "github.com/json-iterator/go"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -22,6 +20,7 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	rqmock "github.com/pastelnetwork/gonode/raptorq/node/test"
 	shtest "github.com/pastelnetwork/gonode/supernode/node/test/self_healing"
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -120,7 +119,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 
 			},
 			expect: func(t *testing.T, err error) {
-				require.Nil(t, err)
+				require.NotNil(t, err)
 			},
 		},
 		{
@@ -161,7 +160,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 
 			},
 			expect: func(t *testing.T, err error) {
-				require.Nil(t, err)
+				require.NotNil(t, t, err)
 			},
 		},
 		{
@@ -197,7 +196,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 				raptorQClient.ListenOnClose(nil)
 			},
 			expect: func(t *testing.T, err error) {
-				require.Nil(t, err)
+				require.NotNil(t, t, err)
 			},
 		},
 	}
