@@ -37,6 +37,7 @@ type LocalStoreInterface interface {
 	CleanupSelfHealingChallenges() (err error)
 	InsertSelfHealingGenerationMetrics(metrics types.SelfHealingGenerationMetric) error
 	InsertSelfHealingExecutionMetrics(metrics types.SelfHealingExecutionMetric) error
+	BatchInsertExecutionMetrics(metrics []types.SelfHealingExecutionMetric) error
 	QuerySelfHealingChallenges() (challenges []types.SelfHealingChallenge, err error)
 	GetSelfHealingGenerationMetrics(timestamp time.Time) ([]types.SelfHealingGenerationMetric, error)
 	GetSelfHealingExecutionMetrics(timestamp time.Time) ([]types.SelfHealingExecutionMetric, error)

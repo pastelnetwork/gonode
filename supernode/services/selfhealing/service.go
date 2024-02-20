@@ -139,18 +139,26 @@ func (service *SHService) processSelfHealingEvents(ctx context.Context) {
 
 	for i := 0; i < len(events); i++ {
 		event := events[i]
+
 		err = task.ProcessSelfHealingChallenge(newCtx, event)
 		if err != nil {
 			log.WithContext(ctx).
 				WithField("trigger_id", event.TriggerID).
-				WithField("ticket_id", event.TicketID).
 				WithField("challenge_id", event.ChallengeID).
+				WithField("ticket_id", event.TicketID).
 				WithError(err).Error("error processing self-healing event")
+
+			continue
 		}
 
 		err = task.historyDB.UpdateSHChallengeEventProcessed(event.ChallengeID, true)
 		if err != nil {
-			return
+			log.WithContext(ctx).
+				WithField("trigger_id", event.TriggerID).
+				WithField("challenge_id", event.ChallengeID).
+				WithField("ticket_id", event.TicketID).
+				WithError(err).Error("error updating self-healing event is processed flag")
+			continue
 		}
 	}
 

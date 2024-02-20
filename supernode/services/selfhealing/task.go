@@ -33,10 +33,6 @@ type SHTask struct {
 	*common.SuperNodeTask
 	*common.StorageHandler
 	*SHService
-	RaptorQSymbols   []byte
-	IDFiles          [][]byte
-	KeySignaturesMap map[string]signatures
-
 	//response message mutex to avoid race conditions
 	responseMessageMu sync.Mutex
 	downloadTask      *download.NftDownloadingTask
@@ -60,7 +56,6 @@ func NewSHTask(service *SHService) *SHTask {
 		SHService:           service,
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 		downloadTask:        download.NewNftDownloadingTask(service.downloadService),
-		KeySignaturesMap:    make(map[string]signatures),
 	}
 
 	return task

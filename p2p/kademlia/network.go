@@ -803,7 +803,7 @@ func findOptimalCompression(count int, keys []string, values [][]byte) (bool, in
 	currentValuesCount := count
 	for utils.BytesIntToMB(len(compressedData)) >= defaultMaxPayloadSize {
 		size := utils.BytesIntToMB(len(compressedData))
-		log.WithField("compressed-data-len", size).WithField("current-count", currentValuesCount).WithField("iter", iter).Info("optimal compression")
+		log.WithField("compressed-data-len", size).WithField("current-count", currentValuesCount).WithField("iter", iter).Debug("optimal compression")
 		iter++
 		// Find top 10 heaviest values and set their keys to nil in the map
 		var heavyKeys []string
@@ -873,7 +873,7 @@ func findTopHeaviestKeys(dataMap map[string][]byte, size int) (int, []string) {
 	}
 
 	if size > (2 * defaultMaxPayloadSize) {
-		log.Info("find optimal compression decreasing payload by half")
+		log.Debug("find optimal compression decreasing payload by half")
 		n = count / 2
 	}
 

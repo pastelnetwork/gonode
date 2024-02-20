@@ -62,6 +62,37 @@ func (s *SQLiteStore) InsertSelfHealingExecutionMetrics(metrics types.SelfHealin
 	return nil
 }
 
+func (s *SQLiteStore) BatchInsertExecutionMetrics(metrics []types.SelfHealingExecutionMetric) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+        INSERT OR IGNORE INTO self_healing_execution_metrics
+        (id, trigger_id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) 
+        VALUES (NULL,?,?,?,?,?,?,?,?)
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	for _, metric := range metrics {
+		now := time.Now().UTC()
+
+		_, err = stmt.Exec(metric.TriggerID, metric.ChallengeID, metric.MessageType, metric.Data, metric.SenderID, metric.SenderSignature, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Commit the transaction
+	return tx.Commit()
+}
+
 // GetSelfHealingExecutionMetrics retrieves all self_healing_execution_metrics records created after the specified timestamp.
 func (s *SQLiteStore) GetSelfHealingExecutionMetrics(timestamp time.Time) ([]types.SelfHealingExecutionMetric, error) {
 	const query = `

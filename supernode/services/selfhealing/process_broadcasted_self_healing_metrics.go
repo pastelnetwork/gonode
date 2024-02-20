@@ -4,6 +4,7 @@ import (
 	"context"
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 )
@@ -35,18 +36,13 @@ func (task *SHTask) ProcessBroadcastedSelfHealingMetrics(ctx context.Context, re
 			logger.WithError(err).Error("error decompressing execution metrics data")
 			return err
 		}
-		log.WithContext(ctx).Info("execution metric data has been decompressed")
 
-		for _, metric := range execMetrics {
-			err := task.StoreSelfHealingExecutionMetrics(ctx, metric)
-			if err != nil {
-				logger.WithField("trigger_id", metric.TriggerID).
-					WithField("message_type", metric.MessageType).
-					WithField("challenge_id", metric.ChallengeID).
-					Error("error storing execution metric")
-				return err
-			}
+		err = task.BatchStoreExecutionMetrics(ctx, execMetrics)
+		if err != nil {
+			logger.WithError(err).Error("error storing execution metrics")
+			return err
 		}
+
 		logger.Info("execution metrics have been stored")
 	}
 
@@ -85,4 +81,26 @@ func (task *SHTask) decompressExecutionMetricsData(compressedData []byte) ([]typ
 	}
 
 	return executionMetrics, nil
+}
+
+// BatchStoreExecutionMetrics stores the self-healing execution metrics to db for further verification
+func (task *SHTask) BatchStoreExecutionMetrics(ctx context.Context, metrics []types.SelfHealingExecutionMetric) error {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	if store != nil {
+		err = store.BatchInsertExecutionMetrics(metrics)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error storing self-healing execution metric to DB")
+			return err
+		}
+	}
+
+	return nil
 }

@@ -373,7 +373,7 @@ SET generation_metrics_last_broadcast_at = ?
 WHERE supernode_id = ?;`
 
 	// Execute the update query
-	_, err := s.db.Exec(updateQuery, time.Now().Add(-60*time.Minute).UTC(), nodeID)
+	_, err := s.db.Exec(updateQuery, time.Now().Add(-180*time.Minute).UTC(), nodeID)
 	if err != nil {
 		return err
 	}
@@ -390,7 +390,7 @@ SET execution_metrics_last_broadcast_at = ?
 WHERE supernode_id = ?;`
 
 	// Execute the update query
-	_, err := s.db.Exec(updateQuery, time.Now().Add(-60*time.Minute).UTC(), nodeID)
+	_, err := s.db.Exec(updateQuery, time.Now().Add(-180*time.Minute).UTC(), nodeID)
 	if err != nil {
 		return err
 	}
