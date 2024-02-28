@@ -135,8 +135,23 @@ commands:
             echo "APP_VERSION=$APP_VERSION"
             echo "APP_LDFLAGS=$APP_LDFLAGS"
 
+            if [[ "<< parameters.package >>" == "walletnode" && "<< parameters.targets >>" == *"linux/amd64"* ]]; then
+              echo "Building walletnode for Linux"
+              sudo apt-get update
+              sudo apt-get install -y libwebp-dev
+              cd walletnode
+              GOOS=linux GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$APP_LDFLAGS"
+              echo "Done Building walletnode for Linux"
+              cd ..
+            fi
+
             for TARGET in $(echo "<< parameters.targets >>" | tr ',' '\n'); do
-                echo "Building for target: $TARGET"
+                if [[ "$TARGET" == "linux/amd64" && "<< parameters.package >>" == "walletnode" ]]; then
+                  echo "Skipping xgo build for walletnode on Linux/amd64"
+                  continue  # Skip the rest of this loop iteration
+                fi
+
+                echo "Building for target: $TARGET using xgo"
                 xgo -go go-1.21.1 --targets="$TARGET" --hooksdir=xgo -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
             done
 
@@ -149,7 +164,7 @@ commands:
               mv << parameters.package >>-windows-4.0-amd64.exe build/
             fi
 
-            if [[ "<< parameters.targets >>" == *"linux/amd64"* ]]; then
+            if [[ "<< parameters.targets >>" == *"linux/amd64"* && "<< parameters.package >>" != "walletnode" ]]; then
               mv << parameters.package >>-linux-amd64 build/
             fi
 
