@@ -19,10 +19,10 @@ import (
 
 // Server lists the metrics service endpoint HTTP handlers.
 type Server struct {
-	Mounts              []*MountPoint
-	GetChallengeReports http.Handler
-	GetMetrics          http.Handler
-	CORS                http.Handler
+	Mounts          []*MountPoint
+	GetDetailedLogs http.Handler
+	GetSummaryStats http.Handler
+	CORS            http.Handler
 }
 
 // MountPoint holds information about the mounted endpoints.
@@ -52,14 +52,14 @@ func New(
 ) *Server {
 	return &Server{
 		Mounts: []*MountPoint{
-			{"GetChallengeReports", "GET", "/metrics/self_healing_challenges"},
-			{"GetMetrics", "GET", "/metrics"},
-			{"CORS", "OPTIONS", "/metrics/self_healing_challenges"},
-			{"CORS", "OPTIONS", "/metrics"},
+			{"GetDetailedLogs", "GET", "/self_healing/detailed_logs"},
+			{"GetSummaryStats", "GET", "/self_healing/summary_stats"},
+			{"CORS", "OPTIONS", "/self_healing/detailed_logs"},
+			{"CORS", "OPTIONS", "/self_healing/summary_stats"},
 		},
-		GetChallengeReports: NewGetChallengeReportsHandler(e.GetChallengeReports, mux, decoder, encoder, errhandler, formatter),
-		GetMetrics:          NewGetMetricsHandler(e.GetMetrics, mux, decoder, encoder, errhandler, formatter),
-		CORS:                NewCORSHandler(),
+		GetDetailedLogs: NewGetDetailedLogsHandler(e.GetDetailedLogs, mux, decoder, encoder, errhandler, formatter),
+		GetSummaryStats: NewGetSummaryStatsHandler(e.GetSummaryStats, mux, decoder, encoder, errhandler, formatter),
+		CORS:            NewCORSHandler(),
 	}
 }
 
@@ -68,8 +68,8 @@ func (s *Server) Service() string { return "metrics" }
 
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
-	s.GetChallengeReports = m(s.GetChallengeReports)
-	s.GetMetrics = m(s.GetMetrics)
+	s.GetDetailedLogs = m(s.GetDetailedLogs)
+	s.GetSummaryStats = m(s.GetSummaryStats)
 	s.CORS = m(s.CORS)
 }
 
@@ -78,8 +78,8 @@ func (s *Server) MethodNames() []string { return metrics.MethodNames[:] }
 
 // Mount configures the mux to serve the metrics endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
-	MountGetChallengeReportsHandler(mux, h.GetChallengeReports)
-	MountGetMetricsHandler(mux, h.GetMetrics)
+	MountGetDetailedLogsHandler(mux, h.GetDetailedLogs)
+	MountGetSummaryStatsHandler(mux, h.GetSummaryStats)
 	MountCORSHandler(mux, h.CORS)
 }
 
@@ -88,21 +88,21 @@ func (s *Server) Mount(mux goahttp.Muxer) {
 	Mount(mux, s)
 }
 
-// MountGetChallengeReportsHandler configures the mux to serve the "metrics"
-// service "getChallengeReports" endpoint.
-func MountGetChallengeReportsHandler(mux goahttp.Muxer, h http.Handler) {
+// MountGetDetailedLogsHandler configures the mux to serve the "metrics"
+// service "getDetailedLogs" endpoint.
+func MountGetDetailedLogsHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := HandleMetricsOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/metrics/self_healing_challenges", f)
+	mux.Handle("GET", "/self_healing/detailed_logs", f)
 }
 
-// NewGetChallengeReportsHandler creates a HTTP handler which loads the HTTP
-// request and calls the "metrics" service "getChallengeReports" endpoint.
-func NewGetChallengeReportsHandler(
+// NewGetDetailedLogsHandler creates a HTTP handler which loads the HTTP
+// request and calls the "metrics" service "getDetailedLogs" endpoint.
+func NewGetDetailedLogsHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -111,13 +111,13 @@ func NewGetChallengeReportsHandler(
 	formatter func(ctx context.Context, err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeGetChallengeReportsRequest(mux, decoder)
-		encodeResponse = EncodeGetChallengeReportsResponse(encoder)
-		encodeError    = EncodeGetChallengeReportsError(encoder, formatter)
+		decodeRequest  = DecodeGetDetailedLogsRequest(mux, decoder)
+		encodeResponse = EncodeGetDetailedLogsResponse(encoder)
+		encodeError    = EncodeGetDetailedLogsError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "getChallengeReports")
+		ctx = context.WithValue(ctx, goa.MethodKey, "getDetailedLogs")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "metrics")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -139,21 +139,21 @@ func NewGetChallengeReportsHandler(
 	})
 }
 
-// MountGetMetricsHandler configures the mux to serve the "metrics" service
-// "getMetrics" endpoint.
-func MountGetMetricsHandler(mux goahttp.Muxer, h http.Handler) {
+// MountGetSummaryStatsHandler configures the mux to serve the "metrics"
+// service "getSummaryStats" endpoint.
+func MountGetSummaryStatsHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := HandleMetricsOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/metrics", f)
+	mux.Handle("GET", "/self_healing/summary_stats", f)
 }
 
-// NewGetMetricsHandler creates a HTTP handler which loads the HTTP request and
-// calls the "metrics" service "getMetrics" endpoint.
-func NewGetMetricsHandler(
+// NewGetSummaryStatsHandler creates a HTTP handler which loads the HTTP
+// request and calls the "metrics" service "getSummaryStats" endpoint.
+func NewGetSummaryStatsHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -162,13 +162,13 @@ func NewGetMetricsHandler(
 	formatter func(ctx context.Context, err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeGetMetricsRequest(mux, decoder)
-		encodeResponse = EncodeGetMetricsResponse(encoder)
-		encodeError    = EncodeGetMetricsError(encoder, formatter)
+		decodeRequest  = DecodeGetSummaryStatsRequest(mux, decoder)
+		encodeResponse = EncodeGetSummaryStatsResponse(encoder)
+		encodeError    = EncodeGetSummaryStatsError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "getMetrics")
+		ctx = context.WithValue(ctx, goa.MethodKey, "getSummaryStats")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "metrics")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -194,8 +194,8 @@ func NewGetMetricsHandler(
 // service metrics.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	h = HandleMetricsOrigin(h)
-	mux.Handle("OPTIONS", "/metrics/self_healing_challenges", h.ServeHTTP)
-	mux.Handle("OPTIONS", "/metrics", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/self_healing/detailed_logs", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/self_healing/summary_stats", h.ServeHTTP)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

@@ -15,7 +15,7 @@ var _ = Service("metrics", func() {
 
 	cors.Origin("localhost")
 	HTTP(func() {
-		Path("/metrics")
+		Path("/self_healing")
 	})
 
 	Error("Unauthorized", ErrorResult) // Assuming ErrorResult is defined in your design
@@ -23,18 +23,18 @@ var _ = Service("metrics", func() {
 	Error("NotFound", ErrorResult)
 	Error("InternalServerError", ErrorResult)
 
-	Method("getChallengeReports", func() {
-		Description("Fetches self-healing challenge reports")
-		Meta("swagger:summary", "Fetches self-healing challenge reports")
+	Method("getDetailedLogs", func() {
+		Description("Fetches self-healing reports")
+		Meta("swagger:summary", "Fetches self-healing reports")
 
 		Security(APIKeyAuth)
 
 		Payload(func() {
-			Attribute("pid", String, "PastelID of the user to fetch challenge reports for", func() {
+			Attribute("pid", String, "PastelID of the user to fetch self-healing reports for", func() {
 				Example("jXYJud3rm...")
 			})
-			Attribute("challenge_id", String, "Specific challenge ID to fetch reports for", func() {
-				Example("Challenge123")
+			Attribute("event_id", String, "Specific event ID to fetch reports for", func() {
+				Example("event-123")
 			})
 			Attribute("count", Int, "Number of reports to fetch", func() {
 				Example(10)
@@ -47,12 +47,12 @@ var _ = Service("metrics", func() {
 			Required("pid", "key")
 		})
 
-		Result(SelfHealingChallengeReports)
+		Result(SelfHealingReports)
 
 		HTTP(func() {
-			GET("/self_healing_challenges")
+			GET("/detailed_logs")
 			Param("pid")
-			Param("challenge_id")
+			Param("event_id")
 			Param("count")
 
 			Response("Unauthorized", StatusUnauthorized)
@@ -63,7 +63,7 @@ var _ = Service("metrics", func() {
 		})
 	})
 
-	Method("getMetrics", func() {
+	Method("getSummaryStats", func() {
 		Description("Fetches metrics data over a specified time range")
 		Meta("swagger:summary", "Fetches metrics data")
 
@@ -93,10 +93,10 @@ var _ = Service("metrics", func() {
 			Required("pid", "key")
 		})
 
-		Result(MetricsResult)
+		Result(SummaryStats)
 
 		HTTP(func() {
-			GET("/")
+			GET("/summary_stats")
 			Param("from")
 			Param("to")
 			Param("pid")
@@ -110,22 +110,21 @@ var _ = Service("metrics", func() {
 	})
 })
 
-// MetricsResult is the result type for the getMetrics method
-var MetricsResult = ResultType("application/vnd.metrics.result", func() {
+// SummaryStats is the result type for the getSummaryStats method
+var SummaryStats = ResultType("application/vnd.metrics.result", func() {
 	Description("Structure representing the metrics data")
 
 	Attributes(func() {
-		Attribute("sc_metrics", Bytes, "SCMetrics represents serialized metrics data")
-		Attribute("sh_trigger_metrics", ArrayOf(SHTriggerMetric), "Self-healing trigger metrics")
-		Attribute("sh_execution_metrics", SHExecutionMetrics, "Self-healing execution metrics")
+		Attribute("sh_trigger_metrics", ArrayOf(SHTriggerStats), "Self-healing trigger stats")
+		Attribute("sh_execution_metrics", SHExecutionStats, "Self-healing execution stats")
 	})
 
-	Required("sc_metrics", "sh_trigger_metrics", "sh_execution_metrics")
+	Required("sh_trigger_metrics", "sh_execution_metrics")
 })
 
-// SHTriggerMetric is the result type for the self-healing trigger metrics
-var SHTriggerMetric = Type("SHTriggerMetric", func() {
-	Description("Self-healing trigger metric")
+// SHTriggerStats is the result type for the self-healing trigger stats
+var SHTriggerStats = Type("SHTriggerStats", func() {
+	Description("Self-healing trigger stats")
 
 	Attribute("trigger_id", String, "Unique identifier for the trigger")
 	Attribute("nodes_offline", Int, "Number of nodes offline")
@@ -136,9 +135,9 @@ var SHTriggerMetric = Type("SHTriggerMetric", func() {
 	Required("trigger_id", "nodes_offline", "list_of_nodes", "total_files_identified", "total_tickets_identified")
 })
 
-// SHExecutionMetrics is the result type for the self-healing execution metrics
-var SHExecutionMetrics = Type("SHExecutionMetrics", func() {
-	Description("Self-healing execution metrics")
+// SHExecutionStats is the result type for the self-healing execution stats
+var SHExecutionStats = Type("SHExecutionStats", func() {
+	Description("Self-healing execution stats")
 
 	Attribute("total_challenges_issued", Int, "Total number of challenges issued")
 	Attribute("total_challenges_acknowledged", Int, "Total number of challenges acknowledged by the healer node")
@@ -162,20 +161,37 @@ var SHExecutionMetrics = Type("SHExecutionMetrics", func() {
 		"total_files_healed", "total_file_healing_failed")
 })
 
-// SelfHealingChallengeReports is the result type for the getChallengeReports method
-var SelfHealingChallengeReports = Type("SelfHealingChallengeReports", func() {
+// SCMetrics is the result type for the storage-challenge metrics
+var SCMetrics = Type("SCMetrics", func() {
+	Description("Storage-Challenge Metrics")
+
+	Attribute("total_challenges_issued", Int, "Total number of challenges issued")
+	Attribute("total_challenges_processed", Int, "Total number of challenges processed by the recipient node")
+	Attribute("total_challenges_verified_by_challenger", Int, "Total number of challenges verified by the challenger node")
+	Attribute("total_challenges_verified_by_observers", Int, "Total number of challenges verified by observers")
+	Attribute("slow_response_observed_by_observers", Int, "challenges failed due to slow-responses evaluated by observers")
+	Attribute("invalid_signatures_observed_by_observers", Int, "challenges failed due to invalid signatures evaluated by observers")
+	Attribute("invalid_evaluation_observed_by_observers", Int, "challenges failed due to invalid evaluation evaluated by observers")
+
+	Required("total_challenges_issued", "total_challenges_processed", "total_challenges_verified_by_challenger",
+		"total_challenges_verified_by_observers", "slow_response_observed_by_observers", "invalid_signatures_observed_by_observers",
+		"invalid_evaluation_observed_by_observers")
+})
+
+// SelfHealingReports is the result type for the getSelfHealingReports method
+var SelfHealingReports = Type("SelfHealingReports", func() {
 	Description("Self-healing challenge reports")
-	Attribute("reports", ArrayOf(SelfHealingChallengeReportKV), "Map of challenge ID to SelfHealingChallengeReport")
+	Attribute("reports", ArrayOf(SelfHealingReportKV), "Map of challenge ID to SelfHealingReport")
 })
 
-// SelfHealingChallengeReportKV is the result type for the self-healing challenge report
-var SelfHealingChallengeReportKV = Type("SelfHealingChallengeReportKV", func() {
-	Attribute("challenge_id", String, "Challenge ID")
-	Attribute("report", SelfHealingChallengeReport, "Self-healing challenge report")
+// SelfHealingReportKV is the result type for the self-healing challenge report
+var SelfHealingReportKV = Type("SelfHealingReportKV", func() {
+	Attribute("event_id", String, "Challenge ID")
+	Attribute("report", SelfHealingReport, "Self-healing report")
 })
 
-// SelfHealingChallengeReport is the result type for the self-healing challenge report
-var SelfHealingChallengeReport = Type("SelfHealingChallengeReport", func() {
+// SelfHealingReport is the result type for the self-healing report
+var SelfHealingReport = Type("SelfHealingReport", func() {
 	Attribute("messages", ArrayOf(SelfHealingMessageKV), "Map of message type to SelfHealingMessages")
 })
 

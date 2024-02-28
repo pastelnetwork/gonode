@@ -15,6 +15,7 @@ service StorageChallenge {
   rpc VerifyStorageChallenge(VerifyStorageChallengeRequest) returns (VerifyStorageChallengeReply);
   rpc VerifyEvaluationResult(VerifyEvaluationResultRequest) returns (VerifyEvaluationResultReply);
   rpc BroadcastStorageChallengeResult(BroadcastStorageChallengeRequest) returns (BroadcastStorageChallengeResponse);
+  rpc BroadcastStorageChallengeMetrics(BroadcastStorageChallengeMetricsRequest) returns (BroadcastStorageChallengeMetricsReply);
 }
 
 message ProcessStorageChallengeRequest {
@@ -70,3 +71,10 @@ message StorageChallengeMessage {
   string sender_id = 4;
   bytes sender_signature = 5;
 }
+
+message BroadcastStorageChallengeMetricsRequest {
+  bytes data = 1;
+  string sender_id = 2;
+}
+
+message BroadcastStorageChallengeMetricsReply {}

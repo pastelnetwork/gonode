@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	verifyThreshold = 2
+	verifyThreshold = 3
 )
 
 // ProcessSelfHealingChallenge is called from service.Run to process the stored events.

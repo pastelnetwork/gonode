@@ -150,6 +150,21 @@ ADD COLUMN generation_metrics_last_broadcast_at DATETIME NULL;`
 const alterTablePingHistoryExecutionMetrics = `ALTER TABLE ping_history
 ADD COLUMN execution_metrics_last_broadcast_at DATETIME NULL;`
 
+const createStorageChallengeMetrics string = `
+  CREATE TABLE IF NOT EXISTS storage_challenge_metrics (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  challenge_id TEXT NOT NULL,
+  message_type INTEGER NOT NULL,
+  data BLOB NOT NULL,
+  sender_id TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+);`
+
+const createStorageChallengeMetricsUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS storage_challenge_metrics_unique ON storage_challenge_metrics(challenge_id, message_type, sender_id);
+`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -225,13 +240,47 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 // InsertStorageChallengeMessage inserts failed storage challenge to db
 func (s *SQLiteStore) InsertStorageChallengeMessage(challenge types.StorageChallengeLogMessage) error {
 	now := time.Now().UTC()
-	const insertQuery = "INSERT INTO storage_challenge_messages(id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?);"
-	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.Sender, challenge.SenderSignature, now, now)
+	const insertQuery = "INSERT INTO storage_challenge_messages(id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"
+	_, _ = s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.Sender, challenge.SenderSignature, now, now)
+
+	const metricsQuery = "INSERT INTO storage_challenge_metrics(id, challenge_id, message_type, data, sender_id, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"
+	_, err := s.db.Exec(metricsQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.Sender, now, now)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *SQLiteStore) BatchInsertSCMetrics(metrics []types.StorageChallengeLogMessage) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+        INSERT OR IGNORE INTO storage_challenge_metrics
+        (id, challenge_id, message_type, data, sender_id, created_at, updated_at)
+        VALUES (NULL,?,?,?,?,?,?)
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	for _, metric := range metrics {
+		now := time.Now().UTC()
+
+		_, err = stmt.Exec(metric.ChallengeID, metric.MessageType, metric.Data, metric.Sender, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Commit the transaction
+	return tx.Commit()
 }
 
 // UpsertPingHistory inserts/update ping information into the ping_history table
@@ -398,6 +447,22 @@ WHERE supernode_id = ?;`
 	return nil
 }
 
+func (s *SQLiteStore) UpdateSCMetricsBroadcastTimestamp(nodeID string, updatedAt time.Time) error {
+	// Update query
+	const updateQuery = `
+UPDATE ping_history
+SET metrics_last_broadcast_at = ?
+WHERE supernode_id = ?;`
+
+	// Execute the update query
+	_, err := s.db.Exec(updateQuery, time.Now().UTC().Add(-180*time.Minute), nodeID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // InsertBroadcastMessage inserts broadcast storage challenge msg to db
 func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage) error {
 	now := time.Now().UTC()
@@ -408,6 +473,33 @@ func (s *SQLiteStore) InsertBroadcastMessage(challenge types.BroadcastLogMessage
 	}
 
 	return nil
+}
+
+// StorageChallengeMetrics retrieves all the metrics needs to be broadcast
+func (s *SQLiteStore) StorageChallengeMetrics(timestamp time.Time) ([]types.StorageChallengeLogMessage, error) {
+	const query = `
+    SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at
+    FROM storage_challenge_metrics
+    WHERE created_at > ?
+    `
+
+	rows, err := s.db.Query(query, timestamp)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.StorageChallengeLogMessage
+	for rows.Next() {
+		var m types.StorageChallengeLogMessage
+		err := rows.Scan(&m.ID, &m.ChallengeID, &m.MessageType, &m.Data, &m.Sender, &m.CreatedAt, &m.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
 }
 
 // QueryStorageChallengeMessage retrieves storage challenge message against challengeID and messageType
@@ -499,9 +591,7 @@ func (s *SQLiteStore) GetAllPingInfoForOnlineNodes() (types.PingInfos, error) {
                metrics_last_broadcast_at, generation_metrics_last_broadcast_at, execution_metrics_last_broadcast_at,
                created_at, updated_at
         FROM ping_history
-        WHERE is_online = true
-
-        `
+        WHERE is_online = true`
 	rows, err := s.db.Query(selectQuery)
 	if err != nil {
 		return nil, err
@@ -683,6 +773,14 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 
 	if _, err := db.Exec(createSelfHealingChallengeTicketsUniqueIndex); err != nil {
 		return nil, fmt.Errorf("cannot create createSelfHealingChallengeTicketsUniqueIndex: %w", err)
+	}
+
+	if _, err := db.Exec(createStorageChallengeMetrics); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createStorageChallengeMetricsUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
 	_, _ = db.Exec(alterTaskHistory)

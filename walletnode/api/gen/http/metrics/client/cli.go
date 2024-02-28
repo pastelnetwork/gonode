@@ -15,25 +15,25 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// BuildGetChallengeReportsPayload builds the payload for the metrics
-// getChallengeReports endpoint from CLI flags.
-func BuildGetChallengeReportsPayload(metricsGetChallengeReportsPid string, metricsGetChallengeReportsChallengeID string, metricsGetChallengeReportsCount string, metricsGetChallengeReportsKey string) (*metrics.GetChallengeReportsPayload, error) {
+// BuildGetDetailedLogsPayload builds the payload for the metrics
+// getDetailedLogs endpoint from CLI flags.
+func BuildGetDetailedLogsPayload(metricsGetDetailedLogsPid string, metricsGetDetailedLogsEventID string, metricsGetDetailedLogsCount string, metricsGetDetailedLogsKey string) (*metrics.GetDetailedLogsPayload, error) {
 	var err error
 	var pid string
 	{
-		pid = metricsGetChallengeReportsPid
+		pid = metricsGetDetailedLogsPid
 	}
-	var challengeID *string
+	var eventID *string
 	{
-		if metricsGetChallengeReportsChallengeID != "" {
-			challengeID = &metricsGetChallengeReportsChallengeID
+		if metricsGetDetailedLogsEventID != "" {
+			eventID = &metricsGetDetailedLogsEventID
 		}
 	}
 	var count *int
 	{
-		if metricsGetChallengeReportsCount != "" {
+		if metricsGetDetailedLogsCount != "" {
 			var v int64
-			v, err = strconv.ParseInt(metricsGetChallengeReportsCount, 10, strconv.IntSize)
+			v, err = strconv.ParseInt(metricsGetDetailedLogsCount, 10, strconv.IntSize)
 			val := int(v)
 			count = &val
 			if err != nil {
@@ -43,25 +43,25 @@ func BuildGetChallengeReportsPayload(metricsGetChallengeReportsPid string, metri
 	}
 	var key string
 	{
-		key = metricsGetChallengeReportsKey
+		key = metricsGetDetailedLogsKey
 	}
-	v := &metrics.GetChallengeReportsPayload{}
+	v := &metrics.GetDetailedLogsPayload{}
 	v.Pid = pid
-	v.ChallengeID = challengeID
+	v.EventID = eventID
 	v.Count = count
 	v.Key = key
 
 	return v, nil
 }
 
-// BuildGetMetricsPayload builds the payload for the metrics getMetrics
-// endpoint from CLI flags.
-func BuildGetMetricsPayload(metricsGetMetricsFrom string, metricsGetMetricsTo string, metricsGetMetricsPid string, metricsGetMetricsKey string) (*metrics.GetMetricsPayload, error) {
+// BuildGetSummaryStatsPayload builds the payload for the metrics
+// getSummaryStats endpoint from CLI flags.
+func BuildGetSummaryStatsPayload(metricsGetSummaryStatsFrom string, metricsGetSummaryStatsTo string, metricsGetSummaryStatsPid string, metricsGetSummaryStatsKey string) (*metrics.GetSummaryStatsPayload, error) {
 	var err error
 	var from *string
 	{
-		if metricsGetMetricsFrom != "" {
-			from = &metricsGetMetricsFrom
+		if metricsGetSummaryStatsFrom != "" {
+			from = &metricsGetSummaryStatsFrom
 			err = goa.MergeErrors(err, goa.ValidateFormat("from", *from, goa.FormatDateTime))
 			if err != nil {
 				return nil, err
@@ -70,8 +70,8 @@ func BuildGetMetricsPayload(metricsGetMetricsFrom string, metricsGetMetricsTo st
 	}
 	var to *string
 	{
-		if metricsGetMetricsTo != "" {
-			to = &metricsGetMetricsTo
+		if metricsGetSummaryStatsTo != "" {
+			to = &metricsGetSummaryStatsTo
 			err = goa.MergeErrors(err, goa.ValidateFormat("to", *to, goa.FormatDateTime))
 			if err != nil {
 				return nil, err
@@ -80,13 +80,13 @@ func BuildGetMetricsPayload(metricsGetMetricsFrom string, metricsGetMetricsTo st
 	}
 	var pid string
 	{
-		pid = metricsGetMetricsPid
+		pid = metricsGetSummaryStatsPid
 	}
 	var key string
 	{
-		key = metricsGetMetricsKey
+		key = metricsGetSummaryStatsKey
 	}
-	v := &metrics.GetMetricsPayload{}
+	v := &metrics.GetSummaryStatsPayload{}
 	v.From = from
 	v.To = to
 	v.Pid = pid

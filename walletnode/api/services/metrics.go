@@ -47,17 +47,17 @@ func (service *MetricsAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 	return ctx, nil
 }
 
-// GetChallengeReports returns the self-healing challenge reports
-func (service *MetricsAPIHandler) GetChallengeReports(ctx context.Context, p *metrics.GetChallengeReportsPayload) (*metrics.SelfHealingChallengeReports, error) {
-	if p.Count == nil && p.ChallengeID == nil {
-		return nil, metrics.MakeBadRequest(fmt.Errorf("count or challenge_id is required"))
+// GetDetailedLogs returns the detailed self-healing reports
+func (service *MetricsAPIHandler) GetDetailedLogs(ctx context.Context, p *metrics.GetDetailedLogsPayload) (*metrics.SelfHealingReports, error) {
+	if p.Count == nil && p.EventID == nil {
+		return nil, metrics.MakeBadRequest(fmt.Errorf("count or event_id is required"))
 	}
 
-	if p.Count != nil && p.ChallengeID != nil {
-		return nil, metrics.MakeBadRequest(fmt.Errorf("only one of count or challenge_id is allowed"))
+	if p.Count != nil && p.EventID != nil {
+		return nil, metrics.MakeBadRequest(fmt.Errorf("only one of count or event_id is allowed"))
 	}
 
-	req := metricsregister.SHChallengesRequest{
+	req := metricsregister.SHReportRequest{
 		PastelID:   p.Pid,
 		Passphrase: p.Key,
 	}
@@ -66,20 +66,20 @@ func (service *MetricsAPIHandler) GetChallengeReports(ctx context.Context, p *me
 		req.Count = *p.Count
 	}
 
-	if p.ChallengeID != nil {
-		req.ChallengeID = *p.ChallengeID
+	if p.EventID != nil {
+		req.EventID = *p.EventID
 	}
 
-	reports, err := service.metricsService.GetSelfHealingChallengeReports(ctx, req)
+	reports, err := service.metricsService.GetDetailedLogs(ctx, req)
 	if err != nil {
 		return nil, metrics.MakeInternalServerError(fmt.Errorf("failed to get challenge reports: %w", err))
 	}
 
-	return toSHChallengeReport(reports), nil
+	return toSHReport(reports), nil
 }
 
-// GetMetrics returns the metrics data over a specified time range
-func (service *MetricsAPIHandler) GetMetrics(ctx context.Context, p *metrics.GetMetricsPayload) (*metrics.MetricsResult, error) {
+// GetSummaryStats returns the stats over a specified time range
+func (service *MetricsAPIHandler) GetSummaryStats(ctx context.Context, p *metrics.GetSummaryStatsPayload) (*metrics.MetricsResult, error) {
 	var from, to *time.Time
 
 	if p.From != nil {
@@ -99,23 +99,23 @@ func (service *MetricsAPIHandler) GetMetrics(ctx context.Context, p *metrics.Get
 		to = &toTime
 	}
 
-	req := metricsregister.GetMetricsRequest{
+	req := metricsregister.GetSummaryStats{
 		From:       from,
 		To:         to,
 		PastelID:   p.Pid,
 		Passphrase: p.Key,
 	}
 
-	res, err := service.metricsService.GetMetrics(ctx, req)
+	res, err := service.metricsService.GetSummaryStats(ctx, req)
 	if err != nil {
 		return nil, metrics.MakeInternalServerError(fmt.Errorf("failed to get metrics: %w", err))
 	}
 
 	// Convert SHTriggerMetrics from slice of SHTriggerMetric to slice of pointers to SHTriggerMetric for the result
-	var shTriggerMetrics []*metrics.SHTriggerMetric
+	var shTriggerMetrics []*metrics.SHTriggerStats
 	for _, metric := range res.SHTriggerMetrics {
 		m := metric
-		shTriggerMetrics = append(shTriggerMetrics, &metrics.SHTriggerMetric{
+		shTriggerMetrics = append(shTriggerMetrics, &metrics.SHTriggerStats{
 			TriggerID:              m.TriggerID,
 			NodesOffline:           m.NodesOffline,
 			ListOfNodes:            m.ListOfNodes,
@@ -125,9 +125,8 @@ func (service *MetricsAPIHandler) GetMetrics(ctx context.Context, p *metrics.Get
 	}
 
 	return &metrics.MetricsResult{
-		ScMetrics:        res.SCMetrics,
 		ShTriggerMetrics: shTriggerMetrics,
-		ShExecutionMetrics: &metrics.SHExecutionMetrics{
+		ShExecutionMetrics: &metrics.SHExecutionStats{
 			TotalChallengesAcknowledged: res.SHExecutionMetrics.TotalChallengesAcknowledged,
 			TotalChallengesIssued:       res.SHExecutionMetrics.TotalChallengesIssued,
 			TotalChallengesRejected:     res.SHExecutionMetrics.TotalChallengesRejected,

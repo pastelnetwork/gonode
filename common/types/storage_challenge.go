@@ -63,14 +63,13 @@ type StorageChallengeSignatures struct {
 
 // Message represents the storage challenge message
 type Message struct {
-	MessageType                MessageType `json:"message_type"`
-	ChallengeID                string      `json:"challenge_id"`
-	Data                       MessageData `json:"data"`
-	Sender                     string      `json:"sender"`
-	SenderSignature            []byte      `json:"sender_signature"`
-	StorageChallengeSignatures StorageChallengeStatus
-	CreatedAt                  time.Time `json:"created_at"`
-	UpdatedAt                  time.Time `json:"updated_at"`
+	MessageType     MessageType `json:"message_type"`
+	ChallengeID     string      `json:"challenge_id"`
+	Data            MessageData `json:"data"`
+	Sender          string      `json:"sender"`
+	SenderSignature []byte      `json:"sender_signature"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
 }
 
 // BroadcastMessage represents the storage challenge message that needs to be broadcast after evaluation
@@ -140,7 +139,7 @@ type StorageChallengeLogMessage struct {
 	MessageType     int       `db:"message_type"`
 	ChallengeID     string    `db:"challenge_id"`
 	Data            []byte    `db:"data"`
-	Sender          string    `db:"sender"`
+	Sender          string    `db:"sender_id"`
 	SenderSignature []byte    `db:"sender_signature"`
 	CreatedAt       time.Time `db:"created_at"`
 	UpdatedAt       time.Time `db:"updated_at"`
@@ -153,4 +152,22 @@ type BroadcastLogMessage struct {
 	Recipient   string `db:"recipient"`
 	Observers   string `db:"observers"`
 	Data        []byte `db:"data"`
+}
+
+// BroadcastMessageMetrics is the struct for broadcast message metrics
+type BroadcastMessageMetrics struct {
+	ID          int       `db:"id"`
+	ChallengeID string    `db:"challenge_id"`
+	Challenger  string    `db:"challenger"`
+	Recipient   string    `db:"recipient"`
+	Observers   string    `db:"observers"`
+	Data        []byte    `db:"data"`
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
+}
+
+// ProcessBroadcastChallengeMetricsRequest represents the request for broadcasting metrics
+type ProcessBroadcastChallengeMetricsRequest struct {
+	Data     []byte `json:"data"`
+	SenderID string `json:"sender_id"`
 }

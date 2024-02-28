@@ -20,36 +20,36 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// EncodeGetChallengeReportsResponse returns an encoder for responses returned
-// by the metrics getChallengeReports endpoint.
-func EncodeGetChallengeReportsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+// EncodeGetDetailedLogsResponse returns an encoder for responses returned by
+// the metrics getDetailedLogs endpoint.
+func EncodeGetDetailedLogsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
-		res, _ := v.(*metrics.SelfHealingChallengeReports)
+		res, _ := v.(*metrics.SelfHealingReports)
 		enc := encoder(ctx, w)
-		body := NewGetChallengeReportsResponseBody(res)
+		body := NewGetDetailedLogsResponseBody(res)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
 }
 
-// DecodeGetChallengeReportsRequest returns a decoder for requests sent to the
-// metrics getChallengeReports endpoint.
-func DecodeGetChallengeReportsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+// DecodeGetDetailedLogsRequest returns a decoder for requests sent to the
+// metrics getDetailedLogs endpoint.
+func DecodeGetDetailedLogsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
-			pid         string
-			challengeID *string
-			count       *int
-			key         string
-			err         error
+			pid     string
+			eventID *string
+			count   *int
+			key     string
+			err     error
 		)
 		pid = r.URL.Query().Get("pid")
 		if pid == "" {
 			err = goa.MergeErrors(err, goa.MissingFieldError("pid", "query string"))
 		}
-		challengeIDRaw := r.URL.Query().Get("challenge_id")
-		if challengeIDRaw != "" {
-			challengeID = &challengeIDRaw
+		eventIDRaw := r.URL.Query().Get("event_id")
+		if eventIDRaw != "" {
+			eventID = &eventIDRaw
 		}
 		{
 			countRaw := r.URL.Query().Get("count")
@@ -69,7 +69,7 @@ func DecodeGetChallengeReportsRequest(mux goahttp.Muxer, decoder func(*http.Requ
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetChallengeReportsPayload(pid, challengeID, count, key)
+		payload := NewGetDetailedLogsPayload(pid, eventID, count, key)
 		if strings.Contains(payload.Key, " ") {
 			// Remove authorization scheme prefix (e.g. "Bearer")
 			cred := strings.SplitN(payload.Key, " ", 2)[1]
@@ -80,9 +80,9 @@ func DecodeGetChallengeReportsRequest(mux goahttp.Muxer, decoder func(*http.Requ
 	}
 }
 
-// EncodeGetChallengeReportsError returns an encoder for errors returned by the
-// getChallengeReports metrics endpoint.
-func EncodeGetChallengeReportsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeGetDetailedLogsError returns an encoder for errors returned by the
+// getDetailedLogs metrics endpoint.
+func EncodeGetDetailedLogsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		var en goa.GoaErrorNamer
@@ -98,7 +98,7 @@ func EncodeGetChallengeReportsError(encoder func(context.Context, http.ResponseW
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewGetChallengeReportsUnauthorizedResponseBody(res)
+				body = NewGetDetailedLogsUnauthorizedResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusUnauthorized)
@@ -111,7 +111,7 @@ func EncodeGetChallengeReportsError(encoder func(context.Context, http.ResponseW
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewGetChallengeReportsBadRequestResponseBody(res)
+				body = NewGetDetailedLogsBadRequestResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusBadRequest)
@@ -124,7 +124,7 @@ func EncodeGetChallengeReportsError(encoder func(context.Context, http.ResponseW
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewGetChallengeReportsNotFoundResponseBody(res)
+				body = NewGetDetailedLogsNotFoundResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusNotFound)
@@ -137,7 +137,7 @@ func EncodeGetChallengeReportsError(encoder func(context.Context, http.ResponseW
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewGetChallengeReportsInternalServerErrorResponseBody(res)
+				body = NewGetDetailedLogsInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -148,21 +148,21 @@ func EncodeGetChallengeReportsError(encoder func(context.Context, http.ResponseW
 	}
 }
 
-// EncodeGetMetricsResponse returns an encoder for responses returned by the
-// metrics getMetrics endpoint.
-func EncodeGetMetricsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+// EncodeGetSummaryStatsResponse returns an encoder for responses returned by
+// the metrics getSummaryStats endpoint.
+func EncodeGetSummaryStatsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
 		res := v.(*metricsviews.MetricsResult)
 		enc := encoder(ctx, w)
-		body := NewGetMetricsResponseBody(res.Projected)
+		body := NewGetSummaryStatsResponseBody(res.Projected)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
 }
 
-// DecodeGetMetricsRequest returns a decoder for requests sent to the metrics
-// getMetrics endpoint.
-func DecodeGetMetricsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+// DecodeGetSummaryStatsRequest returns a decoder for requests sent to the
+// metrics getSummaryStats endpoint.
+func DecodeGetSummaryStatsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
 			from *string
@@ -196,7 +196,7 @@ func DecodeGetMetricsRequest(mux goahttp.Muxer, decoder func(*http.Request) goah
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetMetricsPayload(from, to, pid, key)
+		payload := NewGetSummaryStatsPayload(from, to, pid, key)
 		if strings.Contains(payload.Key, " ") {
 			// Remove authorization scheme prefix (e.g. "Bearer")
 			cred := strings.SplitN(payload.Key, " ", 2)[1]
@@ -207,9 +207,9 @@ func DecodeGetMetricsRequest(mux goahttp.Muxer, decoder func(*http.Request) goah
 	}
 }
 
-// EncodeGetMetricsError returns an encoder for errors returned by the
-// getMetrics metrics endpoint.
-func EncodeGetMetricsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeGetSummaryStatsError returns an encoder for errors returned by the
+// getSummaryStats metrics endpoint.
+func EncodeGetSummaryStatsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		var en goa.GoaErrorNamer
@@ -225,7 +225,7 @@ func EncodeGetMetricsError(encoder func(context.Context, http.ResponseWriter) go
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewGetMetricsUnauthorizedResponseBody(res)
+				body = NewGetSummaryStatsUnauthorizedResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusUnauthorized)
@@ -238,7 +238,7 @@ func EncodeGetMetricsError(encoder func(context.Context, http.ResponseWriter) go
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewGetMetricsBadRequestResponseBody(res)
+				body = NewGetSummaryStatsBadRequestResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusBadRequest)
@@ -251,7 +251,7 @@ func EncodeGetMetricsError(encoder func(context.Context, http.ResponseWriter) go
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewGetMetricsNotFoundResponseBody(res)
+				body = NewGetSummaryStatsNotFoundResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusNotFound)
@@ -264,7 +264,7 @@ func EncodeGetMetricsError(encoder func(context.Context, http.ResponseWriter) go
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewGetMetricsInternalServerErrorResponseBody(res)
+				body = NewGetSummaryStatsInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -275,31 +275,31 @@ func EncodeGetMetricsError(encoder func(context.Context, http.ResponseWriter) go
 	}
 }
 
-// marshalMetricsSelfHealingChallengeReportKVToSelfHealingChallengeReportKVResponseBody
-// builds a value of type *SelfHealingChallengeReportKVResponseBody from a
-// value of type *metrics.SelfHealingChallengeReportKV.
-func marshalMetricsSelfHealingChallengeReportKVToSelfHealingChallengeReportKVResponseBody(v *metrics.SelfHealingChallengeReportKV) *SelfHealingChallengeReportKVResponseBody {
+// marshalMetricsSelfHealingReportKVToSelfHealingReportKVResponseBody builds a
+// value of type *SelfHealingReportKVResponseBody from a value of type
+// *metrics.SelfHealingReportKV.
+func marshalMetricsSelfHealingReportKVToSelfHealingReportKVResponseBody(v *metrics.SelfHealingReportKV) *SelfHealingReportKVResponseBody {
 	if v == nil {
 		return nil
 	}
-	res := &SelfHealingChallengeReportKVResponseBody{
-		ChallengeID: v.ChallengeID,
+	res := &SelfHealingReportKVResponseBody{
+		EventID: v.EventID,
 	}
 	if v.Report != nil {
-		res.Report = marshalMetricsSelfHealingChallengeReportToSelfHealingChallengeReportResponseBody(v.Report)
+		res.Report = marshalMetricsSelfHealingReportToSelfHealingReportResponseBody(v.Report)
 	}
 
 	return res
 }
 
-// marshalMetricsSelfHealingChallengeReportToSelfHealingChallengeReportResponseBody
-// builds a value of type *SelfHealingChallengeReportResponseBody from a value
-// of type *metrics.SelfHealingChallengeReport.
-func marshalMetricsSelfHealingChallengeReportToSelfHealingChallengeReportResponseBody(v *metrics.SelfHealingChallengeReport) *SelfHealingChallengeReportResponseBody {
+// marshalMetricsSelfHealingReportToSelfHealingReportResponseBody builds a
+// value of type *SelfHealingReportResponseBody from a value of type
+// *metrics.SelfHealingReport.
+func marshalMetricsSelfHealingReportToSelfHealingReportResponseBody(v *metrics.SelfHealingReport) *SelfHealingReportResponseBody {
 	if v == nil {
 		return nil
 	}
-	res := &SelfHealingChallengeReportResponseBody{}
+	res := &SelfHealingReportResponseBody{}
 	if v.Messages != nil {
 		res.Messages = make([]*SelfHealingMessageKVResponseBody, len(v.Messages))
 		for i, val := range v.Messages {
@@ -536,11 +536,11 @@ func marshalMetricsVerifiedTicketToVerifiedTicketResponseBody(v *metrics.Verifie
 	return res
 }
 
-// marshalMetricsviewsSHTriggerMetricViewToSHTriggerMetricResponseBody builds a
-// value of type *SHTriggerMetricResponseBody from a value of type
-// *metricsviews.SHTriggerMetricView.
-func marshalMetricsviewsSHTriggerMetricViewToSHTriggerMetricResponseBody(v *metricsviews.SHTriggerMetricView) *SHTriggerMetricResponseBody {
-	res := &SHTriggerMetricResponseBody{
+// marshalMetricsviewsSHTriggerStatsViewToSHTriggerStatsResponseBody builds a
+// value of type *SHTriggerStatsResponseBody from a value of type
+// *metricsviews.SHTriggerStatsView.
+func marshalMetricsviewsSHTriggerStatsViewToSHTriggerStatsResponseBody(v *metricsviews.SHTriggerStatsView) *SHTriggerStatsResponseBody {
+	res := &SHTriggerStatsResponseBody{
 		TriggerID:              *v.TriggerID,
 		NodesOffline:           *v.NodesOffline,
 		ListOfNodes:            *v.ListOfNodes,
@@ -551,11 +551,11 @@ func marshalMetricsviewsSHTriggerMetricViewToSHTriggerMetricResponseBody(v *metr
 	return res
 }
 
-// marshalMetricsviewsSHExecutionMetricsViewToSHExecutionMetricsResponseBody
-// builds a value of type *SHExecutionMetricsResponseBody from a value of type
-// *metricsviews.SHExecutionMetricsView.
-func marshalMetricsviewsSHExecutionMetricsViewToSHExecutionMetricsResponseBody(v *metricsviews.SHExecutionMetricsView) *SHExecutionMetricsResponseBody {
-	res := &SHExecutionMetricsResponseBody{
+// marshalMetricsviewsSHExecutionStatsViewToSHExecutionStatsResponseBody builds
+// a value of type *SHExecutionStatsResponseBody from a value of type
+// *metricsviews.SHExecutionStatsView.
+func marshalMetricsviewsSHExecutionStatsViewToSHExecutionStatsResponseBody(v *metricsviews.SHExecutionStatsView) *SHExecutionStatsResponseBody {
+	res := &SHExecutionStatsResponseBody{
 		TotalChallengesIssued:                                 *v.TotalChallengesIssued,
 		TotalChallengesAcknowledged:                           *v.TotalChallengesAcknowledged,
 		TotalChallengesRejected:                               *v.TotalChallengesRejected,

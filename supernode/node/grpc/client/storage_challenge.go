@@ -134,6 +134,19 @@ func (service *storageChallengeGRPCClient) BroadcastStorageChallengeResult(ctx c
 	return nil
 }
 
+// BroadcastStorageChallengeMetrics broadcast the result to the entire network
+func (service *storageChallengeGRPCClient) BroadcastStorageChallengeMetrics(ctx context.Context, req types.ProcessBroadcastChallengeMetricsRequest) error {
+	_, err := service.client.BroadcastStorageChallengeMetrics(ctx, &pb.BroadcastStorageChallengeMetricsRequest{
+		Data:     req.Data,
+		SenderId: req.SenderID,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func newStorageChallengeGRPCClient(conn *clientConn) node.StorageChallengeInterface {
 	return &storageChallengeGRPCClient{
 		conn:   conn,

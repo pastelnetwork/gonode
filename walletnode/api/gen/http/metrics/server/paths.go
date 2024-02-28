@@ -7,12 +7,12 @@
 
 package server
 
-// GetChallengeReportsMetricsPath returns the URL path to the metrics service getChallengeReports HTTP endpoint.
-func GetChallengeReportsMetricsPath() string {
-	return "/metrics/self_healing_challenges"
+// GetDetailedLogsMetricsPath returns the URL path to the metrics service getDetailedLogs HTTP endpoint.
+func GetDetailedLogsMetricsPath() string {
+	return "/self_healing/detailed_logs"
 }
 
-// GetMetricsMetricsPath returns the URL path to the metrics service getMetrics HTTP endpoint.
-func GetMetricsMetricsPath() string {
-	return "/metrics"
+// GetSummaryStatsMetricsPath returns the URL path to the metrics service getSummaryStats HTTP endpoint.
+func GetSummaryStatsMetricsPath() string {
+	return "/self_healing/summary_stats"
 }

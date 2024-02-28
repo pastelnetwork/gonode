@@ -2,7 +2,10 @@ package storagechallenge
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"github.com/pastelnetwork/gonode/mixins"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -28,6 +31,10 @@ import (
 // Storage challenge is functioning, but if a storage challenge verification fails, nothing happens.
 // Callbacks in task/stateStorage can be adjusted when proper consequences are determined.
 
+const (
+	broadcastSCMetricRegularInterval = 30 * time.Minute
+)
+
 // SCService keeps track of the supernode's nodeID and passes this, the pastel client,
 // and node client interfaces to the tasks it controls.  The run method contains a ticker timer
 // that will check for a new block and generate storage challenges as necessary if a new block
@@ -38,6 +45,7 @@ type SCService struct {
 
 	nodeID                        string
 	nodeClient                    node.ClientInterface
+	pastelHandler                 *mixins.PastelHandler
 	storageChallengeExpiredBlocks int32
 	numberOfChallengeReplicas     int
 	numberOfVerifyingNodes        int
@@ -118,6 +126,8 @@ func (service *SCService) Run(ctx context.Context) error {
 		}
 	}()
 
+	go service.BroadcastStorageChallengeMetricsWorker(ctx)
+
 	go service.RunLocalKeysFetchWorker(ctx)
 
 	if !service.config.IsTestConfig {
@@ -158,6 +168,49 @@ func (service *SCService) Task(id string) *SCTask {
 
 	log.Info("type casted successfully")
 	return scTask
+}
+
+// executeTask executes the self-healing metric task.
+func (service *SCService) executeMetricsBroadcastTask(ctx context.Context) {
+	newCtx := context.Background()
+	task := service.NewSCTask()
+	task.BroadcastStorageChallengeMetrics(newCtx)
+
+	log.WithContext(ctx).Debug("storage challenge metrics broadcasted")
+}
+
+// BroadcastStorageChallengeMetricsWorker broadcast the storage challenge metrics to the entire network
+func (service *SCService) BroadcastStorageChallengeMetricsWorker(ctx context.Context) {
+	log.WithContext(ctx).Info("storage challenge metrics worker func has been invoked")
+
+	startTime := calculateStartTime(service.nodeID)
+	log.WithContext(ctx).WithField("start_time", startTime).
+		Info("storage challenge metric worker will execute on the mentioned time")
+
+	// Wait until the start time
+	time.Sleep(time.Until(startTime))
+
+	// Run the first task immediately
+	service.executeMetricsBroadcastTask(ctx)
+
+	for {
+		select {
+		case <-time.After(broadcastSCMetricRegularInterval):
+			service.executeMetricsBroadcastTask(context.Background())
+		case <-ctx.Done():
+			log.Println("Context done being called in file-healing worker")
+			return
+		}
+	}
+}
+
+// calculateStartTime calculates the start time for the periodic task based on the hash of the PastelID.
+func calculateStartTime(pastelID string) time.Time {
+	hash := sha256.Sum256([]byte(pastelID))
+	hashString := hex.EncodeToString(hash[:])
+	delayMinutes := int(hashString[0]) % 60 // simplistic hash-based delay calculation
+
+	return time.Now().Add(time.Duration(delayMinutes) * time.Minute)
 }
 
 // NewService : Create a new storage challenge service

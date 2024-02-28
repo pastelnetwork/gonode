@@ -17,13 +17,13 @@ import (
 
 // Client lists the metrics service endpoint HTTP clients.
 type Client struct {
-	// GetChallengeReports Doer is the HTTP client used to make requests to the
-	// getChallengeReports endpoint.
-	GetChallengeReportsDoer goahttp.Doer
+	// GetDetailedLogs Doer is the HTTP client used to make requests to the
+	// getDetailedLogs endpoint.
+	GetDetailedLogsDoer goahttp.Doer
 
-	// GetMetrics Doer is the HTTP client used to make requests to the getMetrics
-	// endpoint.
-	GetMetricsDoer goahttp.Doer
+	// GetSummaryStats Doer is the HTTP client used to make requests to the
+	// getSummaryStats endpoint.
+	GetSummaryStatsDoer goahttp.Doer
 
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
@@ -48,26 +48,26 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
-		GetChallengeReportsDoer: doer,
-		GetMetricsDoer:          doer,
-		CORSDoer:                doer,
-		RestoreResponseBody:     restoreBody,
-		scheme:                  scheme,
-		host:                    host,
-		decoder:                 dec,
-		encoder:                 enc,
+		GetDetailedLogsDoer: doer,
+		GetSummaryStatsDoer: doer,
+		CORSDoer:            doer,
+		RestoreResponseBody: restoreBody,
+		scheme:              scheme,
+		host:                host,
+		decoder:             dec,
+		encoder:             enc,
 	}
 }
 
-// GetChallengeReports returns an endpoint that makes HTTP requests to the
-// metrics service getChallengeReports server.
-func (c *Client) GetChallengeReports() goa.Endpoint {
+// GetDetailedLogs returns an endpoint that makes HTTP requests to the metrics
+// service getDetailedLogs server.
+func (c *Client) GetDetailedLogs() goa.Endpoint {
 	var (
-		encodeRequest  = EncodeGetChallengeReportsRequest(c.encoder)
-		decodeResponse = DecodeGetChallengeReportsResponse(c.decoder, c.RestoreResponseBody)
+		encodeRequest  = EncodeGetDetailedLogsRequest(c.encoder)
+		decodeResponse = DecodeGetDetailedLogsResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v any) (any, error) {
-		req, err := c.BuildGetChallengeReportsRequest(ctx, v)
+		req, err := c.BuildGetDetailedLogsRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -75,23 +75,23 @@ func (c *Client) GetChallengeReports() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.GetChallengeReportsDoer.Do(req)
+		resp, err := c.GetDetailedLogsDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("metrics", "getChallengeReports", err)
+			return nil, goahttp.ErrRequestError("metrics", "getDetailedLogs", err)
 		}
 		return decodeResponse(resp)
 	}
 }
 
-// GetMetrics returns an endpoint that makes HTTP requests to the metrics
-// service getMetrics server.
-func (c *Client) GetMetrics() goa.Endpoint {
+// GetSummaryStats returns an endpoint that makes HTTP requests to the metrics
+// service getSummaryStats server.
+func (c *Client) GetSummaryStats() goa.Endpoint {
 	var (
-		encodeRequest  = EncodeGetMetricsRequest(c.encoder)
-		decodeResponse = DecodeGetMetricsResponse(c.decoder, c.RestoreResponseBody)
+		encodeRequest  = EncodeGetSummaryStatsRequest(c.encoder)
+		decodeResponse = DecodeGetSummaryStatsResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v any) (any, error) {
-		req, err := c.BuildGetMetricsRequest(ctx, v)
+		req, err := c.BuildGetSummaryStatsRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -99,9 +99,9 @@ func (c *Client) GetMetrics() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.GetMetricsDoer.Do(req)
+		resp, err := c.GetSummaryStatsDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("metrics", "getMetrics", err)
+			return nil, goahttp.ErrRequestError("metrics", "getSummaryStats", err)
 		}
 		return decodeResponse(resp)
 	}

@@ -8,9 +8,19 @@ import (
 
 // Metrics is the struct for metrics
 type Metrics struct {
-	SCMetrics          []byte
+	SCMetrics          SCMetrics
 	SHTriggerMetrics   SHTriggerMetrics
 	SHExecutionMetrics SHExecutionMetrics
+}
+
+type SCMetrics struct {
+	TotalChallenges                      int
+	TotalChallengesProcessed             int
+	TotalChallengesVerifiedByChallenger  int
+	TotalChallengesVerifiedByObservers   int
+	SlowResponsesObservedByObservers     int
+	InvalidSignaturesObservedByObservers int
+	InvalidEvaluationObservedByObservers int
 }
 
 // SHTriggerMetrics represents the self-healing trigger metrics

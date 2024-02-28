@@ -78,11 +78,11 @@ type PingInfo struct {
 // PingInfos represents array of ping info
 type PingInfos []PingInfo
 
-// SelfHealingChallengeReports represents the self-healing metrics for each challenge
-type SelfHealingChallengeReports map[string]SelfHealingChallengeReport
+// SelfHealingReports represents the self-healing metrics for each challenge
+type SelfHealingReports map[string]SelfHealingReport
 
-// SelfHealingChallengeReport represents the self-healing challenges
-type SelfHealingChallengeReport map[string]SelfHealingMessages
+// SelfHealingReport represents the self-healing challenges
+type SelfHealingReport map[string]SelfHealingMessages
 
 // SelfHealingMessages represents the self-healing metrics for each challenge = message_type = 3
 type SelfHealingMessages []SelfHealingMessage
@@ -246,7 +246,7 @@ type SelfHealingChallengeEvent struct {
 }
 
 // Hash returns the hash of the self-healing challenge reports
-func (s SelfHealingChallengeReports) Hash() string {
+func (s SelfHealingReports) Hash() string {
 	data, _ := json.Marshal(s)
 	hash, _ := utils.Sha3256hash(data)
 
