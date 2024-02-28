@@ -200,6 +200,25 @@ func (service *StorageChallengeGRPC) BroadcastStorageChallengeResult(ctx context
 	return nil, err
 }
 
+// BroadcastStorageChallengeMetrics is the server side of broadcast storage-challenge metrics
+func (service *StorageChallengeGRPC) BroadcastStorageChallengeMetrics(ctx context.Context, m *pb.BroadcastStorageChallengeMetricsRequest) (*pb.BroadcastStorageChallengeMetricsReply, error) {
+	log.WithContext(ctx).WithField("req", m).Debug("Broadcast Storage-Challenge Metrics Request received from gRpc client")
+	task := service.NewSCTask()
+
+	req := types.ProcessBroadcastChallengeMetricsRequest{
+		Data:     m.Data,
+		SenderID: m.SenderId,
+	}
+
+	err := task.ProcessBroadcastStorageChallengeMetrics(ctx, req)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error processing storage-challenge metrics")
+		return nil, err
+	}
+
+	return &pb.BroadcastStorageChallengeMetricsReply{}, nil
+}
+
 // NewStorageChallengeGRPC returns a new StorageChallenge instance.
 func NewStorageChallengeGRPC(service *storagechallenge.SCService) *StorageChallengeGRPC {
 	return &StorageChallengeGRPC{

@@ -13,7 +13,7 @@ import (
 )
 
 // processSHChallenge encapsulates the core logic for self-healing challenge processing.
-func (service *Service) processSHChallenge(ctx context.Context, pid string, signature string, challengeID string, count int) (reports types.SelfHealingChallengeReports, err error) {
+func (service *Service) processSHChallenge(ctx context.Context, pid string, signature string, challengeID string, count int) (reports types.SelfHealingReports, err error) {
 	ok, err := service.scService.PastelClient.Verify(ctx, []byte(pid), signature, pid, pastel.SignAlgorithmED448)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify pid/passphrase: %w", err)
@@ -23,7 +23,7 @@ func (service *Service) processSHChallenge(ctx context.Context, pid string, sign
 		return nil, fmt.Errorf("invalid pid/passphrase")
 	}
 
-	reports = make(types.SelfHealingChallengeReports)
+	reports = make(types.SelfHealingReports)
 
 	store, err := local.OpenHistoryDB()
 	if err != nil {

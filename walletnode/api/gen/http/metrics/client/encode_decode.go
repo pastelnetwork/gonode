@@ -20,14 +20,13 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
-// BuildGetChallengeReportsRequest instantiates a HTTP request object with
-// method and path set to call the "metrics" service "getChallengeReports"
-// endpoint
-func (c *Client) BuildGetChallengeReportsRequest(ctx context.Context, v any) (*http.Request, error) {
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetChallengeReportsMetricsPath()}
+// BuildGetDetailedLogsRequest instantiates a HTTP request object with method
+// and path set to call the "metrics" service "getDetailedLogs" endpoint
+func (c *Client) BuildGetDetailedLogsRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetDetailedLogsMetricsPath()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("metrics", "getChallengeReports", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("metrics", "getDetailedLogs", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -36,13 +35,13 @@ func (c *Client) BuildGetChallengeReportsRequest(ctx context.Context, v any) (*h
 	return req, nil
 }
 
-// EncodeGetChallengeReportsRequest returns an encoder for requests sent to the
-// metrics getChallengeReports server.
-func EncodeGetChallengeReportsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+// EncodeGetDetailedLogsRequest returns an encoder for requests sent to the
+// metrics getDetailedLogs server.
+func EncodeGetDetailedLogsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
 	return func(req *http.Request, v any) error {
-		p, ok := v.(*metrics.GetChallengeReportsPayload)
+		p, ok := v.(*metrics.GetDetailedLogsPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("metrics", "getChallengeReports", "*metrics.GetChallengeReportsPayload", v)
+			return goahttp.ErrInvalidType("metrics", "getDetailedLogs", "*metrics.GetDetailedLogsPayload", v)
 		}
 		{
 			head := p.Key
@@ -50,8 +49,8 @@ func EncodeGetChallengeReportsRequest(encoder func(*http.Request) goahttp.Encode
 		}
 		values := req.URL.Query()
 		values.Add("pid", p.Pid)
-		if p.ChallengeID != nil {
-			values.Add("challenge_id", *p.ChallengeID)
+		if p.EventID != nil {
+			values.Add("event_id", *p.EventID)
 		}
 		if p.Count != nil {
 			values.Add("count", fmt.Sprintf("%v", *p.Count))
@@ -61,16 +60,16 @@ func EncodeGetChallengeReportsRequest(encoder func(*http.Request) goahttp.Encode
 	}
 }
 
-// DecodeGetChallengeReportsResponse returns a decoder for responses returned
-// by the metrics getChallengeReports endpoint. restoreBody controls whether
-// the response body should be restored after having been read.
-// DecodeGetChallengeReportsResponse may return the following errors:
+// DecodeGetDetailedLogsResponse returns a decoder for responses returned by
+// the metrics getDetailedLogs endpoint. restoreBody controls whether the
+// response body should be restored after having been read.
+// DecodeGetDetailedLogsResponse may return the following errors:
 //   - "Unauthorized" (type *goa.ServiceError): http.StatusUnauthorized
 //   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
 //   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
 //   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //   - error: internal error
-func DecodeGetChallengeReportsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+func DecodeGetDetailedLogsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
 			b, err := io.ReadAll(resp.Body)
@@ -87,85 +86,85 @@ func DecodeGetChallengeReportsResponse(decoder func(*http.Response) goahttp.Deco
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body GetChallengeReportsResponseBody
+				body GetDetailedLogsResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getChallengeReports", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getDetailedLogs", err)
 			}
-			res := NewGetChallengeReportsSelfHealingChallengeReportsOK(&body)
+			res := NewGetDetailedLogsSelfHealingReportsOK(&body)
 			return res, nil
 		case http.StatusUnauthorized:
 			var (
-				body GetChallengeReportsUnauthorizedResponseBody
+				body GetDetailedLogsUnauthorizedResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getChallengeReports", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getDetailedLogs", err)
 			}
-			err = ValidateGetChallengeReportsUnauthorizedResponseBody(&body)
+			err = ValidateGetDetailedLogsUnauthorizedResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("metrics", "getChallengeReports", err)
+				return nil, goahttp.ErrValidationError("metrics", "getDetailedLogs", err)
 			}
-			return nil, NewGetChallengeReportsUnauthorized(&body)
+			return nil, NewGetDetailedLogsUnauthorized(&body)
 		case http.StatusBadRequest:
 			var (
-				body GetChallengeReportsBadRequestResponseBody
+				body GetDetailedLogsBadRequestResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getChallengeReports", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getDetailedLogs", err)
 			}
-			err = ValidateGetChallengeReportsBadRequestResponseBody(&body)
+			err = ValidateGetDetailedLogsBadRequestResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("metrics", "getChallengeReports", err)
+				return nil, goahttp.ErrValidationError("metrics", "getDetailedLogs", err)
 			}
-			return nil, NewGetChallengeReportsBadRequest(&body)
+			return nil, NewGetDetailedLogsBadRequest(&body)
 		case http.StatusNotFound:
 			var (
-				body GetChallengeReportsNotFoundResponseBody
+				body GetDetailedLogsNotFoundResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getChallengeReports", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getDetailedLogs", err)
 			}
-			err = ValidateGetChallengeReportsNotFoundResponseBody(&body)
+			err = ValidateGetDetailedLogsNotFoundResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("metrics", "getChallengeReports", err)
+				return nil, goahttp.ErrValidationError("metrics", "getDetailedLogs", err)
 			}
-			return nil, NewGetChallengeReportsNotFound(&body)
+			return nil, NewGetDetailedLogsNotFound(&body)
 		case http.StatusInternalServerError:
 			var (
-				body GetChallengeReportsInternalServerErrorResponseBody
+				body GetDetailedLogsInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getChallengeReports", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getDetailedLogs", err)
 			}
-			err = ValidateGetChallengeReportsInternalServerErrorResponseBody(&body)
+			err = ValidateGetDetailedLogsInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("metrics", "getChallengeReports", err)
+				return nil, goahttp.ErrValidationError("metrics", "getDetailedLogs", err)
 			}
-			return nil, NewGetChallengeReportsInternalServerError(&body)
+			return nil, NewGetDetailedLogsInternalServerError(&body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("metrics", "getChallengeReports", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("metrics", "getDetailedLogs", resp.StatusCode, string(body))
 		}
 	}
 }
 
-// BuildGetMetricsRequest instantiates a HTTP request object with method and
-// path set to call the "metrics" service "getMetrics" endpoint
-func (c *Client) BuildGetMetricsRequest(ctx context.Context, v any) (*http.Request, error) {
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetMetricsMetricsPath()}
+// BuildGetSummaryStatsRequest instantiates a HTTP request object with method
+// and path set to call the "metrics" service "getSummaryStats" endpoint
+func (c *Client) BuildGetSummaryStatsRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetSummaryStatsMetricsPath()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("metrics", "getMetrics", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("metrics", "getSummaryStats", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -174,13 +173,13 @@ func (c *Client) BuildGetMetricsRequest(ctx context.Context, v any) (*http.Reque
 	return req, nil
 }
 
-// EncodeGetMetricsRequest returns an encoder for requests sent to the metrics
-// getMetrics server.
-func EncodeGetMetricsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+// EncodeGetSummaryStatsRequest returns an encoder for requests sent to the
+// metrics getSummaryStats server.
+func EncodeGetSummaryStatsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
 	return func(req *http.Request, v any) error {
-		p, ok := v.(*metrics.GetMetricsPayload)
+		p, ok := v.(*metrics.GetSummaryStatsPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("metrics", "getMetrics", "*metrics.GetMetricsPayload", v)
+			return goahttp.ErrInvalidType("metrics", "getSummaryStats", "*metrics.GetSummaryStatsPayload", v)
 		}
 		{
 			head := p.Key
@@ -199,16 +198,16 @@ func EncodeGetMetricsRequest(encoder func(*http.Request) goahttp.Encoder) func(*
 	}
 }
 
-// DecodeGetMetricsResponse returns a decoder for responses returned by the
-// metrics getMetrics endpoint. restoreBody controls whether the response body
-// should be restored after having been read.
-// DecodeGetMetricsResponse may return the following errors:
+// DecodeGetSummaryStatsResponse returns a decoder for responses returned by
+// the metrics getSummaryStats endpoint. restoreBody controls whether the
+// response body should be restored after having been read.
+// DecodeGetSummaryStatsResponse may return the following errors:
 //   - "Unauthorized" (type *goa.ServiceError): http.StatusUnauthorized
 //   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
 //   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
 //   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //   - error: internal error
-func DecodeGetMetricsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+func DecodeGetSummaryStatsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
 			b, err := io.ReadAll(resp.Body)
@@ -225,109 +224,109 @@ func DecodeGetMetricsResponse(decoder func(*http.Response) goahttp.Decoder, rest
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body GetMetricsResponseBody
+				body GetSummaryStatsResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getSummaryStats", err)
 			}
-			p := NewGetMetricsMetricsResultOK(&body)
+			p := NewGetSummaryStatsMetricsResultOK(&body)
 			view := "default"
 			vres := &metricsviews.MetricsResult{Projected: p, View: view}
 			if err = metricsviews.ValidateMetricsResult(vres); err != nil {
-				return nil, goahttp.ErrValidationError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrValidationError("metrics", "getSummaryStats", err)
 			}
 			res := metrics.NewMetricsResult(vres)
 			return res, nil
 		case http.StatusUnauthorized:
 			var (
-				body GetMetricsUnauthorizedResponseBody
+				body GetSummaryStatsUnauthorizedResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getSummaryStats", err)
 			}
-			err = ValidateGetMetricsUnauthorizedResponseBody(&body)
+			err = ValidateGetSummaryStatsUnauthorizedResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrValidationError("metrics", "getSummaryStats", err)
 			}
-			return nil, NewGetMetricsUnauthorized(&body)
+			return nil, NewGetSummaryStatsUnauthorized(&body)
 		case http.StatusBadRequest:
 			var (
-				body GetMetricsBadRequestResponseBody
+				body GetSummaryStatsBadRequestResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getSummaryStats", err)
 			}
-			err = ValidateGetMetricsBadRequestResponseBody(&body)
+			err = ValidateGetSummaryStatsBadRequestResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrValidationError("metrics", "getSummaryStats", err)
 			}
-			return nil, NewGetMetricsBadRequest(&body)
+			return nil, NewGetSummaryStatsBadRequest(&body)
 		case http.StatusNotFound:
 			var (
-				body GetMetricsNotFoundResponseBody
+				body GetSummaryStatsNotFoundResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getSummaryStats", err)
 			}
-			err = ValidateGetMetricsNotFoundResponseBody(&body)
+			err = ValidateGetSummaryStatsNotFoundResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrValidationError("metrics", "getSummaryStats", err)
 			}
-			return nil, NewGetMetricsNotFound(&body)
+			return nil, NewGetSummaryStatsNotFound(&body)
 		case http.StatusInternalServerError:
 			var (
-				body GetMetricsInternalServerErrorResponseBody
+				body GetSummaryStatsInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrDecodingError("metrics", "getSummaryStats", err)
 			}
-			err = ValidateGetMetricsInternalServerErrorResponseBody(&body)
+			err = ValidateGetSummaryStatsInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("metrics", "getMetrics", err)
+				return nil, goahttp.ErrValidationError("metrics", "getSummaryStats", err)
 			}
-			return nil, NewGetMetricsInternalServerError(&body)
+			return nil, NewGetSummaryStatsInternalServerError(&body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("metrics", "getMetrics", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("metrics", "getSummaryStats", resp.StatusCode, string(body))
 		}
 	}
 }
 
-// unmarshalSelfHealingChallengeReportKVResponseBodyToMetricsSelfHealingChallengeReportKV
-// builds a value of type *metrics.SelfHealingChallengeReportKV from a value of
-// type *SelfHealingChallengeReportKVResponseBody.
-func unmarshalSelfHealingChallengeReportKVResponseBodyToMetricsSelfHealingChallengeReportKV(v *SelfHealingChallengeReportKVResponseBody) *metrics.SelfHealingChallengeReportKV {
+// unmarshalSelfHealingReportKVResponseBodyToMetricsSelfHealingReportKV builds
+// a value of type *metrics.SelfHealingReportKV from a value of type
+// *SelfHealingReportKVResponseBody.
+func unmarshalSelfHealingReportKVResponseBodyToMetricsSelfHealingReportKV(v *SelfHealingReportKVResponseBody) *metrics.SelfHealingReportKV {
 	if v == nil {
 		return nil
 	}
-	res := &metrics.SelfHealingChallengeReportKV{
-		ChallengeID: v.ChallengeID,
+	res := &metrics.SelfHealingReportKV{
+		EventID: v.EventID,
 	}
 	if v.Report != nil {
-		res.Report = unmarshalSelfHealingChallengeReportResponseBodyToMetricsSelfHealingChallengeReport(v.Report)
+		res.Report = unmarshalSelfHealingReportResponseBodyToMetricsSelfHealingReport(v.Report)
 	}
 
 	return res
 }
 
-// unmarshalSelfHealingChallengeReportResponseBodyToMetricsSelfHealingChallengeReport
-// builds a value of type *metrics.SelfHealingChallengeReport from a value of
-// type *SelfHealingChallengeReportResponseBody.
-func unmarshalSelfHealingChallengeReportResponseBodyToMetricsSelfHealingChallengeReport(v *SelfHealingChallengeReportResponseBody) *metrics.SelfHealingChallengeReport {
+// unmarshalSelfHealingReportResponseBodyToMetricsSelfHealingReport builds a
+// value of type *metrics.SelfHealingReport from a value of type
+// *SelfHealingReportResponseBody.
+func unmarshalSelfHealingReportResponseBodyToMetricsSelfHealingReport(v *SelfHealingReportResponseBody) *metrics.SelfHealingReport {
 	if v == nil {
 		return nil
 	}
-	res := &metrics.SelfHealingChallengeReport{}
+	res := &metrics.SelfHealingReport{}
 	if v.Messages != nil {
 		res.Messages = make([]*metrics.SelfHealingMessageKV, len(v.Messages))
 		for i, val := range v.Messages {
@@ -564,11 +563,11 @@ func unmarshalVerifiedTicketResponseBodyToMetricsVerifiedTicket(v *VerifiedTicke
 	return res
 }
 
-// unmarshalSHTriggerMetricResponseBodyToMetricsviewsSHTriggerMetricView builds
-// a value of type *metricsviews.SHTriggerMetricView from a value of type
-// *SHTriggerMetricResponseBody.
-func unmarshalSHTriggerMetricResponseBodyToMetricsviewsSHTriggerMetricView(v *SHTriggerMetricResponseBody) *metricsviews.SHTriggerMetricView {
-	res := &metricsviews.SHTriggerMetricView{
+// unmarshalSHTriggerStatsResponseBodyToMetricsviewsSHTriggerStatsView builds a
+// value of type *metricsviews.SHTriggerStatsView from a value of type
+// *SHTriggerStatsResponseBody.
+func unmarshalSHTriggerStatsResponseBodyToMetricsviewsSHTriggerStatsView(v *SHTriggerStatsResponseBody) *metricsviews.SHTriggerStatsView {
+	res := &metricsviews.SHTriggerStatsView{
 		TriggerID:              v.TriggerID,
 		NodesOffline:           v.NodesOffline,
 		ListOfNodes:            v.ListOfNodes,
@@ -579,11 +578,11 @@ func unmarshalSHTriggerMetricResponseBodyToMetricsviewsSHTriggerMetricView(v *SH
 	return res
 }
 
-// unmarshalSHExecutionMetricsResponseBodyToMetricsviewsSHExecutionMetricsView
-// builds a value of type *metricsviews.SHExecutionMetricsView from a value of
-// type *SHExecutionMetricsResponseBody.
-func unmarshalSHExecutionMetricsResponseBodyToMetricsviewsSHExecutionMetricsView(v *SHExecutionMetricsResponseBody) *metricsviews.SHExecutionMetricsView {
-	res := &metricsviews.SHExecutionMetricsView{
+// unmarshalSHExecutionStatsResponseBodyToMetricsviewsSHExecutionStatsView
+// builds a value of type *metricsviews.SHExecutionStatsView from a value of
+// type *SHExecutionStatsResponseBody.
+func unmarshalSHExecutionStatsResponseBodyToMetricsviewsSHExecutionStatsView(v *SHExecutionStatsResponseBody) *metricsviews.SHExecutionStatsView {
+	res := &metricsviews.SHExecutionStatsView{
 		TotalChallengesIssued:                                 v.TotalChallengesIssued,
 		TotalChallengesAcknowledged:                           v.TotalChallengesAcknowledged,
 		TotalChallengesRejected:                               v.TotalChallengesRejected,

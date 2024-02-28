@@ -13,28 +13,25 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// GetChallengeReportsResponseBody is the type of the "metrics" service
-// "getChallengeReports" endpoint HTTP response body.
-type GetChallengeReportsResponseBody struct {
-	// Map of challenge ID to SelfHealingChallengeReport
-	Reports []*SelfHealingChallengeReportKVResponseBody `form:"reports,omitempty" json:"reports,omitempty" xml:"reports,omitempty"`
+// GetDetailedLogsResponseBody is the type of the "metrics" service
+// "getDetailedLogs" endpoint HTTP response body.
+type GetDetailedLogsResponseBody struct {
+	// Map of challenge ID to SelfHealingReport
+	Reports []*SelfHealingReportKVResponseBody `form:"reports,omitempty" json:"reports,omitempty" xml:"reports,omitempty"`
 }
 
-// GetMetricsResponseBody is the type of the "metrics" service "getMetrics"
-// endpoint HTTP response body.
-type GetMetricsResponseBody struct {
-	// SCMetrics represents serialized metrics data
-	ScMetrics []byte `form:"sc_metrics,omitempty" json:"sc_metrics,omitempty" xml:"sc_metrics,omitempty"`
-	// Self-healing trigger metrics
-	ShTriggerMetrics []*SHTriggerMetricResponseBody `form:"sh_trigger_metrics,omitempty" json:"sh_trigger_metrics,omitempty" xml:"sh_trigger_metrics,omitempty"`
-	// Self-healing execution metrics
-	ShExecutionMetrics *SHExecutionMetricsResponseBody `form:"sh_execution_metrics,omitempty" json:"sh_execution_metrics,omitempty" xml:"sh_execution_metrics,omitempty"`
+// GetSummaryStatsResponseBody is the type of the "metrics" service
+// "getSummaryStats" endpoint HTTP response body.
+type GetSummaryStatsResponseBody struct {
+	// Self-healing trigger stats
+	ShTriggerMetrics []*SHTriggerStatsResponseBody `form:"sh_trigger_metrics,omitempty" json:"sh_trigger_metrics,omitempty" xml:"sh_trigger_metrics,omitempty"`
+	// Self-healing execution stats
+	ShExecutionMetrics *SHExecutionStatsResponseBody `form:"sh_execution_metrics,omitempty" json:"sh_execution_metrics,omitempty" xml:"sh_execution_metrics,omitempty"`
 }
 
-// GetChallengeReportsUnauthorizedResponseBody is the type of the "metrics"
-// service "getChallengeReports" endpoint HTTP response body for the
-// "Unauthorized" error.
-type GetChallengeReportsUnauthorizedResponseBody struct {
+// GetDetailedLogsUnauthorizedResponseBody is the type of the "metrics" service
+// "getDetailedLogs" endpoint HTTP response body for the "Unauthorized" error.
+type GetDetailedLogsUnauthorizedResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -50,10 +47,9 @@ type GetChallengeReportsUnauthorizedResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// GetChallengeReportsBadRequestResponseBody is the type of the "metrics"
-// service "getChallengeReports" endpoint HTTP response body for the
-// "BadRequest" error.
-type GetChallengeReportsBadRequestResponseBody struct {
+// GetDetailedLogsBadRequestResponseBody is the type of the "metrics" service
+// "getDetailedLogs" endpoint HTTP response body for the "BadRequest" error.
+type GetDetailedLogsBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -69,9 +65,9 @@ type GetChallengeReportsBadRequestResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// GetChallengeReportsNotFoundResponseBody is the type of the "metrics" service
-// "getChallengeReports" endpoint HTTP response body for the "NotFound" error.
-type GetChallengeReportsNotFoundResponseBody struct {
+// GetDetailedLogsNotFoundResponseBody is the type of the "metrics" service
+// "getDetailedLogs" endpoint HTTP response body for the "NotFound" error.
+type GetDetailedLogsNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -87,10 +83,10 @@ type GetChallengeReportsNotFoundResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// GetChallengeReportsInternalServerErrorResponseBody is the type of the
-// "metrics" service "getChallengeReports" endpoint HTTP response body for the
+// GetDetailedLogsInternalServerErrorResponseBody is the type of the "metrics"
+// service "getDetailedLogs" endpoint HTTP response body for the
 // "InternalServerError" error.
-type GetChallengeReportsInternalServerErrorResponseBody struct {
+type GetDetailedLogsInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -106,9 +102,9 @@ type GetChallengeReportsInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// GetMetricsUnauthorizedResponseBody is the type of the "metrics" service
-// "getMetrics" endpoint HTTP response body for the "Unauthorized" error.
-type GetMetricsUnauthorizedResponseBody struct {
+// GetSummaryStatsUnauthorizedResponseBody is the type of the "metrics" service
+// "getSummaryStats" endpoint HTTP response body for the "Unauthorized" error.
+type GetSummaryStatsUnauthorizedResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -124,9 +120,9 @@ type GetMetricsUnauthorizedResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// GetMetricsBadRequestResponseBody is the type of the "metrics" service
-// "getMetrics" endpoint HTTP response body for the "BadRequest" error.
-type GetMetricsBadRequestResponseBody struct {
+// GetSummaryStatsBadRequestResponseBody is the type of the "metrics" service
+// "getSummaryStats" endpoint HTTP response body for the "BadRequest" error.
+type GetSummaryStatsBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -142,9 +138,9 @@ type GetMetricsBadRequestResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// GetMetricsNotFoundResponseBody is the type of the "metrics" service
-// "getMetrics" endpoint HTTP response body for the "NotFound" error.
-type GetMetricsNotFoundResponseBody struct {
+// GetSummaryStatsNotFoundResponseBody is the type of the "metrics" service
+// "getSummaryStats" endpoint HTTP response body for the "NotFound" error.
+type GetSummaryStatsNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -160,10 +156,10 @@ type GetMetricsNotFoundResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// GetMetricsInternalServerErrorResponseBody is the type of the "metrics"
-// service "getMetrics" endpoint HTTP response body for the
+// GetSummaryStatsInternalServerErrorResponseBody is the type of the "metrics"
+// service "getSummaryStats" endpoint HTTP response body for the
 // "InternalServerError" error.
-type GetMetricsInternalServerErrorResponseBody struct {
+type GetSummaryStatsInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -179,18 +175,18 @@ type GetMetricsInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// SelfHealingChallengeReportKVResponseBody is used to define fields on
-// response body types.
-type SelfHealingChallengeReportKVResponseBody struct {
+// SelfHealingReportKVResponseBody is used to define fields on response body
+// types.
+type SelfHealingReportKVResponseBody struct {
 	// Challenge ID
-	ChallengeID *string `form:"challenge_id,omitempty" json:"challenge_id,omitempty" xml:"challenge_id,omitempty"`
-	// Self-healing challenge report
-	Report *SelfHealingChallengeReportResponseBody `form:"report,omitempty" json:"report,omitempty" xml:"report,omitempty"`
+	EventID *string `form:"event_id,omitempty" json:"event_id,omitempty" xml:"event_id,omitempty"`
+	// Self-healing report
+	Report *SelfHealingReportResponseBody `form:"report,omitempty" json:"report,omitempty" xml:"report,omitempty"`
 }
 
-// SelfHealingChallengeReportResponseBody is used to define fields on response
-// body types.
-type SelfHealingChallengeReportResponseBody struct {
+// SelfHealingReportResponseBody is used to define fields on response body
+// types.
+type SelfHealingReportResponseBody struct {
 	// Map of message type to SelfHealingMessages
 	Messages []*SelfHealingMessageKVResponseBody `form:"messages,omitempty" json:"messages,omitempty" xml:"messages,omitempty"`
 }
@@ -289,8 +285,8 @@ type VerifiedTicketResponseBody struct {
 	Message                  *string  `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
-// SHTriggerMetricResponseBody is used to define fields on response body types.
-type SHTriggerMetricResponseBody struct {
+// SHTriggerStatsResponseBody is used to define fields on response body types.
+type SHTriggerStatsResponseBody struct {
 	// Unique identifier for the trigger
 	TriggerID *string `form:"trigger_id,omitempty" json:"trigger_id,omitempty" xml:"trigger_id,omitempty"`
 	// Number of nodes offline
@@ -303,9 +299,8 @@ type SHTriggerMetricResponseBody struct {
 	TotalTicketsIdentified *int `form:"total_tickets_identified,omitempty" json:"total_tickets_identified,omitempty" xml:"total_tickets_identified,omitempty"`
 }
 
-// SHExecutionMetricsResponseBody is used to define fields on response body
-// types.
-type SHExecutionMetricsResponseBody struct {
+// SHExecutionStatsResponseBody is used to define fields on response body types.
+type SHExecutionStatsResponseBody struct {
 	// Total number of challenges issued
 	TotalChallengesIssued *int `form:"total_challenges_issued,omitempty" json:"total_challenges_issued,omitempty" xml:"total_challenges_issued,omitempty"`
 	// Total number of challenges acknowledged by the healer node
@@ -337,23 +332,23 @@ type SHExecutionMetricsResponseBody struct {
 	TotalFileHealingFailed *int `form:"total_file_healing_failed,omitempty" json:"total_file_healing_failed,omitempty" xml:"total_file_healing_failed,omitempty"`
 }
 
-// NewGetChallengeReportsSelfHealingChallengeReportsOK builds a "metrics"
-// service "getChallengeReports" endpoint result from a HTTP "OK" response.
-func NewGetChallengeReportsSelfHealingChallengeReportsOK(body *GetChallengeReportsResponseBody) *metrics.SelfHealingChallengeReports {
-	v := &metrics.SelfHealingChallengeReports{}
+// NewGetDetailedLogsSelfHealingReportsOK builds a "metrics" service
+// "getDetailedLogs" endpoint result from a HTTP "OK" response.
+func NewGetDetailedLogsSelfHealingReportsOK(body *GetDetailedLogsResponseBody) *metrics.SelfHealingReports {
+	v := &metrics.SelfHealingReports{}
 	if body.Reports != nil {
-		v.Reports = make([]*metrics.SelfHealingChallengeReportKV, len(body.Reports))
+		v.Reports = make([]*metrics.SelfHealingReportKV, len(body.Reports))
 		for i, val := range body.Reports {
-			v.Reports[i] = unmarshalSelfHealingChallengeReportKVResponseBodyToMetricsSelfHealingChallengeReportKV(val)
+			v.Reports[i] = unmarshalSelfHealingReportKVResponseBodyToMetricsSelfHealingReportKV(val)
 		}
 	}
 
 	return v
 }
 
-// NewGetChallengeReportsUnauthorized builds a metrics service
-// getChallengeReports endpoint Unauthorized error.
-func NewGetChallengeReportsUnauthorized(body *GetChallengeReportsUnauthorizedResponseBody) *goa.ServiceError {
+// NewGetDetailedLogsUnauthorized builds a metrics service getDetailedLogs
+// endpoint Unauthorized error.
+func NewGetDetailedLogsUnauthorized(body *GetDetailedLogsUnauthorizedResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -366,9 +361,9 @@ func NewGetChallengeReportsUnauthorized(body *GetChallengeReportsUnauthorizedRes
 	return v
 }
 
-// NewGetChallengeReportsBadRequest builds a metrics service
-// getChallengeReports endpoint BadRequest error.
-func NewGetChallengeReportsBadRequest(body *GetChallengeReportsBadRequestResponseBody) *goa.ServiceError {
+// NewGetDetailedLogsBadRequest builds a metrics service getDetailedLogs
+// endpoint BadRequest error.
+func NewGetDetailedLogsBadRequest(body *GetDetailedLogsBadRequestResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -381,9 +376,9 @@ func NewGetChallengeReportsBadRequest(body *GetChallengeReportsBadRequestRespons
 	return v
 }
 
-// NewGetChallengeReportsNotFound builds a metrics service getChallengeReports
-// endpoint NotFound error.
-func NewGetChallengeReportsNotFound(body *GetChallengeReportsNotFoundResponseBody) *goa.ServiceError {
+// NewGetDetailedLogsNotFound builds a metrics service getDetailedLogs endpoint
+// NotFound error.
+func NewGetDetailedLogsNotFound(body *GetDetailedLogsNotFoundResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -396,9 +391,9 @@ func NewGetChallengeReportsNotFound(body *GetChallengeReportsNotFoundResponseBod
 	return v
 }
 
-// NewGetChallengeReportsInternalServerError builds a metrics service
-// getChallengeReports endpoint InternalServerError error.
-func NewGetChallengeReportsInternalServerError(body *GetChallengeReportsInternalServerErrorResponseBody) *goa.ServiceError {
+// NewGetDetailedLogsInternalServerError builds a metrics service
+// getDetailedLogs endpoint InternalServerError error.
+func NewGetDetailedLogsInternalServerError(body *GetDetailedLogsInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -411,24 +406,22 @@ func NewGetChallengeReportsInternalServerError(body *GetChallengeReportsInternal
 	return v
 }
 
-// NewGetMetricsMetricsResultOK builds a "metrics" service "getMetrics"
-// endpoint result from a HTTP "OK" response.
-func NewGetMetricsMetricsResultOK(body *GetMetricsResponseBody) *metricsviews.MetricsResultView {
-	v := &metricsviews.MetricsResultView{
-		ScMetrics: body.ScMetrics,
-	}
-	v.ShTriggerMetrics = make([]*metricsviews.SHTriggerMetricView, len(body.ShTriggerMetrics))
+// NewGetSummaryStatsMetricsResultOK builds a "metrics" service
+// "getSummaryStats" endpoint result from a HTTP "OK" response.
+func NewGetSummaryStatsMetricsResultOK(body *GetSummaryStatsResponseBody) *metricsviews.MetricsResultView {
+	v := &metricsviews.MetricsResultView{}
+	v.ShTriggerMetrics = make([]*metricsviews.SHTriggerStatsView, len(body.ShTriggerMetrics))
 	for i, val := range body.ShTriggerMetrics {
-		v.ShTriggerMetrics[i] = unmarshalSHTriggerMetricResponseBodyToMetricsviewsSHTriggerMetricView(val)
+		v.ShTriggerMetrics[i] = unmarshalSHTriggerStatsResponseBodyToMetricsviewsSHTriggerStatsView(val)
 	}
-	v.ShExecutionMetrics = unmarshalSHExecutionMetricsResponseBodyToMetricsviewsSHExecutionMetricsView(body.ShExecutionMetrics)
+	v.ShExecutionMetrics = unmarshalSHExecutionStatsResponseBodyToMetricsviewsSHExecutionStatsView(body.ShExecutionMetrics)
 
 	return v
 }
 
-// NewGetMetricsUnauthorized builds a metrics service getMetrics endpoint
-// Unauthorized error.
-func NewGetMetricsUnauthorized(body *GetMetricsUnauthorizedResponseBody) *goa.ServiceError {
+// NewGetSummaryStatsUnauthorized builds a metrics service getSummaryStats
+// endpoint Unauthorized error.
+func NewGetSummaryStatsUnauthorized(body *GetSummaryStatsUnauthorizedResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -441,9 +434,9 @@ func NewGetMetricsUnauthorized(body *GetMetricsUnauthorizedResponseBody) *goa.Se
 	return v
 }
 
-// NewGetMetricsBadRequest builds a metrics service getMetrics endpoint
-// BadRequest error.
-func NewGetMetricsBadRequest(body *GetMetricsBadRequestResponseBody) *goa.ServiceError {
+// NewGetSummaryStatsBadRequest builds a metrics service getSummaryStats
+// endpoint BadRequest error.
+func NewGetSummaryStatsBadRequest(body *GetSummaryStatsBadRequestResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -456,9 +449,9 @@ func NewGetMetricsBadRequest(body *GetMetricsBadRequestResponseBody) *goa.Servic
 	return v
 }
 
-// NewGetMetricsNotFound builds a metrics service getMetrics endpoint NotFound
-// error.
-func NewGetMetricsNotFound(body *GetMetricsNotFoundResponseBody) *goa.ServiceError {
+// NewGetSummaryStatsNotFound builds a metrics service getSummaryStats endpoint
+// NotFound error.
+func NewGetSummaryStatsNotFound(body *GetSummaryStatsNotFoundResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -471,9 +464,9 @@ func NewGetMetricsNotFound(body *GetMetricsNotFoundResponseBody) *goa.ServiceErr
 	return v
 }
 
-// NewGetMetricsInternalServerError builds a metrics service getMetrics
-// endpoint InternalServerError error.
-func NewGetMetricsInternalServerError(body *GetMetricsInternalServerErrorResponseBody) *goa.ServiceError {
+// NewGetSummaryStatsInternalServerError builds a metrics service
+// getSummaryStats endpoint InternalServerError error.
+func NewGetSummaryStatsInternalServerError(body *GetSummaryStatsInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -486,9 +479,9 @@ func NewGetMetricsInternalServerError(body *GetMetricsInternalServerErrorRespons
 	return v
 }
 
-// ValidateGetChallengeReportsUnauthorizedResponseBody runs the validations
-// defined on getChallengeReports_Unauthorized_response_body
-func ValidateGetChallengeReportsUnauthorizedResponseBody(body *GetChallengeReportsUnauthorizedResponseBody) (err error) {
+// ValidateGetDetailedLogsUnauthorizedResponseBody runs the validations defined
+// on getDetailedLogs_Unauthorized_response_body
+func ValidateGetDetailedLogsUnauthorizedResponseBody(body *GetDetailedLogsUnauthorizedResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -510,9 +503,9 @@ func ValidateGetChallengeReportsUnauthorizedResponseBody(body *GetChallengeRepor
 	return
 }
 
-// ValidateGetChallengeReportsBadRequestResponseBody runs the validations
-// defined on getChallengeReports_BadRequest_response_body
-func ValidateGetChallengeReportsBadRequestResponseBody(body *GetChallengeReportsBadRequestResponseBody) (err error) {
+// ValidateGetDetailedLogsBadRequestResponseBody runs the validations defined
+// on getDetailedLogs_BadRequest_response_body
+func ValidateGetDetailedLogsBadRequestResponseBody(body *GetDetailedLogsBadRequestResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -534,9 +527,9 @@ func ValidateGetChallengeReportsBadRequestResponseBody(body *GetChallengeReports
 	return
 }
 
-// ValidateGetChallengeReportsNotFoundResponseBody runs the validations defined
-// on getChallengeReports_NotFound_response_body
-func ValidateGetChallengeReportsNotFoundResponseBody(body *GetChallengeReportsNotFoundResponseBody) (err error) {
+// ValidateGetDetailedLogsNotFoundResponseBody runs the validations defined on
+// getDetailedLogs_NotFound_response_body
+func ValidateGetDetailedLogsNotFoundResponseBody(body *GetDetailedLogsNotFoundResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -558,9 +551,9 @@ func ValidateGetChallengeReportsNotFoundResponseBody(body *GetChallengeReportsNo
 	return
 }
 
-// ValidateGetChallengeReportsInternalServerErrorResponseBody runs the
-// validations defined on getChallengeReports_InternalServerError_response_body
-func ValidateGetChallengeReportsInternalServerErrorResponseBody(body *GetChallengeReportsInternalServerErrorResponseBody) (err error) {
+// ValidateGetDetailedLogsInternalServerErrorResponseBody runs the validations
+// defined on getDetailedLogs_InternalServerError_response_body
+func ValidateGetDetailedLogsInternalServerErrorResponseBody(body *GetDetailedLogsInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -582,9 +575,9 @@ func ValidateGetChallengeReportsInternalServerErrorResponseBody(body *GetChallen
 	return
 }
 
-// ValidateGetMetricsUnauthorizedResponseBody runs the validations defined on
-// getMetrics_Unauthorized_response_body
-func ValidateGetMetricsUnauthorizedResponseBody(body *GetMetricsUnauthorizedResponseBody) (err error) {
+// ValidateGetSummaryStatsUnauthorizedResponseBody runs the validations defined
+// on getSummaryStats_Unauthorized_response_body
+func ValidateGetSummaryStatsUnauthorizedResponseBody(body *GetSummaryStatsUnauthorizedResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -606,9 +599,9 @@ func ValidateGetMetricsUnauthorizedResponseBody(body *GetMetricsUnauthorizedResp
 	return
 }
 
-// ValidateGetMetricsBadRequestResponseBody runs the validations defined on
-// getMetrics_BadRequest_response_body
-func ValidateGetMetricsBadRequestResponseBody(body *GetMetricsBadRequestResponseBody) (err error) {
+// ValidateGetSummaryStatsBadRequestResponseBody runs the validations defined
+// on getSummaryStats_BadRequest_response_body
+func ValidateGetSummaryStatsBadRequestResponseBody(body *GetSummaryStatsBadRequestResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -630,9 +623,9 @@ func ValidateGetMetricsBadRequestResponseBody(body *GetMetricsBadRequestResponse
 	return
 }
 
-// ValidateGetMetricsNotFoundResponseBody runs the validations defined on
-// getMetrics_NotFound_response_body
-func ValidateGetMetricsNotFoundResponseBody(body *GetMetricsNotFoundResponseBody) (err error) {
+// ValidateGetSummaryStatsNotFoundResponseBody runs the validations defined on
+// getSummaryStats_NotFound_response_body
+func ValidateGetSummaryStatsNotFoundResponseBody(body *GetSummaryStatsNotFoundResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -654,9 +647,9 @@ func ValidateGetMetricsNotFoundResponseBody(body *GetMetricsNotFoundResponseBody
 	return
 }
 
-// ValidateGetMetricsInternalServerErrorResponseBody runs the validations
-// defined on getMetrics_InternalServerError_response_body
-func ValidateGetMetricsInternalServerErrorResponseBody(body *GetMetricsInternalServerErrorResponseBody) (err error) {
+// ValidateGetSummaryStatsInternalServerErrorResponseBody runs the validations
+// defined on getSummaryStats_InternalServerError_response_body
+func ValidateGetSummaryStatsInternalServerErrorResponseBody(body *GetSummaryStatsInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -678,9 +671,9 @@ func ValidateGetMetricsInternalServerErrorResponseBody(body *GetMetricsInternalS
 	return
 }
 
-// ValidateSHTriggerMetricResponseBody runs the validations defined on
-// SHTriggerMetricResponseBody
-func ValidateSHTriggerMetricResponseBody(body *SHTriggerMetricResponseBody) (err error) {
+// ValidateSHTriggerStatsResponseBody runs the validations defined on
+// SHTriggerStatsResponseBody
+func ValidateSHTriggerStatsResponseBody(body *SHTriggerStatsResponseBody) (err error) {
 	if body.TriggerID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("trigger_id", "body"))
 	}
@@ -699,9 +692,9 @@ func ValidateSHTriggerMetricResponseBody(body *SHTriggerMetricResponseBody) (err
 	return
 }
 
-// ValidateSHExecutionMetricsResponseBody runs the validations defined on
-// SHExecutionMetricsResponseBody
-func ValidateSHExecutionMetricsResponseBody(body *SHExecutionMetricsResponseBody) (err error) {
+// ValidateSHExecutionStatsResponseBody runs the validations defined on
+// SHExecutionStatsResponseBody
+func ValidateSHExecutionStatsResponseBody(body *SHExecutionStatsResponseBody) (err error) {
 	if body.TotalChallengesIssued == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_issued", "body"))
 	}

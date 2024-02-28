@@ -346,16 +346,16 @@ type AlternativeNSFWScores struct {
 	Neutral *float32 `json:"neutral"`
 }
 
-func toSHChallengeReport(data types.SelfHealingChallengeReports) *metrics.SelfHealingChallengeReports {
-	reports := &metrics.SelfHealingChallengeReports{
-		Reports: make([]*metrics.SelfHealingChallengeReportKV, 0, len(data)),
+func toSHReport(data types.SelfHealingReports) *metrics.SelfHealingReports {
+	reports := &metrics.SelfHealingReports{
+		Reports: make([]*metrics.SelfHealingReportKV, 0, len(data)),
 	}
 
 	for challengeID, report := range data {
 		chlngID := challengeID
-		reportKV := &metrics.SelfHealingChallengeReportKV{
-			ChallengeID: &chlngID,
-			Report:      toSHChallengeReportStruct(report),
+		reportKV := &metrics.SelfHealingReportKV{
+			EventID: &chlngID,
+			Report:  toSHReportStruct(report),
 		}
 		reports.Reports = append(reports.Reports, reportKV)
 	}
@@ -363,7 +363,7 @@ func toSHChallengeReport(data types.SelfHealingChallengeReports) *metrics.SelfHe
 	return reports
 }
 
-func toSHChallengeReportStruct(report types.SelfHealingChallengeReport) *metrics.SelfHealingChallengeReport {
+func toSHReportStruct(report types.SelfHealingReport) *metrics.SelfHealingReport {
 	messages := make([]*metrics.SelfHealingMessageKV, 0, len(report))
 	for messageType, msgs := range report {
 		msgTyp := messageType
@@ -373,7 +373,7 @@ func toSHChallengeReportStruct(report types.SelfHealingChallengeReport) *metrics
 		}
 		messages = append(messages, msgKV)
 	}
-	return &metrics.SelfHealingChallengeReport{Messages: messages}
+	return &metrics.SelfHealingReport{Messages: messages}
 }
 
 func toSHMessages(msgs types.SelfHealingMessages) []*metrics.SelfHealingMessage {

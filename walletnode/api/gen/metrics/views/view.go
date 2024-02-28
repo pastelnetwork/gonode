@@ -21,16 +21,14 @@ type MetricsResult struct {
 
 // MetricsResultView is a type that runs validations on a projected type.
 type MetricsResultView struct {
-	// SCMetrics represents serialized metrics data
-	ScMetrics []byte
-	// Self-healing trigger metrics
-	ShTriggerMetrics []*SHTriggerMetricView
-	// Self-healing execution metrics
-	ShExecutionMetrics *SHExecutionMetricsView
+	// Self-healing trigger stats
+	ShTriggerMetrics []*SHTriggerStatsView
+	// Self-healing execution stats
+	ShExecutionMetrics *SHExecutionStatsView
 }
 
-// SHTriggerMetricView is a type that runs validations on a projected type.
-type SHTriggerMetricView struct {
+// SHTriggerStatsView is a type that runs validations on a projected type.
+type SHTriggerStatsView struct {
 	// Unique identifier for the trigger
 	TriggerID *string
 	// Number of nodes offline
@@ -43,8 +41,8 @@ type SHTriggerMetricView struct {
 	TotalTicketsIdentified *int
 }
 
-// SHExecutionMetricsView is a type that runs validations on a projected type.
-type SHExecutionMetricsView struct {
+// SHExecutionStatsView is a type that runs validations on a projected type.
+type SHExecutionStatsView struct {
 	// Total number of challenges issued
 	TotalChallengesIssued *int
 	// Total number of challenges acknowledged by the healer node
@@ -81,7 +79,6 @@ var (
 	// view name.
 	MetricsResultMap = map[string][]string{
 		"default": {
-			"sc_metrics",
 			"sh_trigger_metrics",
 			"sh_execution_metrics",
 		},
@@ -103,9 +100,6 @@ func ValidateMetricsResult(result *MetricsResult) (err error) {
 // ValidateMetricsResultView runs the validations defined on MetricsResultView
 // using the "default" view.
 func ValidateMetricsResultView(result *MetricsResultView) (err error) {
-	if result.ScMetrics == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("sc_metrics", "result"))
-	}
 	if result.ShTriggerMetrics == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("sh_trigger_metrics", "result"))
 	}
@@ -114,22 +108,22 @@ func ValidateMetricsResultView(result *MetricsResultView) (err error) {
 	}
 	for _, e := range result.ShTriggerMetrics {
 		if e != nil {
-			if err2 := ValidateSHTriggerMetricView(e); err2 != nil {
+			if err2 := ValidateSHTriggerStatsView(e); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
 	}
 	if result.ShExecutionMetrics != nil {
-		if err2 := ValidateSHExecutionMetricsView(result.ShExecutionMetrics); err2 != nil {
+		if err2 := ValidateSHExecutionStatsView(result.ShExecutionMetrics); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	return
 }
 
-// ValidateSHTriggerMetricView runs the validations defined on
-// SHTriggerMetricView.
-func ValidateSHTriggerMetricView(result *SHTriggerMetricView) (err error) {
+// ValidateSHTriggerStatsView runs the validations defined on
+// SHTriggerStatsView.
+func ValidateSHTriggerStatsView(result *SHTriggerStatsView) (err error) {
 	if result.TriggerID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("trigger_id", "result"))
 	}
@@ -148,9 +142,9 @@ func ValidateSHTriggerMetricView(result *SHTriggerMetricView) (err error) {
 	return
 }
 
-// ValidateSHExecutionMetricsView runs the validations defined on
-// SHExecutionMetricsView.
-func ValidateSHExecutionMetricsView(result *SHExecutionMetricsView) (err error) {
+// ValidateSHExecutionStatsView runs the validations defined on
+// SHExecutionStatsView.
+func ValidateSHExecutionStatsView(result *SHExecutionStatsView) (err error) {
 	if result.TotalChallengesIssued == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_issued", "result"))
 	}

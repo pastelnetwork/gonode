@@ -15,6 +15,9 @@ type LocalStoreInterface interface {
 	InsertTaskHistory(history types.TaskHistory) (int, error)
 	QueryTaskHistory(taskID string) (history []types.TaskHistory, err error)
 
+	BatchInsertSCMetrics(metrics []types.StorageChallengeLogMessage) error
+	UpdateSCMetricsBroadcastTimestamp(nodeID string, broadcastAt time.Time) error
+	StorageChallengeMetrics(timestamp time.Time) ([]types.StorageChallengeLogMessage, error)
 	InsertStorageChallengeMessage(challenge types.StorageChallengeLogMessage) error
 	InsertBroadcastMessage(challenge types.BroadcastLogMessage) error
 	QueryStorageChallengeMessage(challengeID string, messageType int) (challenge types.StorageChallengeLogMessage, err error)
@@ -31,6 +34,7 @@ type LocalStoreInterface interface {
 	UpdateExecutionMetricsBroadcastTimestamp(nodeID string) error
 
 	QueryMetrics(ctx context.Context, from time.Time, to *time.Time) (m metrics.Metrics, err error)
+	GetSCSummaryStats(from time.Time) (scMetrics metrics.SCMetrics, err error)
 	BatchInsertSelfHealingChallengeEvents(ctx context.Context, event []types.SelfHealingChallengeEvent) error
 	UpdateSHChallengeEventProcessed(challengeID string, isProcessed bool) error
 	GetSelfHealingChallengeEvents() ([]types.SelfHealingChallengeEvent, error)
@@ -41,7 +45,10 @@ type LocalStoreInterface interface {
 	QuerySelfHealingChallenges() (challenges []types.SelfHealingChallenge, err error)
 	GetSelfHealingGenerationMetrics(timestamp time.Time) ([]types.SelfHealingGenerationMetric, error)
 	GetSelfHealingExecutionMetrics(timestamp time.Time) ([]types.SelfHealingExecutionMetric, error)
+	GetTotalSCGeneratedAndProcessed(from time.Time) (metrics.SCMetrics, error)
+	GetChallengerEvaluations(from time.Time) ([]types.StorageChallengeLogMessage, error)
+	GetObserversEvaluations(from time.Time) ([]types.StorageChallengeLogMessage, error)
 
-	GetLastNSHChallenges(ctx context.Context, n int) (types.SelfHealingChallengeReports, error)
-	GetSHChallengeReport(ctx context.Context, challengeID string) (types.SelfHealingChallengeReports, error)
+	GetLastNSHChallenges(ctx context.Context, n int) (types.SelfHealingReports, error)
+	GetSHChallengeReport(ctx context.Context, challengeID string) (types.SelfHealingReports, error)
 }

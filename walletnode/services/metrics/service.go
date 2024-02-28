@@ -22,20 +22,20 @@ const (
 	metricsPort = 9089
 )
 
-// GetMetricsRequest represents the request for the GetMetrics method.
-type GetMetricsRequest struct {
+// GetSummaryStats represents the request for the summary stats method.
+type GetSummaryStats struct {
 	From       *time.Time
 	To         *time.Time
 	PastelID   string
 	Passphrase string
 }
 
-// SHChallengesRequest represents the request for the GetSelfHealingChallengeReports method.
-type SHChallengesRequest struct {
-	Count       int
-	ChallengeID string
-	PastelID    string
-	Passphrase  string
+// SHReportRequest represents the request for the GetDetailedLogs method.
+type SHReportRequest struct {
+	Count      int
+	EventID    string
+	PastelID   string
+	Passphrase string
 }
 
 // Service represents a service for the SN metrics
@@ -44,8 +44,8 @@ type Service struct {
 	client        http.Client
 }
 
-// GetMetrics returns the metrics for the given PastelID, fetching them concurrently from all nodes.
-func (service *Service) GetMetrics(ctx context.Context, req GetMetricsRequest) (metrics.Metrics, error) {
+// GetSummaryStats returns the summary stats for the given PastelID, fetching them concurrently from all nodes.
+func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats) (metrics.Metrics, error) {
 	topNodes, err := service.pastelHandler.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get top nodes")
@@ -176,9 +176,9 @@ func (service *Service) fetchMetricsFromNode(addr, pid, passphrase string, from,
 	return data, nil
 }
 
-// GetSelfHealingChallengeReports returns the metrics for the given PastelID, fetching them concurrently from all nodes.
-func (service *Service) GetSelfHealingChallengeReports(ctx context.Context, req SHChallengesRequest) (report types.SelfHealingChallengeReports, err error) {
-	report = types.SelfHealingChallengeReports{}
+// GetDetailedLogs returns the reports for the given PastelID, fetching them concurrently from all nodes.
+func (service *Service) GetDetailedLogs(ctx context.Context, req SHReportRequest) (report types.SelfHealingReports, err error) {
+	report = types.SelfHealingReports{}
 	topNodes, err := service.pastelHandler.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get top nodes")
@@ -196,12 +196,12 @@ func (service *Service) GetSelfHealingChallengeReports(ctx context.Context, req 
 
 	var wg sync.WaitGroup
 	var mutex sync.Mutex // Mutex to protect access to the results map
-	results := make(map[string]types.SelfHealingChallengeReports)
+	results := make(map[string]types.SelfHealingReports)
 	errorCount := 0
 	successCount := 0
 
 	counts := make(map[string]int) // To count occurrences of each unique result.
-	var mostCommon types.SelfHealingChallengeReports
+	var mostCommon types.SelfHealingReports
 	maxCount := 0
 
 	for _, node := range topNodes {
@@ -209,7 +209,7 @@ func (service *Service) GetSelfHealingChallengeReports(ctx context.Context, req 
 		go func(ip string) {
 			defer wg.Done()
 
-			data, err := service.fetchSHChallengesFromNode(ip, req.PastelID, string(signature), req.Count, req.ChallengeID)
+			data, err := service.fetchSHChallengesFromNode(ip, req.PastelID, string(signature), req.Count, req.EventID)
 
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch metrics from node")
@@ -262,8 +262,8 @@ func (service *Service) GetSelfHealingChallengeReports(ctx context.Context, req 
 }
 
 // fetchMetricsFromNode makes an HTTP GET request to the node's metrics endpoint and returns the metrics.
-func (service *Service) fetchSHChallengesFromNode(addr, pid, passphrase string, count int, challengeID string) (data types.SelfHealingChallengeReports, err error) {
-	data = types.SelfHealingChallengeReports{}
+func (service *Service) fetchSHChallengesFromNode(addr, pid, passphrase string, count int, challengeID string) (data types.SelfHealingReports, err error) {
+	data = types.SelfHealingReports{}
 	// Construct the URL with query parameters
 	url := fmt.Sprintf("http://%s:%d/sh_challenge?pid=%s", addr, metricsPort, pid)
 	if count != 0 {

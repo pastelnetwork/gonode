@@ -13,28 +13,25 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// GetChallengeReportsResponseBody is the type of the "metrics" service
-// "getChallengeReports" endpoint HTTP response body.
-type GetChallengeReportsResponseBody struct {
-	// Map of challenge ID to SelfHealingChallengeReport
-	Reports []*SelfHealingChallengeReportKVResponseBody `form:"reports,omitempty" json:"reports,omitempty" xml:"reports,omitempty"`
+// GetDetailedLogsResponseBody is the type of the "metrics" service
+// "getDetailedLogs" endpoint HTTP response body.
+type GetDetailedLogsResponseBody struct {
+	// Map of challenge ID to SelfHealingReport
+	Reports []*SelfHealingReportKVResponseBody `form:"reports,omitempty" json:"reports,omitempty" xml:"reports,omitempty"`
 }
 
-// GetMetricsResponseBody is the type of the "metrics" service "getMetrics"
-// endpoint HTTP response body.
-type GetMetricsResponseBody struct {
-	// SCMetrics represents serialized metrics data
-	ScMetrics []byte `form:"sc_metrics" json:"sc_metrics" xml:"sc_metrics"`
-	// Self-healing trigger metrics
-	ShTriggerMetrics []*SHTriggerMetricResponseBody `form:"sh_trigger_metrics" json:"sh_trigger_metrics" xml:"sh_trigger_metrics"`
-	// Self-healing execution metrics
-	ShExecutionMetrics *SHExecutionMetricsResponseBody `form:"sh_execution_metrics" json:"sh_execution_metrics" xml:"sh_execution_metrics"`
+// GetSummaryStatsResponseBody is the type of the "metrics" service
+// "getSummaryStats" endpoint HTTP response body.
+type GetSummaryStatsResponseBody struct {
+	// Self-healing trigger stats
+	ShTriggerMetrics []*SHTriggerStatsResponseBody `form:"sh_trigger_metrics" json:"sh_trigger_metrics" xml:"sh_trigger_metrics"`
+	// Self-healing execution stats
+	ShExecutionMetrics *SHExecutionStatsResponseBody `form:"sh_execution_metrics" json:"sh_execution_metrics" xml:"sh_execution_metrics"`
 }
 
-// GetChallengeReportsUnauthorizedResponseBody is the type of the "metrics"
-// service "getChallengeReports" endpoint HTTP response body for the
-// "Unauthorized" error.
-type GetChallengeReportsUnauthorizedResponseBody struct {
+// GetDetailedLogsUnauthorizedResponseBody is the type of the "metrics" service
+// "getDetailedLogs" endpoint HTTP response body for the "Unauthorized" error.
+type GetDetailedLogsUnauthorizedResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -50,10 +47,9 @@ type GetChallengeReportsUnauthorizedResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// GetChallengeReportsBadRequestResponseBody is the type of the "metrics"
-// service "getChallengeReports" endpoint HTTP response body for the
-// "BadRequest" error.
-type GetChallengeReportsBadRequestResponseBody struct {
+// GetDetailedLogsBadRequestResponseBody is the type of the "metrics" service
+// "getDetailedLogs" endpoint HTTP response body for the "BadRequest" error.
+type GetDetailedLogsBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -69,9 +65,9 @@ type GetChallengeReportsBadRequestResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// GetChallengeReportsNotFoundResponseBody is the type of the "metrics" service
-// "getChallengeReports" endpoint HTTP response body for the "NotFound" error.
-type GetChallengeReportsNotFoundResponseBody struct {
+// GetDetailedLogsNotFoundResponseBody is the type of the "metrics" service
+// "getDetailedLogs" endpoint HTTP response body for the "NotFound" error.
+type GetDetailedLogsNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -87,10 +83,10 @@ type GetChallengeReportsNotFoundResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// GetChallengeReportsInternalServerErrorResponseBody is the type of the
-// "metrics" service "getChallengeReports" endpoint HTTP response body for the
+// GetDetailedLogsInternalServerErrorResponseBody is the type of the "metrics"
+// service "getDetailedLogs" endpoint HTTP response body for the
 // "InternalServerError" error.
-type GetChallengeReportsInternalServerErrorResponseBody struct {
+type GetDetailedLogsInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -106,9 +102,9 @@ type GetChallengeReportsInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// GetMetricsUnauthorizedResponseBody is the type of the "metrics" service
-// "getMetrics" endpoint HTTP response body for the "Unauthorized" error.
-type GetMetricsUnauthorizedResponseBody struct {
+// GetSummaryStatsUnauthorizedResponseBody is the type of the "metrics" service
+// "getSummaryStats" endpoint HTTP response body for the "Unauthorized" error.
+type GetSummaryStatsUnauthorizedResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -124,9 +120,9 @@ type GetMetricsUnauthorizedResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// GetMetricsBadRequestResponseBody is the type of the "metrics" service
-// "getMetrics" endpoint HTTP response body for the "BadRequest" error.
-type GetMetricsBadRequestResponseBody struct {
+// GetSummaryStatsBadRequestResponseBody is the type of the "metrics" service
+// "getSummaryStats" endpoint HTTP response body for the "BadRequest" error.
+type GetSummaryStatsBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -142,9 +138,9 @@ type GetMetricsBadRequestResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// GetMetricsNotFoundResponseBody is the type of the "metrics" service
-// "getMetrics" endpoint HTTP response body for the "NotFound" error.
-type GetMetricsNotFoundResponseBody struct {
+// GetSummaryStatsNotFoundResponseBody is the type of the "metrics" service
+// "getSummaryStats" endpoint HTTP response body for the "NotFound" error.
+type GetSummaryStatsNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -160,10 +156,10 @@ type GetMetricsNotFoundResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// GetMetricsInternalServerErrorResponseBody is the type of the "metrics"
-// service "getMetrics" endpoint HTTP response body for the
+// GetSummaryStatsInternalServerErrorResponseBody is the type of the "metrics"
+// service "getSummaryStats" endpoint HTTP response body for the
 // "InternalServerError" error.
-type GetMetricsInternalServerErrorResponseBody struct {
+type GetSummaryStatsInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -179,18 +175,18 @@ type GetMetricsInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// SelfHealingChallengeReportKVResponseBody is used to define fields on
-// response body types.
-type SelfHealingChallengeReportKVResponseBody struct {
+// SelfHealingReportKVResponseBody is used to define fields on response body
+// types.
+type SelfHealingReportKVResponseBody struct {
 	// Challenge ID
-	ChallengeID *string `form:"challenge_id,omitempty" json:"challenge_id,omitempty" xml:"challenge_id,omitempty"`
-	// Self-healing challenge report
-	Report *SelfHealingChallengeReportResponseBody `form:"report,omitempty" json:"report,omitempty" xml:"report,omitempty"`
+	EventID *string `form:"event_id,omitempty" json:"event_id,omitempty" xml:"event_id,omitempty"`
+	// Self-healing report
+	Report *SelfHealingReportResponseBody `form:"report,omitempty" json:"report,omitempty" xml:"report,omitempty"`
 }
 
-// SelfHealingChallengeReportResponseBody is used to define fields on response
-// body types.
-type SelfHealingChallengeReportResponseBody struct {
+// SelfHealingReportResponseBody is used to define fields on response body
+// types.
+type SelfHealingReportResponseBody struct {
 	// Map of message type to SelfHealingMessages
 	Messages []*SelfHealingMessageKVResponseBody `form:"messages,omitempty" json:"messages,omitempty" xml:"messages,omitempty"`
 }
@@ -289,8 +285,8 @@ type VerifiedTicketResponseBody struct {
 	Message                  *string  `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
-// SHTriggerMetricResponseBody is used to define fields on response body types.
-type SHTriggerMetricResponseBody struct {
+// SHTriggerStatsResponseBody is used to define fields on response body types.
+type SHTriggerStatsResponseBody struct {
 	// Unique identifier for the trigger
 	TriggerID string `form:"trigger_id" json:"trigger_id" xml:"trigger_id"`
 	// Number of nodes offline
@@ -303,9 +299,8 @@ type SHTriggerMetricResponseBody struct {
 	TotalTicketsIdentified int `form:"total_tickets_identified" json:"total_tickets_identified" xml:"total_tickets_identified"`
 }
 
-// SHExecutionMetricsResponseBody is used to define fields on response body
-// types.
-type SHExecutionMetricsResponseBody struct {
+// SHExecutionStatsResponseBody is used to define fields on response body types.
+type SHExecutionStatsResponseBody struct {
 	// Total number of challenges issued
 	TotalChallengesIssued int `form:"total_challenges_issued" json:"total_challenges_issued" xml:"total_challenges_issued"`
 	// Total number of challenges acknowledged by the healer node
@@ -337,44 +332,84 @@ type SHExecutionMetricsResponseBody struct {
 	TotalFileHealingFailed int `form:"total_file_healing_failed" json:"total_file_healing_failed" xml:"total_file_healing_failed"`
 }
 
-// NewGetChallengeReportsResponseBody builds the HTTP response body from the
-// result of the "getChallengeReports" endpoint of the "metrics" service.
-func NewGetChallengeReportsResponseBody(res *metrics.SelfHealingChallengeReports) *GetChallengeReportsResponseBody {
-	body := &GetChallengeReportsResponseBody{}
+// NewGetDetailedLogsResponseBody builds the HTTP response body from the result
+// of the "getDetailedLogs" endpoint of the "metrics" service.
+func NewGetDetailedLogsResponseBody(res *metrics.SelfHealingReports) *GetDetailedLogsResponseBody {
+	body := &GetDetailedLogsResponseBody{}
 	if res.Reports != nil {
-		body.Reports = make([]*SelfHealingChallengeReportKVResponseBody, len(res.Reports))
+		body.Reports = make([]*SelfHealingReportKVResponseBody, len(res.Reports))
 		for i, val := range res.Reports {
-			body.Reports[i] = marshalMetricsSelfHealingChallengeReportKVToSelfHealingChallengeReportKVResponseBody(val)
+			body.Reports[i] = marshalMetricsSelfHealingReportKVToSelfHealingReportKVResponseBody(val)
 		}
 	}
 	return body
 }
 
-// NewGetMetricsResponseBody builds the HTTP response body from the result of
-// the "getMetrics" endpoint of the "metrics" service.
-func NewGetMetricsResponseBody(res *metricsviews.MetricsResultView) *GetMetricsResponseBody {
-	body := &GetMetricsResponseBody{
-		ScMetrics: res.ScMetrics,
-	}
+// NewGetSummaryStatsResponseBody builds the HTTP response body from the result
+// of the "getSummaryStats" endpoint of the "metrics" service.
+func NewGetSummaryStatsResponseBody(res *metricsviews.MetricsResultView) *GetSummaryStatsResponseBody {
+	body := &GetSummaryStatsResponseBody{}
 	if res.ShTriggerMetrics != nil {
-		body.ShTriggerMetrics = make([]*SHTriggerMetricResponseBody, len(res.ShTriggerMetrics))
+		body.ShTriggerMetrics = make([]*SHTriggerStatsResponseBody, len(res.ShTriggerMetrics))
 		for i, val := range res.ShTriggerMetrics {
-			body.ShTriggerMetrics[i] = marshalMetricsviewsSHTriggerMetricViewToSHTriggerMetricResponseBody(val)
+			body.ShTriggerMetrics[i] = marshalMetricsviewsSHTriggerStatsViewToSHTriggerStatsResponseBody(val)
 		}
 	} else {
-		body.ShTriggerMetrics = []*SHTriggerMetricResponseBody{}
+		body.ShTriggerMetrics = []*SHTriggerStatsResponseBody{}
 	}
 	if res.ShExecutionMetrics != nil {
-		body.ShExecutionMetrics = marshalMetricsviewsSHExecutionMetricsViewToSHExecutionMetricsResponseBody(res.ShExecutionMetrics)
+		body.ShExecutionMetrics = marshalMetricsviewsSHExecutionStatsViewToSHExecutionStatsResponseBody(res.ShExecutionMetrics)
 	}
 	return body
 }
 
-// NewGetChallengeReportsUnauthorizedResponseBody builds the HTTP response body
-// from the result of the "getChallengeReports" endpoint of the "metrics"
+// NewGetDetailedLogsUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "getDetailedLogs" endpoint of the "metrics" service.
+func NewGetDetailedLogsUnauthorizedResponseBody(res *goa.ServiceError) *GetDetailedLogsUnauthorizedResponseBody {
+	body := &GetDetailedLogsUnauthorizedResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetDetailedLogsBadRequestResponseBody builds the HTTP response body from
+// the result of the "getDetailedLogs" endpoint of the "metrics" service.
+func NewGetDetailedLogsBadRequestResponseBody(res *goa.ServiceError) *GetDetailedLogsBadRequestResponseBody {
+	body := &GetDetailedLogsBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetDetailedLogsNotFoundResponseBody builds the HTTP response body from
+// the result of the "getDetailedLogs" endpoint of the "metrics" service.
+func NewGetDetailedLogsNotFoundResponseBody(res *goa.ServiceError) *GetDetailedLogsNotFoundResponseBody {
+	body := &GetDetailedLogsNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetDetailedLogsInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "getDetailedLogs" endpoint of the "metrics"
 // service.
-func NewGetChallengeReportsUnauthorizedResponseBody(res *goa.ServiceError) *GetChallengeReportsUnauthorizedResponseBody {
-	body := &GetChallengeReportsUnauthorizedResponseBody{
+func NewGetDetailedLogsInternalServerErrorResponseBody(res *goa.ServiceError) *GetDetailedLogsInternalServerErrorResponseBody {
+	body := &GetDetailedLogsInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -385,11 +420,53 @@ func NewGetChallengeReportsUnauthorizedResponseBody(res *goa.ServiceError) *GetC
 	return body
 }
 
-// NewGetChallengeReportsBadRequestResponseBody builds the HTTP response body
-// from the result of the "getChallengeReports" endpoint of the "metrics"
+// NewGetSummaryStatsUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "getSummaryStats" endpoint of the "metrics" service.
+func NewGetSummaryStatsUnauthorizedResponseBody(res *goa.ServiceError) *GetSummaryStatsUnauthorizedResponseBody {
+	body := &GetSummaryStatsUnauthorizedResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetSummaryStatsBadRequestResponseBody builds the HTTP response body from
+// the result of the "getSummaryStats" endpoint of the "metrics" service.
+func NewGetSummaryStatsBadRequestResponseBody(res *goa.ServiceError) *GetSummaryStatsBadRequestResponseBody {
+	body := &GetSummaryStatsBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetSummaryStatsNotFoundResponseBody builds the HTTP response body from
+// the result of the "getSummaryStats" endpoint of the "metrics" service.
+func NewGetSummaryStatsNotFoundResponseBody(res *goa.ServiceError) *GetSummaryStatsNotFoundResponseBody {
+	body := &GetSummaryStatsNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetSummaryStatsInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "getSummaryStats" endpoint of the "metrics"
 // service.
-func NewGetChallengeReportsBadRequestResponseBody(res *goa.ServiceError) *GetChallengeReportsBadRequestResponseBody {
-	body := &GetChallengeReportsBadRequestResponseBody{
+func NewGetSummaryStatsInternalServerErrorResponseBody(res *goa.ServiceError) *GetSummaryStatsInternalServerErrorResponseBody {
+	body := &GetSummaryStatsInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -400,107 +477,22 @@ func NewGetChallengeReportsBadRequestResponseBody(res *goa.ServiceError) *GetCha
 	return body
 }
 
-// NewGetChallengeReportsNotFoundResponseBody builds the HTTP response body
-// from the result of the "getChallengeReports" endpoint of the "metrics"
-// service.
-func NewGetChallengeReportsNotFoundResponseBody(res *goa.ServiceError) *GetChallengeReportsNotFoundResponseBody {
-	body := &GetChallengeReportsNotFoundResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewGetChallengeReportsInternalServerErrorResponseBody builds the HTTP
-// response body from the result of the "getChallengeReports" endpoint of the
-// "metrics" service.
-func NewGetChallengeReportsInternalServerErrorResponseBody(res *goa.ServiceError) *GetChallengeReportsInternalServerErrorResponseBody {
-	body := &GetChallengeReportsInternalServerErrorResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewGetMetricsUnauthorizedResponseBody builds the HTTP response body from the
-// result of the "getMetrics" endpoint of the "metrics" service.
-func NewGetMetricsUnauthorizedResponseBody(res *goa.ServiceError) *GetMetricsUnauthorizedResponseBody {
-	body := &GetMetricsUnauthorizedResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewGetMetricsBadRequestResponseBody builds the HTTP response body from the
-// result of the "getMetrics" endpoint of the "metrics" service.
-func NewGetMetricsBadRequestResponseBody(res *goa.ServiceError) *GetMetricsBadRequestResponseBody {
-	body := &GetMetricsBadRequestResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewGetMetricsNotFoundResponseBody builds the HTTP response body from the
-// result of the "getMetrics" endpoint of the "metrics" service.
-func NewGetMetricsNotFoundResponseBody(res *goa.ServiceError) *GetMetricsNotFoundResponseBody {
-	body := &GetMetricsNotFoundResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewGetMetricsInternalServerErrorResponseBody builds the HTTP response body
-// from the result of the "getMetrics" endpoint of the "metrics" service.
-func NewGetMetricsInternalServerErrorResponseBody(res *goa.ServiceError) *GetMetricsInternalServerErrorResponseBody {
-	body := &GetMetricsInternalServerErrorResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewGetChallengeReportsPayload builds a metrics service getChallengeReports
-// endpoint payload.
-func NewGetChallengeReportsPayload(pid string, challengeID *string, count *int, key string) *metrics.GetChallengeReportsPayload {
-	v := &metrics.GetChallengeReportsPayload{}
+// NewGetDetailedLogsPayload builds a metrics service getDetailedLogs endpoint
+// payload.
+func NewGetDetailedLogsPayload(pid string, eventID *string, count *int, key string) *metrics.GetDetailedLogsPayload {
+	v := &metrics.GetDetailedLogsPayload{}
 	v.Pid = pid
-	v.ChallengeID = challengeID
+	v.EventID = eventID
 	v.Count = count
 	v.Key = key
 
 	return v
 }
 
-// NewGetMetricsPayload builds a metrics service getMetrics endpoint payload.
-func NewGetMetricsPayload(from *string, to *string, pid string, key string) *metrics.GetMetricsPayload {
-	v := &metrics.GetMetricsPayload{}
+// NewGetSummaryStatsPayload builds a metrics service getSummaryStats endpoint
+// payload.
+func NewGetSummaryStatsPayload(from *string, to *string, pid string, key string) *metrics.GetSummaryStatsPayload {
+	v := &metrics.GetSummaryStatsPayload{}
 	v.From = from
 	v.To = to
 	v.Pid = pid

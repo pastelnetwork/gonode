@@ -17,10 +17,10 @@ import (
 
 // Metrics service for fetching data over a specified time range
 type Service interface {
-	// Fetches self-healing challenge reports
-	GetChallengeReports(context.Context, *GetChallengeReportsPayload) (res *SelfHealingChallengeReports, err error)
+	// Fetches self-healing reports
+	GetDetailedLogs(context.Context, *GetDetailedLogsPayload) (res *SelfHealingReports, err error)
 	// Fetches metrics data over a specified time range
-	GetMetrics(context.Context, *GetMetricsPayload) (res *MetricsResult, err error)
+	GetSummaryStats(context.Context, *GetSummaryStatsPayload) (res *MetricsResult, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -37,7 +37,7 @@ const ServiceName = "metrics"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"getChallengeReports", "getMetrics"}
+var MethodNames = [2]string{"getDetailedLogs", "getSummaryStats"}
 
 type ChallengeTicket struct {
 	TxID        *string
@@ -47,22 +47,22 @@ type ChallengeTicket struct {
 	Recipient   *string
 }
 
-// GetChallengeReportsPayload is the payload type of the metrics service
-// getChallengeReports method.
-type GetChallengeReportsPayload struct {
-	// PastelID of the user to fetch challenge reports for
+// GetDetailedLogsPayload is the payload type of the metrics service
+// getDetailedLogs method.
+type GetDetailedLogsPayload struct {
+	// PastelID of the user to fetch self-healing reports for
 	Pid string
-	// Specific challenge ID to fetch reports for
-	ChallengeID *string
+	// Specific event ID to fetch reports for
+	EventID *string
 	// Number of reports to fetch
 	Count *int
 	// Passphrase of the owner's PastelID
 	Key string
 }
 
-// GetMetricsPayload is the payload type of the metrics service getMetrics
-// method.
-type GetMetricsPayload struct {
+// GetSummaryStatsPayload is the payload type of the metrics service
+// getSummaryStats method.
+type GetSummaryStatsPayload struct {
 	// Start time for the metrics data range
 	From *string
 	// End time for the metrics data range
@@ -73,14 +73,13 @@ type GetMetricsPayload struct {
 	Key string
 }
 
-// MetricsResult is the result type of the metrics service getMetrics method.
+// MetricsResult is the result type of the metrics service getSummaryStats
+// method.
 type MetricsResult struct {
-	// SCMetrics represents serialized metrics data
-	ScMetrics []byte
-	// Self-healing trigger metrics
-	ShTriggerMetrics []*SHTriggerMetric
-	// Self-healing execution metrics
-	ShExecutionMetrics *SHExecutionMetrics
+	// Self-healing trigger stats
+	ShTriggerMetrics []*SHTriggerStats
+	// Self-healing execution stats
+	ShExecutionMetrics *SHExecutionStats
 }
 
 type RespondedTicket struct {
@@ -93,8 +92,8 @@ type RespondedTicket struct {
 	IsReconstructionRequired *bool
 }
 
-// Self-healing execution metrics
-type SHExecutionMetrics struct {
+// Self-healing execution stats
+type SHExecutionStats struct {
 	// Total number of challenges issued
 	TotalChallengesIssued int
 	// Total number of challenges acknowledged by the healer node
@@ -126,8 +125,8 @@ type SHExecutionMetrics struct {
 	TotalFileHealingFailed int
 }
 
-// Self-healing trigger metric
-type SHTriggerMetric struct {
+// Self-healing trigger stats
+type SHTriggerStats struct {
 	// Unique identifier for the trigger
 	TriggerID string
 	// Number of nodes offline
@@ -146,25 +145,6 @@ type SelfHealingChallengeData struct {
 	Timestamp        *string
 	ChallengeTickets []*ChallengeTicket
 	NodesOnWatchlist *string
-}
-
-type SelfHealingChallengeReport struct {
-	// Map of message type to SelfHealingMessages
-	Messages []*SelfHealingMessageKV
-}
-
-type SelfHealingChallengeReportKV struct {
-	// Challenge ID
-	ChallengeID *string
-	// Self-healing challenge report
-	Report *SelfHealingChallengeReport
-}
-
-// SelfHealingChallengeReports is the result type of the metrics service
-// getChallengeReports method.
-type SelfHealingChallengeReports struct {
-	// Map of challenge ID to SelfHealingChallengeReport
-	Reports []*SelfHealingChallengeReportKV
 }
 
 type SelfHealingMessage struct {
@@ -188,6 +168,25 @@ type SelfHealingMessageKV struct {
 	MessageType *string
 	// Self-healing messages
 	Messages []*SelfHealingMessage
+}
+
+type SelfHealingReport struct {
+	// Map of message type to SelfHealingMessages
+	Messages []*SelfHealingMessageKV
+}
+
+type SelfHealingReportKV struct {
+	// Challenge ID
+	EventID *string
+	// Self-healing report
+	Report *SelfHealingReport
+}
+
+// SelfHealingReports is the result type of the metrics service getDetailedLogs
+// method.
+type SelfHealingReports struct {
+	// Map of challenge ID to SelfHealingReport
+	Reports []*SelfHealingReportKV
 }
 
 type SelfHealingResponseData struct {
@@ -256,17 +255,15 @@ func NewViewedMetricsResult(res *MetricsResult, view string) *metricsviews.Metri
 // newMetricsResult converts projected type MetricsResult to service type
 // MetricsResult.
 func newMetricsResult(vres *metricsviews.MetricsResultView) *MetricsResult {
-	res := &MetricsResult{
-		ScMetrics: vres.ScMetrics,
-	}
+	res := &MetricsResult{}
 	if vres.ShTriggerMetrics != nil {
-		res.ShTriggerMetrics = make([]*SHTriggerMetric, len(vres.ShTriggerMetrics))
+		res.ShTriggerMetrics = make([]*SHTriggerStats, len(vres.ShTriggerMetrics))
 		for i, val := range vres.ShTriggerMetrics {
-			res.ShTriggerMetrics[i] = transformMetricsviewsSHTriggerMetricViewToSHTriggerMetric(val)
+			res.ShTriggerMetrics[i] = transformMetricsviewsSHTriggerStatsViewToSHTriggerStats(val)
 		}
 	}
 	if vres.ShExecutionMetrics != nil {
-		res.ShExecutionMetrics = transformMetricsviewsSHExecutionMetricsViewToSHExecutionMetrics(vres.ShExecutionMetrics)
+		res.ShExecutionMetrics = transformMetricsviewsSHExecutionStatsViewToSHExecutionStats(vres.ShExecutionMetrics)
 	}
 	return res
 }
@@ -274,30 +271,28 @@ func newMetricsResult(vres *metricsviews.MetricsResultView) *MetricsResult {
 // newMetricsResultView projects result type MetricsResult to projected type
 // MetricsResultView using the "default" view.
 func newMetricsResultView(res *MetricsResult) *metricsviews.MetricsResultView {
-	vres := &metricsviews.MetricsResultView{
-		ScMetrics: res.ScMetrics,
-	}
+	vres := &metricsviews.MetricsResultView{}
 	if res.ShTriggerMetrics != nil {
-		vres.ShTriggerMetrics = make([]*metricsviews.SHTriggerMetricView, len(res.ShTriggerMetrics))
+		vres.ShTriggerMetrics = make([]*metricsviews.SHTriggerStatsView, len(res.ShTriggerMetrics))
 		for i, val := range res.ShTriggerMetrics {
-			vres.ShTriggerMetrics[i] = transformSHTriggerMetricToMetricsviewsSHTriggerMetricView(val)
+			vres.ShTriggerMetrics[i] = transformSHTriggerStatsToMetricsviewsSHTriggerStatsView(val)
 		}
 	} else {
-		vres.ShTriggerMetrics = []*metricsviews.SHTriggerMetricView{}
+		vres.ShTriggerMetrics = []*metricsviews.SHTriggerStatsView{}
 	}
 	if res.ShExecutionMetrics != nil {
-		vres.ShExecutionMetrics = transformSHExecutionMetricsToMetricsviewsSHExecutionMetricsView(res.ShExecutionMetrics)
+		vres.ShExecutionMetrics = transformSHExecutionStatsToMetricsviewsSHExecutionStatsView(res.ShExecutionMetrics)
 	}
 	return vres
 }
 
-// transformMetricsviewsSHTriggerMetricViewToSHTriggerMetric builds a value of
-// type *SHTriggerMetric from a value of type *metricsviews.SHTriggerMetricView.
-func transformMetricsviewsSHTriggerMetricViewToSHTriggerMetric(v *metricsviews.SHTriggerMetricView) *SHTriggerMetric {
+// transformMetricsviewsSHTriggerStatsViewToSHTriggerStats builds a value of
+// type *SHTriggerStats from a value of type *metricsviews.SHTriggerStatsView.
+func transformMetricsviewsSHTriggerStatsViewToSHTriggerStats(v *metricsviews.SHTriggerStatsView) *SHTriggerStats {
 	if v == nil {
 		return nil
 	}
-	res := &SHTriggerMetric{
+	res := &SHTriggerStats{
 		TriggerID:              *v.TriggerID,
 		NodesOffline:           *v.NodesOffline,
 		ListOfNodes:            *v.ListOfNodes,
@@ -308,14 +303,14 @@ func transformMetricsviewsSHTriggerMetricViewToSHTriggerMetric(v *metricsviews.S
 	return res
 }
 
-// transformMetricsviewsSHExecutionMetricsViewToSHExecutionMetrics builds a
-// value of type *SHExecutionMetrics from a value of type
-// *metricsviews.SHExecutionMetricsView.
-func transformMetricsviewsSHExecutionMetricsViewToSHExecutionMetrics(v *metricsviews.SHExecutionMetricsView) *SHExecutionMetrics {
+// transformMetricsviewsSHExecutionStatsViewToSHExecutionStats builds a value
+// of type *SHExecutionStats from a value of type
+// *metricsviews.SHExecutionStatsView.
+func transformMetricsviewsSHExecutionStatsViewToSHExecutionStats(v *metricsviews.SHExecutionStatsView) *SHExecutionStats {
 	if v == nil {
 		return nil
 	}
-	res := &SHExecutionMetrics{
+	res := &SHExecutionStats{
 		TotalChallengesIssued:                                 *v.TotalChallengesIssued,
 		TotalChallengesAcknowledged:                           *v.TotalChallengesAcknowledged,
 		TotalChallengesRejected:                               *v.TotalChallengesRejected,
@@ -334,10 +329,10 @@ func transformMetricsviewsSHExecutionMetricsViewToSHExecutionMetrics(v *metricsv
 	return res
 }
 
-// transformSHTriggerMetricToMetricsviewsSHTriggerMetricView builds a value of
-// type *metricsviews.SHTriggerMetricView from a value of type *SHTriggerMetric.
-func transformSHTriggerMetricToMetricsviewsSHTriggerMetricView(v *SHTriggerMetric) *metricsviews.SHTriggerMetricView {
-	res := &metricsviews.SHTriggerMetricView{
+// transformSHTriggerStatsToMetricsviewsSHTriggerStatsView builds a value of
+// type *metricsviews.SHTriggerStatsView from a value of type *SHTriggerStats.
+func transformSHTriggerStatsToMetricsviewsSHTriggerStatsView(v *SHTriggerStats) *metricsviews.SHTriggerStatsView {
+	res := &metricsviews.SHTriggerStatsView{
 		TriggerID:              &v.TriggerID,
 		NodesOffline:           &v.NodesOffline,
 		ListOfNodes:            &v.ListOfNodes,
@@ -348,11 +343,11 @@ func transformSHTriggerMetricToMetricsviewsSHTriggerMetricView(v *SHTriggerMetri
 	return res
 }
 
-// transformSHExecutionMetricsToMetricsviewsSHExecutionMetricsView builds a
-// value of type *metricsviews.SHExecutionMetricsView from a value of type
-// *SHExecutionMetrics.
-func transformSHExecutionMetricsToMetricsviewsSHExecutionMetricsView(v *SHExecutionMetrics) *metricsviews.SHExecutionMetricsView {
-	res := &metricsviews.SHExecutionMetricsView{
+// transformSHExecutionStatsToMetricsviewsSHExecutionStatsView builds a value
+// of type *metricsviews.SHExecutionStatsView from a value of type
+// *SHExecutionStats.
+func transformSHExecutionStatsToMetricsviewsSHExecutionStatsView(v *SHExecutionStats) *metricsviews.SHExecutionStatsView {
+	res := &metricsviews.SHExecutionStatsView{
 		TotalChallengesIssued:                                 &v.TotalChallengesIssued,
 		TotalChallengesAcknowledged:                           &v.TotalChallengesAcknowledged,
 		TotalChallengesRejected:                               &v.TotalChallengesRejected,

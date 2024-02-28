@@ -15,45 +15,46 @@ import (
 
 // Client is the "metrics" service client.
 type Client struct {
-	GetChallengeReportsEndpoint goa.Endpoint
-	GetMetricsEndpoint          goa.Endpoint
+	GetDetailedLogsEndpoint goa.Endpoint
+	GetSummaryStatsEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "metrics" service client given the endpoints.
-func NewClient(getChallengeReports, getMetrics goa.Endpoint) *Client {
+func NewClient(getDetailedLogs, getSummaryStats goa.Endpoint) *Client {
 	return &Client{
-		GetChallengeReportsEndpoint: getChallengeReports,
-		GetMetricsEndpoint:          getMetrics,
+		GetDetailedLogsEndpoint: getDetailedLogs,
+		GetSummaryStatsEndpoint: getSummaryStats,
 	}
 }
 
-// GetChallengeReports calls the "getChallengeReports" endpoint of the
-// "metrics" service.
-// GetChallengeReports may return the following errors:
+// GetDetailedLogs calls the "getDetailedLogs" endpoint of the "metrics"
+// service.
+// GetDetailedLogs may return the following errors:
 //   - "Unauthorized" (type *goa.ServiceError)
 //   - "BadRequest" (type *goa.ServiceError)
 //   - "NotFound" (type *goa.ServiceError)
 //   - "InternalServerError" (type *goa.ServiceError)
 //   - error: internal error
-func (c *Client) GetChallengeReports(ctx context.Context, p *GetChallengeReportsPayload) (res *SelfHealingChallengeReports, err error) {
+func (c *Client) GetDetailedLogs(ctx context.Context, p *GetDetailedLogsPayload) (res *SelfHealingReports, err error) {
 	var ires any
-	ires, err = c.GetChallengeReportsEndpoint(ctx, p)
+	ires, err = c.GetDetailedLogsEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*SelfHealingChallengeReports), nil
+	return ires.(*SelfHealingReports), nil
 }
 
-// GetMetrics calls the "getMetrics" endpoint of the "metrics" service.
-// GetMetrics may return the following errors:
+// GetSummaryStats calls the "getSummaryStats" endpoint of the "metrics"
+// service.
+// GetSummaryStats may return the following errors:
 //   - "Unauthorized" (type *goa.ServiceError)
 //   - "BadRequest" (type *goa.ServiceError)
 //   - "NotFound" (type *goa.ServiceError)
 //   - "InternalServerError" (type *goa.ServiceError)
 //   - error: internal error
-func (c *Client) GetMetrics(ctx context.Context, p *GetMetricsPayload) (res *MetricsResult, err error) {
+func (c *Client) GetSummaryStats(ctx context.Context, p *GetSummaryStatsPayload) (res *MetricsResult, err error) {
 	var ires any
-	ires, err = c.GetMetricsEndpoint(ctx, p)
+	ires, err = c.GetSummaryStatsEndpoint(ctx, p)
 	if err != nil {
 		return
 	}

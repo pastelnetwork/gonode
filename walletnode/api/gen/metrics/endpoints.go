@@ -16,8 +16,8 @@ import (
 
 // Endpoints wraps the "metrics" service endpoints.
 type Endpoints struct {
-	GetChallengeReports goa.Endpoint
-	GetMetrics          goa.Endpoint
+	GetDetailedLogs goa.Endpoint
+	GetSummaryStats goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "metrics" service with endpoints.
@@ -25,22 +25,22 @@ func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		GetChallengeReports: NewGetChallengeReportsEndpoint(s, a.APIKeyAuth),
-		GetMetrics:          NewGetMetricsEndpoint(s, a.APIKeyAuth),
+		GetDetailedLogs: NewGetDetailedLogsEndpoint(s, a.APIKeyAuth),
+		GetSummaryStats: NewGetSummaryStatsEndpoint(s, a.APIKeyAuth),
 	}
 }
 
 // Use applies the given middleware to all the "metrics" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
-	e.GetChallengeReports = m(e.GetChallengeReports)
-	e.GetMetrics = m(e.GetMetrics)
+	e.GetDetailedLogs = m(e.GetDetailedLogs)
+	e.GetSummaryStats = m(e.GetSummaryStats)
 }
 
-// NewGetChallengeReportsEndpoint returns an endpoint function that calls the
-// method "getChallengeReports" of service "metrics".
-func NewGetChallengeReportsEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+// NewGetDetailedLogsEndpoint returns an endpoint function that calls the
+// method "getDetailedLogs" of service "metrics".
+func NewGetDetailedLogsEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		p := req.(*GetChallengeReportsPayload)
+		p := req.(*GetDetailedLogsPayload)
 		var err error
 		sc := security.APIKeyScheme{
 			Name:           "api_key",
@@ -51,15 +51,15 @@ func NewGetChallengeReportsEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyF
 		if err != nil {
 			return nil, err
 		}
-		return s.GetChallengeReports(ctx, p)
+		return s.GetDetailedLogs(ctx, p)
 	}
 }
 
-// NewGetMetricsEndpoint returns an endpoint function that calls the method
-// "getMetrics" of service "metrics".
-func NewGetMetricsEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+// NewGetSummaryStatsEndpoint returns an endpoint function that calls the
+// method "getSummaryStats" of service "metrics".
+func NewGetSummaryStatsEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		p := req.(*GetMetricsPayload)
+		p := req.(*GetSummaryStatsPayload)
 		var err error
 		sc := security.APIKeyScheme{
 			Name:           "api_key",
@@ -70,7 +70,7 @@ func NewGetMetricsEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.
 		if err != nil {
 			return nil, err
 		}
-		res, err := s.GetMetrics(ctx, p)
+		res, err := s.GetSummaryStats(ctx, p)
 		if err != nil {
 			return nil, err
 		}
