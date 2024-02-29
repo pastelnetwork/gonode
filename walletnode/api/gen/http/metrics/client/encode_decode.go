@@ -583,14 +583,14 @@ func unmarshalSHTriggerStatsResponseBodyToMetricsviewsSHTriggerStatsView(v *SHTr
 // type *SHExecutionStatsResponseBody.
 func unmarshalSHExecutionStatsResponseBodyToMetricsviewsSHExecutionStatsView(v *SHExecutionStatsResponseBody) *metricsviews.SHExecutionStatsView {
 	res := &metricsviews.SHExecutionStatsView{
-		TotalChallengesIssued:                                 v.TotalChallengesIssued,
-		TotalChallengesAcknowledged:                           v.TotalChallengesAcknowledged,
-		TotalChallengesRejected:                               v.TotalChallengesRejected,
-		TotalChallengesAccepted:                               v.TotalChallengesAccepted,
-		TotalChallengeEvaluationsVerified:                     v.TotalChallengeEvaluationsVerified,
+		TotalSelfHealingEventsIssued:                          v.TotalSelfHealingEventsIssued,
+		TotalSelfHealingEventsAcknowledged:                    v.TotalSelfHealingEventsAcknowledged,
+		TotalSelfHealingEventsRejected:                        v.TotalSelfHealingEventsRejected,
+		TotalSelfHealingEventsAccepted:                        v.TotalSelfHealingEventsAccepted,
+		TotalSelfHealingEventsEvaluationsVerified:             v.TotalSelfHealingEventsEvaluationsVerified,
 		TotalReconstructionRequiredEvaluationsApproved:        v.TotalReconstructionRequiredEvaluationsApproved,
 		TotalReconstructionNotRequiredEvaluationsApproved:     v.TotalReconstructionNotRequiredEvaluationsApproved,
-		TotalChallengeEvaluationsUnverified:                   v.TotalChallengeEvaluationsUnverified,
+		TotalSelfHealingEventsEvaluationsUnverified:           v.TotalSelfHealingEventsEvaluationsUnverified,
 		TotalReconstructionRequiredEvaluationsNotApproved:     v.TotalReconstructionRequiredEvaluationsNotApproved,
 		TotalReconstructionsNotRequiredEvaluationsNotApproved: v.TotalReconstructionsNotRequiredEvaluationsNotApproved,
 		TotalReconstructionRequiredHashMismatch:               v.TotalReconstructionRequiredHashMismatch,

@@ -77,9 +77,9 @@ type GetSummaryStatsPayload struct {
 // method.
 type MetricsResult struct {
 	// Self-healing trigger stats
-	ShTriggerMetrics []*SHTriggerStats
+	SelfHealingTriggerEventsStats []*SHTriggerStats
 	// Self-healing execution stats
-	ShExecutionMetrics *SHExecutionStats
+	SelfHealingExecutionEventsStats *SHExecutionStats
 }
 
 type RespondedTicket struct {
@@ -94,24 +94,24 @@ type RespondedTicket struct {
 
 // Self-healing execution stats
 type SHExecutionStats struct {
-	// Total number of challenges issued
-	TotalChallengesIssued int
-	// Total number of challenges acknowledged by the healer node
-	TotalChallengesAcknowledged int
-	// Total number of challenges rejected (healer node evaluated that
-	// reconstruction is not required)
-	TotalChallengesRejected int
-	// Total number of challenges accepted (healer node evaluated that
-	// reconstruction is required)
-	TotalChallengesAccepted int
+	// Total number of self-healing events issued
+	TotalSelfHealingEventsIssued int
+	// Total number of events acknowledged by the healer node
+	TotalSelfHealingEventsAcknowledged int
+	// Total number of events rejected (healer node evaluated that reconstruction
+	// is not required)
+	TotalSelfHealingEventsRejected int
+	// Total number of events accepted (healer node evaluated that reconstruction
+	// is required)
+	TotalSelfHealingEventsAccepted int
 	// Total number of challenges verified
-	TotalChallengeEvaluationsVerified int
+	TotalSelfHealingEventsEvaluationsVerified int
 	// Total number of reconstructions approved by verifier nodes
 	TotalReconstructionRequiredEvaluationsApproved int
 	// Total number of reconstructions not required approved by verifier nodes
 	TotalReconstructionNotRequiredEvaluationsApproved int
 	// Total number of challenge evaluations unverified by verifier nodes
-	TotalChallengeEvaluationsUnverified int
+	TotalSelfHealingEventsEvaluationsUnverified int
 	// Total number of reconstructions not approved by verifier nodes
 	TotalReconstructionRequiredEvaluationsNotApproved int
 	// Total number of reconstructions not required evaluation not approved by
@@ -256,14 +256,14 @@ func NewViewedMetricsResult(res *MetricsResult, view string) *metricsviews.Metri
 // MetricsResult.
 func newMetricsResult(vres *metricsviews.MetricsResultView) *MetricsResult {
 	res := &MetricsResult{}
-	if vres.ShTriggerMetrics != nil {
-		res.ShTriggerMetrics = make([]*SHTriggerStats, len(vres.ShTriggerMetrics))
-		for i, val := range vres.ShTriggerMetrics {
-			res.ShTriggerMetrics[i] = transformMetricsviewsSHTriggerStatsViewToSHTriggerStats(val)
+	if vres.SelfHealingTriggerEventsStats != nil {
+		res.SelfHealingTriggerEventsStats = make([]*SHTriggerStats, len(vres.SelfHealingTriggerEventsStats))
+		for i, val := range vres.SelfHealingTriggerEventsStats {
+			res.SelfHealingTriggerEventsStats[i] = transformMetricsviewsSHTriggerStatsViewToSHTriggerStats(val)
 		}
 	}
-	if vres.ShExecutionMetrics != nil {
-		res.ShExecutionMetrics = transformMetricsviewsSHExecutionStatsViewToSHExecutionStats(vres.ShExecutionMetrics)
+	if vres.SelfHealingExecutionEventsStats != nil {
+		res.SelfHealingExecutionEventsStats = transformMetricsviewsSHExecutionStatsViewToSHExecutionStats(vres.SelfHealingExecutionEventsStats)
 	}
 	return res
 }
@@ -272,16 +272,16 @@ func newMetricsResult(vres *metricsviews.MetricsResultView) *MetricsResult {
 // MetricsResultView using the "default" view.
 func newMetricsResultView(res *MetricsResult) *metricsviews.MetricsResultView {
 	vres := &metricsviews.MetricsResultView{}
-	if res.ShTriggerMetrics != nil {
-		vres.ShTriggerMetrics = make([]*metricsviews.SHTriggerStatsView, len(res.ShTriggerMetrics))
-		for i, val := range res.ShTriggerMetrics {
-			vres.ShTriggerMetrics[i] = transformSHTriggerStatsToMetricsviewsSHTriggerStatsView(val)
+	if res.SelfHealingTriggerEventsStats != nil {
+		vres.SelfHealingTriggerEventsStats = make([]*metricsviews.SHTriggerStatsView, len(res.SelfHealingTriggerEventsStats))
+		for i, val := range res.SelfHealingTriggerEventsStats {
+			vres.SelfHealingTriggerEventsStats[i] = transformSHTriggerStatsToMetricsviewsSHTriggerStatsView(val)
 		}
 	} else {
-		vres.ShTriggerMetrics = []*metricsviews.SHTriggerStatsView{}
+		vres.SelfHealingTriggerEventsStats = []*metricsviews.SHTriggerStatsView{}
 	}
-	if res.ShExecutionMetrics != nil {
-		vres.ShExecutionMetrics = transformSHExecutionStatsToMetricsviewsSHExecutionStatsView(res.ShExecutionMetrics)
+	if res.SelfHealingExecutionEventsStats != nil {
+		vres.SelfHealingExecutionEventsStats = transformSHExecutionStatsToMetricsviewsSHExecutionStatsView(res.SelfHealingExecutionEventsStats)
 	}
 	return vres
 }
@@ -311,14 +311,14 @@ func transformMetricsviewsSHExecutionStatsViewToSHExecutionStats(v *metricsviews
 		return nil
 	}
 	res := &SHExecutionStats{
-		TotalChallengesIssued:                                 *v.TotalChallengesIssued,
-		TotalChallengesAcknowledged:                           *v.TotalChallengesAcknowledged,
-		TotalChallengesRejected:                               *v.TotalChallengesRejected,
-		TotalChallengesAccepted:                               *v.TotalChallengesAccepted,
-		TotalChallengeEvaluationsVerified:                     *v.TotalChallengeEvaluationsVerified,
+		TotalSelfHealingEventsIssued:                          *v.TotalSelfHealingEventsIssued,
+		TotalSelfHealingEventsAcknowledged:                    *v.TotalSelfHealingEventsAcknowledged,
+		TotalSelfHealingEventsRejected:                        *v.TotalSelfHealingEventsRejected,
+		TotalSelfHealingEventsAccepted:                        *v.TotalSelfHealingEventsAccepted,
+		TotalSelfHealingEventsEvaluationsVerified:             *v.TotalSelfHealingEventsEvaluationsVerified,
 		TotalReconstructionRequiredEvaluationsApproved:        *v.TotalReconstructionRequiredEvaluationsApproved,
 		TotalReconstructionNotRequiredEvaluationsApproved:     *v.TotalReconstructionNotRequiredEvaluationsApproved,
-		TotalChallengeEvaluationsUnverified:                   *v.TotalChallengeEvaluationsUnverified,
+		TotalSelfHealingEventsEvaluationsUnverified:           *v.TotalSelfHealingEventsEvaluationsUnverified,
 		TotalReconstructionRequiredEvaluationsNotApproved:     *v.TotalReconstructionRequiredEvaluationsNotApproved,
 		TotalReconstructionsNotRequiredEvaluationsNotApproved: *v.TotalReconstructionsNotRequiredEvaluationsNotApproved,
 		TotalReconstructionRequiredHashMismatch:               v.TotalReconstructionRequiredHashMismatch,
@@ -348,14 +348,14 @@ func transformSHTriggerStatsToMetricsviewsSHTriggerStatsView(v *SHTriggerStats) 
 // *SHExecutionStats.
 func transformSHExecutionStatsToMetricsviewsSHExecutionStatsView(v *SHExecutionStats) *metricsviews.SHExecutionStatsView {
 	res := &metricsviews.SHExecutionStatsView{
-		TotalChallengesIssued:                                 &v.TotalChallengesIssued,
-		TotalChallengesAcknowledged:                           &v.TotalChallengesAcknowledged,
-		TotalChallengesRejected:                               &v.TotalChallengesRejected,
-		TotalChallengesAccepted:                               &v.TotalChallengesAccepted,
-		TotalChallengeEvaluationsVerified:                     &v.TotalChallengeEvaluationsVerified,
+		TotalSelfHealingEventsIssued:                          &v.TotalSelfHealingEventsIssued,
+		TotalSelfHealingEventsAcknowledged:                    &v.TotalSelfHealingEventsAcknowledged,
+		TotalSelfHealingEventsRejected:                        &v.TotalSelfHealingEventsRejected,
+		TotalSelfHealingEventsAccepted:                        &v.TotalSelfHealingEventsAccepted,
+		TotalSelfHealingEventsEvaluationsVerified:             &v.TotalSelfHealingEventsEvaluationsVerified,
 		TotalReconstructionRequiredEvaluationsApproved:        &v.TotalReconstructionRequiredEvaluationsApproved,
 		TotalReconstructionNotRequiredEvaluationsApproved:     &v.TotalReconstructionNotRequiredEvaluationsApproved,
-		TotalChallengeEvaluationsUnverified:                   &v.TotalChallengeEvaluationsUnverified,
+		TotalSelfHealingEventsEvaluationsUnverified:           &v.TotalSelfHealingEventsEvaluationsUnverified,
 		TotalReconstructionRequiredEvaluationsNotApproved:     &v.TotalReconstructionRequiredEvaluationsNotApproved,
 		TotalReconstructionsNotRequiredEvaluationsNotApproved: &v.TotalReconstructionsNotRequiredEvaluationsNotApproved,
 		TotalReconstructionRequiredHashMismatch:               v.TotalReconstructionRequiredHashMismatch,

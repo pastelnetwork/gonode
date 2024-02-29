@@ -77,9 +77,9 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 			defer wg.Done()
 
 			data, err := service.fetchMetricsFromNode(ip, req.PastelID, string(signature), req.From, req.To)
-			log.WithContext(ctx).Infof("Metrics response: %v", data)
+			log.WithContext(ctx).Infof("Summary Stats response: %v", data)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch metrics from node")
+				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch summary stats from node")
 
 				// increment error counter
 				func() {
@@ -115,7 +115,7 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 
 	// Proceed only if at least 3 nodes responded successfully
 	if successCount < 3 {
-		return metrics.Metrics{}, fmt.Errorf("failed to fetch metrics from at least 3 nodes, only %d nodes responded successfully", successCount)
+		return metrics.Metrics{}, fmt.Errorf("failed to fetch summary stats from at least 3 nodes, only %d nodes responded successfully", successCount)
 	}
 
 	// Log divergent results
@@ -161,7 +161,7 @@ func (service *Service) fetchMetricsFromNode(addr, pid, passphrase string, from,
 		return data, err
 	}
 
-	log.WithContext(context.Background()).Infof("Metrics response: %s", string(body))
+	log.WithContext(context.Background()).Infof("Summary-Stats response: %s", string(body))
 
 	// Check for non-200 status codes
 	if resp.StatusCode != http.StatusOK {
@@ -212,7 +212,7 @@ func (service *Service) GetDetailedLogs(ctx context.Context, req SHReportRequest
 			data, err := service.fetchSHChallengesFromNode(ip, req.PastelID, string(signature), req.Count, req.EventID)
 
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch metrics from node")
+				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch detailed-logs from node")
 
 				// increment error counter
 				func() {
@@ -248,7 +248,7 @@ func (service *Service) GetDetailedLogs(ctx context.Context, req SHReportRequest
 
 	// Proceed only if at least 3 nodes responded successfully
 	if successCount < 3 {
-		return report, fmt.Errorf("failed to fetch metrics from at least 3 nodes, only %d nodes responded successfully", successCount)
+		return report, fmt.Errorf("failed to fetch detailed-logs from at least 3 nodes, only %d nodes responded successfully", successCount)
 	}
 
 	// Log divergent results
@@ -311,6 +311,6 @@ func (service *Service) fetchSHChallengesFromNode(addr, pid, passphrase string, 
 func NewMetricsService(pastelClient pastel.Client) *Service {
 	return &Service{
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
-		client:        http.Client{Timeout: time.Duration(30) * time.Second},
+		client:        http.Client{Timeout: time.Duration(60) * time.Second},
 	}
 }
