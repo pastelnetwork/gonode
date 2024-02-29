@@ -250,12 +250,15 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 			} else {
 				ch.IsRejected = true
 			}
-			ch.IsAck = true
 			challenges[row.ChallengeID] = ch
 
 		} else if row.MessageType == int(types.SelfHealingCompletionMessage) {
 			ch := challenges[row.ChallengeID]
 			ch.IsHealed = true
+			challenges[row.ChallengeID] = ch
+		} else if row.MessageType == int(types.SelfHealingAcknowledgementMessage) {
+			ch := challenges[row.ChallengeID]
+			ch.IsAck = true
 			challenges[row.ChallengeID] = ch
 		}
 	}
