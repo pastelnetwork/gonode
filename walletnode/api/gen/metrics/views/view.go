@@ -22,9 +22,9 @@ type MetricsResult struct {
 // MetricsResultView is a type that runs validations on a projected type.
 type MetricsResultView struct {
 	// Self-healing trigger stats
-	ShTriggerMetrics []*SHTriggerStatsView
+	SelfHealingTriggerEventsStats []*SHTriggerStatsView
 	// Self-healing execution stats
-	ShExecutionMetrics *SHExecutionStatsView
+	SelfHealingExecutionEventsStats *SHExecutionStatsView
 }
 
 // SHTriggerStatsView is a type that runs validations on a projected type.
@@ -43,24 +43,24 @@ type SHTriggerStatsView struct {
 
 // SHExecutionStatsView is a type that runs validations on a projected type.
 type SHExecutionStatsView struct {
-	// Total number of challenges issued
-	TotalChallengesIssued *int
-	// Total number of challenges acknowledged by the healer node
-	TotalChallengesAcknowledged *int
-	// Total number of challenges rejected (healer node evaluated that
-	// reconstruction is not required)
-	TotalChallengesRejected *int
-	// Total number of challenges accepted (healer node evaluated that
-	// reconstruction is required)
-	TotalChallengesAccepted *int
+	// Total number of self-healing events issued
+	TotalSelfHealingEventsIssued *int
+	// Total number of events acknowledged by the healer node
+	TotalSelfHealingEventsAcknowledged *int
+	// Total number of events rejected (healer node evaluated that reconstruction
+	// is not required)
+	TotalSelfHealingEventsRejected *int
+	// Total number of events accepted (healer node evaluated that reconstruction
+	// is required)
+	TotalSelfHealingEventsAccepted *int
 	// Total number of challenges verified
-	TotalChallengeEvaluationsVerified *int
+	TotalSelfHealingEventsEvaluationsVerified *int
 	// Total number of reconstructions approved by verifier nodes
 	TotalReconstructionRequiredEvaluationsApproved *int
 	// Total number of reconstructions not required approved by verifier nodes
 	TotalReconstructionNotRequiredEvaluationsApproved *int
 	// Total number of challenge evaluations unverified by verifier nodes
-	TotalChallengeEvaluationsUnverified *int
+	TotalSelfHealingEventsEvaluationsUnverified *int
 	// Total number of reconstructions not approved by verifier nodes
 	TotalReconstructionRequiredEvaluationsNotApproved *int
 	// Total number of reconstructions not required evaluation not approved by
@@ -79,8 +79,8 @@ var (
 	// view name.
 	MetricsResultMap = map[string][]string{
 		"default": {
-			"sh_trigger_metrics",
-			"sh_execution_metrics",
+			"self_healing_trigger_events_stats",
+			"self_healing_execution_events_stats",
 		},
 	}
 )
@@ -100,21 +100,21 @@ func ValidateMetricsResult(result *MetricsResult) (err error) {
 // ValidateMetricsResultView runs the validations defined on MetricsResultView
 // using the "default" view.
 func ValidateMetricsResultView(result *MetricsResultView) (err error) {
-	if result.ShTriggerMetrics == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("sh_trigger_metrics", "result"))
+	if result.SelfHealingTriggerEventsStats == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("self_healing_trigger_events_stats", "result"))
 	}
-	if result.ShExecutionMetrics == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("sh_execution_metrics", "result"))
+	if result.SelfHealingExecutionEventsStats == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("self_healing_execution_events_stats", "result"))
 	}
-	for _, e := range result.ShTriggerMetrics {
+	for _, e := range result.SelfHealingTriggerEventsStats {
 		if e != nil {
 			if err2 := ValidateSHTriggerStatsView(e); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
 	}
-	if result.ShExecutionMetrics != nil {
-		if err2 := ValidateSHExecutionStatsView(result.ShExecutionMetrics); err2 != nil {
+	if result.SelfHealingExecutionEventsStats != nil {
+		if err2 := ValidateSHExecutionStatsView(result.SelfHealingExecutionEventsStats); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -145,20 +145,20 @@ func ValidateSHTriggerStatsView(result *SHTriggerStatsView) (err error) {
 // ValidateSHExecutionStatsView runs the validations defined on
 // SHExecutionStatsView.
 func ValidateSHExecutionStatsView(result *SHExecutionStatsView) (err error) {
-	if result.TotalChallengesIssued == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_issued", "result"))
+	if result.TotalSelfHealingEventsIssued == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_issued", "result"))
 	}
-	if result.TotalChallengesAcknowledged == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_acknowledged", "result"))
+	if result.TotalSelfHealingEventsAcknowledged == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_acknowledged", "result"))
 	}
-	if result.TotalChallengesRejected == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_rejected", "result"))
+	if result.TotalSelfHealingEventsRejected == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_rejected", "result"))
 	}
-	if result.TotalChallengesAccepted == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_accepted", "result"))
+	if result.TotalSelfHealingEventsAccepted == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_accepted", "result"))
 	}
-	if result.TotalChallengeEvaluationsVerified == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenge_evaluations_verified", "result"))
+	if result.TotalSelfHealingEventsEvaluationsVerified == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_evaluations_verified", "result"))
 	}
 	if result.TotalReconstructionRequiredEvaluationsApproved == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_required_evaluations_approved", "result"))
@@ -166,8 +166,8 @@ func ValidateSHExecutionStatsView(result *SHExecutionStatsView) (err error) {
 	if result.TotalReconstructionNotRequiredEvaluationsApproved == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_not_required_evaluations_approved", "result"))
 	}
-	if result.TotalChallengeEvaluationsUnverified == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenge_evaluations_unverified", "result"))
+	if result.TotalSelfHealingEventsEvaluationsUnverified == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_evaluations_unverified", "result"))
 	}
 	if result.TotalReconstructionRequiredEvaluationsNotApproved == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_required_evaluations_not_approved", "result"))

@@ -72,7 +72,7 @@ func (service *MetricsAPIHandler) GetDetailedLogs(ctx context.Context, p *metric
 
 	reports, err := service.metricsService.GetDetailedLogs(ctx, req)
 	if err != nil {
-		return nil, metrics.MakeInternalServerError(fmt.Errorf("failed to get challenge reports: %w", err))
+		return nil, metrics.MakeInternalServerError(fmt.Errorf("failed to get self-healing detailed logs: %w", err))
 	}
 
 	return toSHReport(reports), nil
@@ -108,7 +108,7 @@ func (service *MetricsAPIHandler) GetSummaryStats(ctx context.Context, p *metric
 
 	res, err := service.metricsService.GetSummaryStats(ctx, req)
 	if err != nil {
-		return nil, metrics.MakeInternalServerError(fmt.Errorf("failed to get metrics: %w", err))
+		return nil, metrics.MakeInternalServerError(fmt.Errorf("failed to get summary stats: %w", err))
 	}
 
 	// Convert SHTriggerMetrics from slice of SHTriggerMetric to slice of pointers to SHTriggerMetric for the result
@@ -125,17 +125,17 @@ func (service *MetricsAPIHandler) GetSummaryStats(ctx context.Context, p *metric
 	}
 
 	return &metrics.MetricsResult{
-		ShTriggerMetrics: shTriggerMetrics,
-		ShExecutionMetrics: &metrics.SHExecutionStats{
-			TotalChallengesAcknowledged: res.SHExecutionMetrics.TotalChallengesAcknowledged,
-			TotalChallengesIssued:       res.SHExecutionMetrics.TotalChallengesIssued,
-			TotalChallengesRejected:     res.SHExecutionMetrics.TotalChallengesRejected,
-			TotalChallengesAccepted:     res.SHExecutionMetrics.TotalChallengesAccepted,
+		SelfHealingTriggerEventsStats: shTriggerMetrics,
+		SelfHealingExecutionEventsStats: &metrics.SHExecutionStats{
+			TotalSelfHealingEventsIssued:       res.SHExecutionMetrics.TotalChallengesIssued,
+			TotalSelfHealingEventsAcknowledged: res.SHExecutionMetrics.TotalChallengesAcknowledged,
+			TotalSelfHealingEventsRejected:     res.SHExecutionMetrics.TotalChallengesRejected,
+			TotalSelfHealingEventsAccepted:     res.SHExecutionMetrics.TotalChallengesAccepted,
 
-			TotalChallengeEvaluationsVerified:                     res.SHExecutionMetrics.TotalChallengeEvaluationsVerified,
+			TotalSelfHealingEventsEvaluationsVerified:             res.SHExecutionMetrics.TotalChallengeEvaluationsVerified,
 			TotalReconstructionRequiredEvaluationsApproved:        res.SHExecutionMetrics.TotalReconstructionsApproved,
 			TotalReconstructionNotRequiredEvaluationsApproved:     res.SHExecutionMetrics.TotalReconstructionsNotRquiredApproved,
-			TotalChallengeEvaluationsUnverified:                   res.SHExecutionMetrics.TotalChallengeEvaluationsUnverified,
+			TotalSelfHealingEventsEvaluationsUnverified:           res.SHExecutionMetrics.TotalChallengeEvaluationsUnverified,
 			TotalReconstructionRequiredEvaluationsNotApproved:     res.SHExecutionMetrics.TotalReconstructionsNotApproved,
 			TotalReconstructionsNotRequiredEvaluationsNotApproved: res.SHExecutionMetrics.TotalReconstructionsNotRequiredEvaluationNotApproved,
 

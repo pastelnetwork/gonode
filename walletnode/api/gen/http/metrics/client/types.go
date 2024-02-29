@@ -24,9 +24,9 @@ type GetDetailedLogsResponseBody struct {
 // "getSummaryStats" endpoint HTTP response body.
 type GetSummaryStatsResponseBody struct {
 	// Self-healing trigger stats
-	ShTriggerMetrics []*SHTriggerStatsResponseBody `form:"sh_trigger_metrics,omitempty" json:"sh_trigger_metrics,omitempty" xml:"sh_trigger_metrics,omitempty"`
+	SelfHealingTriggerEventsStats []*SHTriggerStatsResponseBody `form:"self_healing_trigger_events_stats,omitempty" json:"self_healing_trigger_events_stats,omitempty" xml:"self_healing_trigger_events_stats,omitempty"`
 	// Self-healing execution stats
-	ShExecutionMetrics *SHExecutionStatsResponseBody `form:"sh_execution_metrics,omitempty" json:"sh_execution_metrics,omitempty" xml:"sh_execution_metrics,omitempty"`
+	SelfHealingExecutionEventsStats *SHExecutionStatsResponseBody `form:"self_healing_execution_events_stats,omitempty" json:"self_healing_execution_events_stats,omitempty" xml:"self_healing_execution_events_stats,omitempty"`
 }
 
 // GetDetailedLogsUnauthorizedResponseBody is the type of the "metrics" service
@@ -301,24 +301,24 @@ type SHTriggerStatsResponseBody struct {
 
 // SHExecutionStatsResponseBody is used to define fields on response body types.
 type SHExecutionStatsResponseBody struct {
-	// Total number of challenges issued
-	TotalChallengesIssued *int `form:"total_challenges_issued,omitempty" json:"total_challenges_issued,omitempty" xml:"total_challenges_issued,omitempty"`
-	// Total number of challenges acknowledged by the healer node
-	TotalChallengesAcknowledged *int `form:"total_challenges_acknowledged,omitempty" json:"total_challenges_acknowledged,omitempty" xml:"total_challenges_acknowledged,omitempty"`
-	// Total number of challenges rejected (healer node evaluated that
-	// reconstruction is not required)
-	TotalChallengesRejected *int `form:"total_challenges_rejected,omitempty" json:"total_challenges_rejected,omitempty" xml:"total_challenges_rejected,omitempty"`
-	// Total number of challenges accepted (healer node evaluated that
-	// reconstruction is required)
-	TotalChallengesAccepted *int `form:"total_challenges_accepted,omitempty" json:"total_challenges_accepted,omitempty" xml:"total_challenges_accepted,omitempty"`
+	// Total number of self-healing events issued
+	TotalSelfHealingEventsIssued *int `form:"total_self_healing_events_issued,omitempty" json:"total_self_healing_events_issued,omitempty" xml:"total_self_healing_events_issued,omitempty"`
+	// Total number of events acknowledged by the healer node
+	TotalSelfHealingEventsAcknowledged *int `form:"total_self_healing_events_acknowledged,omitempty" json:"total_self_healing_events_acknowledged,omitempty" xml:"total_self_healing_events_acknowledged,omitempty"`
+	// Total number of events rejected (healer node evaluated that reconstruction
+	// is not required)
+	TotalSelfHealingEventsRejected *int `form:"total_self_healing_events_rejected,omitempty" json:"total_self_healing_events_rejected,omitempty" xml:"total_self_healing_events_rejected,omitempty"`
+	// Total number of events accepted (healer node evaluated that reconstruction
+	// is required)
+	TotalSelfHealingEventsAccepted *int `form:"total_self_healing_events_accepted,omitempty" json:"total_self_healing_events_accepted,omitempty" xml:"total_self_healing_events_accepted,omitempty"`
 	// Total number of challenges verified
-	TotalChallengeEvaluationsVerified *int `form:"total_challenge_evaluations_verified,omitempty" json:"total_challenge_evaluations_verified,omitempty" xml:"total_challenge_evaluations_verified,omitempty"`
+	TotalSelfHealingEventsEvaluationsVerified *int `form:"total_self_healing_events_evaluations_verified,omitempty" json:"total_self_healing_events_evaluations_verified,omitempty" xml:"total_self_healing_events_evaluations_verified,omitempty"`
 	// Total number of reconstructions approved by verifier nodes
 	TotalReconstructionRequiredEvaluationsApproved *int `form:"total_reconstruction_required_evaluations_approved,omitempty" json:"total_reconstruction_required_evaluations_approved,omitempty" xml:"total_reconstruction_required_evaluations_approved,omitempty"`
 	// Total number of reconstructions not required approved by verifier nodes
 	TotalReconstructionNotRequiredEvaluationsApproved *int `form:"total_reconstruction_not_required_evaluations_approved,omitempty" json:"total_reconstruction_not_required_evaluations_approved,omitempty" xml:"total_reconstruction_not_required_evaluations_approved,omitempty"`
 	// Total number of challenge evaluations unverified by verifier nodes
-	TotalChallengeEvaluationsUnverified *int `form:"total_challenge_evaluations_unverified,omitempty" json:"total_challenge_evaluations_unverified,omitempty" xml:"total_challenge_evaluations_unverified,omitempty"`
+	TotalSelfHealingEventsEvaluationsUnverified *int `form:"total_self_healing_events_evaluations_unverified,omitempty" json:"total_self_healing_events_evaluations_unverified,omitempty" xml:"total_self_healing_events_evaluations_unverified,omitempty"`
 	// Total number of reconstructions not approved by verifier nodes
 	TotalReconstructionRequiredEvaluationsNotApproved *int `form:"total_reconstruction_required_evaluations_not_approved,omitempty" json:"total_reconstruction_required_evaluations_not_approved,omitempty" xml:"total_reconstruction_required_evaluations_not_approved,omitempty"`
 	// Total number of reconstructions not required evaluation not approved by
@@ -410,11 +410,11 @@ func NewGetDetailedLogsInternalServerError(body *GetDetailedLogsInternalServerEr
 // "getSummaryStats" endpoint result from a HTTP "OK" response.
 func NewGetSummaryStatsMetricsResultOK(body *GetSummaryStatsResponseBody) *metricsviews.MetricsResultView {
 	v := &metricsviews.MetricsResultView{}
-	v.ShTriggerMetrics = make([]*metricsviews.SHTriggerStatsView, len(body.ShTriggerMetrics))
-	for i, val := range body.ShTriggerMetrics {
-		v.ShTriggerMetrics[i] = unmarshalSHTriggerStatsResponseBodyToMetricsviewsSHTriggerStatsView(val)
+	v.SelfHealingTriggerEventsStats = make([]*metricsviews.SHTriggerStatsView, len(body.SelfHealingTriggerEventsStats))
+	for i, val := range body.SelfHealingTriggerEventsStats {
+		v.SelfHealingTriggerEventsStats[i] = unmarshalSHTriggerStatsResponseBodyToMetricsviewsSHTriggerStatsView(val)
 	}
-	v.ShExecutionMetrics = unmarshalSHExecutionStatsResponseBodyToMetricsviewsSHExecutionStatsView(body.ShExecutionMetrics)
+	v.SelfHealingExecutionEventsStats = unmarshalSHExecutionStatsResponseBodyToMetricsviewsSHExecutionStatsView(body.SelfHealingExecutionEventsStats)
 
 	return v
 }
@@ -695,20 +695,20 @@ func ValidateSHTriggerStatsResponseBody(body *SHTriggerStatsResponseBody) (err e
 // ValidateSHExecutionStatsResponseBody runs the validations defined on
 // SHExecutionStatsResponseBody
 func ValidateSHExecutionStatsResponseBody(body *SHExecutionStatsResponseBody) (err error) {
-	if body.TotalChallengesIssued == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_issued", "body"))
+	if body.TotalSelfHealingEventsIssued == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_issued", "body"))
 	}
-	if body.TotalChallengesAcknowledged == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_acknowledged", "body"))
+	if body.TotalSelfHealingEventsAcknowledged == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_acknowledged", "body"))
 	}
-	if body.TotalChallengesRejected == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_rejected", "body"))
+	if body.TotalSelfHealingEventsRejected == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_rejected", "body"))
 	}
-	if body.TotalChallengesAccepted == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenges_accepted", "body"))
+	if body.TotalSelfHealingEventsAccepted == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_accepted", "body"))
 	}
-	if body.TotalChallengeEvaluationsVerified == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenge_evaluations_verified", "body"))
+	if body.TotalSelfHealingEventsEvaluationsVerified == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_evaluations_verified", "body"))
 	}
 	if body.TotalReconstructionRequiredEvaluationsApproved == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_required_evaluations_approved", "body"))
@@ -716,8 +716,8 @@ func ValidateSHExecutionStatsResponseBody(body *SHExecutionStatsResponseBody) (e
 	if body.TotalReconstructionNotRequiredEvaluationsApproved == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_not_required_evaluations_approved", "body"))
 	}
-	if body.TotalChallengeEvaluationsUnverified == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("total_challenge_evaluations_unverified", "body"))
+	if body.TotalSelfHealingEventsEvaluationsUnverified == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_self_healing_events_evaluations_unverified", "body"))
 	}
 	if body.TotalReconstructionRequiredEvaluationsNotApproved == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_reconstruction_required_evaluations_not_approved", "body"))

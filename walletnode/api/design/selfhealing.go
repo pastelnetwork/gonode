@@ -115,11 +115,11 @@ var SummaryStats = ResultType("application/vnd.metrics.result", func() {
 	Description("Structure representing the metrics data")
 
 	Attributes(func() {
-		Attribute("sh_trigger_metrics", ArrayOf(SHTriggerStats), "Self-healing trigger stats")
-		Attribute("sh_execution_metrics", SHExecutionStats, "Self-healing execution stats")
+		Attribute("self_healing_trigger_events_stats", ArrayOf(SHTriggerStats), "Self-healing trigger stats")
+		Attribute("self_healing_execution_events_stats", SHExecutionStats, "Self-healing execution stats")
 	})
 
-	Required("sh_trigger_metrics", "sh_execution_metrics")
+	Required("self_healing_trigger_events_stats", "self_healing_execution_events_stats")
 })
 
 // SHTriggerStats is the result type for the self-healing trigger stats
@@ -139,24 +139,24 @@ var SHTriggerStats = Type("SHTriggerStats", func() {
 var SHExecutionStats = Type("SHExecutionStats", func() {
 	Description("Self-healing execution stats")
 
-	Attribute("total_challenges_issued", Int, "Total number of challenges issued")
-	Attribute("total_challenges_acknowledged", Int, "Total number of challenges acknowledged by the healer node")
-	Attribute("total_challenges_rejected", Int, "Total number of challenges rejected (healer node evaluated that reconstruction is not required)")
-	Attribute("total_challenges_accepted", Int, "Total number of challenges accepted (healer node evaluated that reconstruction is required)")
+	Attribute("total_self_healing_events_issued", Int, "Total number of self-healing events issued")
+	Attribute("total_self_healing_events_acknowledged", Int, "Total number of events acknowledged by the healer node")
+	Attribute("total_self_healing_events_rejected", Int, "Total number of events rejected (healer node evaluated that reconstruction is not required)")
+	Attribute("total_self_healing_events_accepted", Int, "Total number of events accepted (healer node evaluated that reconstruction is required)")
 
-	Attribute("total_challenge_evaluations_verified", Int, "Total number of challenges verified")
+	Attribute("total_self_healing_events_evaluations_verified", Int, "Total number of challenges verified")
 	Attribute("total_reconstruction_required_evaluations_approved", Int, "Total number of reconstructions approved by verifier nodes")
 	Attribute("total_reconstruction_not_required_evaluations_approved", Int, "Total number of reconstructions not required approved by verifier nodes")
-	Attribute("total_challenge_evaluations_unverified", Int, "Total number of challenge evaluations unverified by verifier nodes")
+	Attribute("total_self_healing_events_evaluations_unverified", Int, "Total number of challenge evaluations unverified by verifier nodes")
 	Attribute("total_reconstruction_required_evaluations_not_approved", Int, "Total number of reconstructions not approved by verifier nodes")
 	Attribute("total_reconstructions_not_required_evaluations_not_approved", Int, "Total number of reconstructions not required evaluation not approved by verifier nodes")
 	Attribute("total_reconstruction_required_hash_mismatch", Int, "Total number of reconstructions required with hash mismatch")
 	Attribute("total_files_healed", Int, "Total number of files healed")
 	Attribute("total_file_healing_failed", Int, "Total number of file healings that failed")
 
-	Required("total_challenges_issued", "total_challenges_acknowledged", "total_challenges_rejected",
-		"total_challenges_accepted", "total_challenge_evaluations_verified", "total_reconstruction_required_evaluations_approved",
-		"total_reconstruction_not_required_evaluations_approved", "total_challenge_evaluations_unverified",
+	Required("total_self_healing_events_issued", "total_self_healing_events_acknowledged", "total_self_healing_events_rejected",
+		"total_self_healing_events_accepted", "total_self_healing_events_evaluations_verified", "total_reconstruction_required_evaluations_approved",
+		"total_reconstruction_not_required_evaluations_approved", "total_self_healing_events_evaluations_unverified",
 		"total_reconstruction_required_evaluations_not_approved", "total_reconstructions_not_required_evaluations_not_approved",
 		"total_files_healed", "total_file_healing_failed")
 })

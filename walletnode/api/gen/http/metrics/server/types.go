@@ -24,9 +24,9 @@ type GetDetailedLogsResponseBody struct {
 // "getSummaryStats" endpoint HTTP response body.
 type GetSummaryStatsResponseBody struct {
 	// Self-healing trigger stats
-	ShTriggerMetrics []*SHTriggerStatsResponseBody `form:"sh_trigger_metrics" json:"sh_trigger_metrics" xml:"sh_trigger_metrics"`
+	SelfHealingTriggerEventsStats []*SHTriggerStatsResponseBody `form:"self_healing_trigger_events_stats" json:"self_healing_trigger_events_stats" xml:"self_healing_trigger_events_stats"`
 	// Self-healing execution stats
-	ShExecutionMetrics *SHExecutionStatsResponseBody `form:"sh_execution_metrics" json:"sh_execution_metrics" xml:"sh_execution_metrics"`
+	SelfHealingExecutionEventsStats *SHExecutionStatsResponseBody `form:"self_healing_execution_events_stats" json:"self_healing_execution_events_stats" xml:"self_healing_execution_events_stats"`
 }
 
 // GetDetailedLogsUnauthorizedResponseBody is the type of the "metrics" service
@@ -301,24 +301,24 @@ type SHTriggerStatsResponseBody struct {
 
 // SHExecutionStatsResponseBody is used to define fields on response body types.
 type SHExecutionStatsResponseBody struct {
-	// Total number of challenges issued
-	TotalChallengesIssued int `form:"total_challenges_issued" json:"total_challenges_issued" xml:"total_challenges_issued"`
-	// Total number of challenges acknowledged by the healer node
-	TotalChallengesAcknowledged int `form:"total_challenges_acknowledged" json:"total_challenges_acknowledged" xml:"total_challenges_acknowledged"`
-	// Total number of challenges rejected (healer node evaluated that
-	// reconstruction is not required)
-	TotalChallengesRejected int `form:"total_challenges_rejected" json:"total_challenges_rejected" xml:"total_challenges_rejected"`
-	// Total number of challenges accepted (healer node evaluated that
-	// reconstruction is required)
-	TotalChallengesAccepted int `form:"total_challenges_accepted" json:"total_challenges_accepted" xml:"total_challenges_accepted"`
+	// Total number of self-healing events issued
+	TotalSelfHealingEventsIssued int `form:"total_self_healing_events_issued" json:"total_self_healing_events_issued" xml:"total_self_healing_events_issued"`
+	// Total number of events acknowledged by the healer node
+	TotalSelfHealingEventsAcknowledged int `form:"total_self_healing_events_acknowledged" json:"total_self_healing_events_acknowledged" xml:"total_self_healing_events_acknowledged"`
+	// Total number of events rejected (healer node evaluated that reconstruction
+	// is not required)
+	TotalSelfHealingEventsRejected int `form:"total_self_healing_events_rejected" json:"total_self_healing_events_rejected" xml:"total_self_healing_events_rejected"`
+	// Total number of events accepted (healer node evaluated that reconstruction
+	// is required)
+	TotalSelfHealingEventsAccepted int `form:"total_self_healing_events_accepted" json:"total_self_healing_events_accepted" xml:"total_self_healing_events_accepted"`
 	// Total number of challenges verified
-	TotalChallengeEvaluationsVerified int `form:"total_challenge_evaluations_verified" json:"total_challenge_evaluations_verified" xml:"total_challenge_evaluations_verified"`
+	TotalSelfHealingEventsEvaluationsVerified int `form:"total_self_healing_events_evaluations_verified" json:"total_self_healing_events_evaluations_verified" xml:"total_self_healing_events_evaluations_verified"`
 	// Total number of reconstructions approved by verifier nodes
 	TotalReconstructionRequiredEvaluationsApproved int `form:"total_reconstruction_required_evaluations_approved" json:"total_reconstruction_required_evaluations_approved" xml:"total_reconstruction_required_evaluations_approved"`
 	// Total number of reconstructions not required approved by verifier nodes
 	TotalReconstructionNotRequiredEvaluationsApproved int `form:"total_reconstruction_not_required_evaluations_approved" json:"total_reconstruction_not_required_evaluations_approved" xml:"total_reconstruction_not_required_evaluations_approved"`
 	// Total number of challenge evaluations unverified by verifier nodes
-	TotalChallengeEvaluationsUnverified int `form:"total_challenge_evaluations_unverified" json:"total_challenge_evaluations_unverified" xml:"total_challenge_evaluations_unverified"`
+	TotalSelfHealingEventsEvaluationsUnverified int `form:"total_self_healing_events_evaluations_unverified" json:"total_self_healing_events_evaluations_unverified" xml:"total_self_healing_events_evaluations_unverified"`
 	// Total number of reconstructions not approved by verifier nodes
 	TotalReconstructionRequiredEvaluationsNotApproved int `form:"total_reconstruction_required_evaluations_not_approved" json:"total_reconstruction_required_evaluations_not_approved" xml:"total_reconstruction_required_evaluations_not_approved"`
 	// Total number of reconstructions not required evaluation not approved by
@@ -349,16 +349,16 @@ func NewGetDetailedLogsResponseBody(res *metrics.SelfHealingReports) *GetDetaile
 // of the "getSummaryStats" endpoint of the "metrics" service.
 func NewGetSummaryStatsResponseBody(res *metricsviews.MetricsResultView) *GetSummaryStatsResponseBody {
 	body := &GetSummaryStatsResponseBody{}
-	if res.ShTriggerMetrics != nil {
-		body.ShTriggerMetrics = make([]*SHTriggerStatsResponseBody, len(res.ShTriggerMetrics))
-		for i, val := range res.ShTriggerMetrics {
-			body.ShTriggerMetrics[i] = marshalMetricsviewsSHTriggerStatsViewToSHTriggerStatsResponseBody(val)
+	if res.SelfHealingTriggerEventsStats != nil {
+		body.SelfHealingTriggerEventsStats = make([]*SHTriggerStatsResponseBody, len(res.SelfHealingTriggerEventsStats))
+		for i, val := range res.SelfHealingTriggerEventsStats {
+			body.SelfHealingTriggerEventsStats[i] = marshalMetricsviewsSHTriggerStatsViewToSHTriggerStatsResponseBody(val)
 		}
 	} else {
-		body.ShTriggerMetrics = []*SHTriggerStatsResponseBody{}
+		body.SelfHealingTriggerEventsStats = []*SHTriggerStatsResponseBody{}
 	}
-	if res.ShExecutionMetrics != nil {
-		body.ShExecutionMetrics = marshalMetricsviewsSHExecutionStatsViewToSHExecutionStatsResponseBody(res.ShExecutionMetrics)
+	if res.SelfHealingExecutionEventsStats != nil {
+		body.SelfHealingExecutionEventsStats = marshalMetricsviewsSHExecutionStatsViewToSHExecutionStatsResponseBody(res.SelfHealingExecutionEventsStats)
 	}
 	return body
 }

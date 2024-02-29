@@ -25,7 +25,7 @@ const (
 )
 
 func (s SelfHealingMessageType) String() string {
-	messages := [...]string{"", "challenge", "response", "verification", "completion"}
+	messages := [...]string{"", "challenge", "response", "verification", "completion", "acknowledgement"}
 	if s < 1 || int(s) >= len(messages) {
 		return "unknown"
 	}

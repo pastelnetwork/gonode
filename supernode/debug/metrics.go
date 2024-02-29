@@ -111,7 +111,7 @@ func (service *Service) processSHTrigger(ctx context.Context, pid string, signat
 
 	metrics, err := store.GetSelfHealingGenerationMetrics(time.Now().AddDate(20, 0, 0))
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving metrics: %w", err)
+		return nil, fmt.Errorf("error retrieving generation summary stats: %w", err)
 	}
 
 	if triggerID == "" {
@@ -162,7 +162,7 @@ func (service *Service) shTrigger(writer http.ResponseWriter, request *http.Requ
 		switch err.Error() {
 		case "invalid pid/passphrase":
 			statusCode = http.StatusUnauthorized
-		case "error opening DB", "error retrieving metrics":
+		case "error opening DB", "error retrieving summary stats":
 			statusCode = http.StatusNotFound
 		default:
 			statusCode = http.StatusNotFound // For "no metrics found for trigger_id"
@@ -198,7 +198,7 @@ func (service *Service) processMetrics(ctx context.Context, pid string, signatur
 
 	metrics, err := store.QueryMetrics(ctx, from, to)
 	if err != nil {
-		return nil, fmt.Errorf("error querying metrics: %w", err)
+		return nil, fmt.Errorf("error querying summary stats: %w", err)
 	}
 
 	return metrics, nil
