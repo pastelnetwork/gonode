@@ -25,6 +25,7 @@ const (
 	defaultUpdateWatchlistInterval    = 70 * time.Second
 	broadcastMetricRegularInterval    = 60 * time.Minute
 	processSelfHealingWorkerInterval  = 5 * time.Minute
+	selfHealingRetryThreshold         = 3
 )
 
 // SHService keeps track of the supernode's nodeID and passes this, the pastel client,
@@ -43,6 +44,7 @@ type SHService struct {
 	downloadService           *download.NftDownloaderService
 	ticketsMap                map[string]bool
 	triggerAcknowledgementMap map[string]bool
+	eventRetryMap             map[string]int
 
 	currentBlockCount int32
 	merkelroot        string
@@ -139,6 +141,23 @@ func (service *SHService) processSelfHealingEvents(ctx context.Context) {
 
 	for i := 0; i < len(events); i++ {
 		event := events[i]
+		service.eventRetryMap[event.ChallengeID]++
+
+		if service.eventRetryMap[event.ChallengeID] >= selfHealingRetryThreshold {
+			err = task.historyDB.UpdateSHChallengeEventProcessed(event.ChallengeID, false)
+			if err != nil {
+				log.WithContext(ctx).
+					WithField("trigger_id", event.TriggerID).
+					WithField("challenge_id", event.ChallengeID).
+					WithField("ticket_id", event.TicketID).
+					WithError(err).Error("error updating self-healing event is processed flag")
+				continue
+
+			}
+			delete(service.eventRetryMap, event.ChallengeID)
+
+			continue
+		}
 
 		err = task.ProcessSelfHealingChallenge(newCtx, event)
 		if err != nil {
@@ -153,13 +172,10 @@ func (service *SHService) processSelfHealingEvents(ctx context.Context) {
 
 		err = task.historyDB.UpdateSHChallengeEventProcessed(event.ChallengeID, true)
 		if err != nil {
-			log.WithContext(ctx).
-				WithField("trigger_id", event.TriggerID).
-				WithField("challenge_id", event.ChallengeID).
-				WithField("ticket_id", event.TicketID).
-				WithError(err).Error("error updating self-healing event is processed flag")
 			continue
 		}
+
+		delete(service.eventRetryMap, event.ChallengeID)
 	}
 
 	log.WithContext(ctx).Debug("self-healing events have been processed")
@@ -248,6 +264,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		historyDB:                 historyDB,
 		ticketsMap:                make(map[string]bool),
 		triggerAcknowledgementMap: make(map[string]bool),
+		eventRetryMap:             make(map[string]int),
 		downloadService:           downloadService,
 	}
 }

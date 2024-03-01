@@ -805,7 +805,7 @@ func (task *SHTask) DownloadDDAndFingerprints(ctx context.Context, DDAndFingerpr
 		log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Debug("file has been retrieved from the network")
 
 		if len(compressedFile) == 0 {
-			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Warn("compressed data is empty")
+			log.WithContext(ctx).WithField("Hash", DDAndFingerprintsIDs[i]).Debug("compressed data is empty")
 			continue
 		}
 

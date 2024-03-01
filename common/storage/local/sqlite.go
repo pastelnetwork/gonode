@@ -241,10 +241,19 @@ func (s *SQLiteStore) QueryTaskHistory(taskID string) (history []types.TaskHisto
 func (s *SQLiteStore) InsertStorageChallengeMessage(challenge types.StorageChallengeLogMessage) error {
 	now := time.Now().UTC()
 	const insertQuery = "INSERT INTO storage_challenge_messages(id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"
-	_, _ = s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.Sender, challenge.SenderSignature, now, now)
+	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.Sender, challenge.SenderSignature, now, now)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SQLiteStore) InsertStorageChallengeMetric(m types.StorageChallengeMetric) error {
+	now := time.Now().UTC()
 
 	const metricsQuery = "INSERT INTO storage_challenge_metrics(id, challenge_id, message_type, data, sender_id, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"
-	_, err := s.db.Exec(metricsQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.Sender, now, now)
+	_, err := s.db.Exec(metricsQuery, m.ChallengeID, m.MessageType, m.Data, m.SenderID, now, now)
 	if err != nil {
 		return err
 	}

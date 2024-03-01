@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/walletnode/services/storagechallenge"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -227,6 +228,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload, hDB)
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient, hDB)
 	metricsService := metrics.NewMetricsService(pastelClient)
+	storageChallengeService := storagechallenge.NewStorageChallengeService(pastelClient)
 
 	fileMappings := &sync.Map{}
 	server := api.NewAPIServer(config.API, fileMappings, pastelClient,
@@ -237,6 +239,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		services.NewCollectionAPIIHandler(apiSrcvConf, collectionRegister),
 		services.NewSwagger(apiSrcvConf),
 		services.NewMetricsAPIHandler(metricsService),
+		services.NewStorageChallengeAPIHandler(storageChallengeService),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)

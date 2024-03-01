@@ -50,6 +50,10 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 		return types.Message{}, nil
 	}
 
+	if err := task.SCService.P2PClient.EnableKey(ctx, incomingEvaluationResult.Data.Challenge.FileHash); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error enabling the symbol file")
+	}
+
 	//retrieve messages from the DB against challengeID
 	challengeMessage, responseMessage, err := task.retrieveChallengeAndResponseMessageForEvaluationReportVerification(ctx, incomingEvaluationResult.ChallengeID)
 	if err != nil {
@@ -146,6 +150,12 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 		Sender: task.nodeID,
 	}
 
+	if err := task.StoreStorageChallengeMetric(ctx, evaluationResultResponse); err != nil {
+		log.WithContext(ctx).WithField("challenge_id", evaluationResultResponse.ChallengeID).
+			WithField("message_type", evaluationResultResponse.MessageType).Error(
+			"error storing storage challenge metric")
+	}
+
 	logger := log.WithContext(ctx).WithField("challenge_id", evaluationResultResponse.ChallengeID).
 		WithField("node_id", task.nodeID)
 
@@ -155,12 +165,6 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	}
 	evaluationResultResponse.SenderSignature = signature
 	logger.Info("evaluation report has been signed")
-
-	if err := task.SCService.P2PClient.EnableKey(ctx, evaluationResultResponse.Data.Challenge.FileHash); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error enabling the symbol file")
-		return evaluationResultResponse, err
-	}
-	logger.Info("key has been enabled")
 
 	if err := task.StoreChallengeMessage(ctx, evaluationResultResponse); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error storing evaluation response ")
@@ -371,6 +375,12 @@ func (task *SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluati
 func (task *SCTask) validateVerifyingStorageChallengeEvaluationReport(ctx context.Context, evaluationReport types.Message) error {
 	if evaluationReport.MessageType != types.EvaluationMessageType {
 		return fmt.Errorf("incorrect message type to verify evaluation report")
+	}
+
+	if err := task.StoreStorageChallengeMetric(ctx, evaluationReport); err != nil {
+		log.WithContext(ctx).WithField("challenge_id", evaluationReport.ChallengeID).
+			WithField("message_type", evaluationReport.MessageType).Error(
+			"error storing storage challenge metric")
 	}
 
 	isVerified, err := task.VerifyMessageSignature(ctx, evaluationReport)

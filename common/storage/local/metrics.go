@@ -389,25 +389,29 @@ func (s *SQLiteStore) GetObserversEvaluations(from time.Time) ([]types.StorageCh
 }
 
 func (s *SQLiteStore) GetSCSummaryStats(from time.Time) (scMetrics metrics.SCMetrics, err error) {
+	scStats := metrics.SCMetrics{}
 	scMetrics, err = s.GetTotalSCGeneratedAndProcessed(from)
 	if err != nil {
 		return scMetrics, err
 	}
+	scStats.TotalChallenges = scMetrics.TotalChallenges
+	scStats.TotalChallengesProcessed = scMetrics.TotalChallengesProcessed
 
 	challengerEvaluations, err := s.GetChallengerEvaluations(from)
 	if err != nil {
 		return scMetrics, err
 	}
+	log.WithField("challenge_evaluations", len(challengerEvaluations)).Info("challenge_evaluations retrieved")
 
 	for i := 0; i < len(challengerEvaluations); i++ {
 		challengerEvaluation := challengerEvaluations[i]
 
-		var challengeMsg types.Message
+		var challengeMsg types.MessageData
 		if err := json.Unmarshal(challengerEvaluation.Data, &challengeMsg); err != nil {
 			continue
 		}
 
-		if challengeMsg.Data.ChallengerEvaluation.IsVerified {
+		if challengeMsg.ChallengerEvaluation.IsVerified {
 			scMetrics.TotalChallengesVerifiedByChallenger++
 		}
 	}
@@ -416,8 +420,10 @@ func (s *SQLiteStore) GetSCSummaryStats(from time.Time) (scMetrics metrics.SCMet
 	if err != nil {
 		return scMetrics, err
 	}
+	log.WithField("observer_evaluations", len(observersEvaluations)).Info("observer evaluations retrieved")
 
 	observerEvaluationMetrics := processObserverEvaluations(observersEvaluations)
+	log.WithField("observer_evaluation_metrics", len(observerEvaluationMetrics)).Info("observer evaluation metrics retrieved")
 
 	for _, obMetrics := range observerEvaluationMetrics {
 		if obMetrics.ChallengesVerified > 2 {
@@ -441,34 +447,37 @@ func (s *SQLiteStore) GetSCSummaryStats(from time.Time) (scMetrics metrics.SCMet
 func processObserverEvaluations(observersEvaluations []types.StorageChallengeLogMessage) map[string]ObserverEvaluationMetrics {
 	evaluationMap := make(map[string]ObserverEvaluationMetrics)
 
-	for i := 0; i < len(observersEvaluations); i++ {
-		observerEvaluation := observersEvaluations[i]
-
-		var oe types.Message
+	for _, observerEvaluation := range observersEvaluations {
+		var oe types.MessageData
 		if err := json.Unmarshal(observerEvaluation.Data, &oe); err != nil {
 			continue
 		}
 
-		oem := evaluationMap[oe.ChallengeID]
+		oem, exists := evaluationMap[observerEvaluation.ChallengeID]
+		if !exists {
+			oem = ObserverEvaluationMetrics{} // Initialize if not exists
+		}
 
-		if isObserverEvaluationVerified(oe.Data.ObserverEvaluation) {
+		if isObserverEvaluationVerified(oe.ObserverEvaluation) {
 			oem.ChallengesVerified++
 		} else {
-			if !oe.Data.ObserverEvaluation.IsChallengeTimestampOK ||
-				!oe.Data.ObserverEvaluation.IsProcessTimestampOK ||
-				!oe.Data.ObserverEvaluation.IsEvaluationTimestampOK {
+			if !oe.ObserverEvaluation.IsChallengeTimestampOK ||
+				!oe.ObserverEvaluation.IsProcessTimestampOK ||
+				!oe.ObserverEvaluation.IsEvaluationTimestampOK {
 				oem.FailedByInvalidTimestamps++
 			}
 
-			if !oe.Data.ObserverEvaluation.IsChallengerSignatureOK ||
-				!oe.Data.ObserverEvaluation.IsRecipientSignatureOK {
+			if !oe.ObserverEvaluation.IsChallengerSignatureOK ||
+				!oe.ObserverEvaluation.IsRecipientSignatureOK {
 				oem.FailedByInvalidSignatures++
 			}
 
-			if !oe.Data.ObserverEvaluation.IsEvaluationResultOK {
+			if !oe.ObserverEvaluation.IsEvaluationResultOK {
 				oem.FailedByInvalidEvaluation++
 			}
 		}
+
+		evaluationMap[observerEvaluation.ChallengeID] = oem
 	}
 
 	return evaluationMap

@@ -29,6 +29,10 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 		return nil, err
 	}
 
+	if err := task.SCService.P2PClient.EnableKey(ctx, incomingResponseMessage.Data.Challenge.FileHash); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error enabling the symbol file")
+	}
+
 	//if the message is received by one of the observer then save the challenge message
 	if task.isObserver(incomingResponseMessage.Data.Observers) {
 		if err := task.StoreChallengeMessage(ctx, incomingResponseMessage); err != nil {
@@ -99,11 +103,9 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 
 	// determine success or failure
 	var isVerified bool
-	if (incomingResponseMessage.Data.Response.Hash == challengeCorrectHash) && (blocksVerifyStorageChallengeInBlocks <= task.storageChallengeExpiredBlocks) {
+	if incomingResponseMessage.Data.Response.Hash == challengeCorrectHash {
 		isVerified = true
 		logger.Info(fmt.Sprintf("Supernode %s correctly responded in %d blocks to a storage challenge for file %s", incomingResponseMessage.Data.RecipientID, blocksVerifyStorageChallengeInBlocks, incomingResponseMessage.Data.Challenge.FileHash))
-	} else if incomingResponseMessage.Data.Response.Hash == challengeCorrectHash {
-		logger.Info(fmt.Sprintf("Supernode %s  correctly responded in %d blocks to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingResponseMessage.Data.RecipientID, blocksVerifyStorageChallengeInBlocks, incomingResponseMessage.Data.Challenge.FileHash))
 	} else {
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingResponseMessage.ChallengeID).Debug(fmt.Sprintf("Supernode %s failed by incorrectly responding to a storage challenge for file %s", incomingResponseMessage.Data.RecipientID, incomingResponseMessage.Data.Challenge.FileHash))
 	}
@@ -139,6 +141,12 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 		},
 		Sender:          task.nodeID,
 		SenderSignature: nil,
+	}
+
+	if err := task.StoreStorageChallengeMetric(ctx, evaluationMessage); err != nil {
+		log.WithContext(ctx).WithField("challenge_id", evaluationMessage.ChallengeID).
+			WithField("message_type", evaluationMessage.MessageType).Error(
+			"error storing storage challenge metric")
 	}
 
 	// send to observers for affirmations
@@ -194,6 +202,12 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 func (task *SCTask) validateVerifyingStorageChallengeIncomingData(ctx context.Context, incomingChallengeMessage types.Message) error {
 	if incomingChallengeMessage.MessageType != types.ResponseMessageType {
 		return fmt.Errorf("incorrect message type to verify storage challenge")
+	}
+
+	if err := task.StoreStorageChallengeMetric(ctx, incomingChallengeMessage); err != nil {
+		log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID).
+			WithField("message_type", incomingChallengeMessage.MessageType).Error(
+			"error storing storage challenge metric")
 	}
 
 	isVerified, err := task.VerifyMessageSignature(ctx, incomingChallengeMessage)
@@ -274,6 +288,13 @@ func (task *SCTask) processEvaluationResults(ctx context.Context, nodesToConnect
 
 			if affirmationResponse != nil && affirmationResponse.ChallengeID != "" &&
 				affirmationResponse.MessageType == types.AffirmationMessageType {
+
+				if err := task.StoreStorageChallengeMetric(ctx, *affirmationResponse); err != nil {
+					log.WithContext(ctx).WithField("challenge_id", affirmationResponse.ChallengeID).
+						WithField("message_type", affirmationResponse.MessageType).Error(
+						"error storing storage challenge metric")
+				}
+
 				isSuccess, err := task.isAffirmationSuccessful(ctx, affirmationResponse)
 				if err != nil {
 					log.WithContext(ctx).WithField("node_id", node.ExtKey).WithError(err).
