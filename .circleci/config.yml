@@ -21,9 +21,9 @@ commands:
           name: Install Go
           command: |
             cd ..
-            wget https://golang.org/dl/go1.21.0.linux-amd64.tar.gz
+            wget https://golang.org/dl/go1.22.0.linux-amd64.tar.gz
             sudo rm -r /usr/local/go
-            sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
             echo 'export PATH=$PATH:/usr/local/go/bin:~/go/bin' >> ~/.bashrc
             echo 'export CGO_ENABLED=1' >> ~/.bashrc
             echo "export GOPATH=\"$HOME/go\"" >> ~/.bashrc
@@ -135,24 +135,24 @@ commands:
             echo "APP_VERSION=$APP_VERSION"
             echo "APP_LDFLAGS=$APP_LDFLAGS"
 
-            if [[ "<< parameters.package >>" == "walletnode" && "<< parameters.targets >>" == *"linux/amd64"* ]]; then
-              echo "Building walletnode for Linux"
+            if [[ "<< parameters.targets >>" == *"linux/amd64"* ]]; then
+              echo "Building << parameters.package >> for Linux"
               sudo apt-get update
               sudo apt-get install -y libwebp-dev
-              cd walletnode
+              cd << parameters.package >>
               GOOS=linux GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$APP_LDFLAGS"
-              echo "Done Building walletnode for Linux"
+              echo "Done Building << parameters.package >> for Linux"
               cd ..
             fi
 
             for TARGET in $(echo "<< parameters.targets >>" | tr ',' '\n'); do
-                if [[ "$TARGET" == "linux/amd64" && "<< parameters.package >>" == "walletnode" ]]; then
-                  echo "Skipping xgo build for walletnode on Linux/amd64"
+                if [[ "$TARGET" == "linux/amd64" ]]; then
+                  echo "Skipping xgo build for << parameters.package >> on Linux/amd64"
                   continue  # Skip the rest of this loop iteration
                 fi
 
                 echo "Building for target: $TARGET using xgo"
-                xgo -go go-1.21.1 --targets="$TARGET" --hooksdir=xgo -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
+                xgo -go go-1.21.7 --targets="$TARGET" --hooksdir=xgo -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
             done
 
             mkdir -p build
@@ -162,10 +162,6 @@ commands:
 
             if [[ "<< parameters.targets >>" == *"windows/amd64"* ]]; then
               mv << parameters.package >>-windows-4.0-amd64.exe build/
-            fi
-
-            if [[ "<< parameters.targets >>" == *"linux/amd64"* && "<< parameters.package >>" != "walletnode" ]]; then
-              mv << parameters.package >>-linux-amd64 build/
             fi
 
             cd build
@@ -215,6 +211,7 @@ commands:
             rm walletnode-windows-4.0-amd64.exe.sha256
             mv walletnode-windows-4.0-amd64.exe walletnode-win-amd64.exe
             mv walletnode-darwin-10.15-amd64 walletnode-darwin-amd64
+            ls -a
       - aws-cli/setup:
           aws-access-key-id: AWS_ACCESS_KEY_ID
           aws-secret-access-key: AWS_SECRET_ACCESS_KEY
@@ -241,6 +238,7 @@ commands:
           name: Upload << parameters.targets >> to << parameters.repo >> GitHub repo
           working_directory: << parameters.working_directory >>
           command: |
+            ls -a
             export MACOS_ARTIFACT=<< parameters.binaryName >>-darwin-10.15-amd64
             export WINDOWS_ARTIFACT=<< parameters.binaryName >>-windows-4.0-amd64.exe
             export LINUX_ARTIFACT=<< parameters.binaryName >>-linux-amd64
@@ -320,7 +318,7 @@ jobs:
       - run:
           name: Install mockery
           command: |
-            go install github.com/vektra/mockery/v2@v2.33.1
+            go install github.com/vektra/mockery/v2@v2.42.0
       - run:
           name: Install xgo
           command: |

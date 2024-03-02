@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/p2p
 
-go 1.21
+go 1.22.0
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
@@ -12,18 +12,18 @@ require (
 	github.com/anacrolix/utp v0.2.0
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/json-iterator/go v1.1.12
-	github.com/mattn/go-sqlite3 v1.14.17
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/otrv4/ed448 v0.0.0-20221017120334-a33859724cfd
 	github.com/pastelnetwork/gonode/common v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/tj/assert v0.0.3
 	go.uber.org/ratelimit v0.3.0
-	golang.org/x/sync v0.3.0
-	google.golang.org/grpc v1.57.0
+	golang.org/x/sync v0.6.0
+	google.golang.org/grpc v1.62.0
 )
 
 require (
@@ -47,12 +47,12 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
-	golang.org/x/crypto v0.12.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
-	golang.org/x/term v0.12.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	golang.org/x/crypto v0.16.0 // indirect
+	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/term v0.15.0 // indirect
+	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

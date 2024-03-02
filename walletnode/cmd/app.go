@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	bridgeNode "github.com/pastelnetwork/gonode/bridge/node"
-	bridgeGrpc "github.com/pastelnetwork/gonode/bridge/node/grpc"
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -176,25 +174,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.NftRegister.RqFilesDir = config.RqFilesDir
 	config.CascadeRegister.RaptorQServiceAddress = rqAddr
 	config.CascadeRegister.RqFilesDir = config.RqFilesDir
-	config.NftSearch.BridgeOn = config.Bridge.Switch
-	config.NftSearch.BridgeAddress = config.Bridge.Address
-	config.NftSearch.BridgePort = config.Bridge.Port
-
-	bridgeClient := bridgeGrpc.NewClient()
-
-	var bridge bridgeNode.DownloadDataInterface
-	if config.Bridge.Switch {
-		log.WithContext(ctx).Info("Connecting with bridge..")
-
-		conn, err := bridgeClient.Connect(ctx, fmt.Sprintf("%s:%d", config.Bridge.Address, config.Bridge.Port))
-		if err != nil {
-			return errors.New("bridge service switch on but unable to connect")
-		}
-
-		bridge = conn.DownloadData()
-
-		log.WithContext(ctx).Info("Bridge service connected ")
-	}
 
 	// NB: As part of current dev push for Sense and Cascade, we are disabling userdata handling thru rqlite.
 
@@ -240,7 +219,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// These services connect the different clients and configs together to provide tasking and handling for
 	//  the required functionality.  These services aren't started with these declarations, they will be run
 	//	later through the API Server.
-	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient, bridge, hDB)
+	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient, hDB)
 	nftDownload := download.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient, hDB)
 
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, *nftDownload, hDB)

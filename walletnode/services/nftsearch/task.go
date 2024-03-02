@@ -9,7 +9,6 @@ import (
 
 	"sort"
 
-	bridgeGrpc "github.com/pastelnetwork/gonode/bridge/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -32,7 +31,6 @@ type NftSearchingTask struct {
 	searchResult   []*RegTicketSearch
 	resultChan     chan *RegTicketSearch
 	searchResMutex sync.Mutex
-	bridgeOn       bool
 }
 
 // Run starts the task
@@ -45,24 +43,10 @@ func (task *NftSearchingTask) run(ctx context.Context) error {
 	newCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if !task.bridgeOn {
-		go task.connectThumbnailAndDDHelper(newCtx, cancel)
-	} else {
-		// Ignore error because we'd still want to return results
-		if err := task.enforceBridgeConnection(ctx); err != nil {
-			log.WithContext(ctx).WithError(err).Error("enforcing bridge connection failed.. connecting with SNs...")
-			task.bridgeOn = false
-
-			go task.connectThumbnailAndDDHelper(newCtx, cancel)
-		}
-	}
+	go task.connectThumbnailAndDDHelper(newCtx, cancel)
 
 	if err := task.search(ctx); err != nil {
 		return errors.Errorf("search tickets: %w", err)
-	}
-
-	if task.bridgeOn {
-		return task.fetchThumbnails(newCtx, task.searchResult, &task.resultChan)
 	}
 
 	if err := task.thumbnail.FetchMultiple(newCtx, task.searchResult, &task.resultChan); err != nil {
@@ -139,19 +123,10 @@ func (task *NftSearchingTask) filterRegTicket(ctx context.Context, regTicket *pa
 	var ddAndFpData []byte
 	var err error
 
-	// Get DD and FP data so we can filter on it.
-	if task.bridgeOn {
-		ddAndFpData, err = task.service.bridgeClient.DownloadDDAndFingerprints(ctx, regTicket.TXID)
-		if err != nil {
-			log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
-			return srch, false
-		}
-	} else {
-		ddAndFpData, err = task.ddAndFP.Fetch(ctx, regTicket.TXID)
-		if err != nil {
-			log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
-			return srch, false
-		}
+	ddAndFpData, err = task.ddAndFP.Fetch(ctx, regTicket.TXID)
+	if err != nil {
+		log.WithContext(ctx).WithField("request", task.request).WithField("txid", regTicket.TXID).Warn("Could not get dd and fp for this txid in search.")
+		return srch, false
 	}
 
 	ddAndFpStruct := &pastel.DDAndFingerprints{}
@@ -242,7 +217,6 @@ func NewNftSearchTask(service *NftSearchingService, request *NftSearchingRequest
 		resultChan:     make(chan *RegTicketSearch),
 		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
 		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
-		bridgeOn:       service.config.BridgeOn,
 	}
 }
 
@@ -251,7 +225,6 @@ type NftGetSearchTask struct {
 	*common.WalletNodeTask
 	thumbnail *ThumbnailHandler
 	ddAndFP   *DDFPHandler
-	bridgeOn  bool
 }
 
 // NewNftGetSearchTask returns a new NftSearchingTask instance.
@@ -277,61 +250,7 @@ func NewNftGetSearchTask(service *NftSearchingService, pastelID string, passphra
 		WalletNodeTask: task,
 		thumbnail:      NewThumbnailHandler(common.NewMeshHandler(meshHandlerOpts)),
 		ddAndFP:        NewDDFPHandler(common.NewMeshHandler(meshHandlerOpts)),
-		bridgeOn:       service.config.BridgeOn,
 	}
-}
-
-func (task *NftSearchingTask) enforceBridgeConnection(ctx context.Context) error {
-	if err := task.service.bridgeClient.Health(ctx); err != nil {
-		bridgeClient := bridgeGrpc.NewClient()
-		log.WithContext(ctx).Info("Connection lost with bridge..reconnecting..")
-
-		conn, err := bridgeClient.Connect(ctx, fmt.Sprintf("%s:%d", task.service.config.BridgeAddress,
-			task.service.config.BridgePort))
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("reconnecting with bridge failed")
-			return err
-		}
-
-		task.service.bridgeClient = conn.DownloadData()
-		log.WithContext(ctx).Info("Bridge service reconnected ")
-	}
-
-	return nil
-}
-
-func (task *NftSearchingTask) fetchThumbnails(ctx context.Context, searchResult []*RegTicketSearch, resultChan *chan *RegTicketSearch) error {
-	group, _ := errgroup.WithContext(ctx)
-	for i, res := range searchResult {
-		res := res
-		res.MatchIndex = i
-
-		group.Go(func() error {
-			tgroup, tgctx := errgroup.WithContext(ctx)
-			var thumbData map[int][]byte
-			tgroup.Go(func() (err error) {
-				thumbData, err = task.service.bridgeClient.DownloadThumbnail(tgctx, res.RegTicket.TXID, 2)
-
-				return err
-			})
-
-			if err := tgroup.Wait(); err != nil {
-				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("fetch Thumbnail")
-				return nil
-			}
-
-			res.Thumbnail = thumbData[0]
-			res.ThumbnailSecondry = thumbData[1]
-			// Post on result channel
-			*resultChan <- res
-
-			log.WithContext(ctx).WithField("search_result", res).Debug("Posted search result")
-
-			return nil
-		})
-	}
-
-	return group.Wait()
 }
 
 func (task *NftSearchingTask) connectThumbnailAndDDHelper(ctx context.Context, cancel context.CancelFunc) {

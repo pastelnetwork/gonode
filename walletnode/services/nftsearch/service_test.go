@@ -3,9 +3,10 @@ package nftsearch
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/stretchr/testify/mock"
-	"testing"
 
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -92,7 +93,7 @@ func TestRegTicket(t *testing.T) {
 
 			pastelClientMock.ListenOnRegTicket(testCase.args.regTicketID, testCase.want, testCase.args.regTicketErr)
 
-			service := NewNftSearchService(NewConfig(), pastelClientMock, nodeClientMock, nil, nil)
+			service := NewNftSearchService(NewConfig(), pastelClientMock, nodeClientMock, nil)
 
 			result, err := service.RegTicket(ctx, testCase.args.regTicketID)
 			assert.Equal(t, testCase.err, err)

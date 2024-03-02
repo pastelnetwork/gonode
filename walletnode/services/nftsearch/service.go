@@ -2,7 +2,7 @@ package nftsearch
 
 import (
 	"context"
-	bridgeNode "github.com/pastelnetwork/gonode/bridge/node"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -25,7 +25,6 @@ type NftSearchingService struct {
 	config        *Config
 	nodeClient    node.ClientInterface
 	pastelHandler *mixins.PastelHandler
-	bridgeClient  bridgeNode.DownloadDataInterface
 	historyDB     storage.LocalStoreInterface
 }
 
@@ -73,15 +72,6 @@ func (service *NftSearchingService) GetThumbnail(ctx context.Context, regTicket 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if service.config.BridgeOn {
-		dataMap, err := service.bridgeClient.DownloadThumbnail(ctx, regTicket.TXID, 1)
-		if err == nil {
-			return dataMap[0], nil
-		}
-
-		log.WithContext(ctx).WithError(err).Error("download thumbnail through bridge failed")
-	}
-
 	if err := nftGetSearchTask.thumbnail.Connect(ctx, 1, cancel); err != nil {
 		return nil, errors.Errorf("connect and setup fetchers: %w", err)
 	}
@@ -100,16 +90,6 @@ func (service *NftSearchingService) GetDDAndFP(ctx context.Context, regTicket *p
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	// Get DD and FP data so we can filter on it.
-	if service.config.BridgeOn {
-		data, err = service.bridgeClient.DownloadDDAndFingerprints(ctx, regTicket.TXID)
-		if err == nil {
-			return data, nil
-		}
-
-		log.WithContext(ctx).WithError(err).Error("download dd&fp through bridge failed")
-	}
 
 	if err := nftGetSearchTask.ddAndFP.Connect(ctx, 1, cancel); err != nil {
 		return nil, errors.Errorf("connect and setup fetchers: %w", err)
@@ -151,14 +131,13 @@ func (service *NftSearchingService) RegTicket(ctx context.Context, RegTXID strin
 //	NB: Because NewNftApiHandler calls AddTask, an NftSearchTask will actually
 //		be instantiated instead of a generic Task.
 func NewNftSearchService(config *Config, pastelClient pastel.Client,
-	nodeClient node.ClientInterface, bridgeClient bridgeNode.DownloadDataInterface, historyDB storage.LocalStoreInterface) *NftSearchingService {
+	nodeClient node.ClientInterface, historyDB storage.LocalStoreInterface) *NftSearchingService {
 
 	return &NftSearchingService{
 		Worker:        task.NewWorker(),
 		config:        config,
 		nodeClient:    nodeClient,
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
-		bridgeClient:  bridgeClient,
 		historyDB:     historyDB,
 	}
 }

@@ -3,10 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/utils"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/pastelnetwork/gonode/common/utils"
 
 	"net/http"
 	_ "net/http/pprof" //profiling
@@ -30,7 +31,6 @@ import (
 	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/bridge"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/hermes"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
@@ -295,7 +295,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterCollection(collectionRegister),
 		supernode.NewRegisterCollection(collectionRegister),
 		walletnode.NewDownloadNft(nftDownload),
-		bridge.NewDownloadData(nftDownload),
 		supernode.NewStorageChallengeGRPC(storageChallenger),
 		supernode.NewSelfHealingChallengeGRPC(selfHealing),
 		healthcheck.NewHealthCheck(statsMngr),
