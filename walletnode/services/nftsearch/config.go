@@ -7,9 +7,6 @@ import (
 // Config contains settings of the registering nft.
 type Config struct {
 	*common.Config `mapstructure:",squash" json:"-"`
-	BridgeOn       bool
-	BridgeAddress  string
-	BridgePort     int
 }
 
 // NewConfig returns a new Config instance.

@@ -133,9 +133,6 @@ Sense provides other applications or users access to Pastel's state-of-the-art D
 ### Supernode
 [`supernode`](supernode/README.md) is a server application for `walletnode`. It handles communication with the blockchain, duplication detection server, storage, and other services.
 
-### Bridge
-The Bridge service functions as a conduit, enabling `walletnode` to quickly download files through `supernode`. A handshake process is required for `walletnode` to connect with `supernode`, which can be time-consuming. The Bridge service mitigates this delay by maintaining connections with the top 10 nodes, facilitating immediate file downloads from `supernode` upon request.
-
 ### Hermes
 Hermes has two primary roles:
 

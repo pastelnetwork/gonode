@@ -26,14 +26,6 @@ type Config struct {
 	Node    `mapstructure:"node" json:"node,omitempty"`
 	Pastel  *pastel.Config  `mapstructure:"-" json:"-"`
 	RaptorQ *raptorq.Config `mapstructure:"raptorq" json:"raptorq,omitempty"`
-	Bridge  *BridgeConfig   `mapstructure:"bridge" json:"bridge,omitempty"`
-}
-
-// BridgeConfig contains settings of the supernode server.
-type BridgeConfig struct {
-	Address string `mapstructure:"address" json:"address,omitempty"`
-	Port    int    `mapstructure:"port" json:"port,omitempty"`
-	Switch  bool   `mapstructure:"switch" json:"switch,omitempty"`
 }
 
 // LogConfig contains log configs
@@ -67,6 +59,5 @@ func New() *Config {
 		Node:    NewNode(),
 		Pastel:  pastel.NewConfig(),
 		RaptorQ: raptorq.NewConfig(),
-		Bridge:  &BridgeConfig{},
 	}
 }

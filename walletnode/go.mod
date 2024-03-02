@@ -1,9 +1,8 @@
 module github.com/pastelnetwork/gonode/walletnode
 
-go 1.21
+go 1.22.0
 
 replace (
-	github.com/pastelnetwork/gonode/bridge => ../bridge
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/mixins => ../mixins
 	github.com/pastelnetwork/gonode/p2p => ../p2p
@@ -14,23 +13,22 @@ replace (
 )
 
 require (
-	github.com/gabriel-vasile/mimetype v1.4.2
-	github.com/google/uuid v1.4.0
+	github.com/gabriel-vasile/mimetype v1.4.3
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/json-iterator/go v1.1.12
-	github.com/pastelnetwork/gonode/bridge v0.0.0-00010101000000-000000000000
-	github.com/pastelnetwork/gonode/common v0.0.0-20230829114806-701c926c0c44
+	github.com/pastelnetwork/gonode/common v0.0.0-20240229105633-1f295fe18563
 	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/proto v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-00010101000000-000000000000
-	github.com/sahilm/fuzzy v0.1.0
-	github.com/stretchr/testify v1.8.4
-	goa.design/goa/v3 v3.14.0
-	goa.design/plugins/v3 v3.13.1
-	golang.org/x/crypto v0.15.0
-	golang.org/x/sync v0.5.0
-	google.golang.org/grpc v1.59.0
+	github.com/sahilm/fuzzy v0.1.1
+	github.com/stretchr/testify v1.9.0
+	goa.design/goa/v3 v3.15.0
+	goa.design/plugins/v3 v3.15.0
+	golang.org/x/crypto v0.18.0
+	golang.org/x/sync v0.6.0
+	google.golang.org/grpc v1.62.0
 )
 
 require (
@@ -42,7 +40,7 @@ require (
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-chi/chi/v5 v5.0.10 // indirect
+	github.com/go-chi/chi/v5 v5.0.11 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -75,21 +73,21 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.16.0 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/urfave/cli/v2 v2.25.7 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/image v0.14.0 // indirect
+	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.18.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
-	golang.org/x/term v0.14.0 // indirect
+	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/term v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.15.0 // indirect
+	golang.org/x/tools v0.17.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
+	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
