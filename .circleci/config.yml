@@ -190,11 +190,6 @@ commands:
       - xgo-build:
           package: << parameters.package >>
           targets: << parameters.targets >>
-      - github-upload-all-os:
-          working_directory: "~/go/src/github.com/pastelnetwork/gonode/build"
-          binaryName: << parameters.package >>
-          repo: "gonode"
-          targets: << parameters.targets >>
   upload-s3:
     parameters:
       working_directory:
@@ -227,39 +222,44 @@ commands:
     parameters:
       working_directory:
         type: string
-      binaryName:
-        type: string
       repo:
-        type: string
-      targets:
         type: string
     steps:
       - run:
-          name: Upload << parameters.targets >> to << parameters.repo >> GitHub repo
+          name: Upload << parameters.working_directory >> to << parameters.repo >> GitHub repo
           working_directory: << parameters.working_directory >>
           command: |
             ls -a
-            export MACOS_ARTIFACT=<< parameters.binaryName >>-darwin-10.15-amd64
-            export WINDOWS_ARTIFACT=<< parameters.binaryName >>-windows-4.0-amd64.exe
-            export LINUX_ARTIFACT=<< parameters.binaryName >>-linux-amd64
-            if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
-              echo "Check existence of linux/amd64 build and upload to GitHub"
-              test -f $LINUX_ARTIFACT
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-linux-amd64 --file << parameters.binaryName >>-linux-amd64
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-linux-amd64.sha256 --file << parameters.binaryName >>-linux-amd64.sha256
-            fi
-            if [[ "<< parameters.targets >>" == *"darwin-10.15/amd64,"* ]]; then
-              echo "Check existence of darwin-10.15/amd64 build and upload to GitHub"
-              test -f $MACOS_ARTIFACT
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-darwin-amd64 --file << parameters.binaryName >>-darwin-10.15-amd64
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-darwin-amd64.sha256 --file << parameters.binaryName >>-darwin-10.15-amd64.sha256
-            fi
-            if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
-              echo "Check existence of windows/amd64 build and upload to GitHub"
-              test -f $WINDOWS_ARTIFACT
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-win-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-win-amd64.sha256 --file << parameters.binaryName >>-windows-4.0-amd64.exe.sha256
-            fi
+            export WN_MACOS_ARTIFACT=walletnode-darwin-10.15-amd64
+            export WN_WINDOWS_ARTIFACT=walletnode-windows-4.0-amd64.exe
+            export WN_LINUX_ARTIFACT=walletnode-linux-amd64
+            export HERMES_LINUX_ARTIFACT=hermes-linux-amd64
+            export SN_LINUX_ARTIFACT=supernode-linux-amd64
+
+           
+            echo "Check existence of walletnode linux/amd64 build and upload to GitHub"
+            test -f $WN_LINUX_ARTIFACT
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name walletnode-linux-amd64 --file walletnode-linux-amd64
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name walletnode-linux-amd64.sha256 --file walletnode-linux-amd64.sha256
+        
+            echo "Check existence of  walletnode darwin-10.15/amd64 build and upload to GitHub"
+            test -f $WN_MACOS_ARTIFACT
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name walletnode-darwin-amd64 --file walletnode-darwin-10.15-amd64
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name walletnode-darwin-amd64.sha256 --file walletnode-darwin-10.15-amd64.sha256
+    
+            echo "Check existence of walletnode windows/amd64 build and upload to GitHub"
+            test -f $WN_WINDOWS_ARTIFACT
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name walletnode-win-amd64.exe --file walletnode-windows-4.0-amd64.exe
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name walletnode-win-amd64.sha256 --file walletnode-windows-4.0-amd64.exe.sha256
+            
+            test -f $SN_LINUX_ARTIFACT
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name supernode-linux-amd64 --file supernode-linux-amd64
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name supernode-linux-amd64.sha256 --file supernode-linux-amd64.sha256
+
+            test -f $HERMES_LINUX_ARTIFACT
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name hermes-linux-amd64 --file hermes-linux-amd64
+            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name hermes-linux-amd64.sha256 --file hermes-linux-amd64.sha256
+
   install_tensorflow:
     steps:
       - run:
@@ -476,6 +476,9 @@ jobs:
       - release:
           package: "hermes"
           targets: "linux/amd64"
+      - github-upload-all-os:
+          working_directory: "~/go/src/github.com/pastelnetwork/gonode/build"
+          repo: "gonode"
       - upload-s3:
           working_directory: "~/go/src/github.com/pastelnetwork/gonode/build"
 
