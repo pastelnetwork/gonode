@@ -462,7 +462,7 @@ jobs:
       - run:
           name: Install github-release
           command: |
-            GO111MODULE=off go get github.com/github-release/github-release
+            go install github.com/github-release/github-release@latest
       - run:
           name: Install xgo
           command: |
