@@ -152,6 +152,32 @@ func (s *SQLiteStore) GetSelfHealingGenerationMetrics(timestamp time.Time) ([]ty
 	return metrics, rows.Err()
 }
 
+// GetStorageChallengeMetricsByChallengeID retrieves all the metrics
+func (s *SQLiteStore) GetStorageChallengeMetricsByChallengeID(challengeID string) ([]types.StorageChallengeLogMessage, error) {
+	const query = `
+    SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at
+    FROM storage_challenge_metrics
+    WHERE challenge_id = ?;`
+
+	rows, err := s.db.Query(query, challengeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.StorageChallengeLogMessage
+	for rows.Next() {
+		var m types.StorageChallengeLogMessage
+		err := rows.Scan(&m.ID, &m.ChallengeID, &m.MessageType, &m.Data, &m.Sender, &m.CreatedAt, &m.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
+}
+
 // GetSHExecutionMetrics retrieves self-healing execution metrics
 func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time) (metrics.SHExecutionMetrics, error) {
 	m := metrics.SHExecutionMetrics{}
@@ -318,7 +344,7 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 	return m, nil
 }
 
-func (s *SQLiteStore) GetTotalSCGeneratedAndProcessed(from time.Time) (metrics.SCMetrics, error) {
+func (s *SQLiteStore) GetTotalSCGeneratedAndProcessedAndEvaluated(from time.Time) (metrics.SCMetrics, error) {
 	metrics := metrics.SCMetrics{}
 
 	// Query for total number of challenges
@@ -331,6 +357,12 @@ func (s *SQLiteStore) GetTotalSCGeneratedAndProcessed(from time.Time) (metrics.S
 	// Query for total challenges responded
 	totalChallengesProcessedQuery := "SELECT COUNT(DISTINCT challenge_id) FROM storage_challenge_metrics WHERE message_type = 2 AND created_at > ?"
 	err = s.db.QueryRow(totalChallengesProcessedQuery, from).Scan(&metrics.TotalChallengesProcessed)
+	if err != nil {
+		return metrics, err
+	}
+
+	totalChallengesEvaluatedQuery := "SELECT COUNT(DISTINCT challenge_id) FROM storage_challenge_metrics WHERE message_type = 3 AND created_at > ?"
+	err = s.db.QueryRow(totalChallengesEvaluatedQuery, from).Scan(&metrics.TotalChallengesEvaluatedByChallenger)
 	if err != nil {
 		return metrics, err
 	}
@@ -390,31 +422,32 @@ func (s *SQLiteStore) GetObserversEvaluations(from time.Time) ([]types.StorageCh
 
 func (s *SQLiteStore) GetSCSummaryStats(from time.Time) (scMetrics metrics.SCMetrics, err error) {
 	scStats := metrics.SCMetrics{}
-	scMetrics, err = s.GetTotalSCGeneratedAndProcessed(from)
+	scMetrics, err = s.GetTotalSCGeneratedAndProcessedAndEvaluated(from)
 	if err != nil {
 		return scMetrics, err
 	}
 	scStats.TotalChallenges = scMetrics.TotalChallenges
 	scStats.TotalChallengesProcessed = scMetrics.TotalChallengesProcessed
+	scStats.TotalChallengesEvaluatedByChallenger = scMetrics.TotalChallengesEvaluatedByChallenger
 
-	challengerEvaluations, err := s.GetChallengerEvaluations(from)
-	if err != nil {
-		return scMetrics, err
-	}
-	log.WithField("challenge_evaluations", len(challengerEvaluations)).Info("challenge_evaluations retrieved")
-
-	for i := 0; i < len(challengerEvaluations); i++ {
-		challengerEvaluation := challengerEvaluations[i]
-
-		var challengeMsg types.MessageData
-		if err := json.Unmarshal(challengerEvaluation.Data, &challengeMsg); err != nil {
-			continue
-		}
-
-		if challengeMsg.ChallengerEvaluation.IsVerified {
-			scMetrics.TotalChallengesVerifiedByChallenger++
-		}
-	}
+	//challengerEvaluations, err := s.GetChallengerEvaluations(from)
+	//if err != nil {
+	//	return scMetrics, err
+	//}
+	//log.WithField("challenge_evaluations", len(challengerEvaluations)).Info("challenge_evaluations retrieved")
+	//
+	//for i := 0; i < len(challengerEvaluations); i++ {
+	//	challengerEvaluation := challengerEvaluations[i]
+	//
+	//	var challengeMsg types.MessageData
+	//	if err := json.Unmarshal(challengerEvaluation.Data, &challengeMsg); err != nil {
+	//		continue
+	//	}
+	//
+	//	if challengeMsg.ChallengerEvaluation.IsVerified {
+	//		scMetrics.TotalChallengesVerifiedByChallenger++
+	//	}
+	//}
 
 	observersEvaluations, err := s.GetObserversEvaluations(from)
 	if err != nil {
@@ -427,7 +460,7 @@ func (s *SQLiteStore) GetSCSummaryStats(from time.Time) (scMetrics metrics.SCMet
 
 	for _, obMetrics := range observerEvaluationMetrics {
 		if obMetrics.ChallengesVerified > 2 {
-			scMetrics.TotalChallengesVerifiedByObservers++
+			scMetrics.TotalChallengesVerified++
 		} else {
 			if obMetrics.FailedByInvalidTimestamps > 0 {
 				scMetrics.SlowResponsesObservedByObservers++
@@ -617,4 +650,29 @@ func (s *SQLiteStore) GetSHChallengeReport(ctx context.Context, challengeID stri
 	}
 
 	return challenges, nil
+}
+
+func (s *SQLiteStore) GetMetricsDataByStorageChallengeID(ctx context.Context, challengeID string) (storageChallengeMessages []types.Message, err error) {
+	scMetrics, err := s.GetStorageChallengeMetricsByChallengeID(challengeID)
+	if err != nil {
+		return storageChallengeMessages, err
+	}
+	log.WithContext(ctx).WithField("rows", len(scMetrics)).Info("storage-challenge metrics row count")
+
+	for _, scMetric := range scMetrics {
+		msg := types.MessageData{}
+		if err := json.Unmarshal(scMetric.Data, &msg); err != nil {
+			return storageChallengeMessages, fmt.Errorf("cannot unmarshal storage challenge data: %w", err)
+		}
+
+		storageChallengeMessages = append(storageChallengeMessages, types.Message{
+			ChallengeID:     scMetric.ChallengeID,
+			MessageType:     types.MessageType(scMetric.MessageType),
+			Sender:          scMetric.Sender,
+			SenderSignature: scMetric.SenderSignature,
+			Data:            msg,
+		})
+	}
+
+	return storageChallengeMessages, nil
 }

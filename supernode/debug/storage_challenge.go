@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils/storagechallenge"
 	"github.com/pastelnetwork/gonode/pastel"
 	"net/http"
@@ -41,13 +42,73 @@ func (service *Service) processSCSummaryStats(ctx context.Context, pid string, s
 		SCSummaryStats: storagechallenge.SCSummaryStats{
 			TotalChallenges:                      metrics.TotalChallenges,
 			TotalChallengesProcessed:             metrics.TotalChallengesProcessed,
-			TotalChallengesVerifiedByChallenger:  metrics.TotalChallengesVerifiedByChallenger,
-			TotalChallengesVerifiedByObservers:   metrics.TotalChallengesVerifiedByObservers,
+			TotalChallengesEvaluatedByChallenger: metrics.TotalChallengesEvaluatedByChallenger,
+			TotalChallengesVerified:              metrics.TotalChallengesVerified,
 			SlowResponsesObservedByObservers:     metrics.SlowResponsesObservedByObservers,
 			InvalidSignaturesObservedByObservers: metrics.InvalidSignaturesObservedByObservers,
 			InvalidEvaluationObservedByObservers: metrics.InvalidEvaluationObservedByObservers,
 		},
 	}, nil
+}
+
+// SCDetailedLogs is the HTTP handler that parses the request and writes the response.
+func (service *Service) SCDetailedLogs(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+
+	passphrase := request.Header.Get("Authorization")
+	pid := request.URL.Query().Get("pid")
+	if pid == "" {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"error": "Missing pid parameter"})
+		return
+	}
+
+	challengeID := request.URL.Query().Get("challenge_id")
+
+	storageChallengeDetailedLogsData, err := service.GetSCDetailedLogsData(ctx, pid, passphrase, challengeID)
+	if err != nil {
+		var statusCode int
+		switch err.Error() {
+		case "invalid pid/passphrase":
+			statusCode = http.StatusUnauthorized
+		case "error opening DB", "error querying metrics":
+			statusCode = http.StatusNotFound
+		default:
+			statusCode = http.StatusInternalServerError
+		}
+		responseWithJSON(writer, statusCode, map[string]string{"error": err.Error()})
+		return
+	}
+
+	responseWithJSON(writer, http.StatusOK, storageChallengeDetailedLogsData)
+}
+
+// GetSCDetailedLogsData encapsulates the core logic for storage-challenge log data
+func (service *Service) GetSCDetailedLogsData(ctx context.Context, pid string, signature string, challengeID string) (storageChallengeMessageData []types.Message, err error) {
+	ok, err := service.scService.PastelClient.Verify(ctx, []byte(pid), signature, pid, pastel.SignAlgorithmED448)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify pid/passphrase: %w", err)
+	}
+
+	if !ok {
+		return nil, fmt.Errorf("invalid pid/passphrase")
+	}
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		return nil, fmt.Errorf("error opening DB: %w", err)
+	}
+	defer store.CloseHistoryDB(ctx)
+
+	if challengeID != "" {
+		storageChallengeMessageData, err = store.GetMetricsDataByStorageChallengeID(ctx, challengeID)
+		if err != nil {
+			return storageChallengeMessageData, fmt.Errorf("error retrieving detailed logs: %w", err)
+		}
+
+		return storageChallengeMessageData, nil
+	}
+
+	return storageChallengeMessageData, nil
 }
 
 // SCSummaryStats is the HTTP handler that parses the request and writes the response.

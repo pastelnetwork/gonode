@@ -1,7 +1,10 @@
 package types
 
 import (
+	"encoding/json"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )
@@ -79,6 +82,8 @@ type BroadcastMessage struct {
 	Recipient   map[string][]byte
 	Observers   map[string][]byte
 }
+
+type MessageDataList []MessageData
 
 // MessageData represents the storage challenge message data
 type MessageData struct {
@@ -179,4 +184,15 @@ type BroadcastMessageMetrics struct {
 type ProcessBroadcastChallengeMetricsRequest struct {
 	Data     []byte `json:"data"`
 	SenderID string `json:"sender_id"`
+}
+
+type StorageChallengeMessages []Message
+
+// Hash returns the hash of the storage-challenge challenge log data
+
+func (mdl StorageChallengeMessages) Hash() string {
+	data, _ := json.Marshal(mdl)
+	hash, _ := utils.Sha3256hash(data)
+
+	return string(hash)
 }

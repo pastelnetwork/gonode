@@ -16,8 +16,8 @@ type Metrics struct {
 type SCMetrics struct {
 	TotalChallenges                      int
 	TotalChallengesProcessed             int
-	TotalChallengesVerifiedByChallenger  int
-	TotalChallengesVerifiedByObservers   int
+	TotalChallengesEvaluatedByChallenger int
+	TotalChallengesVerified              int
 	SlowResponsesObservedByObservers     int
 	InvalidSignaturesObservedByObservers int
 	InvalidEvaluationObservedByObservers int
