@@ -161,23 +161,6 @@ var SHExecutionStats = Type("SHExecutionStats", func() {
 		"total_files_healed", "total_file_healing_failed")
 })
 
-// SCMetrics is the result type for the storage-challenge metrics
-var SCMetrics = Type("SCMetrics", func() {
-	Description("Storage-Challenge Metrics")
-
-	Attribute("total_challenges_issued", Int, "Total number of challenges issued")
-	Attribute("total_challenges_processed", Int, "Total number of challenges processed by the recipient node")
-	Attribute("total_challenges_verified_by_challenger", Int, "Total number of challenges verified by the challenger node")
-	Attribute("total_challenges_verified_by_observers", Int, "Total number of challenges verified by observers")
-	Attribute("slow_response_observed_by_observers", Int, "challenges failed due to slow-responses evaluated by observers")
-	Attribute("invalid_signatures_observed_by_observers", Int, "challenges failed due to invalid signatures evaluated by observers")
-	Attribute("invalid_evaluation_observed_by_observers", Int, "challenges failed due to invalid evaluation evaluated by observers")
-
-	Required("total_challenges_issued", "total_challenges_processed", "total_challenges_verified_by_challenger",
-		"total_challenges_verified_by_observers", "slow_response_observed_by_observers", "invalid_signatures_observed_by_observers",
-		"invalid_evaluation_observed_by_observers")
-})
-
 // SelfHealingReports is the result type for the getSelfHealingReports method
 var SelfHealingReports = Type("SelfHealingReports", func() {
 	Description("Self-healing challenge reports")

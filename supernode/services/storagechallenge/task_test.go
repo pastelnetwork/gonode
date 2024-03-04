@@ -212,7 +212,8 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 
 			closestNodes := []string{"A", "B", "C", "D"}
 			retrieveValue := []byte("I retrieved this result")
-			p2pClientMock := p2pMock.NewMockClient(t).ListenOnRetrieve(retrieveValue, nil).ListenOnNClosestNodes(closestNodes[0:2], nil)
+			p2pClientMock := p2pMock.NewMockClient(t).ListenOnRetrieve(retrieveValue, nil).
+				ListenOnNClosestNodes(closestNodes[0:2], nil).ListenOnEnableKey(nil)
 
 			rqClientMock := rqMock.NewMockClient(t)
 			rqClientMock.ListenOnEncodeInfo(&rqnode.EncodeInfo{}, nil)

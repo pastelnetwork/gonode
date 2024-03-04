@@ -145,6 +145,15 @@ type StorageChallengeLogMessage struct {
 	UpdatedAt       time.Time `db:"updated_at"`
 }
 
+// StorageChallengeMetric represents the metric log to be stored in the DB
+type StorageChallengeMetric struct {
+	ID          int    `db:"id"`
+	MessageType int    `db:"message_type"`
+	ChallengeID string `db:"challenge_id"`
+	Data        []byte `db:"data"`
+	SenderID    string `db:"sender_id"`
+}
+
 // BroadcastLogMessage represents the broadcast message log to be stored in the DB
 type BroadcastLogMessage struct {
 	ChallengeID string `db:"challenge_id"`

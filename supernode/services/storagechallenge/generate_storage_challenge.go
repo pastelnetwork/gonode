@@ -45,7 +45,7 @@ import (
 // GenerateStorageChallenges is called from service run, generate storage challenges will determine if we should issue a storage challenge,
 // and if so calculate and issue it.
 func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
-	log.WithContext(ctx).Println("Generate Storage Challenges invoked")
+	log.WithContext(ctx).Println("Generate Storage Challenge invoked")
 	// List all NFT tickets and API Cascade Tickets, get their raptorq ids
 	// list all RQ symbol keys from nft and action tickets
 
@@ -148,10 +148,10 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 			SenderSignature: nil,
 		}
 
-		if err := task.SCService.P2PClient.DisableKey(ctx, storageChallengeMessage.Data.Challenge.FileHash); err != nil {
-			log.WithContext(ctx).WithField("challenge_id", challengeID).WithField("file_hash", currentFileHashToChallenge).
-				WithError(err).Error("error locking the file")
-			return errors.Errorf("error locking the file")
+		if err := task.StoreStorageChallengeMetric(ctx, storageChallengeMessage); err != nil {
+			log.WithContext(ctx).WithField("challenge_id", challengeID).
+				WithField("message_type", storageChallengeMessage.MessageType).Error(
+				"error storing storage challenge metric")
 		}
 
 		log.WithContext(ctx).WithField("challenge_id", challengeID).WithField("file_hash", currentFileHashToChallenge).
@@ -476,7 +476,6 @@ func (task SCTask) getChallengingFiles(ctx context.Context, merkleRoot, challeng
 }
 
 func (task SCTask) identifyChallengeRecipientsAndObserversAgainstChallengingFiles(ctx context.Context, sliceOfFileHashesToChallenge []string, merkleRoot, challengerNodeID string) ([]string, map[int][]string) {
-	log.WithContext(ctx).Info("identifying challenge recipients and partial observers")
 	mapOfchallengeFilePartialObservers := make(map[int][]string)
 	sliceOfSupernodesToChallenge := make([]string, len(sliceOfFileHashesToChallenge))
 
@@ -550,6 +549,49 @@ func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message)
 			}
 
 			log.WithContext(ctx).WithError(err).Error("Error storing challenge message to DB")
+			return err
+		}
+	}
+
+	return nil
+}
+
+// StoreStorageChallengeMetric stores the challenge message to db for further verification
+func (task *SCTask) StoreStorageChallengeMetric(ctx context.Context, msg types.Message) error {
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
+		return err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	data, err := json.Marshal(msg.Data)
+	if err != nil {
+		return err
+	}
+
+	if store != nil {
+		log.WithContext(ctx).Info("store")
+		storageChallengeLog := types.StorageChallengeMetric{
+			ChallengeID: msg.ChallengeID,
+			MessageType: int(msg.MessageType),
+			Data:        data,
+			SenderID:    msg.Sender,
+		}
+
+		err = store.InsertStorageChallengeMetric(storageChallengeLog)
+		if err != nil {
+			if strings.Contains(err.Error(), ErrUniqueConstraint.Error()) {
+				log.WithContext(ctx).WithField("challenge_id", msg.ChallengeID).
+					WithField("message_type", msg.MessageType).
+					WithField("sender_id", msg.Sender).
+					Info("message already exists, not updating")
+
+				return nil
+			}
+
 			return err
 		}
 	}

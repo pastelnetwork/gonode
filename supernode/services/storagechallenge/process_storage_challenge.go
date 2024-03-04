@@ -42,7 +42,6 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 
 		if err := task.SCService.P2PClient.DisableKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash); err != nil {
 			log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID).WithError(err).Error("error locking the file")
-			return nil, errors.Errorf("error locking the file")
 		}
 		logger.Info("file has been locked by the observer")
 
@@ -65,12 +64,55 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		return nil, nil
 	}
 
+	if err := task.StoreChallengeMessage(ctx, incomingChallengeMessage); err != nil {
+		log.WithContext(ctx).
+			WithField("node_id", task.nodeID).
+			WithError(err).
+			Error("error storing challenge message")
+	}
+
 	// Get the file to hash
 	log.WithContext(ctx).Info("retrieving the file from hash")
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash, true)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not read file data in to memory")
-		return nil, err
+
+		outgoingResponseMessage := types.Message{
+			MessageType: types.ResponseMessageType,
+			ChallengeID: incomingChallengeMessage.ChallengeID,
+			Data: types.MessageData{
+				ChallengerID: incomingChallengeMessage.Data.ChallengerID,
+				RecipientID:  incomingChallengeMessage.Data.RecipientID,
+				Observers:    append([]string(nil), incomingChallengeMessage.Data.Observers...),
+				Challenge: types.ChallengeData{
+					Block:      incomingChallengeMessage.Data.Challenge.Block,
+					Merkelroot: incomingChallengeMessage.Data.Challenge.Merkelroot,
+					Timestamp:  incomingChallengeMessage.Data.Challenge.Timestamp,
+					FileHash:   incomingChallengeMessage.Data.Challenge.FileHash,
+					StartIndex: incomingChallengeMessage.Data.Challenge.StartIndex,
+					EndIndex:   incomingChallengeMessage.Data.Challenge.EndIndex,
+				},
+				Response: types.ResponseData{
+					Block:      incomingChallengeMessage.Data.Challenge.Block,
+					Merkelroot: incomingChallengeMessage.Data.Challenge.Merkelroot,
+					Hash:       "",
+					Timestamp:  time.Now().UTC(),
+				},
+			},
+			Sender:          task.nodeID,
+			SenderSignature: nil,
+		}
+
+		if err := task.StoreStorageChallengeMetric(ctx, outgoingResponseMessage); err != nil {
+			log.WithContext(ctx).WithField("challenge_id", outgoingResponseMessage.ChallengeID).
+				WithField("message_type", outgoingResponseMessage.MessageType).Error(
+				"error storing storage challenge metric")
+		}
+
+		if err = task.sendVerifyStorageChallenge(ctx, outgoingResponseMessage); err != nil {
+			log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not send processed challenge message to node for verification")
+			return nil, err
+		}
 	}
 	log.WithContext(ctx).Info("challenge file has been retrieved")
 
@@ -120,6 +162,12 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		SenderSignature: nil,
 	}
 
+	if err := task.StoreStorageChallengeMetric(ctx, outgoingResponseMessage); err != nil {
+		log.WithContext(ctx).WithField("challenge_id", outgoingResponseMessage.ChallengeID).
+			WithField("message_type", outgoingResponseMessage.MessageType).Error(
+			"error storing storage challenge metric")
+	}
+
 	// send to Supernodes to validate challenge response hash
 	log.WithContext(ctx).WithField("challenge_id", outgoingResponseMessage.ChallengeID).Info("sending challenge response for verification")
 	if err = task.sendVerifyStorageChallenge(ctx, outgoingResponseMessage); err != nil {
@@ -134,6 +182,12 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 func (task *SCTask) validateProcessingStorageChallengeIncomingData(ctx context.Context, incomingChallengeMessage types.Message) error {
 	if incomingChallengeMessage.MessageType != types.ChallengeMessageType {
 		return fmt.Errorf("incorrect message type to processing storage challenge")
+	}
+
+	if err := task.StoreStorageChallengeMetric(ctx, incomingChallengeMessage); err != nil {
+		log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID).
+			WithField("message_type", incomingChallengeMessage.MessageType).Error(
+			"error storing storage challenge metric")
 	}
 
 	isVerified, err := task.VerifyMessageSignature(ctx, incomingChallengeMessage)
@@ -177,6 +231,10 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 		return err
 	}
 	challengeMessage.SenderSignature = signature
+
+	if err := task.StoreChallengeMessage(ctx, challengeMessage); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error storing the response message")
+	}
 
 	msg := pb.StorageChallengeMessage{
 		MessageType:     pb.StorageChallengeMessageMessageType(challengeMessage.MessageType),

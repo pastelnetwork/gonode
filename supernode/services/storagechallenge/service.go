@@ -126,9 +126,9 @@ func (service *SCService) Run(ctx context.Context) error {
 		}
 	}()
 
-	go service.BroadcastStorageChallengeMetricsWorker(ctx)
-
 	go service.RunLocalKeysFetchWorker(ctx)
+
+	go service.BroadcastStorageChallengeMetricsWorker(ctx)
 
 	if !service.config.IsTestConfig {
 		time.Sleep(15 * time.Minute)
@@ -139,6 +139,8 @@ func (service *SCService) Run(ctx context.Context) error {
 		case <-time.After(defaultTimerBlockCheckDuration):
 
 			if service.CheckNextBlockAvailable(ctx) && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
+				service.executeMetricsBroadcastTask(context.Background())
+
 				newCtx := log.ContextWithPrefix(context.Background(), "storage-challenge")
 				task := service.NewSCTask()
 				task.GenerateStorageChallenges(newCtx)
@@ -306,6 +308,10 @@ func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 
 // GetSymbolFileByKey : Wrapper for p2p file storage service - retrieves a file from kademlia based on its key. Here, they should be raptorq symbol files.
 func (service *SCService) GetSymbolFileByKey(ctx context.Context, key string, getFromLocalOnly bool) ([]byte, error) {
+	if err := service.P2PClient.EnableKey(ctx, key); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error enabling the symbol file")
+	}
+
 	return service.P2PClient.Retrieve(ctx, key, getFromLocalOnly)
 }
 

@@ -19,6 +19,7 @@ type LocalStoreInterface interface {
 	UpdateSCMetricsBroadcastTimestamp(nodeID string, broadcastAt time.Time) error
 	StorageChallengeMetrics(timestamp time.Time) ([]types.StorageChallengeLogMessage, error)
 	InsertStorageChallengeMessage(challenge types.StorageChallengeLogMessage) error
+	InsertStorageChallengeMetric(metric types.StorageChallengeMetric) error
 	InsertBroadcastMessage(challenge types.BroadcastLogMessage) error
 	QueryStorageChallengeMessage(challengeID string, messageType int) (challenge types.StorageChallengeLogMessage, err error)
 	CleanupStorageChallenges() (err error)
