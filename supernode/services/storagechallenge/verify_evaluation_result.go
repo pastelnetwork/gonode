@@ -96,7 +96,62 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingEvaluationResult.Data.Challenge.FileHash, true)
 	if err != nil {
 		log.WithContext(ctx).WithField("method", "VerifyEvaluationResult").WithField("challengeID", incomingEvaluationResult.ChallengeID).Error("could not read local file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
-		return types.Message{}, err
+
+		observerEvaluation := types.Message{
+			MessageType: types.AffirmationMessageType,
+			ChallengeID: incomingEvaluationResult.ChallengeID,
+			Data: types.MessageData{
+				ChallengerID: incomingEvaluationResult.Data.ChallengerID,
+				RecipientID:  incomingEvaluationResult.Data.RecipientID,
+				Observers:    append([]string(nil), incomingEvaluationResult.Data.Observers...),
+				Challenge: types.ChallengeData{
+					Block:      incomingEvaluationResult.Data.Challenge.Block,
+					Merkelroot: incomingEvaluationResult.Data.Challenge.Merkelroot,
+					FileHash:   incomingEvaluationResult.Data.Challenge.FileHash,
+					StartIndex: incomingEvaluationResult.Data.Challenge.StartIndex,
+					EndIndex:   incomingEvaluationResult.Data.Challenge.EndIndex,
+					Timestamp:  incomingEvaluationResult.Data.Challenge.Timestamp,
+				},
+				Response: types.ResponseData{
+					Block:      incomingEvaluationResult.Data.Response.Block,
+					Merkelroot: incomingEvaluationResult.Data.Response.Merkelroot,
+					Hash:       incomingEvaluationResult.Data.Response.Hash,
+					Timestamp:  incomingEvaluationResult.Data.Response.Timestamp,
+				},
+				ChallengerEvaluation: types.EvaluationData{
+					Block:      incomingEvaluationResult.Data.ChallengerEvaluation.Block,
+					Merkelroot: incomingEvaluationResult.Data.ChallengerEvaluation.Merkelroot,
+					Hash:       incomingEvaluationResult.Data.ChallengerEvaluation.Hash,
+					IsVerified: incomingEvaluationResult.Data.ChallengerEvaluation.IsVerified,
+					Timestamp:  time.Now().UTC(),
+				},
+				ObserverEvaluation: types.ObserverEvaluationData{
+					IsChallengerSignatureOK: isChallengerSignatureOk && isChallengeBlockAndMROk,
+					IsRecipientSignatureOK:  isRecipientSignatureOk && isResponseBlockAndMROk,
+					IsChallengeTimestampOK:  isChallengeTSOk,
+					IsProcessTimestampOK:    isResponseTSOk,
+					IsEvaluationTimestampOK: isEvaluationTSOk,
+					IsEvaluationResultOK:    challengeMessage.Data.ChallengerEvaluation.Hash == challengeMessage.Data.Response.Hash,
+					TrueHash:                challengeMessage.Data.ChallengerEvaluation.Hash,
+					Timestamp:               time.Now().UTC(),
+				},
+			},
+			Sender: task.nodeID,
+		}
+
+		if err := task.StoreStorageChallengeMetric(ctx, observerEvaluation); err != nil {
+			log.WithContext(ctx).WithField("challenge_id", observerEvaluation.ChallengeID).
+				WithField("message_type", observerEvaluation.MessageType).Error(
+				"error storing storage challenge metric")
+		}
+
+		signature, _, err := task.SignMessage(ctx, observerEvaluation.Data)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error signing evaluation response")
+		}
+		observerEvaluation.SenderSignature = signature
+
+		return observerEvaluation, nil
 	}
 	log.WithContext(ctx).Info("file has been retrieved for verification of evaluation report")
 

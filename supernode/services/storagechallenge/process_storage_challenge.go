@@ -113,6 +113,8 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 			log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not send processed challenge message to node for verification")
 			return nil, err
 		}
+
+		return nil, nil
 	}
 	log.WithContext(ctx).Info("challenge file has been retrieved")
 

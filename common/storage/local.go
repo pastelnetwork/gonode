@@ -46,10 +46,11 @@ type LocalStoreInterface interface {
 	QuerySelfHealingChallenges() (challenges []types.SelfHealingChallenge, err error)
 	GetSelfHealingGenerationMetrics(timestamp time.Time) ([]types.SelfHealingGenerationMetric, error)
 	GetSelfHealingExecutionMetrics(timestamp time.Time) ([]types.SelfHealingExecutionMetric, error)
-	GetTotalSCGeneratedAndProcessed(from time.Time) (metrics.SCMetrics, error)
+	GetTotalSCGeneratedAndProcessedAndEvaluated(from time.Time) (metrics.SCMetrics, error)
 	GetChallengerEvaluations(from time.Time) ([]types.StorageChallengeLogMessage, error)
 	GetObserversEvaluations(from time.Time) ([]types.StorageChallengeLogMessage, error)
 
 	GetLastNSHChallenges(ctx context.Context, n int) (types.SelfHealingReports, error)
 	GetSHChallengeReport(ctx context.Context, challengeID string) (types.SelfHealingReports, error)
+	GetMetricsDataByStorageChallengeID(ctx context.Context, challengeID string) ([]types.Message, error)
 }
