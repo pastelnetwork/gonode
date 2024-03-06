@@ -131,7 +131,7 @@ commands:
               APP_VERSION="latest"
             fi
 
-            export APP_LDFLAGS="-extldflags '-static-libgcc -static-libstdc++" -X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
+            export APP_LDFLAGS="-extldflags '-static-libgcc -static-libstdc++' -X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
             echo "APP_VERSION=$APP_VERSION"
             echo "APP_LDFLAGS=$APP_LDFLAGS"
 
