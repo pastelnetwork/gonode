@@ -195,7 +195,9 @@ func EncodeGetDetailedLogsRequest(encoder func(*http.Request) goahttp.Encoder) f
 		}
 		values := req.URL.Query()
 		values.Add("pid", p.Pid)
-		values.Add("challenge_id", p.ChallengeID)
+		if p.ChallengeID != nil {
+			values.Add("challenge_id", *p.ChallengeID)
+		}
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}

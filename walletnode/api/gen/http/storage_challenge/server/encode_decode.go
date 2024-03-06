@@ -164,7 +164,7 @@ func DecodeGetDetailedLogsRequest(mux goahttp.Muxer, decoder func(*http.Request)
 	return func(r *http.Request) (any, error) {
 		var (
 			pid         string
-			challengeID string
+			challengeID *string
 			key         string
 			err         error
 		)
@@ -172,9 +172,9 @@ func DecodeGetDetailedLogsRequest(mux goahttp.Muxer, decoder func(*http.Request)
 		if pid == "" {
 			err = goa.MergeErrors(err, goa.MissingFieldError("pid", "query string"))
 		}
-		challengeID = r.URL.Query().Get("challenge_id")
-		if challengeID == "" {
-			err = goa.MergeErrors(err, goa.MissingFieldError("challenge_id", "query string"))
+		challengeIDRaw := r.URL.Query().Get("challenge_id")
+		if challengeIDRaw != "" {
+			challengeID = &challengeIDRaw
 		}
 		key = r.Header.Get("Authorization")
 		if key == "" {

@@ -178,6 +178,42 @@ func (s *SQLiteStore) GetStorageChallengeMetricsByChallengeID(challengeID string
 	return metrics, rows.Err()
 }
 
+// GetLastNSCMetrics gets the N number of latest challenge IDs from the DB
+func (s *SQLiteStore) GetLastNSCMetrics() ([]types.NScMetric, error) {
+	const query = `
+SELECT 
+    count(*) AS count, 
+    challenge_id, 
+    MAX(created_at) AS most_recent
+FROM 
+    storage_challenge_metrics 
+GROUP BY 
+    challenge_id
+HAVING 
+    count(*) > 5
+ORDER BY 
+    most_recent DESC
+LIMIT 20;`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.NScMetric
+	for rows.Next() {
+		var m types.NScMetric
+		err := rows.Scan(&m.Count, &m.ChallengeID, &m.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
+}
+
 // GetSHExecutionMetrics retrieves self-healing execution metrics
 func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time) (metrics.SHExecutionMetrics, error) {
 	m := metrics.SHExecutionMetrics{}

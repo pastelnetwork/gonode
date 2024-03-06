@@ -89,7 +89,7 @@ var _ = Service("StorageChallenge", func() {
 				Example("Basic abcdef12345")
 			})
 
-			Required("pid", "challenge_id", "key")
+			Required("pid", "key")
 		})
 
 		Result(ArrayOf(SCDetailedLogs))

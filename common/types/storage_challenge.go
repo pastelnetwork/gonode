@@ -196,3 +196,10 @@ func (mdl StorageChallengeMessages) Hash() string {
 
 	return string(hash)
 }
+
+// NScMetric gets the latest challenge IDs from the DB
+type NScMetric struct {
+	Count       int
+	ChallengeID string
+	CreatedAt   string
+}

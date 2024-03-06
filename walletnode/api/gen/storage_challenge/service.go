@@ -81,7 +81,7 @@ type GetDetailedLogsPayload struct {
 	// PastelID of the user to fetch storage-challenge reports for
 	Pid string
 	// ChallengeID of the storage challenge to fetch their logs
-	ChallengeID string
+	ChallengeID *string
 	// Passphrase of the owner's PastelID
 	Key string
 }

@@ -64,7 +64,14 @@ func (service *Service) SCDetailedLogs(writer http.ResponseWriter, request *http
 
 	challengeID := request.URL.Query().Get("challenge_id")
 
-	storageChallengeDetailedLogsData, err := service.GetSCDetailedLogsData(ctx, pid, passphrase, challengeID)
+	var storageChallengeDetailedLogsData []types.Message
+	var err error
+	if challengeID != "" {
+		storageChallengeDetailedLogsData, err = service.GetSCDetailedLogsData(ctx, pid, passphrase, challengeID)
+	} else {
+		storageChallengeDetailedLogsData, err = service.GetNSCDetailedLogsData(ctx, pid, passphrase)
+	}
+
 	if err != nil {
 		var statusCode int
 		switch err.Error() {
@@ -106,6 +113,44 @@ func (service *Service) GetSCDetailedLogsData(ctx context.Context, pid string, s
 		}
 
 		return storageChallengeMessageData, nil
+	}
+
+	return storageChallengeMessageData, nil
+}
+
+// GetNSCDetailedLogsData encapsulates the core logic for storage-challenge log data
+func (service *Service) GetNSCDetailedLogsData(ctx context.Context, pid string, signature string) (storageChallengeMessageData []types.Message, err error) {
+	ok, err := service.scService.PastelClient.Verify(ctx, []byte(pid), signature, pid, pastel.SignAlgorithmED448)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify pid/passphrase: %w", err)
+	}
+
+	if !ok {
+		return nil, fmt.Errorf("invalid pid/passphrase")
+	}
+
+	store, err := local.OpenHistoryDB()
+	if err != nil {
+		return nil, fmt.Errorf("error opening DB: %w", err)
+	}
+	defer store.CloseHistoryDB(ctx)
+
+	mostRecentChallengeIDs, err := store.GetLastNSCMetrics()
+	if err != nil {
+		return storageChallengeMessageData, fmt.Errorf("error retrieving detailed logs: %w", err)
+	}
+
+	for _, mc := range mostRecentChallengeIDs {
+		data, err := store.GetMetricsDataByStorageChallengeID(ctx, mc.ChallengeID)
+		if err != nil {
+			return storageChallengeMessageData, fmt.Errorf("error retrieving detailed logs: %w", err)
+		}
+
+		storageChallengeMessageData = append(storageChallengeMessageData, data...)
+	}
+
+	if len(storageChallengeMessageData) > 64 {
+		return storageChallengeMessageData[:64], nil
 	}
 
 	return storageChallengeMessageData, nil

@@ -53,4 +53,5 @@ type LocalStoreInterface interface {
 	GetLastNSHChallenges(ctx context.Context, n int) (types.SelfHealingReports, error)
 	GetSHChallengeReport(ctx context.Context, challengeID string) (types.SelfHealingReports, error)
 	GetMetricsDataByStorageChallengeID(ctx context.Context, challengeID string) ([]types.Message, error)
+	GetLastNSCMetrics() ([]types.NScMetric, error)
 }
