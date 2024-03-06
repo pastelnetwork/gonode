@@ -49,25 +49,20 @@ func (service *MetricsAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 
 // GetDetailedLogs returns the detailed self-healing reports
 func (service *MetricsAPIHandler) GetDetailedLogs(ctx context.Context, p *metrics.GetDetailedLogsPayload) (*metrics.SelfHealingReports, error) {
-	if p.Count == nil && p.EventID == nil {
-		return nil, metrics.MakeBadRequest(fmt.Errorf("count or event_id is required"))
-	}
-
-	if p.Count != nil && p.EventID != nil {
-		return nil, metrics.MakeBadRequest(fmt.Errorf("only one of count or event_id is allowed"))
-	}
-
-	req := metricsregister.SHReportRequest{
-		PastelID:   p.Pid,
-		Passphrase: p.Key,
-	}
-
-	if p.Count != nil {
-		req.Count = *p.Count
-	}
+	var req metricsregister.SHReportRequest
 
 	if p.EventID != nil {
-		req.EventID = *p.EventID
+		req = metricsregister.SHReportRequest{
+			EventID:    *p.EventID,
+			PastelID:   p.Pid,
+			Passphrase: p.Key,
+		}
+	} else {
+		req = metricsregister.SHReportRequest{
+			Count:      10,
+			PastelID:   p.Pid,
+			Passphrase: p.Key,
+		}
 	}
 
 	reports, err := service.metricsService.GetDetailedLogs(ctx, req)
