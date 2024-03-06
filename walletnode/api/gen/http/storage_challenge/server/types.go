@@ -443,7 +443,7 @@ func NewGetSummaryStatsPayload(from *string, to *string, pid string, key string)
 
 // NewGetDetailedLogsPayload builds a StorageChallenge service getDetailedLogs
 // endpoint payload.
-func NewGetDetailedLogsPayload(pid string, challengeID string, key string) *storagechallenge.GetDetailedLogsPayload {
+func NewGetDetailedLogsPayload(pid string, challengeID *string, key string) *storagechallenge.GetDetailedLogsPayload {
 	v := &storagechallenge.GetDetailedLogsPayload{}
 	v.Pid = pid
 	v.ChallengeID = challengeID

@@ -51,14 +51,20 @@ func (service *StorageChallengeAPIHandler) APIKeyAuth(ctx context.Context, _ str
 
 // GetDetailedLogs returns the detailed storage-challenge data logs
 func (service *StorageChallengeAPIHandler) GetDetailedLogs(ctx context.Context, p *storagechallenge.GetDetailedLogsPayload) (scDetailedLogMessages []*storagechallenge.StorageMessage, err error) {
-	if p.ChallengeID == "" {
-		return nil, storagechallenge.MakeBadRequest(fmt.Errorf("challenge_id is required"))
-	}
+	var req storagechallengeregister.SCDetailedLogRequest
 
-	req := storagechallengeregister.SCDetailedLogRequest{
-		ChallengeID: p.ChallengeID,
-		PastelID:    p.Pid,
-		Passphrase:  p.Key,
+	if p.ChallengeID != nil {
+		req = storagechallengeregister.SCDetailedLogRequest{
+			ChallengeID: *p.ChallengeID,
+			PastelID:    p.Pid,
+			Passphrase:  p.Key,
+		}
+	} else {
+		req = storagechallengeregister.SCDetailedLogRequest{
+			Count:      50,
+			PastelID:   p.Pid,
+			Passphrase: p.Key,
+		}
 	}
 
 	scDetailedMessageDataList, err := service.storageChallengeService.GetDetailedMessageDataList(ctx, req)

@@ -33,6 +33,7 @@ type GetSummaryStats struct {
 // SCDetailedLogRequest represents the request for the GetDetailedLogs method.
 type SCDetailedLogRequest struct {
 	ChallengeID string
+	Count       int
 	PastelID    string
 	Passphrase  string
 }
@@ -207,7 +208,7 @@ func (service *Service) GetDetailedMessageDataList(ctx context.Context, req SCDe
 		go func(ip string) {
 			defer wg.Done()
 
-			data, err := service.fetchSCDetailedLogs(ip, req.PastelID, string(signature), req.ChallengeID)
+			data, err := service.fetchSCDetailedLogs(ip, req.PastelID, string(signature), req.ChallengeID, req.Count)
 
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch detailed-logs from node")
@@ -260,7 +261,7 @@ func (service *Service) GetDetailedMessageDataList(ctx context.Context, req SCDe
 }
 
 // fetchSCMessageLogsData makes an HTTP GET request to the node's detailed_logs endpoint and returns the SCMessageData.
-func (service *Service) fetchSCDetailedLogs(addr, pid, passphrase string, challengeID string) (data types.StorageChallengeMessages, err error) {
+func (service *Service) fetchSCDetailedLogs(addr, pid, passphrase string, challengeID string, count int) (data types.StorageChallengeMessages, err error) {
 	// Construct the URL with query parameters
 	url := fmt.Sprintf("http://%s:%d/storage_challenge/detailed_logs?pid=%s", addr, StorageChallengePort, pid)
 	if challengeID != "" {
@@ -291,6 +292,7 @@ func (service *Service) fetchSCDetailedLogs(addr, pid, passphrase string, challe
 
 	// Check for non-200 status codes
 	if resp.StatusCode != http.StatusOK {
+		fmt.Println(string(body))
 		return data, fmt.Errorf("received non-200 status code: %d", resp.StatusCode)
 	}
 

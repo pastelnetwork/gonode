@@ -60,9 +60,11 @@ func BuildGetDetailedLogsPayload(storageChallengeGetDetailedLogsPid string, stor
 	{
 		pid = storageChallengeGetDetailedLogsPid
 	}
-	var challengeID string
+	var challengeID *string
 	{
-		challengeID = storageChallengeGetDetailedLogsChallengeID
+		if storageChallengeGetDetailedLogsChallengeID != "" {
+			challengeID = &storageChallengeGetDetailedLogsChallengeID
+		}
 	}
 	var key string
 	{

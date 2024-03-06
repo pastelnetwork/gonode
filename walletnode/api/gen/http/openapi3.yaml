@@ -9048,7 +9048,6 @@ paths:
                   in: query
                   description: ChallengeID of the storage challenge to fetch their logs
                   allowEmptyValue: true
-                  required: true
                   schema:
                     type: string
                     description: ChallengeID of the storage challenge to fetch their logs
