@@ -215,7 +215,7 @@ type SelfHealingMessageResponseBody struct {
 type SelfHealingMessageDataResponseBody struct {
 	ChallengerID *string                                  `form:"challenger_id,omitempty" json:"challenger_id,omitempty" xml:"challenger_id,omitempty"`
 	RecipientID  *string                                  `form:"recipient_id,omitempty" json:"recipient_id,omitempty" xml:"recipient_id,omitempty"`
-	Challenge    *SelfHealingChallengeDataResponseBody    `form:"challenge,omitempty" json:"challenge,omitempty" xml:"challenge,omitempty"`
+	EventDetails *SelfHealingChallengeDataResponseBody    `form:"event_details,omitempty" json:"event_details,omitempty" xml:"event_details,omitempty"`
 	Response     *SelfHealingResponseDataResponseBody     `form:"response,omitempty" json:"response,omitempty" xml:"response,omitempty"`
 	Verification *SelfHealingVerificationDataResponseBody `form:"verification,omitempty" json:"verification,omitempty" xml:"verification,omitempty"`
 }
@@ -223,15 +223,15 @@ type SelfHealingMessageDataResponseBody struct {
 // SelfHealingChallengeDataResponseBody is used to define fields on response
 // body types.
 type SelfHealingChallengeDataResponseBody struct {
-	Block            *int32                         `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
-	Merkelroot       *string                        `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
-	Timestamp        *string                        `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
-	ChallengeTickets []*ChallengeTicketResponseBody `form:"challenge_tickets,omitempty" json:"challenge_tickets,omitempty" xml:"challenge_tickets,omitempty"`
-	NodesOnWatchlist *string                        `form:"nodes_on_watchlist,omitempty" json:"nodes_on_watchlist,omitempty" xml:"nodes_on_watchlist,omitempty"`
+	Block            *int32                     `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	Merkelroot       *string                    `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	Timestamp        *string                    `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	EventTickets     []*EventTicketResponseBody `form:"event_tickets,omitempty" json:"event_tickets,omitempty" xml:"event_tickets,omitempty"`
+	NodesOnWatchlist *string                    `form:"nodes_on_watchlist,omitempty" json:"nodes_on_watchlist,omitempty" xml:"nodes_on_watchlist,omitempty"`
 }
 
-// ChallengeTicketResponseBody is used to define fields on response body types.
-type ChallengeTicketResponseBody struct {
+// EventTicketResponseBody is used to define fields on response body types.
+type EventTicketResponseBody struct {
 	TxID        *string  `form:"tx_id,omitempty" json:"tx_id,omitempty" xml:"tx_id,omitempty"`
 	TicketType  *string  `form:"ticket_type,omitempty" json:"ticket_type,omitempty" xml:"ticket_type,omitempty"`
 	MissingKeys []string `form:"missing_keys,omitempty" json:"missing_keys,omitempty" xml:"missing_keys,omitempty"`
@@ -242,7 +242,7 @@ type ChallengeTicketResponseBody struct {
 // SelfHealingResponseDataResponseBody is used to define fields on response
 // body types.
 type SelfHealingResponseDataResponseBody struct {
-	ChallengeID     *string                      `form:"challenge_id,omitempty" json:"challenge_id,omitempty" xml:"challenge_id,omitempty"`
+	EventID         *string                      `form:"event_id,omitempty" json:"event_id,omitempty" xml:"event_id,omitempty"`
 	Block           *int32                       `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
 	Merkelroot      *string                      `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
 	Timestamp       *string                      `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
@@ -256,15 +256,13 @@ type RespondedTicketResponseBody struct {
 	TicketType               *string  `form:"ticket_type,omitempty" json:"ticket_type,omitempty" xml:"ticket_type,omitempty"`
 	MissingKeys              []string `form:"missing_keys,omitempty" json:"missing_keys,omitempty" xml:"missing_keys,omitempty"`
 	ReconstructedFileHash    []byte   `form:"reconstructed_file_hash,omitempty" json:"reconstructed_file_hash,omitempty" xml:"reconstructed_file_hash,omitempty"`
-	SenseFileIds             []string `form:"sense_file_ids,omitempty" json:"sense_file_ids,omitempty" xml:"sense_file_ids,omitempty"`
-	RaptorQSymbols           []byte   `form:"raptor_q_symbols,omitempty" json:"raptor_q_symbols,omitempty" xml:"raptor_q_symbols,omitempty"`
 	IsReconstructionRequired *bool    `form:"is_reconstruction_required,omitempty" json:"is_reconstruction_required,omitempty" xml:"is_reconstruction_required,omitempty"`
 }
 
 // SelfHealingVerificationDataResponseBody is used to define fields on response
 // body types.
 type SelfHealingVerificationDataResponseBody struct {
-	ChallengeID    *string                     `form:"challenge_id,omitempty" json:"challenge_id,omitempty" xml:"challenge_id,omitempty"`
+	EventID        *string                     `form:"event_id,omitempty" json:"event_id,omitempty" xml:"event_id,omitempty"`
 	Block          *int32                      `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
 	Merkelroot     *string                     `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
 	Timestamp      *string                     `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
@@ -279,8 +277,6 @@ type VerifiedTicketResponseBody struct {
 	MissingKeys              []string `form:"missing_keys,omitempty" json:"missing_keys,omitempty" xml:"missing_keys,omitempty"`
 	ReconstructedFileHash    []byte   `form:"reconstructed_file_hash,omitempty" json:"reconstructed_file_hash,omitempty" xml:"reconstructed_file_hash,omitempty"`
 	IsReconstructionRequired *bool    `form:"is_reconstruction_required,omitempty" json:"is_reconstruction_required,omitempty" xml:"is_reconstruction_required,omitempty"`
-	RaptorQSymbols           []byte   `form:"raptor_q_symbols,omitempty" json:"raptor_q_symbols,omitempty" xml:"raptor_q_symbols,omitempty"`
-	SenseFileIds             []string `form:"sense_file_ids,omitempty" json:"sense_file_ids,omitempty" xml:"sense_file_ids,omitempty"`
 	IsVerified               *bool    `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
 	Message                  *string  `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }

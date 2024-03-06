@@ -197,7 +197,7 @@ var SelfHealingMessage = Type("SelfHealingMessage", func() {
 var SelfHealingMessageData = Type("SelfHealingMessageData", func() {
 	Attribute("challenger_id", String)
 	Attribute("recipient_id", String)
-	Attribute("challenge", SelfHealingChallengeData)
+	Attribute("event_details", SelfHealingChallengeData)
 	Attribute("response", SelfHealingResponseData)
 	Attribute("verification", SelfHealingVerificationData)
 })
@@ -207,12 +207,12 @@ var SelfHealingChallengeData = Type("SelfHealingChallengeData", func() {
 	Attribute("block", Int32)
 	Attribute("merkelroot", String)
 	Attribute("timestamp", String) // Goa does not directly support time.Time, use string and format as RFC3339
-	Attribute("challenge_tickets", ArrayOf(ChallengeTicket))
+	Attribute("event_tickets", ArrayOf(ChallengeTicket))
 	Attribute("nodes_on_watchlist", String)
 })
 
 // ChallengeTicket is the result type for the challenge ticket
-var ChallengeTicket = Type("ChallengeTicket", func() {
+var ChallengeTicket = Type("EventTicket", func() {
 	Attribute("tx_id", String)
 	Attribute("ticket_type", String) // Assuming TicketType is an enum or similar in Go, represented as String here
 	Attribute("missing_keys", ArrayOf(String))
@@ -222,7 +222,7 @@ var ChallengeTicket = Type("ChallengeTicket", func() {
 
 // SelfHealingResponseData is the result type for the self-healing response data
 var SelfHealingResponseData = Type("SelfHealingResponseData", func() {
-	Attribute("challenge_id", String)
+	Attribute("event_id", String)
 	Attribute("block", Int32)
 	Attribute("merkelroot", String)
 	Attribute("timestamp", String) // Use string for time.Time
@@ -236,14 +236,12 @@ var RespondedTicket = Type("RespondedTicket", func() {
 	Attribute("ticket_type", String) // Assuming TicketType is an enum or similar in Go
 	Attribute("missing_keys", ArrayOf(String))
 	Attribute("reconstructed_file_hash", Bytes)
-	Attribute("sense_file_ids", ArrayOf(String))
-	Attribute("raptor_q_symbols", Bytes)
 	Attribute("is_reconstruction_required", Boolean)
 })
 
 // SelfHealingVerificationData is the result type for the self-healing verification data
 var SelfHealingVerificationData = Type("SelfHealingVerificationData", func() {
-	Attribute("challenge_id", String)
+	Attribute("event_id", String)
 	Attribute("block", Int32)
 	Attribute("merkelroot", String)
 	Attribute("timestamp", String) // Use string for time.Time
@@ -258,8 +256,6 @@ var VerifiedTicket = Type("VerifiedTicket", func() {
 	Attribute("missing_keys", ArrayOf(String))
 	Attribute("reconstructed_file_hash", Bytes)
 	Attribute("is_reconstruction_required", Boolean)
-	Attribute("raptor_q_symbols", Bytes)
-	Attribute("sense_file_ids", ArrayOf(String))
 	Attribute("is_verified", Boolean)
 	Attribute("message", String)
 })
