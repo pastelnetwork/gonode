@@ -132,6 +132,8 @@ commands:
             fi
 
             export APP_LDFLAGS="-extldflags '-static-libstdc++' -X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
+            export LINUX_APP_LDFLAGS="-extldflags '-static-libgcc -static-libstdc++' -X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION"
+
             echo "APP_VERSION=$APP_VERSION"
             echo "APP_LDFLAGS=$APP_LDFLAGS"
 
@@ -140,7 +142,7 @@ commands:
               sudo apt-get update
               sudo apt-get install -y libwebp-dev
               cd << parameters.package >>
-              GOOS=linux GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$APP_LDFLAGS"
+              GOOS=linux GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$LINUX_APP_LDFLAGS"
               echo "Done Building << parameters.package >> for Linux"
               cd ..
             fi
