@@ -311,6 +311,6 @@ func (service *Service) fetchSHChallengesFromNode(addr, pid, passphrase string, 
 func NewMetricsService(pastelClient pastel.Client) *Service {
 	return &Service{
 		pastelHandler: mixins.NewPastelHandler(pastelClient),
-		client:        http.Client{Timeout: time.Duration(60) * time.Second},
+		client:        http.Client{Timeout: time.Duration(120) * time.Second},
 	}
 }
