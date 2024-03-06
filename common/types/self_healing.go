@@ -129,8 +129,6 @@ type RespondedTicket struct {
 	TicketType               TicketType `json:"ticket_type"`
 	MissingKeys              []string   `json:"missing_keys"`
 	ReconstructedFileHash    []byte     `json:"reconstructed_file_hash"`
-	FileIDs                  []string   `json:"sense_file_ids"`
-	RaptorQSymbols           []byte     `json:"raptor_q_symbols"`
 	IsReconstructionRequired bool       `json:"is_reconstruction_required"`
 	Error                    string     `json:"error"`
 }
@@ -153,8 +151,6 @@ type VerifiedTicket struct {
 	ReconstructedFileHash            []byte     `json:"reconstructed_file_hash"`
 	IsReconstructionRequired         bool       `json:"is_reconstruction_required"`
 	IsReconstructionRequiredByHealer bool       `json:"is_reconstruction_required_by_healer"`
-	RaptorQSymbols                   []byte     `json:"raptor_q_symbols"`
-	FileIDs                          []string   `json:"sense_file_ids"`
 	IsVerified                       bool       `json:"is_verified"`
 	Message                          string     `json:"message"`
 }

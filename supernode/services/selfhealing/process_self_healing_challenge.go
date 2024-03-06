@@ -89,7 +89,6 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, event types
 				TicketType:               ticket.TicketType,
 				MissingKeys:              ticket.MissingKeys,
 				ReconstructedFileHash:    nil,
-				RaptorQSymbols:           nil,
 				IsReconstructionRequired: false,
 			}
 			logger.Info("sending response for verification")
@@ -125,7 +124,6 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, event types
 			TicketType:               ticket.TicketType,
 			MissingKeys:              ticket.MissingKeys,
 			ReconstructedFileHash:    reconstructedFileHash,
-			RaptorQSymbols:           raptorQSymbols,
 			IsReconstructionRequired: true,
 		}
 		logger.Info("sending response for verification")
@@ -192,8 +190,6 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, event types
 				TicketType:               ticket.TicketType,
 				MissingKeys:              ticket.MissingKeys,
 				ReconstructedFileHash:    nil,
-				RaptorQSymbols:           nil,
-				FileIDs:                  nil,
 				IsReconstructionRequired: false,
 			}
 			logger.Info("sending response for verification")
@@ -215,7 +211,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, event types
 		}
 		logger.Info("going to initiate sense self-healing")
 
-		ids, idFiles, fileHash, err := task.senseSelfHealing(ctx, senseTicket, sortedFiles)
+		_, idFiles, fileHash, err := task.senseSelfHealing(ctx, senseTicket, sortedFiles)
 		if err != nil {
 			logger.WithError(err).Error("self-healing failed for sense ticket")
 			return err
@@ -227,7 +223,6 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, event types
 			TicketType:               ticket.TicketType,
 			MissingKeys:              ticket.MissingKeys,
 			ReconstructedFileHash:    fileHash,
-			FileIDs:                  ids,
 			IsReconstructionRequired: true,
 		}
 		logger.Info("sending response for verification")

@@ -400,7 +400,7 @@ func toSHMessageData(data types.SelfHealingMessageData, msgType types.SelfHealin
 	}
 
 	if msgType == types.SelfHealingChallengeMessage {
-		ret.Challenge = toSHChallengeData(data.Challenge)
+		ret.EventDetails = toSHChallengeData(data.Challenge)
 	} else if msgType == types.SelfHealingResponseMessage {
 		ret.Response = toSHResponseData(data.Response)
 	} else if msgType == types.SelfHealingVerificationMessage {
@@ -416,17 +416,17 @@ func toSHChallengeData(data types.SelfHealingChallengeData) *metrics.SelfHealing
 		Block:            &data.Block,
 		Merkelroot:       &data.Merkelroot,
 		Timestamp:        &timestamp,
-		ChallengeTickets: toChallengeTickets(data.ChallengeTickets),
+		EventTickets:     toChallengeTickets(data.ChallengeTickets),
 		NodesOnWatchlist: &data.NodesOnWatchlist,
 	}
 }
 
-func toChallengeTickets(tickets []types.ChallengeTicket) []*metrics.ChallengeTicket {
-	mTickets := make([]*metrics.ChallengeTicket, 0, len(tickets))
+func toChallengeTickets(tickets []types.ChallengeTicket) []*metrics.EventTicket {
+	mTickets := make([]*metrics.EventTicket, 0, len(tickets))
 	for _, ticket := range tickets {
 		tType := ticket.TicketType.String()
 
-		mTicket := &metrics.ChallengeTicket{
+		mTicket := &metrics.EventTicket{
 			TxID:        &ticket.TxID,
 			TicketType:  &tType,
 			MissingKeys: ticket.MissingKeys,
@@ -441,7 +441,7 @@ func toChallengeTickets(tickets []types.ChallengeTicket) []*metrics.ChallengeTic
 func toSHResponseData(data types.SelfHealingResponseData) *metrics.SelfHealingResponseData {
 	timestamp := data.Timestamp.Format(time.RFC3339)
 	return &metrics.SelfHealingResponseData{
-		ChallengeID:     &data.ChallengeID,
+		EventID:         &data.ChallengeID,
 		Block:           &data.Block,
 		Merkelroot:      &data.Merkelroot,
 		Timestamp:       &timestamp,
@@ -458,8 +458,6 @@ func toRespondedTicket(ticket types.RespondedTicket) *metrics.RespondedTicket {
 		TicketType:               &tType,
 		MissingKeys:              ticket.MissingKeys,
 		ReconstructedFileHash:    ticket.ReconstructedFileHash,
-		SenseFileIds:             ticket.FileIDs,
-		RaptorQSymbols:           ticket.RaptorQSymbols,
 		IsReconstructionRequired: &ticket.IsReconstructionRequired,
 	}
 }
@@ -467,7 +465,7 @@ func toRespondedTicket(ticket types.RespondedTicket) *metrics.RespondedTicket {
 func toSHVerificationData(data types.SelfHealingVerificationData) *metrics.SelfHealingVerificationData {
 	timestamp := data.Timestamp.Format(time.RFC3339)
 	return &metrics.SelfHealingVerificationData{
-		ChallengeID:    &data.ChallengeID,
+		EventID:        &data.ChallengeID,
 		Block:          &data.Block,
 		Merkelroot:     &data.Merkelroot,
 		Timestamp:      &timestamp,
@@ -485,8 +483,6 @@ func toVerifiedTicket(ticket types.VerifiedTicket) *metrics.VerifiedTicket {
 		MissingKeys:              ticket.MissingKeys,
 		ReconstructedFileHash:    ticket.ReconstructedFileHash,
 		IsReconstructionRequired: &ticket.IsReconstructionRequired,
-		RaptorQSymbols:           ticket.RaptorQSymbols,
-		SenseFileIds:             ticket.FileIDs,
 		IsVerified:               &ticket.IsVerified,
 		Message:                  &ticket.Message,
 	}

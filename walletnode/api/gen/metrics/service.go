@@ -45,7 +45,7 @@ const ServiceName = "metrics"
 // MethodKey key.
 var MethodNames = [2]string{"getDetailedLogs", "getSummaryStats"}
 
-type ChallengeTicket struct {
+type EventTicket struct {
 	TxID        *string
 	TicketType  *string
 	MissingKeys []string
@@ -93,8 +93,6 @@ type RespondedTicket struct {
 	TicketType               *string
 	MissingKeys              []string
 	ReconstructedFileHash    []byte
-	SenseFileIds             []string
-	RaptorQSymbols           []byte
 	IsReconstructionRequired *bool
 }
 
@@ -149,7 +147,7 @@ type SelfHealingChallengeData struct {
 	Block            *int32
 	Merkelroot       *string
 	Timestamp        *string
-	ChallengeTickets []*ChallengeTicket
+	EventTickets     []*EventTicket
 	NodesOnWatchlist *string
 }
 
@@ -164,7 +162,7 @@ type SelfHealingMessage struct {
 type SelfHealingMessageData struct {
 	ChallengerID *string
 	RecipientID  *string
-	Challenge    *SelfHealingChallengeData
+	EventDetails *SelfHealingChallengeData
 	Response     *SelfHealingResponseData
 	Verification *SelfHealingVerificationData
 }
@@ -196,7 +194,7 @@ type SelfHealingReports struct {
 }
 
 type SelfHealingResponseData struct {
-	ChallengeID     *string
+	EventID         *string
 	Block           *int32
 	Merkelroot      *string
 	Timestamp       *string
@@ -205,7 +203,7 @@ type SelfHealingResponseData struct {
 }
 
 type SelfHealingVerificationData struct {
-	ChallengeID    *string
+	EventID        *string
 	Block          *int32
 	Merkelroot     *string
 	Timestamp      *string
@@ -219,8 +217,6 @@ type VerifiedTicket struct {
 	MissingKeys              []string
 	ReconstructedFileHash    []byte
 	IsReconstructionRequired *bool
-	RaptorQSymbols           []byte
-	SenseFileIds             []string
 	IsVerified               *bool
 	Message                  *string
 }

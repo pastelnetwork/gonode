@@ -388,8 +388,8 @@ func unmarshalSelfHealingMessageDataResponseBodyToMetricsSelfHealingMessageData(
 		ChallengerID: v.ChallengerID,
 		RecipientID:  v.RecipientID,
 	}
-	if v.Challenge != nil {
-		res.Challenge = unmarshalSelfHealingChallengeDataResponseBodyToMetricsSelfHealingChallengeData(v.Challenge)
+	if v.EventDetails != nil {
+		res.EventDetails = unmarshalSelfHealingChallengeDataResponseBodyToMetricsSelfHealingChallengeData(v.EventDetails)
 	}
 	if v.Response != nil {
 		res.Response = unmarshalSelfHealingResponseDataResponseBodyToMetricsSelfHealingResponseData(v.Response)
@@ -414,24 +414,23 @@ func unmarshalSelfHealingChallengeDataResponseBodyToMetricsSelfHealingChallengeD
 		Timestamp:        v.Timestamp,
 		NodesOnWatchlist: v.NodesOnWatchlist,
 	}
-	if v.ChallengeTickets != nil {
-		res.ChallengeTickets = make([]*metrics.ChallengeTicket, len(v.ChallengeTickets))
-		for i, val := range v.ChallengeTickets {
-			res.ChallengeTickets[i] = unmarshalChallengeTicketResponseBodyToMetricsChallengeTicket(val)
+	if v.EventTickets != nil {
+		res.EventTickets = make([]*metrics.EventTicket, len(v.EventTickets))
+		for i, val := range v.EventTickets {
+			res.EventTickets[i] = unmarshalEventTicketResponseBodyToMetricsEventTicket(val)
 		}
 	}
 
 	return res
 }
 
-// unmarshalChallengeTicketResponseBodyToMetricsChallengeTicket builds a value
-// of type *metrics.ChallengeTicket from a value of type
-// *ChallengeTicketResponseBody.
-func unmarshalChallengeTicketResponseBodyToMetricsChallengeTicket(v *ChallengeTicketResponseBody) *metrics.ChallengeTicket {
+// unmarshalEventTicketResponseBodyToMetricsEventTicket builds a value of type
+// *metrics.EventTicket from a value of type *EventTicketResponseBody.
+func unmarshalEventTicketResponseBodyToMetricsEventTicket(v *EventTicketResponseBody) *metrics.EventTicket {
 	if v == nil {
 		return nil
 	}
-	res := &metrics.ChallengeTicket{
+	res := &metrics.EventTicket{
 		TxID:       v.TxID,
 		TicketType: v.TicketType,
 		DataHash:   v.DataHash,
@@ -455,10 +454,10 @@ func unmarshalSelfHealingResponseDataResponseBodyToMetricsSelfHealingResponseDat
 		return nil
 	}
 	res := &metrics.SelfHealingResponseData{
-		ChallengeID: v.ChallengeID,
-		Block:       v.Block,
-		Merkelroot:  v.Merkelroot,
-		Timestamp:   v.Timestamp,
+		EventID:    v.EventID,
+		Block:      v.Block,
+		Merkelroot: v.Merkelroot,
+		Timestamp:  v.Timestamp,
 	}
 	if v.RespondedTicket != nil {
 		res.RespondedTicket = unmarshalRespondedTicketResponseBodyToMetricsRespondedTicket(v.RespondedTicket)
@@ -484,19 +483,12 @@ func unmarshalRespondedTicketResponseBodyToMetricsRespondedTicket(v *RespondedTi
 		TxID:                     v.TxID,
 		TicketType:               v.TicketType,
 		ReconstructedFileHash:    v.ReconstructedFileHash,
-		RaptorQSymbols:           v.RaptorQSymbols,
 		IsReconstructionRequired: v.IsReconstructionRequired,
 	}
 	if v.MissingKeys != nil {
 		res.MissingKeys = make([]string, len(v.MissingKeys))
 		for i, val := range v.MissingKeys {
 			res.MissingKeys[i] = val
-		}
-	}
-	if v.SenseFileIds != nil {
-		res.SenseFileIds = make([]string, len(v.SenseFileIds))
-		for i, val := range v.SenseFileIds {
-			res.SenseFileIds[i] = val
 		}
 	}
 
@@ -511,10 +503,10 @@ func unmarshalSelfHealingVerificationDataResponseBodyToMetricsSelfHealingVerific
 		return nil
 	}
 	res := &metrics.SelfHealingVerificationData{
-		ChallengeID: v.ChallengeID,
-		Block:       v.Block,
-		Merkelroot:  v.Merkelroot,
-		Timestamp:   v.Timestamp,
+		EventID:    v.EventID,
+		Block:      v.Block,
+		Merkelroot: v.Merkelroot,
+		Timestamp:  v.Timestamp,
 	}
 	if v.VerifiedTicket != nil {
 		res.VerifiedTicket = unmarshalVerifiedTicketResponseBodyToMetricsVerifiedTicket(v.VerifiedTicket)
@@ -543,7 +535,6 @@ func unmarshalVerifiedTicketResponseBodyToMetricsVerifiedTicket(v *VerifiedTicke
 		TicketType:               v.TicketType,
 		ReconstructedFileHash:    v.ReconstructedFileHash,
 		IsReconstructionRequired: v.IsReconstructionRequired,
-		RaptorQSymbols:           v.RaptorQSymbols,
 		IsVerified:               v.IsVerified,
 		Message:                  v.Message,
 	}
@@ -551,12 +542,6 @@ func unmarshalVerifiedTicketResponseBodyToMetricsVerifiedTicket(v *VerifiedTicke
 		res.MissingKeys = make([]string, len(v.MissingKeys))
 		for i, val := range v.MissingKeys {
 			res.MissingKeys[i] = val
-		}
-	}
-	if v.SenseFileIds != nil {
-		res.SenseFileIds = make([]string, len(v.SenseFileIds))
-		for i, val := range v.SenseFileIds {
-			res.SenseFileIds[i] = val
 		}
 	}
 
