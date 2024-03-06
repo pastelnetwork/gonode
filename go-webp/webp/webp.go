@@ -22,8 +22,8 @@
 package webp
 
 import (
-	"github.com/kolesa-team/go-webp/decoder"
-	"github.com/kolesa-team/go-webp/encoder"
+	"github/pastelnetwork/gonode/go-webp/decoder"
+	"github/pastelnetwork/gonode/go-webp/encoder"
 	"image"
 	"io"
 )

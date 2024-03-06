@@ -1,4 +1,4 @@
-module github.com/kolesa-team/go-webp
+module github.com/pastelnetwork/gonode/go-webp
 
 go 1.17
 
