@@ -20,7 +20,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/json-iterator/go v1.1.12
 	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/pastelnetwork/gonode/common v0.0.0-20240307003211-db10a21c27c2
+	github.com/pastelnetwork/gonode/common v0.0.0-20240307111701-c491864e6826
 	github.com/pastelnetwork/gonode/go-webp v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
