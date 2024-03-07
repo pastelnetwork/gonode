@@ -186,6 +186,7 @@ commands:
           name: Cleanup working dir
           working_directory: << parameters.working_directory >>
           command: |
+            ls -a
             rm hermes-linux-amd64.sha256
             rm supernode-linux-amd64.sha256
             rm walletnode-darwin-10.15-amd64.sha256
