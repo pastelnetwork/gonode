@@ -20,8 +20,8 @@ require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/json-iterator/go v1.1.12
 	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/pastelnetwork/gonode/common v0.0.0-00010101000000-000000000000
-	github.com/pastelnetwork/gonode/go-webp v0.0.0-00010101000000-000000000000
+	github.com/pastelnetwork/gonode/common v0.0.0-20240307111701-c491864e6826
+	github.com/pastelnetwork/gonode/go-webp v0.0.0-20240307111701-c491864e6826
 	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/proto v0.0.0-00010101000000-000000000000
@@ -49,7 +49,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/otrv4/ed448 v0.0.0-20221017120334-a33859724cfd // indirect
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-00010101000000-000000000000 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -67,7 +66,6 @@ require (
 	github.com/spf13/viper v1.18.2 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/tj/assert v0.0.3 // indirect
 	github.com/urfave/cli/v2 v2.27.1 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
