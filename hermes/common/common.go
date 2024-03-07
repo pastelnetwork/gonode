@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/go-webp/encoder"
-	"github.com/pastelnetwork/gonode/go-webp/webp"
 	"github.com/pastelnetwork/gonode/hermes/service/node"
 	"golang.org/x/crypto/sha3"
 )

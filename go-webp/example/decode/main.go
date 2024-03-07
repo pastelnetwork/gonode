@@ -26,8 +26,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/pastelnetwork/gonode/go-webp/decoder"
-	"github.com/pastelnetwork/gonode/go-webp/webp"
+	"github.com/kolesa-team/go-webp/decoder"
+	"github.com/kolesa-team/go-webp/webp"
 )
 
 func main() {
