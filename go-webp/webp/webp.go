@@ -22,10 +22,11 @@
 package webp
 
 import (
-	"github.com/kolesa-team/go-webp/decoder"
-	"github.com/kolesa-team/go-webp/encoder"
 	"image"
 	"io"
+
+	"github.com/pastelnetwork/gonode/go-webp/decoder"
+	"github.com/pastelnetwork/gonode/go-webp/encoder"
 )
 
 func Decode(r io.Reader, options *decoder.Options) (image.Image, error) {

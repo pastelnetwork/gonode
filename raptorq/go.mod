@@ -7,10 +7,10 @@ replace github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
 require (
 	github.com/google/uuid v1.6.0
 	github.com/json-iterator/go v1.1.12
-	github.com/pastelnetwork/gonode/common v0.0.0-20240229105633-1f295fe18563
+	github.com/pastelnetwork/gonode/common v0.0.0-20240307003211-db10a21c27c2
 	github.com/stretchr/testify v1.9.0
-	google.golang.org/grpc v1.62.0
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/grpc v1.62.1
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
