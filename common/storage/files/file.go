@@ -15,16 +15,16 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 
-	"github.com/pastelnetwork/gonode/go-webp/decoder"
-	"github.com/pastelnetwork/gonode/go-webp/encoder"
-	"github.com/pastelnetwork/gonode/go-webp/webp"
+	"github.com/kolesa-team/go-webp/decoder"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
 
 	"github.com/disintegration/imaging"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/storage"
 )
 
-// File represents a file.g
+// File represents a file.
 type File struct {
 	fmt.Stringer
 	sync.Mutex
