@@ -14,7 +14,7 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/google/uuid v1.6.0
 	github.com/json-iterator/go v1.1.12
-	github.com/pastelnetwork/gonode/common v0.0.0-20240307003211-db10a21c27c2
+	github.com/pastelnetwork/gonode/common v0.0.0-20240307111701-c491864e6826
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-00010101000000-000000000000
 	github.com/tj/assert v0.0.3
@@ -34,7 +34,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/pastelnetwork/gonode/go-webp v0.0.0-00010101000000-000000000000 // indirect
+	github.com/pastelnetwork/gonode/go-webp v0.0.0-20240307111701-c491864e6826 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect

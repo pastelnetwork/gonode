@@ -27,7 +27,7 @@ require (
 	github.com/mkmik/argsort v1.1.0
 	github.com/pastelnetwork/gonode/common v0.0.0-20240307111701-c491864e6826
 	github.com/pastelnetwork/gonode/dupedetection v0.0.0-00010101000000-000000000000
-	github.com/pastelnetwork/gonode/go-webp v0.0.0-00010101000000-000000000000
+	github.com/pastelnetwork/gonode/go-webp v0.0.0-20240307111701-c491864e6826
 	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/p2p v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000

@@ -61,7 +61,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/otrv4/ed448 v0.0.0-20221017120334-a33859724cfd // indirect
-	github.com/pastelnetwork/gonode/go-webp v0.0.0-00010101000000-000000000000 // indirect
+	github.com/pastelnetwork/gonode/go-webp v0.0.0-20240307111701-c491864e6826 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
