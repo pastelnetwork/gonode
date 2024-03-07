@@ -27,6 +27,8 @@ install_windows() {
     # Define cross-compiler prefix
     CROSS_PREFIX=x86_64-w64-mingw32-
 
+    echo "Current Working Directory: $(pwd)"
+    echo "CROSS_PREFIX Value: $CROSS_PREFIX"
     # Install cross-compile tools
     apt-get update
     apt-get install -y mingw-w64
@@ -37,12 +39,19 @@ install_windows() {
     cd libwebp-1.2.0
 
     # Configure for cross-compilation for Windows
-    ./configure --host=${CROSS_PREFIX%?} --prefix=/usr/${CROSS_PREFIX%?} --enable-shared --enable-static
+    ./configure --host=${CROSS_PREFIX%?} --prefix=/usr/${CROSS_PREFIX%?} --enable-static
 
     # Compile and install
     make
     make install
 
+    echo "Checking for WebPGetFeaturesInternal in libwebp.a"
+    x86_64-w64-mingw32-nm -g /usr/x86_64-w64-mingw32/lib/libwebp.a | grep WebPGetFeaturesInternal
+
+    export CGO_CFLAGS="-I/usr/${CROSS_PREFIX%?}/include"
+    export CGO_LDFLAGS="-L/usr/${CROSS_PREFIX%?}/lib -lwebp"
+    echo "CGO_CFLAGS: $CGO_CFLAGS"
+    echo "CGO_LDFLAGS: $CGO_LDFLAGS"
     # Return to the original directory
     cd ..
 
