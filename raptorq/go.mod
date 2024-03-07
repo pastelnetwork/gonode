@@ -1,10 +1,10 @@
 module github.com/pastelnetwork/gonode/raptorq
 
-go 1.22.1
+go 1.21.7
 
 replace (
-	 github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
-	 github.com/pastelnetwork/gonode/go-webp => ../go-webp
+	github.com/pastelnetwork/gonode/go-webp => ../go-webp
+	github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
 )
 
 require (
