@@ -1,9 +1,9 @@
 module github.com/pastelnetwork/gonode/common
 
-go 1.22.0
+go 1.22.1
 
 replace (
-	github.com/kolesa-team/go-webp => ../go-webp
+	github.com/pastelnetwork/gonode/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/raptorq => ../raptorq
 	golang.org/x/crypto => github.com/golang/crypto v0.13.0
@@ -18,10 +18,10 @@ require (
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629
 	github.com/json-iterator/go v1.1.12
 	github.com/klauspost/compress v1.16.7
-	github.com/kolesa-team/go-webp v1.0.4
 	github.com/makiuchi-d/gozxing v0.1.1
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/otrv4/ed448 v0.0.0-20221017120334-a33859724cfd
+	github.com/pastelnetwork/gonode/go-webp v0.0.0-20240307160103-cb14e62b9021
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1

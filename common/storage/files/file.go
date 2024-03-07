@@ -15,9 +15,9 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 
-	"github.com/kolesa-team/go-webp/decoder"
-	"github.com/kolesa-team/go-webp/encoder"
-	"github.com/kolesa-team/go-webp/webp"
+	"github.com/pastelnetwork/gonode/go-webp/decoder"
+	"github.com/pastelnetwork/gonode/go-webp/encoder"
+	"github.com/pastelnetwork/gonode/go-webp/webp"
 
 	"github.com/disintegration/imaging"
 	"github.com/pastelnetwork/gonode/common/errors"
