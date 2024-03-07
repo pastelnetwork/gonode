@@ -131,16 +131,14 @@ commands:
               APP_VERSION="latest"
             fi
 
-            export APP_LDFLAGS="-X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
+            export APP_LDFLAGS="-linkmode external -extldflags "-static" -s -w -X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
             echo "APP_VERSION=$APP_VERSION"
             echo "APP_LDFLAGS=$APP_LDFLAGS"
 
             if [[ "<< parameters.targets >>" == *"linux/amd64"* ]]; then
               echo "Building << parameters.package >> for Linux"
-              sudo apt-get update
-              sudo apt-get install -y libwebp-dev
               cd << parameters.package >>
-              GOOS=linux GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$APP_LDFLAGS"
+              CGO_ENABLED=1 GOOS=linux CC=musl-gcc GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$APP_LDFLAGS"
               echo "Done Building << parameters.package >> for Linux"
               cd ..
             fi
@@ -286,6 +284,16 @@ commands:
             make check
             sudo make install
             sudo /sbin/ldconfig -v
+  instal_musl:
+    steps:
+      - run:
+          name: Install Musl
+          command: |
+            sudo apt-get update
+            sudo apt-get install musl musl-dev musl-tools
+            sudo apt-get update
+            sudo apt-get install -y libwebp-dev
+
 
 jobs:
   prepare_workspace:

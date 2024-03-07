@@ -6,6 +6,7 @@ replace (
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/utils => ../utils
+	github.com/pastelnetwork/gonode/go-webp => ../go-webp
 )
 
 require (

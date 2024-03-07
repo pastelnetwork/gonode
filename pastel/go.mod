@@ -1,6 +1,9 @@
 module github.com/pastelnetwork/gonode/pastel
 
-replace github.com/pastelnetwork/gonode/common => ../common
+replace (
+	github.com/pastelnetwork/gonode/common => ../common
+	github.com/pastelnetwork/gonode/go-webp => ../go-webp
+)
 
 go 1.22.0
 
