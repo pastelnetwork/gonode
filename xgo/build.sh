@@ -32,9 +32,9 @@ install_windows() {
     apt-get install -y mingw-w64
 
     # Download and extract libwebp
-    wget https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.2.0.tar.gz
-    tar -xzf libwebp-1.2.0.tar.gz
-    cd libwebp-1.2.0
+    wget https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.3.2.tar.gz
+    tar -xzf libwebp-1.32.tar.gz
+    cd libwebp-1.3.2
 
     # Configure for cross-compilation for Windows
     ./configure --host=${CROSS_PREFIX%?} --prefix=/usr/${CROSS_PREFIX%?} --enable-shared --enable-static

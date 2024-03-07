@@ -3,7 +3,7 @@ module github.com/pastelnetwork/gonode/supernode
 go 1.22.0
 
 replace (
-	github.com/kolesa-team/go-webp => ../go-webp
+	github/pastelnetwork/gonode/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/dupedetection => ../dupedetection
 	github.com/pastelnetwork/gonode/hermes => ../hermes
@@ -24,7 +24,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/json-iterator/go v1.1.12
-	github.com/kolesa-team/go-webp v1.0.4
+	github/pastelnetwork/gonode/go-webp v1.0.4
 	github.com/mkmik/argsort v1.1.0
 	github.com/pastelnetwork/gonode/common v0.0.0-20240229105633-1f295fe18563
 	github.com/pastelnetwork/gonode/dupedetection v0.0.0-00010101000000-000000000000
