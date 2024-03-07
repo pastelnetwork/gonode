@@ -55,17 +55,6 @@ commands:
           working_directory: ~/<< parameters.path >>/<< parameters.package >>
           command: |
             ls
-           # diff -u <(echo -n) <(gofmt -d -e .)
-     # - run:
-      #    name: "<< parameters.package >>: Run go vet"
-       #   working_directory: ~/<< parameters.path >>/<< parameters.package >>
-        #  command: |
-         #   go vet -v ./...
-      #- run:
-       #   name: "<< parameters.package >>: Run revive"
-        #  working_directory: ~/<< parameters.path >>/<< parameters.package >>
-         # command: |
-          #  revive -config ~/<< parameters.path >>/.circleci/revive.toml ./...
       - run:
           name: "<< parameters.package >>: Run staticcheck"
           working_directory: ~/<< parameters.path >>/<< parameters.package >>
