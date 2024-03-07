@@ -4,9 +4,9 @@ go 1.22.0
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
+	github.com/pastelnetwork/gonode/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/utils => ../utils
-	github.com/pastelnetwork/gonode/go-webp => ../go-webp
 )
 
 require (
@@ -44,7 +44,6 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect

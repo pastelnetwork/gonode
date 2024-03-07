@@ -462,6 +462,8 @@ jobs:
       - checkout
       - install_go
       - setup
+      - instal_musl
+      - install_libsodium
       - run:
           name: Update PATH and GOPATH
           command: |
@@ -497,6 +499,8 @@ jobs:
           at: ~/go
       - install_go
       - install_tensorflow
+      - instal_musl
+      - install_libsodium
       - run:
           name: Update PATH and GOPATH
           command: |
