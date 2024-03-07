@@ -22,11 +22,12 @@
 package main
 
 import (
-	"github.com/kolesa-team/go-webp/encoder"
-	"github.com/kolesa-team/go-webp/webp"
 	"image/jpeg"
 	"log"
 	"os"
+
+	"github.com/pastelnetwork/gonode/go-webp/encoder"
+	"github.com/pastelnetwork/gonode/go-webp/webp"
 )
 
 func main() {
