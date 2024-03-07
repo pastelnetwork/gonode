@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/tools/supernode_ping
 
-go 1.22.0
+go 1.21.7
 
 replace github.com/pastelnetwork/gonode/proto => ../../proto
 

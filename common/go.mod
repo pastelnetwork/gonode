@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/common
 
-go 1.22.0
+go 1.21.7
 
 replace (
 	github.com/kolesa-team/go-webp => ../go-webp
@@ -10,7 +10,7 @@ replace (
 )
 
 require (
-	github.com/cloudflare/circl v1.3.3
+	github.com/cloudflare/circl v1.3.7
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/go-errors/errors v1.5.1
@@ -53,6 +53,8 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/onsi/ginkgo v1.16.5 // indirect
+	github.com/onsi/gomega v1.31.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect

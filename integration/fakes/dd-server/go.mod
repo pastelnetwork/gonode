@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/integration/fakes/dd-server
 
-go 1.22.0
+go 1.21.7
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../../../common

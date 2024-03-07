@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/supernode
 
-go 1.22.0
+go 1.21.7
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
@@ -28,7 +28,7 @@ require (
 	github.com/pastelnetwork/gonode/common v0.0.0-20240307160103-cb14e62b9021
 	github.com/pastelnetwork/gonode/dupedetection v0.0.0-20240307160103-cb14e62b9021
 	github.com/pastelnetwork/gonode/go-webp v0.0.0-20240307160103-cb14e62b9021
-	github.com/pastelnetwork/gonode/mixins v0.0.0-20240307111701-c491864e6826
+	github.com/pastelnetwork/gonode/mixins v0.0.0-20240307160103-cb14e62b9021
 	github.com/pastelnetwork/gonode/p2p v0.0.0-20240307160103-cb14e62b9021
 	github.com/pastelnetwork/gonode/pastel v0.0.0-20240307160103-cb14e62b9021
 	github.com/pastelnetwork/gonode/proto v0.0.0-20240307160103-cb14e62b9021

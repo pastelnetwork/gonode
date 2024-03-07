@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/tools/ui-cli
 
-go 1.22.0
+go 1.21.7
 
 require (
 	github.com/gorilla/websocket v1.5.1

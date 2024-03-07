@@ -1,8 +1,9 @@
 module github.com/pastelnetwork/gonode/raptorq
 
-go 1.22.0
+go 1.21.7
 
 replace (
+	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
 )
@@ -28,8 +29,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
-	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/onsi/gomega v1.31.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect

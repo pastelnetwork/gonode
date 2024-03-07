@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/proto
 
-go 1.22.0
+go 1.21.7
 
 require (
 	google.golang.org/grpc v1.62.1

@@ -21,9 +21,9 @@ commands:
           name: Install Go
           command: |
             cd ..
-            wget https://golang.org/dl/go1.22.0.linux-amd64.tar.gz
+            wget https://golang.org/dl/go1.21.7.linux-amd64.tar.gz
             sudo rm -r /usr/local/go
-            sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.21.7.linux-amd64.tar.gz
             echo 'export PATH=$PATH:/usr/local/go/bin:~/go/bin' >> ~/.bashrc
             echo 'export CGO_ENABLED=1' >> ~/.bashrc
             echo "export GOPATH=\"$HOME/go\"" >> ~/.bashrc

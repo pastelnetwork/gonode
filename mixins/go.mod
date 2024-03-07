@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/mixins
 
-go 1.22.0
+go 1.21.7
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
@@ -26,6 +26,7 @@ require (
 	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
 	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/makiuchi-d/gozxing v0.1.1 // indirect
@@ -34,6 +35,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/pastelnetwork/gonode/go-webp v0.0.0-20240307160103-cb14e62b9021 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
