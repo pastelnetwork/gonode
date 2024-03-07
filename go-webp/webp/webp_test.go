@@ -23,14 +23,15 @@ package webp
 
 import (
 	"bytes"
-	"github.com/kolesa-team/go-webp/decoder"
-	"github.com/kolesa-team/go-webp/encoder"
-	"golang.org/x/image/webp"
 	"image"
 	"image/jpeg"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/pastelnetwork/gonode/go-webp/decoder"
+	"github.com/pastelnetwork/gonode/go-webp/encoder"
+	"golang.org/x/image/webp"
 )
 
 func TestEncode(t *testing.T) {

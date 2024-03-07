@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/integration
 
-go 1.22.0
+go 1.22.1
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common

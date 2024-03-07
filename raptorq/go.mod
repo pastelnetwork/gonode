@@ -1,8 +1,11 @@
 module github.com/pastelnetwork/gonode/raptorq
 
-go 1.22.0
+go 1.22.1
 
-replace github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
+replace (
+	 github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
+	 github.com/pastelnetwork/gonode/go-webp => ../go-webp
+)
 
 require (
 	github.com/google/uuid v1.6.0
