@@ -25,7 +25,7 @@ import (
 	"os"
 	"testing"
 
-	"github/pastelnetwork/gonode/go-webp/utils"
+	"github.com/kolesa-team/go-webp/utils"
 )
 
 func TestNewDecoder(t *testing.T) {

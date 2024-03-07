@@ -3,7 +3,7 @@ module github.com/pastelnetwork/gonode/hermes
 go 1.22.0
 
 replace (
-	github/pastelnetwork/gonode/go-webp => ../go-webp
+	github.com/kolesa-team/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/mixins => ../mixins
 	github.com/pastelnetwork/gonode/p2p => ../p2p
@@ -19,7 +19,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/json-iterator/go v1.1.12
-	github/pastelnetwork/gonode/go-webp v1.0.4
+	github.com/kolesa-team/go-webp v1.0.4
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/pastelnetwork/gonode/common v0.0.0-20240229105633-1f295fe18563
 	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000

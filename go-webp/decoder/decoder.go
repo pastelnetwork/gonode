@@ -36,7 +36,7 @@ import (
 	"io/ioutil"
 	"unsafe"
 
-	"github/pastelnetwork/gonode/go-webp/utils"
+	"github.com/kolesa-team/go-webp/utils"
 )
 
 // Decoder stores information to decode picture
