@@ -144,7 +144,7 @@ func (service *SHService) processSelfHealingEvents(ctx context.Context) {
 		service.eventRetryMap[event.ChallengeID]++
 
 		if service.eventRetryMap[event.ChallengeID] >= selfHealingRetryThreshold {
-			err = task.historyDB.UpdateSHChallengeEventProcessed(event.ChallengeID, false)
+			err = task.historyDB.UpdateSHChallengeEventProcessed(event.ChallengeID, true)
 			if err != nil {
 				log.WithContext(ctx).
 					WithField("trigger_id", event.TriggerID).
