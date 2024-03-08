@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/walletnode
 
-go 1.22.1
+go 1.22.0
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
@@ -48,6 +48,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
+	github.com/kolesa-team/go-webp v1.0.4 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/makiuchi-d/gozxing v0.1.1 // indirect
@@ -60,7 +61,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/otrv4/ed448 v0.0.0-20221017120334-a33859724cfd // indirect
-	github.com/pastelnetwork/gonode/go-webp v0.0.0-20240307160103-cb14e62b9021 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

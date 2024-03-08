@@ -1,7 +1,7 @@
 # go-webp
 [![Build Status](https://travis-ci.com/kolesa-team/go-webp.svg)](https://travis-ci.com/github/kolesa-team/go-webp)
-[![GoDoc](https://godoc.org/github.com/pastelnetwork/gonode/go-webp?status.svg)](https://godoc.org/github.com/pastelnetwork/gonode/go-webp)
-[![Go Report](https://goreportcard.com/badge/github.com/pastelnetwork/gonode/go-webp)](https://goreportcard.com/report/github.com/pastelnetwork/gonode/go-webp)
+[![GoDoc](https://godoc.org/github.com/kolesa-team/go-webp?status.svg)](https://godoc.org/github.com/kolesa-team/go-webp)
+[![Go Report](https://goreportcard.com/badge/github.com/kolesa-team/go-webp)](https://goreportcard.com/report/github.com/kolesa-team/go-webp)
 
 Golang Webp library for encoding and decoding, using **C** binding for Google libwebp
 
@@ -13,13 +13,13 @@ Golang Webp library for encoding and decoding, using **C** binding for Google li
 % go test -bench "^BenchmarkDecode" ./webp                                                                                
 goos: darwin
 goarch: amd64
-pkg: github.com/pastelnetwork/gonode/go-webp/webp
+pkg: github.com/kolesa-team/go-webp/webp
 BenchmarkDecodeLossy-12                       45          25965139 ns/op
 BenchmarkDecodeXImageLossy-12                 13          90735879 ns/op
 BenchmarkDecodeLossless-12                    64          18887482 ns/op
 BenchmarkDecodeXImageLossless-12              27          42422596 ns/op
 PASS
-ok      github.com/pastelnetwork/gonode/go-webp/webp     7.877s
+ok      github.com/kolesa-team/go-webp/webp     7.877s
 ```
 
 ## Install libwebp
@@ -34,7 +34,7 @@ sudo apt-get install libwebp-dev
 ```
 
 ## Install
-`go get -u github.com/pastelnetwork/gonode/go-webp`
+`go get -u github.com/kolesa-team/go-webp`
 
 ## Examples
 
@@ -47,8 +47,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/pastelnetwork/gonode/go-webp/decoder"
-	"github.com/pastelnetwork/gonode/go-webp/webp"
+	"github.com/kolesa-team/go-webp/decoder"
+	"github.com/kolesa-team/go-webp/webp"
 )
 
 func main() {
@@ -83,8 +83,8 @@ go run example/decode/main.go
 package main
 
 import (
-	"github.com/pastelnetwork/gonode/go-webp/encoder"
-	"github.com/pastelnetwork/gonode/go-webp/webp"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
 	"image/jpeg"
 	"log"
 	"os"

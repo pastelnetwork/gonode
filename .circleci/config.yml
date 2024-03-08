@@ -21,9 +21,9 @@ commands:
           name: Install Go
           command: |
             cd ..
-            wget https://golang.org/dl/go1.22.1.linux-amd64.tar.gz
+            wget https://golang.org/dl/go1.22.0.linux-amd64.tar.gz
             sudo rm -r /usr/local/go
-            sudo tar -C /usr/local -xzf go1.22.1.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
             echo 'export PATH=$PATH:/usr/local/go/bin:~/go/bin' >> ~/.bashrc
             echo 'export CGO_ENABLED=1' >> ~/.bashrc
             echo "export GOPATH=\"$HOME/go\"" >> ~/.bashrc
@@ -55,6 +55,17 @@ commands:
           working_directory: ~/<< parameters.path >>/<< parameters.package >>
           command: |
             ls
+           # diff -u <(echo -n) <(gofmt -d -e .)
+     # - run:
+      #    name: "<< parameters.package >>: Run go vet"
+       #   working_directory: ~/<< parameters.path >>/<< parameters.package >>
+        #  command: |
+         #   go vet -v ./...
+      #- run:
+       #   name: "<< parameters.package >>: Run revive"
+        #  working_directory: ~/<< parameters.path >>/<< parameters.package >>
+         # command: |
+          #  revive -config ~/<< parameters.path >>/.circleci/revive.toml ./...
       - run:
           name: "<< parameters.package >>: Run staticcheck"
           working_directory: ~/<< parameters.path >>/<< parameters.package >>
@@ -120,14 +131,16 @@ commands:
               APP_VERSION="latest"
             fi
 
-            export APP_LDFLAGS="-linkmode external -extldflags "-static" -s -w -X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
+            export APP_LDFLAGS="-X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
             echo "APP_VERSION=$APP_VERSION"
             echo "APP_LDFLAGS=$APP_LDFLAGS"
 
             if [[ "<< parameters.targets >>" == *"linux/amd64"* ]]; then
               echo "Building << parameters.package >> for Linux"
+              sudo apt-get update
+              sudo apt-get install -y libwebp-dev
               cd << parameters.package >>
-              CGO_ENABLED=1 GOOS=linux CC=musl-gcc GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$APP_LDFLAGS"
+              GOOS=linux GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$APP_LDFLAGS"
               echo "Done Building << parameters.package >> for Linux"
               cd ..
             fi
@@ -273,16 +286,6 @@ commands:
             make check
             sudo make install
             sudo /sbin/ldconfig -v
-  instal_musl:
-    steps:
-      - run:
-          name: Install Musl
-          command: |
-            sudo apt-get update
-            sudo apt-get install musl musl-dev musl-tools
-            sudo apt-get update
-            sudo apt-get install -y libwebp-dev
-
 
 jobs:
   prepare_workspace:
@@ -292,7 +295,7 @@ jobs:
       - run:
           name: Detect not merged code
           command: |
-            ls
+            ./scripts/merge_master.sh
       - install_go
       - setup
       - run:
@@ -451,8 +454,6 @@ jobs:
       - checkout
       - install_go
       - setup
-      - instal_musl
-      - install_libsodium
       - run:
           name: Update PATH and GOPATH
           command: |
@@ -488,8 +489,6 @@ jobs:
           at: ~/go
       - install_go
       - install_tensorflow
-      - instal_musl
-      - install_libsodium
       - run:
           name: Update PATH and GOPATH
           command: |
