@@ -2,7 +2,7 @@ module github.com/pastelnetwork/gonode/pastel
 
 replace github.com/pastelnetwork/gonode/common => ../common
 
-go 1.22.1
+go 1.22.0
 
 require (
 	github.com/btcsuite/btcutil v1.0.2

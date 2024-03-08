@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/p2p
 
-go 1.22.1
+go 1.22.0
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
