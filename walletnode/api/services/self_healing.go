@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
@@ -110,9 +111,12 @@ func (service *MetricsAPIHandler) GetSummaryStats(ctx context.Context, p *metric
 	var shTriggerMetrics []*metrics.SHTriggerStats
 	for _, metric := range res.SHTriggerMetrics {
 		m := metric
+
+		noOfNodesOffline := len(strings.Split(m.ListOfNodes, "-"))
+
 		shTriggerMetrics = append(shTriggerMetrics, &metrics.SHTriggerStats{
 			TriggerID:              m.TriggerID,
-			NodesOffline:           m.NodesOffline,
+			NodesOffline:           noOfNodesOffline,
 			ListOfNodes:            m.ListOfNodes,
 			TotalFilesIdentified:   m.TotalFilesIdentified,
 			TotalTicketsIdentified: m.TotalTicketsIdentified,
