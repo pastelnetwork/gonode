@@ -21,9 +21,9 @@ commands:
           name: Install Go
           command: |
             cd ..
-            wget https://golang.org/dl/go1.22.0.linux-amd64.tar.gz
+            wget https://golang.org/dl/go1.22.1.linux-amd64.tar.gz
             sudo rm -r /usr/local/go
-            sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.22.1.linux-amd64.tar.gz
             echo 'export PATH=$PATH:/usr/local/go/bin:~/go/bin' >> ~/.bashrc
             echo 'export CGO_ENABLED=1' >> ~/.bashrc
             echo "export GOPATH=\"$HOME/go\"" >> ~/.bashrc
@@ -55,17 +55,6 @@ commands:
           working_directory: ~/<< parameters.path >>/<< parameters.package >>
           command: |
             ls
-           # diff -u <(echo -n) <(gofmt -d -e .)
-     # - run:
-      #    name: "<< parameters.package >>: Run go vet"
-       #   working_directory: ~/<< parameters.path >>/<< parameters.package >>
-        #  command: |
-         #   go vet -v ./...
-      #- run:
-       #   name: "<< parameters.package >>: Run revive"
-        #  working_directory: ~/<< parameters.path >>/<< parameters.package >>
-         # command: |
-          #  revive -config ~/<< parameters.path >>/.circleci/revive.toml ./...
       - run:
           name: "<< parameters.package >>: Run staticcheck"
           working_directory: ~/<< parameters.path >>/<< parameters.package >>
@@ -131,19 +120,32 @@ commands:
               APP_VERSION="latest"
             fi
 
-            export APP_LDFLAGS="-X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
+            export APP_LDFLAGS="-linkmode external -extldflags "-static" -s -w -X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
+            export MAC_APP_LDFLAGS="-linkmode external -extldflags -s -w -X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION"
+            
             echo "APP_VERSION=$APP_VERSION"
             echo "APP_LDFLAGS=$APP_LDFLAGS"
+            echo "MAC_APP_LDFLAGS=$MAC_APP_LDFLAGS"
+
+            export CGO_LDFLAGS="-L/usr/lib/x86_64-linux-gnu -l:libwebp.a -lm"
+            export CGO_CFLAGS="-I/usr/include/webp"
 
             if [[ "<< parameters.targets >>" == *"linux/amd64"* ]]; then
               echo "Building << parameters.package >> for Linux"
-              sudo apt-get update
-              sudo apt-get install -y libwebp-dev
               cd << parameters.package >>
-              GOOS=linux GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$APP_LDFLAGS"
+              CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o $LINUX_ARTIFACT -ldflags "$MAC_APP_LDFLAGS"
               echo "Done Building << parameters.package >> for Linux"
               cd ..
             fi
+
+            # Check if CIRCLE_BRANCH is set and not empty
+            if [[ -n "$CIRCLE_BRANCH" ]]; then
+              BRANCH_ARG=" --branch=$CIRCLE_BRANCH "
+            else
+              BRANCH_ARG=" "
+            fi
+
+            echo "BRANCH_ARG=$BRANCH_ARG"
 
             for TARGET in $(echo "<< parameters.targets >>" | tr ',' '\n'); do
                 if [[ "$TARGET" == "linux/amd64" ]]; then
@@ -151,8 +153,15 @@ commands:
                   continue  # Skip the rest of this loop iteration
                 fi
 
-                echo "Building for target: $TARGET using xgo"
-                xgo -go go-1.21.7 --targets="$TARGET" --hooksdir=xgo -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
+                if [[ "$TARGET" == "windows/amd64" ]]; then
+                  echo "xgo build for << parameters.package >> on Windows/amd64"
+                  xgo -go go-1.21.7 --targets="$TARGET"$BRANCH_ARG--hooksdir=xgo -ldflags "$APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
+                fi
+
+                if [[ "$TARGET" == "darwin-10.15/amd64" ]]; then
+                  echo "Building << parameters.package >> for target: $TARGET using xgo"
+                  xgo -go go-1.21.7 --targets="$TARGET"$BRANCH_ARG--hooksdir=xgo -ldflags "$MAC_APP_LDFLAGS" github.com/pastelnetwork/gonode/<< parameters.package >>
+                fi
             done
 
             mkdir -p build
@@ -199,6 +208,7 @@ commands:
           name: Cleanup working dir
           working_directory: << parameters.working_directory >>
           command: |
+            ls -a
             rm hermes-linux-amd64.sha256
             rm supernode-linux-amd64.sha256
             rm walletnode-darwin-10.15-amd64.sha256
@@ -286,6 +296,16 @@ commands:
             make check
             sudo make install
             sudo /sbin/ldconfig -v
+  instal_musl:
+    steps:
+      - run:
+          name: Install Musl
+          command: |
+            sudo apt-get update
+            sudo apt-get install musl musl-dev musl-tools
+            sudo apt-get update
+            sudo apt-get install -y libwebp-dev
+
 
 jobs:
   prepare_workspace:
@@ -295,7 +315,7 @@ jobs:
       - run:
           name: Detect not merged code
           command: |
-            ./scripts/merge_master.sh
+            ls
       - install_go
       - setup
       - run:
@@ -454,6 +474,8 @@ jobs:
       - checkout
       - install_go
       - setup
+      - instal_musl
+      - install_libsodium
       - run:
           name: Update PATH and GOPATH
           command: |
@@ -489,6 +511,8 @@ jobs:
           at: ~/go
       - install_go
       - install_tensorflow
+      - instal_musl
+      - install_libsodium
       - run:
           name: Update PATH and GOPATH
           command: |

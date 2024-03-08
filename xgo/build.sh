@@ -27,6 +27,8 @@ install_windows() {
     # Define cross-compiler prefix
     CROSS_PREFIX=x86_64-w64-mingw32-
 
+    echo "Current Working Directory: $(pwd)"
+    echo "CROSS_PREFIX Value: $CROSS_PREFIX"
     # Install cross-compile tools
     apt-get update
     apt-get install -y mingw-w64
@@ -37,19 +39,25 @@ install_windows() {
     cd libwebp-1.2.0
 
     # Configure for cross-compilation for Windows
-    ./configure --host=${CROSS_PREFIX%?} --prefix=/usr/${CROSS_PREFIX%?} --enable-shared --enable-static
+    ./configure --host=${CROSS_PREFIX%?} --prefix=/usr/${CROSS_PREFIX%?} --enable-static
 
     # Compile and install
     make
     make install
 
+    echo "Checking for WebPGetFeaturesInternal in libwebp.a"
+    x86_64-w64-mingw32-nm -g /usr/x86_64-w64-mingw32/lib/libwebp.a | grep WebPGetFeaturesInternal
+
+    export CGO_CFLAGS="-I/usr/${CROSS_PREFIX%?}/include"
+    export CGO_LDFLAGS="-L/usr/${CROSS_PREFIX%?}/lib -lwebp"
+    echo "CGO_CFLAGS: $CGO_CFLAGS"
+    echo "CGO_LDFLAGS: $CGO_LDFLAGS"
     # Return to the original directory
     cd ..
 
     echo "Installation for Windows completed successfully."
 }
 
-# Function to install for macOS
 install_macos() {
     LIBWEBP_URL="https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.1.0-rc2-mac-10.15.tar.gz"
 
@@ -72,12 +80,19 @@ install_macos() {
     export LD_LIBRARY_PATH="${INSTALL_DIR}/lib:${LD_LIBRARY_PATH}"
     export PATH="${INSTALL_DIR}/bin:${PATH}"
 
-    # Check if libsharpyuv is included and add it to the linker flags
-    if [ -f "${INSTALL_DIR}/lib/libsharpyuv.a" ]; then
-        export CGO_LDFLAGS="-L${INSTALL_DIR}/lib -lwebp -lsharpyuv ${CGO_LDFLAGS}"
-    else
+    # Explicitly set CGO_LDFLAGS for static linking of libwebp
+    if [ -f "${INSTALL_DIR}/lib/libwebp.a" ]; then
         export CGO_LDFLAGS="-L${INSTALL_DIR}/lib -lwebp ${CGO_LDFLAGS}"
+    else
+        echo "Static libwebp not found in ${INSTALL_DIR}/lib"
+        exit 1
     fi
+
+    # Additional check for libsharpyuv if needed
+    if [ -f "${INSTALL_DIR}/lib/libsharpyuv.a" ]; then
+        export CGO_LDFLAGS="${CGO_LDFLAGS} -lsharpyuv"
+    fi
+
 
     # Create a pkg-config file if it does not exist
     PKG_CONFIG_PATH="${INSTALL_DIR}/lib/pkgconfig"
@@ -94,17 +109,14 @@ install_macos() {
         echo "Description: WebP library" >> "$PKG_CONFIG_FILE"
         echo "Version: 1.1.0-rc2" >> "$PKG_CONFIG_FILE"
         echo "Libs: -L\${libdir} -lwebp" >> "$PKG_CONFIG_FILE"
-        if [ -f "${INSTALL_DIR}/lib/libsharpyuv.a" ]; then
-            echo "Libs: -L\${libdir} -lsharpyuv" >> "$PKG_CONFIG_FILE"
-        fi
         echo "Cflags: -I\${includedir}" >> "$PKG_CONFIG_FILE"
     fi
 
     # Set PKG_CONFIG_PATH to the directory containing 'libwebp.pc'
     export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${PKG_CONFIG_PATH}"
 
+    ls ${INSTALL_DIR}/lib
     echo "libwebp version 1.1.0-rc2 installed successfully in ${INSTALL_DIR}"
-
 }
 
 echo "building for HOST: $HOST"
