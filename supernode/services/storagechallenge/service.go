@@ -139,10 +139,11 @@ func (service *SCService) Run(ctx context.Context) error {
 		case <-time.After(defaultTimerBlockCheckDuration):
 
 			if service.CheckNextBlockAvailable(ctx) && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
-				service.executeMetricsBroadcastTask(context.Background())
-
 				newCtx := log.ContextWithPrefix(context.Background(), "storage-challenge")
 				task := service.NewSCTask()
+
+				service.executeMetricsBroadcastTask(context.Background())
+
 				task.GenerateStorageChallenges(newCtx)
 				log.WithContext(newCtx).Debug("Would normally generate a storage challenge")
 			}

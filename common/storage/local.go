@@ -54,4 +54,12 @@ type LocalStoreInterface interface {
 	GetSHChallengeReport(ctx context.Context, challengeID string) (types.SelfHealingReports, error)
 	GetMetricsDataByStorageChallengeID(ctx context.Context, challengeID string) ([]types.Message, error)
 	GetLastNSCMetrics() ([]types.NScMetric, error)
+
+	BatchInsertHCMetrics(metrics []types.HealthCheckChallengeLogMessage) error
+	UpdateHCMetricsBroadcastTimestamp(nodeID string, broadcastAt time.Time) error
+	HealthCheckChallengeMetrics(timestamp time.Time) ([]types.HealthCheckChallengeLogMessage, error)
+	InsertHealthCheckChallengeMessage(challenge types.HealthCheckChallengeLogMessage) error
+	InsertHealthCheckChallengeMetric(metric types.HealthCheckChallengeMetric) error
+	InsertBroadcastHealthCheckMessage(challenge types.BroadcastHealthCheckLogMessage) error
+	QueryHCChallengeMessage(challengeID string, messageType int) (challengeMessage types.HealthCheckChallengeLogMessage, err error)
 }

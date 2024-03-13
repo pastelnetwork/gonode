@@ -93,7 +93,7 @@ func (service *StorageChallengeGRPC) Desc() *grpc.ServiceDesc {
 
 // ProcessStorageChallenge is the server side of storage challenge processing GRPC comms
 func (service *StorageChallengeGRPC) ProcessStorageChallenge(ctx context.Context, scRequest *pb.ProcessStorageChallengeRequest) (*pb.ProcessStorageChallengeReply, error) {
-	log.WithContext(ctx).WithField("req", scRequest).Info("Process Storage Challenge Request received from gRpc client")
+	log.WithContext(ctx).WithField("req", scRequest).Debugf("Process Storage Challenge Request received from gRpc client")
 
 	task := service.NewSCTask()
 

@@ -65,8 +65,6 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 		log.WithContext(ctx).Error("unable to retrieve challenge or response message")
 		return types.Message{}, errors.Errorf("unable to retrieve challenge or response message")
 	}
-	log.WithContext(ctx).WithField("challenge_msg", challengeMessage).Info("challenge msg retrieved")
-	log.WithContext(ctx).WithField("response_msg", responseMessage).Info("response msg retrieved")
 
 	//Need to verify the following
 	//	IsChallengeTimestampOK  bool      `json:"is_challenge_timestamp_ok"`

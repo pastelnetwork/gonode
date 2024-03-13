@@ -189,7 +189,6 @@ type ProcessBroadcastChallengeMetricsRequest struct {
 type StorageChallengeMessages []Message
 
 // Hash returns the hash of the storage-challenge challenge log data
-
 func (mdl StorageChallengeMessages) Hash() string {
 	data, _ := json.Marshal(mdl)
 	hash, _ := utils.Sha3256hash(data)

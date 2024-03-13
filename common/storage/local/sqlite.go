@@ -165,6 +165,49 @@ const createStorageChallengeMetricsUniqueIndex string = `
 CREATE UNIQUE INDEX IF NOT EXISTS storage_challenge_metrics_unique ON storage_challenge_metrics(challenge_id, message_type, sender_id);
 `
 
+const createHealthCheckChallengeMessages string = `
+  CREATE TABLE IF NOT EXISTS healthcheck_challenge_messages (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  challenge_id TEXT NOT NULL,
+  message_type INTEGER NOT NULL,
+  data BLOB NOT NULL,
+  sender_id TEXT NOT NULL,
+  sender_signature BLOB NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+);`
+
+const createBroadcastHealthCheckChallengeMessages string = `
+  CREATE TABLE IF NOT EXISTS broadcast_healthcheck_challenge_messages (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  challenge_id TEXT NOT NULL,
+  challenger TEXT NOT NULL,
+  recipient TEXT NOT NULL,
+  observers TEXT NOT NULL,
+  data BLOB NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+);`
+
+const createHealthCheckChallengeMetrics string = `
+  CREATE TABLE IF NOT EXISTS healthcheck_challenge_metrics (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  challenge_id TEXT NOT NULL,
+  message_type INTEGER NOT NULL,
+  data BLOB NOT NULL,
+  sender_id TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+);
+`
+
+const createHealthCheckChallengeMetricsUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS healthcheck_challenge_metrics_unique ON healthcheck_challenge_metrics(challenge_id, message_type, sender_id);
+`
+
+const alterTablePingHistoryHealthCheckColumn = `ALTER TABLE ping_history
+ADD COLUMN health_check_metrics_last_broadcast_at DATETIME NULL;`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -717,6 +760,131 @@ func (s *SQLiteStore) UpdateSHChallengeEventProcessed(challengeID string, isProc
 	return err
 }
 
+// InsertHealthCheckChallengeMessage inserts failed healthcheck challenge to db
+func (s *SQLiteStore) InsertHealthCheckChallengeMessage(challenge types.HealthCheckChallengeLogMessage) error {
+	now := time.Now().UTC()
+	const insertQuery = "INSERT INTO healthcheck_challenge_messages(id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?);"
+	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.MessageType, challenge.Data, challenge.Sender, challenge.SenderSignature, now, now)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SQLiteStore) InsertHealthCheckChallengeMetric(m types.HealthCheckChallengeMetric) error {
+	now := time.Now().UTC()
+
+	const metricsQuery = "INSERT INTO healthcheck_challenge_metrics(id, challenge_id, message_type, data, sender_id, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"
+	_, err := s.db.Exec(metricsQuery, m.ChallengeID, m.MessageType, m.Data, m.SenderID, now, now)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SQLiteStore) BatchInsertHCMetrics(metrics []types.HealthCheckChallengeLogMessage) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+        INSERT OR IGNORE INTO healthcheck_challenge_metrics
+        (id, challenge_id, message_type, data, sender_id, created_at, updated_at)
+        VALUES (NULL,?,?,?,?,?,?)
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	for _, metric := range metrics {
+		now := time.Now().UTC()
+
+		_, err = stmt.Exec(metric.ChallengeID, metric.MessageType, metric.Data, metric.Sender, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Commit the transaction
+	return tx.Commit()
+}
+
+func (s *SQLiteStore) UpdateHCMetricsBroadcastTimestamp(nodeID string, updatedAt time.Time) error {
+	// Update query
+	const updateQuery = `
+UPDATE ping_history
+SET health_check_metrics_last_broadcast_at = ?
+WHERE supernode_id = ?;`
+
+	// Execute the update query
+	_, err := s.db.Exec(updateQuery, time.Now().UTC().Add(-180*time.Minute), nodeID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// HealthCheckChallengeMetrics retrieves all the metrics needs to be broadcast
+func (s *SQLiteStore) HealthCheckChallengeMetrics(timestamp time.Time) ([]types.HealthCheckChallengeLogMessage, error) {
+	const query = `
+    SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at
+    FROM healthcheck_challenge_metrics
+    WHERE created_at > ?
+    `
+
+	rows, err := s.db.Query(query, timestamp)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.HealthCheckChallengeLogMessage
+	for rows.Next() {
+		var m types.HealthCheckChallengeLogMessage
+		err := rows.Scan(&m.ID, &m.ChallengeID, &m.MessageType, &m.Data, &m.Sender, &m.CreatedAt, &m.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
+}
+
+// InsertBroadcastHealthCheckMessage inserts healthcheck healthcheck challenge msg to db
+func (s *SQLiteStore) InsertBroadcastHealthCheckMessage(challenge types.BroadcastHealthCheckLogMessage) error {
+	now := time.Now().UTC()
+	const insertQuery = "INSERT INTO broadcast_healthcheck_challenge_messages(id, challenge_id, data, challenger, recipient, observers, created_at, updated_at) VALUES(NULL,?,?,?,?,?,?,?);"
+	_, err := s.db.Exec(insertQuery, challenge.ChallengeID, challenge.Data, challenge.Challenger, challenge.Recipient, challenge.Observers, now, now)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// QueryHCChallengeMessage retrieves healthcheck challenge message against challengeID and messageType
+func (s *SQLiteStore) QueryHCChallengeMessage(challengeID string, messageType int) (challengeMessage types.HealthCheckChallengeLogMessage, err error) {
+	const selectQuery = "SELECT * FROM healthcheck_challenge_messages WHERE challenge_id=? AND message_type=?"
+	err = s.db.QueryRow(selectQuery, challengeID, messageType).Scan(
+		&challengeMessage.ID, &challengeMessage.ChallengeID, &challengeMessage.MessageType, &challengeMessage.Data,
+		&challengeMessage.Sender, &challengeMessage.SenderSignature, &challengeMessage.CreatedAt, &challengeMessage.UpdatedAt)
+
+	if err != nil {
+		return challengeMessage, err
+	}
+
+	return challengeMessage, nil
+}
+
 // CleanupSelfHealingChallenges cleans up self-healing challenges stored in DB for inspection
 func (s *SQLiteStore) CleanupSelfHealingChallenges() (err error) {
 	const delQuery = "DELETE FROM self_healing_challenges"
@@ -792,6 +960,22 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
+	if _, err := db.Exec(createHealthCheckChallengeMessages); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createHealthCheckChallengeMetrics); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createHealthCheckChallengeMetricsUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createBroadcastHealthCheckChallengeMessages); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
 	_, _ = db.Exec(alterTaskHistory)
 
 	_, _ = db.Exec(alterTablePingHistory)
@@ -799,6 +983,8 @@ func OpenHistoryDB() (storage.LocalStoreInterface, error) {
 	_, _ = db.Exec(alterTablePingHistoryGenerationMetrics)
 
 	_, _ = db.Exec(alterTablePingHistoryExecutionMetrics)
+
+	_, _ = db.Exec(alterTablePingHistoryHealthCheckColumn)
 
 	pragmas := []string{
 		"PRAGMA synchronous=NORMAL;",

@@ -104,6 +104,7 @@ func (config *Config) OverridePastelIDAndPass(id, pass string) {
 	config.NftDownload.PastelID = id
 	config.StorageChallenge.PastelID = id
 	config.SelfHealingChallenge.PastelID = id
+	config.HealthCheckChallenge.PastelID = id
 
 	// Override pass phrase
 	config.PassPhrase = pass
@@ -114,4 +115,5 @@ func (config *Config) OverridePastelIDAndPass(id, pass string) {
 	config.NftDownload.PassPhrase = pass
 	config.StorageChallenge.PassPhrase = pass
 	config.SelfHealingChallenge.PassPhrase = pass
+	config.HealthCheckChallenge.PassPhrase = pass
 }
