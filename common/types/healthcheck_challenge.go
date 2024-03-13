@@ -12,14 +12,10 @@ const (
 	HealthCheckResponseMessageType
 	// HealthCheckEvaluationMessageType represents the evaluation message
 	HealthCheckEvaluationMessageType
-	// HealthCheckVerificationMessageType represents the verification message
-	HealthCheckVerificationMessageType
-	// HealthCheckCompletionMessageType represents the challenge message processed successfully
-	HealthCheckCompletionMessageType
-	// HealthCheckBroadcastMessageType represents the broadcast message processed successfully
-	HealthCheckBroadcastMessageType
 	// HealthCheckAffirmationMessageType represents the affirmation message
 	HealthCheckAffirmationMessageType
+	// HealthCheckBroadcastMessageType represents the broadcast message
+	HealthCheckBroadcastMessageType
 )
 
 // String returns the message string
@@ -103,14 +99,13 @@ type HealthCheckMessageData struct {
 
 // HealthCheckMessage represents the healthcheck challenge message
 type HealthCheckMessage struct {
-	MessageType                HealthCheckMessageType `json:"message_type"`
-	ChallengeID                string                 `json:"challenge_id"`
-	Data                       HealthCheckMessageData `json:"data"`
-	Sender                     string                 `json:"sender"`
-	SenderSignature            []byte                 `json:"sender_signature"`
-	StorageChallengeSignatures StorageChallengeStatus
-	CreatedAt                  time.Time `json:"created_at"`
-	UpdatedAt                  time.Time `json:"updated_at"`
+	MessageType     HealthCheckMessageType `json:"message_type"`
+	ChallengeID     string                 `json:"challenge_id"`
+	Data            HealthCheckMessageData `json:"data"`
+	Sender          string                 `json:"sender"`
+	SenderSignature []byte                 `json:"sender_signature"`
+	CreatedAt       time.Time              `json:"created_at"`
+	UpdatedAt       time.Time              `json:"updated_at"`
 }
 
 // HealthCheckChallengeMetric represents the metric log to be stored in the DB

@@ -473,25 +473,6 @@ func (s *SQLiteStore) GetSCSummaryStats(from time.Time) (scMetrics metrics.SCMet
 	scStats.TotalChallengesProcessed = scMetrics.TotalChallengesProcessed
 	scStats.TotalChallengesEvaluatedByChallenger = scMetrics.TotalChallengesEvaluatedByChallenger
 
-	//challengerEvaluations, err := s.GetChallengerEvaluations(from)
-	//if err != nil {
-	//	return scMetrics, err
-	//}
-	//log.WithField("challenge_evaluations", len(challengerEvaluations)).Info("challenge_evaluations retrieved")
-	//
-	//for i := 0; i < len(challengerEvaluations); i++ {
-	//	challengerEvaluation := challengerEvaluations[i]
-	//
-	//	var challengeMsg types.MessageData
-	//	if err := json.Unmarshal(challengerEvaluation.Data, &challengeMsg); err != nil {
-	//		continue
-	//	}
-	//
-	//	if challengeMsg.ChallengerEvaluation.IsVerified {
-	//		scMetrics.TotalChallengesVerifiedByChallenger++
-	//	}
-	//}
-
 	observersEvaluations, err := s.GetObserversEvaluations(from)
 	if err != nil {
 		return scMetrics, err
@@ -560,6 +541,34 @@ func processObserverEvaluations(observersEvaluations []types.StorageChallengeLog
 }
 
 func isObserverEvaluationVerified(observerEvaluation types.ObserverEvaluationData) bool {
+	if !observerEvaluation.IsEvaluationResultOK {
+		return false
+	}
+
+	if !observerEvaluation.IsChallengerSignatureOK {
+		return false
+	}
+
+	if !observerEvaluation.IsRecipientSignatureOK {
+		return false
+	}
+
+	if !observerEvaluation.IsChallengeTimestampOK {
+		return false
+	}
+
+	if !observerEvaluation.IsProcessTimestampOK {
+		return false
+	}
+
+	if !observerEvaluation.IsEvaluationTimestampOK {
+		return false
+	}
+
+	return true
+}
+
+func isHCObserverEvaluationVerified(observerEvaluation types.HealthCheckObserverEvaluationData) bool {
 	if !observerEvaluation.IsEvaluationResultOK {
 		return false
 	}
@@ -718,4 +727,132 @@ func (s *SQLiteStore) GetMetricsDataByStorageChallengeID(ctx context.Context, ch
 	}
 
 	return storageChallengeMessages, nil
+}
+
+func (s *SQLiteStore) GetTotalHCGeneratedAndProcessedAndEvaluated(from time.Time) (metrics.HCMetrics, error) {
+	metrics := metrics.HCMetrics{}
+
+	// Query for total number of challenges
+	totalChallengeQuery := "SELECT COUNT(DISTINCT challenge_id) FROM healthcheck_challenge_metrics WHERE message_type = 1 AND created_at > ?"
+	err := s.db.QueryRow(totalChallengeQuery, from).Scan(&metrics.TotalChallenges)
+	if err != nil {
+		return metrics, err
+	}
+
+	// Query for total challenges responded
+	totalChallengesProcessedQuery := "SELECT COUNT(DISTINCT challenge_id) FROM healthcheck_challenge_metrics WHERE message_type = 2 AND created_at > ?"
+	err = s.db.QueryRow(totalChallengesProcessedQuery, from).Scan(&metrics.TotalChallengesProcessed)
+	if err != nil {
+		return metrics, err
+	}
+
+	totalChallengesEvaluatedQuery := "SELECT COUNT(DISTINCT challenge_id) FROM healthcheck_challenge_metrics WHERE message_type = 3 AND created_at > ?"
+	err = s.db.QueryRow(totalChallengesEvaluatedQuery, from).Scan(&metrics.TotalChallengesEvaluatedByChallenger)
+	if err != nil {
+		return metrics, err
+	}
+
+	return metrics, nil
+}
+
+func (s *SQLiteStore) GetHCObserversEvaluations(from time.Time) ([]types.HealthCheckChallengeLogMessage, error) {
+	var messages []types.HealthCheckChallengeLogMessage
+
+	query := "SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at FROM healthcheck_challenge_metrics WHERE message_type = 4 and created_at > ?"
+	rows, err := s.db.Query(query, from)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var msg types.HealthCheckChallengeLogMessage
+		err := rows.Scan(&msg.ID, &msg.ChallengeID, &msg.MessageType, &msg.Data, &msg.Sender, &msg.CreatedAt, &msg.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return messages, nil
+}
+
+func processHCObserverEvaluations(observersEvaluations []types.HealthCheckChallengeLogMessage) map[string]HCObserverEvaluationMetrics {
+	evaluationMap := make(map[string]HCObserverEvaluationMetrics)
+
+	for _, observerEvaluation := range observersEvaluations {
+		var oe types.HealthCheckMessageData
+		if err := json.Unmarshal(observerEvaluation.Data, &oe); err != nil {
+			continue
+		}
+
+		oem, exists := evaluationMap[observerEvaluation.ChallengeID]
+		if !exists {
+			oem = HCObserverEvaluationMetrics{} // Initialize if not exists
+		}
+
+		if isHCObserverEvaluationVerified(oe.ObserverEvaluation) {
+			oem.ChallengesVerified++
+		} else {
+			if !oe.ObserverEvaluation.IsChallengeTimestampOK ||
+				!oe.ObserverEvaluation.IsProcessTimestampOK ||
+				!oe.ObserverEvaluation.IsEvaluationTimestampOK {
+				oem.FailedByInvalidTimestamps++
+			}
+
+			if !oe.ObserverEvaluation.IsChallengerSignatureOK ||
+				!oe.ObserverEvaluation.IsRecipientSignatureOK {
+				oem.FailedByInvalidSignatures++
+			}
+
+			if !oe.ObserverEvaluation.IsEvaluationResultOK {
+				oem.FailedByInvalidEvaluation++
+			}
+		}
+
+		evaluationMap[observerEvaluation.ChallengeID] = oem
+	}
+
+	return evaluationMap
+}
+
+func (s *SQLiteStore) GetHCSummaryStats(from time.Time) (hcMetrics metrics.HCMetrics, err error) {
+	hcStats := metrics.HCMetrics{}
+	hcMetrics, err = s.GetTotalHCGeneratedAndProcessedAndEvaluated(from)
+	if err != nil {
+		return hcMetrics, err
+	}
+	hcStats.TotalChallenges = hcMetrics.TotalChallenges
+	hcStats.TotalChallengesProcessed = hcMetrics.TotalChallengesProcessed
+	hcStats.TotalChallengesEvaluatedByChallenger = hcMetrics.TotalChallengesEvaluatedByChallenger
+
+	hcObserversEvaluations, err := s.GetHCObserversEvaluations(from)
+	if err != nil {
+		return hcMetrics, err
+	}
+	log.WithField("observer_evaluations", len(hcObserversEvaluations)).Info("observer evaluations retrieved")
+
+	observerEvaluationMetrics := processHCObserverEvaluations(hcObserversEvaluations)
+	log.WithField("observer_evaluation_metrics", len(observerEvaluationMetrics)).Info("observer evaluation metrics retrieved")
+
+	for _, obMetrics := range observerEvaluationMetrics {
+		if obMetrics.ChallengesVerified >= 3 {
+			hcMetrics.TotalChallengesVerified++
+		} else {
+			if obMetrics.FailedByInvalidTimestamps > 0 {
+				hcMetrics.SlowResponsesObservedByObservers++
+			}
+			if obMetrics.FailedByInvalidSignatures > 0 {
+				hcMetrics.InvalidSignaturesObservedByObservers++
+			}
+			if obMetrics.FailedByInvalidEvaluation > 0 {
+				hcMetrics.InvalidEvaluationObservedByObservers++
+			}
+		}
+	}
+
+	return hcMetrics, nil
 }
