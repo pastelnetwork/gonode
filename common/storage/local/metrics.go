@@ -37,6 +37,13 @@ type SHChallengeMetric struct {
 	IsHealed bool
 }
 
+type HCObserverEvaluationMetrics struct {
+	ChallengesVerified        int
+	FailedByInvalidTimestamps int
+	FailedByInvalidSignatures int
+	FailedByInvalidEvaluation int
+}
+
 type ObserverEvaluationMetrics struct {
 	ChallengesVerified        int
 	FailedByInvalidTimestamps int

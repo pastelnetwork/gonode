@@ -7,6 +7,7 @@
 //go:generate mockery --name=RegisterCollectionInterface
 //go:generate mockery --name=StorageChallengeInterface
 //go:generate mockery --name=SelfHealingChallengeInterface
+//go:generate mockery --name=HealthCheckChallengeInterface
 
 package node
 
@@ -38,6 +39,8 @@ type ConnectionInterface interface {
 	RegisterCascade() RegisterCascadeInterface
 	//StorageChallenge returns a new StorageChallenge stream
 	StorageChallenge() StorageChallengeInterface
+	//HealthCheckChallenge returns a new HealthCheckChallenge stream
+	HealthCheckChallenge() HealthCheckChallengeInterface
 	//SelfHealingChallenge returns a new SelfHealingChallenge stream
 	SelfHealingChallenge() SelfHealingChallengeInterface
 	// RegisterCollection returns a new RegisterCollection stream
@@ -115,6 +118,26 @@ type StorageChallengeInterface interface {
 
 	//BroadcastStorageChallengeMetrics broadcast the storage-challenge metrics to the entire network
 	BroadcastStorageChallengeMetrics(ctx context.Context, req types.ProcessBroadcastChallengeMetricsRequest) error
+}
+
+// HealthCheckChallengeInterface represents an interaction stream with supernodes for healthcheck challenge communications
+type HealthCheckChallengeInterface interface {
+	SuperNodePeerAPIInterface
+
+	// ProcessHealthCheckChallenge process the challenge and sends the response for verification
+	ProcessHealthCheckChallenge(ctx context.Context, challengeMessage *pb.HealthCheckChallengeMessage) error
+
+	//VerifyHealthCheckChallenge verifies the challenge and sends evaluation report to observers
+	VerifyHealthCheckChallenge(ctx context.Context, challengeMessage *pb.HealthCheckChallengeMessage) error
+
+	//VerifyHealthCheckEvaluationResult verifies the evaluation report by challenger
+	VerifyHealthCheckEvaluationResult(ctx context.Context, challengeMessage *pb.HealthCheckChallengeMessage) (types.HealthCheckMessage, error)
+
+	//BroadcastHealthCheckChallengeResult broadcast the result to all SNs
+	BroadcastHealthCheckChallengeResult(ctx context.Context, req *pb.BroadcastHealthCheckChallengeRequest) error
+
+	//BroadcastHealthCheckChallengeMetrics broadcast the healthcheck-challenge metrics to the entire network
+	BroadcastHealthCheckChallengeMetrics(ctx context.Context, req types.ProcessBroadcastHealthCheckChallengeMetricsRequest) error
 }
 
 // SelfHealingChallengeInterface represents an interaction stream with supernodes for self-healing challenge communications

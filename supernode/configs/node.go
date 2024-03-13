@@ -5,6 +5,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/supernode/services/download"
+	"github.com/pastelnetwork/gonode/supernode/services/healthcheckchallenge"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/selfhealing"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
@@ -25,9 +26,10 @@ type Node struct {
 	NumberConnectedNodes       int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
 	PreburntTxMinConfirmations int `mapstructure:"preburnt_tx_min_confirmations" json:"preburnt_tx_min_confirmations,omitempty"`
 
-	NftDownload          download.Config         `mapstructure:",squash" json:"nft_download,omitempty"`
-	StorageChallenge     storagechallenge.Config `mapstructure:",squash" json:"storage_challenge,omitempty"`
-	SelfHealingChallenge selfhealing.Config      `mapstructure:",squash" json:"self_healing,omitempty"`
+	NftDownload          download.Config             `mapstructure:",squash" json:"nft_download,omitempty"`
+	StorageChallenge     storagechallenge.Config     `mapstructure:",squash" json:"storage_challenge,omitempty"`
+	HealthCheckChallenge healthcheckchallenge.Config `mapstructure:",squash" json:"healthcheck_challenge,omitempty"`
+	SelfHealingChallenge selfhealing.Config          `mapstructure:",squash" json:"self_healing,omitempty"`
 }
 
 // NewNode returns a new Node instance

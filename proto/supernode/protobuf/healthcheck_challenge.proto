@@ -1,0 +1,80 @@
+// Copyright (c) 2021-2021 The Pastel Core developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode;supernode";
+
+package supernode;
+
+import "common_sn.proto";
+
+service HealthCheckChallenge {
+  rpc Session(stream SessionRequest) returns (stream SessionReply);
+  rpc ProcessHealthCheckChallenge(ProcessHealthCheckChallengeRequest) returns (ProcessHealthCheckChallengeReply);
+  rpc VerifyHealthCheckChallenge(VerifyHealthCheckChallengeRequest) returns (VerifyHealthCheckChallengeReply);
+  rpc VerifyHealthCheckEvaluationResult(VerifyHealthCheckEvaluationResultRequest) returns (VerifyHealthCheckEvaluationResultReply);
+  rpc BroadcastHealthCheckChallengeResult(BroadcastHealthCheckChallengeRequest) returns (BroadcastHealthCheckChallengeResponse);
+  rpc BroadcastHealthCheckChallengeMetrics(BroadcastHealthCheckChallengeMetricsRequest) returns (BroadcastHealthCheckChallengeMetricsReply);
+}
+
+message ProcessHealthCheckChallengeRequest {
+  HealthCheckChallengeMessage data = 1;
+}
+
+message ProcessHealthCheckChallengeReply {
+  HealthCheckChallengeMessage data = 1;
+}
+
+message VerifyHealthCheckChallengeRequest {
+  HealthCheckChallengeMessage data = 1;
+}
+
+message VerifyHealthCheckChallengeReply {
+  HealthCheckChallengeMessage data = 1;
+}
+
+message VerifyHealthCheckEvaluationResultRequest {
+  HealthCheckChallengeMessage data = 1;
+}
+
+message VerifyHealthCheckEvaluationResultReply {
+  HealthCheckChallengeMessage data = 1;
+}
+
+message BroadcastHealthCheckChallengeRequest {
+  string challenge_id = 1;
+  map<string, bytes> challenger = 2;
+  map<string, bytes> recipient = 3;
+  map<string, bytes> observers = 4;
+  bytes sender_signature = 5;
+}
+
+message BroadcastHealthCheckChallengeResponse {
+  HealthCheckChallengeMessage data = 1;
+}
+
+
+message HealthCheckChallengeMessage {
+  enum messageType {
+    MessageType_UNKNOWN = 0;
+    MessageType_HEALTHCHECK_CHALLENGE_CHALLENGE_MESSAGE = 1;
+    MessageType_HEALTHCHECK_CHALLENGE_RESPONSE_MESSAGE = 2;
+    MessageType_HEALTHCHECK_CHALLENGE_EVALUATION_MESSAGE = 3;
+    MessageType_HEALTHCHECK_CHALLENGE_AFFIRMATION_MESSAGE = 4;
+    MessageType_HEALTHCHECK_CHALLENGE_BROADCAST_MESSAGE = 5;
+  }
+
+  messageType message_type = 1;
+  string challenge_id = 2;
+  bytes data = 3;
+  string sender_id = 4;
+  bytes sender_signature = 5;
+}
+
+message BroadcastHealthCheckChallengeMetricsRequest {
+  bytes data = 1;
+  string sender_id = 2;
+}
+
+message BroadcastHealthCheckChallengeMetricsReply {}

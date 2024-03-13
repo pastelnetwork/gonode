@@ -43,6 +43,11 @@ func (conn *clientConn) SelfHealingChallenge() node.SelfHealingChallengeInterfac
 	return newSelfHealingGRPCClient(conn)
 }
 
+// HealthCheckChallenge implements node.Connection.HealthCheckChallenge()
+func (conn *clientConn) HealthCheckChallenge() node.HealthCheckChallengeInterface {
+	return newHealthCheckChallengeGRPCClient(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.ConnectionInterface {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

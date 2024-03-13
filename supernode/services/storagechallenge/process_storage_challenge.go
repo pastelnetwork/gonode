@@ -33,7 +33,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		log.WithContext(ctx).WithError(err).Error("Error validating storage challenge incoming data: ")
 		return nil, err
 	}
-	log.WithContext(ctx).WithField("incoming_challenge", incomingChallengeMessage).Info("Incoming challenge validated")
+	log.WithContext(ctx).Info("Incoming challenge validated")
 
 	//if the message is received by one of the observer then save the challenge message, lock the file & return
 	if task.isObserver(incomingChallengeMessage.Data.Observers) {

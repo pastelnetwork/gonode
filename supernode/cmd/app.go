@@ -38,6 +38,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/supernode/services/download"
+	"github.com/pastelnetwork/gonode/supernode/services/healthcheckchallenge"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/selfhealing"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
@@ -270,6 +271,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p, hDB)
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, fileStorage, pastelClient, nodeClient, p2p, hDB)
 	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, nil, hDB)
+	healthCheckChallenger := healthcheckchallenge.NewService(&config.HealthCheckChallenge, fileStorage, pastelClient, nodeClient, p2p, nil, hDB)
 	selfHealing := selfhealing.NewService(&config.SelfHealingChallenge, fileStorage, pastelClient, nodeClient, p2p, hDB, nftDownload)
 	// // ----Userdata Services----
 	// userdataNodeClient := client.New(pastelClient, secInfo)
@@ -296,6 +298,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterCollection(collectionRegister),
 		walletnode.NewDownloadNft(nftDownload),
 		supernode.NewStorageChallengeGRPC(storageChallenger),
+		supernode.NewHealthCheckChallengeGRPC(healthCheckChallenger),
 		supernode.NewSelfHealingChallengeGRPC(selfHealing),
 		healthcheck.NewHealthCheck(statsMngr),
 		hermes.NewHermes(p2p),
@@ -312,5 +315,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		_ = http.ListenAndServe(fmt.Sprintf(":%s", profilingPort), nil)
 	}()
 
-	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger, selfHealing, collectionRegister)
+	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger, selfHealing, collectionRegister, healthCheckChallenger)
 }
