@@ -101,19 +101,19 @@ func (service *NftRegistrationService) StoreFile(ctx context.Context, fileName *
 }
 
 // CalculateFee stores file into walletnode file storage
-func (service *NftRegistrationService) CalculateFee(ctx context.Context, fileID string) (float64, error) {
+func (service *NftRegistrationService) CalculateFee(ctx context.Context, fileID string) (float64, float64, error) {
 	fileData, err := service.ImageHandler.GetImgData(fileID)
 	if err != nil {
-		return 0.0, err
+		return 0.0, 0.0, err
 	}
 
 	fileDataInMb := utils.GetFileSizeInMB(fileData)
 	fee, err := service.pastelHandler.PastelClient.NFTStorageFee(ctx, int(fileDataInMb))
 	if err != nil {
-		return 0.0, fmt.Errorf("get network fee failure: %w", err)
+		return 0.0, 0.0, fmt.Errorf("get network fee failure: %w", err)
 	}
 
-	return fee.EstimatedNftStorageFeeMax * 0.1, nil
+	return fileDataInMb, fee.EstimatedNftStorageFeeMax * 0.1, nil
 }
 
 // ValidateUser validates user credentials

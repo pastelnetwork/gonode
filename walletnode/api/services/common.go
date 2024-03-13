@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	fileMemoryMultiplier = 18
+)
+
 var randIDGen = rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
 
 // Config represents a config for the common service.
@@ -36,4 +40,19 @@ func randIDFunc() string {
 	// Generate a random 6-digit ID
 	uniqueID := randIDGen.Intn(1000000)
 	return fmt.Sprintf("%06d", uniqueID)
+}
+
+func isEnoughMemoryAvailableToProcessFile(fileSize float64) (bool, error) {
+	availMem, err := getAvailableRAMInMB()
+	if err != nil {
+		return false, fmt.Errorf("failed to get available memory: %w", err)
+	}
+
+	reqMem := fileSize * fileMemoryMultiplier
+
+	if float64(availMem) < reqMem {
+		return false, fmt.Errorf("sorry! you do not have enough available memory to process this file - Required: %fMB, Available: %dMB - File Size: %fMB", reqMem, availMem, fileSize)
+	}
+
+	return true, nil
 }

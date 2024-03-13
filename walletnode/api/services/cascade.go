@@ -70,12 +70,22 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 	}
 	log.Infof("file has been uploaded: %s", id)
 
-	fee, err := service.register.CalculateFee(ctx, id)
+	fileSize, fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
 		log.WithError(err).Error("error calculating fee")
 		return nil, cascade.MakeInternalServerError(err)
 	}
 	log.Infof("estimated fee has been calculated: %f", fee)
+
+	ok, err := isEnoughMemoryAvailableToProcessFile(fileSize)
+	if err != nil {
+		log.WithError(err).Error("error checking memory")
+		return nil, cascade.MakeBadRequest(err)
+	}
+
+	if !ok {
+		return nil, cascade.MakeBadRequest(errors.New("not enough memory available to process file"))
+	}
 
 	res = &cascade.Asset{
 		FileID:                id,

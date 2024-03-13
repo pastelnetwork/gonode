@@ -91,10 +91,20 @@ func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 
 	log.Infof("file has been uploaded: %s", id)
 
-	fee, err := service.register.CalculateFee(ctx, id)
+	fileSize, fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
 		log.WithError(err).Error("error calculating fee")
 		return nil, nft.MakeInternalServerError(err)
+	}
+
+	ok, err := isEnoughMemoryAvailableToProcessFile(fileSize)
+	if err != nil {
+		log.WithError(err).Error("error checking memory")
+		return nil, nft.MakeBadRequest(err)
+	}
+
+	if !ok {
+		return nil, nft.MakeBadRequest(errors.New("not enough memory available to process file"))
 	}
 
 	log.Infof("estimated fee has been calculated: %f", fee)

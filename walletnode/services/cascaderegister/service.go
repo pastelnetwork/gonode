@@ -2,6 +2,7 @@ package cascaderegister
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
@@ -114,13 +115,19 @@ func (service *CascadeRegistrationService) StoreFile(ctx context.Context, fileNa
 }
 
 // CalculateFee stores file into walletnode file storage
-func (service *CascadeRegistrationService) CalculateFee(ctx context.Context, fileID string) (float64, error) {
+func (service *CascadeRegistrationService) CalculateFee(ctx context.Context, fileID string) (float64, float64, error) {
 	fileData, err := service.ImageHandler.GetImgData(fileID)
 	if err != nil {
-		return 0.0, err
+		return 0.0, 0.0, err
+	}
+	fileSizeMB := utils.GetFileSizeInMB(fileData)
+
+	fee, err := service.pastelHandler.GetEstimatedCascadeFee(ctx, fileSizeMB)
+	if err != nil {
+		return 0.0, 0.0, fmt.Errorf("get estimated cascade fee: %w", err)
 	}
 
-	return service.pastelHandler.GetEstimatedCascadeFee(ctx, utils.GetFileSizeInMB(fileData))
+	return fileSizeMB, fee, nil
 }
 
 // NewService returns a new Service instance
