@@ -780,6 +780,11 @@ func (s *DHT) NClosestNodes(_ context.Context, n int, key string, ignores ...*No
 func (s *DHT) NClosestNodesWithIncludingNodelist(_ context.Context, n int, key string, ignores, includeNodeList []*Node) []*Node {
 	list := s.ignorelist.ToNodeList()
 	ignores = append(ignores, list...)
+
+	for i := 0; i < len(includeNodeList); i++ {
+		includeNodeList[i].SetHashedID()
+	}
+
 	nodeList := s.ht.closestContactsWithIncludingNodeList(n, base58.Decode(key), ignores, includeNodeList)
 
 	return nodeList.Nodes
@@ -956,11 +961,14 @@ func (s *DHT) cleanupRedundantDataWorker(ctx context.Context) {
 
 	ignores := s.ignorelist.ToNodeList()
 	self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
+	self.SetHashedID()
+
 	closestContactsMap := make(map[string][][]byte)
 
 	for i := 0; i < len(replicationKeys); i++ {
 		decKey, _ := hex.DecodeString(replicationKeys[i].Key)
-		closestContactsMap[replicationKeys[i].Key] = s.ht.closestContactsWithInlcudingNode(Alpha, decKey, ignores, self).NodeIDs()
+		nodes := s.ht.closestContactsWithInlcudingNode(Alpha, decKey, ignores, self)
+		closestContactsMap[replicationKeys[i].Key] = nodes.NodeIDs()
 	}
 
 	insertKeys := make([]domain.DelKey, 0)

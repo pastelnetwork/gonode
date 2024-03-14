@@ -298,11 +298,9 @@ func (ht *HashTable) closestContactsWithInlcudingNode(num int, target []byte, ig
 	}
 
 	// Flatten the routeTable and add nodes to nl if they're not in the ignoredMap
-	counter := 0
 	for _, bucket := range ht.routeTable {
 		for _, node := range bucket {
 			if !ignoredMap[string(node.ID)] {
-				counter++
 				nl.AddNodes([]*Node{node})
 			}
 		}

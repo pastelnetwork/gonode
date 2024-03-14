@@ -179,3 +179,16 @@ func (s *NodeList) NodeIDs() [][]byte {
 
 	return toRet
 }
+
+// NodeIPs returns the dump information for node list
+func (s *NodeList) NodeIPs() []string {
+	s.Mux.RLock()
+	defer s.Mux.RUnlock()
+
+	toRet := make([]string, len(s.Nodes))
+	for i := 0; i < len(s.Nodes); i++ {
+		toRet = append(toRet, s.Nodes[i].IP)
+	}
+
+	return toRet
+}
