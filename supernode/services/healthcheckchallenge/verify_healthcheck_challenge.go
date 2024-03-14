@@ -328,7 +328,7 @@ func (task *HCTask) sendEvaluationMessage(ctx context.Context, challengeMessage 
 		return nil, err
 	}
 
-	logger.WithField("affirmation:", affirmationResult).Info("affirmation result received")
+	logger.WithField("affirmation:", affirmationResult).Debug("affirmation result received")
 	return &affirmationResult, nil
 }
 

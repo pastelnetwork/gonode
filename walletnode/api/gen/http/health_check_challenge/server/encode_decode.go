@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strings"
 
+	healthcheckchallenge "github.com/pastelnetwork/gonode/walletnode/api/gen/health_check_challenge"
 	healthcheckchallengeviews "github.com/pastelnetwork/gonode/walletnode/api/gen/health_check_challenge/views"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
@@ -145,6 +146,122 @@ func EncodeGetSummaryStatsError(encoder func(context.Context, http.ResponseWrite
 	}
 }
 
+// EncodeGetDetailedLogsResponse returns an encoder for responses returned by
+// the HealthCheckChallenge getDetailedLogs endpoint.
+func EncodeGetDetailedLogsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.([]*healthcheckchallenge.HcDetailedLogsMessage)
+		enc := encoder(ctx, w)
+		body := NewGetDetailedLogsResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetDetailedLogsRequest returns a decoder for requests sent to the
+// HealthCheckChallenge getDetailedLogs endpoint.
+func DecodeGetDetailedLogsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+	return func(r *http.Request) (any, error) {
+		var (
+			pid         string
+			challengeID *string
+			key         string
+			err         error
+		)
+		pid = r.URL.Query().Get("pid")
+		if pid == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("pid", "query string"))
+		}
+		challengeIDRaw := r.URL.Query().Get("challenge_id")
+		if challengeIDRaw != "" {
+			challengeID = &challengeIDRaw
+		}
+		key = r.Header.Get("Authorization")
+		if key == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("key", "header"))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetDetailedLogsPayload(pid, challengeID, key)
+		if strings.Contains(payload.Key, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Key, " ", 2)[1]
+			payload.Key = cred
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeGetDetailedLogsError returns an encoder for errors returned by the
+// getDetailedLogs HealthCheckChallenge endpoint.
+func EncodeGetDetailedLogsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "Unauthorized":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetDetailedLogsUnauthorizedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		case "BadRequest":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetDetailedLogsBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetDetailedLogsNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetDetailedLogsInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // marshalHealthcheckchallengeviewsHCSummaryStatsViewToHCSummaryStatsResponseBody
 // builds a value of type *HCSummaryStatsResponseBody from a value of type
 // *healthcheckchallengeviews.HCSummaryStatsView.
@@ -157,6 +274,113 @@ func marshalHealthcheckchallengeviewsHCSummaryStatsViewToHCSummaryStatsResponseB
 		NoOfSlowResponsesObservedByObservers:     *v.NoOfSlowResponsesObservedByObservers,
 		NoOfInvalidSignaturesObservedByObservers: *v.NoOfInvalidSignaturesObservedByObservers,
 		NoOfInvalidEvaluationObservedByObservers: *v.NoOfInvalidEvaluationObservedByObservers,
+	}
+
+	return res
+}
+
+// marshalHealthcheckchallengeHcDetailedLogsMessageToHcDetailedLogsMessageResponse
+// builds a value of type *HcDetailedLogsMessageResponse from a value of type
+// *healthcheckchallenge.HcDetailedLogsMessage.
+func marshalHealthcheckchallengeHcDetailedLogsMessageToHcDetailedLogsMessageResponse(v *healthcheckchallenge.HcDetailedLogsMessage) *HcDetailedLogsMessageResponse {
+	res := &HcDetailedLogsMessageResponse{
+		ChallengeID:     v.ChallengeID,
+		MessageType:     v.MessageType,
+		SenderID:        v.SenderID,
+		SenderSignature: v.SenderSignature,
+		ChallengerID:    v.ChallengerID,
+		RecipientID:     v.RecipientID,
+	}
+	if v.Challenge != nil {
+		res.Challenge = marshalHealthcheckchallengeHCChallengeDataToHCChallengeDataResponse(v.Challenge)
+	}
+	if v.Observers != nil {
+		res.Observers = make([]string, len(v.Observers))
+		for i, val := range v.Observers {
+			res.Observers[i] = val
+		}
+	} else {
+		res.Observers = []string{}
+	}
+	if v.Response != nil {
+		res.Response = marshalHealthcheckchallengeHCResponseDataToHCResponseDataResponse(v.Response)
+	}
+	if v.ChallengerEvaluation != nil {
+		res.ChallengerEvaluation = marshalHealthcheckchallengeHCEvaluationDataToHCEvaluationDataResponse(v.ChallengerEvaluation)
+	}
+	if v.ObserverEvaluation != nil {
+		res.ObserverEvaluation = marshalHealthcheckchallengeHCObserverEvaluationDataToHCObserverEvaluationDataResponse(v.ObserverEvaluation)
+	}
+
+	return res
+}
+
+// marshalHealthcheckchallengeHCChallengeDataToHCChallengeDataResponse builds a
+// value of type *HCChallengeDataResponse from a value of type
+// *healthcheckchallenge.HCChallengeData.
+func marshalHealthcheckchallengeHCChallengeDataToHCChallengeDataResponse(v *healthcheckchallenge.HCChallengeData) *HCChallengeDataResponse {
+	if v == nil {
+		return nil
+	}
+	res := &HCChallengeDataResponse{
+		Block:      v.Block,
+		Merkelroot: v.Merkelroot,
+		Timestamp:  v.Timestamp,
+	}
+
+	return res
+}
+
+// marshalHealthcheckchallengeHCResponseDataToHCResponseDataResponse builds a
+// value of type *HCResponseDataResponse from a value of type
+// *healthcheckchallenge.HCResponseData.
+func marshalHealthcheckchallengeHCResponseDataToHCResponseDataResponse(v *healthcheckchallenge.HCResponseData) *HCResponseDataResponse {
+	if v == nil {
+		return nil
+	}
+	res := &HCResponseDataResponse{
+		Block:      v.Block,
+		Merkelroot: v.Merkelroot,
+		Timestamp:  v.Timestamp,
+	}
+
+	return res
+}
+
+// marshalHealthcheckchallengeHCEvaluationDataToHCEvaluationDataResponse builds
+// a value of type *HCEvaluationDataResponse from a value of type
+// *healthcheckchallenge.HCEvaluationData.
+func marshalHealthcheckchallengeHCEvaluationDataToHCEvaluationDataResponse(v *healthcheckchallenge.HCEvaluationData) *HCEvaluationDataResponse {
+	if v == nil {
+		return nil
+	}
+	res := &HCEvaluationDataResponse{
+		Block:      v.Block,
+		Merkelroot: v.Merkelroot,
+		Timestamp:  v.Timestamp,
+		IsVerified: v.IsVerified,
+	}
+
+	return res
+}
+
+// marshalHealthcheckchallengeHCObserverEvaluationDataToHCObserverEvaluationDataResponse
+// builds a value of type *HCObserverEvaluationDataResponse from a value of
+// type *healthcheckchallenge.HCObserverEvaluationData.
+func marshalHealthcheckchallengeHCObserverEvaluationDataToHCObserverEvaluationDataResponse(v *healthcheckchallenge.HCObserverEvaluationData) *HCObserverEvaluationDataResponse {
+	if v == nil {
+		return nil
+	}
+	res := &HCObserverEvaluationDataResponse{
+		Block:                   v.Block,
+		Merkelroot:              v.Merkelroot,
+		IsChallengeTimestampOK:  v.IsChallengeTimestampOK,
+		IsProcessTimestampOK:    v.IsProcessTimestampOK,
+		IsEvaluationTimestampOK: v.IsEvaluationTimestampOK,
+		IsRecipientSignatureOK:  v.IsRecipientSignatureOK,
+		IsChallengerSignatureOK: v.IsChallengerSignatureOK,
+		IsEvaluationResultOK:    v.IsEvaluationResultOK,
+		Timestamp:               v.Timestamp,
 	}
 
 	return res

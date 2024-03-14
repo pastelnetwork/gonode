@@ -221,6 +221,42 @@ LIMIT 20;`
 	return metrics, rows.Err()
 }
 
+// GetLastNHCMetrics gets the N number of latest health-check challenge IDs from the DB
+func (s *SQLiteStore) GetLastNHCMetrics() ([]types.NHcMetric, error) {
+	const query = `
+SELECT 
+    count(*) AS count, 
+    challenge_id, 
+    MAX(created_at) AS most_recent
+FROM 
+    healthcheck_challenge_metrics 
+GROUP BY 
+    challenge_id
+HAVING 
+    count(*) > 5
+ORDER BY 
+    most_recent DESC
+LIMIT 20;`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.NHcMetric
+	for rows.Next() {
+		var m types.NHcMetric
+		err := rows.Scan(&m.Count, &m.ChallengeID, &m.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
+}
+
 // GetSHExecutionMetrics retrieves self-healing execution metrics
 func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time) (metrics.SHExecutionMetrics, error) {
 	m := metrics.SHExecutionMetrics{}
@@ -855,4 +891,55 @@ func (s *SQLiteStore) GetHCSummaryStats(from time.Time) (hcMetrics metrics.HCMet
 	}
 
 	return hcMetrics, nil
+}
+
+// GetHealthCheckChallengeMetricsByChallengeID retrieves all the metrics
+func (s *SQLiteStore) GetHealthCheckChallengeMetricsByChallengeID(challengeID string) ([]types.HealthCheckChallengeLogMessage, error) {
+	const query = `
+    SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at
+    FROM healthcheck_challenge_metrics
+    WHERE challenge_id = ?;`
+
+	rows, err := s.db.Query(query, challengeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.HealthCheckChallengeLogMessage
+	for rows.Next() {
+		var m types.HealthCheckChallengeLogMessage
+		err := rows.Scan(&m.ID, &m.ChallengeID, &m.MessageType, &m.Data, &m.Sender, &m.CreatedAt, &m.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
+}
+
+func (s *SQLiteStore) GetMetricsDataByHealthCheckChallengeID(ctx context.Context, challengeID string) (healthCheckChallengeMessages []types.HealthCheckMessage, err error) {
+	hcMetrics, err := s.GetHealthCheckChallengeMetricsByChallengeID(challengeID)
+	if err != nil {
+		return healthCheckChallengeMessages, err
+	}
+	log.WithContext(ctx).WithField("rows", len(hcMetrics)).Info("health-check-challenge metrics row count")
+
+	for _, hcMetric := range hcMetrics {
+		msg := types.HealthCheckMessageData{}
+		if err := json.Unmarshal(hcMetric.Data, &msg); err != nil {
+			return healthCheckChallengeMessages, fmt.Errorf("cannot unmarshal health check challenge data: %w", err)
+		}
+
+		healthCheckChallengeMessages = append(healthCheckChallengeMessages, types.HealthCheckMessage{
+			ChallengeID:     hcMetric.ChallengeID,
+			MessageType:     types.HealthCheckMessageType(hcMetric.MessageType),
+			Sender:          hcMetric.Sender,
+			SenderSignature: hcMetric.SenderSignature,
+			Data:            msg,
+		})
+	}
+
+	return healthCheckChallengeMessages, nil
 }

@@ -88,9 +88,9 @@ func (task *HCTask) identifyChallengerRecipientsAndObserversAgainstMarkleRoot(ct
 	logger := log.WithContext(ctx).WithField("Method", "GenerateHealthCheckChallenge")
 
 	logger.Info("identifying challenge recipients and partial observers")
-	sliceOfObservers := make([]string, 4)
+	sliceOfObservers := make([]string, 5)
 
-	supernodes, err := task.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
+	supernodes, err := task.getListOfOnlineSupernodes(ctx)
 	if err != nil {
 		logger.WithField("method", "sendHealthCheckStorageChallenge").WithError(err).Warn("could not get Supernode extra: ", err.Error())
 		return "", "", nil, nil, err
@@ -103,7 +103,7 @@ func (task *HCTask) identifyChallengerRecipientsAndObserversAgainstMarkleRoot(ct
 		supernodesDetails[supernode.ExtKey] = supernode
 	}
 
-	respondingSupernodeIDs := task.GetNClosestSupernodeIDsToComparisonString(ctx, 6, merkleRoot, supernodesIDs)
+	respondingSupernodeIDs := task.GetNClosestSupernodeIDsToComparisonString(ctx, 7, merkleRoot, supernodesIDs)
 	if len(respondingSupernodeIDs) < 6 {
 		logger.WithField("closest_nodes", len(respondingSupernodeIDs)).Warn("not enough closest nodes found")
 		return "", "", nil, nil, errors.Errorf("not enough closest nodes found")
@@ -473,4 +473,35 @@ func (task *HCTask) VerifyMessageSignature(ctx context.Context, msg types.Health
 	}
 
 	return isVerified, nil
+}
+
+func (task *HCTask) getListOfOnlineSupernodes(ctx context.Context) ([]pastel.MasterNode, error) {
+	pingInfos, err := task.historyDB.GetAllPingInfoForOnlineNodes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Unable to retrieve ping infos")
+	}
+
+	supernodes, err := task.PastelClient.MasterNodesExtra(ctx)
+	if err != nil {
+		return nil, errors.Errorf("unable to retrieve list of supernodes")
+	}
+
+	var listOfSupernodes []pastel.MasterNode
+	for _, sn := range supernodes {
+		if IsOnline(pingInfos, sn.ExtKey) {
+			listOfSupernodes = append(listOfSupernodes, sn)
+		}
+	}
+
+	return listOfSupernodes, nil
+}
+
+func IsOnline(infos types.PingInfos, supernodeID string) bool {
+	for _, inf := range infos {
+		if inf.SupernodeID == supernodeID && inf.IsOnline {
+			return true
+		}
+	}
+
+	return false
 }

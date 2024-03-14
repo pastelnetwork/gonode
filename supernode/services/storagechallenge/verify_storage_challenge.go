@@ -348,7 +348,7 @@ func (task SCTask) sendEvaluationMessage(ctx context.Context, challengeMessage *
 		return nil, err
 	}
 
-	log.WithContext(ctx).WithField("affirmation:", affirmationResult).Info("affirmation result received")
+	log.WithContext(ctx).WithField("affirmation:", affirmationResult).Debug("affirmation result received")
 	return &affirmationResult, nil
 }
 

@@ -11,3 +11,8 @@ package client
 func GetSummaryStatsHealthCheckChallengePath() string {
 	return "/healthcheck_challenge/summary_stats"
 }
+
+// GetDetailedLogsHealthCheckChallengePath returns the URL path to the HealthCheckChallenge service getDetailedLogs HTTP endpoint.
+func GetDetailedLogsHealthCheckChallengePath() string {
+	return "/healthcheck_challenge/detailed_logs"
+}

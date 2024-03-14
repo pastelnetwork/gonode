@@ -1,6 +1,10 @@
 package types
 
-import "time"
+import (
+	"encoding/json"
+	"github.com/pastelnetwork/gonode/common/utils"
+	"time"
+)
 
 // HealthCheckMessageType represents the type of message sent in the health-check process
 type HealthCheckMessageType int
@@ -145,4 +149,15 @@ type BroadcastHealthCheckMessageMetrics struct {
 type ProcessBroadcastHealthCheckChallengeMetricsRequest struct {
 	Data     []byte `json:"data"`
 	SenderID string `json:"sender_id"`
+}
+
+// HealthCheckChallengeMessages represents an array of health-check message
+type HealthCheckChallengeMessages []HealthCheckMessage
+
+// Hash returns the hash of the health-check-challenge challenge log data
+func (mdl HealthCheckChallengeMessages) Hash() string {
+	data, _ := json.Marshal(mdl)
+	hash, _ := utils.Sha3256hash(data)
+
+	return string(hash)
 }

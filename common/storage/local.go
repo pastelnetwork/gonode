@@ -64,4 +64,6 @@ type LocalStoreInterface interface {
 	QueryHCChallengeMessage(challengeID string, messageType int) (challengeMessage types.HealthCheckChallengeLogMessage, err error)
 	GetHCSummaryStats(from time.Time) (hcMetrics metrics.HCMetrics, err error)
 	GetTotalHCGeneratedAndProcessedAndEvaluated(from time.Time) (metrics.HCMetrics, error)
+	GetMetricsDataByHealthCheckChallengeID(ctx context.Context, challengeID string) ([]types.HealthCheckMessage, error)
+	GetLastNHCMetrics() ([]types.NHcMetric, error)
 }

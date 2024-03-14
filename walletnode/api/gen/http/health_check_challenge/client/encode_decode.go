@@ -17,6 +17,7 @@ import (
 	healthcheckchallenge "github.com/pastelnetwork/gonode/walletnode/api/gen/health_check_challenge"
 	healthcheckchallengeviews "github.com/pastelnetwork/gonode/walletnode/api/gen/health_check_challenge/views"
 	goahttp "goa.design/goa/v3/http"
+	goa "goa.design/goa/v3/pkg"
 )
 
 // BuildGetSummaryStatsRequest instantiates a HTTP request object with method
@@ -164,6 +165,152 @@ func DecodeGetSummaryStatsResponse(decoder func(*http.Response) goahttp.Decoder,
 	}
 }
 
+// BuildGetDetailedLogsRequest instantiates a HTTP request object with method
+// and path set to call the "HealthCheckChallenge" service "getDetailedLogs"
+// endpoint
+func (c *Client) BuildGetDetailedLogsRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetDetailedLogsHealthCheckChallengePath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("HealthCheckChallenge", "getDetailedLogs", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetDetailedLogsRequest returns an encoder for requests sent to the
+// HealthCheckChallenge getDetailedLogs server.
+func EncodeGetDetailedLogsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*healthcheckchallenge.GetDetailedLogsPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("HealthCheckChallenge", "getDetailedLogs", "*healthcheckchallenge.GetDetailedLogsPayload", v)
+		}
+		{
+			head := p.Key
+			req.Header.Set("Authorization", head)
+		}
+		values := req.URL.Query()
+		values.Add("pid", p.Pid)
+		if p.ChallengeID != nil {
+			values.Add("challenge_id", *p.ChallengeID)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetDetailedLogsResponse returns a decoder for responses returned by
+// the HealthCheckChallenge getDetailedLogs endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeGetDetailedLogsResponse may return the following errors:
+//   - "Unauthorized" (type *goa.ServiceError): http.StatusUnauthorized
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
+func DecodeGetDetailedLogsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetDetailedLogsResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			for _, e := range body {
+				if e != nil {
+					if err2 := ValidateHcDetailedLogsMessageResponse(e); err2 != nil {
+						err = goa.MergeErrors(err, err2)
+					}
+				}
+			}
+			if err != nil {
+				return nil, goahttp.ErrValidationError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			res := NewGetDetailedLogsHcDetailedLogsMessageOK(body)
+			return res, nil
+		case http.StatusUnauthorized:
+			var (
+				body GetDetailedLogsUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			err = ValidateGetDetailedLogsUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			return nil, NewGetDetailedLogsUnauthorized(&body)
+		case http.StatusBadRequest:
+			var (
+				body GetDetailedLogsBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			err = ValidateGetDetailedLogsBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			return nil, NewGetDetailedLogsBadRequest(&body)
+		case http.StatusNotFound:
+			var (
+				body GetDetailedLogsNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			err = ValidateGetDetailedLogsNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			return nil, NewGetDetailedLogsNotFound(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetDetailedLogsInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			err = ValidateGetDetailedLogsInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("HealthCheckChallenge", "getDetailedLogs", err)
+			}
+			return nil, NewGetDetailedLogsInternalServerError(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("HealthCheckChallenge", "getDetailedLogs", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // unmarshalHCSummaryStatsResponseBodyToHealthcheckchallengeviewsHCSummaryStatsView
 // builds a value of type *healthcheckchallengeviews.HCSummaryStatsView from a
 // value of type *HCSummaryStatsResponseBody.
@@ -176,6 +323,109 @@ func unmarshalHCSummaryStatsResponseBodyToHealthcheckchallengeviewsHCSummaryStat
 		NoOfSlowResponsesObservedByObservers:     v.NoOfSlowResponsesObservedByObservers,
 		NoOfInvalidSignaturesObservedByObservers: v.NoOfInvalidSignaturesObservedByObservers,
 		NoOfInvalidEvaluationObservedByObservers: v.NoOfInvalidEvaluationObservedByObservers,
+	}
+
+	return res
+}
+
+// unmarshalHcDetailedLogsMessageResponseToHealthcheckchallengeHcDetailedLogsMessage
+// builds a value of type *healthcheckchallenge.HcDetailedLogsMessage from a
+// value of type *HcDetailedLogsMessageResponse.
+func unmarshalHcDetailedLogsMessageResponseToHealthcheckchallengeHcDetailedLogsMessage(v *HcDetailedLogsMessageResponse) *healthcheckchallenge.HcDetailedLogsMessage {
+	res := &healthcheckchallenge.HcDetailedLogsMessage{
+		ChallengeID:     *v.ChallengeID,
+		MessageType:     *v.MessageType,
+		SenderID:        *v.SenderID,
+		SenderSignature: v.SenderSignature,
+		ChallengerID:    *v.ChallengerID,
+		RecipientID:     *v.RecipientID,
+	}
+	if v.Challenge != nil {
+		res.Challenge = unmarshalHCChallengeDataResponseToHealthcheckchallengeHCChallengeData(v.Challenge)
+	}
+	res.Observers = make([]string, len(v.Observers))
+	for i, val := range v.Observers {
+		res.Observers[i] = val
+	}
+	if v.Response != nil {
+		res.Response = unmarshalHCResponseDataResponseToHealthcheckchallengeHCResponseData(v.Response)
+	}
+	if v.ChallengerEvaluation != nil {
+		res.ChallengerEvaluation = unmarshalHCEvaluationDataResponseToHealthcheckchallengeHCEvaluationData(v.ChallengerEvaluation)
+	}
+	if v.ObserverEvaluation != nil {
+		res.ObserverEvaluation = unmarshalHCObserverEvaluationDataResponseToHealthcheckchallengeHCObserverEvaluationData(v.ObserverEvaluation)
+	}
+
+	return res
+}
+
+// unmarshalHCChallengeDataResponseToHealthcheckchallengeHCChallengeData builds
+// a value of type *healthcheckchallenge.HCChallengeData from a value of type
+// *HCChallengeDataResponse.
+func unmarshalHCChallengeDataResponseToHealthcheckchallengeHCChallengeData(v *HCChallengeDataResponse) *healthcheckchallenge.HCChallengeData {
+	if v == nil {
+		return nil
+	}
+	res := &healthcheckchallenge.HCChallengeData{
+		Block:      v.Block,
+		Merkelroot: v.Merkelroot,
+		Timestamp:  *v.Timestamp,
+	}
+
+	return res
+}
+
+// unmarshalHCResponseDataResponseToHealthcheckchallengeHCResponseData builds a
+// value of type *healthcheckchallenge.HCResponseData from a value of type
+// *HCResponseDataResponse.
+func unmarshalHCResponseDataResponseToHealthcheckchallengeHCResponseData(v *HCResponseDataResponse) *healthcheckchallenge.HCResponseData {
+	if v == nil {
+		return nil
+	}
+	res := &healthcheckchallenge.HCResponseData{
+		Block:      v.Block,
+		Merkelroot: v.Merkelroot,
+		Timestamp:  *v.Timestamp,
+	}
+
+	return res
+}
+
+// unmarshalHCEvaluationDataResponseToHealthcheckchallengeHCEvaluationData
+// builds a value of type *healthcheckchallenge.HCEvaluationData from a value
+// of type *HCEvaluationDataResponse.
+func unmarshalHCEvaluationDataResponseToHealthcheckchallengeHCEvaluationData(v *HCEvaluationDataResponse) *healthcheckchallenge.HCEvaluationData {
+	if v == nil {
+		return nil
+	}
+	res := &healthcheckchallenge.HCEvaluationData{
+		Block:      v.Block,
+		Merkelroot: v.Merkelroot,
+		Timestamp:  *v.Timestamp,
+		IsVerified: *v.IsVerified,
+	}
+
+	return res
+}
+
+// unmarshalHCObserverEvaluationDataResponseToHealthcheckchallengeHCObserverEvaluationData
+// builds a value of type *healthcheckchallenge.HCObserverEvaluationData from a
+// value of type *HCObserverEvaluationDataResponse.
+func unmarshalHCObserverEvaluationDataResponseToHealthcheckchallengeHCObserverEvaluationData(v *HCObserverEvaluationDataResponse) *healthcheckchallenge.HCObserverEvaluationData {
+	if v == nil {
+		return nil
+	}
+	res := &healthcheckchallenge.HCObserverEvaluationData{
+		Block:                   v.Block,
+		Merkelroot:              v.Merkelroot,
+		IsChallengeTimestampOK:  *v.IsChallengeTimestampOK,
+		IsProcessTimestampOK:    *v.IsProcessTimestampOK,
+		IsEvaluationTimestampOK: *v.IsEvaluationTimestampOK,
+		IsRecipientSignatureOK:  *v.IsRecipientSignatureOK,
+		IsChallengerSignatureOK: *v.IsChallengerSignatureOK,
+		IsEvaluationResultOK:    *v.IsEvaluationResultOK,
+		Timestamp:               *v.Timestamp,
 	}
 
 	return res

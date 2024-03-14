@@ -202,3 +202,10 @@ type NScMetric struct {
 	ChallengeID string
 	CreatedAt   string
 }
+
+// NHcMetric gets the latest health-check challenge IDs from the DB
+type NHcMetric struct {
+	Count       int
+	ChallengeID string
+	CreatedAt   string
+}
