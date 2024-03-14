@@ -21,6 +21,10 @@ type Client struct {
 	// getSummaryStats endpoint.
 	GetSummaryStatsDoer goahttp.Doer
 
+	// GetDetailedLogs Doer is the HTTP client used to make requests to the
+	// getDetailedLogs endpoint.
+	GetDetailedLogsDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -46,6 +50,7 @@ func NewClient(
 ) *Client {
 	return &Client{
 		GetSummaryStatsDoer: doer,
+		GetDetailedLogsDoer: doer,
 		CORSDoer:            doer,
 		RestoreResponseBody: restoreBody,
 		scheme:              scheme,
@@ -74,6 +79,30 @@ func (c *Client) GetSummaryStats() goa.Endpoint {
 		resp, err := c.GetSummaryStatsDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("HealthCheckChallenge", "getSummaryStats", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetDetailedLogs returns an endpoint that makes HTTP requests to the
+// HealthCheckChallenge service getDetailedLogs server.
+func (c *Client) GetDetailedLogs() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetDetailedLogsRequest(c.encoder)
+		decodeResponse = DecodeGetDetailedLogsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetDetailedLogsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetDetailedLogsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("HealthCheckChallenge", "getDetailedLogs", err)
 		}
 		return decodeResponse(resp)
 	}

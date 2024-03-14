@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/walletnode/services/storagechallenge"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -32,6 +31,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
+	"github.com/pastelnetwork/gonode/walletnode/services/storagechallenge"
 )
 
 const (

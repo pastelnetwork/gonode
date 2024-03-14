@@ -16,13 +16,15 @@ import (
 // Client is the "HealthCheckChallenge" service client.
 type Client struct {
 	GetSummaryStatsEndpoint goa.Endpoint
+	GetDetailedLogsEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "HealthCheckChallenge" service client given the
 // endpoints.
-func NewClient(getSummaryStats goa.Endpoint) *Client {
+func NewClient(getSummaryStats, getDetailedLogs goa.Endpoint) *Client {
 	return &Client{
 		GetSummaryStatsEndpoint: getSummaryStats,
+		GetDetailedLogsEndpoint: getDetailedLogs,
 	}
 }
 
@@ -41,4 +43,21 @@ func (c *Client) GetSummaryStats(ctx context.Context, p *GetSummaryStatsPayload)
 		return
 	}
 	return ires.(*HcSummaryStatsResult), nil
+}
+
+// GetDetailedLogs calls the "getDetailedLogs" endpoint of the
+// "HealthCheckChallenge" service.
+// GetDetailedLogs may return the following errors:
+//   - "Unauthorized" (type *goa.ServiceError)
+//   - "BadRequest" (type *goa.ServiceError)
+//   - "NotFound" (type *goa.ServiceError)
+//   - "InternalServerError" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) GetDetailedLogs(ctx context.Context, p *GetDetailedLogsPayload) (res []*HcDetailedLogsMessage, err error) {
+	var ires any
+	ires, err = c.GetDetailedLogsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.([]*HcDetailedLogsMessage), nil
 }

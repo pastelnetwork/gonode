@@ -8,6 +8,7 @@
 package client
 
 import (
+	healthcheckchallenge "github.com/pastelnetwork/gonode/walletnode/api/gen/health_check_challenge"
 	healthcheckchallengeviews "github.com/pastelnetwork/gonode/walletnode/api/gen/health_check_challenge/views"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -18,6 +19,10 @@ type GetSummaryStatsResponseBody struct {
 	// HCSummaryStats represents health check challenge summary of metrics stats
 	HcSummaryStats *HCSummaryStatsResponseBody `form:"hc_summary_stats,omitempty" json:"hc_summary_stats,omitempty" xml:"hc_summary_stats,omitempty"`
 }
+
+// GetDetailedLogsResponseBody is the type of the "HealthCheckChallenge"
+// service "getDetailedLogs" endpoint HTTP response body.
+type GetDetailedLogsResponseBody []*HcDetailedLogsMessageResponse
 
 // GetSummaryStatsUnauthorizedResponseBody is the type of the
 // "HealthCheckChallenge" service "getSummaryStats" endpoint HTTP response body
@@ -95,6 +100,82 @@ type GetSummaryStatsInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// GetDetailedLogsUnauthorizedResponseBody is the type of the
+// "HealthCheckChallenge" service "getDetailedLogs" endpoint HTTP response body
+// for the "Unauthorized" error.
+type GetDetailedLogsUnauthorizedResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetDetailedLogsBadRequestResponseBody is the type of the
+// "HealthCheckChallenge" service "getDetailedLogs" endpoint HTTP response body
+// for the "BadRequest" error.
+type GetDetailedLogsBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetDetailedLogsNotFoundResponseBody is the type of the
+// "HealthCheckChallenge" service "getDetailedLogs" endpoint HTTP response body
+// for the "NotFound" error.
+type GetDetailedLogsNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetDetailedLogsInternalServerErrorResponseBody is the type of the
+// "HealthCheckChallenge" service "getDetailedLogs" endpoint HTTP response body
+// for the "InternalServerError" error.
+type GetDetailedLogsInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
 // HCSummaryStatsResponseBody is used to define fields on response body types.
 type HCSummaryStatsResponseBody struct {
 	// Total number of challenges issued
@@ -111,6 +192,88 @@ type HCSummaryStatsResponseBody struct {
 	NoOfInvalidSignaturesObservedByObservers *int `form:"no_of_invalid_signatures_observed_by_observers,omitempty" json:"no_of_invalid_signatures_observed_by_observers,omitempty" xml:"no_of_invalid_signatures_observed_by_observers,omitempty"`
 	// challenges failed due to invalid evaluation evaluated by observers
 	NoOfInvalidEvaluationObservedByObservers *int `form:"no_of_invalid_evaluation_observed_by_observers,omitempty" json:"no_of_invalid_evaluation_observed_by_observers,omitempty" xml:"no_of_invalid_evaluation_observed_by_observers,omitempty"`
+}
+
+// HcDetailedLogsMessageResponse is used to define fields on response body
+// types.
+type HcDetailedLogsMessageResponse struct {
+	// ID of the challenge
+	ChallengeID *string `form:"challenge_id,omitempty" json:"challenge_id,omitempty" xml:"challenge_id,omitempty"`
+	// type of the message
+	MessageType *string `form:"message_type,omitempty" json:"message_type,omitempty" xml:"message_type,omitempty"`
+	// ID of the sender's node
+	SenderID *string `form:"sender_id,omitempty" json:"sender_id,omitempty" xml:"sender_id,omitempty"`
+	// signature of the sender
+	SenderSignature *string `form:"sender_signature,omitempty" json:"sender_signature,omitempty" xml:"sender_signature,omitempty"`
+	// ID of the challenger
+	ChallengerID *string `form:"challenger_id,omitempty" json:"challenger_id,omitempty" xml:"challenger_id,omitempty"`
+	// Challenge data
+	Challenge *HCChallengeDataResponse `form:"challenge,omitempty" json:"challenge,omitempty" xml:"challenge,omitempty"`
+	// List of observer IDs
+	Observers []string `form:"observers,omitempty" json:"observers,omitempty" xml:"observers,omitempty"`
+	// ID of the recipient
+	RecipientID *string `form:"recipient_id,omitempty" json:"recipient_id,omitempty" xml:"recipient_id,omitempty"`
+	// Response data
+	Response *HCResponseDataResponse `form:"response,omitempty" json:"response,omitempty" xml:"response,omitempty"`
+	// Challenger evaluation data
+	ChallengerEvaluation *HCEvaluationDataResponse `form:"challenger_evaluation,omitempty" json:"challenger_evaluation,omitempty" xml:"challenger_evaluation,omitempty"`
+	// Observer evaluation data
+	ObserverEvaluation *HCObserverEvaluationDataResponse `form:"observer_evaluation,omitempty" json:"observer_evaluation,omitempty" xml:"observer_evaluation,omitempty"`
+}
+
+// HCChallengeDataResponse is used to define fields on response body types.
+type HCChallengeDataResponse struct {
+	// Block
+	Block *int32 `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	// Merkelroot
+	Merkelroot *string `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	// Timestamp
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+}
+
+// HCResponseDataResponse is used to define fields on response body types.
+type HCResponseDataResponse struct {
+	// Block
+	Block *int32 `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	// Merkelroot
+	Merkelroot *string `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	// Timestamp
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+}
+
+// HCEvaluationDataResponse is used to define fields on response body types.
+type HCEvaluationDataResponse struct {
+	// Block
+	Block *int32 `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	// Merkelroot
+	Merkelroot *string `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	// Timestamp
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	// IsVerified
+	IsVerified *bool `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
+}
+
+// HCObserverEvaluationDataResponse is used to define fields on response body
+// types.
+type HCObserverEvaluationDataResponse struct {
+	// Block
+	Block *int32 `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	// Merkelroot
+	Merkelroot *string `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	// IsChallengeTimestampOK
+	IsChallengeTimestampOK *bool `form:"is_challenge_timestamp_ok,omitempty" json:"is_challenge_timestamp_ok,omitempty" xml:"is_challenge_timestamp_ok,omitempty"`
+	// IsProcessTimestampOK
+	IsProcessTimestampOK *bool `form:"is_process_timestamp_ok,omitempty" json:"is_process_timestamp_ok,omitempty" xml:"is_process_timestamp_ok,omitempty"`
+	// IsEvaluationTimestampOK
+	IsEvaluationTimestampOK *bool `form:"is_evaluation_timestamp_ok,omitempty" json:"is_evaluation_timestamp_ok,omitempty" xml:"is_evaluation_timestamp_ok,omitempty"`
+	// IsRecipientSignatureOK
+	IsRecipientSignatureOK *bool `form:"is_recipient_signature_ok,omitempty" json:"is_recipient_signature_ok,omitempty" xml:"is_recipient_signature_ok,omitempty"`
+	// IsChallengerSignatureOK
+	IsChallengerSignatureOK *bool `form:"is_challenger_signature_ok,omitempty" json:"is_challenger_signature_ok,omitempty" xml:"is_challenger_signature_ok,omitempty"`
+	// IsEvaluationResultOK
+	IsEvaluationResultOK *bool `form:"is_evaluation_result_ok,omitempty" json:"is_evaluation_result_ok,omitempty" xml:"is_evaluation_result_ok,omitempty"`
+	// Timestamp
+	Timestamp *string `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
 }
 
 // NewGetSummaryStatsHcSummaryStatsResultOK builds a "HealthCheckChallenge"
@@ -170,6 +333,77 @@ func NewGetSummaryStatsNotFound(body *GetSummaryStatsNotFoundResponseBody) *goa.
 // NewGetSummaryStatsInternalServerError builds a HealthCheckChallenge service
 // getSummaryStats endpoint InternalServerError error.
 func NewGetSummaryStatsInternalServerError(body *GetSummaryStatsInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetDetailedLogsHcDetailedLogsMessageOK builds a "HealthCheckChallenge"
+// service "getDetailedLogs" endpoint result from a HTTP "OK" response.
+func NewGetDetailedLogsHcDetailedLogsMessageOK(body []*HcDetailedLogsMessageResponse) []*healthcheckchallenge.HcDetailedLogsMessage {
+	v := make([]*healthcheckchallenge.HcDetailedLogsMessage, len(body))
+	for i, val := range body {
+		v[i] = unmarshalHcDetailedLogsMessageResponseToHealthcheckchallengeHcDetailedLogsMessage(val)
+	}
+
+	return v
+}
+
+// NewGetDetailedLogsUnauthorized builds a HealthCheckChallenge service
+// getDetailedLogs endpoint Unauthorized error.
+func NewGetDetailedLogsUnauthorized(body *GetDetailedLogsUnauthorizedResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetDetailedLogsBadRequest builds a HealthCheckChallenge service
+// getDetailedLogs endpoint BadRequest error.
+func NewGetDetailedLogsBadRequest(body *GetDetailedLogsBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetDetailedLogsNotFound builds a HealthCheckChallenge service
+// getDetailedLogs endpoint NotFound error.
+func NewGetDetailedLogsNotFound(body *GetDetailedLogsNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetDetailedLogsInternalServerError builds a HealthCheckChallenge service
+// getDetailedLogs endpoint InternalServerError error.
+func NewGetDetailedLogsInternalServerError(body *GetDetailedLogsInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -278,6 +512,102 @@ func ValidateGetSummaryStatsInternalServerErrorResponseBody(body *GetSummaryStat
 	return
 }
 
+// ValidateGetDetailedLogsUnauthorizedResponseBody runs the validations defined
+// on getDetailedLogs_Unauthorized_response_body
+func ValidateGetDetailedLogsUnauthorizedResponseBody(body *GetDetailedLogsUnauthorizedResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetDetailedLogsBadRequestResponseBody runs the validations defined
+// on getDetailedLogs_BadRequest_response_body
+func ValidateGetDetailedLogsBadRequestResponseBody(body *GetDetailedLogsBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetDetailedLogsNotFoundResponseBody runs the validations defined on
+// getDetailedLogs_NotFound_response_body
+func ValidateGetDetailedLogsNotFoundResponseBody(body *GetDetailedLogsNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetDetailedLogsInternalServerErrorResponseBody runs the validations
+// defined on getDetailedLogs_InternalServerError_response_body
+func ValidateGetDetailedLogsInternalServerErrorResponseBody(body *GetDetailedLogsInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
 // ValidateHCSummaryStatsResponseBody runs the validations defined on
 // HCSummaryStatsResponseBody
 func ValidateHCSummaryStatsResponseBody(body *HCSummaryStatsResponseBody) (err error) {
@@ -301,6 +631,107 @@ func ValidateHCSummaryStatsResponseBody(body *HCSummaryStatsResponseBody) (err e
 	}
 	if body.NoOfInvalidEvaluationObservedByObservers == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("no_of_invalid_evaluation_observed_by_observers", "body"))
+	}
+	return
+}
+
+// ValidateHcDetailedLogsMessageResponse runs the validations defined on
+// Hc_detailed_logsMessageResponse
+func ValidateHcDetailedLogsMessageResponse(body *HcDetailedLogsMessageResponse) (err error) {
+	if body.ChallengeID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("challenge_id", "body"))
+	}
+	if body.MessageType == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message_type", "body"))
+	}
+	if body.SenderID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("sender_id", "body"))
+	}
+	if body.ChallengerID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("challenger_id", "body"))
+	}
+	if body.Observers == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("observers", "body"))
+	}
+	if body.RecipientID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("recipient_id", "body"))
+	}
+	if body.Challenge != nil {
+		if err2 := ValidateHCChallengeDataResponse(body.Challenge); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.Response != nil {
+		if err2 := ValidateHCResponseDataResponse(body.Response); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.ChallengerEvaluation != nil {
+		if err2 := ValidateHCEvaluationDataResponse(body.ChallengerEvaluation); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.ObserverEvaluation != nil {
+		if err2 := ValidateHCObserverEvaluationDataResponse(body.ObserverEvaluation); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateHCChallengeDataResponse runs the validations defined on
+// HCChallengeDataResponse
+func ValidateHCChallengeDataResponse(body *HCChallengeDataResponse) (err error) {
+	if body.Timestamp == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timestamp", "body"))
+	}
+	return
+}
+
+// ValidateHCResponseDataResponse runs the validations defined on
+// HCResponseDataResponse
+func ValidateHCResponseDataResponse(body *HCResponseDataResponse) (err error) {
+	if body.Timestamp == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timestamp", "body"))
+	}
+	return
+}
+
+// ValidateHCEvaluationDataResponse runs the validations defined on
+// HCEvaluationDataResponse
+func ValidateHCEvaluationDataResponse(body *HCEvaluationDataResponse) (err error) {
+	if body.Timestamp == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timestamp", "body"))
+	}
+	if body.IsVerified == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("is_verified", "body"))
+	}
+	return
+}
+
+// ValidateHCObserverEvaluationDataResponse runs the validations defined on
+// HCObserverEvaluationDataResponse
+func ValidateHCObserverEvaluationDataResponse(body *HCObserverEvaluationDataResponse) (err error) {
+	if body.Timestamp == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timestamp", "body"))
+	}
+	if body.IsChallengeTimestampOK == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("is_challenge_timestamp_ok", "body"))
+	}
+	if body.IsProcessTimestampOK == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("is_process_timestamp_ok", "body"))
+	}
+	if body.IsEvaluationTimestampOK == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("is_evaluation_timestamp_ok", "body"))
+	}
+	if body.IsRecipientSignatureOK == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("is_recipient_signature_ok", "body"))
+	}
+	if body.IsChallengerSignatureOK == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("is_challenger_signature_ok", "body"))
+	}
+	if body.IsEvaluationResultOK == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("is_evaluation_result_ok", "body"))
 	}
 	return
 }

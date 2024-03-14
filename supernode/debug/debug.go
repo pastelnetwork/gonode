@@ -111,6 +111,7 @@ func NewService(config *Config, p2pClient p2p.Client, srvc *storagechallenge.SCS
 	metricsRouter.HandleFunc("/storage_challenge/summary_stats", service.SCSummaryStats).Methods(http.MethodGet)
 	metricsRouter.HandleFunc("/storage_challenge/detailed_logs", service.SCDetailedLogs).Methods(http.MethodGet)
 	metricsRouter.HandleFunc("/health_check_challenge/summary_stats", service.HCSummaryStats).Methods(http.MethodGet)
+	metricsRouter.HandleFunc("/health_check_challenge/detailed_logs", service.HCDetailedLogs).Methods(http.MethodGet)
 	service.metricsServer = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.MetricsPort),
 		Handler: metricsRouter,

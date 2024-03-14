@@ -52,3 +52,28 @@ func BuildGetSummaryStatsPayload(healthCheckChallengeGetSummaryStatsFrom string,
 
 	return v, nil
 }
+
+// BuildGetDetailedLogsPayload builds the payload for the HealthCheckChallenge
+// getDetailedLogs endpoint from CLI flags.
+func BuildGetDetailedLogsPayload(healthCheckChallengeGetDetailedLogsPid string, healthCheckChallengeGetDetailedLogsChallengeID string, healthCheckChallengeGetDetailedLogsKey string) (*healthcheckchallenge.GetDetailedLogsPayload, error) {
+	var pid string
+	{
+		pid = healthCheckChallengeGetDetailedLogsPid
+	}
+	var challengeID *string
+	{
+		if healthCheckChallengeGetDetailedLogsChallengeID != "" {
+			challengeID = &healthCheckChallengeGetDetailedLogsChallengeID
+		}
+	}
+	var key string
+	{
+		key = healthCheckChallengeGetDetailedLogsKey
+	}
+	v := &healthcheckchallenge.GetDetailedLogsPayload{}
+	v.Pid = pid
+	v.ChallengeID = challengeID
+	v.Key = key
+
+	return v, nil
+}

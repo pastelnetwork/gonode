@@ -19,6 +19,8 @@ import (
 type Service interface {
 	// Fetches summary stats data over a specified time range
 	GetSummaryStats(context.Context, *GetSummaryStatsPayload) (res *HcSummaryStatsResult, err error)
+	// Fetches health-check-challenge reports
+	GetDetailedLogs(context.Context, *GetDetailedLogsPayload) (res []*HcDetailedLogsMessage, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -41,7 +43,18 @@ const ServiceName = "HealthCheckChallenge"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [1]string{"getSummaryStats"}
+var MethodNames = [2]string{"getSummaryStats", "getDetailedLogs"}
+
+// GetDetailedLogsPayload is the payload type of the HealthCheckChallenge
+// service getDetailedLogs method.
+type GetDetailedLogsPayload struct {
+	// PastelID of the user to fetch health-check-challenge reports for
+	Pid string
+	// ChallengeID of the health check challenge to fetch their logs
+	ChallengeID *string
+	// Passphrase of the owner's PastelID
+	Key string
+}
 
 // GetSummaryStatsPayload is the payload type of the HealthCheckChallenge
 // service getSummaryStats method.
@@ -54,6 +67,60 @@ type GetSummaryStatsPayload struct {
 	Pid string
 	// Passphrase of the owner's PastelID
 	Key string
+}
+
+// Data of challenge
+type HCChallengeData struct {
+	// Block
+	Block *int32
+	// Merkelroot
+	Merkelroot *string
+	// Timestamp
+	Timestamp string
+}
+
+// Data of evaluation
+type HCEvaluationData struct {
+	// Block
+	Block *int32
+	// Merkelroot
+	Merkelroot *string
+	// Timestamp
+	Timestamp string
+	// IsVerified
+	IsVerified bool
+}
+
+// Data of Observer's evaluation
+type HCObserverEvaluationData struct {
+	// Block
+	Block *int32
+	// Merkelroot
+	Merkelroot *string
+	// IsChallengeTimestampOK
+	IsChallengeTimestampOK bool
+	// IsProcessTimestampOK
+	IsProcessTimestampOK bool
+	// IsEvaluationTimestampOK
+	IsEvaluationTimestampOK bool
+	// IsRecipientSignatureOK
+	IsRecipientSignatureOK bool
+	// IsChallengerSignatureOK
+	IsChallengerSignatureOK bool
+	// IsEvaluationResultOK
+	IsEvaluationResultOK bool
+	// Timestamp
+	Timestamp string
+}
+
+// Data of response
+type HCResponseData struct {
+	// Block
+	Block *int32
+	// Merkelroot
+	Merkelroot *string
+	// Timestamp
+	Timestamp string
 }
 
 // HealthCheck-Challenge SummaryStats
@@ -72,6 +139,32 @@ type HCSummaryStats struct {
 	NoOfInvalidSignaturesObservedByObservers int
 	// challenges failed due to invalid evaluation evaluated by observers
 	NoOfInvalidEvaluationObservedByObservers int
+}
+
+// HealthCheck challenge message data
+type HcDetailedLogsMessage struct {
+	// ID of the challenge
+	ChallengeID string
+	// type of the message
+	MessageType string
+	// ID of the sender's node
+	SenderID string
+	// signature of the sender
+	SenderSignature *string
+	// ID of the challenger
+	ChallengerID string
+	// Challenge data
+	Challenge *HCChallengeData
+	// List of observer IDs
+	Observers []string
+	// ID of the recipient
+	RecipientID string
+	// Response data
+	Response *HCResponseData
+	// Challenger evaluation data
+	ChallengerEvaluation *HCEvaluationData
+	// Observer evaluation data
+	ObserverEvaluation *HCObserverEvaluationData
 }
 
 // HcSummaryStatsResult is the result type of the HealthCheckChallenge service

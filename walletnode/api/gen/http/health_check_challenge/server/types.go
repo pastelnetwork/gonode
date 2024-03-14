@@ -20,6 +20,10 @@ type GetSummaryStatsResponseBody struct {
 	HcSummaryStats *HCSummaryStatsResponseBody `form:"hc_summary_stats" json:"hc_summary_stats" xml:"hc_summary_stats"`
 }
 
+// GetDetailedLogsResponseBody is the type of the "HealthCheckChallenge"
+// service "getDetailedLogs" endpoint HTTP response body.
+type GetDetailedLogsResponseBody []*HcDetailedLogsMessageResponse
+
 // GetSummaryStatsUnauthorizedResponseBody is the type of the
 // "HealthCheckChallenge" service "getSummaryStats" endpoint HTTP response body
 // for the "Unauthorized" error.
@@ -96,6 +100,82 @@ type GetSummaryStatsInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// GetDetailedLogsUnauthorizedResponseBody is the type of the
+// "HealthCheckChallenge" service "getDetailedLogs" endpoint HTTP response body
+// for the "Unauthorized" error.
+type GetDetailedLogsUnauthorizedResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// GetDetailedLogsBadRequestResponseBody is the type of the
+// "HealthCheckChallenge" service "getDetailedLogs" endpoint HTTP response body
+// for the "BadRequest" error.
+type GetDetailedLogsBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// GetDetailedLogsNotFoundResponseBody is the type of the
+// "HealthCheckChallenge" service "getDetailedLogs" endpoint HTTP response body
+// for the "NotFound" error.
+type GetDetailedLogsNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// GetDetailedLogsInternalServerErrorResponseBody is the type of the
+// "HealthCheckChallenge" service "getDetailedLogs" endpoint HTTP response body
+// for the "InternalServerError" error.
+type GetDetailedLogsInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // HCSummaryStatsResponseBody is used to define fields on response body types.
 type HCSummaryStatsResponseBody struct {
 	// Total number of challenges issued
@@ -114,12 +194,104 @@ type HCSummaryStatsResponseBody struct {
 	NoOfInvalidEvaluationObservedByObservers int `form:"no_of_invalid_evaluation_observed_by_observers" json:"no_of_invalid_evaluation_observed_by_observers" xml:"no_of_invalid_evaluation_observed_by_observers"`
 }
 
+// HcDetailedLogsMessageResponse is used to define fields on response body
+// types.
+type HcDetailedLogsMessageResponse struct {
+	// ID of the challenge
+	ChallengeID string `form:"challenge_id" json:"challenge_id" xml:"challenge_id"`
+	// type of the message
+	MessageType string `form:"message_type" json:"message_type" xml:"message_type"`
+	// ID of the sender's node
+	SenderID string `form:"sender_id" json:"sender_id" xml:"sender_id"`
+	// signature of the sender
+	SenderSignature *string `form:"sender_signature,omitempty" json:"sender_signature,omitempty" xml:"sender_signature,omitempty"`
+	// ID of the challenger
+	ChallengerID string `form:"challenger_id" json:"challenger_id" xml:"challenger_id"`
+	// Challenge data
+	Challenge *HCChallengeDataResponse `form:"challenge,omitempty" json:"challenge,omitempty" xml:"challenge,omitempty"`
+	// List of observer IDs
+	Observers []string `form:"observers" json:"observers" xml:"observers"`
+	// ID of the recipient
+	RecipientID string `form:"recipient_id" json:"recipient_id" xml:"recipient_id"`
+	// Response data
+	Response *HCResponseDataResponse `form:"response,omitempty" json:"response,omitempty" xml:"response,omitempty"`
+	// Challenger evaluation data
+	ChallengerEvaluation *HCEvaluationDataResponse `form:"challenger_evaluation,omitempty" json:"challenger_evaluation,omitempty" xml:"challenger_evaluation,omitempty"`
+	// Observer evaluation data
+	ObserverEvaluation *HCObserverEvaluationDataResponse `form:"observer_evaluation,omitempty" json:"observer_evaluation,omitempty" xml:"observer_evaluation,omitempty"`
+}
+
+// HCChallengeDataResponse is used to define fields on response body types.
+type HCChallengeDataResponse struct {
+	// Block
+	Block *int32 `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	// Merkelroot
+	Merkelroot *string `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	// Timestamp
+	Timestamp string `form:"timestamp" json:"timestamp" xml:"timestamp"`
+}
+
+// HCResponseDataResponse is used to define fields on response body types.
+type HCResponseDataResponse struct {
+	// Block
+	Block *int32 `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	// Merkelroot
+	Merkelroot *string `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	// Timestamp
+	Timestamp string `form:"timestamp" json:"timestamp" xml:"timestamp"`
+}
+
+// HCEvaluationDataResponse is used to define fields on response body types.
+type HCEvaluationDataResponse struct {
+	// Block
+	Block *int32 `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	// Merkelroot
+	Merkelroot *string `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	// Timestamp
+	Timestamp string `form:"timestamp" json:"timestamp" xml:"timestamp"`
+	// IsVerified
+	IsVerified bool `form:"is_verified" json:"is_verified" xml:"is_verified"`
+}
+
+// HCObserverEvaluationDataResponse is used to define fields on response body
+// types.
+type HCObserverEvaluationDataResponse struct {
+	// Block
+	Block *int32 `form:"block,omitempty" json:"block,omitempty" xml:"block,omitempty"`
+	// Merkelroot
+	Merkelroot *string `form:"merkelroot,omitempty" json:"merkelroot,omitempty" xml:"merkelroot,omitempty"`
+	// IsChallengeTimestampOK
+	IsChallengeTimestampOK bool `form:"is_challenge_timestamp_ok" json:"is_challenge_timestamp_ok" xml:"is_challenge_timestamp_ok"`
+	// IsProcessTimestampOK
+	IsProcessTimestampOK bool `form:"is_process_timestamp_ok" json:"is_process_timestamp_ok" xml:"is_process_timestamp_ok"`
+	// IsEvaluationTimestampOK
+	IsEvaluationTimestampOK bool `form:"is_evaluation_timestamp_ok" json:"is_evaluation_timestamp_ok" xml:"is_evaluation_timestamp_ok"`
+	// IsRecipientSignatureOK
+	IsRecipientSignatureOK bool `form:"is_recipient_signature_ok" json:"is_recipient_signature_ok" xml:"is_recipient_signature_ok"`
+	// IsChallengerSignatureOK
+	IsChallengerSignatureOK bool `form:"is_challenger_signature_ok" json:"is_challenger_signature_ok" xml:"is_challenger_signature_ok"`
+	// IsEvaluationResultOK
+	IsEvaluationResultOK bool `form:"is_evaluation_result_ok" json:"is_evaluation_result_ok" xml:"is_evaluation_result_ok"`
+	// Timestamp
+	Timestamp string `form:"timestamp" json:"timestamp" xml:"timestamp"`
+}
+
 // NewGetSummaryStatsResponseBody builds the HTTP response body from the result
 // of the "getSummaryStats" endpoint of the "HealthCheckChallenge" service.
 func NewGetSummaryStatsResponseBody(res *healthcheckchallengeviews.HcSummaryStatsResultView) *GetSummaryStatsResponseBody {
 	body := &GetSummaryStatsResponseBody{}
 	if res.HcSummaryStats != nil {
 		body.HcSummaryStats = marshalHealthcheckchallengeviewsHCSummaryStatsViewToHCSummaryStatsResponseBody(res.HcSummaryStats)
+	}
+	return body
+}
+
+// NewGetDetailedLogsResponseBody builds the HTTP response body from the result
+// of the "getDetailedLogs" endpoint of the "HealthCheckChallenge" service.
+func NewGetDetailedLogsResponseBody(res []*healthcheckchallenge.HcDetailedLogsMessage) GetDetailedLogsResponseBody {
+	body := make([]*HcDetailedLogsMessageResponse, len(res))
+	for i, val := range res {
+		body[i] = marshalHealthcheckchallengeHcDetailedLogsMessageToHcDetailedLogsMessageResponse(val)
 	}
 	return body
 }
@@ -184,6 +356,66 @@ func NewGetSummaryStatsInternalServerErrorResponseBody(res *goa.ServiceError) *G
 	return body
 }
 
+// NewGetDetailedLogsUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "getDetailedLogs" endpoint of the
+// "HealthCheckChallenge" service.
+func NewGetDetailedLogsUnauthorizedResponseBody(res *goa.ServiceError) *GetDetailedLogsUnauthorizedResponseBody {
+	body := &GetDetailedLogsUnauthorizedResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetDetailedLogsBadRequestResponseBody builds the HTTP response body from
+// the result of the "getDetailedLogs" endpoint of the "HealthCheckChallenge"
+// service.
+func NewGetDetailedLogsBadRequestResponseBody(res *goa.ServiceError) *GetDetailedLogsBadRequestResponseBody {
+	body := &GetDetailedLogsBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetDetailedLogsNotFoundResponseBody builds the HTTP response body from
+// the result of the "getDetailedLogs" endpoint of the "HealthCheckChallenge"
+// service.
+func NewGetDetailedLogsNotFoundResponseBody(res *goa.ServiceError) *GetDetailedLogsNotFoundResponseBody {
+	body := &GetDetailedLogsNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetDetailedLogsInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "getDetailedLogs" endpoint of the
+// "HealthCheckChallenge" service.
+func NewGetDetailedLogsInternalServerErrorResponseBody(res *goa.ServiceError) *GetDetailedLogsInternalServerErrorResponseBody {
+	body := &GetDetailedLogsInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewGetSummaryStatsPayload builds a HealthCheckChallenge service
 // getSummaryStats endpoint payload.
 func NewGetSummaryStatsPayload(from *string, to *string, pid string, key string) *healthcheckchallenge.GetSummaryStatsPayload {
@@ -191,6 +423,17 @@ func NewGetSummaryStatsPayload(from *string, to *string, pid string, key string)
 	v.From = from
 	v.To = to
 	v.Pid = pid
+	v.Key = key
+
+	return v
+}
+
+// NewGetDetailedLogsPayload builds a HealthCheckChallenge service
+// getDetailedLogs endpoint payload.
+func NewGetDetailedLogsPayload(pid string, challengeID *string, key string) *healthcheckchallenge.GetDetailedLogsPayload {
+	v := &healthcheckchallenge.GetDetailedLogsPayload{}
+	v.Pid = pid
+	v.ChallengeID = challengeID
 	v.Key = key
 
 	return v

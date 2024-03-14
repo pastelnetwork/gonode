@@ -3,16 +3,17 @@ package services
 import (
 	"context"
 	"fmt"
+	goahttp "goa.design/goa/v3/http"
+	"goa.design/goa/v3/security"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	healthCheckChallenge "github.com/pastelnetwork/gonode/walletnode/api/gen/health_check_challenge"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/health_check_challenge/server"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/metrics"
 	healthCheckChallengeRegister "github.com/pastelnetwork/gonode/walletnode/services/healthcheckchallenge"
-
-	goahttp "goa.design/goa/v3/http"
-	"goa.design/goa/v3/security"
 )
 
 // HealthCheckChallengeAPIHandler - HealthCheckChallengeAPIHandler service
@@ -91,6 +92,110 @@ func (service *HealthCheckChallengeAPIHandler) GetSummaryStats(ctx context.Conte
 			NoOfInvalidEvaluationObservedByObservers: res.HCSummaryStats.InvalidEvaluationObservedByObservers,
 		},
 	}, nil
+}
+
+// GetDetailedLogs returns the detailed health-check-challenge data logs
+func (service *HealthCheckChallengeAPIHandler) GetDetailedLogs(ctx context.Context, p *healthCheckChallenge.GetDetailedLogsPayload) (hcDetailedLogMessages []*healthCheckChallenge.HcDetailedLogsMessage, err error) {
+	var req healthCheckChallengeRegister.HCDetailedLogRequest
+
+	if p.ChallengeID != nil {
+		req = healthCheckChallengeRegister.HCDetailedLogRequest{
+			ChallengeID: *p.ChallengeID,
+			PastelID:    p.Pid,
+			Passphrase:  p.Key,
+		}
+	} else {
+		req = healthCheckChallengeRegister.HCDetailedLogRequest{
+			Count:      50,
+			PastelID:   p.Pid,
+			Passphrase: p.Key,
+		}
+	}
+
+	hcDetailedMessageDataList, err := service.healthCheckChallengeService.GetDetailedMessageDataList(ctx, req)
+	if err != nil {
+		return nil, metrics.MakeInternalServerError(fmt.Errorf("failed to get health-check-challenge detailed logs: %w", err))
+	}
+
+	for _, hcl := range hcDetailedMessageDataList {
+
+		hcMsg := &healthCheckChallenge.HcDetailedLogsMessage{
+			ChallengeID: hcl.ChallengeID,
+			MessageType: hcl.MessageType.String(),
+			SenderID:    hcl.Sender,
+
+			ChallengerID: hcl.Data.ChallengerID,
+			Observers:    hcl.Data.Observers,
+			RecipientID:  hcl.Data.RecipientID,
+		}
+
+		if hcl.MessageType == types.HealthCheckChallengeMessageType {
+			hcMsg.Challenge = &healthCheckChallenge.HCChallengeData{
+				Timestamp: hcl.Data.Challenge.Timestamp.Format(time.RFC3339),
+			}
+
+			if hcl.Data.Challenge.Block != 0 {
+				hcMsg.Challenge.Block = &hcl.Data.Challenge.Block
+			}
+
+			if hcl.Data.Challenge.Merkelroot != "" {
+				hcMsg.Challenge.Merkelroot = &hcl.Data.Challenge.Merkelroot
+			}
+		}
+
+		if hcl.MessageType == types.HealthCheckResponseMessageType {
+			hcMsg.Response = &healthCheckChallenge.HCResponseData{
+				Timestamp: hcl.Data.Response.Timestamp.Format(time.RFC3339),
+			}
+
+			if hcl.Data.Response.Block != 0 {
+				hcMsg.Response.Block = &hcl.Data.Response.Block
+			}
+
+			if hcl.Data.Response.Merkelroot != "" {
+				hcMsg.Response.Merkelroot = &hcl.Data.Response.Merkelroot
+			}
+		}
+
+		if hcl.MessageType == types.HealthCheckEvaluationMessageType {
+			hcMsg.ChallengerEvaluation = &healthCheckChallenge.HCEvaluationData{
+				Timestamp:  hcl.Data.ChallengerEvaluation.Timestamp.Format(time.RFC3339),
+				IsVerified: hcl.Data.ChallengerEvaluation.IsVerified,
+			}
+
+			if hcl.Data.ChallengerEvaluation.Block != 0 {
+				hcMsg.ChallengerEvaluation.Block = &hcl.Data.ChallengerEvaluation.Block
+			}
+
+			if hcl.Data.ChallengerEvaluation.Merkelroot != "" {
+				hcMsg.ChallengerEvaluation.Merkelroot = &hcl.Data.ChallengerEvaluation.Merkelroot
+			}
+		}
+
+		if hcl.MessageType == types.HealthCheckAffirmationMessageType {
+			hcMsg.ObserverEvaluation = &healthCheckChallenge.HCObserverEvaluationData{
+				IsChallengeTimestampOK:  hcl.Data.ObserverEvaluation.IsChallengeTimestampOK,
+				IsProcessTimestampOK:    hcl.Data.ObserverEvaluation.IsProcessTimestampOK,
+				IsEvaluationTimestampOK: hcl.Data.ObserverEvaluation.IsEvaluationTimestampOK,
+				IsRecipientSignatureOK:  hcl.Data.ObserverEvaluation.IsRecipientSignatureOK,
+				IsChallengerSignatureOK: hcl.Data.ObserverEvaluation.IsChallengerSignatureOK,
+				IsEvaluationResultOK:    hcl.Data.ObserverEvaluation.IsEvaluationResultOK,
+				Timestamp:               hcl.Data.ObserverEvaluation.Timestamp.Format(time.RFC3339),
+			}
+
+			if hcl.Data.ObserverEvaluation.Block != 0 {
+				hcMsg.ObserverEvaluation.Block = &hcl.Data.ObserverEvaluation.Block
+			}
+
+			if hcl.Data.ObserverEvaluation.Merkelroot != "" {
+				hcMsg.ObserverEvaluation.Merkelroot = &hcl.Data.ObserverEvaluation.Merkelroot
+			}
+		}
+
+		hcDetailedLogMessages = append(hcDetailedLogMessages, hcMsg)
+	}
+
+	return hcDetailedLogMessages, nil
 }
 
 // NewHealthCheckChallengeAPIHandler returns the swagger OpenAPI implementation.
