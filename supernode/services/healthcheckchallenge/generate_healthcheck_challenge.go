@@ -273,10 +273,10 @@ func (task *HCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 		}
 
 		return nil, errors.Errorf("no recipients found to send this message")
-	case types.HealthCheckVerificationMessageType:
+	case types.HealthCheckAffirmationMessageType:
 	// not required
 
-	case types.HealthCheckCompletionMessageType:
+	case types.HealthCheckBroadcastMessageType:
 		return supernodes, nil
 
 	default:

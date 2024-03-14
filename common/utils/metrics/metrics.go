@@ -23,6 +23,16 @@ type SCMetrics struct {
 	InvalidEvaluationObservedByObservers int
 }
 
+type HCMetrics struct {
+	TotalChallenges                      int
+	TotalChallengesProcessed             int
+	TotalChallengesEvaluatedByChallenger int
+	TotalChallengesVerified              int
+	SlowResponsesObservedByObservers     int
+	InvalidSignaturesObservedByObservers int
+	InvalidEvaluationObservedByObservers int
+}
+
 // SHTriggerMetrics represents the self-healing trigger metrics
 type SHTriggerMetrics []SHTriggerMetric
 

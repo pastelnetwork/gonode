@@ -27,6 +27,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/walletnode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
+	"github.com/pastelnetwork/gonode/walletnode/services/healthcheckchallenge"
 	"github.com/pastelnetwork/gonode/walletnode/services/metrics"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/nftsearch"
@@ -229,6 +230,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient, hDB)
 	metricsService := metrics.NewMetricsService(pastelClient)
 	storageChallengeService := storagechallenge.NewStorageChallengeService(pastelClient)
+	healthCheckChallengeService := healthcheckchallenge.NewHealthCheckChallengeService(pastelClient)
 
 	fileMappings := &sync.Map{}
 	server := api.NewAPIServer(config.API, fileMappings, pastelClient,
@@ -240,6 +242,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		services.NewSwagger(apiSrcvConf),
 		services.NewMetricsAPIHandler(metricsService),
 		services.NewStorageChallengeAPIHandler(storageChallengeService),
+		services.NewHealthCheckChallengeAPIHandler(healthCheckChallengeService),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
