@@ -166,8 +166,10 @@ func (s *DHT) Replicate(ctx context.Context) {
 	ignores := s.ignorelist.ToNodeList()
 	closestContactsMap := make(map[string][][]byte)
 
+	self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
+	self.SetHashedID()
+
 	for i := 0; i < len(replicationKeys); i++ {
-		self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
 		decKey, _ := hex.DecodeString(replicationKeys[i].Key)
 		closestContactsMap[replicationKeys[i].Key] = s.ht.closestContactsWithInlcudingNode(Alpha, decKey, ignores, self).NodeIDs()
 	}
@@ -290,6 +292,7 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 	for i := 0; i < len(replicationKeys); i++ {
 
 		offNode := &Node{ID: []byte(info.ID), IP: info.IP, Port: info.Port}
+		offNode.SetHashedID()
 
 		// get closest contacts to the key
 		key, _ := hex.DecodeString(replicationKeys[i].Key)

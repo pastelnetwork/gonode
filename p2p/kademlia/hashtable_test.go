@@ -105,14 +105,14 @@ func TestClosestContactsWithIncludingNode(t *testing.T) {
 			3YjKEDhanRTxuP1WvEg4PFsq1ejnQuS1NhHRBZWWzxFq3dcUEwKeRdjRBrVU4b9BobvX6LesQRRNYpELhXccYzPmeNiLi69eFCGh4MZ1jK5zU24RSJo2DJ-149.102.147.113:14445,
 			3YjK6FkgW1eZvnVpcbeR5LyazNCmRNKg59yHHdpV52sAHp7c2Np9TVQeoCvZmRciQndXXbSZhVW81mEUunXd6apUbv8Df9Lk7sLRvMMdVd1nWQEYRGi1tu-95.111.253.200:14445,
 			3YjKAnECn9CpGB3kqKEKiEKoisqpyWVYKzDNdQXzTZ97MH4hpg3nyZknEGb3vszNMccQNvGz51yQPtjs2BwWJpCYwPmzJJbs8s7Vy7qiUewaK5Ce5UGBxL-38.242.151.234:14445,
-			3YjKAqro6htwGLENofxUwJ1V1QSsdcPGJ2v4A4zb8AphwVACizg8wFTq4jsJfCGhRznPYb86HqpYFVmGvgDiq6EASrHxFkbkX37JzfDGntvVGLinvZyqz4-154.12.235.19:14445,
 			3YjK6TzKc4beYhe8PQLtMfqFLicDS4PkhZJrb5TgzJQ7EBvRZjfBbo3dVu9SqFd2m6rupfrr5hZEHhNHyySjC5ZozjuqdJfTKEXYzJ4KYWFFmKcwTtiVGe-149.102.147.180:14445,
 			3YjK9rsqRn8jXC4T48J1tdeEGC2XxHw4YNdfLX8PvZyw53ykNdXYU7WSEPHSNkDyg3npdxAPG57vFqLs9yZzrzfrCSvt6uFaUTLV6ReXkVWdZ8SY6YfeHu-95.111.235.112:14445,
 			3YjKA64Z5iLhRN7NEU1P444nMyjAsGtHR3RgdoXMV14evXh6iox3qWDudkbDnwFztk5h8NHQZPZxyFwyv6USyFyoxG8YT3qB1NLU4V1XFFEDkve4ie5gcE-154.12.235.12:14445,
 			3YjKjNzpsUY2RqPqVifHHHtqDstMKExtTjQzT97wozZyDgn9HA3ckxu4dTYdsxw9isrqwMtGjMkPav344cfApLfsMrRBkZRR3n2mRZceY2xjiqnBDBfh3u-149.102.147.122:14445,
 			3YjK6S5YcNWvGUP8YdDKYNXm4xKbXrhd4jkSeD7ZaPgo5tfCWAUPY16fZh7Dp2hCDz1rg35EBgrL2U67pSU3JjQYb4GAjKL2MqsdJ3HM5diQFZTbjZTVR7-154.12.235.16:14445,
-			3YjK6RMKAqFPD99e6EMt514wLRGqoFnKWhqQzpxRZowTHZPVFAuRB2fSLU2eucNyYBrFowFWBQ9hm3x4JBdCSesMJD1vcFYywxohmXET3NwCm3dBTBijxa-3.142.100.245:14445"`,
-			includedNode: nil,
+			3YjK6RMKAqFPD99e6EMt514wLRGqoFnKWhqQzpxRZowTHZPVFAuRB2fSLU2eucNyYBrFowFWBQ9hm3x4JBdCSesMJD1vcFYywxohmXET3NwCm3dBTBijxa-3.142.100.245:14445`,
+			includedNode: &Node{ID: []byte("3YjKAqro6htwGLENofxUwJ1V1QSsdcPGJ2v4A4zb8AphwVACizg8wFTq4jsJfCGhRznPYb86HqpYFVmGvgDiq6EASrHxFkbkX37JzfDGntvVGLinvZyqz4"),
+				IP: "154.12.235.19", Port: 14445},
 			ignoredNodes: make([]*Node, 0),
 			topCount:     6,
 			targetKey:    "517b1003b805793f35f4242f481a48cd45e5431a2af6e10339cbcf97f7b1a27e",
@@ -149,8 +149,10 @@ func TestClosestContactsWithIncludingNode(t *testing.T) {
 			key, err := hex.DecodeString(tc.targetKey)
 			assert.NoError(t, err)
 
+			if tc.includedNode != nil {
+				tc.includedNode.SetHashedID()
+			}
 			result := tc.hashTable.closestContactsWithInlcudingNode(tc.topCount, key, tc.ignoredNodes, tc.includedNode)
-
 			for i, node := range result.Nodes {
 
 				assert.Equal(t, node.IP, tc.expectedResults.Nodes[i].IP)
