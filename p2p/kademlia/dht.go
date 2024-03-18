@@ -33,7 +33,7 @@ var (
 	defaultCleanupInterval               = time.Minute * 2
 	defaultDisabledKeyExpirationInterval = time.Minute * 30
 	defaultRedundantDataCleanupInterval  = 12 * time.Hour
-	defaultDeleteDataInterval            = 12 * time.Hour
+	defaultDeleteDataInterval            = 11 * time.Hour
 	delKeysCountThreshold                = 10
 	lowSpaceThreshold                    = 50 // GB
 )
@@ -972,6 +972,7 @@ func (s *DHT) cleanupRedundantDataWorker(ctx context.Context) {
 	}
 
 	insertKeys := make([]domain.DelKey, 0)
+	removeKeys := make([]domain.DelKey, 0)
 	for key, closestContacts := range closestContactsMap {
 		if len(closestContacts) < Alpha {
 			log.P2P().WithContext(ctx).WithField("key", key).WithField("closest contacts", closestContacts).Info("not enough contacts to replicate")
@@ -985,14 +986,16 @@ func (s *DHT) cleanupRedundantDataWorker(ctx context.Context) {
 			}
 		}
 
-		if !found {
-			delKey := domain.DelKey{
-				Key:       key,
-				CreatedAt: time.Now(),
-				Count:     1,
-			}
+		delKey := domain.DelKey{
+			Key:       key,
+			CreatedAt: time.Now(),
+			Count:     1,
+		}
 
+		if !found {
 			insertKeys = append(insertKeys, delKey)
+		} else {
+			removeKeys = append(removeKeys, delKey)
 		}
 	}
 
@@ -1006,6 +1009,14 @@ func (s *DHT) cleanupRedundantDataWorker(ctx context.Context) {
 	} else {
 		log.P2P().WithContext(ctx).Info("No redundant key found to be stored in the storage")
 	}
+
+	if len(removeKeys) > 0 {
+		if err := s.metaStore.BatchDeleteDelKeys(ctx, removeKeys); err != nil {
+			log.WithContext(ctx).WithError(err).Error("batch delete del-keys failed")
+			return
+		}
+	}
+
 }
 
 func (s *DHT) startDeleteDataWorker(ctx context.Context) {

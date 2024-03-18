@@ -454,3 +454,45 @@ func (s *Store) BatchInsertDelKeys(ctx context.Context, delKeys domain.DelKeys) 
 
 	return tx.Commit()
 }
+
+func (s *Store) BatchDeleteDelKeys(ctx context.Context, delKeys domain.DelKeys) error {
+	// Start a transaction
+	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+	if err != nil {
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+
+	// Prepare the delete statement within the transaction context
+	deleteStmt, err := tx.PreparexContext(ctx, `DELETE FROM del_keys WHERE key = ?`)
+	if err != nil {
+		tx.Rollback() // make sure to rollback the transaction on error
+		return fmt.Errorf("error preparing delete statement: %w", err)
+	}
+	defer deleteStmt.Close()
+
+	// Iterate through the provided delKeys
+	for _, dk := range delKeys {
+		delKey := fromDomain(dk) // Assuming this function converts domain.DelKey to the appropriate structure
+
+		// Check if the key exists in the table
+		var exists bool
+		err = tx.GetContext(ctx, &exists, `SELECT EXISTS(SELECT 1 FROM del_keys WHERE key = ?)`, delKey.Key)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error checking if key exists: %w", err)
+		}
+
+		// If the key exists, delete the corresponding row
+		if exists {
+			_, err := deleteStmt.ExecContext(ctx, delKey.Key)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error deleting key: %w", err)
+			}
+		}
+		// If the key doesn't exist, move on to the next key
+	}
+
+	// Commit the transaction after processing all keys
+	return tx.Commit()
+}
