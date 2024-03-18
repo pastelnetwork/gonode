@@ -109,4 +109,7 @@ type MetaStore interface {
 
 	// BatchInsertDelKeys inserts or updates multiple DelKey records in a single transaction
 	BatchInsertDelKeys(ctx context.Context, delKeys domain.DelKeys) error
+
+	// BatchDeleteDelKeys deletes multiple DelKey records in a single transaction
+	BatchDeleteDelKeys(ctx context.Context, delKeys domain.DelKeys) error
 }
