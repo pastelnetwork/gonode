@@ -25,7 +25,7 @@ func (task *HCTask) ProcessHealthCheckChallenge(ctx context.Context, incomingCha
 		logger.WithError(err).Error("Error validating healthcheck challenge incoming data: ")
 		return nil, err
 	}
-	logger.Info("incoming health-check challenge validated")
+	logger.Debug("incoming health-check challenge validated")
 
 	//if the message is received by one of the observer then save the challenge message, lock the file & return
 	if task.isObserver(incomingChallengeMessage.Data.Observers) {
@@ -33,12 +33,11 @@ func (task *HCTask) ProcessHealthCheckChallenge(ctx context.Context, incomingCha
 			incomingChallengeMessage.ChallengeID)
 
 		if err := task.StoreChallengeMessage(ctx, incomingChallengeMessage); err != nil {
-			logger.
-				WithField("node_id", task.nodeID).
+			logger.WithField("node_id", task.nodeID).
 				WithError(err).
 				Error("error storing health-check challenge message")
 		}
-		logger.Info("health-check challenge message has been stored by the observer")
+		logger.Debug("health-check challenge message has been stored by the observer")
 
 		return nil, nil
 	}
@@ -46,7 +45,7 @@ func (task *HCTask) ProcessHealthCheckChallenge(ctx context.Context, incomingCha
 	//if not the challenge recipient, should return, otherwise proceed
 	if task.nodeID != incomingChallengeMessage.Data.RecipientID {
 		logger.WithField("node_id", task.nodeID).
-			Info("current node is not the health-check challenge recipient to process challenge message")
+			Debug("current node is not the health-check challenge recipient to process challenge message")
 
 		return nil, nil
 	}
@@ -56,7 +55,7 @@ func (task *HCTask) ProcessHealthCheckChallenge(ctx context.Context, incomingCha
 			WithError(err).
 			Error("error storing health-check challenge message")
 	}
-	logger.Info("health-check challenge message has been stored by the recipient")
+	logger.Debug("health-check challenge message has been stored by the recipient")
 
 	blockNumChallengeRespondedTo, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
@@ -182,18 +181,18 @@ func (task *HCTask) sendVerifyHealthCheckChallenge(ctx context.Context, challeng
 				return
 			}
 
-			logger.Info("response message has been sent")
+			logger.Debug("response message has been sent")
 		}()
 	}
 	wg.Wait()
-	logger.WithField("challenge_id", challengeMessage.ChallengeID).Info("response message has been sent to observers")
+	logger.WithField("challenge_id", challengeMessage.ChallengeID).Debug("response message has been sent to observers")
 
 	if err := task.SendMessage(ctx, &msg, challengerNode.ExtAddress); err != nil {
 		logger.WithField("node_address", challengerNode.ExtAddress).WithError(err).Error("error sending response message to challenger for verification")
 		return err
 	}
 	logger.WithField("hc_challenge_id", challengeMessage.ChallengeID).
-		WithField("node_address", challengerNode.ExtAddress).Info("response message has been sent to challenger")
+		WithField("node_address", challengerNode.ExtAddress).Debug("response message has been sent to challenger")
 
 	return nil
 }

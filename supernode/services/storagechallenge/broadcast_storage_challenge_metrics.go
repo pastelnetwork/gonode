@@ -16,7 +16,7 @@ import (
 
 // BroadcastStorageChallengeMetrics worker broadcasts the metrics to the entire network
 func (task *SCTask) BroadcastStorageChallengeMetrics(ctx context.Context) error {
-	log.WithContext(ctx).Infoln("BroadcastStorageChallengeMetrics has been invoked")
+	log.WithContext(ctx).Debug("BroadcastStorageChallengeMetrics has been invoked")
 
 	pingInfos, err := task.historyDB.GetAllPingInfoForOnlineNodes()
 	if err != nil {

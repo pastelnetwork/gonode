@@ -24,58 +24,46 @@ import (
 //	Sending the response to all other supernodes
 //	Saving challenge state
 func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage types.Message) (*pb.StorageChallengeMessage, error) {
-	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").
-		WithField("challengeID", incomingChallengeMessage.ChallengeID).
-		Debug("Start processing storage challenge") // Incoming challenge message validation
+	logger := log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").
+		WithField("sc_challenge_id", incomingChallengeMessage.ChallengeID)
 
 	// incoming challenge message validation
 	if err := task.validateProcessingStorageChallengeIncomingData(ctx, incomingChallengeMessage); err != nil {
-		log.WithContext(ctx).WithError(err).Error("Error validating storage challenge incoming data: ")
+		logger.WithError(err).Error("Error validating storage challenge incoming data: ")
 		return nil, err
 	}
-	log.WithContext(ctx).Info("Incoming challenge validated")
+	logger.Debug("Incoming challenge validated")
 
 	//if the message is received by one of the observer then save the challenge message, lock the file & return
 	if task.isObserver(incomingChallengeMessage.Data.Observers) {
-		logger := log.WithContext(ctx).WithField("node_id", task.nodeID).WithField("challenge_id",
-			incomingChallengeMessage.ChallengeID)
-
 		if err := task.SCService.P2PClient.DisableKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash); err != nil {
-			log.WithContext(ctx).WithField("challenge_id", incomingChallengeMessage.ChallengeID).WithError(err).Error("error locking the file")
+			logger.WithError(err).Error("error locking the file")
 		}
-		logger.Info("file has been locked by the observer")
 
 		if err := task.StoreChallengeMessage(ctx, incomingChallengeMessage); err != nil {
-			log.WithContext(ctx).
-				WithField("node_id", task.nodeID).
-				WithError(err).
-				Error("error storing challenge message")
+			logger.WithError(err).Error("error storing challenge message")
 		}
-		logger.Info("challenge message has been stored by the observer")
+		logger.WithField("node_id", task.nodeID).Debug("challenge message has been stored by the observer")
 
 		return nil, nil
 	}
 
 	//if not the challenge recipient, should return, otherwise proceed
 	if task.nodeID != incomingChallengeMessage.Data.RecipientID {
-		log.WithContext(ctx).WithField("node_id", task.nodeID).
-			Info("current node is not the challenge recipient to process challenge message")
+		logger.Debug("current node is not the challenge recipient to process challenge message")
 
 		return nil, nil
 	}
 
+	logger.Info("Storage challenge processing started") // Incoming challenge message validation
 	if err := task.StoreChallengeMessage(ctx, incomingChallengeMessage); err != nil {
-		log.WithContext(ctx).
-			WithField("node_id", task.nodeID).
-			WithError(err).
-			Error("error storing challenge message")
+		logger.WithError(err).Error("error storing challenge message")
 	}
 
 	// Get the file to hash
-	log.WithContext(ctx).Info("retrieving the file from hash")
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingChallengeMessage.Data.Challenge.FileHash, true)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not read file data in to memory")
+		logger.WithError(err).Error("could not read file data in to memory")
 
 		outgoingResponseMessage := types.Message{
 			MessageType: types.ResponseMessageType,
@@ -104,36 +92,30 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		}
 
 		if err := task.StoreStorageChallengeMetric(ctx, outgoingResponseMessage); err != nil {
-			log.WithContext(ctx).WithField("challenge_id", outgoingResponseMessage.ChallengeID).
-				WithField("message_type", outgoingResponseMessage.MessageType).Error(
-				"error storing storage challenge metric")
+			logger.WithError(err).Error("error storing storage challenge metric")
 		}
 
 		if err = task.sendVerifyStorageChallenge(ctx, outgoingResponseMessage); err != nil {
-			log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not send processed challenge message to node for verification")
+			logger.WithError(err).Error("could not send processed challenge message to node for verification")
 			return nil, err
 		}
 
 		return nil, nil
 	}
-	log.WithContext(ctx).Info("challenge file has been retrieved")
 
 	// Get the hash of the chunk of the file we're supposed to hash
-	log.WithContext(ctx).Info("generating hash for the data against given indices")
 	challengeResponseHash := task.computeHashOfFileSlice(challengeFileData, incomingChallengeMessage.Data.Challenge.StartIndex, incomingChallengeMessage.Data.Challenge.EndIndex)
-	log.WithContext(ctx).Info(fmt.Sprintf("hash for data generated against the indices:%s", challengeResponseHash))
+	logger.Info("hash for data generated against the indices")
 
-	log.WithContext(ctx).Info("sending message to challenger for verification")
 	blockNumChallengeRespondedTo, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not get current block count")
+		logger.WithError(err).Error("could not get current block count")
 		return nil, err
 	}
-	log.WithContext(ctx).Info(fmt.Sprintf("block num challenge responded to:%d", blockNumChallengeRespondedTo))
 
 	blkVerbose1, err := task.SuperNodeService.PastelClient.GetBlockVerbose1(ctx, blockNumChallengeRespondedTo)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not get current block verbose 1")
+		logger.WithError(err).Error("could not get current block verbose 1")
 		return nil, err
 	}
 
@@ -165,18 +147,14 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	}
 
 	if err := task.StoreStorageChallengeMetric(ctx, outgoingResponseMessage); err != nil {
-		log.WithContext(ctx).WithField("challenge_id", outgoingResponseMessage.ChallengeID).
-			WithField("message_type", outgoingResponseMessage.MessageType).Error(
-			"error storing storage challenge metric")
+		logger.WithError(err).Error("error storing storage challenge metric")
 	}
 
-	// send to Supernodes to validate challenge response hash
-	log.WithContext(ctx).WithField("challenge_id", outgoingResponseMessage.ChallengeID).Info("sending challenge response for verification")
 	if err = task.sendVerifyStorageChallenge(ctx, outgoingResponseMessage); err != nil {
-		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not send processed challenge message to node for verification")
+		logger.WithError(err).Error("could not send processed challenge message to node for verification")
 		return nil, err
 	}
-	log.WithContext(ctx).Info("message sent to other SNs for verification")
+	logger.Info("message sent to other SNs for verification")
 
 	return nil, nil
 }
@@ -266,19 +244,17 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 				logger.WithError(err).Error("error sending process storage challenge message for processing")
 				return
 			}
-
-			logger.Info("response message has been sent")
 		}()
 	}
 	wg.Wait()
-	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Info("response message has been sent to observers")
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Debug("response message has been sent to observers")
 
 	if err := task.SendMessage(ctx, &msg, challengerNode.ExtAddress); err != nil {
 		log.WithContext(ctx).WithField("node_address", challengerNode.ExtAddress).WithError(err).Error("error sending response message to challenger for verification")
 		return err
 	}
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).
-		WithField("node_address", challengerNode.ExtAddress).Info("response message has been sent to challenger")
+		WithField("node_address", challengerNode.ExtAddress).Debug("response message has been sent to challenger")
 
 	return nil
 }

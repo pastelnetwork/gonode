@@ -69,7 +69,7 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 			if err != nil {
 				t.Fatalf("faied to marshal, err: %s", err)
 			}
-			ticket.RegTicketData.NFTTicketData.AppTicket = base64.StdEncoding.EncodeToString(b)
+			ticket.RegTicketData.NFTTicketData.AppTicket = base64.RawStdEncoding.EncodeToString(b)
 
 			b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
 			if err != nil {
@@ -160,6 +160,8 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 						},
 						RecipientID: "B",
 					},
+					Sender:          "A",
+					SenderSignature: []byte{1, 2, 3},
 				},
 
 				PastelID:   "B",

@@ -47,7 +47,7 @@ func (task *HCTask) VerifyHealthCheckChallenge(ctx context.Context, incomingResp
 	//if not the challenger, should return, otherwise proceed
 	if task.nodeID != incomingResponseMessage.Data.ChallengerID {
 		logger.WithField("node_id", task.nodeID).
-			Info("current node is not the health-check challenger to verify the response message")
+			Debug("current node is not the health-check challenger to verify the response message")
 
 		return nil, nil
 	}
@@ -59,7 +59,7 @@ func (task *HCTask) VerifyHealthCheckChallenge(ctx context.Context, incomingResp
 			WithError(err).
 			Error("error storing response message")
 	} else {
-		logger.Info("response health-check message has been stored by the challenger")
+		logger.Debug("response health-check message has been stored by the challenger")
 	}
 
 	// Verifies the challenger's time against the recipient's time.
@@ -80,7 +80,7 @@ func (task *HCTask) VerifyHealthCheckChallenge(ctx context.Context, incomingResp
 
 	blockNumChallengeSent := incomingResponseMessage.Data.Challenge.Block
 	blocksVerifyStorageChallengeInBlocks := blockNumChallengeVerified - blockNumChallengeSent
-	logger.WithField("no_of_blocks", blocksVerifyStorageChallengeInBlocks).Info("No of blocks from the time HC challenge being sent and verified")
+	logger.WithField("no_of_blocks", blocksVerifyStorageChallengeInBlocks).Debug("No of blocks from the time HC challenge being sent and verified")
 
 	evaluationMessage := types.HealthCheckMessage{
 		MessageType: types.HealthCheckEvaluationMessageType,
