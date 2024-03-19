@@ -29,7 +29,7 @@ func (task *SHTask) ProcessBroadcastedSelfHealingMetrics(ctx context.Context, re
 				return err
 			}
 		}
-		logger.Info("generation metrics have been stored")
+		logger.Debug("generation metrics have been stored")
 	case types.ExecutionSelfHealingMetricType:
 		execMetrics, err := task.decompressExecutionMetricsData(req.Data)
 		if err != nil {
@@ -43,7 +43,7 @@ func (task *SHTask) ProcessBroadcastedSelfHealingMetrics(ctx context.Context, re
 			return err
 		}
 
-		logger.Info("execution metrics have been stored")
+		logger.Debug("execution metrics have been stored")
 	}
 
 	return nil

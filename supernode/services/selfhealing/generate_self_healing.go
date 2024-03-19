@@ -44,18 +44,18 @@ type SymbolFileKeyDetails struct {
 
 // GenerateSelfHealingChallenge worker checks the ping info and identify self-healing tickets and their recipients
 func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
-	log.WithContext(ctx).Infoln("Self Healing Worker has been invoked")
+	log.WithContext(ctx).Infoln("Generate Self Healing Worker has been invoked")
 
 	watchlistPingInfos, err := task.retrieveWatchlistPingInfo(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("retrieveWatchlistPingInfo")
 		return errors.Errorf("error retrieving watchlist ping info")
 	}
-	log.WithContext(ctx).Info("watchlist ping history has been retrieved")
+	log.WithContext(ctx).Debug("watchlist ping history has been retrieved")
 
 	shouldTrigger, watchlistPingInfos := task.shouldTriggerSelfHealing(watchlistPingInfos)
 	if !shouldTrigger {
-		log.WithContext(ctx).WithField("no_of_nodes_on_watchlist", len(watchlistPingInfos)).Info("not enough nodes on the watchlist, skipping further processing")
+		log.WithContext(ctx).WithField("no_of_nodes_on_watchlist", len(watchlistPingInfos)).Debug("not enough nodes on the watchlist, skipping further processing")
 		return nil
 	}
 	log.WithContext(ctx).Info("self-healing has been triggered, proceeding with the identification of files & recipients")
@@ -67,18 +67,18 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error retrieving symbol file keys from NFT & action tickets")
 		return errors.Errorf("error retrieving symbol file keys")
 	}
-	log.WithContext(ctx).WithField("total_keys", len(keys)).Info("all the keys from NFT and action tickets have been listed")
+	log.WithContext(ctx).WithField("total_keys", len(keys)).Debug("all the keys from NFT and action tickets have been listed")
 
 	mapOfClosestNodesAgainstKeys := task.createClosestNodesMapAgainstKeys(ctx, keys, watchlistPingInfos)
 	if len(mapOfClosestNodesAgainstKeys) == 0 {
 		log.WithContext(ctx).Error("unable to create map of closest nodes against keys")
 		return nil
 	}
-	log.WithContext(ctx).Info("map of closest nodes against keys have been created")
+	log.WithContext(ctx).Debug("map of closest nodes against keys have been created")
 
 	selfHealingTicketsMap := task.identifySelfHealingTickets(ctx, watchlistPingInfos, mapOfClosestNodesAgainstKeys, symbolFileKeyMap)
 	if len(selfHealingTicketsMap) == 0 {
-		log.WithContext(ctx).Info("no tickets required self-healing")
+		log.WithContext(ctx).Debug("no tickets required self-healing")
 
 		if err := task.updateWatchlist(ctx, watchlistPingInfos); err != nil {
 			log.WithContext(ctx).WithError(err).Error("error updating watchlist ping info")
@@ -92,7 +92,7 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error identifying challenge recipients")
 	}
-	log.WithContext(ctx).WithField("challenge_recipients", len(challengeRecipientMap)).Info("challenge recipients have been identified")
+	log.WithContext(ctx).WithField("challenge_recipients", len(challengeRecipientMap)).Debug("challenge recipients have been identified")
 
 	blockNum, err := task.PastelClient.GetBlockCount(ctx)
 	if err != nil {
@@ -123,7 +123,7 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 	if err := task.updateWatchlist(ctx, watchlistPingInfos); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error updating watchlist ping info")
 	}
-	log.WithContext(ctx).Info("watchlist has been adjusted")
+	log.WithContext(ctx).Info("self-healing triggered & watchlist has been adjusted")
 
 	return nil
 }
@@ -185,7 +185,7 @@ func (service *SHService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 	if err != nil {
 		return keys, symbolFileKeyMap, err
 	}
-	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Reg tickets retrieved")
+	log.WithContext(ctx).WithField("count", len(regTickets)).Debug("Reg tickets retrieved")
 
 	for i := 0; i < len(regTickets); i++ {
 		decTicket, err := pastel.DecodeNFTTicket(regTickets[i].RegTicketData.NFTTicket)
@@ -209,10 +209,10 @@ func (service *SHService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.
 		return keys, symbolFileKeyMap, err
 	}
 	if len(actionTickets) == 0 {
-		log.WithContext(ctx).WithField("count", len(actionTickets)).Info("no action tickets retrieved")
+		log.WithContext(ctx).WithField("count", len(actionTickets)).Debug("no action tickets retrieved")
 		return keys, symbolFileKeyMap, nil
 	}
-	log.WithContext(ctx).WithField("count", len(actionTickets)).Info("Action tickets retrieved")
+	log.WithContext(ctx).WithField("count", len(actionTickets)).Debug("Action tickets retrieved")
 
 	for i := 0; i < len(actionTickets); i++ {
 		decTicket, err := pastel.DecodeActionTicket(actionTickets[i].ActionTicketData.ActionTicket)
@@ -283,7 +283,7 @@ func (task *SHTask) identifyClosestNodes(ctx context.Context, key string, nodesO
 }
 
 func (task *SHTask) identifySelfHealingTickets(ctx context.Context, watchlistPingInfos types.PingInfos, keyClosestNodesMap map[string][]string, symbolFileKeyMap map[string]SymbolFileKeyDetails) map[string]SymbolFileKeyDetails {
-	log.WithContext(ctx).Info("identifying tickets for self healing")
+	log.WithContext(ctx).Debug("identifying tickets for self healing")
 	selfHealingTicketsMap := make(map[string]SymbolFileKeyDetails)
 
 	for key, closestNodes := range keyClosestNodesMap {
@@ -348,7 +348,7 @@ func (task *SHTask) identifyChallengeRecipients(ctx context.Context, selfHealing
 
 		challengeRecipients := task.SHService.GetNClosestSupernodeIDsToComparisonString(ctx, 1, string(dataHash), task.filterWatchlistAndCurrentNode(watchlist, listOfSupernodes))
 		if len(challengeRecipients) < 1 {
-			log.WithContext(ctx).WithField("file_hash", dataHash).Info("no closest nodes have found against the file")
+			log.WithContext(ctx).WithField("file_hash", dataHash).Debug("no closest nodes have found against the file")
 			continue
 		}
 		recipient := challengeRecipients[0]
@@ -482,10 +482,10 @@ func (task *SHTask) getDataHash(nftTicket *pastel.NFTTicket, cascadeTicket *past
 }
 
 func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challengeRecipientMap map[string][]SymbolFileKeyDetails, triggerID string, nodesOnWatchlist string) error {
-	log.WithContext(ctx).WithField("method", "prepareAndSendSelfHealingMessage").Info("method has been invoked")
+	log.WithContext(ctx).WithField("method", "prepareAndSendSelfHealingMessage").Debug("method has been invoked")
 
 	var err error
-	log.WithContext(ctx).Info("retrieving block no and verbose")
+	log.WithContext(ctx).Debug("retrieving block no and verbose")
 	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get current block count")
@@ -502,7 +502,7 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 		challengeTickets := getTicketsForSelfHealingChallengeMessage(ticketsDetails, challengeRecipient)
 
 		log.WithContext(ctx).WithField("recipient_id", challengeRecipient).
-			WithField("total_tickets", len(challengeTickets)).Info("sending for self-healing")
+			WithField("total_tickets", len(challengeTickets)).Debug("sending for self-healing")
 
 		msgData := types.SelfHealingMessageData{
 			ChallengerID: task.nodeID,
@@ -534,7 +534,7 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 			continue
 		}
 	}
-	log.WithContext(ctx).Info("self-healing messages have been sent")
+	log.WithContext(ctx).Debug("self-healing messages have been sent")
 
 	return nil
 }
@@ -601,7 +601,7 @@ func (task *SHTask) GetNodeToConnect(ctx context.Context, nodeID string) (*paste
 func (task *SHTask) SendMessage(ctx context.Context, challengeMessage types.SelfHealingMessage, processingSupernodeAddr string) error {
 	logger := log.WithContext(ctx).WithField("trigger_id", challengeMessage.TriggerID)
 
-	logger.Info("sending self-healing challenge to processing supernode address: " + processingSupernodeAddr)
+	logger.Debug("sending self-healing challenge to processing supernode address: " + processingSupernodeAddr)
 
 	ctx, cancel := context.WithTimeout(ctx, timeoutDuration)
 	defer cancel()

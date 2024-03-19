@@ -12,7 +12,7 @@ import (
 
 // UpdateWatchlist fetch and update the nodes on watchlist
 func (task *SHTask) UpdateWatchlist(ctx context.Context) error {
-	log.WithContext(ctx).Infoln("Update Watchlist worker invoked")
+	log.WithContext(ctx).Debug("Update Watchlist worker invoked")
 
 	pingInfos, err := task.GetAllPingInfo(ctx)
 	if err != nil {
@@ -25,7 +25,7 @@ func (task *SHTask) UpdateWatchlist(ctx context.Context) error {
 			info.IsOnWatchlist = true
 			info.IsAdjusted = false
 
-			log.WithContext(ctx).WithField("supernode_id", info.SupernodeID).Info("updating watchlist flag")
+			log.WithContext(ctx).WithField("supernode_id", info.SupernodeID).Debug("updating watchlist flag")
 			if err := task.UpsertPingHistory(ctx, info); err != nil {
 				log.WithContext(ctx).
 					WithField("supernode_id", info.SupernodeID).

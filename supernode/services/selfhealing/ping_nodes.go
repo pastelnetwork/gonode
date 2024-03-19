@@ -23,7 +23,7 @@ const (
 
 // FetchAndMaintainPingInfo fetch and maintains the ping info in db for every node
 func (task *SHTask) FetchAndMaintainPingInfo(ctx context.Context) error {
-	log.WithContext(ctx).Infoln("Self Healing Ping Nodes Worker invoked")
+	log.WithContext(ctx).Debug("Self Healing Ping Nodes Worker invoked")
 
 	nodesToPing, err := task.getNodesAddressesToConnect(ctx)
 	if err != nil {
