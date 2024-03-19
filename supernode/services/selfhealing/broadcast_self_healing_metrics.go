@@ -15,7 +15,7 @@ import (
 
 // BroadcastSelfHealingMetrics worker broadcasts the metrics to the entire network
 func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
-	log.WithContext(ctx).Infoln("BroadcastSelfHealingMetrics has been invoked")
+	log.WithContext(ctx).Debug("BroadcastSelfHealingMetrics has been invoked")
 
 	pingInfos, err := task.historyDB.GetAllPingInfoForOnlineNodes()
 	if err != nil {
@@ -23,7 +23,7 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 		return errors.Errorf("error retrieving ping info")
 	}
 	log.WithContext(ctx).WithField("total_node_infos", len(pingInfos)).
-		Info("online node info has been retrieved for metrics broadcast")
+		Debug("online node info has been retrieved for metrics broadcast")
 
 	sem := make(chan struct{}, 5) // Limit set to 10
 	var wg sync.WaitGroup
@@ -105,7 +105,7 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 
 	wg.Wait()
 
-	log.WithContext(ctx).Info("self-healing metrics have been broadcast")
+	log.WithContext(ctx).Debug("self-healing metrics have been broadcast")
 
 	return nil
 }

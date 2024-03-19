@@ -23,13 +23,13 @@ func (task *SHTask) AcknowledgeAndStoreChallengeTickets(ctx context.Context, inc
 		log.WithContext(ctx).WithError(err).Error("Error validating self-healing challenge incoming data: ")
 		return err
 	}
-	logger.Info("self healing challenge message has been validated")
+	logger.Debug("self healing challenge message has been validated")
 
-	logger.Info("total challenge tickets received", len(incomingChallengeMessage.SelfHealingMessageData.Challenge.ChallengeTickets))
+	logger.Debug("total challenge tickets received", len(incomingChallengeMessage.SelfHealingMessageData.Challenge.ChallengeTickets))
 
 	batches := splitSelfHealingTickets(incomingChallengeMessage.SelfHealingMessageData.Challenge.ChallengeTickets, 50)
 
-	logger.WithField("total_batches", len(batches)).Info("batches have been created")
+	logger.WithField("total_batches", len(batches)).Debug("batches have been created")
 
 	for i := 0; i < len(batches); i++ {
 		err := task.StoreSelfHealingChallengeEvents(ctx, incomingChallengeMessage.TriggerID, incomingChallengeMessage.SenderID, incomingChallengeMessage.SenderSignature, batches[i])

@@ -82,11 +82,11 @@ func (service *SHService) PingNodes(ctx context.Context) {
 
 // BroadcastSelfHealingMetricsWorker broadcast the self-healing metrics to the entire network
 func (service *SHService) BroadcastSelfHealingMetricsWorker(ctx context.Context) {
-	log.WithContext(ctx).Info("self-healing-metric worker func has been invoked")
+	log.WithContext(ctx).Debug("self-healing-metric worker func has been invoked")
 
 	startTime := calculateStartTime(service.nodeID)
 	log.WithContext(ctx).WithField("start_time", startTime).
-		Info("self-healing-metric service will execute on the mentioned time")
+		Debug("self-healing-metric service will execute on the mentioned time")
 
 	// Wait until the start time
 	time.Sleep(time.Until(startTime))
@@ -107,7 +107,7 @@ func (service *SHService) BroadcastSelfHealingMetricsWorker(ctx context.Context)
 
 // ProcessSelfHealingEventsWorker process the events stored in DB
 func (service *SHService) ProcessSelfHealingEventsWorker(ctx context.Context) {
-	log.WithContext(ctx).Info("process-self-healing run worker func has been invoked")
+	log.WithContext(ctx).Debug("process-self-healing run worker func has been invoked")
 
 	for {
 		select {
@@ -199,7 +199,7 @@ func (service *SHService) RunUpdateWatchlistWorker(ctx context.Context) {
 
 // Run : self-healing service will run continuously to generate self-healing.
 func (service *SHService) Run(ctx context.Context) error {
-	log.WithContext(ctx).Info("self-healing service run func has been invoked")
+	log.WithContext(ctx).Debug("self-healing service run func has been invoked")
 	//does this need to be in its own goroutine?
 	go func() {
 		if err := service.RunHelper(ctx, service.config.PastelID, logPrefix); err != nil {
@@ -245,7 +245,7 @@ func (service *SHService) Task(id string) *SHTask {
 		return nil
 	}
 
-	log.Info("type casted successfully")
+	log.Debug("type casted successfully")
 	return scTask
 }
 
@@ -284,11 +284,11 @@ func (service *SHService) MapSymbolFileKeysFromNFTAndActionTickets(ctx context.C
 	}
 
 	if len(regTickets) == 0 {
-		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no reg tickets retrieved")
+		log.WithContext(ctx).WithField("count", len(regTickets)).Debug("no reg tickets retrieved")
 		return regTicketKeys, actionTicketKeys, nil
 	}
 
-	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Reg tickets retrieved")
+	log.WithContext(ctx).WithField("count", len(regTickets)).Debug("Reg tickets retrieved")
 	for _, regTicket := range regTickets {
 
 		decTicket, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
@@ -310,10 +310,10 @@ func (service *SHService) MapSymbolFileKeysFromNFTAndActionTickets(ctx context.C
 	}
 
 	if len(actionTickets) == 0 {
-		log.WithContext(ctx).WithField("count", len(regTickets)).Info("no action reg tickets retrieved")
+		log.WithContext(ctx).WithField("count", len(regTickets)).Debug("no action reg tickets retrieved")
 		return regTicketKeys, actionTicketKeys, nil
 	}
-	log.WithContext(ctx).WithField("count", len(regTickets)).Info("Action tickets retrieved")
+	log.WithContext(ctx).WithField("count", len(regTickets)).Debug("Action tickets retrieved")
 
 	for _, actionTicket := range actionTickets {
 		decTicket, err := pastel.DecodeActionTicket(actionTicket.ActionTicketData.ActionTicket)

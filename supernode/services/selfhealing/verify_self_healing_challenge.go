@@ -27,7 +27,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 		log.WithContext(ctx).WithError(err).Error("Error validating self-healing challenge incoming data: ")
 		return nil, err
 	}
-	logger.Info("self healing response message has been validated")
+	logger.Debug("self healing response message has been validated")
 
 	var (
 		nftTicket     *pastel.NFTTicket
@@ -35,7 +35,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 		senseTicket   *pastel.APISenseTicket
 	)
 
-	log.WithContext(ctx).Info("retrieving block no and verbose")
+	log.WithContext(ctx).Debug("retrieving block no and verbose")
 	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get current block count")
@@ -47,7 +47,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 		return nil, err
 	}
 	merkleroot := blkVerbose1.MerkleRoot
-	logger.Info("block count & merkelroot has been retrieved")
+	logger.Debug("block count & merkelroot has been retrieved")
 
 	verificationMsg := &types.SelfHealingMessage{
 		TriggerID:   incomingResponseMessage.TriggerID,
@@ -76,17 +76,17 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 		return nil, nil
 	}
 
-	logger.WithField("ticket_txid", ticket.TxID).Info("starting self-healing verification for the ticket")
+	logger.WithField("ticket_txid", ticket.TxID).Debug("starting self-healing verification for the ticket")
 	nftTicket, cascadeTicket, senseTicket, err = task.getTicket(ctx, ticket.TxID, TicketType(ticket.TicketType))
 	if err != nil {
 		logger.WithError(err).Error("Error getRelevantTicketFromMsg")
 	}
-	logger.Info("reg ticket has been retrieved for verification")
+	logger.Debug("reg ticket has been retrieved for verification")
 
 	if cascadeTicket != nil || nftTicket != nil {
 		isReconstructionReq := task.isReconstructionRequired(ctx, ticket.MissingKeys)
 		if !isReconstructionReq {
-			logger.WithField("ticket_txid", ticket.TxID).Error("reconstruction is not required for ticket")
+			logger.WithField("ticket_txid", ticket.TxID).Debug("reconstruction is not required for ticket")
 
 			if !ticket.IsReconstructionRequired {
 				logger.WithField("ticket_txid", ticket.TxID).
@@ -126,7 +126,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 			log.WithContext(ctx).WithError(err).Error("Error self-healing the file")
 		}
 
-		logger.Info("comparing data hashes")
+		logger.Debug("comparing data hashes")
 		if !bytes.Equal(reconstructedFileHash, ticket.ReconstructedFileHash) {
 			logger.WithContext(ctx).WithField("txid", ticket.TxID).Info("reconstructed file hash does not match with the verifier reconstructed file")
 			verificationMsg.SelfHealingMessageData.Verification.VerifiedTicket = types.VerifiedTicket{
@@ -194,7 +194,7 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 		var fileHash []byte
 		fileHash, err = task.getReconstructedFileHashForVerification(ctx, sortedFiles)
 		if err != nil {
-			logger.WithField("ticket_txid", ticket.TxID).Info("error getting reconstructed sense file hash")
+			logger.WithField("ticket_txid", ticket.TxID).Debug("error getting reconstructed sense file hash")
 		}
 
 		if bytes.Equal(fileHash, incomingResponseMessage.SelfHealingMessageData.Response.RespondedTicket.ReconstructedFileHash) {
@@ -230,25 +230,6 @@ func (task *SHTask) VerifySelfHealingChallenge(ctx context.Context, incomingResp
 	return task.prepareAndSendVerificationMsg(ctx, *verificationMsg)
 }
 
-func compareFileIDs(verifyingFileIDs []string, processedFileIDs []string) bool {
-	verifyingFileIDsMap := make(map[string]bool)
-	for _, id := range verifyingFileIDs {
-		verifyingFileIDsMap[id] = false
-	}
-
-	for _, id := range processedFileIDs {
-		verifyingFileIDsMap[id] = true
-	}
-
-	for _, IsMatched := range verifyingFileIDsMap {
-		if !IsMatched {
-			return false
-		}
-	}
-
-	return true //all file ids matched
-}
-
 func (task *SHTask) validateSelfHealingResponseIncomingData(ctx context.Context, incomingChallengeMessage types.SelfHealingMessage) error {
 	if incomingChallengeMessage.MessageType != types.SelfHealingResponseMessage {
 		return fmt.Errorf("incorrect message type to processing self-healing challenge")
@@ -277,7 +258,7 @@ func (task *SHTask) prepareAndSendVerificationMsg(ctx context.Context, verificat
 		log.WithContext(ctx).WithError(err).Error("error signing the self-healing verification msg")
 	}
 	verificationMsg.SenderSignature = signature
-	logger.Info("verification msg has been signed")
+	logger.Debug("verification msg has been signed")
 
 	msg := &pb.SelfHealingMessage{
 		TriggerId:       verificationMsg.TriggerID,
@@ -346,7 +327,7 @@ func (task *SHTask) getReconstructedFileHashForVerification(ctx context.Context,
 			continue
 		}
 
-		log.WithContext(ctx).Info("sense reconstructed file hash has been generated for verification")
+		log.WithContext(ctx).Debug("sense reconstructed file hash has been generated for verification")
 
 		return fileHash, nil
 	}
