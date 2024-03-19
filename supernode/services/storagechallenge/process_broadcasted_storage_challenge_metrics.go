@@ -11,7 +11,7 @@ import (
 func (task *SCTask) ProcessBroadcastStorageChallengeMetrics(ctx context.Context, req types.ProcessBroadcastChallengeMetricsRequest) error {
 	logger := log.WithContext(ctx).WithField("sender_id", req.SenderID)
 
-	logger.Info("storage-challenge metrics broadcast msg has been received")
+	logger.Debug("storage-challenge metrics broadcast msg has been received")
 
 	metrics, err := task.decompressData(req.Data)
 	if err != nil {
@@ -24,6 +24,6 @@ func (task *SCTask) ProcessBroadcastStorageChallengeMetrics(ctx context.Context,
 		return err
 	}
 
-	logger.Info("sc metrics have been stored")
+	logger.Debug("sc metrics have been stored")
 	return nil
 }

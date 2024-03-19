@@ -22,47 +22,40 @@ const (
 
 // VerifyEvaluationResult process the evaluation report from the challenger by the observers
 func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluationResult types.Message) (types.Message, error) {
-	log.WithContext(ctx).WithField("method", "VerifyEvaluationResult").WithField("challengeID", incomingEvaluationResult.ChallengeID).
-		Debug("Start verifying challenger's evaluation report") // Incoming evaluation report validation
+	logger := log.WithContext(ctx).WithField("method", "VerifyEvaluationResult").WithField("sc_challenge_id", incomingEvaluationResult.ChallengeID)
 
 	if err := task.validateVerifyingStorageChallengeEvaluationReport(ctx, incomingEvaluationResult); err != nil {
 		return types.Message{}, err
 	}
-	log.WithContext(ctx).WithField("incoming_evaluation", incomingEvaluationResult).Info("Incoming evaluation " +
-		"signature validated")
-
 	receivedAt := time.Now().UTC()
 
 	//if observers then save the evaluation message
 	if task.isObserver(incomingEvaluationResult.Data.Observers) {
-		logger := log.WithContext(ctx).WithField("node_id", task.nodeID)
-
 		if err := task.StoreChallengeMessage(ctx, incomingEvaluationResult); err != nil {
-			log.WithContext(ctx).
-				WithField("node_id", task.nodeID).
-				WithError(err).
-				Error("error storing challenge message")
+			logger.WithError(err).Error("error storing challenge message")
 		}
 
-		logger.Info("evaluation report by challenger has been stored by the observer")
+		logger.Debug("evaluation report by challenger has been stored by the observer")
 	} else {
-		log.WithContext(ctx).WithField("node_id", task.nodeID).Info("not the observer to process evaluation report")
+		logger.Debug("not the observer to process evaluation report")
 		return types.Message{}, nil
 	}
 
+	logger.Info("Storage Challenge evaluation report verification started")
+
 	if err := task.SCService.P2PClient.EnableKey(ctx, incomingEvaluationResult.Data.Challenge.FileHash); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error enabling the symbol file")
+		logger.WithError(err).Error("error enabling the symbol file")
 	}
 
 	//retrieve messages from the DB against challengeID
 	challengeMessage, responseMessage, err := task.retrieveChallengeAndResponseMessageForEvaluationReportVerification(ctx, incomingEvaluationResult.ChallengeID)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error retrieving the challenge and response message for verification")
+		logger.WithError(err).Error("error retrieving the challenge and response message for verification")
 		return types.Message{}, err
 	}
 
 	if challengeMessage == nil || responseMessage == nil {
-		log.WithContext(ctx).Error("unable to retrieve challenge or response message")
+		logger.Error("unable to retrieve challenge or response message")
 		return types.Message{}, errors.Errorf("unable to retrieve challenge or response message")
 	}
 
@@ -77,7 +70,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	//Verify message signatures
 	isChallengerSignatureOk, isRecipientSignatureOk, err := task.verifyMessageSignaturesForEvaluation(ctx, *challengeMessage, *responseMessage)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("challenge_id", incomingEvaluationResult.ChallengeID).
+		logger.WithError(err).WithField("challenge_id", incomingEvaluationResult.ChallengeID).
 			Error("error verifying signatures for evaluation")
 		return types.Message{}, errors.Errorf("error verifying signatures for evalaution")
 	}
@@ -90,10 +83,9 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	isChallengeBlockAndMROk, isResponseBlockAndMROk := task.verifyMerkelrootAndBlockNum(ctx, *challengeMessage, *responseMessage, incomingEvaluationResult)
 
 	//Get the file assuming we host it locally (if not, return)
-	log.WithContext(ctx).Info("getting the file from hash to verify evaluation report")
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingEvaluationResult.Data.Challenge.FileHash, true)
 	if err != nil {
-		log.WithContext(ctx).WithField("method", "VerifyEvaluationResult").WithField("challengeID", incomingEvaluationResult.ChallengeID).Error("could not read local file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
+		logger.WithError(err).Error("could not read local file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
 
 		observerEvaluation := types.Message{
 			MessageType: types.AffirmationMessageType,
@@ -138,26 +130,20 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 		}
 
 		if err := task.StoreStorageChallengeMetric(ctx, observerEvaluation); err != nil {
-			log.WithContext(ctx).WithField("challenge_id", observerEvaluation.ChallengeID).
-				WithField("message_type", observerEvaluation.MessageType).Error(
-				"error storing storage challenge metric")
+			logger.WithError(err).Error("error storing storage challenge metric")
 		}
 
 		signature, _, err := task.SignMessage(ctx, observerEvaluation.Data)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("error signing evaluation response")
+			logger.WithError(err).Error("error signing evaluation response")
 		}
 		observerEvaluation.SenderSignature = signature
 
 		return observerEvaluation, nil
 	}
-	log.WithContext(ctx).Info("file has been retrieved for verification of evaluation report")
 
 	//Compute the hash of the data at the indicated byte range
-	log.WithContext(ctx).Info("generating hash for the data against given indices")
 	challengeCorrectHash := task.computeHashOfFileSlice(challengeFileData, incomingEvaluationResult.Data.Challenge.StartIndex, incomingEvaluationResult.Data.Challenge.EndIndex)
-	log.WithContext(ctx).Info("hash of the data has been generated against the given indices")
-
 	isEvaluationResultOk, reason := task.verifyEvaluationResult(ctx, incomingEvaluationResult, challengeCorrectHash)
 
 	evaluationResultResponse := types.Message{
@@ -204,25 +190,19 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	}
 
 	if err := task.StoreStorageChallengeMetric(ctx, evaluationResultResponse); err != nil {
-		log.WithContext(ctx).WithField("challenge_id", evaluationResultResponse.ChallengeID).
-			WithField("message_type", evaluationResultResponse.MessageType).Error(
-			"error storing storage challenge metric")
+		logger.WithError(err).Error("error storing storage challenge metric")
 	}
-
-	logger := log.WithContext(ctx).WithField("challenge_id", evaluationResultResponse.ChallengeID).
-		WithField("node_id", task.nodeID)
 
 	signature, _, err := task.SignMessage(ctx, evaluationResultResponse.Data)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error signing evaluation response")
+		logger.WithError(err).Error("error signing evaluation response")
 	}
 	evaluationResultResponse.SenderSignature = signature
-	logger.Info("evaluation report has been signed")
 
 	if err := task.StoreChallengeMessage(ctx, evaluationResultResponse); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error storing evaluation response ")
+		logger.WithError(err).Error("error storing evaluation response ")
 	}
-	logger.Info("evaluation report has been stored")
+	logger.WithField("node_id", task.nodeID).Info("evaluation report has been evaluated")
 
 	return evaluationResultResponse, nil
 }
@@ -244,7 +224,7 @@ func (task SCTask) RetrieveChallengeMessage(ctx context.Context, challengeID str
 			log.WithContext(ctx).WithError(err).Error("Error retrieving challenge message from DB")
 			return nil, err
 		}
-		log.WithContext(ctx).Info("storage challenge msg retrieved")
+		log.WithContext(ctx).Debug("storage challenge msg retrieved")
 
 		var data types.MessageData
 		err = json.Unmarshal(msg.Data, &data)
@@ -285,12 +265,12 @@ func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 	isChallengeTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Challenge.Timestamp.UTC(),
 		challengeMessage.Data.Challenge.Timestamp.UTC(), challengeMessage.CreatedAt.UTC(),
 		challengeMessage.ChallengeID, challengeMessage.MessageType)
-	log.WithContext(ctx).Info("challenge message timestamps have been verified successfully")
+	log.WithContext(ctx).Info("challenge message timestamps have been evaluated successfully")
 
 	isResponseTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Response.Timestamp.UTC(),
 		responseMessage.Data.Response.Timestamp.UTC(), responseMessage.CreatedAt.UTC(),
 		responseMessage.ChallengeID, responseMessage.MessageType)
-	log.WithContext(ctx).Info("response message timestamps have been verified successfully")
+	log.WithContext(ctx).Info("response message timestamps have been evaluated successfully")
 
 	differenceBetweenEvaluationMsgSendAndRecvTime := incomingEvaluationResult.Data.ChallengerEvaluation.Timestamp.Sub(evaluationMsgRecvTime)
 	if differenceBetweenEvaluationMsgSendAndRecvTime < 0 {
@@ -299,7 +279,7 @@ func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 
 	var evaluationReportTSOk bool
 	if differenceBetweenEvaluationMsgSendAndRecvTime <= timestampTolerance {
-		log.WithContext(ctx).Info("evaluation message timestamp is verified successfully")
+		log.WithContext(ctx).Info("evaluation message timestamp is evaluated successfully")
 		evaluationReportTSOk = true
 	} else {
 		log.WithContext(ctx).Info("the time diff between the evaluation report send and receive time, exceeds the tolerance limit")
@@ -317,7 +297,7 @@ func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 	if evaluationReportTSOk && overallChallengeTSOk {
 		isEvaluationTSOk = true
 	}
-	log.WithContext(ctx).Info("evaluation report & overall time taken by challenge has been verified successfully")
+	log.WithContext(ctx).Info("evaluation report & overall time taken by challenge has been evaluated successfully")
 
 	return isChallengeTSOk, isResponseTSOk, isEvaluationTSOk
 }

@@ -29,13 +29,13 @@ func (task *HCTask) VerifyHealthCheckEvaluationResult(ctx context.Context, incom
 	if err := task.validateVerifyingHealthCheckChallengeEvaluationReport(ctx, incomingEvaluationResult); err != nil {
 		return types.HealthCheckMessage{}, err
 	}
-	logger.Info("Incoming evaluation signature validated")
+	logger.Debug("Incoming evaluation signature validated")
 
 	receivedAt := time.Now().UTC()
 
 	//if observers then save the evaluation message
 	if task.isObserver(incomingEvaluationResult.Data.Observers) {
-		logger := logger.WithField("node_id", task.nodeID)
+		logger.WithField("node_id", task.nodeID)
 
 		if err := task.StoreChallengeMessage(ctx, incomingEvaluationResult); err != nil {
 			logger.
@@ -44,9 +44,9 @@ func (task *HCTask) VerifyHealthCheckEvaluationResult(ctx context.Context, incom
 				Error("error storing challenge message")
 		}
 
-		logger.Info("health-check challenge evaluation report by challenger has been stored by the observer")
+		logger.Debug("health-check challenge evaluation report by challenger has been stored by the observer")
 	} else {
-		logger.WithField("node_id", task.nodeID).Info("not the observer to process evaluation report")
+		logger.WithField("node_id", task.nodeID).Debug("not the observer to process evaluation report")
 		return types.HealthCheckMessage{}, nil
 	}
 
@@ -124,11 +124,11 @@ func (task *HCTask) VerifyHealthCheckEvaluationResult(ctx context.Context, incom
 		logger.WithError(err).Error("error signing evaluation response")
 	}
 	evaluationResultResponse.SenderSignature = signature
-	logger.Info("evaluation report has been signed")
+
 	if err := task.StoreChallengeMessage(ctx, evaluationResultResponse); err != nil {
 		logger.WithError(err).Error("error storing evaluation response ")
 	}
-	logger.Info("evaluation report has been stored")
+	logger.WithField("node_id", task.nodeID).Info("evaluation report has been evaluated by observer")
 
 	return evaluationResultResponse, nil
 }

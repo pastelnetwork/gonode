@@ -15,13 +15,13 @@ import (
 func (task *SCTask) BroadcastStorageChallengeResult(ctx context.Context, incomingBroadcastMsg types.BroadcastMessage) (types.Message, error) {
 	log.WithContext(ctx).WithField("method", "BroadcastStorageChallengeResult").
 		WithField("challengeID", incomingBroadcastMsg.ChallengeID).
-		Info("Start processing broadcasting message") // Incoming challenge message validation
+		Debug("Start processing broadcasting message") // Incoming challenge message validation
 
 	if err := task.storeBroadcastChallengeMsg(ctx, incomingBroadcastMsg); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error storing broadcast message")
 	}
 	log.WithContext(ctx).WithField("challenge_id", incomingBroadcastMsg.ChallengeID).
-		Info("Broadcast message has been stored")
+		Debug("Broadcast message has been stored")
 
 	return types.Message{}, nil
 }
@@ -52,7 +52,7 @@ func (task *SCTask) storeBroadcastChallengeMsg(ctx context.Context, msg types.Br
 	}
 
 	if store != nil {
-		log.WithContext(ctx).Info("store")
+		log.WithContext(ctx).Debug("store")
 		broadcastMsgLog := types.BroadcastLogMessage{
 			ChallengeID: msg.ChallengeID,
 			Challenger:  challengerNodeIDAndAddress,

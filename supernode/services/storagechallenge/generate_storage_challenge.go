@@ -24,54 +24,35 @@ import (
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
-//Generate storage challenge tasks when a new block is detected
-// Order of operations:
-// List all NFT tickets, get their raptorq ids
-// Identify which raptorq files are currently hosted on this node
-// Identify current block number
-// Identify merkle root from current block
-// Get a list of supernodes
-// Calculate the number of supernodes to issue challenge per block
-// Calculate the challenges per challenger
-// Identify which supernodes should issue challenges for this block
-// determine if this node is a challenger, continue if so
-// Identify which files should be challenged
-// Identify which supernodes have our file
-// Identify challenge slice indices
-// Set relevant outgoing challenge message details
-// Send the storage challenge message for processing by the responder
-// Save the challenge state
-
 // GenerateStorageChallenges is called from service run, generate storage challenges will determine if we should issue a storage challenge,
 // and if so calculate and issue it.
 func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
-	log.WithContext(ctx).Println("Generate Storage Challenge invoked")
-	// List all NFT tickets and API Cascade Tickets, get their raptorq ids
-	// list all RQ symbol keys from nft and action tickets
+	logger := log.WithContext(ctx).WithField("Method", "GenerateStorageChallenge")
+	logger.Info("invoked")
 
-	log.WithContext(ctx).Info("retrieving block no and verbose")
+	logger.Debug("retrieving block no and verbose")
 	currentBlockCount, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not get current block count")
+		logger.WithError(err).Error("could not get current block count")
 		return err
 	}
 	blkVerbose1, err := task.SuperNodeService.PastelClient.GetBlockVerbose1(ctx, currentBlockCount)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not get current block verbose 1")
+		logger.WithError(err).Error("could not get current block verbose 1")
 		return err
 	}
 
 	//current block hash
 	merkleroot := blkVerbose1.MerkleRoot
-	log.WithContext(ctx).Info("block no and verbose retrieved")
+	logger.Debug("block no and verbose retrieved")
 
 	// Identify challengers
 	sliceOfChallengingSupernodeIDsForBlock, _, _, err := task.getChallengers(ctx, merkleroot)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("error identifying challengers")
+		logger.WithError(err).Error("error identifying challengers")
 		return err
 	}
-	log.WithContext(ctx).WithField("node_id", task.nodeID).Info("challengers have been selected")
+	logger.WithField("node_id", task.nodeID).Info("challengers have been selected")
 
 	//If we are in the sliceOfChallengingSupernodeIDsForBlock, we need to generate a storage challenge, Otherwise we don't.
 	var challengingSupernodeID string
@@ -81,40 +62,39 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 	}
 	challengingSupernodeID = task.nodeID
 
-	log.WithContext(ctx).Info("list symbol file keys from registered nft tickets")
 	sliceOfFileHashes, err := task.ListSymbolFileKeysFromNFTAndActionTickets(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
+		logger.WithError(err).Error("could not get list symbol file keys")
 		return err
 	}
-	log.WithContext(ctx).Info("symbol file keys from registered nft tickets have been retrieved")
+	logger.Debug("symbol file keys from registered nft tickets have been retrieved")
 
 	// Identify which raptorq files are currently hosted on this node
 	sliceOfFileHashesStoredByLocalSupernode := task.getFilesStoredByLocalSN(ctx, sliceOfFileHashes)
-	log.WithContext(ctx).Info("slice of file hashes stored by local SN has been retrieved")
+	logger.Debug("slice of file hashes stored by local SN has been retrieved")
 
 	if len(sliceOfFileHashesStoredByLocalSupernode) == 0 {
-		log.WithContext(ctx).Warn("no files are hosted on this node - exiting")
+		logger.Info("no files are hosted on this node - exiting")
 		return nil
 	}
 
 	// Identify which files should be challenged, their recipients and observers
 	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, defaultChallengeReplicas, sliceOfFileHashesStoredByLocalSupernode)
-	log.WithContext(ctx).Info("challenging file hashes stored by local SN has been retrieved")
+	logger.Info("file hashes to challenge stored by local SN have been retrieved")
 
-	log.WithContext(ctx).Info("identifying challenge recipients and partial observers")
 	sliceOfSupernodesToChallenge, challengeFileObservers := task.identifyChallengeRecipientsAndObserversAgainstChallengingFiles(ctx, sliceOfFileHashesToChallenge, merkleroot, challengingSupernodeID)
+	logger.Info("challenge recipients and partial observers have been identified")
 
 	for idx2, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
 		b, err := task.GetSymbolFileByKey(ctx, currentFileHashToChallenge, true)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("Supernode %s encountered an error generating storage challenges", challengingSupernodeID)
+			logger.WithError(err).Errorf("Supernode %s encountered an error generating storage challenges", challengingSupernodeID)
 			continue
 		}
 
 		challengeDataSize := uint64(len(b))
 		if challengeDataSize == 0 {
-			log.WithContext(ctx).Errorf("Supernode %s encountered an invalid file while attempting to generate a storage challenge for file hash %s", challengingSupernodeID, currentFileHashToChallenge)
+			logger.Errorf("Supernode %s encountered an invalid file while attempting to generate a storage challenge for file hash %s", challengingSupernodeID, currentFileHashToChallenge)
 			continue
 		}
 
@@ -149,22 +129,22 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		}
 
 		if err := task.StoreStorageChallengeMetric(ctx, storageChallengeMessage); err != nil {
-			log.WithContext(ctx).WithField("challenge_id", challengeID).
+			logger.WithField("challenge_id", challengeID).
 				WithField("message_type", storageChallengeMessage.MessageType).Error(
 				"error storing storage challenge metric")
 		}
 
-		log.WithContext(ctx).WithField("challenge_id", challengeID).WithField("file_hash", currentFileHashToChallenge).
-			Info("sending challenge for processing")
 		// Send the storage challenge message for processing by the responder
 		if err = task.sendProcessStorageChallenge(ctx, storageChallengeMessage); err != nil {
-			log.WithContext(ctx).WithError(err).WithField("challenge_id", storageChallengeMessage.ChallengeID).
+			logger.WithError(err).WithField("challenge_id", storageChallengeMessage.ChallengeID).
 				Error("Error processing storage challenge: ")
 		}
-		// Save the challenge state
+
+		logger.WithField("challenge_id", challengeID).WithField("file_hash", currentFileHashToChallenge).
+			Info("challenge sent for processing to recipient & observers")
 	}
 
-	log.WithContext(ctx).Info("files have been challenged")
+	logger.Info("files have been challenged")
 	return nil
 }
 
@@ -219,18 +199,18 @@ func (task *SCTask) sendProcessStorageChallenge(ctx context.Context, challengeMe
 				return
 			}
 
-			logger.Info("challenge message has been sent")
+			logger.Debug("challenge message has been sent")
 		}()
 	}
 	wg.Wait()
-	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Info("challenge message has been sent to observers")
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Debug("challenge message has been sent to observers")
 
 	if err := task.SendMessage(ctx, &msg, recipientNode.ExtAddress); err != nil {
 		log.WithContext(ctx).WithField("node_address", recipientNode.ExtAddress).WithError(err).Error("error sending storage challenge message to recipient for processing")
 		return err
 	}
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).
-		WithField("node_address", recipientNode.ExtAddress).Info("challenge message has been sent to recipient")
+		WithField("node_address", recipientNode.ExtAddress).Debug("challenge message has been sent to recipient")
 
 	return nil
 }
@@ -293,7 +273,7 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 	for _, mn := range supernodes {
 		if mn.ExtAddress == "" || mn.ExtKey == "" {
 			log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeID).WithField("method", "sendProcessStorageChallenge").
-				WithField("node_id", mn.ExtKey).Warn("node address or node id is empty")
+				WithField("node_id", mn.ExtKey).Debug("node address or node id is empty")
 
 			continue
 		}
@@ -311,14 +291,14 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 			if value, ok := mapSupernodes[po]; ok {
 				nodesToConnect = append(nodesToConnect, value)
 			} else {
-				log.WithContext(ctx).WithField("observer_id", po).Info("observer not found in masternode list")
+				logger.WithField("observer_id", po).Info("observer not found in masternode list")
 			}
 		}
 
 		// and challenge recipient
 		nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.RecipientID])
 
-		logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
+		logger.WithField("nodes_to_connect", nodesToConnect).Debug("nodes to send msg have been selected")
 		return nodesToConnect, nil
 	case types.ResponseMessageType:
 		//should process and send by recipient only
@@ -328,14 +308,14 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 				if value, ok := mapSupernodes[po]; ok {
 					nodesToConnect = append(nodesToConnect, value)
 				} else {
-					log.WithContext(ctx).WithField("observer_id", po).Info("observer not found in masternode list")
+					logger.WithField("observer_id", po).Info("observer not found in masternode list")
 				}
 			}
 
 			//and challenger
 			nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.ChallengerID])
 
-			logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
+			logger.WithField("nodes_to_connect", nodesToConnect).Debug("nodes to send msg have been selected")
 			return nodesToConnect, nil
 		}
 
@@ -351,11 +331,11 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 				if value, ok := mapSupernodes[po]; ok {
 					nodesToConnect = append(nodesToConnect, value)
 				} else {
-					log.WithContext(ctx).WithField("observer_id", po).Info("observer not found in masternode list")
+					logger.WithField("observer_id", po).Info("observer not found in masternode list")
 				}
 			}
 
-			logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
+			logger.WithField("nodes_to_connect", nodesToConnect).Debug("nodes to send msg have been selected")
 			return nodesToConnect, nil
 		}
 
@@ -375,7 +355,7 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 
 // SendMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
 func (task *SCTask) SendMessage(ctx context.Context, challengeMessage *pb.StorageChallengeMessage, processingSupernodeAddr string) error {
-	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Info("Sending storage challenge to processing supernode address: " + processingSupernodeAddr)
+	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Debug("Sending storage challenge to processing supernode address: " + processingSupernodeAddr)
 
 	//Connect over grpc
 	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
@@ -413,7 +393,7 @@ func (task SCTask) isMyNodeChallenger(ctx context.Context, sliceOfChallengingSup
 }
 
 func (task SCTask) getFilesStoredByLocalSN(ctx context.Context, sliceOfFileHashes []string) (sliceOfFileHashesStoredByLocalSupernode []string) {
-	log.WithContext(ctx).WithField("len_slice_of_file_hashes", len(sliceOfFileHashes)).Info("identifying which files are currently hosted on this node")
+	log.WithContext(ctx).WithField("len_slice_of_file_hashes", len(sliceOfFileHashes)).Debug("identifying which files are currently hosted on this node")
 
 	totalLen := len(sliceOfFileHashes)
 	sliceOfFileHashesStoredByLocalSupernode = make([]string, 0, totalLen)
@@ -426,7 +406,7 @@ func (task SCTask) getFilesStoredByLocalSN(ctx context.Context, sliceOfFileHashe
 			}
 
 			if !stored {
-				log.WithContext(ctx).WithField("file_hash", sliceOfFileHashes[i]).Info("file hash is in map but not stored")
+				log.WithContext(ctx).WithField("file_hash", sliceOfFileHashes[i]).Debug("file hash is in map but not stored")
 				continue
 			}
 
@@ -441,15 +421,13 @@ func (task SCTask) getFilesStoredByLocalSN(ctx context.Context, sliceOfFileHashe
 }
 
 func (task SCTask) getChallengers(ctx context.Context, merkleRoot string) (sliceOfChallengers []string, challengersPerBlock, challengesPerBlock int, err error) {
-	log.WithContext(ctx).Info("retrieving list of all super nodes")
+	log.WithContext(ctx).Debug("retrieving list of all super nodes")
 	listOfSupernodes, err := task.GetListOfSupernode(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get list of Supernode using pastel client")
 		return nil, 0, 0, err
 	}
-	log.WithContext(ctx).Info("list of supernodes have been retrieved")
 
-	log.WithContext(ctx).Info("identifying no of challengers & challenges to issue for this block")
 	numberOfSupernodesDividedByThree := int(math.Ceil(float64(len(listOfSupernodes)) / 3))
 	// Calculate the number of supernodes to issue challenge per block
 	challengersPerBlock = numberOfSupernodesDividedByThree
@@ -463,13 +441,12 @@ func (task SCTask) getChallengers(ctx context.Context, merkleRoot string) (slice
 }
 
 func (task SCTask) getChallengingFiles(ctx context.Context, merkleRoot, challengerNodeID string, challengesPerBlock int, sliceOfFileHashesStoredByLocalSupernode []string) (sliceOfFileHashesToChallenge []string) {
-	log.WithContext(ctx).Info("identifying the files to challenge")
 	comparisonStringForFileHashSelection := merkleRoot + challengerNodeID
 	comparisonStringHashForChallengeFileSelection := utils.GetHashFromString(comparisonStringForFileHashSelection)
 
-	log.WithContext(ctx).Info(fmt.Sprintf("comparison string hash for challenge file selection:%s", comparisonStringHashForChallengeFileSelection))
+	log.WithContext(ctx).Debug(fmt.Sprintf("comparison string hash for challenge file selection:%s", comparisonStringHashForChallengeFileSelection))
 	sliceOfFileHashesToChallenge = task.GetNClosestFileHashesToAGivenComparisonString(ctx, challengesPerBlock, comparisonStringHashForChallengeFileSelection, sliceOfFileHashesStoredByLocalSupernode)
-	log.WithContext(ctx).Info(fmt.Sprintf("total files to challenge are:%d", len(sliceOfFileHashesToChallenge)))
+	log.WithContext(ctx).Debug(fmt.Sprintf("total files to challenge are:%d", len(sliceOfFileHashesToChallenge)))
 
 	return sliceOfFileHashesToChallenge
 
@@ -481,20 +458,20 @@ func (task SCTask) identifyChallengeRecipientsAndObserversAgainstChallengingFile
 
 	// Identify which supernodes have our file to challenge
 	for idx1, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
-		log.WithContext(ctx).WithField("no_of_challenge_replicas", defaultNumberOfChallengeReplicas).Info("no of closest nodes to find against the file hash")
+		log.WithContext(ctx).WithField("no_of_challenge_replicas", defaultNumberOfChallengeReplicas).Debug("no of closest nodes to find against the file hash")
 		sliceOfSupernodesStoringFileHashExcludingChallenger := task.GetNClosestSupernodesToAGivenFileUsingKademlia(ctx, defaultNumberOfChallengeReplicas, currentFileHashToChallenge, challengerNodeID)
-		log.WithContext(ctx).WithField("slice_of_supernodes_ex_challenger_len", len(sliceOfSupernodesStoringFileHashExcludingChallenger)).Info("slice of closest sns excluding challenger have been retrieved")
+		log.WithContext(ctx).WithField("slice_of_supernodes_ex_challenger_len", len(sliceOfSupernodesStoringFileHashExcludingChallenger)).Debug("slice of closest sns excluding challenger have been retrieved")
 
 		comparisonStringForSupernodeSelection := merkleRoot + currentFileHashToChallenge + challengerNodeID + utils.GetHashFromString(fmt.Sprint(idx1))
 
 		respondingSupernodeIDs := task.GetNClosestSupernodeIDsToComparisonString(ctx, 1, comparisonStringForSupernodeSelection, sliceOfSupernodesStoringFileHashExcludingChallenger)
 		if len(respondingSupernodeIDs) < 1 {
-			log.WithContext(ctx).WithField("file_hash", currentFileHashToChallenge).Info("no closest nodes have found against the file")
+			log.WithContext(ctx).WithField("file_hash", currentFileHashToChallenge).Debug("no closest nodes have found against the file")
 			continue
 		}
 
 		sliceOfSupernodesToChallenge[idx1] = respondingSupernodeIDs[0] //challenge recipient
-		log.WithContext(ctx).WithField("challenge_recipient", respondingSupernodeIDs[0]).Info("challenge recipient has been selected")
+		log.WithContext(ctx).WithField("challenge_recipient", respondingSupernodeIDs[0]).Debug("challenge recipient has been selected")
 
 		//partial observers
 		for _, sn := range sliceOfSupernodesStoringFileHashExcludingChallenger {
@@ -505,7 +482,7 @@ func (task SCTask) identifyChallengeRecipientsAndObserversAgainstChallengingFile
 			mapOfchallengeFilePartialObservers[idx1] = append(mapOfchallengeFilePartialObservers[idx1], sn)
 		}
 
-		log.WithContext(ctx).WithField("partial_observers_map", mapOfchallengeFilePartialObservers).Info("partial observers have been selected")
+		log.WithContext(ctx).WithField("partial_observers_map", mapOfchallengeFilePartialObservers).Debug("partial observers have been selected")
 	}
 
 	return sliceOfSupernodesToChallenge, mapOfchallengeFilePartialObservers
@@ -528,7 +505,7 @@ func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message)
 	}
 
 	if store != nil {
-		log.WithContext(ctx).Info("store")
+		log.WithContext(ctx).Debug("store")
 		storageChallengeLog := types.StorageChallengeLogMessage{
 			ChallengeID:     msg.ChallengeID,
 			MessageType:     int(msg.MessageType),
@@ -543,7 +520,7 @@ func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message)
 				log.WithContext(ctx).WithField("challenge_id", msg.ChallengeID).
 					WithField("message_type", msg.MessageType).
 					WithField("sender_id", msg.Sender).
-					Info("message already exists, not updating")
+					Debug("message already exists, not updating")
 
 				return nil
 			}
@@ -573,7 +550,7 @@ func (task *SCTask) StoreStorageChallengeMetric(ctx context.Context, msg types.M
 	}
 
 	if store != nil {
-		log.WithContext(ctx).Info("store")
+		log.WithContext(ctx).Debug("store")
 		storageChallengeLog := types.StorageChallengeMetric{
 			ChallengeID: msg.ChallengeID,
 			MessageType: int(msg.MessageType),
@@ -587,7 +564,7 @@ func (task *SCTask) StoreStorageChallengeMetric(ctx context.Context, msg types.M
 				log.WithContext(ctx).WithField("challenge_id", msg.ChallengeID).
 					WithField("message_type", msg.MessageType).
 					WithField("sender_id", msg.Sender).
-					Info("message already exists, not updating")
+					Debug("message already exists, not updating")
 
 				return nil
 			}

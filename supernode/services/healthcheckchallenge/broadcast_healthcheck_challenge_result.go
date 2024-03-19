@@ -15,13 +15,13 @@ import (
 func (task *HCTask) BroadcastHealthCheckChallengeResult(ctx context.Context, incomingBroadcastMsg types.BroadcastHealthCheckMessage) (types.HealthCheckMessage, error) {
 	log.WithContext(ctx).WithField("method", "BroadcastHealthCheckChallengeResult").
 		WithField("challengeID", incomingBroadcastMsg.ChallengeID).
-		Info("Start processing broadcasting message") // Incoming challenge message validation
+		Debug("Start processing broadcasting message") // Incoming challenge message validation
 
 	if err := task.storeBroadcastChallengeMsg(ctx, incomingBroadcastMsg); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error storing broadcast message")
 	}
 	log.WithContext(ctx).WithField("challenge_id", incomingBroadcastMsg.ChallengeID).
-		Info("Broadcast message has been stored")
+		Debug("Broadcast message has been stored")
 
 	return types.HealthCheckMessage{}, nil
 }

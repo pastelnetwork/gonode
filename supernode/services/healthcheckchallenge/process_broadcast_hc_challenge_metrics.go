@@ -11,7 +11,7 @@ import (
 func (task *HCTask) ProcessBroadcastHealthCheckChallengeMetrics(ctx context.Context, req types.ProcessBroadcastHealthCheckChallengeMetricsRequest) error {
 	logger := log.WithContext(ctx).WithField("sender_id", req.SenderID)
 
-	logger.Info("healthcheck-challenge metrics broadcast msg has been received")
+	logger.Debug("healthcheck-challenge metrics broadcast msg has been received")
 
 	metrics, err := task.decompressData(req.Data)
 	if err != nil {
@@ -24,6 +24,6 @@ func (task *HCTask) ProcessBroadcastHealthCheckChallengeMetrics(ctx context.Cont
 		return err
 	}
 
-	logger.Info("hc metrics have been stored")
+	logger.Debug("hc metrics have been stored")
 	return nil
 }

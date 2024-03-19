@@ -16,7 +16,7 @@ import (
 
 // BroadcastHealthCheckChallengeMetrics worker broadcasts the metrics to the entire network
 func (task *HCTask) BroadcastHealthCheckChallengeMetrics(ctx context.Context) error {
-	log.WithContext(ctx).Infoln("BroadcastHealthCheckChallengeMetrics has been invoked")
+	log.WithContext(ctx).Debug("BroadcastHealthCheckChallengeMetrics has been invoked")
 
 	pingInfos, err := task.historyDB.GetAllPingInfoForOnlineNodes()
 	if err != nil {
