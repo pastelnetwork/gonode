@@ -53,11 +53,13 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 	}
 
 	if len(topNodes) < 3 {
+		log.WithContext(ctx).Error("failed to get sufficient nodes")
 		return metrics.Metrics{}, fmt.Errorf("no top nodes found")
 	}
 
 	signature, err := service.pastelHandler.PastelClient.Sign(ctx, []byte(req.PastelID), req.PastelID, req.Passphrase, pastel.SignAlgorithmED448)
 	if err != nil {
+		log.WithContext(ctx).Info("invalid pid/passphrase")
 		return metrics.Metrics{}, fmt.Errorf("invalid pid/passphrase: %w", err)
 	}
 
@@ -77,7 +79,6 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 			defer wg.Done()
 
 			data, err := service.fetchMetricsFromNode(ip, req.PastelID, string(signature), req.From, req.To)
-			log.WithContext(ctx).Infof("Summary Stats response: %v", data)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch summary stats from node")
 
@@ -91,6 +92,7 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 
 				return
 			}
+			log.WithContext(ctx).Infof("Summary Stats response: %v", data)
 
 			// add results to map and increment success counter
 			func() {
@@ -115,6 +117,7 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 
 	// Proceed only if at least 3 nodes responded successfully
 	if successCount < 3 {
+		log.WithContext(ctx).Error("failed to fetch summary status from at least 3 nodes")
 		return metrics.Metrics{}, fmt.Errorf("failed to fetch summary stats from at least 3 nodes, only %d nodes responded successfully", successCount)
 	}
 
@@ -186,11 +189,13 @@ func (service *Service) GetDetailedLogs(ctx context.Context, req SHReportRequest
 	}
 
 	if len(topNodes) < 3 {
+		log.WithContext(ctx).Error("failed to get sufficient top nodes")
 		return report, fmt.Errorf("no top nodes found")
 	}
 
 	signature, err := service.pastelHandler.PastelClient.Sign(ctx, []byte(req.PastelID), req.PastelID, req.Passphrase, pastel.SignAlgorithmED448)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("invalid pid/passphrase")
 		return report, fmt.Errorf("invalid pid/passphrase: %w", err)
 	}
 
@@ -248,6 +253,7 @@ func (service *Service) GetDetailedLogs(ctx context.Context, req SHReportRequest
 
 	// Proceed only if at least 3 nodes responded successfully
 	if successCount < 3 {
+		log.WithContext(ctx).Error("failed to fetch detailed-logs from at least 3 nodes")
 		return report, fmt.Errorf("failed to fetch detailed-logs from at least 3 nodes, only %d nodes responded successfully", successCount)
 	}
 
