@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	logPrefix            = "wn-storage-challenge"
 	StorageChallengePort = 9089
 )
 
@@ -53,11 +52,13 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 	}
 
 	if len(topNodes) < 3 {
+		log.WithContext(ctx).Error("failed to get sufficient top nodes")
 		return storagechallenge.SCSummaryStatsRes{}, fmt.Errorf("no top nodes found")
 	}
 
 	signature, err := service.pastelHandler.PastelClient.Sign(ctx, []byte(req.PastelID), req.PastelID, req.Passphrase, pastel.SignAlgorithmED448)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("invalid pid/passphrase")
 		return storagechallenge.SCSummaryStatsRes{}, fmt.Errorf("invalid pid/passphrase: %w", err)
 	}
 
@@ -77,7 +78,6 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 			defer wg.Done()
 
 			data, err := service.fetchSummaryStatsFromNode(ip, req.PastelID, string(signature), req.From, req.To)
-			log.WithContext(ctx).Infof("Summary Stats response: %v", data)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node-ip", ip).Error("failed to fetch summary stats from node")
 
@@ -91,6 +91,7 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 
 				return
 			}
+			log.WithContext(ctx).Infof("Summary Stats response: %v", data)
 
 			// add results to map and increment success counter
 			func() {
@@ -115,6 +116,7 @@ func (service *Service) GetSummaryStats(ctx context.Context, req GetSummaryStats
 
 	// Proceed only if at least 3 nodes responded successfully
 	if successCount < 3 {
+		log.WithContext(ctx).Error("failed to fetch summary stats from at least 3 nodes")
 		return storagechallenge.SCSummaryStatsRes{}, fmt.Errorf("failed to fetch summary stats from at least 3 nodes, only %d nodes responded successfully", successCount)
 	}
 
@@ -185,11 +187,13 @@ func (service *Service) GetDetailedMessageDataList(ctx context.Context, req SCDe
 	}
 
 	if len(topNodes) < 3 {
+		log.WithContext(ctx).Error("failed to get top nodes")
 		return messageDataList, fmt.Errorf("no top nodes found")
 	}
 
 	signature, err := service.pastelHandler.PastelClient.Sign(ctx, []byte(req.PastelID), req.PastelID, req.Passphrase, pastel.SignAlgorithmED448)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("invalid pid/passphrase")
 		return messageDataList, fmt.Errorf("invalid pid/passphrase: %w", err)
 	}
 
@@ -247,6 +251,7 @@ func (service *Service) GetDetailedMessageDataList(ctx context.Context, req SCDe
 
 	// Proceed only if at least 3 nodes responded successfully
 	if successCount < 3 {
+		log.WithContext(ctx).Error("failed to fetch detailed-logs from at least 3 nodes")
 		return messageDataList, fmt.Errorf("failed to fetch detailed-logs from at least 3 nodes, only %d nodes responded successfully", successCount)
 	}
 
