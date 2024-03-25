@@ -142,8 +142,6 @@ func (service *SCService) Run(ctx context.Context) error {
 				newCtx := log.ContextWithPrefix(context.Background(), "storage-challenge")
 				task := service.NewSCTask()
 
-				service.executeMetricsBroadcastTask(context.Background())
-
 				task.GenerateStorageChallenges(newCtx)
 				log.WithContext(newCtx).Debug("Would normally generate a storage challenge")
 			}
