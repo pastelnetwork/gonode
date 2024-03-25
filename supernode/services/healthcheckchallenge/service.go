@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/pastelnetwork/gonode/mixins"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,7 +29,6 @@ type HCService struct {
 
 	nodeID                            string
 	nodeClient                        node.ClientInterface
-	pastelHandler                     *mixins.PastelHandler
 	healthCheckChallengeExpiredBlocks int32
 	numberOfChallengeReplicas         int
 	numberOfVerifyingNodes            int
@@ -40,8 +38,7 @@ type HCService struct {
 	// currently unimplemented, default always used instead.
 	challengeStatusObserver SaveChallengeState
 
-	localKeys            sync.Map
-	localKeysLastFetchAt time.Time
+	localKeys sync.Map
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available

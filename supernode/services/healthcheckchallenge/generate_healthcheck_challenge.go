@@ -80,19 +80,19 @@ func (task *HCTask) GenerateHealthCheckChallenges(ctx context.Context) error {
 			Error("Error processing healthcheck challenge: ")
 	}
 
-	logger.Info("health-check challenge has been sent for processing")
+	logger.Debug("health-check challenge has been sent for processing")
 	return nil
 }
 
 func (task *HCTask) identifyChallengerRecipientsAndObserversAgainstMarkleRoot(ctx context.Context, merkleRoot string) (string, string, []string, map[string]pastel.MasterNode, error) {
 	logger := log.WithContext(ctx).WithField("Method", "GenerateHealthCheckChallenge")
 
-	logger.Info("identifying challenge recipients and partial observers")
+	logger.Debug("identifying challenge recipients and partial observers")
 	sliceOfObservers := make([]string, 5)
 
 	supernodes, err := task.getListOfOnlineSupernodes(ctx)
 	if err != nil {
-		logger.WithField("method", "sendHealthCheckStorageChallenge").WithError(err).Warn("could not get Supernode extra: ", err.Error())
+		logger.WithField("method", "sendHealthCheckChallenge").WithError(err).Warn("could not get Supernode extra: ", err.Error())
 		return "", "", nil, nil, err
 	}
 
@@ -182,14 +182,14 @@ func (task *HCTask) sendProcessHealthCheckChallenge(ctx context.Context, challen
 		}()
 	}
 	wg.Wait()
-	logger.WithField("hc_challenge_id", challengeMessage.ChallengeID).Info("health-check challenge message has been sent to observers")
+	logger.WithField("hc_challenge_id", challengeMessage.ChallengeID).Debug("health-check challenge message has been sent to observers")
 
 	if err := task.SendMessage(ctx, &msg, recipientNode.ExtAddress); err != nil {
 		logger.WithField("node_address", recipientNode.ExtAddress).WithError(err).Error("error sending healthcheck challenge message to recipient for processing")
 		return err
 	}
 	logger.WithField("hc_challenge_id", challengeMessage.ChallengeID).
-		WithField("node_address", recipientNode.ExtAddress).Info("health-check challenge message has been sent to recipient")
+		WithField("node_address", recipientNode.ExtAddress).Info("health-check challenge message has been sent to observers & recipient")
 
 	return nil
 }
@@ -231,7 +231,7 @@ func (task *HCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 		// and challenge recipient
 		nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.RecipientID])
 
-		logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
+		logger.WithField("nodes_to_connect", nodesToConnect).Debug("nodes to send msg have been selected")
 		return nodesToConnect, nil
 	case types.HealthCheckResponseMessageType:
 		//should process and send by recipient only
@@ -241,14 +241,14 @@ func (task *HCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 				if value, ok := mapSupernodes[po]; ok {
 					nodesToConnect = append(nodesToConnect, value)
 				} else {
-					logger.WithField("observer_id", po).Info("observer not found in masternode list")
+					logger.WithField("observer_id", po).Debug("observer not found in masternode list")
 				}
 			}
 
 			//and challenger
 			nodesToConnect = append(nodesToConnect, mapSupernodes[challengeMessage.Data.ChallengerID])
 
-			logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
+			logger.WithField("nodes_to_connect", nodesToConnect).Debug("nodes to send msg have been selected")
 			return nodesToConnect, nil
 		}
 
@@ -268,7 +268,7 @@ func (task *HCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 				}
 			}
 
-			logger.WithField("nodes_to_connect", nodesToConnect).Info("nodes to send msg have been selected")
+			logger.WithField("nodes_to_connect", nodesToConnect).Debug("nodes to send msg have been selected")
 			return nodesToConnect, nil
 		}
 

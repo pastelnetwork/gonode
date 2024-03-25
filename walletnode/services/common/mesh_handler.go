@@ -728,7 +728,7 @@ func (m MeshHandler) GetRequiredDataFromSN(ctx context.Context, someNode SuperNo
 	logger := log.WithContext(ctx).WithField("address", someNode.Address())
 
 	if err := someNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
-		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes - address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
+		log.WithContext(ctx).WithField("req-id", m.logRequestID).WithError(err).Errorf("Failed to connect to Supernodes to get required data- address: %s; pastelID: %s ", someNode.String(), someNode.PastelID())
 		return balance, top, hash, data, err
 	}
 
