@@ -74,7 +74,9 @@ func (task *SCTask) storeBroadcastChallengeMsg(ctx context.Context, msg types.Br
 func (task *SCTask) getNodeIDAndAddress(ctx context.Context, msg map[string][]byte) string {
 	supernodes, err := task.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
 	if err != nil {
-		return ""
+		for key := range msg {
+			return key
+		}
 	}
 
 	mapSupernodes := make(map[string]pastel.MasterNode)
@@ -86,6 +88,8 @@ func (task *SCTask) getNodeIDAndAddress(ctx context.Context, msg map[string][]by
 	for key := range msg {
 		if value, ok := mapSupernodes[key]; ok {
 			result = result + value.ExtKey + ";" + value.ExtAddress + ";"
+		} else {
+			result = key
 		}
 	}
 

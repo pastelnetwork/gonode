@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"github.com/pastelnetwork/gonode/mixins"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -20,8 +19,9 @@ import (
 )
 
 const (
-	broadcastHCMetricRegularInterval = 30 * time.Minute
-	defaultTimerBlockCheckDuration   = 30 * time.Second
+	healthCheckBlockInterval         int32 = 3
+	broadcastHCMetricRegularInterval       = 30 * time.Minute
+	defaultTimerBlockCheckDuration         = 30 * time.Second
 )
 
 type HCService struct {
@@ -50,7 +50,8 @@ func (service *HCService) CheckNextBlockAvailable(ctx context.Context) bool {
 	if err != nil {
 		return false
 	}
-	if blockCount > int32(service.currentBlockCount) {
+
+	if blockCount > service.currentBlockCount+healthCheckBlockInterval {
 		atomic.StoreInt32(&service.currentBlockCount, blockCount)
 		return true
 	}
@@ -74,13 +75,9 @@ func (service *HCService) Run(ctx context.Context) error {
 		select {
 		case <-time.After(defaultTimerBlockCheckDuration):
 
-			if service.CheckNextBlockAvailable(ctx) && os.Getenv("INTEGRATION_TEST_ENV") != "true" {
-				newCtx := log.ContextWithPrefix(context.Background(), "healthcheck-challenge")
-				task := service.NewHCTask()
-
-				service.executeMetricsBroadcastTask(ctx)
-				task.GenerateHealthCheckChallenges(newCtx)
-				log.WithContext(newCtx).Debug("Would normally generate a healthcheck challenge")
+			if service.CheckNextBlockAvailable(ctx) {
+				service.RunGenerateHealthCheckChallenges(ctx)
+				log.WithContext(ctx).Debug("Would normally generate a healthcheck challenge")
 			}
 		case <-ctx.Done():
 			log.Println("Context done being called in generatehealthcheckchallenge loop in service.go")
@@ -114,7 +111,21 @@ func (service *HCService) executeMetricsBroadcastTask(ctx context.Context) {
 	task := service.NewHCTask()
 	task.BroadcastHealthCheckChallengeMetrics(newCtx)
 
-	log.WithContext(ctx).Debug("storage challenge metrics broadcasted")
+	log.WithContext(ctx).Debug("health-check challenge metrics broadcasted")
+}
+
+func (service *HCService) RunGenerateHealthCheckChallenges(ctx context.Context) {
+	startTime := calculateStartTimeForHealthCheckTrigger(service.nodeID)
+	log.WithContext(ctx).WithField("start_time", startTime).
+		Info("health check challenge metric worker will execute on the mentioned time")
+
+	// Wait until the start time
+	time.Sleep(time.Until(startTime))
+
+	newCtx := context.Background()
+	task := service.NewHCTask()
+
+	task.GenerateHealthCheckChallenges(newCtx)
 }
 
 // BroadcastHealthCheckChallengeMetricsWorker broadcast the health check challenge metrics to the entire network
@@ -149,6 +160,15 @@ func calculateStartTime(pastelID string) time.Time {
 	delayMinutes := int(hashString[0]) % 60 // simplistic hash-based delay calculation
 
 	return time.Now().Add(time.Duration(delayMinutes) * time.Minute)
+}
+
+// calculateStartTime calculates the start time for the periodic task based on the hash of the PastelID.
+func calculateStartTimeForHealthCheckTrigger(pastelID string) time.Time {
+	hash := sha256.Sum256([]byte(pastelID))
+	hashString := hex.EncodeToString(hash[:])
+	delaySecs := int(hashString[0]) % 20 // simplistic hash-based delay calculation
+
+	return time.Now().Add(time.Duration(delaySecs) * time.Second)
 }
 
 // NewService : Create a new healthcheck challenge service
