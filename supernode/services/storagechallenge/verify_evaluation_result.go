@@ -265,12 +265,12 @@ func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 	isChallengeTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Challenge.Timestamp.UTC(),
 		challengeMessage.Data.Challenge.Timestamp.UTC(), challengeMessage.CreatedAt.UTC(),
 		challengeMessage.ChallengeID, challengeMessage.MessageType)
-	log.WithContext(ctx).Info("challenge message timestamps have been evaluated successfully")
+	log.WithContext(ctx).Debug("challenge message timestamps have been evaluated successfully")
 
 	isResponseTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Response.Timestamp.UTC(),
 		responseMessage.Data.Response.Timestamp.UTC(), responseMessage.CreatedAt.UTC(),
 		responseMessage.ChallengeID, responseMessage.MessageType)
-	log.WithContext(ctx).Info("response message timestamps have been evaluated successfully")
+	log.WithContext(ctx).Debug("response message timestamps have been evaluated successfully")
 
 	differenceBetweenEvaluationMsgSendAndRecvTime := incomingEvaluationResult.Data.ChallengerEvaluation.Timestamp.Sub(evaluationMsgRecvTime)
 	if differenceBetweenEvaluationMsgSendAndRecvTime < 0 {
@@ -279,10 +279,10 @@ func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 
 	var evaluationReportTSOk bool
 	if differenceBetweenEvaluationMsgSendAndRecvTime <= timestampTolerance {
-		log.WithContext(ctx).Info("evaluation message timestamp is evaluated successfully")
+		log.WithContext(ctx).Debug("evaluation message timestamp is evaluated successfully")
 		evaluationReportTSOk = true
 	} else {
-		log.WithContext(ctx).Info("the time diff between the evaluation report send and receive time, exceeds the tolerance limit")
+		log.WithContext(ctx).Debug("the time diff between the evaluation report send and receive time, exceeds the tolerance limit")
 		evaluationReportTSOk = false
 	}
 
@@ -374,14 +374,14 @@ func (task *SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluati
 		evaluationResultData.Response.Hash == correctHash {
 		isAffirmationOk = true
 
-		logger.Info("both hash by challenger and recipient were correct, and challenger evaluates correctly")
+		logger.Debug("both hash by challenger and recipient were correct, and challenger evaluates correctly")
 	}
 
 	//recipientHash = false, challengerHash = false, observerAffirmation = true
 	if evaluationResultData.Response.Hash != correctHash && !evaluationResultData.ChallengerEvaluation.IsVerified {
 		isAffirmationOk = true
 
-		logger.Info("recipient hash was not correct, and challenger evaluates correctly")
+		logger.Debug("recipient hash was not correct, and challenger evaluates correctly")
 	}
 
 	//recipientHash = true, challengerHash = false, observerAffirmation = false
@@ -391,7 +391,7 @@ func (task *SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluati
 
 		reason = "recipient hash was correct, but challenger evaluated to false"
 
-		logger.Info("recipient hash was correct, but challenger evaluates it to false")
+		logger.Debug("recipient hash was correct, but challenger evaluates it to false")
 	}
 
 	if evaluationResultData.Response.Hash != correctHash && evaluationResultData.ChallengerEvaluation.IsVerified {
@@ -399,7 +399,7 @@ func (task *SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluati
 
 		reason = "recipient hash was not correct, but challenger evaluated it to true"
 
-		logger.Info("recipient hash was not correct, but challenger evaluates it to true")
+		logger.Debug("recipient hash was not correct, but challenger evaluates it to true")
 	}
 
 	return isAffirmationOk, reason

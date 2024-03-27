@@ -55,7 +55,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 		return nil, nil
 	}
 
-	logger.Info("Storage challenge processing started") // Incoming challenge message validation
+	logger.Debug("Storage challenge processing started") // Incoming challenge message validation
 	if err := task.StoreChallengeMessage(ctx, incomingChallengeMessage); err != nil {
 		logger.WithError(err).Error("error storing challenge message")
 	}
