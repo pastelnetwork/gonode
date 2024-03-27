@@ -5,11 +5,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/pastelnetwork/gonode/mixins"
 	"os"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pastelnetwork/gonode/mixins"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
@@ -364,7 +365,7 @@ func (service *SCService) GetNClosestSupernodeIDsToComparisonString(_ context.Co
 
 // GetNClosestSupernodesToAGivenFileUsingKademlia : Wrapper for a utility function that accesses kademlia's distributed hash table to determine which nodes should be closest to a given string (hence hosting it)
 func (service *SCService) GetNClosestSupernodesToAGivenFileUsingKademlia(ctx context.Context, n int, comparisonString string, ignores ...string) []string {
-	log.WithContext(ctx).WithField("file_hash", comparisonString).Info("file_hash against which closest sns required")
+	log.WithContext(ctx).WithField("file_hash", comparisonString).Debug("file_hash against which closest sns required")
 	return service.P2PClient.NClosestNodes(ctx, n, comparisonString, ignores...)
 }
 

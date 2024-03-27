@@ -80,10 +80,10 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 
 	// Identify which files should be challenged, their recipients and observers
 	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, defaultChallengeReplicas, sliceOfFileHashesStoredByLocalSupernode)
-	logger.Info("file hashes to challenge stored by local SN have been retrieved")
+	logger.Debug("file hashes to challenge stored by local SN have been retrieved")
 
 	sliceOfSupernodesToChallenge, challengeFileObservers := task.identifyChallengeRecipientsAndObserversAgainstChallengingFiles(ctx, sliceOfFileHashesToChallenge, merkleroot, challengingSupernodeID)
-	logger.Info("challenge recipients and partial observers have been identified")
+	logger.Debug("challenge recipients and partial observers have been identified")
 
 	for idx2, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
 		b, err := task.GetSymbolFileByKey(ctx, currentFileHashToChallenge, true)

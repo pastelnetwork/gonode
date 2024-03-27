@@ -337,7 +337,7 @@ func NewNftDownloadTask(service *NftDownloadingService, request *NftDownloadingR
 		LogRequestID:  request.Txid,
 		Configs: &common.MeshHandlerConfig{
 			ConnectToNextNodeDelay:        service.config.ConnectToNextNodeDelay,
-			ConnectToNodeTimeout:          service.config.ConnectToNodeTimeout,
+			ConnectToNodeTimeout:          service.config.DownloadConnectToNodeTimeout,
 			AcceptNodesTimeout:            service.config.AcceptNodesTimeout,
 			MinSNs:                        service.config.NumberSuperNodes,
 			PastelID:                      request.PastelID,
