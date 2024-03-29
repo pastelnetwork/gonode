@@ -59,7 +59,7 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingResponseMessage.Data.Challenge.FileHash, true)
 	if err != nil {
-		logger.WithError(err).Error("could not read local file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
+		logger.WithError(err).Error("could not read queries file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
 		return nil, err
 	}
 	logger.WithContext(ctx).Debug("file has been retrieved for verification")

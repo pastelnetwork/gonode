@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"time"
 )
@@ -41,7 +41,7 @@ func (task *SHTask) UpdateWatchlist(ctx context.Context) error {
 
 // GetAllPingInfo get all the ping info from db
 func (task *SHTask) GetAllPingInfo(ctx context.Context) (types.PingInfos, error) {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return nil, err
@@ -70,7 +70,7 @@ func (task *SHTask) GetAllPingInfo(ctx context.Context) (types.PingInfos, error)
 
 // UpsertPingHistory upsert the ping info to db
 func (task *SHTask) UpsertPingHistory(ctx context.Context, info types.PingInfo) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return err

@@ -17,7 +17,7 @@ var (
 	defaultCompress  = false
 )
 
-// FileHook is a hook to handle writing to local log files.
+// FileHook is a hook to handle writing to queries log files.
 type FileHook struct {
 	fileLogger *lumberjack.Logger
 	formatter  logrus.Formatter

@@ -19,7 +19,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
@@ -258,7 +258,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.SelfHealingChallenge.NodeAddress = ip
 
 	//Initialize History DB
-	hDB, err := local.OpenHistoryDB()
+	hDB, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error connecting history db..")
 	}

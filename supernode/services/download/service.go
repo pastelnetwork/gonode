@@ -2,8 +2,8 @@ package download
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 
-	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
@@ -17,7 +17,7 @@ const (
 type NftDownloaderService struct {
 	*common.SuperNodeService
 	config    *Config
-	historyDB storage.LocalStoreInterface
+	historyDB queries.LocalStoreInterface
 }
 
 // Run starts task
@@ -38,7 +38,7 @@ func (service *NftDownloaderService) Task(id string) *NftDownloadingTask {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, historyDB storage.LocalStoreInterface) *NftDownloaderService {
+func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, historyDB queries.LocalStoreInterface) *NftDownloaderService {
 	return &NftDownloaderService{
 		SuperNodeService: common.NewSuperNodeService(nil, pastelClient, p2pClient),
 		config:           config,

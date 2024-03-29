@@ -1,4 +1,4 @@
-package local
+package queries
 
 import (
 	"context"
@@ -10,6 +10,24 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils/metrics"
 )
+
+type SelfHealingQueries interface {
+	BatchInsertSelfHealingChallengeEvents(ctx context.Context, event []types.SelfHealingChallengeEvent) error
+	UpdateSHChallengeEventProcessed(challengeID string, isProcessed bool) error
+	GetSelfHealingChallengeEvents() ([]types.SelfHealingChallengeEvent, error)
+	CleanupSelfHealingChallenges() (err error)
+	QuerySelfHealingChallenges() (challenges []types.SelfHealingChallenge, err error)
+
+	QueryMetrics(ctx context.Context, from time.Time, to *time.Time) (m metrics.Metrics, err error)
+	InsertSelfHealingGenerationMetrics(metrics types.SelfHealingGenerationMetric) error
+	InsertSelfHealingExecutionMetrics(metrics types.SelfHealingExecutionMetric) error
+	BatchInsertExecutionMetrics(metrics []types.SelfHealingExecutionMetric) error
+	GetSelfHealingGenerationMetrics(timestamp time.Time) ([]types.SelfHealingGenerationMetric, error)
+	GetSelfHealingExecutionMetrics(timestamp time.Time) ([]types.SelfHealingExecutionMetric, error)
+	GetLastNSHChallenges(ctx context.Context, n int) (types.SelfHealingReports, error)
+	GetSHChallengeReport(ctx context.Context, challengeID string) (types.SelfHealingReports, error)
+	GetSHExecutionMetrics(ctx context.Context, from time.Time) (metrics.SHExecutionMetrics, error)
+}
 
 var (
 	oneYearAgo = time.Now().AddDate(-1, 0, 0)
@@ -76,6 +94,7 @@ func (s *SQLiteStore) InsertSelfHealingExecutionMetrics(metrics types.SelfHealin
 	return nil
 }
 
+// BatchInsertExecutionMetrics inserts execution metrics in a batch
 func (s *SQLiteStore) BatchInsertExecutionMetrics(metrics []types.SelfHealingExecutionMetric) error {
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -151,32 +170,6 @@ func (s *SQLiteStore) GetSelfHealingGenerationMetrics(timestamp time.Time) ([]ty
 	for rows.Next() {
 		var m types.SelfHealingGenerationMetric
 		if err := rows.Scan(&m.ID, &m.TriggerID, &m.MessageType, &m.Data, &m.SenderID, &m.SenderSignature, &m.CreatedAt, &m.UpdatedAt); err != nil {
-			return nil, err
-		}
-		metrics = append(metrics, m)
-	}
-
-	return metrics, rows.Err()
-}
-
-// GetStorageChallengeMetricsByChallengeID retrieves all the metrics
-func (s *SQLiteStore) GetStorageChallengeMetricsByChallengeID(challengeID string) ([]types.StorageChallengeLogMessage, error) {
-	const query = `
-    SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at
-    FROM storage_challenge_metrics
-    WHERE challenge_id = ?;`
-
-	rows, err := s.db.Query(query, challengeID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var metrics []types.StorageChallengeLogMessage
-	for rows.Next() {
-		var m types.StorageChallengeLogMessage
-		err := rows.Scan(&m.ID, &m.ChallengeID, &m.MessageType, &m.Data, &m.Sender, &m.CreatedAt, &m.UpdatedAt)
-		if err != nil {
 			return nil, err
 		}
 		metrics = append(metrics, m)
@@ -423,216 +416,7 @@ func (s *SQLiteStore) GetSHExecutionMetrics(ctx context.Context, from time.Time)
 	return m, nil
 }
 
-func (s *SQLiteStore) GetTotalSCGeneratedAndProcessedAndEvaluated(from time.Time) (metrics.SCMetrics, error) {
-	metrics := metrics.SCMetrics{}
-
-	// Query for total number of challenges
-	totalChallengeQuery := "SELECT COUNT(DISTINCT challenge_id) FROM storage_challenge_metrics WHERE message_type = 1 AND created_at > ?"
-	err := s.db.QueryRow(totalChallengeQuery, from).Scan(&metrics.TotalChallenges)
-	if err != nil {
-		return metrics, err
-	}
-
-	// Query for total challenges responded
-	totalChallengesProcessedQuery := "SELECT COUNT(DISTINCT challenge_id) FROM storage_challenge_metrics WHERE message_type = 2 AND created_at > ?"
-	err = s.db.QueryRow(totalChallengesProcessedQuery, from).Scan(&metrics.TotalChallengesProcessed)
-	if err != nil {
-		return metrics, err
-	}
-
-	totalChallengesEvaluatedQuery := "SELECT COUNT(DISTINCT challenge_id) FROM storage_challenge_metrics WHERE message_type = 3 AND created_at > ?"
-	err = s.db.QueryRow(totalChallengesEvaluatedQuery, from).Scan(&metrics.TotalChallengesEvaluatedByChallenger)
-	if err != nil {
-		return metrics, err
-	}
-
-	return metrics, nil
-}
-
-func (s *SQLiteStore) GetChallengerEvaluations(from time.Time) ([]types.StorageChallengeLogMessage, error) {
-	var messages []types.StorageChallengeLogMessage
-
-	query := "SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at FROM storage_challenge_metrics WHERE message_type = 3 and created_at > ?"
-	rows, err := s.db.Query(query, from)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var msg types.StorageChallengeLogMessage
-		err := rows.Scan(&msg.ID, &msg.ChallengeID, &msg.MessageType, &msg.Data, &msg.Sender, &msg.CreatedAt, &msg.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		messages = append(messages, msg)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return messages, nil
-}
-
-func (s *SQLiteStore) GetObserversEvaluations(from time.Time) ([]types.StorageChallengeLogMessage, error) {
-	var messages []types.StorageChallengeLogMessage
-
-	query := "SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at FROM storage_challenge_metrics WHERE message_type = 4 and created_at > ?"
-	rows, err := s.db.Query(query, from)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var msg types.StorageChallengeLogMessage
-		err := rows.Scan(&msg.ID, &msg.ChallengeID, &msg.MessageType, &msg.Data, &msg.Sender, &msg.CreatedAt, &msg.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		messages = append(messages, msg)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return messages, nil
-}
-
-func (s *SQLiteStore) GetSCSummaryStats(from time.Time) (scMetrics metrics.SCMetrics, err error) {
-	scStats := metrics.SCMetrics{}
-	scMetrics, err = s.GetTotalSCGeneratedAndProcessedAndEvaluated(from)
-	if err != nil {
-		return scMetrics, err
-	}
-	scStats.TotalChallenges = scMetrics.TotalChallenges
-	scStats.TotalChallengesProcessed = scMetrics.TotalChallengesProcessed
-	scStats.TotalChallengesEvaluatedByChallenger = scMetrics.TotalChallengesEvaluatedByChallenger
-
-	observersEvaluations, err := s.GetObserversEvaluations(from)
-	if err != nil {
-		return scMetrics, err
-	}
-	log.WithField("observer_evaluations", len(observersEvaluations)).Info("observer evaluations retrieved")
-
-	observerEvaluationMetrics := processObserverEvaluations(observersEvaluations)
-	log.WithField("observer_evaluation_metrics", len(observerEvaluationMetrics)).Info("observer evaluation metrics retrieved")
-
-	for _, obMetrics := range observerEvaluationMetrics {
-		if obMetrics.ChallengesVerified > 2 {
-			scMetrics.TotalChallengesVerified++
-		} else {
-			if obMetrics.FailedByInvalidTimestamps > 0 {
-				scMetrics.SlowResponsesObservedByObservers++
-			}
-			if obMetrics.FailedByInvalidSignatures > 0 {
-				scMetrics.InvalidSignaturesObservedByObservers++
-			}
-			if obMetrics.FailedByInvalidEvaluation > 0 {
-				scMetrics.InvalidEvaluationObservedByObservers++
-			}
-		}
-	}
-
-	return scMetrics, nil
-}
-
-func processObserverEvaluations(observersEvaluations []types.StorageChallengeLogMessage) map[string]ObserverEvaluationMetrics {
-	evaluationMap := make(map[string]ObserverEvaluationMetrics)
-
-	for _, observerEvaluation := range observersEvaluations {
-		var oe types.MessageData
-		if err := json.Unmarshal(observerEvaluation.Data, &oe); err != nil {
-			continue
-		}
-
-		oem, exists := evaluationMap[observerEvaluation.ChallengeID]
-		if !exists {
-			oem = ObserverEvaluationMetrics{} // Initialize if not exists
-		}
-
-		if isObserverEvaluationVerified(oe.ObserverEvaluation) {
-			oem.ChallengesVerified++
-		} else {
-			if !oe.ObserverEvaluation.IsChallengeTimestampOK ||
-				!oe.ObserverEvaluation.IsProcessTimestampOK ||
-				!oe.ObserverEvaluation.IsEvaluationTimestampOK {
-				oem.FailedByInvalidTimestamps++
-			}
-
-			if !oe.ObserverEvaluation.IsChallengerSignatureOK ||
-				!oe.ObserverEvaluation.IsRecipientSignatureOK {
-				oem.FailedByInvalidSignatures++
-			}
-
-			if !oe.ObserverEvaluation.IsEvaluationResultOK {
-				oem.FailedByInvalidEvaluation++
-			}
-		}
-
-		evaluationMap[observerEvaluation.ChallengeID] = oem
-	}
-
-	return evaluationMap
-}
-
-func isObserverEvaluationVerified(observerEvaluation types.ObserverEvaluationData) bool {
-	if !observerEvaluation.IsEvaluationResultOK {
-		return false
-	}
-
-	if !observerEvaluation.IsChallengerSignatureOK {
-		return false
-	}
-
-	if !observerEvaluation.IsRecipientSignatureOK {
-		return false
-	}
-
-	if !observerEvaluation.IsChallengeTimestampOK {
-		return false
-	}
-
-	if !observerEvaluation.IsProcessTimestampOK {
-		return false
-	}
-
-	if !observerEvaluation.IsEvaluationTimestampOK {
-		return false
-	}
-
-	return true
-}
-
-func isHCObserverEvaluationVerified(observerEvaluation types.HealthCheckObserverEvaluationData) bool {
-	if !observerEvaluation.IsEvaluationResultOK {
-		return false
-	}
-
-	if !observerEvaluation.IsChallengerSignatureOK {
-		return false
-	}
-
-	if !observerEvaluation.IsRecipientSignatureOK {
-		return false
-	}
-
-	if !observerEvaluation.IsChallengeTimestampOK {
-		return false
-	}
-
-	if !observerEvaluation.IsProcessTimestampOK {
-		return false
-	}
-
-	if !observerEvaluation.IsEvaluationTimestampOK {
-		return false
-	}
-
-	return true
-}
-
-// QueryMetrics queries metrics
+// QueryMetrics queries the self-healing metrics
 func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.Time) (m metrics.Metrics, err error) {
 	genMetric, err := s.GetSelfHealingGenerationMetrics(from)
 	if err != nil {
@@ -680,7 +464,7 @@ func (s *SQLiteStore) QueryMetrics(ctx context.Context, from time.Time, _ *time.
 	return m, nil
 }
 
-// GetLastNSHChallenges ...
+// GetLastNSHChallenges retrieves the latest 'N' self-healing challenges
 func (s *SQLiteStore) GetLastNSHChallenges(ctx context.Context, n int) (types.SelfHealingReports, error) {
 	challenges := types.SelfHealingReports{}
 	rows, err := s.GetSelfHealingExecutionMetrics(oneYearAgo)
@@ -712,7 +496,7 @@ func (s *SQLiteStore) GetLastNSHChallenges(ctx context.Context, n int) (types.Se
 	return challenges, nil
 }
 
-// GetSHChallengeReport ...
+// GetSHChallengeReport returns the self-healing report
 func (s *SQLiteStore) GetSHChallengeReport(ctx context.Context, challengeID string) (types.SelfHealingReports, error) {
 	challenges := types.SelfHealingReports{}
 	rows, err := s.GetSelfHealingExecutionMetrics(oneYearAgo)
@@ -740,206 +524,121 @@ func (s *SQLiteStore) GetSHChallengeReport(ctx context.Context, challengeID stri
 	return challenges, nil
 }
 
-func (s *SQLiteStore) GetMetricsDataByStorageChallengeID(ctx context.Context, challengeID string) (storageChallengeMessages []types.Message, err error) {
-	scMetrics, err := s.GetStorageChallengeMetricsByChallengeID(challengeID)
-	if err != nil {
-		return storageChallengeMessages, err
-	}
-	log.WithContext(ctx).WithField("rows", len(scMetrics)).Info("storage-challenge metrics row count")
-
-	for _, scMetric := range scMetrics {
-		msg := types.MessageData{}
-		if err := json.Unmarshal(scMetric.Data, &msg); err != nil {
-			return storageChallengeMessages, fmt.Errorf("cannot unmarshal storage challenge data: %w", err)
-		}
-
-		storageChallengeMessages = append(storageChallengeMessages, types.Message{
-			ChallengeID:     scMetric.ChallengeID,
-			MessageType:     types.MessageType(scMetric.MessageType),
-			Sender:          scMetric.Sender,
-			SenderSignature: scMetric.SenderSignature,
-			Data:            msg,
-		})
-	}
-
-	return storageChallengeMessages, nil
-}
-
-func (s *SQLiteStore) GetTotalHCGeneratedAndProcessedAndEvaluated(from time.Time) (metrics.HCMetrics, error) {
-	metrics := metrics.HCMetrics{}
-
-	// Query for total number of challenges
-	totalChallengeQuery := "SELECT COUNT(DISTINCT challenge_id) FROM healthcheck_challenge_metrics WHERE message_type = 1 AND created_at > ?"
-	err := s.db.QueryRow(totalChallengeQuery, from).Scan(&metrics.TotalChallenges)
-	if err != nil {
-		return metrics, err
-	}
-
-	// Query for total challenges responded
-	totalChallengesProcessedQuery := "SELECT COUNT(DISTINCT challenge_id) FROM healthcheck_challenge_metrics WHERE message_type = 2 AND created_at > ?"
-	err = s.db.QueryRow(totalChallengesProcessedQuery, from).Scan(&metrics.TotalChallengesProcessed)
-	if err != nil {
-		return metrics, err
-	}
-
-	totalChallengesEvaluatedQuery := "SELECT COUNT(DISTINCT challenge_id) FROM healthcheck_challenge_metrics WHERE message_type = 3 AND created_at > ?"
-	err = s.db.QueryRow(totalChallengesEvaluatedQuery, from).Scan(&metrics.TotalChallengesEvaluatedByChallenger)
-	if err != nil {
-		return metrics, err
-	}
-
-	return metrics, nil
-}
-
-func (s *SQLiteStore) GetHCObserversEvaluations(from time.Time) ([]types.HealthCheckChallengeLogMessage, error) {
-	var messages []types.HealthCheckChallengeLogMessage
-
-	query := "SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at FROM healthcheck_challenge_metrics WHERE message_type = 4 and created_at > ?"
-	rows, err := s.db.Query(query, from)
+// QuerySelfHealingChallenges retrieves self-healing audit logs stored in DB for self-healing
+func (s *SQLiteStore) QuerySelfHealingChallenges() (challenges []types.SelfHealingChallenge, err error) {
+	const selectQuery = "SELECT * FROM self_healing_challenges"
+	rows, err := s.db.Query(selectQuery)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var msg types.HealthCheckChallengeLogMessage
-		err := rows.Scan(&msg.ID, &msg.ChallengeID, &msg.MessageType, &msg.Data, &msg.Sender, &msg.CreatedAt, &msg.UpdatedAt)
+		challenge := types.SelfHealingChallenge{}
+		err = rows.Scan(&challenge.ID, &challenge.ChallengeID, &challenge.MerkleRoot, &challenge.FileHash,
+			&challenge.ChallengingNode, &challenge.RespondingNode, &challenge.VerifyingNode, &challenge.ReconstructedFileHash,
+			&challenge.Status, &challenge.CreatedAt, &challenge.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
-		messages = append(messages, msg)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
+
+		challenges = append(challenges, challenge)
 	}
 
-	return messages, nil
+	return challenges, nil
 }
 
-func processHCObserverEvaluations(observersEvaluations []types.HealthCheckChallengeLogMessage) map[string]HCObserverEvaluationMetrics {
-	evaluationMap := make(map[string]HCObserverEvaluationMetrics)
-
-	for _, observerEvaluation := range observersEvaluations {
-		var oe types.HealthCheckMessageData
-		if err := json.Unmarshal(observerEvaluation.Data, &oe); err != nil {
-			continue
-		}
-
-		oem, exists := evaluationMap[observerEvaluation.ChallengeID]
-		if !exists {
-			oem = HCObserverEvaluationMetrics{} // Initialize if not exists
-		}
-
-		if isHCObserverEvaluationVerified(oe.ObserverEvaluation) {
-			oem.ChallengesVerified++
-		} else {
-			if !oe.ObserverEvaluation.IsChallengeTimestampOK ||
-				!oe.ObserverEvaluation.IsProcessTimestampOK ||
-				!oe.ObserverEvaluation.IsEvaluationTimestampOK {
-				oem.FailedByInvalidTimestamps++
-			}
-
-			if !oe.ObserverEvaluation.IsChallengerSignatureOK ||
-				!oe.ObserverEvaluation.IsRecipientSignatureOK {
-				oem.FailedByInvalidSignatures++
-			}
-
-			if !oe.ObserverEvaluation.IsEvaluationResultOK {
-				oem.FailedByInvalidEvaluation++
-			}
-		}
-
-		evaluationMap[observerEvaluation.ChallengeID] = oem
-	}
-
-	return evaluationMap
-}
-
-func (s *SQLiteStore) GetHCSummaryStats(from time.Time) (hcMetrics metrics.HCMetrics, err error) {
-	hcStats := metrics.HCMetrics{}
-	hcMetrics, err = s.GetTotalHCGeneratedAndProcessedAndEvaluated(from)
+// BatchInsertSelfHealingChallengeEvents inserts self-healing-challenge events in a batch
+func (s *SQLiteStore) BatchInsertSelfHealingChallengeEvents(ctx context.Context, eventsBatch []types.SelfHealingChallengeEvent) error {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return hcMetrics, err
+		return err
 	}
-	hcStats.TotalChallenges = hcMetrics.TotalChallenges
-	hcStats.TotalChallengesProcessed = hcMetrics.TotalChallengesProcessed
-	hcStats.TotalChallengesEvaluatedByChallenger = hcMetrics.TotalChallengesEvaluatedByChallenger
 
-	hcObserversEvaluations, err := s.GetHCObserversEvaluations(from)
+	stmt, err := tx.Prepare(`
+        INSERT OR IGNORE INTO self_healing_challenge_events
+        (trigger_id, ticket_id, challenge_id, data, sender_id, is_processed, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `)
 	if err != nil {
-		return hcMetrics, err
+		tx.Rollback()
+		return err
 	}
-	log.WithField("observer_evaluations", len(hcObserversEvaluations)).Info("observer evaluations retrieved")
+	defer stmt.Close()
 
-	observerEvaluationMetrics := processHCObserverEvaluations(hcObserversEvaluations)
-	log.WithField("observer_evaluation_metrics", len(observerEvaluationMetrics)).Info("observer evaluation metrics retrieved")
+	stmt2, err := tx.Prepare(`
+		INSERT OR IGNORE INTO self_healing_execution_metrics(id, trigger_id, challenge_id, message_type, data, sender_id, sender_signature, created_at, updated_at) 
+		       VALUES(NULL,?,?,?,?,?,?,?,?);
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt2.Close()
 
-	for _, obMetrics := range observerEvaluationMetrics {
-		if obMetrics.ChallengesVerified >= 3 {
-			hcMetrics.TotalChallengesVerified++
-		} else {
-			if obMetrics.FailedByInvalidTimestamps > 0 {
-				hcMetrics.SlowResponsesObservedByObservers++
-			}
-			if obMetrics.FailedByInvalidSignatures > 0 {
-				hcMetrics.InvalidSignaturesObservedByObservers++
-			}
-			if obMetrics.FailedByInvalidEvaluation > 0 {
-				hcMetrics.InvalidEvaluationObservedByObservers++
-			}
+	for _, event := range eventsBatch {
+		now := time.Now().UTC()
+
+		_, err = stmt.Exec(event.TriggerID, event.TicketID, event.ChallengeID, event.Data, event.SenderID, false, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		_, err = stmt2.Exec(event.ExecMetric.TriggerID, event.ExecMetric.ChallengeID, event.ExecMetric.MessageType, event.ExecMetric.Data, event.ExecMetric.SenderID, event.ExecMetric.SenderSignature, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
 		}
 	}
 
-	return hcMetrics, nil
+	return tx.Commit()
 }
 
-// GetHealthCheckChallengeMetricsByChallengeID retrieves all the metrics
-func (s *SQLiteStore) GetHealthCheckChallengeMetricsByChallengeID(challengeID string) ([]types.HealthCheckChallengeLogMessage, error) {
-	const query = `
-    SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at
-    FROM healthcheck_challenge_metrics
-    WHERE challenge_id = ?;`
-
-	rows, err := s.db.Query(query, challengeID)
+// GetSelfHealingChallengeEvents retrieves the challenge events from DB
+func (s *SQLiteStore) GetSelfHealingChallengeEvents() ([]types.SelfHealingChallengeEvent, error) {
+	const selectQuery = `
+        SELECT trigger_id, ticket_id, challenge_id, data, sender_id, is_processed, created_at, updated_at
+        FROM self_healing_challenge_events
+        WHERE is_processed = false
+    `
+	rows, err := s.db.Query(selectQuery)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var metrics []types.HealthCheckChallengeLogMessage
+	var events []types.SelfHealingChallengeEvent
+
 	for rows.Next() {
-		var m types.HealthCheckChallengeLogMessage
-		err := rows.Scan(&m.ID, &m.ChallengeID, &m.MessageType, &m.Data, &m.Sender, &m.CreatedAt, &m.UpdatedAt)
-		if err != nil {
+		var event types.SelfHealingChallengeEvent
+		if err := rows.Scan(
+			&event.TriggerID, &event.TicketID, &event.ChallengeID, &event.Data, &event.SenderID, &event.IsProcessed,
+			&event.CreatedAt, &event.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
-		metrics = append(metrics, m)
+
+		events = append(events, event)
 	}
 
-	return metrics, rows.Err()
+	return events, nil
 }
 
-func (s *SQLiteStore) GetMetricsDataByHealthCheckChallengeID(ctx context.Context, challengeID string) (healthCheckChallengeMessages []types.HealthCheckMessage, err error) {
-	hcMetrics, err := s.GetHealthCheckChallengeMetricsByChallengeID(challengeID)
-	if err != nil {
-		return healthCheckChallengeMessages, err
-	}
-	log.WithContext(ctx).WithField("rows", len(hcMetrics)).Info("health-check-challenge metrics row count")
+// UpdateSHChallengeEventProcessed updates the is_processed flag of an event
+func (s *SQLiteStore) UpdateSHChallengeEventProcessed(challengeID string, isProcessed bool) error {
+	const updateQuery = `
+        UPDATE self_healing_challenge_events
+        SET is_processed = ?
+        WHERE challenge_id = ?
+    `
+	_, err := s.db.Exec(updateQuery, isProcessed, challengeID)
+	return err
+}
 
-	for _, hcMetric := range hcMetrics {
-		msg := types.HealthCheckMessageData{}
-		if err := json.Unmarshal(hcMetric.Data, &msg); err != nil {
-			return healthCheckChallengeMessages, fmt.Errorf("cannot unmarshal health check challenge data: %w", err)
-		}
-
-		healthCheckChallengeMessages = append(healthCheckChallengeMessages, types.HealthCheckMessage{
-			ChallengeID:     hcMetric.ChallengeID,
-			MessageType:     types.HealthCheckMessageType(hcMetric.MessageType),
-			Sender:          hcMetric.Sender,
-			SenderSignature: hcMetric.SenderSignature,
-			Data:            msg,
-		})
-	}
-
-	return healthCheckChallengeMessages, nil
+// CleanupSelfHealingChallenges cleans up self-healing challenges stored in DB for inspection
+func (s *SQLiteStore) CleanupSelfHealingChallenges() (err error) {
+	const delQuery = "DELETE FROM self_healing_challenges"
+	_, err = s.db.Exec(delQuery)
+	return err
 }

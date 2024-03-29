@@ -6,7 +6,7 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -27,7 +27,7 @@ func (task *SCTask) BroadcastStorageChallengeResult(ctx context.Context, incomin
 }
 
 func (task *SCTask) storeBroadcastChallengeMsg(ctx context.Context, msg types.BroadcastMessage) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return err

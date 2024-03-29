@@ -36,7 +36,7 @@ const (
 type Network struct {
 	dht      *DHT              // the distributed hash table
 	listener net.Listener      // the server socket for the network
-	self     *Node             // local node itself
+	self     *Node             // queries node itself
 	limiter  ratelimit.Limiter // the rate limit for accept socket
 	done     chan struct{}     // network is stopped
 
@@ -154,7 +154,7 @@ func (s *Network) handleFindNode(ctx context.Context, message *Message) (res []b
 		return s.encodeMesage(resMsg)
 	}
 
-	// add the sender to local hash table
+	// add the sender to queries hash table
 	s.dht.addNode(ctx, message.Sender)
 
 	// the closest contacts
@@ -219,10 +219,10 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) (res []
 		return s.encodeMesage(resMsg)
 	}
 
-	// add the sender to local hash table
+	// add the sender to queries hash table
 	s.dht.addNode(ctx, message.Sender)
 
-	// retrieve the value from local storage
+	// retrieve the value from queries storage
 	value, err := s.dht.store.Retrieve(ctx, request.Target)
 	if err != nil {
 		err = errors.Errorf("store retrieve: %w", err)
@@ -307,7 +307,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) (res []
 
 	log.P2P().WithContext(ctx).Debugf("handle store data: %v", message.String())
 
-	// add the sender to local hash table
+	// add the sender to queries hash table
 	s.dht.addNode(ctx, message.Sender)
 
 	// format the key
@@ -315,7 +315,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) (res []
 
 	value, err := s.dht.store.Retrieve(ctx, key)
 	if err != nil || len(value) == 0 {
-		// store the data to local storage
+		// store the data to queries storage
 		if err := s.dht.store.Store(ctx, key, request.Data, request.Type, false); err != nil {
 			err = errors.Errorf("store the data: %w", err)
 			response := &StoreDataResponse{

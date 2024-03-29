@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	healthCheckChallenge "github.com/pastelnetwork/gonode/common/utils/healthcheckchallenge"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -28,7 +28,7 @@ func (service *Service) processHCSummaryStats(ctx context.Context, pid string, s
 		return healthCheckChallenge.HCSummaryStatsRes{}, fmt.Errorf("rate limit exceeded, please try again later")
 	}
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return healthCheckChallenge.HCSummaryStatsRes{}, fmt.Errorf("error opening DB: %w", err)
 	}
@@ -157,7 +157,7 @@ func (service *Service) GetHCDetailedLogsData(ctx context.Context, pid string, s
 		return nil, fmt.Errorf("invalid pid/passphrase")
 	}
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, fmt.Errorf("error opening DB: %w", err)
 	}
@@ -185,7 +185,7 @@ func (service *Service) GetNHCDetailedLogsData(ctx context.Context, pid string, 
 		return nil, fmt.Errorf("invalid pid/passphrase")
 	}
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, fmt.Errorf("error opening DB: %w", err)
 	}

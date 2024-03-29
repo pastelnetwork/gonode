@@ -3,7 +3,7 @@ package debug
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils/storagechallenge"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -27,7 +27,7 @@ func (service *Service) processSCSummaryStats(ctx context.Context, pid string, s
 		return storagechallenge.SCSummaryStatsRes{}, fmt.Errorf("rate limit exceeded, please try again later")
 	}
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return storagechallenge.SCSummaryStatsRes{}, fmt.Errorf("error opening DB: %w", err)
 	}
@@ -100,7 +100,7 @@ func (service *Service) GetSCDetailedLogsData(ctx context.Context, pid string, s
 		return nil, fmt.Errorf("invalid pid/passphrase")
 	}
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, fmt.Errorf("error opening DB: %w", err)
 	}
@@ -129,7 +129,7 @@ func (service *Service) GetNSCDetailedLogsData(ctx context.Context, pid string, 
 		return nil, fmt.Errorf("invalid pid/passphrase")
 	}
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, fmt.Errorf("error opening DB: %w", err)
 	}

@@ -9,8 +9,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 )
 
@@ -38,7 +37,7 @@ type State interface {
 	SetStateLog(statusLog types.Fields)
 
 	//InitialiseHistoryDB sets the connection to historyDB
-	InitialiseHistoryDB(store storage.LocalStoreInterface)
+	InitialiseHistoryDB(store queries.LocalStoreInterface)
 }
 
 type state struct {
@@ -50,7 +49,7 @@ type state struct {
 	subsCh         []chan *Status
 	taskID         string
 	statusLog      types.Fields
-	historyDBStore storage.LocalStoreInterface
+	historyDBStore queries.LocalStoreInterface
 }
 
 // Status implements State.Status()
@@ -98,7 +97,7 @@ func (state *state) UpdateStatus(subStatus SubStatus) {
 			log.WithError(err).Error("unable to store task status")
 		}
 	} else {
-		store, err := local.OpenHistoryDB()
+		store, err := queries.OpenHistoryDB()
 		if err != nil {
 			log.WithError(err).Error("error opening history db")
 		}
@@ -148,13 +147,13 @@ func (state *state) SetStateLog(statusLog types.Fields) {
 	state.statusLog = statusLog
 }
 
-func (state *state) InitialiseHistoryDB(storeInterface storage.LocalStoreInterface) {
+func (state *state) InitialiseHistoryDB(storeInterface queries.LocalStoreInterface) {
 	state.historyDBStore = storeInterface
 }
 
 // New returns a new state instance.
 func New(subStatus SubStatus, taskID string) State {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithError(err).Error("error opening history db")
 	}

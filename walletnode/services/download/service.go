@@ -2,10 +2,10 @@ package download
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
@@ -25,7 +25,7 @@ type NftDownloadingService struct {
 	config        *Config
 	nodeClient    node.ClientInterface
 	pastelHandler *mixins.PastelHandler
-	historyDB     storage.LocalStoreInterface
+	historyDB     queries.LocalStoreInterface
 }
 
 // Run starts worker.
@@ -77,7 +77,7 @@ func (service *NftDownloadingService) AddTask(p *nft.DownloadPayload, ticketType
 }
 
 // NewNftDownloadService returns a new Service instance.
-func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface, historyDB storage.LocalStoreInterface) *NftDownloadingService {
+func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface, historyDB queries.LocalStoreInterface) *NftDownloadingService {
 	return &NftDownloadingService{
 		Worker:        task.NewWorker(),
 		config:        config,

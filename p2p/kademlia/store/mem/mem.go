@@ -30,7 +30,7 @@ func (s *Store) UpdateKeyReplication(_ context.Context, _ []byte) error {
 	return nil
 }
 
-// Store will store a key/value pair for the local node with the given
+// Store will store a key/value pair for the queries node with the given
 // replication and expiration times.
 func (s *Store) Store(_ context.Context, key []byte, value []byte, _ int, _ bool) error {
 	s.mutex.Lock()
@@ -42,7 +42,7 @@ func (s *Store) Store(_ context.Context, key []byte, value []byte, _ int, _ bool
 	return nil
 }
 
-// Retrieve will return the local key/value if it exists
+// Retrieve will return the queries key/value if it exists
 func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -87,7 +87,7 @@ func (s *Store) DeleteAll(_ context.Context /*, type RecordType*/) error {
 	return nil
 }
 
-// StoreBatch stores a batch of key/value pairs for the local node with the given
+// StoreBatch stores a batch of key/value pairs for the queries node with the given
 func (s *Store) StoreBatch(_ context.Context, values [][]byte, _ int, _ bool) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -97,7 +97,7 @@ func (s *Store) StoreBatch(_ context.Context, values [][]byte, _ int, _ bool) er
 	return nil
 }
 
-// RetrieveWithType will return the local key/value if it exists
+// RetrieveWithType will return the queries key/value if it exists
 func (s *Store) RetrieveWithType(_ context.Context, _ []byte) ([]byte, int, error) {
 	return []byte{}, 0, nil
 }

@@ -2,12 +2,12 @@ package nftsearch
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
@@ -25,7 +25,7 @@ type NftSearchingService struct {
 	config        *Config
 	nodeClient    node.ClientInterface
 	pastelHandler *mixins.PastelHandler
-	historyDB     storage.LocalStoreInterface
+	historyDB     queries.LocalStoreInterface
 }
 
 // Run starts worker.
@@ -131,7 +131,7 @@ func (service *NftSearchingService) RegTicket(ctx context.Context, RegTXID strin
 //	NB: Because NewNftApiHandler calls AddTask, an NftSearchTask will actually
 //		be instantiated instead of a generic Task.
 func NewNftSearchService(config *Config, pastelClient pastel.Client,
-	nodeClient node.ClientInterface, historyDB storage.LocalStoreInterface) *NftSearchingService {
+	nodeClient node.ClientInterface, historyDB queries.LocalStoreInterface) *NftSearchingService {
 
 	return &NftSearchingService{
 		Worker:        task.NewWorker(),

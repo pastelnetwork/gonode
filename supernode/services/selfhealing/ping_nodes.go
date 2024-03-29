@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"sync"
 	"time"
@@ -164,7 +164,7 @@ func (task *SHTask) ping(ctx context.Context, req *pb.PingRequest, supernodeAddr
 
 // StorePingInfo stores the ping info to db
 func (task *SHTask) StorePingInfo(ctx context.Context, info types.PingInfo) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return err
@@ -197,7 +197,7 @@ func (task *SHTask) StorePingInfo(ctx context.Context, info types.PingInfo) erro
 
 // GetPingInfoFromDB get the ping info from db
 func (task *SHTask) GetPingInfoFromDB(ctx context.Context, supernodeID string) (*types.PingInfo, error) {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return nil, err

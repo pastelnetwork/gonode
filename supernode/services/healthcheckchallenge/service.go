@@ -10,6 +10,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -32,7 +33,7 @@ type HCService struct {
 	healthCheckChallengeExpiredBlocks int32
 	numberOfChallengeReplicas         int
 	numberOfVerifyingNodes            int
-	historyDB                         storage.LocalStoreInterface
+	historyDB                         queries.LocalStoreInterface
 
 	currentBlockCount int32
 	// currently unimplemented, default always used instead.
@@ -172,7 +173,7 @@ func calculateStartTimeForHealthCheckTrigger(pastelID string) time.Time {
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface,
-	p2p p2p.Client, challengeStatusObserver SaveChallengeState, historyDB storage.LocalStoreInterface) *HCService {
+	p2p p2p.Client, challengeStatusObserver SaveChallengeState, historyDB queries.LocalStoreInterface) *HCService {
 	return &HCService{
 		config:                            config,
 		SuperNodeService:                  common.NewSuperNodeService(fileStorage, pastelClient, p2p),

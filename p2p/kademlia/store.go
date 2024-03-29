@@ -9,10 +9,10 @@ import (
 
 // Store is the interface for implementing the storage mechanism for the DHT
 type Store interface {
-	// Store a key/value pair for the local node with the replication
+	// Store a key/value pair for the queries node with the replication
 	Store(ctx context.Context, key []byte, data []byte, typ int, isOriginal bool) error
 
-	// Retrieve the local key/value from store
+	// Retrieve the queries key/value from store
 	Retrieve(ctx context.Context, key []byte) ([]byte, error)
 
 	// RetrieveWithType gets data with type
@@ -39,7 +39,7 @@ type Store interface {
 	// UpdateKeyReplication updates the replication status of the key
 	UpdateKeyReplication(ctx context.Context, key []byte) error
 
-	// StoreBatch stores a batch of key/value pairs for the local node with the replication
+	// StoreBatch stores a batch of key/value pairs for the queries node with the replication
 	StoreBatch(ctx context.Context, values [][]byte, typ int, isOriginal bool) error
 	// GetAllReplicationInfo returns all records in replication table
 	GetAllReplicationInfo(ctx context.Context) ([]domain.NodeReplicationInfo, error)
@@ -92,13 +92,13 @@ type MetaStore interface {
 	// Delete a key pair from the store
 	Delete(_ context.Context, key []byte)
 
-	// Retrieve the local key from store
+	// Retrieve the queries key from store
 	Retrieve(_ context.Context, key string) error
 
 	// Close the store
 	Close(ctx context.Context)
 
-	// Store a key pair for the local node with the replication
+	// Store a key pair for the queries node with the replication
 	Store(ctx context.Context, key []byte) error
 
 	// GetDisabledKeys returns all disabled keys

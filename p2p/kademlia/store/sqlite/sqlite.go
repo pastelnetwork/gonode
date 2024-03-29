@@ -306,7 +306,7 @@ func (s *Store) Store(ctx context.Context, key []byte, value []byte, datatype in
 	return nil
 }
 
-// StoreBatch stores a batch of key/value pairs for the local node with the replication
+// StoreBatch stores a batch of key/value pairs for the queries node with the replication
 func (s *Store) StoreBatch(ctx context.Context, values [][]byte, datatype int, isOriginal bool) error {
 	job := Job{
 		JobType:    "BatchInsert",
@@ -372,7 +372,7 @@ func (s *Store) UpdateKeyReplication(ctx context.Context, key []byte) error {
 	return nil
 }
 
-// Retrieve will return the local key/value if it exists
+// Retrieve will return the queries key/value if it exists
 func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	hkey := hex.EncodeToString(key)
 
@@ -385,7 +385,7 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	return r.Data, nil
 }
 
-// RetrieveWithType will return the local key/value if it exists
+// RetrieveWithType will return the queries key/value if it exists
 func (s *Store) RetrieveWithType(_ context.Context, key []byte) ([]byte, int, error) {
 	hkey := hex.EncodeToString(key)
 
@@ -443,7 +443,7 @@ func (s *Store) performJob(j Job) error {
 	return nil
 }
 
-// storeRecord will store a key/value pair for the local node
+// storeRecord will store a key/value pair for the queries node
 func (s *Store) storeRecord(key []byte, value []byte, typ int, isOriginal bool) error {
 
 	operation := func() error {
