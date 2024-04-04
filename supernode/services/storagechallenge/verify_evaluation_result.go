@@ -11,7 +11,7 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 )
 
@@ -85,7 +85,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	//Get the file assuming we host it locally (if not, return)
 	challengeFileData, err := task.GetSymbolFileByKey(ctx, incomingEvaluationResult.Data.Challenge.FileHash, true)
 	if err != nil {
-		logger.WithError(err).Error("could not read local file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
+		logger.WithError(err).Error("could not read queries file data in to memory, so not continuing with verification.", "file.ReadFileIntoMemory", err.Error())
 
 		observerEvaluation := types.Message{
 			MessageType: types.AffirmationMessageType,
@@ -209,7 +209,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 
 // RetrieveChallengeMessage retrieves the challenge messages from db for further verification
 func (task SCTask) RetrieveChallengeMessage(ctx context.Context, challengeID string, msgType int) (challengeMessage *types.Message, err error) {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return nil, err

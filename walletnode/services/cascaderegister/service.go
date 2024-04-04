@@ -2,6 +2,7 @@ package cascaderegister
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"time"
 
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
@@ -43,7 +44,7 @@ type CascadeRegistrationService struct {
 	rqClient rqnode.ClientInterface
 
 	downloadHandler download.NftDownloadingService
-	historyDB       storage.LocalStoreInterface
+	historyDB       queries.LocalStoreInterface
 }
 
 // Run starts worker.
@@ -127,7 +128,7 @@ func (service *CascadeRegistrationService) CalculateFee(ctx context.Context, fil
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface, db storage.KeyValue,
 	downloadService download.NftDownloadingService,
-	historyDB storage.LocalStoreInterface,
+	historyDB queries.LocalStoreInterface,
 ) *CascadeRegistrationService {
 	return &CascadeRegistrationService{
 		Worker:          task.NewWorker(),

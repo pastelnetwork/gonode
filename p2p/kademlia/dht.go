@@ -40,7 +40,7 @@ var (
 
 const maxIterations = 5
 
-// DHT represents the state of the local node in the distributed hash table
+// DHT represents the state of the queries node in the distributed hash table
 type DHT struct {
 	ht             *HashTable       // the hashtable for routing
 	options        *Options         // the options of DHT
@@ -57,14 +57,14 @@ type DHT struct {
 	replicationMtx sync.RWMutex
 }
 
-// Options contains configuration options for the local node
+// Options contains configuration options for the queries node
 type Options struct {
 	ID []byte
 
-	// The local IPv4 or IPv6 address
+	// The queries IPv4 or IPv6 address
 	IP string
 
-	// The local port to listen for connections
+	// The queries port to listen for connections
 	Port int
 
 	// The nodes being used to bootstrap the network. Without a bootstrap
@@ -196,10 +196,10 @@ func (s *DHT) Store(ctx context.Context, data []byte, typ int) (string, error) {
 	key, _ := utils.Sha3256hash(data)
 
 	retKey := base58.Encode(key)
-	// store the key to local storage
+	// store the key to queries storage
 	if err := s.retryStore(ctx, key, data, typ); err != nil {
-		log.WithContext(ctx).WithError(err).Error("local data store failure after retries")
-		return "", fmt.Errorf("retry store data to local storage: %v", err)
+		log.WithContext(ctx).WithError(err).Error("queries data store failure after retries")
+		return "", fmt.Errorf("retry store data to queries storage: %v", err)
 	}
 
 	if _, err := s.iterate(ctx, IterateStore, key, data, typ); err != nil {
@@ -280,15 +280,15 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 		}
 	}
 
-	// retrieve the key/value from local storage
+	// retrieve the key/value from queries storage
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil && len(value) > 0 {
 		return value, nil
 	}
 
-	// if local only option is set, do not search just return error
+	// if queries only option is set, do not search just return error
 	if len(localOnly) > 0 && localOnly[0] {
-		return nil, fmt.Errorf("local-only failed to get properly: " + err.Error())
+		return nil, fmt.Errorf("queries-only failed to get properly: " + err.Error())
 	}
 
 	// if not found locally, iterative find value from kademlia network
@@ -305,7 +305,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	return peerValue, nil
 }
 
-// Delete delete key in local node
+// Delete delete key in queries node
 func (s *DHT) Delete(ctx context.Context, key string) error {
 	decoded := base58.Decode(key)
 	if len(decoded) != B/8 {
@@ -472,7 +472,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	sKey := hex.EncodeToString(target)
 
 	igList := s.ignorelist.ToNodeList()
-	// find the closest contacts for the target node from local route tables
+	// find the closest contacts for the target node from queries route tables
 	nl, _ := s.ht.closestContacts(Alpha, target, igList)
 	if len(igList) > 0 {
 		log.P2P().WithContext(ctx).WithField("nodes", nl.String()).WithField("ignored", s.ignorelist.String()).Info("closest contacts")
@@ -797,10 +797,10 @@ func (s *DHT) LocalStore(ctx context.Context, key string, data []byte) (string, 
 		return "", fmt.Errorf("invalid key: %v", key)
 	}
 
-	// store the key to local storage
+	// store the key to queries storage
 	if err := s.retryStore(ctx, decoded, data, 0); err != nil {
-		log.WithContext(ctx).WithError(err).Error("local data store failure after retries")
-		return "", fmt.Errorf("retry store data to local storage: %v", err)
+		log.WithContext(ctx).WithError(err).Error("queries data store failure after retries")
+		return "", fmt.Errorf("retry store data to queries storage: %v", err)
 	}
 
 	return key, nil

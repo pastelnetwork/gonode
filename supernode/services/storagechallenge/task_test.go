@@ -12,7 +12,7 @@ import (
 
 	json "github.com/json-iterator/go"
 
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/stretchr/testify/assert"
 
@@ -702,7 +702,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 	}
 
 	defer func() {
-		store, err := local.OpenHistoryDB()
+		store, err := queries.OpenHistoryDB()
 		assert.NoError(t, err)
 
 		store.CleanupStorageChallenges()

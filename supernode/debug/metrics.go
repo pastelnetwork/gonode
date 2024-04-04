@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -25,7 +25,7 @@ func (service *Service) processSHChallenge(ctx context.Context, pid string, sign
 
 	reports = make(types.SelfHealingReports)
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, fmt.Errorf("error opening DB: %w", err)
 	}
@@ -103,7 +103,7 @@ func (service *Service) processSHTrigger(ctx context.Context, pid string, signat
 		return nil, fmt.Errorf("invalid pid/passphrase")
 	}
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, fmt.Errorf("error opening DB: %w", err)
 	}
@@ -190,7 +190,7 @@ func (service *Service) processMetrics(ctx context.Context, pid string, signatur
 		return nil, fmt.Errorf("rate limit exceeded, please try again later")
 	}
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, fmt.Errorf("error opening DB: %w", err)
 	}

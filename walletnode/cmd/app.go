@@ -14,8 +14,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
-	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -137,7 +137,7 @@ func NewApp() *cli.App {
 // - Creates App Context
 // - Registers system interrupts for shutdown
 // - Configures RPC connections to nodeC and raptorq
-// - Sets up local file storage for NFT registration
+// - Sets up queries file storage for NFT registration
 // - Set minimum confirmation requirements for transactions
 // - Create services for the functions we want to expose to users, allowing for running and tasking
 // - Create API endpoints for those services
@@ -184,11 +184,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// start new key value storage
 	db := memory.NewKeyValue()
-	// Initialize temporary local file storage
+	// Initialize temporary queries file storage
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	//Initialize History DB
-	hDB, err := local.OpenHistoryDB()
+	hDB, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error connecting history db..")
 	}

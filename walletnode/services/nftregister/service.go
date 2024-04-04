@@ -3,6 +3,7 @@ package nftregister
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -36,7 +37,7 @@ type NftRegistrationService struct {
 
 	rqClient        rqnode.ClientInterface
 	downloadHandler *download.NftDownloadingService
-	historyDB       storage.LocalStoreInterface
+	historyDB       queries.LocalStoreInterface
 }
 
 // Run starts worker. //TODO: make common with the same from SenseRegisterService
@@ -127,7 +128,7 @@ func (service *NftRegistrationService) ValidateUser(ctx context.Context, id stri
 //
 //	are  handled in NftApiHandler, an NftRegistrationTask will actually be created via AddTask.
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface, fileStorage storage.FileStorageInterface,
-	db storage.KeyValue, downloadService *download.NftDownloadingService, historyDB storage.LocalStoreInterface) *NftRegistrationService {
+	db storage.KeyValue, downloadService *download.NftDownloadingService, historyDB queries.LocalStoreInterface) *NftRegistrationService {
 	return &NftRegistrationService{
 		Worker:          task.NewWorker(),
 		config:          config,

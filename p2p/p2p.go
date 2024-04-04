@@ -142,7 +142,7 @@ func (s *p2p) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	return s.dht.Retrieve(ctx, key, localOnly...)
 }
 
-// Delete delete key in local node
+// Delete delete key in queries node
 func (s *p2p) Delete(ctx context.Context, key string) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
@@ -217,7 +217,7 @@ func (s *p2p) NClosestNodesWithIncludingNodeList(ctx context.Context, n int, key
 
 // configure the distributed hash table for p2p service
 func (s *p2p) configure(ctx context.Context) error {
-	// new the local storage
+	// new the queries storage
 	kadOpts := &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
@@ -314,7 +314,7 @@ func (s *p2p) GetLocalKeys(ctx context.Context, from *time.Time, to time.Time) (
 
 	keys, err := s.store.GetLocalKeys(*from, to)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get local keys: %w", err)
+		return nil, fmt.Errorf("failed to get queries keys: %w", err)
 	}
 
 	retkeys := make([]string, len(keys))

@@ -19,8 +19,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
-	"github.com/pastelnetwork/gonode/common/storage/local"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/nft/server"
@@ -137,7 +137,7 @@ func (service *NftAPIHandler) Register(ctx context.Context, p *nft.RegisterPaylo
 
 // GetTaskHistory - Gets a task's history
 func (service *NftAPIHandler) GetTaskHistory(ctx context.Context, p *nft.GetTaskHistoryPayload) (res []*nft.TaskHistory, err error) {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, nft.MakeInternalServerError(errors.New("error retrieving status"))
 	}

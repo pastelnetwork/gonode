@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/collection"
@@ -109,7 +109,7 @@ func (service *CollectionAPIHandler) RegisterTaskState(ctx context.Context, p *c
 
 // GetTaskHistory - Gets a task's history
 func (service *CollectionAPIHandler) GetTaskHistory(ctx context.Context, p *collection.GetTaskHistoryPayload) (history []*collection.TaskHistory, err error) {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, collection.MakeInternalServerError(errors.New("error retrieving status"))
 	}

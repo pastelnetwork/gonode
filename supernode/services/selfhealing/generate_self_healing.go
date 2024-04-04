@@ -11,7 +11,7 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -130,7 +130,7 @@ func (task *SHTask) GenerateSelfHealingChallenge(ctx context.Context) error {
 
 // retrieveWatchlistPingInfo retrieves all the nodes on watchlist
 func (task *SHTask) retrieveWatchlistPingInfo(ctx context.Context) (types.PingInfos, error) {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return nil, err
@@ -635,7 +635,7 @@ func (task *SHTask) SendMessage(ctx context.Context, challengeMessage types.Self
 }
 
 func (task *SHTask) updateWatchlist(ctx context.Context, watchlistPingInfos types.PingInfos) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return nil
@@ -695,7 +695,7 @@ func (task *SHTask) filterWatchlistAndCurrentNode(watchList types.PingInfos, lis
 
 // StoreSelfHealingGenerationMetrics stores the self-healing generation metrics to db for further verification
 func (task *SHTask) StoreSelfHealingGenerationMetrics(ctx context.Context, metricLog types.SelfHealingGenerationMetric) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return err
@@ -726,7 +726,7 @@ func (task *SHTask) StoreSelfHealingGenerationMetrics(ctx context.Context, metri
 
 // StoreSelfHealingExecutionMetrics stores the self-healing execution metrics to db for further verification
 func (task *SHTask) StoreSelfHealingExecutionMetrics(ctx context.Context, executionMetricsLog types.SelfHealingExecutionMetric) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return err

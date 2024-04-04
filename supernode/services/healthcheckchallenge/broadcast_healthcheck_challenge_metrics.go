@@ -9,7 +9,7 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 )
@@ -181,7 +181,7 @@ func splitHCMetrics(metrics []types.HealthCheckChallengeLogMessage, batchSize in
 }
 
 func (task *HCTask) BatchStoreHCMetrics(ctx context.Context, metrics []types.HealthCheckChallengeLogMessage) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return err

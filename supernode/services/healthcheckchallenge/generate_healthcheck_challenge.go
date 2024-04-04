@@ -12,7 +12,7 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -372,7 +372,7 @@ func (task *HCTask) SignMessage(ctx context.Context, data types.HealthCheckMessa
 func (task *HCTask) StoreChallengeMessage(ctx context.Context, msg types.HealthCheckMessage) error {
 	logger := log.WithContext(ctx).WithField("Method", "HealthCheckChallenge")
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		logger.WithError(err).Error("Error Opening DB")
 		return err
@@ -419,7 +419,7 @@ func (task *HCTask) StoreChallengeMessage(ctx context.Context, msg types.HealthC
 func (task *HCTask) StoreHealthCheckChallengeMetric(ctx context.Context, msg types.HealthCheckMessage) error {
 	logger := log.WithContext(ctx).WithField("Method", "HealthCheckChallenge")
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		logger.WithError(err).Error("Error Opening DB")
 		return err

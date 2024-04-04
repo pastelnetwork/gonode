@@ -2,6 +2,7 @@ package senseregister
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"time"
 
 	"github.com/pastelnetwork/gonode/mixins"
@@ -38,7 +39,7 @@ type SenseRegistrationService struct {
 	ImageHandler    *mixins.FilesHandler
 	pastelHandler   *mixins.PastelHandler
 	nodeClient      node.ClientInterface
-	historyDB       storage.LocalStoreInterface
+	historyDB       queries.LocalStoreInterface
 }
 
 // Run starts worker.
@@ -128,7 +129,7 @@ func NewService(
 	fileStorage storage.FileStorageInterface,
 	downloadService *download.NftDownloadingService,
 	db storage.KeyValue,
-	historyDB storage.LocalStoreInterface,
+	historyDB queries.LocalStoreInterface,
 ) *SenseRegistrationService {
 	return &SenseRegistrationService{
 		Worker:          task.NewWorker(),

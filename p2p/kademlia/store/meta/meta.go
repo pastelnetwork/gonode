@@ -279,7 +279,7 @@ func (s *Store) Close(ctx context.Context) {
 	}
 }
 
-// Retrieve will return the local key/value if it exists
+// Retrieve will return the queries key/value if it exists
 func (s *Store) Retrieve(_ context.Context, key string) error {
 	r := DisabledKey{}
 	err := s.db.Get(&r, `SELECT * FROM disabled_keys WHERE key = ?`, key)

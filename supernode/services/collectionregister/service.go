@@ -2,6 +2,7 @@ package collectionregister
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -20,7 +21,7 @@ type CollectionRegistrationService struct {
 	config *Config
 
 	nodeClient node.ClientInterface
-	historyDB  storage.LocalStoreInterface
+	historyDB  queries.LocalStoreInterface
 }
 
 // Run starts task
@@ -46,7 +47,7 @@ func NewService(config *Config,
 	pastelClient pastel.Client,
 	nodeClient node.ClientInterface,
 	p2pClient p2p.Client,
-	historyDB storage.LocalStoreInterface,
+	historyDB queries.LocalStoreInterface,
 ) *CollectionRegistrationService {
 	return &CollectionRegistrationService{
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient),

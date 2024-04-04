@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"sync/atomic"
 	"time"
 
@@ -40,7 +41,7 @@ type SHService struct {
 	nodeID                    string
 	nodeAddress               string
 	nodeClient                node.ClientInterface
-	historyDB                 storage.LocalStoreInterface
+	historyDB                 queries.LocalStoreInterface
 	downloadService           *download.NftDownloaderService
 	ticketsMap                map[string]bool
 	triggerAcknowledgementMap map[string]bool
@@ -253,7 +254,7 @@ func (service *SHService) Task(id string) *SHTask {
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastel-client, p2p, and rqClient.
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client,
-	historyDB storage.LocalStoreInterface, downloadService *download.NftDownloaderService) *SHService {
+	historyDB queries.LocalStoreInterface, downloadService *download.NftDownloaderService) *SHService {
 	return &SHService{
 		config:                    config,
 		SuperNodeService:          common.NewSuperNodeService(fileStorage, pastelClient, p2p),

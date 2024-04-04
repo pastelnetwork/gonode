@@ -17,7 +17,7 @@ import (
 	"github.com/mkmik/argsort"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -71,7 +71,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 
 	// Identify which raptorq files are currently hosted on this node
 	sliceOfFileHashesStoredByLocalSupernode := task.getFilesStoredByLocalSN(ctx, sliceOfFileHashes)
-	logger.Debug("slice of file hashes stored by local SN has been retrieved")
+	logger.Debug("slice of file hashes stored by queries SN has been retrieved")
 
 	if len(sliceOfFileHashesStoredByLocalSupernode) == 0 {
 		logger.Info("no files are hosted on this node - exiting")
@@ -80,7 +80,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 
 	// Identify which files should be challenged, their recipients and observers
 	sliceOfFileHashesToChallenge := task.getChallengingFiles(ctx, merkleroot, challengingSupernodeID, defaultChallengeReplicas, sliceOfFileHashesStoredByLocalSupernode)
-	logger.Debug("file hashes to challenge stored by local SN have been retrieved")
+	logger.Debug("file hashes to challenge stored by queries SN have been retrieved")
 
 	sliceOfSupernodesToChallenge, challengeFileObservers := task.identifyChallengeRecipientsAndObserversAgainstChallengingFiles(ctx, sliceOfFileHashesToChallenge, merkleroot, challengingSupernodeID)
 	logger.Debug("challenge recipients and partial observers have been identified")
@@ -490,7 +490,7 @@ func (task SCTask) identifyChallengeRecipientsAndObserversAgainstChallengingFile
 
 // StoreChallengeMessage stores the challenge message to db for further verification
 func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return err
@@ -535,7 +535,7 @@ func (task SCTask) StoreChallengeMessage(ctx context.Context, msg types.Message)
 
 // StoreStorageChallengeMetric stores the challenge message to db for further verification
 func (task *SCTask) StoreStorageChallengeMetric(ctx context.Context, msg types.Message) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return err

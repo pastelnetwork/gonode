@@ -35,7 +35,7 @@ const (
 
 // HashTable represents the hashtable state
 type HashTable struct {
-	// The ID of the local node
+	// The ID of the queries node
 	self *Node
 
 	// Route table a list of all known nodes in the network

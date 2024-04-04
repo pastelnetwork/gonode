@@ -2,10 +2,10 @@ package collectionregister
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/collection"
@@ -25,7 +25,7 @@ type CollectionRegistrationService struct {
 
 	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface
-	historyDB     storage.LocalStoreInterface
+	historyDB     queries.LocalStoreInterface
 }
 
 // Run starts worker.
@@ -77,7 +77,7 @@ func NewService(
 	config *Config,
 	pastelClient pastel.Client,
 	nodeClient node.ClientInterface,
-	historyDB storage.LocalStoreInterface,
+	historyDB queries.LocalStoreInterface,
 ) *CollectionRegistrationService {
 	return &CollectionRegistrationService{
 		config:        config,

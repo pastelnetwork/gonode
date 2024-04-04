@@ -4,7 +4,7 @@ import (
 	"context"
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 )
@@ -85,7 +85,7 @@ func (task *SHTask) decompressExecutionMetricsData(compressedData []byte) ([]typ
 
 // BatchStoreExecutionMetrics stores the self-healing execution metrics to db for further verification
 func (task *SHTask) BatchStoreExecutionMetrics(ctx context.Context, metrics []types.SelfHealingExecutionMetric) error {
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 		return err

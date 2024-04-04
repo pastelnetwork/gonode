@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -50,7 +51,7 @@ type SCService struct {
 	storageChallengeExpiredBlocks int32
 	numberOfChallengeReplicas     int
 	numberOfVerifyingNodes        int
-	historyDB                     storage.LocalStoreInterface
+	historyDB                     queries.LocalStoreInterface
 
 	currentBlockCount int32
 	// currently unimplemented, default always used instead.
@@ -79,7 +80,7 @@ const (
 	defaultLocalKeysFetchInterval  = 20 * time.Minute
 )
 
-// RunLocalKeysFetchWorker : This worker will periodically fetch the local keys from the local storage
+// RunLocalKeysFetchWorker : This worker will periodically fetch the queries keys from the queries storage
 func (service *SCService) RunLocalKeysFetchWorker(ctx context.Context) {
 	service.localKeysLastFetchAt = time.Now().UTC()
 	if err := service.populateLocalKeys(ctx, nil); err != nil {
@@ -93,7 +94,7 @@ func (service *SCService) RunLocalKeysFetchWorker(ctx context.Context) {
 				log.WithContext(ctx).WithError(err).Error("RunLocalKeysFetchWorker:populateLocalKeys")
 			}
 		case <-ctx.Done():
-			log.Println("Context done being called in local keys fetch worker in service.go")
+			log.Println("Context done being called in queries keys fetch worker in service.go")
 			return
 		}
 	}
@@ -104,7 +105,7 @@ func (service *SCService) populateLocalKeys(ctx context.Context, from *time.Time
 	if from != nil {
 		fromStr = from.String()
 	}
-	log.WithContext(ctx).WithField("fromStr", fromStr).WithField("to", service.localKeysLastFetchAt).Info("Populating local keys")
+	log.WithContext(ctx).WithField("fromStr", fromStr).WithField("to", service.localKeysLastFetchAt).Info("Populating queries keys")
 	keys, err := service.P2PClient.GetLocalKeys(ctx, from, service.localKeysLastFetchAt)
 	if err != nil {
 		return fmt.Errorf("GetLocalKeys: %w", err)
@@ -219,7 +220,7 @@ func calculateStartTime(pastelID string) time.Time {
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface,
-	p2p p2p.Client, challengeStatusObserver SaveChallengeState, historyDB storage.LocalStoreInterface) *SCService {
+	p2p p2p.Client, challengeStatusObserver SaveChallengeState, historyDB queries.LocalStoreInterface) *SCService {
 	return &SCService{
 		config:                        config,
 		SuperNodeService:              common.NewSuperNodeService(fileStorage, pastelClient, p2p),

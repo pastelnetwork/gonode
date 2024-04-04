@@ -230,7 +230,7 @@ func (s *DHT) Bootstrap(ctx context.Context, bootstrapIPs string) error {
 	// wait until all are done
 	wg.Wait()
 
-	// if it has nodes in local route tables
+	// if it has nodes in queries route tables
 	if s.ht.totalCount() > 0 {
 		// iterative find node from the nodes
 		if _, err := s.iterate(ctx, IterateFindNode, s.ht.self.ID, nil, 0); err != nil {

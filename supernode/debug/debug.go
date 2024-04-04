@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/local"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
@@ -84,7 +84,7 @@ func NewService(config *Config, p2pClient p2p.Client, srvc *storagechallenge.SCS
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/local_p2p", service.p2pLocalStore).Methods(http.MethodPost)                    // store data only in local node
+	router.HandleFunc("/local_p2p", service.p2pLocalStore).Methods(http.MethodPost)                    // store data only in queries node
 	router.HandleFunc("/p2p/stats", service.p2pStats).Methods(http.MethodGet)                          // Return stats of p2p
 	router.HandleFunc("/p2p", service.p2pStore).Methods(http.MethodPost)                               // store a data
 	router.HandleFunc("/p2p/{key}", service.p2pRetrieve).Methods(http.MethodGet)                       // retrieve a key
@@ -166,7 +166,7 @@ func (service *Service) p2pRetrieve(writer http.ResponseWriter, request *http.Re
 func (service *Service) storageChallengeCleanup(writer http.ResponseWriter, request *http.Request) {
 	ctx := service.contextWithLogPrefix(request.Context())
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 	}
@@ -184,7 +184,7 @@ func (service *Service) storageChallengeCleanup(writer http.ResponseWriter, requ
 func (service *Service) storageChallengeRetrieve(writer http.ResponseWriter, request *http.Request) {
 	ctx := service.contextWithLogPrefix(request.Context())
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 	}
@@ -202,7 +202,7 @@ func (service *Service) storageChallengeRetrieve(writer http.ResponseWriter, req
 func (service *Service) selfHealingChallengesRetrieve(writer http.ResponseWriter, request *http.Request) {
 	ctx := service.contextWithLogPrefix(request.Context())
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 	}
@@ -220,7 +220,7 @@ func (service *Service) selfHealingChallengesRetrieve(writer http.ResponseWriter
 func (service *Service) selfHealingChallengeCleanup(writer http.ResponseWriter, request *http.Request) {
 	ctx := service.contextWithLogPrefix(request.Context())
 
-	store, err := local.OpenHistoryDB()
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error Opening DB")
 	}

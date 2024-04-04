@@ -2,6 +2,7 @@ package senseregister
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 
 	"github.com/pastelnetwork/gonode/common/dupedetection"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -25,7 +26,7 @@ type SenseRegistrationService struct {
 
 	nodeClient node.ClientInterface
 	ddClient   ddclient.DDServerClient
-	historyDB  storage.LocalStoreInterface
+	historyDB  queries.LocalStoreInterface
 }
 
 // Run starts task
@@ -76,7 +77,7 @@ func NewService(config *Config,
 	nodeClient node.ClientInterface,
 	p2pClient p2p.Client,
 	ddClient ddclient.DDServerClient,
-	historyDB storage.LocalStoreInterface,
+	historyDB queries.LocalStoreInterface,
 ) *SenseRegistrationService {
 	return &SenseRegistrationService{
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient),

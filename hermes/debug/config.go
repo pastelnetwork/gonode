@@ -10,7 +10,7 @@ const (
 
 // Config contains configuration of debug service
 type Config struct {
-	// HTTPPort the local port to listen for connections on
+	// HTTPPort the queries port to listen for connections on
 	HTTPPort int `mapstructure:"http-port" json:"http-port,omitempty"`
 }
 

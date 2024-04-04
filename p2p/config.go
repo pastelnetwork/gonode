@@ -11,10 +11,10 @@ const (
 
 // Config contains settings of the p2p service
 type Config struct {
-	// the local IPv4 or IPv6 address
+	// the queries IPv4 or IPv6 address
 	ListenAddress string `mapstructure:"listen_address" json:"listen_address,omitempty"`
 
-	// the local port to listen for connections on
+	// the queries port to listen for connections on
 	Port int `mapstructure:"port" json:"port,omitempty"`
 
 	// data directory for badger
