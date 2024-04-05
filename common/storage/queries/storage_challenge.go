@@ -11,6 +11,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/utils/metrics"
 )
 
+const batchSizeForChallengeIDsRetrieval = 500
+
 type StorageChallengeQueries interface {
 	InsertStorageChallengeMessage(challenge types.StorageChallengeLogMessage) error
 	InsertBroadcastMessage(challenge types.BroadcastLogMessage) error
@@ -27,6 +29,9 @@ type StorageChallengeQueries interface {
 	GetObserversEvaluations(from time.Time) ([]types.StorageChallengeLogMessage, error)
 	GetMetricsDataByStorageChallengeID(ctx context.Context, challengeID string) ([]types.Message, error)
 	GetLastNSCMetrics() ([]types.NScMetric, error)
+	GetDistinctChallengeIDsCountForScoreAggregation(after, before time.Time) (int, error)
+	GetDistinctChallengeIDs(after, before time.Time, batchNumber int) ([]string, error)
+	BatchInsertScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error
 }
 
 // InsertStorageChallengeMessage inserts failed storage challenge to db
@@ -374,4 +379,86 @@ func isObserverEvaluationVerified(observerEvaluation types.ObserverEvaluationDat
 	}
 
 	return true
+}
+
+// GetDistinctChallengeIDsCountForScoreAggregation gets the count of distinct challenge ids for score aggregation
+func (s *SQLiteStore) GetDistinctChallengeIDsCountForScoreAggregation(after, before time.Time) (int, error) {
+	query := `
+        SELECT COUNT(DISTINCT challenge_id)
+        FROM storage_challenge_metrics
+        WHERE message_type = 4 AND created_at >= ? AND created_at < ?
+    `
+
+	var challengeIDsCount int
+	err := s.db.QueryRow(query, after, before).Scan(&challengeIDsCount)
+	if err != nil {
+		return 0, err
+	}
+
+	return challengeIDsCount, nil
+}
+
+// GetDistinctChallengeIDs retrieves the distinct challenge ids for score aggregation
+func (s *SQLiteStore) GetDistinctChallengeIDs(after, before time.Time, batchNumber int) ([]string, error) {
+	offset := batchNumber * batchSizeForChallengeIDsRetrieval
+
+	query := `
+        SELECT DISTINCT challenge_id
+        FROM storage_challenge_metrics
+        WHERE message_type = 4 AND created_at >= ? AND created_at < ?
+        LIMIT ? OFFSET ?
+    `
+
+	rows, err := s.db.Query(query, after, before, batchSizeForChallengeIDsRetrieval, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var challengeIDs []string
+	for rows.Next() {
+		var challengeID string
+		if err := rows.Scan(&challengeID); err != nil {
+			return nil, err
+		}
+		challengeIDs = append(challengeIDs, challengeID)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return challengeIDs, nil
+}
+
+// BatchInsertScoreAggregationChallenges inserts the batch of challenge ids for score aggregation
+func (s *SQLiteStore) BatchInsertScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+        INSERT OR IGNORE INTO sc_score_aggregation_queue
+        (challenge_id, is_aggregated, created_at, updated_at)
+        VALUES (?,?,?,?)
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	for _, id := range challengeIDs {
+		now := time.Now().UTC()
+
+		_, err = stmt.Exec(id, isAggregated, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Commit the transaction
+	return tx.Commit()
 }
