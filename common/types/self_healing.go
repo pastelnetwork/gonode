@@ -73,6 +73,7 @@ type PingInfo struct {
 	HealthCheckMetricsLastBroadcastAt sql.NullTime `db:"health_check_metrics_last_broadcast_at"`
 	GenerationMetricsLastBroadcastAt  sql.NullTime `db:"generation_metrics_last_broadcast_at"`
 	ExecutionMetricsLastBroadcastAt   sql.NullTime `db:"execution_metrics_last_broadcast_at"`
+	SCScoreLastAggregatedAt           sql.NullTime `db:"sc_score_last_aggregated_at"`
 	LastResponseTime                  float64      `db:"-"`
 }
 

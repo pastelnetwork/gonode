@@ -196,9 +196,57 @@ const createHealthCheckChallengeMetrics string = `
   updated_at DATETIME NOT NULL
 );
 `
+const createAggregatedSCScores string = `
+CREATE TABLE IF NOT EXISTS aggregated_sc_scores (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    node_id TEXT NOT NULL,
+    ip_address TEXT NOT NULL,
+    total_challenges_as_challengers INTEGER,
+    total_challenges_as_recipients INTEGER,
+    total_challenges_as_observers INTEGER,
+    correct_challenger_evaluations INTEGER,
+    correct_recipient_evaluations INTEGER,
+    correct_observer_evaluation INTEGER,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+`
+
+const createSCScoreAggregationQueue string = `
+CREATE TABLE IF NOT EXISTS sc_score_aggregation_queue (
+    challenge_id TEXT PRIMARY KEY NOT NULL,
+    is_aggregated BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+`
+
+const createScoreAggregationTracker string = `
+CREATE TABLE IF NOT EXISTS score_aggregation_tracker (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    challenge_type INTEGER NOT NULL,
+    aggregated_til DATETIME NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+`
+
+const createScoreAggregationTrackerUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS score_aggregation_tracker_unique ON score_aggregation_tracker(challenge_type);
+`
 
 const createHealthCheckChallengeMetricsUniqueIndex string = `
 CREATE UNIQUE INDEX IF NOT EXISTS healthcheck_challenge_metrics_unique ON healthcheck_challenge_metrics(challenge_id, message_type, sender_id);
+`
+
+const createAggregatedSCScoresUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS aggregated_sc_scores_unique_index 
+ON aggregated_sc_scores(node_id, ip_address);
+`
+
+const createAggregatedSCChallengesUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS sc_score_aggregation_queue_unique_index 
+ON sc_score_aggregation_queue(challenge_id);
 `
 
 const alterTablePingHistoryHealthCheckColumn = `ALTER TABLE ping_history
@@ -303,6 +351,30 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 
 	if _, err := db.Exec(createBroadcastHealthCheckChallengeMessages); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createAggregatedSCScores); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createSCScoreAggregationQueue); err != nil {
+		return nil, fmt.Errorf("cannot create table(s): %w", err)
+	}
+
+	if _, err := db.Exec(createScoreAggregationTracker); err != nil {
+		return nil, fmt.Errorf("cannot create table: %w", err)
+	}
+
+	if _, err := db.Exec(createAggregatedSCScoresUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create unique index: %w", err)
+	}
+
+	if _, err := db.Exec(createAggregatedSCChallengesUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create unique index: %w", err)
+	}
+
+	if _, err := db.Exec(createScoreAggregationTrackerUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create unique index: %w", err)
 	}
 
 	_, _ = db.Exec(alterTaskHistory)
