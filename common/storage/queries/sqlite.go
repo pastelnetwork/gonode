@@ -200,7 +200,7 @@ const createAggregatedSCScores string = `
 CREATE TABLE IF NOT EXISTS aggregated_sc_scores (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     node_id TEXT NOT NULL,
-    ip_address TEXT NOT NULL,
+    ip_address TEXT,
     total_challenges_as_challengers INTEGER,
     total_challenges_as_recipients INTEGER,
     total_challenges_as_observers INTEGER,
@@ -241,7 +241,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS healthcheck_challenge_metrics_unique ON health
 
 const createAggregatedSCScoresUniqueIndex string = `
 CREATE UNIQUE INDEX IF NOT EXISTS aggregated_sc_scores_unique_index 
-ON aggregated_sc_scores(node_id, ip_address);
+ON aggregated_sc_scores(node_id);
 `
 
 const createAggregatedSCChallengesUniqueIndex string = `

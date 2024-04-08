@@ -44,7 +44,7 @@ func (task *SCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 			logger.Error("error retrieving the challenge ids for score aggregation")
 		}
 
-		err = task.historyDB.BatchUpsertScoreAggregationChallenges(batchOfChallengeIDs, false)
+		err = task.historyDB.BatchInsertScoreAggregationChallenges(batchOfChallengeIDs, false)
 		if err != nil {
 			logger.Error("error storing challenge_ids for score aggregation")
 			return err
@@ -69,12 +69,12 @@ func (task *SCTask) retrieveChallengeIDsInBatches(tracker queries.ScoreAggregati
 
 	before = time.Now().UTC().Add(-6 * time.Hour)
 	if !tracker.AggregatedTil.Valid {
-		challengeIDs, err = task.historyDB.GetDistinctChallengeIDsBatch(zeroTime, before, batchNumber)
+		challengeIDs, err = task.historyDB.GetDistinctChallengeIDs(zeroTime, before, batchNumber)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		challengeIDs, err = task.historyDB.GetDistinctChallengeIDsBatch(tracker.AggregatedTil.Time, before, batchNumber)
+		challengeIDs, err = task.historyDB.GetDistinctChallengeIDs(tracker.AggregatedTil.Time, before, batchNumber)
 		if err != nil {
 			return nil, err
 		}

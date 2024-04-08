@@ -19,6 +19,7 @@ type StorageChallengeQueries interface {
 	QueryStorageChallengeMessage(challengeID string, messageType int) (challenge types.StorageChallengeLogMessage, err error)
 	CleanupStorageChallenges() (err error)
 	GetStorageChallengeMetricsByChallengeID(challengeID string) ([]types.StorageChallengeLogMessage, error)
+	GetMetricsByChallengeIDAndMessageType(challengeID string, messageType types.MessageType) ([]types.StorageChallengeLogMessage, error)
 
 	BatchInsertSCMetrics(metrics []types.StorageChallengeLogMessage) error
 	StorageChallengeMetrics(timestamp time.Time) ([]types.StorageChallengeLogMessage, error)
@@ -296,6 +297,33 @@ func (s *SQLiteStore) GetStorageChallengeMetricsByChallengeID(challengeID string
     WHERE challenge_id = ?;`
 
 	rows, err := s.db.Query(query, challengeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.StorageChallengeLogMessage
+	for rows.Next() {
+		var m types.StorageChallengeLogMessage
+		err := rows.Scan(&m.ID, &m.ChallengeID, &m.MessageType, &m.Data, &m.Sender, &m.CreatedAt, &m.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
+}
+
+// GetMetricsByChallengeIDAndMessageType retrieves all the metrics by challengeID and messageType
+func (s *SQLiteStore) GetMetricsByChallengeIDAndMessageType(challengeID string, messageType types.MessageType) ([]types.StorageChallengeLogMessage, error) {
+	const query = `
+    SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at
+    FROM storage_challenge_metrics
+    WHERE challenge_id = ?
+    AND message_type = ?;`
+
+	rows, err := s.db.Query(query, challengeID, int(messageType))
 	if err != nil {
 		return nil, err
 	}

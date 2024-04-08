@@ -209,3 +209,16 @@ type NHcMetric struct {
 	ChallengeID string
 	CreatedAt   string
 }
+
+type AggregatedSCScore struct {
+	NodeID                       string    `db:"node_id"`
+	IPAddress                    string    `db:"ip_address"`
+	TotalChallengesAsRecipients  int       `db:"total_challenges_as_recipients"`
+	TotalChallengesAsObservers   int       `db:"total_challenges_as_observers"`
+	TotalChallengesAsChallengers int       `db:"total_challenges_as_challengers"`
+	CorrectChallengerEvaluations int       `db:"correct_challenger_evaluations"`
+	CorrectObserverEvaluations   int       `db:"correct_observer_evaluations"`
+	CorrectRecipientEvaluations  int       `db:"correct_recipient_evaluations"`
+	CreatedAt                    time.Time `db:"created_at"`
+	UpdatedAt                    time.Time `db:"updated_at"`
+}
