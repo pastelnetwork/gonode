@@ -2,9 +2,11 @@ package cascaderegister
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/storage/queries"
 
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/node"
@@ -22,6 +24,7 @@ type CascadeRegistrationService struct {
 
 	nodeClient node.ClientInterface
 	historyDB  queries.LocalStoreInterface
+	rqstore    rqstore.Store
 }
 
 // Run starts task
@@ -48,12 +51,14 @@ func (service *CascadeRegistrationService) Task(id string) *CascadeRegistrationT
 
 // NewService returns a new Service instance.
 func NewService(config *Config, fileStorage storage.FileStorageInterface,
-	pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, historyDB queries.LocalStoreInterface) *CascadeRegistrationService {
+	pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client,
+	historyDB queries.LocalStoreInterface, rqstore rqstore.Store) *CascadeRegistrationService {
 
 	return &CascadeRegistrationService{
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient),
 		config:           config,
 		nodeClient:       nodeClient,
 		historyDB:        historyDB,
+		rqstore:          rqstore,
 	}
 }

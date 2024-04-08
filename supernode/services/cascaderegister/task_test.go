@@ -11,6 +11,7 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/common/types"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
@@ -40,8 +41,9 @@ func add2NodesAnd2TicketSignatures(task *CascadeRegistrationTask) *CascadeRegist
 	return task
 }
 
-func makeEmptyCascadeRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, rqClient rqnode.ClientInterface) *CascadeRegistrationTask {
-	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, nil)
+func makeEmptyCascadeRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface,
+	p2pClient p2p.Client, rqClient rqnode.ClientInterface, rqStore rqstore.Store) *CascadeRegistrationTask {
+	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, nil, rqStore)
 	task := NewCascadeRegistrationTask(service)
 	task.storage.RqClient = rqClient
 	task.Ticket = &pastel.ActionTicket{}
@@ -86,6 +88,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			wantErr: errors.New("test"),
 		},
 	}
+
 	for name, tc := range testCases {
 		tc := tc
 
@@ -99,7 +102,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			clientMock.ListenOnSendCascadeTicketSignature(tc.args.sendArtErr).
 				ListenOnConnect("", nil).ListenOnRegisterCascade()
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, clientMock, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, clientMock, nil, nil, rqstore.SetupTestDB(t))
 
 			task.NetworkHandler.ConnectedTo = &common.SuperNodePeer{
 				ClientInterface: clientMock,
@@ -210,7 +213,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, rqstore.SetupTestDB(t))
 
 			_, err := task.NetworkHandler.PastelNodeByExtKey(context.Background(), tc.args.nodeID)
 			if tc.wantErr != nil {
@@ -264,7 +267,7 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(tc.args.verifyRet, tc.args.verifyErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, rqstore.SetupTestDB(t))
 			task = add2NodesAnd2TicketSignatures(task)
 
 			err := task.VerifyPeersTicketSignature(context.Background(), task.Ticket)
@@ -347,7 +350,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			pastelClientMock.ListenOnGetBlockCount(1, nil)
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.retRes, tc.retErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, rqstore.SetupTestDB(t))
 
 			err := <-task.WaitConfirmation(ctx, tc.args.txid,
 				tc.args.minConfirmations, tc.args.interval, false, 0, 0)
@@ -419,7 +422,7 @@ func TestTaskSessionNode(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, rqstore.SetupTestDB(t))
 			task.UpdateStatus(tc.args.status)
 
 			go task.RunAction(ctx)
@@ -502,7 +505,7 @@ func TestTaskAddPeerCascadeTicketSignature(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
-			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil)
+			task := makeEmptyCascadeRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, rqstore.SetupTestDB(t))
 			task.UpdateStatus(tc.args.status)
 
 			go task.RunAction(ctx)
@@ -575,7 +578,7 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, nil, rqClientMock)
+			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, nil, rqClientMock, rqstore.SetupTestDB(t))
 			storage := files.NewStorage(fsMock)
 			task.Asset = files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
@@ -675,7 +678,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, p2pClient, rqClientMock)
+			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, p2pClient, rqClientMock, rqstore.SetupTestDB(t))
 
 			storage := files.NewStorage(fsMock)
 			task.Asset = files.NewFile(storage, "test")

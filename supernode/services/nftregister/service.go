@@ -2,12 +2,14 @@ package nftregister
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/storage/queries"
 
 	"github.com/pastelnetwork/gonode/common/dupedetection"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/ddstore"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -27,6 +29,7 @@ type NftRegistrationService struct {
 	nodeClient node.ClientInterface
 	ddClient   ddclient.DDServerClient
 	historyDB  queries.LocalStoreInterface
+	rqstore    rqstore.Store
 }
 
 // Run starts task
@@ -71,12 +74,15 @@ func (service *NftRegistrationService) GetDupeDetectionServerStats(ctx context.C
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client, ddClient ddclient.DDServerClient, historyDB queries.LocalStoreInterface) *NftRegistrationService {
+func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client,
+	nodeClient node.ClientInterface, p2pClient p2p.Client, ddClient ddclient.DDServerClient,
+	historyDB queries.LocalStoreInterface, rqstore rqstore.Store) *NftRegistrationService {
 	return &NftRegistrationService{
 		SuperNodeService: common.NewSuperNodeService(fileStorage, pastelClient, p2pClient),
 		config:           config,
 		nodeClient:       nodeClient,
 		ddClient:         ddClient,
 		historyDB:        historyDB,
+		rqstore:          rqstore,
 	}
 }

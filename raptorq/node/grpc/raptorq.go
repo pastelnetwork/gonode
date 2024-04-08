@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	pb "github.com/pastelnetwork/gonode/raptorq"
 	"github.com/pastelnetwork/gonode/raptorq/node"
 )
@@ -132,9 +133,10 @@ func scanSymbolIDFiles(dirPath string) (map[string]node.RawSymbolIDFile, error) 
 	return filesMap, nil
 }
 
-// scan symbol  files in "symbols" folder, return map of file Ids & contents of file (as list of line)
-func scanSymbolFiles(dirPath string) (map[string][]byte, error) {
-	filesMap := make(map[string][]byte)
+func (service *raptorQ) scanSymbolFilesAndStore(dirPath string, id string, store rqstore.Store) (map[string][]byte, error) {
+	const batchSize = 1000
+	idMap := make(map[string][]byte)
+	batch := make(map[string][]byte)
 
 	err := filepath.Walk(dirPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -142,18 +144,25 @@ func scanSymbolFiles(dirPath string) (map[string][]byte, error) {
 		}
 
 		if info.IsDir() {
-			// TODO - compare it to root
-			return nil
+			return nil // Skip directories
 		}
-
-		fileID := filepath.Base(path)
 
 		data, err := readFile(path)
 		if err != nil {
 			return errors.Errorf("read file %s: %w", path, err)
 		}
 
-		filesMap[fileID] = data
+		fileID := filepath.Base(path)
+		idMap[fileID] = []byte{}
+		batch[fileID] = data
+
+		// Store in batches
+		if len(batch) >= batchSize {
+			if err := store.StoreSymbols(id, batch); err != nil {
+				return errors.Errorf("store symbols batch: %w", err)
+			}
+			batch = make(map[string][]byte) // Reset batch after storing
+		}
 
 		return nil
 	})
@@ -162,11 +171,18 @@ func scanSymbolFiles(dirPath string) (map[string][]byte, error) {
 		return nil, err
 	}
 
-	return filesMap, nil
+	// Store any remaining symbols not covered by the last batch
+	if len(batch) > 0 {
+		if err := store.StoreSymbols(id, batch); err != nil {
+			return nil, errors.Errorf("store symbols final batch: %w", err)
+		}
+	}
+
+	return idMap, nil
 }
 
 // Encode data, and return a list of identifier of symbols
-func (service *raptorQ) Encode(ctx context.Context, data []byte) (*node.Encode, error) {
+func (service *raptorQ) RQEncode(ctx context.Context, data []byte, id string, store rqstore.Store) (*node.Encode, error) {
 	if data == nil {
 		return nil, errors.Errorf("invalid data")
 	}
@@ -187,7 +203,7 @@ func (service *raptorQ) Encode(ctx context.Context, data []byte) (*node.Encode, 
 		return nil, errors.Errorf("send encode request: %w", err)
 	}
 
-	fileMap, err := scanSymbolFiles(res.Path)
+	fileMap, err := service.scanSymbolFilesAndStore(res.Path, id, store)
 	if err != nil {
 		return nil, errors.Errorf("scan symbol folder %s: %w", res.Path, err)
 	}

@@ -427,7 +427,7 @@ func NewSenseRegistrationTask(service *SenseRegistrationService) *SenseRegistrat
 	task := &SenseRegistrationTask{
 		SuperNodeTask:            common.NewSuperNodeTask(logPrefix, service.historyDB),
 		SenseRegistrationService: service,
-		storage:                  common.NewStorageHandler(service.P2PClient, nil, "", ""),
+		storage:                  common.NewStorageHandler(service.P2PClient, nil, "", "", nil),
 	}
 
 	task.DupeDetectionHandler = common.NewDupeDetectionTaskHelper(task.SuperNodeTask, service.ddClient,

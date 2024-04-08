@@ -10,6 +10,7 @@ import (
 
 	fuzz "github.com/google/gofuzz"
 	json "github.com/json-iterator/go"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
@@ -209,7 +210,7 @@ func TestProcessSelfHealingTest(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil, downloadService)
+				p2pClient, nil, downloadService, rqstore.SetupTestDB(t))
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values

@@ -4,14 +4,16 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"sync/atomic"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 
 	"github.com/pastelnetwork/gonode/mixins"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -49,6 +51,7 @@ type SHService struct {
 
 	currentBlockCount int32
 	merkelroot        string
+	rqstore           rqstore.Store
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -254,7 +257,7 @@ func (service *SHService) Task(id string) *SHTask {
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastel-client, p2p, and rqClient.
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2p p2p.Client,
-	historyDB queries.LocalStoreInterface, downloadService *download.NftDownloaderService) *SHService {
+	historyDB queries.LocalStoreInterface, downloadService *download.NftDownloaderService, rqstore rqstore.Store) *SHService {
 	return &SHService{
 		config:                    config,
 		SuperNodeService:          common.NewSuperNodeService(fileStorage, pastelClient, p2p),
@@ -267,6 +270,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		triggerAcknowledgementMap: make(map[string]bool),
 		eventRetryMap:             make(map[string]int),
 		downloadService:           downloadService,
+		rqstore:                   rqstore,
 	}
 }
 

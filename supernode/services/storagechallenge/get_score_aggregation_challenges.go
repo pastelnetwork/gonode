@@ -2,11 +2,12 @@ package storagechallenge
 
 import (
 	"context"
+	"math"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/storage/scorestore"
-	"math"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )

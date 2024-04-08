@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -60,6 +61,8 @@ func TestNewService(t *testing.T) {
 			},
 		},
 	}
+	storeDB := rqstore.SetupTestDB(t)
+	defer storeDB.Close()
 
 	for i, testCase := range testCases {
 		testCase := testCase
@@ -68,7 +71,7 @@ func TestNewService(t *testing.T) {
 			t.Parallel()
 
 			service := NewService(testCase.args.config, nil, testCase.args.pastelClient, testCase.args.nodeClient,
-				testCase.args.p2pClient, nil)
+				testCase.args.p2pClient, nil, storeDB)
 			assert.Equal(t, testCase.want.config, service.config)
 			assert.Equal(t, testCase.want.PastelClient, service.PastelClient)
 			assert.Equal(t, testCase.want.P2PClient, service.P2PClient)

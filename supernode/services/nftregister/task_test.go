@@ -17,6 +17,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -66,8 +67,8 @@ func add2NodesAnd2TicketSignatures(task *NftRegistrationTask) *NftRegistrationTa
 }
 
 func makeEmptyNftRegTask(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface, p2pClient p2p.Client,
-	ddClient ddclient.DDServerClient, rqClient rqnode.ClientInterface) *NftRegistrationTask {
-	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, ddClient, nil)
+	ddClient ddclient.DDServerClient, rqClient rqnode.ClientInterface, rqStore rqstore.Store) *NftRegistrationTask {
+	service := NewService(config, fileStorage, pastelClient, nodeClient, p2pClient, ddClient, nil, rqStore)
 	task := NewNftRegistrationTask(service)
 	task.storage.RqClient = rqClient
 	task.Ticket = &pastel.NFTTicket{}
@@ -123,7 +124,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			clientMock.ListenOnSendNftTicketSignature(tc.args.sendArtErr).
 				ListenOnConnect("", nil).ListenOnRegisterNft()
 
-			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, clientMock, nil, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, clientMock, nil, nil, nil, rqstore.SetupTestDB(t))
 
 			task.NetworkHandler.ConnectedTo = &common.SuperNodePeer{
 				ClientInterface: clientMock,
@@ -176,7 +177,7 @@ func TestTaskRegisterArt(t *testing.T) {
 				ListenOnGetInactiveNFTTickets(pastel.RegTickets{}, nil).
 				ListenOnRegisterNFTTicket(tc.args.regRetID, tc.args.regErr)
 
-			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil, rqstore.SetupTestDB(t))
 			task = add2NodesAnd2TicketSignatures(task)
 
 			id, err := task.registerNft(context.Background())
@@ -296,7 +297,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			ddmock := ddMock.NewMockClient(t)
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
 
-			task := makeEmptyNftRegTask(&Config{}, fsMock, pastelClientMock, nil, nil, ddmock, nil)
+			task := makeEmptyNftRegTask(&Config{}, fsMock, pastelClientMock, nil, nil, ddmock, nil, rqstore.SetupTestDB(t))
 			task = add2NodesAnd2TicketSignatures(task)
 			task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID", BlockHeight: "testBlockHeight", Timestamp: "2022-03-31 16:55:28"}
 
@@ -357,7 +358,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
-			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil, rqstore.SetupTestDB(t))
 
 			_, err := task.NetworkHandler.PastelNodeByExtKey(context.Background(), tc.args.nodeID)
 			if tc.wantErr != nil {
@@ -422,7 +423,7 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, nil, nil, rqClientMock)
+			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, nil, nil, rqClientMock, rqstore.SetupTestDB(t))
 
 			storage := files.NewStorage(fsMock)
 			task.Nft = files.NewFile(storage, "test")
@@ -523,7 +524,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, nil, rqClientMock)
+			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, nil, rqClientMock, rqstore.SetupTestDB(t))
 
 			storage := files.NewStorage(fsMock)
 			task.Nft = files.NewFile(storage, "test")
@@ -580,7 +581,7 @@ func TestTaskStoreThumbnails(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, nil, nil, rqstore.SetupTestDB(t))
 
 			storage := files.NewStorage(fsMock)
 			task.SmallThumbnail = files.NewFile(storage, "test-small")
@@ -641,7 +642,7 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(tc.args.verifyRet, tc.args.verifyErr)
 
-			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil, rqstore.SetupTestDB(t))
 			task = add2NodesAnd2TicketSignatures(task)
 
 			err := task.verifyPeersSignature(context.Background())
@@ -724,7 +725,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 			pastelClientMock.ListenOnGetBlockCount(1, nil)
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.retRes, tc.retErr)
 
-			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil, rqstore.SetupTestDB(t))
 			task.registrationFee = 100
 
 			err := <-task.WaitConfirmation(ctx, tc.args.txid,
@@ -861,7 +862,7 @@ func TestTaskProbeImage(t *testing.T) {
 					ListenOnConnect("", nil).ListenOnRegisterNft()
 			}
 
-			task := makeEmptyNftRegTask(serviceCfg, fsMock, pastelClientMock, clientMock, nil, ddmock, nil)
+			task := makeEmptyNftRegTask(serviceCfg, fsMock, pastelClientMock, clientMock, nil, ddmock, nil, rqstore.SetupTestDB(t))
 			task = add2NodesAnd2TicketSignatures(task)
 			task = makeConnected(task, tc.args.status)
 
@@ -895,8 +896,8 @@ func TestTaskProbeImage(t *testing.T) {
 	}
 }
 
-func makeTask1(pastelClient pastel.Client, status common.Status) *NftRegistrationTask {
-	task := makeEmptyNftRegTask(&Config{}, nil, pastelClient, nil, nil, nil, nil)
+func makeTask1(t *testing.T, pastelClient pastel.Client, status common.Status) *NftRegistrationTask {
+	task := makeEmptyNftRegTask(&Config{}, nil, pastelClient, nil, nil, nil, nil, rqstore.SetupTestDB(t))
 	task.UpdateStatus(status)
 	task.Ticket = &pastel.NFTTicket{
 		Author: "author-id-b",
@@ -963,7 +964,7 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 			pastelClientMock.ListenOnGetRegisterNFTFee(tc.args.retFee, tc.args.retErr)
 			pastelClientMock.ListenOnVerify(true, nil)
 
-			task := makeTask1(pastelClientMock, tc.args.status)
+			task := makeTask1(t, pastelClientMock, tc.args.status)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1039,7 +1040,7 @@ func TestTaskSessionNode(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
-			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil, rqstore.SetupTestDB(t))
 			task.UpdateStatus(tc.args.status)
 
 			go task.RunAction(ctx)
@@ -1122,7 +1123,7 @@ func TestTaskAddPeerNftTicketSignature(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr).ListenOnMasterNodesExtra(nodes, tc.args.masterNodesErr)
 
-			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil, rqstore.SetupTestDB(t))
 			task.UpdateStatus(tc.args.status)
 
 			go task.RunAction(ctx)
@@ -1177,7 +1178,7 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 
 			stg := files.NewStorage(fs.NewFileStorage(os.TempDir()))
 
-			task := makeEmptyNftRegTask(&Config{}, stg, nil, nil, nil, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, stg, nil, nil, nil, nil, nil, rqstore.SetupTestDB(t))
 			task.UpdateStatus(tc.args.status)
 
 			go task.RunAction(ctx)
@@ -1287,7 +1288,7 @@ func TestTaskValidateRqIDsAndDdFpIDs(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnVerify(true, nil)
 
-			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil)
+			task := makeEmptyNftRegTask(&Config{}, nil, pastelClientMock, nil, nil, nil, nil, rqstore.SetupTestDB(t))
 
 			meshedNodes := []types.MeshedSuperNode{
 				types.MeshedSuperNode{NodeID: "node-1"},

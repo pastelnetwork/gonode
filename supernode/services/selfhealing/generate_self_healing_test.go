@@ -3,12 +3,14 @@ package selfhealing
 import (
 	"context"
 	"database/sql"
-	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"testing"
 	"time"
 
+	"github.com/pastelnetwork/gonode/supernode/services/download"
+
 	fuzz "github.com/google/gofuzz"
 	json "github.com/json-iterator/go"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/common/types"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -151,7 +153,7 @@ func TestListSymbolFileKeysForNFTAndActionTickets(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil, downloadService)
+				p2pClient, nil, downloadService, rqstore.SetupTestDB(t))
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
@@ -219,7 +221,7 @@ func TestCreateClosestNodeMapAgainstKeys(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil, downloadService)
+				p2pClient, nil, downloadService, rqstore.SetupTestDB(t))
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
@@ -303,7 +305,7 @@ func TestCreateSelfHealingTicketsMap(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil, downloadService)
+				p2pClient, nil, downloadService, rqstore.SetupTestDB(t))
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
@@ -378,7 +380,7 @@ func TestShouldTriggerSelfHealing(t *testing.T) {
 		t.Run(tt.testcase, func(t *testing.T) {
 			// Run the setup for the testcase
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil, downloadService)
+				p2pClient, nil, downloadService, rqstore.SetupTestDB(t))
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values
