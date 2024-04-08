@@ -338,7 +338,7 @@ jobs:
       - run:
           name: Install mockery
           command: |
-            go install github.com/vektra/mockery/v2@v2.33.3
+            go install github.com/vektra/mockery/v2@v2.42.2
       - run:
           name: Install xgo
           command: |
