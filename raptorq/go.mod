@@ -2,7 +2,10 @@ module github.com/pastelnetwork/gonode/raptorq
 
 go 1.22.0
 
-replace github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
+replace (
+	github.com/pastelnetwork/gonode/common => ../common
+	github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
+)
 
 require (
 	github.com/google/uuid v1.6.0
@@ -17,6 +20,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
