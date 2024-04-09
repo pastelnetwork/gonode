@@ -252,6 +252,20 @@ ON sc_score_aggregation_queue(challenge_id);
 const alterTablePingHistoryHealthCheckColumn = `ALTER TABLE ping_history
 ADD COLUMN health_check_metrics_last_broadcast_at DATETIME NULL;`
 
+const createHCScoreAggregationQueue string = `
+CREATE TABLE IF NOT EXISTS hc_score_aggregation_queue (
+    challenge_id TEXT PRIMARY KEY NOT NULL,
+    is_aggregated BOOLEAN NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+`
+
+const createAggregatedHCChallengesUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS hc_score_aggregation_queue_unique_index 
+ON hc_score_aggregation_queue(challenge_id);
+`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -374,6 +388,14 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createScoreAggregationTrackerUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create unique index: %w", err)
+	}
+
+	if _, err := db.Exec(createHCScoreAggregationQueue); err != nil {
+		return nil, fmt.Errorf("cannot create unique index: %w", err)
+	}
+
+	if _, err := db.Exec(createAggregatedHCChallengesUniqueIndex); err != nil {
 		return nil, fmt.Errorf("cannot create unique index: %w", err)
 	}
 
