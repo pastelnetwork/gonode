@@ -17,6 +17,7 @@ type HealthCheckChallengeQueries interface {
 	QueryHCChallengeMessage(challengeID string, messageType int) (challengeMessage types.HealthCheckChallengeLogMessage, err error)
 	GetHealthCheckChallengeMetricsByChallengeID(challengeID string) ([]types.HealthCheckChallengeLogMessage, error)
 
+	GetHCMetricsByChallengeIDAndMessageType(challengeID string, messageType types.MessageType) ([]types.HealthCheckChallengeLogMessage, error)
 	BatchInsertHCMetrics(metrics []types.HealthCheckChallengeLogMessage) error
 	HealthCheckChallengeMetrics(timestamp time.Time) ([]types.HealthCheckChallengeLogMessage, error)
 	InsertHealthCheckChallengeMetric(metric types.HealthCheckChallengeMetric) error
@@ -283,6 +284,33 @@ func (s *SQLiteStore) QueryHCChallengeMessage(challengeID string, messageType in
 	}
 
 	return challengeMessage, nil
+}
+
+// GetHCMetricsByChallengeIDAndMessageType retrieves all the metrics by challengeID and messageType
+func (s *SQLiteStore) GetHCMetricsByChallengeIDAndMessageType(challengeID string, messageType types.MessageType) ([]types.HealthCheckChallengeLogMessage, error) {
+	const query = `
+    SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at
+    FROM healthcheck_challenge_metrics
+    WHERE challenge_id = ?
+    AND message_type = ?;`
+
+	rows, err := s.db.Query(query, challengeID, int(messageType))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var metrics []types.HealthCheckChallengeLogMessage
+	for rows.Next() {
+		var m types.HealthCheckChallengeLogMessage
+		err := rows.Scan(&m.ID, &m.ChallengeID, &m.MessageType, &m.Data, &m.Sender, &m.CreatedAt, &m.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+
+	return metrics, rows.Err()
 }
 
 func processHCObserverEvaluations(observersEvaluations []types.HealthCheckChallengeLogMessage) map[string]HCObserverEvaluationMetrics {

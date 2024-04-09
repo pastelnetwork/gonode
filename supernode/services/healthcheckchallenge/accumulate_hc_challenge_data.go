@@ -1,4 +1,4 @@
-package storagechallenge
+package healthcheckchallenge
 
 import (
 	"context"
@@ -9,9 +9,9 @@ import (
 	"github.com/pastelnetwork/gonode/common/types"
 )
 
-// ProcessStorageChallengeScoreData accumulates the storage-challenge score data
-func (task *SCTask) ProcessStorageChallengeScoreData(ctx context.Context, challengeID string) error {
-	logger := log.WithContext(ctx).WithField("method", "AggregateStorageChallengeScore")
+// AccumulateHChallengeScoreData accumulates the healthcheck-challenge score data
+func (task *HCTask) AccumulateHChallengeScoreData(ctx context.Context, challengeID string) error {
+	logger := log.WithContext(ctx).WithField("method", "AccumulateHChallengeScoreData")
 
 	msgs, err := task.getAffirmationMessages(challengeID)
 	if err != nil {
@@ -30,7 +30,7 @@ func (task *SCTask) ProcessStorageChallengeScoreData(ctx context.Context, challe
 		challengerID          string
 		recipientEvaluations  int
 		recipientID           string
-		observerEvaluation    = make(map[string]int)
+		observerEvaluation    = make(map[bool]int)
 	)
 
 	for _, msg := range msgs {
@@ -44,10 +44,10 @@ func (task *SCTask) ProcessStorageChallengeScoreData(ctx context.Context, challe
 			recipientEvaluations++
 		}
 
-		observerEvaluation[msg.Data.ObserverEvaluation.TrueHash] = observerEvaluation[msg.Data.ObserverEvaluation.TrueHash] + 1
+		observerEvaluation[msg.Data.ObserverEvaluation.IsEvaluationResultOK] = observerEvaluation[msg.Data.ObserverEvaluation.IsEvaluationTimestampOK] + 1
 	}
 
-	commonHash := getCorrectHash(observerEvaluation)
+	commonEval := getCommonEvaluationResult(observerEvaluation)
 	successThreshold := len(msgs) - 1
 
 	err = task.processChallengerEvaluation(challengerEvaluations, challengerID, successThreshold, pingInfos)
@@ -63,7 +63,7 @@ func (task *SCTask) ProcessStorageChallengeScoreData(ctx context.Context, challe
 	}
 
 	for _, msg := range msgs {
-		err = task.processObserverEvaluation(commonHash, msg.Data.ObserverEvaluation.TrueHash, msg.Sender, pingInfos)
+		err = task.processObserverEvaluation(commonEval, msg.Data.ObserverEvaluation.IsEvaluationTimestampOK, msg.Sender, pingInfos)
 		if err != nil {
 			logger.WithField("node_id", msg.Sender).WithError(err).Error("error accumulating observer data for sc score aggregation")
 		}
@@ -72,13 +72,13 @@ func (task *SCTask) ProcessStorageChallengeScoreData(ctx context.Context, challe
 	return nil
 }
 
-func (task *SCTask) getAffirmationMessages(challengeID string) (types.StorageChallengeMessages, error) {
-	affMsgs, err := task.historyDB.GetMetricsByChallengeIDAndMessageType(challengeID, types.AffirmationMessageType)
+func (task *HCTask) getAffirmationMessages(challengeID string) (types.HealthCheckChallengeMessages, error) {
+	affMsgs, err := task.historyDB.GetHCMetricsByChallengeIDAndMessageType(challengeID, types.AffirmationMessageType)
 	if err != nil {
 		return nil, errors.Errorf("error retrieving affirmation msgs")
 	}
 
-	var affirmationMsgs types.StorageChallengeMessages
+	var affirmationMsgs types.HealthCheckChallengeMessages
 	for _, msg := range affMsgs {
 		var scMsg types.Message
 
@@ -87,9 +87,9 @@ func (task *SCTask) getAffirmationMessages(challengeID string) (types.StorageCha
 			return nil, errors.Errorf("error unmarshaling affirmation msg")
 		}
 
-		affirmationMsgs = append(affirmationMsgs, types.Message{
+		affirmationMsgs = append(affirmationMsgs, types.HealthCheckMessage{
 			ChallengeID:     challengeID,
-			MessageType:     types.MessageType(msg.MessageType),
+			MessageType:     types.HealthCheckMessageType(msg.MessageType),
 			Sender:          msg.Sender,
 			SenderSignature: msg.SenderSignature,
 		})
@@ -98,36 +98,36 @@ func (task *SCTask) getAffirmationMessages(challengeID string) (types.StorageCha
 	return affirmationMsgs, nil
 }
 
-func IsChallengerCorrectlyEvaluated(data types.MessageData) bool {
+func IsChallengerCorrectlyEvaluated(data types.HealthCheckMessageData) bool {
 	return data.ObserverEvaluation.IsChallengeTimestampOK &&
 		data.ObserverEvaluation.IsChallengerSignatureOK &&
 		data.ObserverEvaluation.IsEvaluationResultOK
 }
 
-func IsRecipientCorrectlyEvaluated(data types.MessageData) bool {
+func IsRecipientCorrectlyEvaluated(data types.HealthCheckMessageData) bool {
 	return data.ObserverEvaluation.IsProcessTimestampOK &&
 		data.ObserverEvaluation.IsRecipientSignatureOK &&
-		data.Response.Hash == data.ObserverEvaluation.TrueHash
+		data.ObserverEvaluation.IsEvaluationResultOK
 }
 
-func getCorrectHash(hashMap map[string]int) (correctHash string) {
+func getCommonEvaluationResult(evaluationMap map[bool]int) bool {
 	var (
-		highgestTally  int
-		mostCommonHash string
+		highgestTally        int
+		mostCommonEvaluation bool
 	)
 
-	for hash, tally := range hashMap {
+	for evaluationResult, tally := range evaluationMap {
 		if tally > highgestTally {
 			highgestTally = tally
-			mostCommonHash = hash
+			mostCommonEvaluation = evaluationResult
 		}
 	}
 
-	return mostCommonHash
+	return mostCommonEvaluation
 }
 
-func (task *SCTask) processChallengerEvaluation(challengerEvaluations int, challengerID string, successThreshold int, infos types.PingInfos) error {
-	aggregatedScoreData, err := task.historyDB.GetAggregatedSCScoreByNodeID(challengerID)
+func (task *HCTask) processChallengerEvaluation(challengerEvaluations int, challengerID string, successThreshold int, infos types.PingInfos) error {
+	aggregatedScoreData, err := task.historyDB.GetAccumulativeHCData(challengerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, challengerID)
@@ -147,15 +147,15 @@ func (task *SCTask) processChallengerEvaluation(challengerEvaluations int, chall
 
 	aggregatedScoreData.TotalChallengesAsChallengers = aggregatedScoreData.TotalChallengesAsChallengers + 1
 
-	if err := task.historyDB.UpsertAggregatedScScore(aggregatedScoreData); err != nil {
+	if err := task.historyDB.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
 		return errors.Errorf("error retrieving aggregated score data")
 	}
 
 	return nil
 }
 
-func (task *SCTask) processRecipientEvaluation(recipientEvaluations int, recipientID string, successThreshold int, infos types.PingInfos) error {
-	aggregatedScoreData, err := task.historyDB.GetAggregatedSCScoreByNodeID(recipientID)
+func (task *HCTask) processRecipientEvaluation(recipientEvaluations int, recipientID string, successThreshold int, infos types.PingInfos) error {
+	aggregatedScoreData, err := task.historyDB.GetAccumulativeHCData(recipientID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, recipientID)
@@ -175,15 +175,15 @@ func (task *SCTask) processRecipientEvaluation(recipientEvaluations int, recipie
 
 	aggregatedScoreData.TotalChallengesAsRecipients = aggregatedScoreData.TotalChallengesAsRecipients + 1
 
-	if err := task.historyDB.UpsertAggregatedScScore(aggregatedScoreData); err != nil {
+	if err := task.historyDB.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
 		return errors.Errorf("error retrieving aggregated score data")
 	}
 
 	return nil
 }
 
-func (task *SCTask) processObserverEvaluation(commonHash string, observerTrueHash, observerID string, infos types.PingInfos) error {
-	aggregatedScoreData, err := task.historyDB.GetAggregatedSCScoreByNodeID(observerID)
+func (task *HCTask) processObserverEvaluation(commonEval, observerEval bool, observerID string, infos types.PingInfos) error {
+	aggregatedScoreData, err := task.historyDB.GetAccumulativeHCData(observerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, observerID)
@@ -199,11 +199,11 @@ func (task *SCTask) processObserverEvaluation(commonHash string, observerTrueHas
 
 	aggregatedScoreData.TotalChallengesAsObservers++
 
-	if observerTrueHash == commonHash {
+	if commonEval == observerEval {
 		aggregatedScoreData.CorrectObserverEvaluations++
 	}
 
-	if err := task.historyDB.UpsertAggregatedScScore(aggregatedScoreData); err != nil {
+	if err := task.historyDB.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
 		return errors.Errorf("error retrieving aggregated score data")
 	}
 
