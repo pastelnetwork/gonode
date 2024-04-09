@@ -196,8 +196,24 @@ const createHealthCheckChallengeMetrics string = `
   updated_at DATETIME NOT NULL
 );
 `
-const createAggregatedSCScores string = `
-CREATE TABLE IF NOT EXISTS aggregated_sc_scores (
+const createAccumulativeSCData string = `
+CREATE TABLE IF NOT EXISTS accumulative_sc_data (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    node_id TEXT NOT NULL,
+    ip_address TEXT,
+    total_challenges_as_challengers INTEGER,
+    total_challenges_as_recipients INTEGER,
+    total_challenges_as_observers INTEGER,
+    correct_challenger_evaluations INTEGER,
+    correct_recipient_evaluations INTEGER,
+    correct_observer_evaluation INTEGER,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+`
+
+const createAccumulativeHCData string = `
+CREATE TABLE IF NOT EXISTS accumulative_hc_data (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     node_id TEXT NOT NULL,
     ip_address TEXT,
@@ -239,9 +255,14 @@ const createHealthCheckChallengeMetricsUniqueIndex string = `
 CREATE UNIQUE INDEX IF NOT EXISTS healthcheck_challenge_metrics_unique ON healthcheck_challenge_metrics(challenge_id, message_type, sender_id);
 `
 
-const createAggregatedSCScoresUniqueIndex string = `
-CREATE UNIQUE INDEX IF NOT EXISTS aggregated_sc_scores_unique_index 
-ON aggregated_sc_scores(node_id);
+const createAccumulativeSCDataUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS accumulative_sc_data_unique_index 
+ON accumulative_sc_data(node_id);
+`
+
+const createAccumulativeHCDataUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS accumulative_hc_data_unique_index 
+ON accumulative_hc_data(node_id);
 `
 
 const createAggregatedSCChallengesUniqueIndex string = `
@@ -367,7 +388,7 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
-	if _, err := db.Exec(createAggregatedSCScores); err != nil {
+	if _, err := db.Exec(createAccumulativeSCData); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
@@ -379,7 +400,7 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 		return nil, fmt.Errorf("cannot create table: %w", err)
 	}
 
-	if _, err := db.Exec(createAggregatedSCScoresUniqueIndex); err != nil {
+	if _, err := db.Exec(createAccumulativeSCDataUniqueIndex); err != nil {
 		return nil, fmt.Errorf("cannot create unique index: %w", err)
 	}
 
@@ -396,6 +417,14 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createAggregatedHCChallengesUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create unique index: %w", err)
+	}
+
+	if _, err := db.Exec(createAccumulativeHCData); err != nil {
+		return nil, fmt.Errorf("cannot create unique index: %w", err)
+	}
+
+	if _, err := db.Exec(createAccumulativeHCDataUniqueIndex); err != nil {
 		return nil, fmt.Errorf("cannot create unique index: %w", err)
 	}
 
