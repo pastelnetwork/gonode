@@ -132,7 +132,7 @@ func (task *HCTask) processChallengerEvaluation(challengerEvaluations int, chall
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, challengerID)
 
-			aggregatedScoreData = types.AggregatedSCScore{
+			aggregatedScoreData = types.AccumulativeChallengeData{
 				NodeID:    nodeID,
 				IPAddress: nodeIP,
 			}
@@ -160,7 +160,7 @@ func (task *HCTask) processRecipientEvaluation(recipientEvaluations int, recipie
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, recipientID)
 
-			aggregatedScoreData = types.AggregatedSCScore{
+			aggregatedScoreData = types.AccumulativeChallengeData{
 				NodeID:    nodeID,
 				IPAddress: nodeIP,
 			}
@@ -188,7 +188,7 @@ func (task *HCTask) processObserverEvaluation(commonEval, observerEval bool, obs
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, observerID)
 
-			aggregatedScoreData = types.AggregatedSCScore{
+			aggregatedScoreData = types.AccumulativeChallengeData{
 				NodeID:    nodeID,
 				IPAddress: nodeIP,
 			}
