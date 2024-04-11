@@ -210,7 +210,7 @@ type NHcMetric struct {
 	CreatedAt   string
 }
 
-type AggregatedSCScore struct {
+type AccumulativeChallengeData struct {
 	NodeID                       string    `db:"node_id"`
 	IPAddress                    string    `db:"ip_address"`
 	TotalChallengesAsRecipients  int       `db:"total_challenges_as_recipients"`
@@ -221,4 +221,14 @@ type AggregatedSCScore struct {
 	CorrectRecipientEvaluations  int       `db:"correct_recipient_evaluations"`
 	CreatedAt                    time.Time `db:"created_at"`
 	UpdatedAt                    time.Time `db:"updated_at"`
+}
+
+// AggregatedScore represents the structure of data in the aggregated_challenge_scores table
+type AggregatedScore struct {
+	NodeID                    string
+	IPAddress                 string
+	StorageChallengeScore     float64
+	HealthCheckChallengeScore float64
+	CreatedAt                 time.Time
+	UpdatedAt                 time.Time
 }

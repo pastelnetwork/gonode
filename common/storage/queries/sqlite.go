@@ -287,6 +287,22 @@ CREATE UNIQUE INDEX IF NOT EXISTS hc_score_aggregation_queue_unique_index
 ON hc_score_aggregation_queue(challenge_id);
 `
 
+const createAggregatedChallengeScores string = `
+CREATE TABLE IF NOT EXISTS aggregated_challenge_scores (
+    node_id TEXT PRIMARY KEY NOT NULL,
+    ip_address TEXT,
+    storage_challenge_score REAL,
+    healthcheck_challenge_score REAL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+`
+
+const createAggregatedChallengeScoresUniqueIndex string = `
+CREATE UNIQUE INDEX IF NOT EXISTS aggregated_challenge_scores_unique_index 
+ON aggregated_challenge_scores(node_id);
+`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -425,6 +441,14 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 	}
 
 	if _, err := db.Exec(createAccumulativeHCDataUniqueIndex); err != nil {
+		return nil, fmt.Errorf("cannot create unique index: %w", err)
+	}
+
+	if _, err := db.Exec(createAggregatedChallengeScores); err != nil {
+		return nil, fmt.Errorf("cannot create unique index: %w", err)
+	}
+
+	if _, err := db.Exec(createAggregatedChallengeScoresUniqueIndex); err != nil {
 		return nil, fmt.Errorf("cannot create unique index: %w", err)
 	}
 
