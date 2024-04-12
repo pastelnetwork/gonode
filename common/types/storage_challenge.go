@@ -232,3 +232,10 @@ type AggregatedScore struct {
 	CreatedAt                 time.Time
 	UpdatedAt                 time.Time
 }
+
+type ScoreAggregationEvent struct {
+	ChallengeID  string    `db:"challenge_id"`
+	IsAggregated bool      `db:"is_aggregated"`
+	CreatedAt    time.Time `db:"created_at"`
+	UpdatedAt    time.Time `db:"updated_at"`
+}

@@ -128,7 +128,7 @@ func (task *HCTask) VerifyHealthCheckEvaluationResult(ctx context.Context, incom
 	if err := task.StoreChallengeMessage(ctx, evaluationResultResponse); err != nil {
 		logger.WithError(err).Error("error storing evaluation response ")
 	}
-	logger.WithField("node_id", task.nodeID).Info("evaluation report has been evaluated by observer")
+	logger.WithField("node_id", task.nodeID).Debug("evaluation report has been evaluated by observer")
 
 	return evaluationResultResponse, nil
 }
@@ -152,7 +152,7 @@ func (task *HCTask) RetrieveChallengeMessage(ctx context.Context, challengeID st
 			logger.WithError(err).Error("Error retrieving challenge message from DB")
 			return nil, err
 		}
-		logger.Info("health check challenge msg retrieved")
+		logger.Debug("health check challenge msg retrieved")
 
 		var data types.HealthCheckMessageData
 		err = json.Unmarshal(msg.Data, &data)
@@ -195,12 +195,12 @@ func (task *HCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 	isChallengeTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Challenge.Timestamp.UTC(),
 		challengeMessage.Data.Challenge.Timestamp.UTC(), challengeMessage.CreatedAt.UTC(),
 		challengeMessage.ChallengeID, challengeMessage.MessageType)
-	logger.Info("health-check challenge message timestamps have been verified successfully")
+	logger.Debug("health-check challenge message timestamps have been verified successfully")
 
 	isResponseTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Response.Timestamp.UTC(),
 		responseMessage.Data.Response.Timestamp.UTC(), responseMessage.CreatedAt.UTC(),
 		responseMessage.ChallengeID, responseMessage.MessageType)
-	logger.Info("health-check response message timestamps have been verified successfully")
+	logger.Debug("health-check response message timestamps have been verified successfully")
 
 	differenceBetweenEvaluationMsgSendAndRecvTime := incomingEvaluationResult.Data.ChallengerEvaluation.Timestamp.Sub(evaluationMsgRecvTime)
 	if differenceBetweenEvaluationMsgSendAndRecvTime < 0 {
@@ -209,10 +209,10 @@ func (task *HCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 
 	var evaluationReportTSOk bool
 	if differenceBetweenEvaluationMsgSendAndRecvTime <= timestampTolerance {
-		logger.Info("health-check challenge evaluation message timestamp is verified successfully")
+		logger.Debug("health-check challenge evaluation message timestamp is verified successfully")
 		evaluationReportTSOk = true
 	} else {
-		logger.Info("the time diff between the health-check challenge evaluation report send and receive time, exceeds the tolerance limit")
+		logger.Debug("the time diff between the health-check challenge evaluation report send and receive time, exceeds the tolerance limit")
 		evaluationReportTSOk = false
 	}
 
@@ -227,7 +227,7 @@ func (task *HCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 	if evaluationReportTSOk && overallChallengeTSOk {
 		isEvaluationTSOk = true
 	}
-	logger.Info("health-check challenge evaluation report & overall time taken by challenge has been verified successfully")
+	logger.Debug("health-check challenge evaluation report & overall time taken by challenge has been verified successfully")
 
 	return isChallengeTSOk, isResponseTSOk, isEvaluationTSOk
 }
@@ -252,14 +252,14 @@ func (task *HCTask) verifyMessageTimestamps(ctx context.Context, timeWhenMsgSent
 		if difference <= timestampTolerance {
 			isTSOk = true
 		} else {
-			logger.Info("the time difference when message has been sent and when message has been stored, " +
+			logger.Debug("the time difference when message has been sent and when message has been stored, " +
 				"exceeds the tolerance limit")
 
 			isTSOk = false
 		}
 
 	} else {
-		logger.Info("time when message sent and sent time when message received are not same")
+		logger.Debug("time when message sent and sent time when message received are not same")
 	}
 
 	return isTSOk
@@ -272,22 +272,22 @@ func (task *HCTask) verifyMerkelrootAndBlockNum(ctx context.Context, challengeMe
 
 	isChallengeBlockOk := challengeMessage.Data.Challenge.Block == incomingEvaluationResult.Data.Challenge.Block
 	if !isChallengeBlockOk {
-		logger.Info("challenge msg block num is different and not same when challenge sent and received")
+		logger.Debug("challenge msg block num is different and not same when challenge sent and received")
 	}
 
 	isChallengeMerkelrootOk := challengeMessage.Data.Challenge.Merkelroot == incomingEvaluationResult.Data.Challenge.Merkelroot
 	if !isChallengeMerkelrootOk {
-		logger.Info("challenge msg merkelroot is different and not same when challenge sent and received")
+		logger.Debug("challenge msg merkelroot is different and not same when challenge sent and received")
 	}
 
 	isResponseBlockOk := responseMessage.Data.Response.Block == incomingEvaluationResult.Data.Response.Block
 	if !isResponseBlockOk {
-		logger.Info("response msg block num is different and not same when challenge sent and received")
+		logger.Debug("response msg block num is different and not same when challenge sent and received")
 	}
 
 	isResponseMerkelrootOk := responseMessage.Data.Response.Merkelroot == incomingEvaluationResult.Data.Response.Merkelroot
 	if !isResponseMerkelrootOk {
-		logger.Info("response msg merkelroot is different and not same when challenge sent and received")
+		logger.Debug("response msg merkelroot is different and not same when challenge sent and received")
 	}
 
 	return isChallengeBlockOk && isChallengeMerkelrootOk, isResponseBlockOk && isResponseMerkelrootOk

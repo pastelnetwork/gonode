@@ -19,9 +19,12 @@ import (
 )
 
 const (
-	healthCheckBlockInterval         int32 = 3
-	broadcastHCMetricRegularInterval       = 30 * time.Minute
-	defaultTimerBlockCheckDuration         = 30 * time.Second
+	healthCheckBlockInterval                       int32 = 3
+	broadcastHCMetricRegularInterval                     = 30 * time.Minute
+	defaultTimerBlockCheckDuration                       = 30 * time.Second
+	retryThreshold                                       = 3
+	processHealthCheckChallengeScoreEventsInterval       = 22 * time.Minute
+	getScoreEventsInterval                               = 20 * time.Minute
 )
 
 type HCService struct {
@@ -39,7 +42,8 @@ type HCService struct {
 	// currently unimplemented, default always used instead.
 	challengeStatusObserver SaveChallengeState
 
-	localKeys sync.Map
+	localKeys     sync.Map
+	eventRetryMap map[string]int
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -68,6 +72,10 @@ func (service *HCService) Run(ctx context.Context) error {
 	}()
 
 	go service.BroadcastHealthCheckChallengeMetricsWorker(ctx)
+
+	go service.GetChallengesForScoreAggregation(ctx)
+
+	go service.ProcessAggregationChallenges(ctx)
 
 	for {
 		select {
@@ -169,6 +177,101 @@ func calculateStartTimeForHealthCheckTrigger(pastelID string) time.Time {
 	return time.Now().Add(time.Duration(delaySecs) * time.Second)
 }
 
+// executeTask executes the self-healing metric task.
+func (service *HCService) executeGetChallengeIDsForScoreWorker(ctx context.Context) {
+	newCtx := context.Background()
+	task := service.NewHCTask()
+	task.GetScoreAggregationChallenges(newCtx)
+
+	log.WithContext(ctx).Debug("health-check challenge score events have been fetched")
+}
+
+// GetChallengesForScoreAggregation get the challenges for score aggregation
+func (service *HCService) GetChallengesForScoreAggregation(ctx context.Context) {
+	log.WithContext(ctx).Info("health-check challenge score-aggregation worker func has been invoked")
+
+	for {
+		select {
+		case <-time.After(getScoreEventsInterval):
+			service.executeGetChallengeIDsForScoreWorker(context.Background())
+		case <-ctx.Done():
+			log.Println("Context done being called in hc-get-score-events worker")
+			return
+		}
+	}
+}
+
+// ProcessAggregationChallenges process the challenges stored in DB for aggregation
+func (service *HCService) ProcessAggregationChallenges(ctx context.Context) {
+	log.WithContext(ctx).Debug("process-health-check-aggregate challenges run worker func has been invoked")
+
+	for {
+		select {
+		case <-time.After(processHealthCheckChallengeScoreEventsInterval):
+			service.processHealthCheckChallengeScoreEvents(ctx)
+		case <-ctx.Done():
+			log.Println("Context done being called in process-health-check-aggregate")
+			return
+		}
+	}
+}
+
+// processStorageChallengeScoreEvents executes the self-healing events.
+func (service *HCService) processHealthCheckChallengeScoreEvents(ctx context.Context) {
+	newCtx := context.Background()
+	task := service.NewHCTask()
+
+	store, err := queries.OpenHistoryDB()
+	if err != nil {
+		return
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	events, err := store.GetHealthCheckChallengeScoreEvents()
+	if err != nil {
+		return
+	}
+
+	for i := 0; i < len(events); i++ {
+		event := events[i]
+		service.eventRetryMap[event.ChallengeID]++
+
+		if service.eventRetryMap[event.ChallengeID] >= retryThreshold {
+			err = store.UpdateHealthCheckScoreChallengeEvent(event.ChallengeID)
+			if err != nil {
+				log.WithContext(ctx).
+					WithField("score_sc_challenge_event_id", event.ChallengeID).
+					WithError(err).Error("error updating score-storage-challenge-event")
+				continue
+
+			}
+			delete(service.eventRetryMap, event.ChallengeID)
+
+			continue
+		}
+
+		err = task.AccumulateHChallengeScoreData(newCtx, event.ChallengeID)
+		if err != nil {
+			log.WithContext(ctx).
+				WithField("score_sc_challenge_event_id", event.ChallengeID).
+				WithError(err).Error("error processing score-storage-challenge-event")
+
+			continue
+		}
+
+		err = store.UpdateHealthCheckScoreChallengeEvent(event.ChallengeID)
+		if err != nil {
+			continue
+		}
+
+		delete(service.eventRetryMap, event.ChallengeID)
+	}
+
+	log.WithContext(ctx).Debug("self-healing events have been processed")
+}
+
 // NewService : Create a new healthcheck challenge service
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
@@ -186,6 +289,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		challengeStatusObserver:   challengeStatusObserver,
 		localKeys:                 sync.Map{},
 		historyDB:                 historyDB,
+		eventRetryMap:             make(map[string]int),
 	}
 }
 

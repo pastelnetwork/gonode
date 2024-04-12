@@ -26,7 +26,7 @@ func (task *SCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 		return errors.Errorf("error score-aggregate tracker for storage challenges")
 	}
 
-	totalChallengesToBeAggregated, err := task.getChallengeIDsCountForScoreAggregation(tracker)
+	totalChallengesToBeAggregated, err := task.getChallengeIDsCountForScoreAggregation(ctx, tracker)
 	if err != nil {
 		logger.WithError(err).Error("error retrieving sc affirmations counts")
 		return errors.Errorf("error retrieving affirmation messages count")
@@ -34,47 +34,60 @@ func (task *SCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 
 	if totalChallengesToBeAggregated == 0 {
 		logger.Info("no storage-challenges found for score aggregation")
+		return nil
 	}
 
 	totalBatches := task.calculateTotalBatches(totalChallengesToBeAggregated)
 
 	for i := 0; i < totalBatches; i++ {
-		batchOfChallengeIDs, err := task.retrieveChallengeIDsInBatches(tracker, i)
+		batchOfChallengeIDs, err := task.retrieveChallengeIDsInBatches(ctx, tracker, i)
 		if err != nil {
-			logger.Error("error retrieving the challenge ids for score aggregation")
+			logger.WithError(err).Error("error retrieving the challenge ids for score aggregation")
+			return err
 		}
 
-		err = task.historyDB.BatchInsertScoreAggregationChallenges(batchOfChallengeIDs, false)
+		if len(batchOfChallengeIDs) == 0 {
+			continue
+		}
+
+		err = task.BatchInsertChallengeIDs(ctx, batchOfChallengeIDs, false)
 		if err != nil {
-			logger.Error("error storing challenge_ids for score aggregation")
+			logger.WithError(err).Error("error storing storage_challenge_ids for score aggregation")
 			return err
 		}
 	}
 
 	if err := task.historyDB.UpsertScoreLastAggregatedAt(queries.StorageChallengeScoreAggregationType); err != nil {
-		logger.Error("error storing affirmation type batch in score aggregation challenges")
+		logger.WithError(err).Error("error updating aggregated til for storage-challenge score aggregation tracker")
 		return errors.Errorf("error updating aggregated til")
 	}
 
 	return nil
 }
 
-func (task *SCTask) retrieveChallengeIDsInBatches(tracker queries.ScoreAggregationTracker, batchNumber int) ([]string, error) {
+func (task *SCTask) retrieveChallengeIDsInBatches(ctx context.Context, tracker queries.ScoreAggregationTracker, batchNumber int) ([]string, error) {
+	store, err := queries.OpenHistoryDB()
+	if err != nil {
+		return nil, err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
 	var (
 		zeroTime     time.Time
-		err          error
 		challengeIDs []string
 		before       time.Time
 	)
 
 	before = time.Now().UTC().Add(-6 * time.Hour)
 	if !tracker.AggregatedTil.Valid {
-		challengeIDs, err = task.historyDB.GetDistinctChallengeIDs(zeroTime, before, batchNumber)
+		challengeIDs, err = store.GetDistinctChallengeIDs(zeroTime, before, batchNumber)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		challengeIDs, err = task.historyDB.GetDistinctChallengeIDs(tracker.AggregatedTil.Time, before, batchNumber)
+		challengeIDs, err = store.GetDistinctChallengeIDs(tracker.AggregatedTil.Time, before, batchNumber)
 		if err != nil {
 			return nil, err
 		}
@@ -83,22 +96,29 @@ func (task *SCTask) retrieveChallengeIDsInBatches(tracker queries.ScoreAggregati
 	return challengeIDs, nil
 }
 
-func (task *SCTask) getChallengeIDsCountForScoreAggregation(tracker queries.ScoreAggregationTracker) (int, error) {
+func (task *SCTask) getChallengeIDsCountForScoreAggregation(ctx context.Context, tracker queries.ScoreAggregationTracker) (int, error) {
+	store, err := queries.OpenHistoryDB()
+	if err != nil {
+		return 0, err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
 	var (
 		zeroTime          time.Time
-		err               error
 		challenegIDsCount int
 		before            time.Time
 	)
 
 	before = time.Now().UTC().Add(-6 * time.Hour)
 	if !tracker.AggregatedTil.Valid {
-		challenegIDsCount, err = task.historyDB.GetDistinctChallengeIDsCountForScoreAggregation(zeroTime, before)
+		challenegIDsCount, err = store.GetDistinctChallengeIDsCountForScoreAggregation(zeroTime, before)
 		if err != nil {
 			return 0, err
 		}
 	} else {
-		challenegIDsCount, err = task.historyDB.GetDistinctChallengeIDsCountForScoreAggregation(tracker.AggregatedTil.Time, before)
+		challenegIDsCount, err = store.GetDistinctChallengeIDsCountForScoreAggregation(tracker.AggregatedTil.Time, before)
 		if err != nil {
 			return 0, err
 		}
@@ -109,4 +129,24 @@ func (task *SCTask) getChallengeIDsCountForScoreAggregation(tracker queries.Scor
 
 func (task *SCTask) calculateTotalBatches(count int) int {
 	return int(math.Ceil(float64(count) / float64(batchSize)))
+}
+
+// BatchInsertChallengeIDs stores the challenge id to db for further verification
+func (task *SCTask) BatchInsertChallengeIDs(ctx context.Context, batchOfChallengeIDs []string, isAggregated bool) error {
+	store, err := queries.OpenHistoryDB()
+	if err != nil {
+		return err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	if store != nil {
+		err = store.BatchInsertScoreAggregationChallenges(batchOfChallengeIDs, isAggregated)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

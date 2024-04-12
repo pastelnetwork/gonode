@@ -202,7 +202,7 @@ func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluati
 	if err := task.StoreChallengeMessage(ctx, evaluationResultResponse); err != nil {
 		logger.WithError(err).Error("error storing evaluation response ")
 	}
-	logger.WithField("node_id", task.nodeID).Info("evaluation report has been evaluated")
+	logger.WithField("node_id", task.nodeID).Info("evaluation report has been evaluated by the observer")
 
 	return evaluationResultResponse, nil
 }
@@ -297,7 +297,7 @@ func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 	if evaluationReportTSOk && overallChallengeTSOk {
 		isEvaluationTSOk = true
 	}
-	log.WithContext(ctx).Info("evaluation report & overall time taken by challenge has been evaluated successfully")
+	log.WithContext(ctx).Debug("evaluation report & overall time taken by challenge has been evaluated successfully")
 
 	return isChallengeTSOk, isResponseTSOk, isEvaluationTSOk
 }
@@ -322,14 +322,14 @@ func (task *SCTask) verifyMessageTimestamps(ctx context.Context, timeWhenMsgSent
 		if difference <= timestampTolerance {
 			isTSOk = true
 		} else {
-			logger.Info("the time difference when message has been sent and when message has been stored, " +
+			logger.Debug("the time difference when message has been sent and when message has been stored, " +
 				"exceeds the tolerance limit")
 
 			isTSOk = false
 		}
 
 	} else {
-		logger.Info("time when message sent and sent time when message received are not same")
+		logger.Debug("time when message sent and sent time when message received are not same")
 	}
 
 	return isTSOk
@@ -342,22 +342,22 @@ func (task *SCTask) verifyMerkelrootAndBlockNum(ctx context.Context, challengeMe
 
 	isChallengeBlockOk := challengeMessage.Data.Challenge.Block == incomingEvaluationResult.Data.Challenge.Block
 	if !isChallengeBlockOk {
-		logger.Info("challenge msg block num is different and not same when challenge sent and received")
+		logger.Debug("challenge msg block num is different and not same when challenge sent and received")
 	}
 
 	isChallengeMerkelrootOk := challengeMessage.Data.Challenge.Merkelroot == incomingEvaluationResult.Data.Challenge.Merkelroot
 	if !isChallengeMerkelrootOk {
-		logger.Info("challenge msg merkelroot is different and not same when challenge sent and received")
+		logger.Debug("challenge msg merkelroot is different and not same when challenge sent and received")
 	}
 
 	isResponseBlockOk := responseMessage.Data.Response.Block == incomingEvaluationResult.Data.Response.Block
 	if !isResponseBlockOk {
-		logger.Info("response msg block num is different and not same when challenge sent and received")
+		logger.Debug("response msg block num is different and not same when challenge sent and received")
 	}
 
 	isResponseMerkelrootOk := responseMessage.Data.Response.Merkelroot == incomingEvaluationResult.Data.Response.Merkelroot
 	if !isResponseMerkelrootOk {
-		logger.Info("response msg merkelroot is different and not same when challenge sent and received")
+		logger.Debug("response msg merkelroot is different and not same when challenge sent and received")
 	}
 
 	return isChallengeBlockOk && isChallengeMerkelrootOk, isResponseBlockOk && isResponseMerkelrootOk

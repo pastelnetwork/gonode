@@ -52,7 +52,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 		logger.WithError(err).Error("error identifying challengers")
 		return err
 	}
-	logger.WithField("node_id", task.nodeID).Info("challengers have been selected")
+	logger.WithField("node_id", task.nodeID).Debug("challengers have been selected")
 
 	//If we are in the sliceOfChallengingSupernodeIDsForBlock, we need to generate a storage challenge, Otherwise we don't.
 	var challengingSupernodeID string
@@ -144,7 +144,7 @@ func (task SCTask) GenerateStorageChallenges(ctx context.Context) error {
 			Info("challenge sent for processing to recipient & observers")
 	}
 
-	logger.Info("files have been challenged")
+	logger.Info("files have been sent for challenge-processing")
 	return nil
 }
 
@@ -291,7 +291,7 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 			if value, ok := mapSupernodes[po]; ok {
 				nodesToConnect = append(nodesToConnect, value)
 			} else {
-				logger.WithField("observer_id", po).Info("observer not found in masternode list")
+				logger.WithField("observer_id", po).Debug("observer not found in masternode list")
 			}
 		}
 
@@ -308,7 +308,7 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 				if value, ok := mapSupernodes[po]; ok {
 					nodesToConnect = append(nodesToConnect, value)
 				} else {
-					logger.WithField("observer_id", po).Info("observer not found in masternode list")
+					logger.WithField("observer_id", po).Debug("observer not found in masternode list")
 				}
 			}
 
@@ -331,7 +331,7 @@ func (task *SCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 				if value, ok := mapSupernodes[po]; ok {
 					nodesToConnect = append(nodesToConnect, value)
 				} else {
-					logger.WithField("observer_id", po).Info("observer not found in masternode list")
+					logger.WithField("observer_id", po).Debug("observer not found in masternode list")
 				}
 			}
 
@@ -375,7 +375,7 @@ func (task *SCTask) SendMessage(ctx context.Context, challengeMessage *pb.Storag
 		return storageChallengeIF.VerifyStorageChallenge(ctx, challengeMessage)
 
 	default:
-		log.WithContext(ctx).Info("message type not supported by any Process & Verify worker")
+		log.WithContext(ctx).Debug("message type not supported by any Process & Verify worker")
 	}
 
 	return nil

@@ -3,7 +3,6 @@ package healthcheckchallenge
 import (
 	"context"
 	"fmt"
-	"math"
 	"strings"
 	"sync"
 	"time"
@@ -90,9 +89,8 @@ func (task *HCTask) identifyChallengerRecipientsAndObserversAgainstMarkleRoot(ct
 	logger.Debug("identifying challenge recipients and partial observers")
 	sliceOfObservers := make([]string, 5)
 
-	supernodes, err := task.getListOfOnlineSupernodes(ctx)
+	supernodes, err := task.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
 	if err != nil {
-		logger.WithField("method", "sendHealthCheckChallenge").WithError(err).Warn("could not get Supernode extra: ", err.Error())
 		return "", "", nil, nil, err
 	}
 
@@ -103,7 +101,7 @@ func (task *HCTask) identifyChallengerRecipientsAndObserversAgainstMarkleRoot(ct
 		supernodesDetails[supernode.ExtKey] = supernode
 	}
 
-	respondingSupernodeIDs := task.GetNClosestSupernodeIDsToComparisonString(ctx, 7, merkleRoot, supernodesIDs)
+	respondingSupernodeIDs := task.GetNClosestSupernodeIDsToComparisonString(ctx, 6, merkleRoot, supernodesIDs)
 	if len(respondingSupernodeIDs) < 6 {
 		logger.WithField("closest_nodes", len(respondingSupernodeIDs)).Warn("not enough closest nodes found")
 		return "", "", nil, nil, errors.Errorf("not enough closest nodes found")
@@ -178,7 +176,7 @@ func (task *HCTask) sendProcessHealthCheckChallenge(ctx context.Context, challen
 				return
 			}
 
-			logger.Info("health-check challenge message has been sent")
+			logger.Debug("health-check challenge message has been sent")
 		}()
 	}
 	wg.Wait()
@@ -189,7 +187,7 @@ func (task *HCTask) sendProcessHealthCheckChallenge(ctx context.Context, challen
 		return err
 	}
 	logger.WithField("hc_challenge_id", challengeMessage.ChallengeID).
-		WithField("node_address", recipientNode.ExtAddress).Info("health-check challenge message has been sent to observers & recipient")
+		WithField("node_address", recipientNode.ExtAddress).Debug("health-check challenge message has been sent to observers & recipient")
 
 	return nil
 }
@@ -224,7 +222,7 @@ func (task *HCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 			if value, ok := mapSupernodes[po]; ok {
 				nodesToConnect = append(nodesToConnect, value)
 			} else {
-				logger.WithField("observer_id", po).Info("observer not found in masternode list")
+				logger.WithField("observer_id", po).Debug("observer not found in masternode list")
 			}
 		}
 
@@ -264,7 +262,7 @@ func (task *HCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 				if value, ok := mapSupernodes[po]; ok {
 					nodesToConnect = append(nodesToConnect, value)
 				} else {
-					logger.WithField("observer_id", po).Info("observer not found in masternode list")
+					logger.WithField("observer_id", po).Debug("observer not found in masternode list")
 				}
 			}
 
@@ -290,7 +288,7 @@ func (task *HCTask) GetNodesAddressesToConnect(ctx context.Context, challengeMes
 func (task *HCTask) SendMessage(ctx context.Context, challengeMessage *pb.HealthCheckChallengeMessage, processingSupernodeAddr string) error {
 	logger := log.WithContext(ctx).WithField("Method", "HealthCheckChallenge").WithField("hc_challenge_id", challengeMessage.ChallengeId)
 
-	logger.Info("Sending health-check challenge to processing supernode address: " + processingSupernodeAddr)
+	logger.Debug("Sending health-check challenge to processing supernode address: " + processingSupernodeAddr)
 
 	//Connect over grpc
 	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
@@ -310,7 +308,7 @@ func (task *HCTask) SendMessage(ctx context.Context, challengeMessage *pb.Health
 		return healthcheckChallengeIF.VerifyHealthCheckChallenge(ctx, challengeMessage)
 
 	default:
-		logger.Info("message type not supported by any Process & Verify worker")
+		logger.Debug("message type not supported by any Process & Verify worker")
 	}
 
 	return nil
@@ -325,30 +323,6 @@ func (task *HCTask) isMyNodeChallenger(ctx context.Context, challengingSupernode
 	logger.Info("exit because this node is not a challenger")
 
 	return false
-}
-
-func (task *HCTask) getChallengers(ctx context.Context, merkleRoot string) (sliceOfChallengers []string, challengersPerBlock, challengesPerBlock int, err error) {
-	logger := log.WithContext(ctx).WithField("Method", "GenerateHealthCheckChallenge")
-
-	logger.Info("retrieving list of all super nodes")
-	listOfSupernodes, err := task.GetListOfSupernode(ctx)
-	if err != nil {
-		logger.WithError(err).Error("could not get list of Supernode using pastel client")
-		return nil, 0, 0, err
-	}
-	logger.Info("list of supernodes have been retrieved")
-
-	logger.Info("identifying no of challengers & challenges to issue for this block")
-	numberOfSupernodesDividedByThree := int(math.Ceil(float64(len(listOfSupernodes)) / 3))
-	// Calculate the number of supernodes to issue challenge per block
-	challengersPerBlock = numberOfSupernodesDividedByThree
-	// Calculate the challenges per challenger
-	challengesPerBlock = numberOfSupernodesDividedByThree
-
-	// Identify challengers for this block
-	sliceOfChallengers = task.GetNClosestSupernodeIDsToComparisonString(ctx, challengersPerBlock, merkleRoot, listOfSupernodes)
-
-	return sliceOfChallengers, challengersPerBlock, challengesPerBlock, nil
 }
 
 // SignMessage signs the message using sender's pastelID and passphrase
@@ -387,7 +361,7 @@ func (task *HCTask) StoreChallengeMessage(ctx context.Context, msg types.HealthC
 	}
 
 	if store != nil {
-		logger.Info("store")
+		logger.Debug("store")
 		healthcheckChallengeLog := types.HealthCheckChallengeLogMessage{
 			ChallengeID:     msg.ChallengeID,
 			MessageType:     int(msg.MessageType),
@@ -434,7 +408,7 @@ func (task *HCTask) StoreHealthCheckChallengeMetric(ctx context.Context, msg typ
 	}
 
 	if store != nil {
-		logger.Info("store")
+		logger.Debug("store")
 		healthCheckChallengeLog := types.HealthCheckChallengeMetric{
 			ChallengeID: msg.ChallengeID,
 			MessageType: int(msg.MessageType),
@@ -473,6 +447,22 @@ func (task *HCTask) VerifyMessageSignature(ctx context.Context, msg types.Health
 	}
 
 	return isVerified, nil
+}
+
+// GetListOfSupernode : Access the supernode service to get a list of all supernodes, including their id's and addresses.
+// This is used to enumerate supernodes both for calculation and connection
+func (task *HCTask) GetListOfSupernode(ctx context.Context) ([]string, error) {
+	var ret = make([]string, 0)
+	listMN, err := task.SuperNodeService.PastelClient.MasterNodesExtra(ctx)
+	if err != nil {
+		return ret, err
+	}
+
+	for _, node := range listMN {
+		ret = append(ret, node.ExtKey)
+	}
+
+	return ret, nil
 }
 
 func (task *HCTask) getListOfOnlineSupernodes(ctx context.Context) ([]pastel.MasterNode, error) {
