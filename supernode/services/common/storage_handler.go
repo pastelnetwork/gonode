@@ -204,7 +204,7 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 			return fmt.Errorf("load batch symbols from db: %w", err)
 		}
 
-		// Prepare batch for P2P storage
+		// Prepare batch for P2P storage		return nil
 		result := make([][]byte, len(loadedSymbols))
 		i := 0
 		for key, value := range loadedSymbols {
@@ -237,6 +237,10 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 			// Reset batchKeys for the next batch
 			batchKeys = make(map[string][]byte)
 		}
+	}
+
+	if err := h.store.DeleteSymbolsByTxID(h.TxID); err != nil {
+		log.WithContext(ctx).WithError(err).Error("delete symbols by txid")
 	}
 
 	return nil

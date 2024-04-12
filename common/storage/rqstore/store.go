@@ -19,6 +19,7 @@ const createRQSymbolsTable string = `
 type Store interface {
 	StoreSymbols(id string, symbols map[string][]byte) error
 	LoadSymbols(id string, symbols map[string][]byte) (map[string][]byte, error)
+	DeleteSymbolsByTxID(txid string) error
 }
 
 // SQLiteRQStore is sqlite implementation of DD store and Score store
@@ -151,4 +152,22 @@ func SetupTestDB(t *testing.T) *SQLiteRQStore {
 	}
 
 	return &SQLiteRQStore{db: db}
+}
+
+// DeleteSymbolsByTxID deletes all symbols entries associated with a specific txid.
+func (s *SQLiteRQStore) DeleteSymbolsByTxID(txid string) error {
+	// Prepare the delete statement
+	stmt, err := s.db.Prepare("DELETE FROM rq_symbols WHERE txid = ?")
+	if err != nil {
+		return fmt.Errorf("failed to prepare delete statement: %w", err)
+	}
+	defer stmt.Close()
+
+	// Execute the delete statement
+	_, err = stmt.Exec(txid)
+	if err != nil {
+		return fmt.Errorf("failed to execute delete statement: %w", err)
+	}
+
+	return nil
 }
