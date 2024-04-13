@@ -6,6 +6,7 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 )
 
@@ -13,16 +14,16 @@ import (
 func (task *HCTask) AccumulateHChallengeScoreData(ctx context.Context, challengeID string) error {
 	logger := log.WithContext(ctx).WithField("method", "AccumulateHChallengeScoreData")
 
-	msgs, err := task.getAffirmationMessages(challengeID)
+	msgs, err := task.getAffirmationMessages(ctx, challengeID)
 	if err != nil {
 		logger.WithError(err).Error("error retrieving affirmation messages")
 		return errors.Errorf("error retrieving affirmation messages")
 	}
 
-	pingInfos, err := task.historyDB.GetAllPingInfos()
+	pingInfos, err := task.getPingInfos(ctx)
 	if err != nil {
-		logger.WithError(err).Error("error retrieving affirmation messages")
-		return errors.Errorf("error retrieving affirmation messages")
+		logger.WithError(err).Error("error retrieving ping-infos for hc score aggregation")
+		return errors.Errorf("error retrieving ping-infos for hc score aggregation")
 	}
 
 	var (
@@ -52,37 +53,61 @@ func (task *HCTask) AccumulateHChallengeScoreData(ctx context.Context, challenge
 
 	err = task.processChallengerEvaluation(challengerEvaluations, challengerID, successThreshold, pingInfos)
 	if err != nil {
-		logger.WithError(err).Error("error accumulating challenger summary for sc score aggregation")
+		logger.WithError(err).Error("error accumulating challenger summary for hc score aggregation")
 		return err
 	}
 
 	err = task.processRecipientEvaluation(recipientEvaluations, recipientID, successThreshold, pingInfos)
 	if err != nil {
-		logger.WithError(err).Error("error accumulating recipient summary for sc score aggregation")
+		logger.WithError(err).Error("error accumulating recipient summary for hc score aggregation")
 		return err
 	}
 
 	for _, msg := range msgs {
 		err = task.processObserverEvaluation(commonEval, msg.Data.ObserverEvaluation.IsEvaluationTimestampOK, msg.Sender, pingInfos)
 		if err != nil {
-			logger.WithField("node_id", msg.Sender).WithError(err).Error("error accumulating observer data for sc score aggregation")
+			logger.WithField("node_id", msg.Sender).WithError(err).Error("error accumulating observer data for hc score aggregation")
 		}
 	}
 
 	return nil
 }
-
-func (task *HCTask) getAffirmationMessages(challengeID string) (types.HealthCheckChallengeMessages, error) {
-	affMsgs, err := task.historyDB.GetHCMetricsByChallengeIDAndMessageType(challengeID, types.AffirmationMessageType)
+func (task *HCTask) getPingInfos(ctx context.Context) (types.PingInfos, error) {
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
-		return nil, errors.Errorf("error retrieving affirmation msgs")
+		return nil, err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	pingInfos, err := store.GetAllPingInfos()
+	if err != nil {
+		return pingInfos, err
+	}
+
+	return pingInfos, nil
+}
+
+func (task *HCTask) getAffirmationMessages(ctx context.Context, challengeID string) (types.HealthCheckChallengeMessages, error) {
+	store, err := queries.OpenHistoryDB()
+	if err != nil {
+		return nil, err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	affMsgs, err := store.GetHCMetricsByChallengeIDAndMessageType(challengeID, types.HealthCheckAffirmationMessageType)
+	if err != nil {
+		return nil, err
 	}
 
 	var affirmationMsgs types.HealthCheckChallengeMessages
 	for _, msg := range affMsgs {
-		var scMsg types.Message
+		var hcMsg types.HealthCheckMessage
 
-		err := json.Unmarshal(msg.Data, &scMsg.Data)
+		err := json.Unmarshal(msg.Data, &hcMsg.Data)
 		if err != nil {
 			return nil, errors.Errorf("error unmarshaling affirmation msg")
 		}
@@ -92,6 +117,7 @@ func (task *HCTask) getAffirmationMessages(challengeID string) (types.HealthChec
 			MessageType:     types.HealthCheckMessageType(msg.MessageType),
 			Sender:          msg.Sender,
 			SenderSignature: msg.SenderSignature,
+			Data:            hcMsg.Data,
 		})
 	}
 
@@ -148,7 +174,7 @@ func (task *HCTask) processChallengerEvaluation(challengerEvaluations int, chall
 	aggregatedScoreData.TotalChallengesAsChallengers = aggregatedScoreData.TotalChallengesAsChallengers + 1
 
 	if err := task.historyDB.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
-		return errors.Errorf("error retrieving aggregated score data")
+		return err
 	}
 
 	return nil
@@ -176,7 +202,7 @@ func (task *HCTask) processRecipientEvaluation(recipientEvaluations int, recipie
 	aggregatedScoreData.TotalChallengesAsRecipients = aggregatedScoreData.TotalChallengesAsRecipients + 1
 
 	if err := task.historyDB.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
-		return errors.Errorf("error retrieving aggregated score data")
+		return err
 	}
 
 	return nil
@@ -204,7 +230,7 @@ func (task *HCTask) processObserverEvaluation(commonEval, observerEval bool, obs
 	}
 
 	if err := task.historyDB.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
-		return errors.Errorf("error retrieving aggregated score data")
+		return err
 	}
 
 	return nil

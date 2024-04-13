@@ -30,7 +30,7 @@ func (task *SCTask) AggregateChallengesScore(ctx context.Context) error {
 		mapOfAggregatedScores[nodeData.NodeID] = types.AggregatedScore{
 			NodeID:                nodeData.NodeID,
 			IPAddress:             nodeData.IPAddress,
-			StorageChallengeScore: adjustScore(aggregatedSCScore),
+			StorageChallengeScore: aggregatedSCScore,
 		}
 	}
 
@@ -43,7 +43,7 @@ func (task *SCTask) AggregateChallengesScore(ctx context.Context) error {
 			mapOfAggregatedScores[nodeData.NodeID] = types.AggregatedScore{
 				NodeID:                    nodeData.NodeID,
 				IPAddress:                 nodeData.IPAddress,
-				HealthCheckChallengeScore: adjustScore(aggregatedHCScore),
+				HealthCheckChallengeScore: aggregatedHCScore,
 			}
 		}
 	}
@@ -75,13 +75,4 @@ func AggregateChallengeScore(data types.AccumulativeChallengeData) float64 {
 	}
 
 	return challengerScore + recipientScore + observerScore
-}
-
-func adjustScore(score float64) float64 {
-	if score < 50 {
-		return 50
-	} else if score > 100 {
-		return 100
-	}
-	return score
 }

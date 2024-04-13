@@ -140,7 +140,7 @@ func (task *HCTask) VerifyHealthCheckChallenge(ctx context.Context, incomingResp
 	}
 
 	if broadcastingMsg == nil {
-		logger.Info("Unable to create broadcast health-check message")
+		logger.Debug("Unable to create broadcast health-check message")
 		return nil, nil
 	}
 
@@ -163,12 +163,12 @@ func (task *HCTask) isVerifiedChallengerAndRecipientTimestamp(ctx context.Contex
 
 	if challengeTime.Before(responseTime) {
 		if responseTime.Sub(challengeTime) < verificationThreshold {
-			logger.Info("health check challenge has been verified")
+			logger.Debug("health check challenge has been verified")
 			return true
 		}
 	}
 
-	logger.Info("health check challenge has not been verified")
+	logger.Debug("health check challenge has not been verified")
 	return false
 }
 
@@ -255,7 +255,7 @@ func (task *HCTask) processEvaluationResults(ctx context.Context, nodesToConnect
 
 	for _, node := range nodesToConnect {
 		node := node
-		logger.WithField("node_id", node.ExtAddress).Info("processing sn address")
+		logger.WithField("node_id", node.ExtAddress).Debug("processing sn address")
 		wg.Add(1)
 
 		go func() {
@@ -281,7 +281,7 @@ func (task *HCTask) processEvaluationResults(ctx context.Context, nodesToConnect
 					logger.WithField("node_id", node.ExtKey).WithError(err).
 						Error("unsuccessful affirmation by observer")
 				}
-				logger.WithField("is_success", isSuccess).Info("affirmation message has been verified")
+				logger.WithField("is_success", isSuccess).Debug("affirmation message has been verified")
 
 				mu.Lock()
 				affirmations[affirmationResponse.Sender] = *affirmationResponse

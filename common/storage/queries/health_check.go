@@ -17,7 +17,7 @@ type HealthCheckChallengeQueries interface {
 	QueryHCChallengeMessage(challengeID string, messageType int) (challengeMessage types.HealthCheckChallengeLogMessage, err error)
 	GetHealthCheckChallengeMetricsByChallengeID(challengeID string) ([]types.HealthCheckChallengeLogMessage, error)
 
-	GetHCMetricsByChallengeIDAndMessageType(challengeID string, messageType types.MessageType) ([]types.HealthCheckChallengeLogMessage, error)
+	GetHCMetricsByChallengeIDAndMessageType(challengeID string, messageType types.HealthCheckMessageType) ([]types.HealthCheckChallengeLogMessage, error)
 	BatchInsertHCMetrics(metrics []types.HealthCheckChallengeLogMessage) error
 	HealthCheckChallengeMetrics(timestamp time.Time) ([]types.HealthCheckChallengeLogMessage, error)
 	InsertHealthCheckChallengeMetric(metric types.HealthCheckChallengeMetric) error
@@ -287,7 +287,7 @@ func (s *SQLiteStore) QueryHCChallengeMessage(challengeID string, messageType in
 }
 
 // GetHCMetricsByChallengeIDAndMessageType retrieves all the metrics by challengeID and messageType
-func (s *SQLiteStore) GetHCMetricsByChallengeIDAndMessageType(challengeID string, messageType types.MessageType) ([]types.HealthCheckChallengeLogMessage, error) {
+func (s *SQLiteStore) GetHCMetricsByChallengeIDAndMessageType(challengeID string, messageType types.HealthCheckMessageType) ([]types.HealthCheckChallengeLogMessage, error) {
 	const query = `
     SELECT id, challenge_id, message_type, data, sender_id, created_at, updated_at
     FROM healthcheck_challenge_metrics
@@ -438,7 +438,7 @@ func (s *SQLiteStore) BatchInsertHCScoreAggregationChallenges(challengeIDs []str
 	}
 
 	stmt, err := tx.Prepare(`
-        INSERT OR IGNORE INTO sc_score_aggregation_queue
+        INSERT OR IGNORE INTO hc_score_aggregation_queue
         (challenge_id, is_aggregated, created_at, updated_at)
         VALUES (?,?,?,?)
     `)

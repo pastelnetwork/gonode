@@ -34,7 +34,10 @@ import (
 // Callbacks in task/stateStorage can be adjusted when proper consequences are determined.
 
 const (
-	broadcastSCMetricRegularInterval = 30 * time.Minute
+	broadcastSCMetricRegularInterval           = 30 * time.Minute
+	retryThreshold                             = 3
+	processStorageChallengeScoreEventsInterval = 12 * time.Minute
+	getChallengesForScoreAggregationInterval   = 10 * time.Minute
 )
 
 // SCService keeps track of the supernode's nodeID and passes this, the pastel client,
@@ -59,6 +62,7 @@ type SCService struct {
 
 	localKeys            sync.Map
 	localKeysLastFetchAt time.Time
+	eventRetryMap        map[string]int
 }
 
 // CheckNextBlockAvailable calls pasteld and checks if a new block is available
@@ -132,6 +136,10 @@ func (service *SCService) Run(ctx context.Context) error {
 
 	go service.BroadcastStorageChallengeMetricsWorker(ctx)
 
+	go service.GetChallengesForScoreAggregation(ctx)
+
+	go service.ProcessAggregationChallenges(ctx)
+
 	if !service.config.IsTestConfig {
 		time.Sleep(15 * time.Minute)
 	}
@@ -182,6 +190,15 @@ func (service *SCService) executeMetricsBroadcastTask(ctx context.Context) {
 	log.WithContext(ctx).Debug("storage challenge metrics broadcasted")
 }
 
+// executeTask executes the self-healing metric task.
+func (service *SCService) executeGetChallengeIDsForScoreWorker(ctx context.Context) {
+	newCtx := context.Background()
+	task := service.NewSCTask()
+	task.GetScoreAggregationChallenges(newCtx)
+
+	log.WithContext(ctx).Debug("storage challenge score events have been fetched")
+}
+
 // BroadcastStorageChallengeMetricsWorker broadcast the storage challenge metrics to the entire network
 func (service *SCService) BroadcastStorageChallengeMetricsWorker(ctx context.Context) {
 	log.WithContext(ctx).Info("storage challenge metrics worker func has been invoked")
@@ -207,6 +224,21 @@ func (service *SCService) BroadcastStorageChallengeMetricsWorker(ctx context.Con
 	}
 }
 
+// GetChallengesForScoreAggregation get the challenges for score aggregation
+func (service *SCService) GetChallengesForScoreAggregation(ctx context.Context) {
+	log.WithContext(ctx).Info("storage challenge score-aggregation worker func has been invoked")
+
+	for {
+		select {
+		case <-time.After(getChallengesForScoreAggregationInterval):
+			service.executeGetChallengeIDsForScoreWorker(context.Background())
+		case <-ctx.Done():
+			log.Println("Context done being called in file-healing worker")
+			return
+		}
+	}
+}
+
 // calculateStartTime calculates the start time for the periodic task based on the hash of the PastelID.
 func calculateStartTime(pastelID string) time.Time {
 	hash := sha256.Sum256([]byte(pastelID))
@@ -214,6 +246,77 @@ func calculateStartTime(pastelID string) time.Time {
 	delayMinutes := int(hashString[0]) % 60 // simplistic hash-based delay calculation
 
 	return time.Now().Add(time.Duration(delayMinutes) * time.Minute)
+}
+
+// ProcessAggregationChallenges process the challenges stored in DB for aggregation
+func (service *SCService) ProcessAggregationChallenges(ctx context.Context) {
+	log.WithContext(ctx).Debug("process-sc-aggregation-challenges worker func has been invoked")
+
+	for {
+		select {
+		case <-time.After(processStorageChallengeScoreEventsInterval):
+			service.processStorageChallengeScoreEvents(ctx)
+		case <-ctx.Done():
+			log.Println("Context done being called in file-healing worker")
+			return
+		}
+	}
+}
+
+// processStorageChallengeScoreEvents executes the self-healing events.
+func (service *SCService) processStorageChallengeScoreEvents(ctx context.Context) {
+	newCtx := context.Background()
+	task := service.NewSCTask()
+
+	store, err := queries.OpenHistoryDB()
+	if err != nil {
+		return
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	events, err := store.GetStorageChallengeScoreEvents()
+	if err != nil {
+		return
+	}
+
+	for i := 0; i < len(events); i++ {
+		event := events[i]
+		service.eventRetryMap[event.ChallengeID]++
+
+		if service.eventRetryMap[event.ChallengeID] >= retryThreshold {
+			err = store.UpdateScoreChallengeEvent(event.ChallengeID)
+			if err != nil {
+				log.WithContext(ctx).
+					WithField("score_sc_challenge_event_id", event.ChallengeID).
+					WithError(err).Error("error updating score-storage-challenge-event")
+				continue
+
+			}
+			delete(service.eventRetryMap, event.ChallengeID)
+
+			continue
+		}
+
+		err = task.AccumulateStorageChallengeScoreData(newCtx, event.ChallengeID)
+		if err != nil {
+			log.WithContext(ctx).
+				WithField("score_sc_challenge_event_id", event.ChallengeID).
+				WithError(err).Error("error processing score-storage-challenge-event")
+
+			continue
+		}
+
+		err = store.UpdateScoreChallengeEvent(event.ChallengeID)
+		if err != nil {
+			continue
+		}
+
+		delete(service.eventRetryMap, event.ChallengeID)
+	}
+
+	log.WithContext(ctx).Debug("self-healing events have been processed")
 }
 
 // NewService : Create a new storage challenge service
@@ -233,6 +336,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		challengeStatusObserver:   challengeStatusObserver,
 		localKeys:                 sync.Map{},
 		historyDB:                 historyDB,
+		eventRetryMap:             make(map[string]int),
 	}
 }
 

@@ -49,12 +49,14 @@ func (s *SQLiteStore) GetScoreLastAggregatedAt(challengeType ScoreAggregationTra
 // UpsertScoreLastAggregatedAt updates or insert score-aggregation-tracker
 func (s *SQLiteStore) UpsertScoreLastAggregatedAt(challengeType ScoreAggregationTrackerChallengeType) error {
 	const upsertQuery = `
-INSERT INTO score_aggregation_tracker (challenge_type, aggregated_til)
-VALUES (?, ?)
+INSERT INTO score_aggregation_tracker (challenge_type, aggregated_til, created_at, updated_at)
+VALUES (?, ?, ?, ?)
 ON CONFLICT(challenge_type)
-DO UPDATE SET aggregated_til = excluded.aggregated_til;`
+DO UPDATE SET 
+    aggregated_til = excluded.aggregated_til,
+    updated_at =excluded.updated_at;`
 
-	_, err := s.db.Exec(upsertQuery, challengeType, time.Now().UTC())
+	_, err := s.db.Exec(upsertQuery, challengeType, time.Now().UTC().Add(-60*time.Minute), time.Now().UTC(), time.Now().UTC())
 	if err != nil {
 		return err
 	}

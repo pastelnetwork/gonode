@@ -65,7 +65,7 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 	logger.WithContext(ctx).Debug("file has been retrieved for verification")
 
 	challengeCorrectHash := task.computeHashOfFileSlice(challengeFileData, incomingResponseMessage.Data.Challenge.StartIndex, incomingResponseMessage.Data.Challenge.EndIndex)
-	logger.Info("hash of the data has been generated against the given indices")
+	logger.Debug("hash of the data has been generated against the given indices")
 
 	blockNumChallengeVerified, err := task.SuperNodeService.PastelClient.GetBlockCount(ctx)
 	if err != nil {
@@ -86,7 +86,7 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 	var isVerified bool
 	if incomingResponseMessage.Data.Response.Hash == challengeCorrectHash {
 		isVerified = true
-		logger.Info(fmt.Sprintf("Supernode %s correctly responded in %d blocks to a storage challenge for file %s", incomingResponseMessage.Data.RecipientID, blocksVerifyStorageChallengeInBlocks, incomingResponseMessage.Data.Challenge.FileHash))
+		logger.Debug(fmt.Sprintf("Supernode %s correctly responded in %d blocks to a storage challenge for file %s", incomingResponseMessage.Data.RecipientID, blocksVerifyStorageChallengeInBlocks, incomingResponseMessage.Data.Challenge.FileHash))
 	} else {
 		log.Debug(fmt.Sprintf("Supernode %s failed by incorrectly responding to a storage challenge for file %s", incomingResponseMessage.Data.RecipientID, incomingResponseMessage.Data.Challenge.FileHash))
 	}
@@ -161,7 +161,7 @@ func (task *SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponse
 	}
 
 	if broadcastingMsg == nil {
-		logger.Info("Unable to create broadcast message")
+		logger.Debug("Unable to create broadcast message")
 		return nil, nil
 	}
 

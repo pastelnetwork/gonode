@@ -6,6 +6,7 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/types"
 )
 
@@ -13,16 +14,16 @@ import (
 func (task *SCTask) AccumulateStorageChallengeScoreData(ctx context.Context, challengeID string) error {
 	logger := log.WithContext(ctx).WithField("method", "AccumulateStorageChallengeScoreData")
 
-	msgs, err := task.getAffirmationMessages(challengeID)
+	msgs, err := task.getAffirmationMessages(ctx, challengeID)
 	if err != nil {
 		logger.WithError(err).Error("error retrieving affirmation messages")
 		return errors.Errorf("error retrieving affirmation messages")
 	}
 
-	pingInfos, err := task.historyDB.GetAllPingInfos()
+	pingInfos, err := task.getPingInfos(ctx)
 	if err != nil {
-		logger.WithError(err).Error("error retrieving affirmation messages")
-		return errors.Errorf("error retrieving affirmation messages")
+		logger.WithError(err).Error("error retrieving ping infos for sc score aggregation")
+		return errors.Errorf("error retrieving ping infos for sc score aggregation")
 	}
 
 	var (
@@ -34,6 +35,8 @@ func (task *SCTask) AccumulateStorageChallengeScoreData(ctx context.Context, cha
 	)
 
 	for _, msg := range msgs {
+		logger.WithField("msg", msg.Data).Debug("msg processing")
+
 		if IsChallengerCorrectlyEvaluated(msg.Data) {
 			challengerID = msg.Data.ChallengerID
 			challengerEvaluations++
@@ -72,10 +75,18 @@ func (task *SCTask) AccumulateStorageChallengeScoreData(ctx context.Context, cha
 	return nil
 }
 
-func (task *SCTask) getAffirmationMessages(challengeID string) (types.StorageChallengeMessages, error) {
-	affMsgs, err := task.historyDB.GetMetricsByChallengeIDAndMessageType(challengeID, types.AffirmationMessageType)
+func (task *SCTask) getAffirmationMessages(ctx context.Context, challengeID string) (types.StorageChallengeMessages, error) {
+	store, err := queries.OpenHistoryDB()
 	if err != nil {
-		return nil, errors.Errorf("error retrieving affirmation msgs")
+		return nil, err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	affMsgs, err := store.GetMetricsByChallengeIDAndMessageType(challengeID, types.AffirmationMessageType)
+	if err != nil {
+		return nil, err
 	}
 
 	var affirmationMsgs types.StorageChallengeMessages
@@ -92,6 +103,7 @@ func (task *SCTask) getAffirmationMessages(challengeID string) (types.StorageCha
 			MessageType:     types.MessageType(msg.MessageType),
 			Sender:          msg.Sender,
 			SenderSignature: msg.SenderSignature,
+			Data:            scMsg.Data,
 		})
 	}
 
@@ -141,14 +153,13 @@ func (task *SCTask) processChallengerEvaluation(challengerEvaluations int, chall
 		}
 	}
 
+	aggregatedScoreData.TotalChallengesAsChallengers = aggregatedScoreData.TotalChallengesAsChallengers + 1
 	if challengerEvaluations >= successThreshold {
 		aggregatedScoreData.CorrectChallengerEvaluations = aggregatedScoreData.CorrectChallengerEvaluations + 1
 	}
 
-	aggregatedScoreData.TotalChallengesAsChallengers = aggregatedScoreData.TotalChallengesAsChallengers + 1
-
 	if err := task.historyDB.UpsertAccumulativeSCData(aggregatedScoreData); err != nil {
-		return errors.Errorf("error retrieving aggregated score data")
+		return err
 	}
 
 	return nil
@@ -176,7 +187,7 @@ func (task *SCTask) processRecipientEvaluation(recipientEvaluations int, recipie
 	aggregatedScoreData.TotalChallengesAsRecipients = aggregatedScoreData.TotalChallengesAsRecipients + 1
 
 	if err := task.historyDB.UpsertAccumulativeSCData(aggregatedScoreData); err != nil {
-		return errors.Errorf("error retrieving aggregated score data")
+		return err
 	}
 
 	return nil
@@ -198,13 +209,12 @@ func (task *SCTask) processObserverEvaluation(commonHash string, observerTrueHas
 	}
 
 	aggregatedScoreData.TotalChallengesAsObservers++
-
 	if observerTrueHash == commonHash {
 		aggregatedScoreData.CorrectObserverEvaluations++
 	}
 
 	if err := task.historyDB.UpsertAccumulativeSCData(aggregatedScoreData); err != nil {
-		return errors.Errorf("error retrieving aggregated score data")
+		return err
 	}
 
 	return nil
@@ -218,4 +228,21 @@ func getNodeInfo(infos types.PingInfos, nodeID string) (id, nodeIP string) {
 	}
 
 	return nodeID, ""
+}
+
+func (task *SCTask) getPingInfos(ctx context.Context) (types.PingInfos, error) {
+	store, err := queries.OpenHistoryDB()
+	if err != nil {
+		return nil, err
+	}
+	if store != nil {
+		defer store.CloseHistoryDB(ctx)
+	}
+
+	pingInfos, err := store.GetAllPingInfos()
+	if err != nil {
+		return pingInfos, err
+	}
+
+	return pingInfos, nil
 }
