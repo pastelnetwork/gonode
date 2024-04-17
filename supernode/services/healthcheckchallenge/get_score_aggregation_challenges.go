@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/queries"
+	"github.com/pastelnetwork/gonode/common/storage/scorestore"
 	"math"
 	"time"
 
@@ -20,7 +21,7 @@ func (task *HCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 
 	logger.Info("invoked")
 
-	tracker, err := task.historyDB.GetScoreLastAggregatedAt(queries.HealthCheckChallengeScoreAggregationType)
+	tracker, err := task.scoreStore.GetScoreLastAggregatedAt(scorestore.HealthCheckChallengeScoreAggregationType)
 	if err != nil {
 		logger.WithError(err).Error("error retrieving score-aggregate tracker for healthcheck-challenges")
 		return errors.Errorf("error retrieving score-aggregate tracker for healthcheck-challenges")
@@ -39,6 +40,14 @@ func (task *HCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 
 	totalBatches := task.calculateTotalBatches(totalChallengesToBeAggregated)
 
+	store, err := scorestore.OpenScoringDb()
+	if err != nil {
+		return err
+	}
+	if store != nil {
+		defer store.CloseDB(ctx)
+	}
+
 	for i := 0; i < totalBatches; i++ {
 		batchOfChallengeIDs, err := task.retrieveChallengeIDsInBatches(ctx, tracker, i)
 		if err != nil {
@@ -50,14 +59,15 @@ func (task *HCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 			continue
 		}
 
-		err = task.BatchInsertChallengeIDs(ctx, batchOfChallengeIDs, false)
-		if err != nil {
-			logger.Error("error storing healthcheck challenge_ids for score aggregation")
-			return err
+		if store != nil {
+			err = store.BatchInsertScoreAggregationChallenges(batchOfChallengeIDs, false)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	if err := task.historyDB.UpsertScoreLastAggregatedAt(queries.HealthCheckChallengeScoreAggregationType); err != nil {
+	if err := task.scoreStore.UpsertScoreLastAggregatedAt(scorestore.HealthCheckChallengeScoreAggregationType); err != nil {
 		logger.WithError(err).Error("error storing affirmation type batch in score aggregation healthcheck-challenges")
 		return errors.Errorf("error updating aggregated til for hc")
 	}
@@ -65,7 +75,7 @@ func (task *HCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 	return nil
 }
 
-func (task *HCTask) retrieveChallengeIDsInBatches(ctx context.Context, tracker queries.ScoreAggregationTracker, batchNumber int) ([]string, error) {
+func (task *HCTask) retrieveChallengeIDsInBatches(ctx context.Context, tracker scorestore.ScoreAggregationTracker, batchNumber int) ([]string, error) {
 	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, err
@@ -96,7 +106,7 @@ func (task *HCTask) retrieveChallengeIDsInBatches(ctx context.Context, tracker q
 	return challengeIDs, nil
 }
 
-func (task *HCTask) getChallengeIDsCountForScoreAggregation(ctx context.Context, tracker queries.ScoreAggregationTracker) (int, error) {
+func (task *HCTask) getChallengeIDsCountForScoreAggregation(ctx context.Context, tracker scorestore.ScoreAggregationTracker) (int, error) {
 	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return 0, err
@@ -133,20 +143,6 @@ func (task *HCTask) calculateTotalBatches(count int) int {
 
 // BatchInsertChallengeIDs stores the challenge id to db for further verification
 func (task *HCTask) BatchInsertChallengeIDs(ctx context.Context, batchOfChallengeIDs []string, isAggregated bool) error {
-	store, err := queries.OpenHistoryDB()
-	if err != nil {
-		return err
-	}
-	if store != nil {
-		defer store.CloseHistoryDB(ctx)
-	}
-
-	if store != nil {
-		err = store.BatchInsertHCScoreAggregationChallenges(batchOfChallengeIDs, isAggregated)
-		if err != nil {
-			return err
-		}
-	}
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/pastelnetwork/gonode/common/storage/queries"
+	"github.com/pastelnetwork/gonode/common/storage/scorestore"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -55,6 +56,7 @@ type SCService struct {
 	numberOfChallengeReplicas     int
 	numberOfVerifyingNodes        int
 	historyDB                     queries.LocalStoreInterface
+	scoreStore                    scorestore.ScoreStorageInterface
 
 	currentBlockCount int32
 	// currently unimplemented, default always used instead.
@@ -268,15 +270,7 @@ func (service *SCService) processStorageChallengeScoreEvents(ctx context.Context
 	newCtx := context.Background()
 	task := service.NewSCTask()
 
-	store, err := queries.OpenHistoryDB()
-	if err != nil {
-		return
-	}
-	if store != nil {
-		defer store.CloseHistoryDB(ctx)
-	}
-
-	events, err := store.GetStorageChallengeScoreEvents()
+	events, err := service.scoreStore.GetStorageChallengeScoreEvents()
 	if err != nil {
 		return
 	}
@@ -286,7 +280,7 @@ func (service *SCService) processStorageChallengeScoreEvents(ctx context.Context
 		service.eventRetryMap[event.ChallengeID]++
 
 		if service.eventRetryMap[event.ChallengeID] >= retryThreshold {
-			err = store.UpdateScoreChallengeEvent(event.ChallengeID)
+			err = service.scoreStore.UpdateScoreChallengeEvent(event.ChallengeID)
 			if err != nil {
 				log.WithContext(ctx).
 					WithField("score_sc_challenge_event_id", event.ChallengeID).
@@ -308,7 +302,7 @@ func (service *SCService) processStorageChallengeScoreEvents(ctx context.Context
 			continue
 		}
 
-		err = store.UpdateScoreChallengeEvent(event.ChallengeID)
+		err = service.scoreStore.UpdateScoreChallengeEvent(event.ChallengeID)
 		if err != nil {
 			continue
 		}
@@ -323,7 +317,7 @@ func (service *SCService) processStorageChallengeScoreEvents(ctx context.Context
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface,
-	p2p p2p.Client, challengeStatusObserver SaveChallengeState, historyDB queries.LocalStoreInterface) *SCService {
+	p2p p2p.Client, challengeStatusObserver SaveChallengeState, historyDB queries.LocalStoreInterface, scoreDB scorestore.ScoreStorageInterface) *SCService {
 	return &SCService{
 		config:                        config,
 		SuperNodeService:              common.NewSuperNodeService(fileStorage, pastelClient, p2p),
@@ -336,6 +330,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		challengeStatusObserver:   challengeStatusObserver,
 		localKeys:                 sync.Map{},
 		historyDB:                 historyDB,
+		scoreStore:                scoreDB,
 		eventRetryMap:             make(map[string]int),
 	}
 }

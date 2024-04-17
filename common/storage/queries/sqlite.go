@@ -196,112 +196,11 @@ const createHealthCheckChallengeMetrics string = `
   updated_at DATETIME NOT NULL
 );
 `
-const createAccumulativeSCData string = `
-CREATE TABLE IF NOT EXISTS accumulative_sc_data (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    node_id TEXT NOT NULL,
-    ip_address TEXT,
-    total_challenges_as_challengers INTEGER,
-    total_challenges_as_recipients INTEGER,
-    total_challenges_as_observers INTEGER,
-    correct_challenger_evaluations INTEGER,
-    correct_recipient_evaluations INTEGER,
-    correct_observer_evaluation INTEGER,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
-);
-`
-
-const createAccumulativeHCData string = `
-CREATE TABLE IF NOT EXISTS accumulative_hc_data (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    node_id TEXT NOT NULL,
-    ip_address TEXT,
-    total_challenges_as_challengers INTEGER,
-    total_challenges_as_recipients INTEGER,
-    total_challenges_as_observers INTEGER,
-    correct_challenger_evaluations INTEGER,
-    correct_recipient_evaluations INTEGER,
-    correct_observer_evaluation INTEGER,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
-);
-`
-
-const createSCScoreAggregationQueue string = `
-CREATE TABLE IF NOT EXISTS sc_score_aggregation_queue (
-    challenge_id TEXT PRIMARY KEY NOT NULL,
-    is_aggregated BOOLEAN NOT NULL,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
-);
-`
-
-const createScoreAggregationTracker string = `
-CREATE TABLE IF NOT EXISTS score_aggregation_tracker (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    challenge_type INTEGER NOT NULL,
-    aggregated_til DATETIME NOT NULL,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
-);
-`
-
-const createScoreAggregationTrackerUniqueIndex string = `
-CREATE UNIQUE INDEX IF NOT EXISTS score_aggregation_tracker_unique ON score_aggregation_tracker(challenge_type);
-`
-
 const createHealthCheckChallengeMetricsUniqueIndex string = `
 CREATE UNIQUE INDEX IF NOT EXISTS healthcheck_challenge_metrics_unique ON healthcheck_challenge_metrics(challenge_id, message_type, sender_id);
 `
-
-const createAccumulativeSCDataUniqueIndex string = `
-CREATE UNIQUE INDEX IF NOT EXISTS accumulative_sc_data_unique_index 
-ON accumulative_sc_data(node_id);
-`
-
-const createAccumulativeHCDataUniqueIndex string = `
-CREATE UNIQUE INDEX IF NOT EXISTS accumulative_hc_data_unique_index 
-ON accumulative_hc_data(node_id);
-`
-
-const createAggregatedSCChallengesUniqueIndex string = `
-CREATE UNIQUE INDEX IF NOT EXISTS sc_score_aggregation_queue_unique_index 
-ON sc_score_aggregation_queue(challenge_id);
-`
-
 const alterTablePingHistoryHealthCheckColumn = `ALTER TABLE ping_history
 ADD COLUMN health_check_metrics_last_broadcast_at DATETIME NULL;`
-
-const createHCScoreAggregationQueue string = `
-CREATE TABLE IF NOT EXISTS hc_score_aggregation_queue (
-    challenge_id TEXT PRIMARY KEY NOT NULL,
-    is_aggregated BOOLEAN NOT NULL,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
-);
-`
-
-const createAggregatedHCChallengesUniqueIndex string = `
-CREATE UNIQUE INDEX IF NOT EXISTS hc_score_aggregation_queue_unique_index 
-ON hc_score_aggregation_queue(challenge_id);
-`
-
-const createAggregatedChallengeScores string = `
-CREATE TABLE IF NOT EXISTS aggregated_challenge_scores (
-    node_id TEXT PRIMARY KEY NOT NULL,
-    ip_address TEXT,
-    storage_challenge_score REAL,
-    healthcheck_challenge_score REAL,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
-);
-`
-
-const createAggregatedChallengeScoresUniqueIndex string = `
-CREATE UNIQUE INDEX IF NOT EXISTS aggregated_challenge_scores_unique_index 
-ON aggregated_challenge_scores(node_id);
-`
 
 const (
 	historyDBName = "history.db"
@@ -404,54 +303,6 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
 
-	if _, err := db.Exec(createAccumulativeSCData); err != nil {
-		return nil, fmt.Errorf("cannot create table(s): %w", err)
-	}
-
-	if _, err := db.Exec(createSCScoreAggregationQueue); err != nil {
-		return nil, fmt.Errorf("cannot create table(s): %w", err)
-	}
-
-	if _, err := db.Exec(createScoreAggregationTracker); err != nil {
-		return nil, fmt.Errorf("cannot create table: %w", err)
-	}
-
-	if _, err := db.Exec(createAccumulativeSCDataUniqueIndex); err != nil {
-		return nil, fmt.Errorf("cannot create unique index: %w", err)
-	}
-
-	if _, err := db.Exec(createAggregatedSCChallengesUniqueIndex); err != nil {
-		return nil, fmt.Errorf("cannot create unique index: %w", err)
-	}
-
-	if _, err := db.Exec(createScoreAggregationTrackerUniqueIndex); err != nil {
-		return nil, fmt.Errorf("cannot create unique index: %w", err)
-	}
-
-	if _, err := db.Exec(createHCScoreAggregationQueue); err != nil {
-		return nil, fmt.Errorf("cannot create unique index: %w", err)
-	}
-
-	if _, err := db.Exec(createAggregatedHCChallengesUniqueIndex); err != nil {
-		return nil, fmt.Errorf("cannot create unique index: %w", err)
-	}
-
-	if _, err := db.Exec(createAccumulativeHCData); err != nil {
-		return nil, fmt.Errorf("cannot create unique index: %w", err)
-	}
-
-	if _, err := db.Exec(createAccumulativeHCDataUniqueIndex); err != nil {
-		return nil, fmt.Errorf("cannot create unique index: %w", err)
-	}
-
-	if _, err := db.Exec(createAggregatedChallengeScores); err != nil {
-		return nil, fmt.Errorf("cannot create unique index: %w", err)
-	}
-
-	if _, err := db.Exec(createAggregatedChallengeScoresUniqueIndex); err != nil {
-		return nil, fmt.Errorf("cannot create unique index: %w", err)
-	}
-
 	_, _ = db.Exec(alterTaskHistory)
 
 	_, _ = db.Exec(alterTablePingHistory)
@@ -466,6 +317,7 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 		"PRAGMA synchronous=NORMAL;",
 		"PRAGMA cache_size=-262144;",
 		"PRAGMA busy_timeout=120000;",
+		"PRAGMA journal_mode=WAL;",
 	}
 
 	for _, pragma := range pragmas {

@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/scorestore"
 	"github.com/pastelnetwork/gonode/common/types"
 	"net/http"
 
-	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -59,11 +59,11 @@ func (service *Service) getScores(ctx context.Context, pid string, signature str
 		return nil, fmt.Errorf("rate limit exceeded, please try again later")
 	}
 
-	store, err := queries.OpenHistoryDB()
+	store, err := scorestore.OpenScoringDb()
 	if err != nil {
 		return nil, fmt.Errorf("error opening DB: %w", err)
 	}
-	defer store.CloseHistoryDB(ctx)
+	defer store.CloseDB(ctx)
 
 	supernodes, err := service.scService.PastelClient.MasterNodesExtra(ctx)
 	if err != nil {

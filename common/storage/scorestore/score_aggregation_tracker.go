@@ -1,9 +1,10 @@
-package queries
+package scorestore
 
 import (
 	"database/sql"
-	"github.com/pastelnetwork/gonode/common/errors"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 type ScoreAggregationTrackerChallengeType int
@@ -24,7 +25,7 @@ type ScoreAggregationTrackerQueries interface {
 }
 
 // GetScoreLastAggregatedAt retrieves the last aggregated for the given challenge-type
-func (s *SQLiteStore) GetScoreLastAggregatedAt(challengeType ScoreAggregationTrackerChallengeType) (ScoreAggregationTracker, error) {
+func (s *ScoringStore) GetScoreLastAggregatedAt(challengeType ScoreAggregationTrackerChallengeType) (ScoreAggregationTracker, error) {
 	const query = `SELECT challenge_type, aggregated_til FROM score_aggregation_tracker WHERE challenge_type = ?`
 
 	var tracker ScoreAggregationTracker
@@ -47,7 +48,7 @@ func (s *SQLiteStore) GetScoreLastAggregatedAt(challengeType ScoreAggregationTra
 }
 
 // UpsertScoreLastAggregatedAt updates or insert score-aggregation-tracker
-func (s *SQLiteStore) UpsertScoreLastAggregatedAt(challengeType ScoreAggregationTrackerChallengeType) error {
+func (s *ScoringStore) UpsertScoreLastAggregatedAt(challengeType ScoreAggregationTrackerChallengeType) error {
 	const upsertQuery = `
 INSERT INTO score_aggregation_tracker (challenge_type, aggregated_til, created_at, updated_at)
 VALUES (?, ?, ?, ?)

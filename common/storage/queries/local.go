@@ -13,6 +13,4 @@ type LocalStoreInterface interface {
 	StorageChallengeQueries
 	PingHistoryQueries
 	HealthCheckChallengeQueries
-	ScoreAggregationTrackerQueries
-	AggregateScScoreQueries
 }
