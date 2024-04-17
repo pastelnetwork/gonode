@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/pastelnetwork/gonode/common/storage/scorestore"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -37,6 +38,7 @@ type HCService struct {
 	numberOfChallengeReplicas         int
 	numberOfVerifyingNodes            int
 	historyDB                         queries.LocalStoreInterface
+	scoreStore                        scorestore.ScoreStorageInterface
 
 	currentBlockCount int32
 	// currently unimplemented, default always used instead.
@@ -221,12 +223,12 @@ func (service *HCService) processHealthCheckChallengeScoreEvents(ctx context.Con
 	newCtx := context.Background()
 	task := service.NewHCTask()
 
-	store, err := queries.OpenHistoryDB()
+	store, err := scorestore.OpenScoringDb()
 	if err != nil {
 		return
 	}
 	if store != nil {
-		defer store.CloseHistoryDB(ctx)
+		defer store.CloseDB(ctx)
 	}
 
 	events, err := store.GetHealthCheckChallengeScoreEvents()
@@ -276,7 +278,7 @@ func (service *HCService) processHealthCheckChallengeScoreEvents(ctx context.Con
 //
 //	Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface,
-	p2p p2p.Client, challengeStatusObserver SaveChallengeState, historyDB queries.LocalStoreInterface) *HCService {
+	p2p p2p.Client, challengeStatusObserver SaveChallengeState, historyDB queries.LocalStoreInterface, scoreDB scorestore.ScoreStorageInterface) *HCService {
 	return &HCService{
 		config:                            config,
 		SuperNodeService:                  common.NewSuperNodeService(fileStorage, pastelClient, p2p),
@@ -289,6 +291,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		challengeStatusObserver:   challengeStatusObserver,
 		localKeys:                 sync.Map{},
 		historyDB:                 historyDB,
+		scoreStore:                scoreDB,
 		eventRetryMap:             make(map[string]int),
 	}
 }

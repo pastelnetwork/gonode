@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pastelnetwork/gonode/common/utils"
-
 	"net/http"
 	_ "net/http/pprof" //profiling
 
@@ -20,7 +18,9 @@ import (
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/storage/queries"
+	"github.com/pastelnetwork/gonode/common/storage/scorestore"
 	"github.com/pastelnetwork/gonode/common/sys"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/mixins"
@@ -264,14 +264,21 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 	defer hDB.CloseHistoryDB(ctx)
 
+	//Initialize History DB
+	sDB, err := scorestore.OpenScoringDb()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error connecting history db..")
+	}
+	defer sDB.CloseDB(ctx)
+
 	// business logic services
 	nftRegister := nftregister.NewService(&config.NftRegister, fileStorage, pastelClient, nodeClient, p2p, ddClient, hDB)
 	nftDownload := download.NewService(&config.NftDownload, pastelClient, p2p, hDB)
 	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, p2p, ddClient, hDB)
 	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, p2p, hDB)
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, fileStorage, pastelClient, nodeClient, p2p, hDB)
-	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, nil, hDB)
-	healthCheckChallenger := healthcheckchallenge.NewService(&config.HealthCheckChallenge, fileStorage, pastelClient, nodeClient, p2p, nil, hDB)
+	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, nil, hDB, sDB)
+	healthCheckChallenger := healthcheckchallenge.NewService(&config.HealthCheckChallenge, fileStorage, pastelClient, nodeClient, p2p, nil, hDB, sDB)
 	selfHealing := selfhealing.NewService(&config.SelfHealingChallenge, fileStorage, pastelClient, nodeClient, p2p, hDB, nftDownload)
 	// // ----Userdata Services----
 	// userdataNodeClient := client.New(pastelClient, secInfo)

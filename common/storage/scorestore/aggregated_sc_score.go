@@ -1,4 +1,4 @@
-package queries
+package scorestore
 
 import (
 	"database/sql"
@@ -20,9 +20,10 @@ type AggregateScScoreQueries interface {
 	GetHealthCheckChallengeScoreEvents() ([]types.ScoreAggregationEvent, error)
 	UpdateScoreChallengeEvent(challengeID string) error
 	UpdateHealthCheckScoreChallengeEvent(challengeID string) error
+	BatchInsertScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error
 }
 
-func (s *SQLiteStore) GetAccumulativeSCDataForAllNodes() ([]types.AccumulativeChallengeData, error) {
+func (s *ScoringStore) GetAccumulativeSCDataForAllNodes() ([]types.AccumulativeChallengeData, error) {
 	rows, err := s.db.Query(`
         SELECT node_id, ip_address, total_challenges_as_challengers, 
                total_challenges_as_recipients, total_challenges_as_observers,
@@ -55,7 +56,7 @@ func (s *SQLiteStore) GetAccumulativeSCDataForAllNodes() ([]types.AccumulativeCh
 	return results, nil
 }
 
-func (s *SQLiteStore) GetAccumulativeHCDataForAllNodes() ([]types.AccumulativeChallengeData, error) {
+func (s *ScoringStore) GetAccumulativeHCDataForAllNodes() ([]types.AccumulativeChallengeData, error) {
 	rows, err := s.db.Query(`
         SELECT node_id, ip_address, total_challenges_as_challengers, 
                total_challenges_as_recipients, total_challenges_as_observers,
@@ -88,7 +89,7 @@ func (s *SQLiteStore) GetAccumulativeHCDataForAllNodes() ([]types.AccumulativeCh
 	return results, nil
 }
 
-func (s *SQLiteStore) GetAccumulativeSCData(nodeID string) (types.AccumulativeChallengeData, error) {
+func (s *ScoringStore) GetAccumulativeSCData(nodeID string) (types.AccumulativeChallengeData, error) {
 	const selectQuery = `
         SELECT node_id, ip_address, total_challenges_as_challengers, 
                total_challenges_as_recipients, total_challenges_as_observers,
@@ -112,7 +113,7 @@ func (s *SQLiteStore) GetAccumulativeSCData(nodeID string) (types.AccumulativeCh
 	return aggregatedScScore, nil
 }
 
-func (s *SQLiteStore) GetAccumulativeHCData(nodeID string) (types.AccumulativeChallengeData, error) {
+func (s *ScoringStore) GetAccumulativeHCData(nodeID string) (types.AccumulativeChallengeData, error) {
 	const selectQuery = `
         SELECT node_id, ip_address, total_challenges_as_challengers, 
                total_challenges_as_recipients, total_challenges_as_observers,
@@ -136,7 +137,7 @@ func (s *SQLiteStore) GetAccumulativeHCData(nodeID string) (types.AccumulativeCh
 	return aggregatedScScore, nil
 }
 
-func (s *SQLiteStore) UpsertAccumulativeSCData(aggregatedScScore types.AccumulativeChallengeData) error {
+func (s *ScoringStore) UpsertAccumulativeSCData(aggregatedScScore types.AccumulativeChallengeData) error {
 	const upsertQuery = `
         INSERT INTO accumulative_sc_data (
             node_id, ip_address,
@@ -169,7 +170,7 @@ func (s *SQLiteStore) UpsertAccumulativeSCData(aggregatedScScore types.Accumulat
 	return nil
 }
 
-func (s *SQLiteStore) UpsertAccumulativeHCData(aggregatedScScore types.AccumulativeChallengeData) error {
+func (s *ScoringStore) UpsertAccumulativeHCData(aggregatedScScore types.AccumulativeChallengeData) error {
 	const upsertQuery = `
         INSERT INTO accumulative_hc_data (
             node_id, ip_address,
@@ -202,7 +203,7 @@ func (s *SQLiteStore) UpsertAccumulativeHCData(aggregatedScScore types.Accumulat
 	return nil
 }
 
-func (s *SQLiteStore) UpsertAggregatedScore(score types.AggregatedScore) error {
+func (s *ScoringStore) UpsertAggregatedScore(score types.AggregatedScore) error {
 	query := `
 	INSERT INTO aggregated_challenge_scores(node_id, ip_address, storage_challenge_score, healthcheck_challenge_score, created_at, updated_at)
 	VALUES (?, ?, ?, ?, ?, ?)
@@ -217,7 +218,7 @@ func (s *SQLiteStore) UpsertAggregatedScore(score types.AggregatedScore) error {
 	return err
 }
 
-func (s *SQLiteStore) GetAggregatedScore(nodeID string) (*types.AggregatedScore, error) {
+func (s *ScoringStore) GetAggregatedScore(nodeID string) (*types.AggregatedScore, error) {
 	query := `
 	SELECT node_id, ip_address, storage_challenge_score, healthcheck_challenge_score, created_at, updated_at
 	FROM aggregated_challenge_scores
@@ -239,7 +240,7 @@ func (s *SQLiteStore) GetAggregatedScore(nodeID string) (*types.AggregatedScore,
 }
 
 // GetStorageChallengeScoreEvents retrieves the challenge events from DB
-func (s *SQLiteStore) GetStorageChallengeScoreEvents() ([]types.ScoreAggregationEvent, error) {
+func (s *ScoringStore) GetStorageChallengeScoreEvents() ([]types.ScoreAggregationEvent, error) {
 	const selectQuery = `
         SELECT challenge_id, is_aggregated, created_at, updated_at
         FROM sc_score_aggregation_queue
@@ -268,7 +269,7 @@ func (s *SQLiteStore) GetStorageChallengeScoreEvents() ([]types.ScoreAggregation
 }
 
 // GetHealthCheckChallengeScoreEvents retrieves the challenge events from DB
-func (s *SQLiteStore) GetHealthCheckChallengeScoreEvents() ([]types.ScoreAggregationEvent, error) {
+func (s *ScoringStore) GetHealthCheckChallengeScoreEvents() ([]types.ScoreAggregationEvent, error) {
 	const selectQuery = `
         SELECT challenge_id, is_aggregated, created_at, updated_at
         FROM hc_score_aggregation_queue
@@ -296,7 +297,7 @@ func (s *SQLiteStore) GetHealthCheckChallengeScoreEvents() ([]types.ScoreAggrega
 	return events, nil
 }
 
-func (s *SQLiteStore) UpdateScoreChallengeEvent(challengeID string) error {
+func (s *ScoringStore) UpdateScoreChallengeEvent(challengeID string) error {
 	query := `update sc_score_aggregation_queue
 set is_aggregated = ?,
 updated_at= ?
@@ -307,7 +308,7 @@ where challenge_id = ?
 	return err
 }
 
-func (s *SQLiteStore) UpdateHealthCheckScoreChallengeEvent(challengeID string) error {
+func (s *ScoringStore) UpdateHealthCheckScoreChallengeEvent(challengeID string) error {
 	query := `update hc_score_aggregation_queue
 set is_aggregated = ?,
 updated_at= ?
@@ -316,4 +317,35 @@ where challenge_id = ?
 
 	_, err := s.db.Exec(query, true, time.Now().UTC(), challengeID)
 	return err
+}
+
+func (s *ScoringStore) BatchInsertScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+        INSERT OR IGNORE INTO sc_score_aggregation_queue
+        (challenge_id, is_aggregated, created_at, updated_at)
+        VALUES (?,?,?,?)
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	for _, id := range challengeIDs {
+		now := time.Now().UTC()
+
+		_, err = stmt.Exec(id, isAggregated, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Commit the transaction
+	return tx.Commit()
 }

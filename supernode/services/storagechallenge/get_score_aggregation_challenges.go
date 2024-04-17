@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/queries"
+	"github.com/pastelnetwork/gonode/common/storage/scorestore"
 	"math"
 	"time"
 
@@ -20,7 +21,7 @@ func (task *SCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 
 	logger.Info("invoked")
 
-	tracker, err := task.historyDB.GetScoreLastAggregatedAt(queries.StorageChallengeScoreAggregationType)
+	tracker, err := task.getStorageChallengeTracker(ctx)
 	if err != nil {
 		logger.WithError(err).Error("error retrieving storage-challenge score aggregate tracker")
 		return errors.Errorf("error score-aggregate tracker for storage challenges")
@@ -39,6 +40,14 @@ func (task *SCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 
 	totalBatches := task.calculateTotalBatches(totalChallengesToBeAggregated)
 
+	store, err := scorestore.OpenScoringDb()
+	if err != nil {
+		return err
+	}
+	if store != nil {
+		defer store.CloseDB(ctx)
+	}
+
 	for i := 0; i < totalBatches; i++ {
 		batchOfChallengeIDs, err := task.retrieveChallengeIDsInBatches(ctx, tracker, i)
 		if err != nil {
@@ -50,14 +59,16 @@ func (task *SCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 			continue
 		}
 
-		err = task.BatchInsertChallengeIDs(ctx, batchOfChallengeIDs, false)
-		if err != nil {
-			logger.WithError(err).Error("error storing storage_challenge_ids for score aggregation")
-			return err
+		if store != nil {
+			err = store.BatchInsertScoreAggregationChallenges(batchOfChallengeIDs, false)
+			if err != nil {
+				logger.WithError(err).Error("error storing storage_challenge_ids for score aggregation")
+				return err
+			}
 		}
 	}
 
-	if err := task.historyDB.UpsertScoreLastAggregatedAt(queries.StorageChallengeScoreAggregationType); err != nil {
+	if err := task.scoreStore.UpsertScoreLastAggregatedAt(scorestore.StorageChallengeScoreAggregationType); err != nil {
 		logger.WithError(err).Error("error updating aggregated til for storage-challenge score aggregation tracker")
 		return errors.Errorf("error updating aggregated til")
 	}
@@ -65,7 +76,16 @@ func (task *SCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 	return nil
 }
 
-func (task *SCTask) retrieveChallengeIDsInBatches(ctx context.Context, tracker queries.ScoreAggregationTracker, batchNumber int) ([]string, error) {
+func (task *SCTask) getStorageChallengeTracker(ctx context.Context) (scorestore.ScoreAggregationTracker, error) {
+	tracker, err := task.scoreStore.GetScoreLastAggregatedAt(scorestore.StorageChallengeScoreAggregationType)
+	if err != nil {
+		return scorestore.ScoreAggregationTracker{}, err
+	}
+
+	return tracker, nil
+}
+
+func (task *SCTask) retrieveChallengeIDsInBatches(ctx context.Context, tracker scorestore.ScoreAggregationTracker, batchNumber int) ([]string, error) {
 	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return nil, err
@@ -96,7 +116,7 @@ func (task *SCTask) retrieveChallengeIDsInBatches(ctx context.Context, tracker q
 	return challengeIDs, nil
 }
 
-func (task *SCTask) getChallengeIDsCountForScoreAggregation(ctx context.Context, tracker queries.ScoreAggregationTracker) (int, error) {
+func (task *SCTask) getChallengeIDsCountForScoreAggregation(ctx context.Context, tracker scorestore.ScoreAggregationTracker) (int, error) {
 	store, err := queries.OpenHistoryDB()
 	if err != nil {
 		return 0, err
@@ -129,24 +149,4 @@ func (task *SCTask) getChallengeIDsCountForScoreAggregation(ctx context.Context,
 
 func (task *SCTask) calculateTotalBatches(count int) int {
 	return int(math.Ceil(float64(count) / float64(batchSize)))
-}
-
-// BatchInsertChallengeIDs stores the challenge id to db for further verification
-func (task *SCTask) BatchInsertChallengeIDs(ctx context.Context, batchOfChallengeIDs []string, isAggregated bool) error {
-	store, err := queries.OpenHistoryDB()
-	if err != nil {
-		return err
-	}
-	if store != nil {
-		defer store.CloseHistoryDB(ctx)
-	}
-
-	if store != nil {
-		err = store.BatchInsertScoreAggregationChallenges(batchOfChallengeIDs, isAggregated)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
