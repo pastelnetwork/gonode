@@ -195,13 +195,13 @@ func (h *StorageHandler) ValidateRaptorQSymbolIDs(ctx context.Context,
 
 func (h *StorageHandler) storeSymbolsInP2P(ctx context.Context, dir string, batchKeys map[string][]byte) error {
 	// Load symbols from the database for the current batch
-	log.WithContext(ctx).WithField("curr-time", time.Now().UTC()).WithField("count", len(batchKeys)).Info("loading batch symbols")
+	log.WithContext(ctx).WithField("count", len(batchKeys)).Info("loading batch symbols")
 	loadedSymbols, err := utils.LoadSymbols(dir, batchKeys)
 	if err != nil {
 		return fmt.Errorf("load batch symbols from db: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("curr-time", time.Now().UTC()).WithField("count", len(loadedSymbols)).Info("loaded batch symbols, storing now")
+	log.WithContext(ctx).WithField("count", len(loadedSymbols)).Info("loaded batch symbols, storing now")
 	// Prepare batch for P2P storage		return nil
 	result := make([][]byte, len(loadedSymbols))
 	i := 0
@@ -215,24 +215,24 @@ func (h *StorageHandler) storeSymbolsInP2P(ctx context.Context, dir string, batc
 	if err := h.P2PClient.StoreBatch(ctx, result, P2PDataRaptorQSymbol); err != nil {
 		return fmt.Errorf("store batch raptorq symbols in p2p: %w", err)
 	}
-	log.WithContext(ctx).WithField("curr-time", time.Now().UTC()).WithField("count", len(loadedSymbols)).Info("stored batch symbols")
+	log.WithContext(ctx).WithField("count", len(loadedSymbols)).Info("stored batch symbols")
 
 	if err := utils.DeleteSymbols(ctx, dir, batchKeys); err != nil {
 		return fmt.Errorf("delete batch symbols from db: %w", err)
 	}
-	log.WithContext(ctx).WithField("curr-time", time.Now().UTC()).WithField("count", len(loadedSymbols)).Info("deleted batch symbols")
+	log.WithContext(ctx).WithField("count", len(loadedSymbols)).Info("deleted batch symbols")
 
 	return nil
 }
 
 func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []byte, name string) error {
 	// Generate the keys for RaptorQ symbols, with empty values
-	log.WithContext(ctx).WithField("curr-time", time.Now().UTC()).Info("generating RaptorQ symbols")
+	log.WithContext(ctx).Info("generating RaptorQ symbols")
 	keysMap, err := h.GenerateRaptorQSymbols(ctx, data, name)
 	if err != nil {
 		return err
 	}
-	log.WithContext(ctx).WithField("curr-time", time.Now().UTC()).WithField("count", len(keysMap)).Info("generated RaptorQ symbols")
+	log.WithContext(ctx).WithField("count", len(keysMap)).Info("generated RaptorQ symbols")
 
 	if h.TxID == "" {
 		return errors.New("txid is not set, cannot store rq symbols")
@@ -265,7 +265,7 @@ func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []
 	batchKeys := make(map[string][]byte)
 	count := 0
 
-	log.WithContext(ctx).WithField("curr-time", time.Now().UTC()).WithField("count", len(keys)).Info("storing raptorQ symbols")
+	log.WithContext(ctx).WithField("count", len(keys)).Info("storing raptorQ symbols")
 	for _, key := range keys {
 		batchKeys[key] = nil
 		count++

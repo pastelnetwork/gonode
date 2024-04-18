@@ -5,8 +5,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -524,12 +526,35 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 			fileMock := storageMock.NewMockFile()
 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, nil, rqClientMock, rqstore.SetupTestDB(t))
+			str := rqstore.SetupTestDB(t)
+			task := makeEmptyNftRegTask(&Config{}, fsMock, nil, nil, p2pClient, nil, rqClientMock, str)
 
 			storage := files.NewStorage(fsMock)
 			task.Nft = files.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
+			// Create a temporary directory
+			tempDir, err := ioutil.TempDir("", "example")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.RemoveAll(tempDir) // clean up
+
+			// Generate random bytes for the file content
+			data := make([]byte, 100) // 100 bytes of random data
+			if _, err := rand.Read(data); err != nil {
+				t.Fatal(err)
+			}
+
+			// Write data to a file within the temporary directory
+			tempFilePath := filepath.Join(tempDir, "A")
+			if err := ioutil.WriteFile(tempFilePath, data, 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			str.StoreSymbolDirectory("txid", tempDir)
+
+			task.storage.TxID = "txid"
 			err = task.storeRaptorQSymbols(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
