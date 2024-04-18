@@ -17,6 +17,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -227,7 +228,7 @@ func (ts *testSuite) newDHTNodeWithMemStore(ctx context.Context, port int, nodes
 	// }
 	// transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
 
-	dht, err := NewDHT(ctx, ts.memStore, nil, pastelClientMock, secInfo, options)
+	dht, err := NewDHT(ctx, ts.memStore, nil, pastelClientMock, secInfo, options, rqstore.SetupTestDB(ts.T()))
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
@@ -271,7 +272,7 @@ func (ts *testSuite) newDHTNodeWithDBStore(ctx context.Context, port int, nodes 
 		pub:    TestPub,
 	}
 
-	dht, err := NewDHT(ctx, ts.dbStore, nil, fakePastelClient, secInfo, options)
+	dht, err := NewDHT(ctx, ts.dbStore, nil, fakePastelClient, secInfo, options, rqstore.SetupTestDB(ts.T()))
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}

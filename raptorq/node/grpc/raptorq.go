@@ -14,6 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/rqstore"
+	"github.com/pastelnetwork/gonode/common/utils"
 	pb "github.com/pastelnetwork/gonode/raptorq"
 	"github.com/pastelnetwork/gonode/raptorq/node"
 )
@@ -133,54 +134,6 @@ func scanSymbolIDFiles(dirPath string) (map[string]node.RawSymbolIDFile, error) 
 	return filesMap, nil
 }
 
-func (service *raptorQ) scanSymbolFilesAndStore(dirPath string, id string, store rqstore.Store) (map[string][]byte, error) {
-	const batchSize = 1000
-	idMap := make(map[string][]byte)
-	batch := make(map[string][]byte)
-
-	err := filepath.Walk(dirPath, func(path string, info fs.FileInfo, err error) error {
-		if err != nil {
-			return errors.Errorf("scan a path %s: %w", path, err)
-		}
-
-		if info.IsDir() {
-			return nil // Skip directories
-		}
-
-		data, err := readFile(path)
-		if err != nil {
-			return errors.Errorf("read file %s: %w", path, err)
-		}
-
-		fileID := filepath.Base(path)
-		idMap[fileID] = []byte{}
-		batch[fileID] = data
-
-		// Store in batches
-		if len(batch) >= batchSize {
-			if err := store.StoreSymbols(id, batch); err != nil {
-				return errors.Errorf("store symbols batch: %w", err)
-			}
-			batch = make(map[string][]byte) // Reset batch after storing
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	// Store any remaining symbols not covered by the last batch
-	if len(batch) > 0 {
-		if err := store.StoreSymbols(id, batch); err != nil {
-			return nil, errors.Errorf("store symbols final batch: %w", err)
-		}
-	}
-
-	return idMap, nil
-}
-
 // Encode data, and return a list of identifier of symbols
 func (service *raptorQ) RQEncode(ctx context.Context, data []byte, id string, store rqstore.Store) (*node.Encode, error) {
 	if data == nil {
@@ -203,9 +156,13 @@ func (service *raptorQ) RQEncode(ctx context.Context, data []byte, id string, st
 		return nil, errors.Errorf("send encode request: %w", err)
 	}
 
-	fileMap, err := service.scanSymbolFilesAndStore(res.Path, id, store)
+	fileMap, err := utils.ReadDirFilenames(res.Path)
 	if err != nil {
 		return nil, errors.Errorf("scan symbol folder %s: %w", res.Path, err)
+	}
+
+	if err := store.StoreSymbolDirectory(id, res.Path); err != nil {
+		return nil, errors.Errorf("store symbol directory: %w", err)
 	}
 
 	if len(fileMap) != int(res.SymbolsCount) {
@@ -216,6 +173,10 @@ func (service *raptorQ) RQEncode(ctx context.Context, data []byte, id string, st
 		EncoderParam: node.EncoderParameters{
 			Oti: res.EncoderParameters,
 		},
+	}
+
+	if err := os.Remove(inputPath); err != nil {
+		log.WithContext(ctx).WithError(err).Error("rq-encode: error removing input file")
 	}
 
 	return output, nil
@@ -260,6 +221,10 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 		EncoderParam: node.EncoderParameters{
 			Oti: res.EncoderParameters,
 		},
+	}
+
+	if err := os.Remove(inputPath); err != nil {
+		log.WithContext(ctx).WithError(err).Error("encode info: error removing input file")
 	}
 
 	return output, nil

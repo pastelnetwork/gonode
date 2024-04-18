@@ -2,29 +2,39 @@ package rqstore
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-const createRQSymbolsTable string = `
-  CREATE TABLE IF NOT EXISTS rq_symbols (
+const createRQSymbolsDir string = `
+  CREATE TABLE IF NOT EXISTS rq_symbols_dir (
   txid TEXT NOT NULL,
-  hash TEXT NOT NULL,
-  data BLOB NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  dir TEXT NOT NULL,
+  is_first_batch_stored BOOLEAN NOT NULL DEFAULT FALSE,
+  is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (txid)
 );`
 
 type Store interface {
-	StoreSymbols(id string, symbols map[string][]byte) error
-	LoadSymbols(id string, symbols map[string][]byte) (map[string][]byte, error)
 	DeleteSymbolsByTxID(txid string) error
+	StoreSymbolDirectory(txid, dir string) error
+	GetDirectoryByTxID(txid string) (string, error)
+	GetToDoStoreSymbolDirs() ([]SymbolDir, error)
+	SetIsCompleted(txid string) error
+	UpdateIsFirstBatchStored(txid string) error
 }
 
 // SQLiteRQStore is sqlite implementation of DD store and Score store
 type SQLiteRQStore struct {
 	db *sqlx.DB
+}
+
+type SymbolDir struct {
+	TXID string `db:"txid"`
+	Dir  string `db:"dir"`
 }
 
 // NewSQLiteRQStore is new sqlite store constructor
@@ -34,8 +44,8 @@ func NewSQLiteRQStore(file string) (*SQLiteRQStore, error) {
 		return nil, fmt.Errorf("cannot open rq-service database: %w", err)
 	}
 
-	// Create the rq_symbols table if it doesn't exist
-	_, err = db.Exec(createRQSymbolsTable)
+	// Create the rq_symbols_dir table if it doesn't exist
+	_, err = db.Exec(createRQSymbolsDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not create rq_symbols table: %w", err)
 	}
@@ -57,83 +67,6 @@ func NewSQLiteRQStore(file string) (*SQLiteRQStore, error) {
 	}, nil
 }
 
-// StoreSymbols inserts all the symbols in the given table 'rq_symbols' through a batch insert using a transaction.
-func (s *SQLiteRQStore) StoreSymbols(id string, symbols map[string][]byte) error {
-	// Begin a transaction
-	tx, err := s.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-
-	stmt, err := tx.Prepare("INSERT INTO rq_symbols (txid, hash, data) VALUES (?, ?, ?)")
-	if err != nil {
-		tx.Rollback() // Roll back the transaction in case of an error
-		return fmt.Errorf("failed to prepare statement: %w", err)
-	}
-	defer stmt.Close()
-
-	for hash, data := range symbols {
-		if _, err := stmt.Exec(id, hash, data); err != nil {
-			tx.Rollback() // Roll back the transaction in case of an error
-			return fmt.Errorf("failed to execute statement: %w", err)
-		}
-	}
-
-	// Commit the transaction
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return nil
-}
-
-// LoadSymbols loads the values for the given keys (hashes) and populates the symbols map with the loaded values.
-func (s *SQLiteRQStore) LoadSymbols(id string, symbols map[string][]byte) (map[string][]byte, error) {
-	if len(symbols) == 0 {
-		return symbols, nil
-	}
-
-	hashes := make([]string, 0, len(symbols))
-	for hash := range symbols {
-		hashes = append(hashes, hash)
-	}
-
-	// Construct the query with placeholders for each hash
-	query := fmt.Sprintf("SELECT hash, data FROM rq_symbols WHERE txid = ? AND hash IN (%s)",
-		strings.Repeat("?,", len(hashes)-1)+"?")
-
-	// Prepare arguments for the query
-	args := make([]interface{}, 0, len(hashes)+1)
-	args = append(args, id) // Add txid as the first argument
-	for _, hash := range hashes {
-		args = append(args, hash)
-	}
-
-	rows, err := s.db.Queryx(query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load symbols: %w", err)
-	}
-	defer rows.Close()
-
-	// Iterate over the result set
-	loadedSymbols := make(map[string][]byte)
-	for rows.Next() {
-		var hash string
-		var data []byte
-		if err := rows.Scan(&hash, &data); err != nil {
-			return nil, fmt.Errorf("failed to scan symbol: %w", err)
-		}
-		loadedSymbols[hash] = data
-	}
-
-	// Check for errors encountered during iteration
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating over symbols: %w", err)
-	}
-
-	return loadedSymbols, nil
-}
-
 func (s *SQLiteRQStore) Close() error {
 	return s.db.Close()
 }
@@ -146,7 +79,7 @@ func SetupTestDB(t *testing.T) *SQLiteRQStore {
 	}
 
 	// Create the rq_symbols table
-	_, err = db.Exec(createRQSymbolsTable)
+	_, err = db.Exec(createRQSymbolsDir)
 	if err != nil {
 		t.Fatalf("Could not create test table: %v", err)
 	}
@@ -167,6 +100,73 @@ func (s *SQLiteRQStore) DeleteSymbolsByTxID(txid string) error {
 	_, err = stmt.Exec(txid)
 	if err != nil {
 		return fmt.Errorf("failed to execute delete statement: %w", err)
+	}
+
+	return nil
+}
+
+// StoreSymbolDirectory associates a txid with a directory path and stores it in the database.
+func (s *SQLiteRQStore) StoreSymbolDirectory(txid, dir string) error {
+	stmt, err := s.db.Prepare("INSERT INTO rq_symbols_dir (txid, dir) VALUES (?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare insert statement for directory: %w", err)
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(txid, dir); err != nil {
+		return fmt.Errorf("failed to execute insert statement for directory: %w", err)
+	}
+
+	return nil
+}
+
+// GetDirectoryByTxID retrieves the directory path associated with a given txid.
+func (s *SQLiteRQStore) GetDirectoryByTxID(txid string) (string, error) {
+	var dir string
+	err := s.db.Get(&dir, "SELECT dir FROM rq_symbols_dir WHERE txid = ?", txid)
+	if err != nil {
+		return "", fmt.Errorf("failed to retrieve directory for txid %s: %w", txid, err)
+	}
+
+	return dir, nil
+}
+
+// GetToDoStoreSymbolDirs retrieves directories and their txids where is_first_batch_stored is true and is_completed is false
+func (s *SQLiteRQStore) GetToDoStoreSymbolDirs() ([]SymbolDir, error) {
+	var symbolDirs []SymbolDir
+	query := "SELECT txid, dir FROM rq_symbols_dir WHERE is_first_batch_stored = TRUE AND is_completed = FALSE"
+	err := s.db.Select(&symbolDirs, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve symbol directories: %w", err)
+	}
+	return symbolDirs, nil
+}
+
+// UpdateIsFirstBatchStored sets is_first_batch_stored to true for a given txid
+func (s *SQLiteRQStore) UpdateIsFirstBatchStored(txid string) error {
+	stmt, err := s.db.Prepare("UPDATE rq_symbols_dir SET is_first_batch_stored = TRUE WHERE txid = ?")
+	if err != nil {
+		return fmt.Errorf("failed to prepare update statement: %w", err)
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(txid); err != nil {
+		return fmt.Errorf("failed to execute update statement: %w", err)
+	}
+
+	return nil
+}
+
+// SetIsCompleted sets is_completed to true for a given txid
+func (s *SQLiteRQStore) SetIsCompleted(txid string) error {
+	stmt, err := s.db.Prepare("UPDATE rq_symbols_dir SET is_completed = TRUE WHERE txid = ?")
+	if err != nil {
+		return fmt.Errorf("failed to prepare update statement: %w", err)
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(txid); err != nil {
+		return fmt.Errorf("failed to execute update statement: %w", err)
 	}
 
 	return nil

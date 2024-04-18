@@ -168,7 +168,7 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	}
 
 	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
-	taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade)
+	taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade, false)
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
 

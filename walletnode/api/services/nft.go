@@ -247,7 +247,7 @@ func (service *NftAPIHandler) Download(ctx context.Context, p *nft.DownloadPaylo
 
 	log.WithContext(ctx).WithField("txid", p.Txid).Info("Start downloading")
 	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
-	taskID := service.download.AddTask(p, "")
+	taskID := service.download.AddTask(p, "", false)
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
 

@@ -21,6 +21,7 @@ message DownloadRequest {
     string signature = 3;
     string ttxid = 4;
     string ttype = 5;
+    bool send_hash = 6;
 }
 
 message DownloadReply {

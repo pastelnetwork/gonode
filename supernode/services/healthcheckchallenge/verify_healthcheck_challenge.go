@@ -128,7 +128,7 @@ func (task *HCTask) VerifyHealthCheckChallenge(ctx context.Context, incomingResp
 
 		return nil, err
 	}
-	logger.Info("sufficient affirmations have been received")
+	logger.Debug("sufficient affirmations have been received")
 
 	//Broadcasting
 	broadcastingMsg, err := task.prepareBroadcastingMessage(ctx, evaluationMessage, affirmations)

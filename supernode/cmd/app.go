@@ -215,10 +215,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nodeClient := client.New(pastelClient, secInfo)
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
+	rqstore, err := rqstore.NewSQLiteRQStore(filepath.Join(defaultPath, rqDB))
+	if err != nil {
+		return errors.Errorf("could not create rqstore, %w", err)
+	}
+	defer rqstore.Close()
+
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
 	config.P2P.ID = config.PastelID
-	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo)
+	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo, rqstore)
 	if err != nil {
 		return errors.Errorf("could not create p2p service, %w", err)
 	}
@@ -274,11 +280,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	defer sDB.CloseDB(ctx)
 
 	// business logic services
-	rqstore, err := rqstore.NewSQLiteRQStore(filepath.Join(config.RqFilesDir, rqDB))
-	if err != nil {
-		return errors.Errorf("could not create rqstore, %w", err)
-	}
-	defer rqstore.Close()
 
 	nftRegister := nftregister.NewService(&config.NftRegister, fileStorage, pastelClient, nodeClient, p2p, ddClient, hDB, rqstore)
 	nftDownload := download.NewService(&config.NftDownload, pastelClient, p2p, hDB)

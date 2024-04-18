@@ -12,19 +12,19 @@ const (
 
 // DownloadVerifier represents an interface with the p2p data validation download function
 type DownloadVerifier interface {
-	Download(ctx context.Context) error
+	Download(ctx context.Context, hashOnly bool) error
 }
 
 // DownloadWithRetry represents a func that will retry downloading data from p2p for one minute
-func DownloadWithRetry(ctx context.Context, fn DownloadVerifier, retryN, maxRetry time.Time) error {
-	err := fn.Download(ctx)
+func DownloadWithRetry(ctx context.Context, fn DownloadVerifier, retryN, maxRetry time.Time, hashOnly bool) error {
+	err := fn.Download(ctx, hashOnly)
 	if err != nil {
 		if retryN.After(maxRetry) {
 			return err
 		}
 
 		time.Sleep(15 * time.Second)
-		return DownloadWithRetry(ctx, fn, time.Now().UTC(), maxRetry)
+		return DownloadWithRetry(ctx, fn, time.Now().UTC(), maxRetry, hashOnly)
 	}
 
 	return nil

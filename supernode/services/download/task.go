@@ -272,7 +272,7 @@ func (task *NftDownloadingTask) getTicketInfo(ctx context.Context, txid string) 
 }
 
 // Download downloads image and return the image.
-func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string) ([]byte, error) {
+func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, signature, ttxid, ttype string, sendHashOnly bool) ([]byte, error) {
 	var err error
 	if err = task.RequiredStatus(common.StatusTaskStarted); err != nil {
 		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
@@ -394,6 +394,15 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 			log.WithContext(ctx).WithField("txid", txid).Error("nil file downloaded")
 			err = errors.New("nil restored file")
 			task.UpdateStatus(common.StatusFileEmpty)
+		}
+
+		if sendHashOnly {
+			file, err = utils.Sha3256hash(file)
+			if err != nil {
+				err = errors.Errorf("could not hash file: %w", err)
+				task.UpdateStatus(common.StatusFileEmpty)
+				return nil
+			}
 		}
 
 		log.WithContext(ctx).WithField("txid", txid).Info("file downloaded successfully")

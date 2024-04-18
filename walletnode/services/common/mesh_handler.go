@@ -119,14 +119,14 @@ func NewMeshHandler(opts MeshHandlerOpts) *MeshHandler {
 
 // SetupMeshOfNSupernodesNodes sets Mesh
 func (m *MeshHandler) SetupMeshOfNSupernodesNodes(ctx context.Context, sortKey []byte) (int, string, error) {
-	log.WithContext(ctx).Info("SetupMeshOfNSupernodesNodes Starting...")
+	log.WithContext(ctx).Debug("SetupMeshOfNSupernodesNodes Starting...")
 
 	// Get current block height & hash
 	blockNum, blockHash, err := m.pastelHandler.GetBlock(ctx)
 	if err != nil {
 		return -1, "", errors.Errorf("get block: %v", err)
 	}
-	log.WithContext(ctx).Infof("Current block is %d", blockNum)
+	log.WithContext(ctx).Infof("Current block: %d", blockNum)
 
 	connectedNodes, err := m.findNValidTopSuperNodes(ctx, m.minNumberSuperNodes, []string{}, sortKey, blockNum)
 	if err != nil {
@@ -202,11 +202,9 @@ func (m *MeshHandler) findNValidTopSuperNodes(ctx context.Context, n int, skipNo
 	log.WithContext(ctx).WithField("req-id", m.logRequestID).Infof("Found %d valid Supernodes", len(foundNodes))
 
 	if len(sortKey) > 0 {
-		log.WithContext(ctx).WithField("before sort", foundNodes).Info("nodes before sorting")
 		foundNodes.Sort(sortKey)
-		log.WithContext(ctx).WithField("after sort", foundNodes).Info("nodes after sorting")
 	} else {
-		log.WithContext(ctx).Info("no sort key provided")
+		log.WithContext(ctx).Debug("no sort key provided")
 	}
 
 	return foundNodes, nil
@@ -218,7 +216,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 		return candidatesNodes, nil
 	}
 
-	log.WithContext(ctx).WithField("given nodes", len(candidatesNodes)).Info("GetCandidateNodes Starting...")
+	log.WithContext(ctx).WithField("given nodes", len(candidatesNodes)).Debug("GetCandidateNodes Starting...")
 
 	type result struct {
 		node    *SuperNodeClient
@@ -311,7 +309,7 @@ func (m *MeshHandler) GetCandidateNodes(ctx context.Context, candidatesNodes Sup
 		}
 	}
 	log.WithContext(ctx).WithField("req-id", m.logRequestID).WithField("nodes count", len(candidatesNodes)).
-		Info("given nodes count after checking min req balance")
+		Debug("given nodes count after checking min req balance")
 
 	if m.checkDDDatabaseHashes {
 		WNTopNodesList, err = m.filterByDDHash(ctx, WNTopNodesList, hashes)
@@ -344,7 +342,7 @@ func (m *MeshHandler) setMesh(ctx context.Context, candidatesNodes SuperNodeList
 	var err error
 
 	var meshedNodes SuperNodeList
-	log.WithContext(ctx).WithField("req-id", m.logRequestID).Info("connected nodes: ", candidatesNodes)
+	log.WithContext(ctx).WithField("req-id", m.logRequestID).Info("Connected nodes: ", candidatesNodes)
 	for primaryRank := range candidatesNodes {
 		meshedNodes, err = m.connectToPrimarySecondary(ctx, candidatesNodes, primaryRank)
 		if err != nil {
@@ -630,7 +628,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 					}); err != nil {
 						return
 					}
-					log.WithContext(ctx).WithField("task", m.logRequestID).WithField("sameNode", sameNode.SessID()).Infof("Connected to secondry node %q", sameNode.Address())
+					log.WithContext(ctx).WithField("task", m.logRequestID).WithField("sameNode", sameNode.SessID()).Debugf("Connected to secondry node %q", sameNode.Address())
 				}()
 			}
 		}
@@ -652,7 +650,7 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 	defer secondariesMtx.Unlock()
 
 	for _, pastelID := range accepted {
-		log.WithContext(ctx).Infof("Primary accepted %q secondary node", pastelID)
+		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
 
 		someNode := secondaries.FindByPastelID(pastelID)
 		if someNode == nil {
@@ -675,7 +673,7 @@ func (m *MeshHandler) filterByTopNodesList(ctx context.Context, WNTopNodesList S
 	}
 
 	badPeers := 0
-	log.WithContext(ctx).Info("getting candidate nodes")
+	log.WithContext(ctx).Debug("getting candidate nodes")
 	for _, someNode := range WNTopNodesList {
 		someNodeIP := someNode.Address()
 		log.WithContext(ctx).WithField("address", someNodeIP)
