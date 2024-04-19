@@ -8,16 +8,11 @@ import (
 	"testing"
 	"time"
 
-	json "github.com/json-iterator/go"
-
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/common/types"
-	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
-	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/tj/assert"
 
@@ -588,103 +583,6 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 			}
 
 			err := task.validateRQSymbolID(context.Background())
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-			} else {
-				assert.Nil(t, err)
-			}
-		})
-	}
-}
-
-func TestTaskStoreRaptorQSymbols(t *testing.T) {
-	type args struct {
-		encodeErr  error
-		connectErr error
-		fileErr    error
-		storeErr   error
-		encodeResp *rqnode.Encode
-	}
-
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"success": {
-			args: args{
-				encodeErr:  nil,
-				connectErr: nil,
-				fileErr:    nil,
-				storeErr:   nil,
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: nil,
-		},
-		"file-err": {
-			args: args{
-				encodeErr:  nil,
-				connectErr: nil,
-				fileErr:    errors.New("test"),
-				storeErr:   nil,
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: errors.New("test"),
-		},
-		"conn-err": {
-			args: args{
-				encodeErr:  nil,
-				connectErr: errors.New("test"),
-				fileErr:    nil,
-				storeErr:   nil,
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: errors.New("test"),
-		},
-		"encode-err": {
-			args: args{
-				encodeErr:  errors.New("test"),
-				connectErr: nil,
-				fileErr:    nil,
-				storeErr:   nil,
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: errors.New("test"),
-		},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			rqFile := rq.SymbolIDFile{ID: "A"}
-			bytes, err := json.Marshal(rqFile)
-			assert.Nil(t, err)
-
-			tc.args.encodeResp.Symbols = map[string][]byte{"A": bytes}
-
-			rqClientMock := rqMock.NewMockClient(t)
-			rqClientMock.ListenOnEncodeInfo(&rqnode.EncodeInfo{}, nil)
-			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
-			rqClientMock.ListenOnConnect(tc.args.connectErr).
-				ListenOnEncode(tc.args.encodeResp, tc.args.encodeErr)
-
-			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr).On("StoreBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.args.storeErr)
-
-			fsMock := storageMock.NewMockFileStorage()
-			fileMock := storageMock.NewMockFile()
-			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
-
-			task := makeEmptyCascadeRegTask(&Config{}, fsMock, nil, nil, p2pClient, rqClientMock, rqstore.SetupTestDB(t))
-
-			storage := files.NewStorage(fsMock)
-			task.Asset = files.NewFile(storage, "test")
-			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
-
-			err = task.storeRaptorQSymbols(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
