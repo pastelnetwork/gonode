@@ -3,6 +3,8 @@ package common
 import (
 	"context"
 	"fmt"
+	"math"
+	"sort"
 	"time"
 
 	json "github.com/json-iterator/go"
@@ -12,9 +14,15 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+)
+
+const (
+	loadSymbolsBatchSize = 2500
+	storeSymbolsPercent  = 10
 )
 
 // StorageHandler provides common logic for RQ and P2P operations
@@ -27,17 +35,20 @@ type StorageHandler struct {
 
 	TaskID string
 	TxID   string
+
+	store rqstore.Store
 }
 
 // NewStorageHandler creates instance of StorageHandler
 func NewStorageHandler(p2p p2p.Client, rq rqnode.ClientInterface,
-	rqAddress string, rqDir string) *StorageHandler {
+	rqAddress string, rqDir string, store rqstore.Store) *StorageHandler {
 
 	return &StorageHandler{
 		P2PClient: p2p,
 		RqClient:  rq,
 		rqAddress: rqAddress,
 		rqDir:     rqDir,
+		store:     store,
 	}
 }
 
@@ -100,7 +111,7 @@ func (h *StorageHandler) GenerateRaptorQSymbols(ctx context.Context, data []byte
 		RqFilesDir: h.rqDir,
 	})
 
-	encodeResp, err := rqService.Encode(ctx, data)
+	encodeResp, err := rqService.RQEncode(ctx, data, h.TxID, h.store)
 	if err != nil {
 		return nil, errors.Errorf("create raptorq symbol from data %s: %w", name, err)
 	}
@@ -182,29 +193,101 @@ func (h *StorageHandler) ValidateRaptorQSymbolIDs(ctx context.Context,
 	return nil
 }
 
-// StoreRaptorQSymbolsIntoP2P stores RQ symbols into P2P
-func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []byte, name string) error {
-	symbols, err := h.GenerateRaptorQSymbols(ctx, data, name)
+func (h *StorageHandler) storeSymbolsInP2P(ctx context.Context, dir string, batchKeys map[string][]byte) error {
+	// Load symbols from the database for the current batch
+	log.WithContext(ctx).WithField("count", len(batchKeys)).Info("loading batch symbols")
+	loadedSymbols, err := utils.LoadSymbols(dir, batchKeys)
 	if err != nil {
-		return err
+		return fmt.Errorf("load batch symbols from db: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
-		Info("storing raptorQ symbols in p2p")
-
-	result := make([][]byte, 0, len(symbols))
-	for _, value := range symbols {
-		result = append(result, value)
+	log.WithContext(ctx).WithField("count", len(loadedSymbols)).Info("loaded batch symbols, storing now")
+	// Prepare batch for P2P storage		return nil
+	result := make([][]byte, len(loadedSymbols))
+	i := 0
+	for key, value := range loadedSymbols {
+		result[i] = value
+		loadedSymbols[key] = nil // Release the reference for faster memory cleanup
+		i++
 	}
 
-	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
-		Info("begin batch store raptorQ symbols in p2p")
+	// Store the loaded symbols in P2P
 	if err := h.P2PClient.StoreBatch(ctx, result, P2PDataRaptorQSymbol); err != nil {
 		return fmt.Errorf("store batch raptorq symbols in p2p: %w", err)
 	}
+	log.WithContext(ctx).WithField("count", len(loadedSymbols)).Info("stored batch symbols")
 
-	log.WithContext(ctx).WithField("symbols count", len(symbols)).WithField("task_id", h.TaskID).WithField("reg-txid", h.TxID).
-		Info("done batch stored raptorQ symbols in p2p")
+	if err := utils.DeleteSymbols(ctx, dir, batchKeys); err != nil {
+		return fmt.Errorf("delete batch symbols from db: %w", err)
+	}
+	log.WithContext(ctx).WithField("count", len(loadedSymbols)).Info("deleted batch symbols")
+
+	return nil
+}
+
+func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []byte, name string) error {
+	// Generate the keys for RaptorQ symbols, with empty values
+	log.WithContext(ctx).Info("generating RaptorQ symbols")
+	keysMap, err := h.GenerateRaptorQSymbols(ctx, data, name)
+	if err != nil {
+		return err
+	}
+	log.WithContext(ctx).WithField("count", len(keysMap)).Info("generated RaptorQ symbols")
+
+	if h.TxID == "" {
+		return errors.New("txid is not set, cannot store rq symbols")
+	}
+
+	dir, err := h.store.GetDirectoryByTxID(h.TxID)
+	if err != nil {
+		return fmt.Errorf("error fetching symbols dir from rq DB: %w", err)
+	}
+
+	// Create a slice of keys from keysMap and sort it
+	keys := make([]string, 0, len(keysMap))
+	for key := range keysMap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys) // Sort the keys alphabetically
+
+	if len(keys) > loadSymbolsBatchSize {
+		// Calculate 15% of the total keys, rounded up
+		requiredKeysCount := int(math.Ceil(float64(len(keys)) * storeSymbolsPercent / 100))
+
+		// Get the subset of keys (15%)
+		if requiredKeysCount > len(keys) {
+			requiredKeysCount = len(keys) // Ensure we don't exceed the available keys count
+		}
+		keys = keys[:requiredKeysCount]
+	}
+
+	// Iterate over sorted keys in batches
+	batchKeys := make(map[string][]byte)
+	count := 0
+
+	log.WithContext(ctx).WithField("count", len(keys)).Info("storing raptorQ symbols")
+	for _, key := range keys {
+		batchKeys[key] = nil
+		count++
+		if count%loadSymbolsBatchSize == 0 {
+			if err := h.storeSymbolsInP2P(ctx, dir, batchKeys); err != nil {
+				return err
+			}
+			batchKeys = make(map[string][]byte) // Reset batchKeys after storing
+		}
+	}
+
+	// Store any remaining symbols in the last batch
+	if len(batchKeys) > 0 {
+		if err := h.storeSymbolsInP2P(ctx, dir, batchKeys); err != nil {
+			return err
+		}
+	}
+
+	if err := h.store.UpdateIsFirstBatchStored(h.TxID); err != nil {
+		return fmt.Errorf("error updating first batch stored flag in rq DB: %w", err)
+	}
+	log.WithContext(ctx).WithField("curr-time", time.Now().UTC()).WithField("count", len(keys)).Info("stored RaptorQ symbols")
 
 	return nil
 }

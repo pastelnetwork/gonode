@@ -2,9 +2,12 @@ package log
 
 import (
 	"context"
+	"io/ioutil"
+	"net"
+	"net/http"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
-	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 type (
@@ -12,6 +15,10 @@ type (
 	ctxKey    int
 	serverKey string
 	taskID    string
+)
+
+var (
+	ip = ""
 )
 
 const (
@@ -25,7 +32,7 @@ const (
 
 // ContextWithPrefix returns a new context with PrefixKey value.
 func ContextWithPrefix(ctx context.Context, prefix string) context.Context {
-	ip, err := utils.GetExternalIPAddress()
+	ip, err := GetExternalIPAddress()
 	if err != nil {
 		WithContext(ctx).WithError(err).Error("unable to fetch server ip")
 	}
@@ -45,4 +52,29 @@ func init() {
 		fields["prefix"] = ctxValue
 		return msg, fields
 	}))
+}
+
+// GetExternalIPAddress returns external IP address
+func GetExternalIPAddress() (externalIP string, err error) {
+	if ip != "" {
+		return ip, nil
+	}
+
+	resp, err := http.Get("http://ipinfo.io/ip")
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if net.ParseIP(string(body)) == nil {
+		return "", errors.Errorf("invalid IP response from %s", "ipconf.ip")
+	}
+
+	return string(body), nil
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/services/download"
@@ -158,7 +159,7 @@ func TestVerifySelfHealingChallenge(t *testing.T) {
 			tt.setup()
 
 			service := NewService(config, nil, pastelClient, nodeClient,
-				p2pClient, nil, downloadService)
+				p2pClient, nil, downloadService, rqstore.SetupTestDB(t))
 			task := NewSHTask(service)
 			task.StorageHandler.RqClient = raptorQClient
 			// call the function to get return values

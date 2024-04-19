@@ -186,7 +186,8 @@ func TestTaskRun(t *testing.T) {
 				ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 12}, nil).
 				ListenOnVerify(true, nil).ListenOnGetBalance(10, nil).
 				ListenOnActivateActionTicket("txid", nil).
-				ListenOnGetActionFee(&pastel.GetActionFeesResult{CascadeFee: 10, SenseFee: 10}, nil)
+				ListenOnGetActionFee(&pastel.GetActionFeesResult{CascadeFee: 10, SenseFee: 10}, nil).On("FindActionRegTicketsByLabel", mock.Anything, mock.Anything, mock.Anything).
+				Return(pastel.ActionTicketDatas{}, nil).On("FindNFTRegTicketsByLabel", mock.Anything, mock.Anything).Return(pastel.RegTickets{}, nil)
 
 			rqClientMock := rqMock.NewMockClient(t)
 			rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)

@@ -118,7 +118,7 @@ func (task *SHTask) ProcessSelfHealingChallenge(ctx context.Context, event types
 			return err
 		}
 		logger.Debug("file has been reconstructed")
-
+		task.StorageHandler.TxID = ticket.TxID
 		responseMsg.SelfHealingMessageData.Response.RespondedTicket = types.RespondedTicket{
 			TxID:                     ticket.TxID,
 			TicketType:               ticket.TicketType,

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -14,22 +15,27 @@ import (
 )
 
 const (
-	maxGoroutines = 2000
-	resultBufSize = 1000 // or any other appropriate value
+	maxGoroutines              = 2000
+	resultBufSize              = 1000 // or any other appropriate value
+	restoreFileSymbolBatchSize = 9
 )
 
 func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rqService rqnode.RaptorQ, symbolIDs []string, rqOti []byte,
 	dataHash []byte, txid string) (file []byte, err error) {
-	totalSymbols := len(symbolIDs)
-	requiredSymbols := totalSymbols / 5 // 20% of total symbols
 
-	// Divide symbols into four equal sets
-	symbolSets := make([][]string, 4)
-	for i := range symbolSets {
-		start := i * (totalSymbols / 4)
-		end := start + (totalSymbols / 4)
-		if i == 3 {
-			end = totalSymbols // Make sure to include any remaining symbols in the last set
+	sort.Strings(symbolIDs) // Sort the keys alphabetically because we store the symbols in p2p in a sorted order
+
+	totalSymbols := len(symbolIDs)
+	requiredSymbols := (totalSymbols + (restoreFileSymbolBatchSize - 1)) / restoreFileSymbolBatchSize
+
+	// Divide symbols into ten equal sets
+	symbolSets := make([][]string, restoreFileSymbolBatchSize)
+	partSize := totalSymbols / restoreFileSymbolBatchSize
+	for i := 0; i < restoreFileSymbolBatchSize; i++ {
+		start := i * partSize
+		end := start + partSize
+		if i == (restoreFileSymbolBatchSize - 1) {
+			end = totalSymbols
 		}
 		symbolSets[i] = symbolIDs[start:end]
 	}
@@ -45,7 +51,7 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 	}, resultBufSize)
 
 	// Create a semaphore with a maximum of 2000 tokens
-	sem := make(chan struct{}, 2000)
+	sem := make(chan struct{}, maxGoroutines)
 
 	// Create a worker pool
 	for i := 0; i < maxGoroutines; i++ {

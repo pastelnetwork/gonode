@@ -242,7 +242,8 @@ func TestTaskRun(t *testing.T) {
 				ListenOnGetActionFee(&pastel.GetActionFeesResult{CascadeFee: 10, SenseFee: 10}, nil).
 				ListenOnGetRawMempoolMethod([]string{}, nil).
 				ListenOnGetInactiveActionTickets(pastel.ActTickets{}, nil).
-				ListenOnGetInactiveNFTTickets(pastel.RegTickets{}, nil)
+				ListenOnGetInactiveNFTTickets(pastel.RegTickets{}, nil).On("FindActionRegTicketsByLabel", mock.Anything, mock.Anything, mock.Anything).
+				Return(pastel.ActionTicketDatas{}, nil).On("FindNFTRegTicketsByLabel", mock.Anything, mock.Anything).Return(pastel.RegTickets{}, nil)
 
 			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, nil, nil)
 			service.config.WaitTxnValidInterval = 1

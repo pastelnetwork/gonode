@@ -2,8 +2,9 @@ package selfhealing
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"sync"
+
+	"github.com/pastelnetwork/gonode/supernode/services/download"
 
 	json "github.com/json-iterator/go"
 
@@ -52,7 +53,7 @@ func NewSHTask(service *SHService) *SHTask {
 	task := &SHTask{
 		SuperNodeTask: common.NewSuperNodeTask(logPrefix, service.historyDB),
 		StorageHandler: common.NewStorageHandler(service.P2PClient, rqgrpc.NewClient(),
-			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
+			service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.rqstore),
 		SHService:           service,
 		FingerprintsHandler: mixins.NewFingerprintsHandler(service.pastelHandler),
 		downloadTask:        download.NewNftDownloadingTask(service.downloadService),

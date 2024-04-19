@@ -5,9 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"os/exec"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -20,8 +17,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/common/utils"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -36,6 +33,7 @@ var (
 	defaultDeleteDataInterval            = 11 * time.Hour
 	delKeysCountThreshold                = 10
 	lowSpaceThreshold                    = 50 // GB
+	batchStoreSize                       = 2500
 )
 
 const maxIterations = 5
@@ -55,6 +53,7 @@ type DHT struct {
 	authHelper     *AuthHelper
 	ignorelist     *BanList
 	replicationMtx sync.RWMutex
+	rqstore        rqstore.Store
 }
 
 // Options contains configuration options for the queries node
@@ -81,7 +80,7 @@ type Options struct {
 }
 
 // NewDHT returns a new DHT node
-func NewDHT(ctx context.Context, store Store, metaStore MetaStore, pc pastel.Client, secInfo *alts.SecInfo, options *Options) (*DHT, error) {
+func NewDHT(ctx context.Context, store Store, metaStore MetaStore, pc pastel.Client, secInfo *alts.SecInfo, options *Options, rqstore rqstore.Store) (*DHT, error) {
 	// validate the options, if it's invalid, set them to default value
 	if options.IP == "" {
 		options.IP = defaultNetworkAddr
@@ -99,6 +98,7 @@ func NewDHT(ctx context.Context, store Store, metaStore MetaStore, pc pastel.Cli
 		cache:          memory.NewKeyValue(),
 		ignorelist:     NewBanList(ctx),
 		replicationMtx: sync.RWMutex{},
+		rqstore:        rqstore,
 	}
 
 	if options.ExternalIP != "" {
@@ -167,6 +167,7 @@ func (s *DHT) Start(ctx context.Context) error {
 	go s.startDisabledKeysCleanupWorker(ctx)
 	go s.startCleanupRedundantDataWorker(ctx)
 	go s.startDeleteDataWorker(ctx)
+	go s.startStoreSymbolsWorker(ctx)
 
 	return nil
 }
@@ -235,11 +236,11 @@ func (s *DHT) StoreBatch(ctx context.Context, values [][]byte, typ int) error {
 	for i := 0; i < len(values); i++ {
 		// Wait until we have a free spot
 		for {
-			if atomic.LoadInt32(&counter) < 2000 {
+			if atomic.LoadInt32(&counter) < int32(batchStoreSize) {
 				break
 			}
 			// Sleep for a bit to prevent 100% CPU usage
-			time.Sleep(1 * time.Second)
+			time.Sleep(500 * time.Millisecond)
 		}
 
 		wg.Add(1)
@@ -843,7 +844,7 @@ func (s *DHT) storeToAlphaNodes(ctx context.Context, nl *NodeList, data []byte, 
 		if atomic.LoadInt32(&storeCount) >= int32(Alpha) {
 			nl.TopN(Alpha)
 			log.WithContext(ctx).WithField("task_id", taskID).WithField("skey", hex.EncodeToString(skey)).WithField("closest 6 nodes", nl.String()).
-				WithField("len-total-nodes", nl.Len()).Info("store data to alpha nodes success")
+				WithField("len-total-nodes", nl.Len()).Debug("store data to alpha nodes success")
 			return nil
 		}
 	}
@@ -875,12 +876,30 @@ func (s *DHT) storeToAlphaNodes(ctx context.Context, nl *NodeList, data []byte, 
 	}
 
 	if finalStoreCount >= int32(Alpha) {
-		log.WithContext(ctx).WithField("task_id", taskID).WithField("len-total-nodes", nl.Len()).WithField("skey", hex.EncodeToString(skey)).Info("store data to alpha nodes success")
+		log.WithContext(ctx).WithField("task_id", taskID).WithField("len-total-nodes", nl.Len()).WithField("skey", hex.EncodeToString(skey)).Debug("store data to alpha nodes success")
 		return nil
 	}
 	log.WithContext(ctx).WithField("task_id", taskID).WithField("store-count", finalStoreCount).WithField("skey", hex.EncodeToString(skey)).Info("store data to alpha nodes failed")
 
 	return fmt.Errorf("store data to alpha nodes failed, only %d nodes stored", finalStoreCount)
+}
+
+// remove node from appropriate k bucket
+func (s *DHT) removeNode(ctx context.Context, node *Node) {
+	// ensure this is not itself address
+	if bytes.Equal(node.ID, s.ht.self.ID) {
+		log.P2P().WithContext(ctx).Debug("trying to remove itself")
+		return
+	}
+	node.SetHashedID()
+
+	index := s.ht.bucketIndex(s.ht.self.HashedID, node.HashedID)
+
+	if removed := s.ht.RemoveNode(index, node.ID); !removed {
+		log.P2P().WithContext(ctx).Errorf("remove node %s not found in bucket %d", node.String(), index)
+	} else {
+		log.P2P().WithContext(ctx).Infof("removed node %s from bucket %d success", node.String(), index)
+	}
 }
 
 func (s *DHT) startDisabledKeysCleanupWorker(ctx context.Context) error {
@@ -918,191 +937,4 @@ func (s *DHT) cleanupDisabledKeys(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// remove node from appropriate k bucket
-func (s *DHT) removeNode(ctx context.Context, node *Node) {
-	// ensure this is not itself address
-	if bytes.Equal(node.ID, s.ht.self.ID) {
-		log.P2P().WithContext(ctx).Debug("trying to remove itself")
-		return
-	}
-	node.SetHashedID()
-
-	index := s.ht.bucketIndex(s.ht.self.HashedID, node.HashedID)
-
-	if removed := s.ht.RemoveNode(index, node.ID); !removed {
-		log.P2P().WithContext(ctx).Errorf("remove node %s not found in bucket %d", node.String(), index)
-	} else {
-		log.P2P().WithContext(ctx).Infof("removed node %s from bucket %d success", node.String(), index)
-	}
-}
-
-func (s *DHT) startCleanupRedundantDataWorker(ctx context.Context) {
-	log.P2P().WithContext(ctx).Info("redundant data cleanup worker started")
-
-	for {
-		select {
-		case <-time.After(defaultRedundantDataCleanupInterval):
-			s.cleanupRedundantDataWorker(ctx)
-		case <-ctx.Done():
-			log.P2P().WithContext(ctx).Error("closing disabled keys cleanup worker")
-			return
-		}
-	}
-}
-
-func (s *DHT) cleanupRedundantDataWorker(ctx context.Context) {
-	from := time.Now().AddDate(-5, 0, 0) // 5 years ago
-
-	log.P2P().WithContext(ctx).WithField("from", from).Info("getting all possible replication keys past five years")
-	to := time.Now().UTC()
-	replicationKeys := s.store.GetKeysForReplication(ctx, from, to)
-
-	ignores := s.ignorelist.ToNodeList()
-	self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
-	self.SetHashedID()
-
-	closestContactsMap := make(map[string][][]byte)
-
-	for i := 0; i < len(replicationKeys); i++ {
-		decKey, _ := hex.DecodeString(replicationKeys[i].Key)
-		nodes := s.ht.closestContactsWithInlcudingNode(Alpha, decKey, ignores, self)
-		closestContactsMap[replicationKeys[i].Key] = nodes.NodeIDs()
-	}
-
-	insertKeys := make([]domain.DelKey, 0)
-	removeKeys := make([]domain.DelKey, 0)
-	for key, closestContacts := range closestContactsMap {
-		if len(closestContacts) < Alpha {
-			log.P2P().WithContext(ctx).WithField("key", key).WithField("closest contacts", closestContacts).Info("not enough contacts to replicate")
-			continue
-		}
-
-		found := false
-		for _, contact := range closestContacts {
-			if bytes.Equal(contact, self.ID) {
-				found = true
-			}
-		}
-
-		delKey := domain.DelKey{
-			Key:       key,
-			CreatedAt: time.Now(),
-			Count:     1,
-		}
-
-		if !found {
-			insertKeys = append(insertKeys, delKey)
-		} else {
-			removeKeys = append(removeKeys, delKey)
-		}
-	}
-
-	if len(insertKeys) > 0 {
-		if err := s.metaStore.BatchInsertDelKeys(ctx, insertKeys); err != nil {
-			log.P2P().WithContext(ctx).WithError(err).Error("insert keys failed")
-			return
-		}
-
-		log.P2P().WithContext(ctx).WithField("count-del-keys", len(insertKeys)).Info("insert del keys success")
-	} else {
-		log.P2P().WithContext(ctx).Info("No redundant key found to be stored in the storage")
-	}
-
-	if len(removeKeys) > 0 {
-		if err := s.metaStore.BatchDeleteDelKeys(ctx, removeKeys); err != nil {
-			log.WithContext(ctx).WithError(err).Error("batch delete del-keys failed")
-			return
-		}
-	}
-
-}
-
-func (s *DHT) startDeleteDataWorker(ctx context.Context) {
-	log.P2P().WithContext(ctx).Info("start delete data worker")
-
-	for {
-		select {
-		case <-time.After(defaultDeleteDataInterval):
-			s.deleteRedundantData(ctx)
-		case <-ctx.Done():
-			log.P2P().WithContext(ctx).Error("closing delete data worker")
-			return
-		}
-	}
-}
-
-func (s *DHT) deleteRedundantData(ctx context.Context) {
-	const batchSize = 100
-
-	delKeys, err := s.metaStore.GetAllToDelKeys(delKeysCountThreshold)
-	if err != nil {
-		log.P2P().WithContext(ctx).WithError(err).Error("get all to delete keys failed")
-		return
-	}
-
-	for len(delKeys) > 0 {
-		// Check the available disk space
-		isLow, err := CheckDiskSpace()
-		if err != nil {
-			log.P2P().WithContext(ctx).WithError(err).Error("check disk space failed")
-			break
-		}
-
-		if !isLow {
-			// Disk space is sufficient, stop deletion
-			break
-		}
-
-		// Determine the size of the next batch
-		batchEnd := batchSize
-		if len(delKeys) < batchSize {
-			batchEnd = len(delKeys)
-		}
-
-		// Prepare the batch for deletion
-		keysToDelete := make([]string, 0, batchEnd)
-		for _, delKey := range delKeys[:batchEnd] {
-			keysToDelete = append(keysToDelete, delKey.Key)
-		}
-
-		// Perform the deletion
-		if err := s.store.BatchDeleteRecords(keysToDelete); err != nil {
-			log.P2P().WithContext(ctx).WithError(err).Error("batch delete records failed")
-			break
-		}
-
-		// Update the remaining keys to be deleted
-		delKeys = delKeys[batchEnd:]
-	}
-}
-
-// CheckDiskSpace checks if the available space on the disk is less than 50 GB
-func CheckDiskSpace() (bool, error) {
-	// Define the command and its arguments
-	cmd := exec.Command("bash", "-c", "df -BG --output=source,fstype,avail | egrep 'ext4|xfs' | sort -rn -k3 | awk 'NR==1 {print $3}'")
-
-	// Execute the command
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
-	if err != nil {
-		return false, fmt.Errorf("failed to execute command: %w", err)
-	}
-
-	// Process the output
-	output := strings.TrimSpace(out.String())
-	if len(output) < 2 {
-		return false, errors.New("invalid output from disk space check")
-	}
-
-	// Convert the available space to an integer
-	availSpace, err := strconv.Atoi(output[:len(output)-1])
-	if err != nil {
-		return false, fmt.Errorf("failed to parse available space: %w", err)
-	}
-
-	// Check if the available space is less than 50 GB
-	return availSpace < lowSpaceThreshold, nil
 }

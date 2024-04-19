@@ -586,7 +586,7 @@ func NewNftRegistrationTask(service *NftRegistrationService) *NftRegistrationTas
 		SuperNodeTask:          common.NewSuperNodeTask(logPrefix, service.historyDB),
 		NftRegistrationService: service,
 		storage: common.NewStorageHandler(service.P2PClient, rqgrpc.NewClient(),
-			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
+			service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.rqstore),
 	}
 
 	task.DupeDetectionHandler = common.NewDupeDetectionTaskHelper(task.SuperNodeTask, service.ddClient, task.config.PastelID, task.config.PassPhrase,

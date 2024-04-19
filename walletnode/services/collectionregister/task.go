@@ -67,7 +67,6 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 	defer cancel()
 	go func() {
 		<-connCtx.Done()
-		log.Println("Conn context 'connCtx' in run func was cancelled:", connCtx.Err())
 	}()
 
 	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
@@ -166,7 +165,7 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("error closing SNs connections")
 	}
 
-	log.WithContext(ctx).Infof("Waiting Confirmations for Collection Reg Ticket - Ticket txid: %s", task.collectionTXID)
+	log.WithContext(ctx).Infof("Waiting for enough Confirmations for Collection Reg Ticket - Ticket txid: %s", task.collectionTXID)
 	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.collectionTXID, int64(task.service.config.CollectionRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
 
@@ -199,7 +198,7 @@ func (task *CollectionRegistrationTask) run(ctx context.Context) error {
 		IsFinalBool:   false,
 	})
 	log.WithContext(ctx).Infof("Collection ticket activated. Activation ticket txid: %s", activateTxID)
-	log.WithContext(ctx).Infof("Waiting Confirmations for Collection Activation Ticket - Ticket txid: %s", activateTxID)
+	log.WithContext(ctx).Infof("Waiting for enough Confirmations for Collection Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
 	err = task.service.pastelHandler.WaitTxidValid(ctx, activateTxID, int64(task.service.config.CollectionActTxMinConfirmations),

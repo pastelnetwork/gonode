@@ -18,6 +18,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
+	commonSrvc "github.com/pastelnetwork/gonode/supernode/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 )
 
@@ -332,7 +333,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 	isValidBurnTxID := false
 	var compressedDDFingerAndScores []byte
 
-	err = task.ValidateBurnTxID(ctx, 20)
+	err = task.PastelHandler.ValidateBurnTxID(ctx, task.ActionTicketRegMetadata.BurnTxID, float64(task.ActionTicketRegMetadata.EstimatedFee))
 	if err == nil {
 		isValidBurnTxID = true
 
@@ -342,6 +343,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 			return fmt.Errorf("task.ProbeImage: %w", err)
 		}
 	} else {
+		task.UpdateStatus(commonSrvc.StatusErrorInvalidBurnTxID)
 		log.WithContext(ctx).WithError(err).Error("validate burn txid failed")
 	}
 

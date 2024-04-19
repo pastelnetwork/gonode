@@ -2,6 +2,8 @@ package mixins
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/blocktracker"
@@ -12,6 +14,8 @@ import (
 
 const (
 	defaultDownloadTimeout = 300 * time.Second
+	burnTxnPercentage      = 20
+	burnTxnConfirmations   = 3
 )
 
 // PastelHandler handles pastel communication
@@ -154,31 +158,40 @@ func (pt *PastelHandler) WaitTxidValid(ctx context.Context, txID string, expecte
 		return err
 	}
 
+	var currentConfirmations int64
 	for {
 		select {
 		case <-ctx.Done():
 			return errors.Errorf("wait tixid valid context done: %w", ctx.Err())
 		case <-time.After(interval):
-			checkConfirms := func() error {
+			checkConfirms := func() (int64, error) {
 				subCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 				defer cancel()
 
 				result, err := pt.PastelClient.GetRawTransactionVerbose1(subCtx, txID)
 				if err != nil {
 					log.WithContext(ctx).WithField("txid", txID).Warn("failed to get txn in mixins")
-					return errors.Errorf("get transaction: %w", err)
+					return 0, errors.Errorf("get transaction: %w", err)
 				}
 
 				if result.Confirmations >= expectedConfirms {
-					return nil
+					return result.Confirmations, nil
 				}
 
-				return errors.Errorf("not enough confirmations: expected %d, got %d", expectedConfirms, result.Confirmations)
+				return result.Confirmations, errors.Errorf("not enough confirmations: expected %d, got %d", expectedConfirms, result.Confirmations)
 			}
 
-			err := checkConfirms()
+			cc, err := checkConfirms()
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Warn("check confirmations failed")
+				if strings.Contains(err.Error(), "not enough confirmations") {
+					if cc > currentConfirmations {
+						currentConfirmations = cc
+						log.WithContext(ctx).Warnf("Waiting for enough confirmations: expected: %d, got: %d", expectedConfirms, cc)
+					}
+				} else {
+					log.WithContext(ctx).WithError(err).Error("failed to check confirmations")
+				}
+
 			} else {
 				return nil
 			}
@@ -282,4 +295,159 @@ func getEstimatedDownloadSizeOnBytes(size int) time.Duration {
 
 func (pt *PastelHandler) GetBurnAddress() string {
 	return pt.PastelClient.BurnAddress()
+}
+
+// ValidateBurnTxID - validates the pre-burnt fee transaction created by the caller
+func (pt *PastelHandler) ValidateBurnTxID(ctx context.Context, burnTxnID string, estimatedFee float64) error {
+	var err error
+
+	if err := pt.checkBurnTxID(ctx, burnTxnID); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("duplicate burnTXID")
+		err = errors.Errorf("validated burnTXID :%w", err)
+		return err
+	}
+
+	confirmationChn := pt.WaitConfirmation(ctx, burnTxnID,
+		burnTxnConfirmations, 15*time.Second, true, estimatedFee, burnTxnPercentage)
+	log.WithContext(ctx).Debug("waiting for confirmation")
+	select {
+	case retErr := <-confirmationChn:
+		if retErr != nil {
+			log.WithContext(ctx).WithError(retErr).Errorf("validate preburn transaction validation")
+			err = errors.Errorf("validate preburn transaction validation :%w", retErr)
+			return err
+		}
+	case <-ctx.Done():
+		err = errors.New("context done")
+		return err
+	}
+
+	log.WithContext(ctx).Info("Burn Txn confirmed & validated")
+
+	return nil
+}
+
+func (pt *PastelHandler) checkBurnTxID(ctx context.Context, burnTXID string) error {
+	actionTickets, err := pt.PastelClient.FindActionRegTicketsByLabel(ctx, burnTXID)
+	if err != nil {
+		return fmt.Errorf("action reg tickets by label: %w", err)
+	}
+
+	if len(actionTickets) > 0 {
+		return errors.New("duplicate burnTXID")
+	}
+
+	regTickets, err := pt.PastelClient.FindNFTRegTicketsByLabel(ctx, burnTXID)
+	if err != nil {
+		return fmt.Errorf("nft reg tickets by label: %w", err)
+	}
+
+	if len(regTickets) > 0 {
+		return errors.New("duplicate burnTXID")
+	}
+
+	return nil
+}
+
+func (pt *PastelHandler) verifyTxn(ctx context.Context,
+	txn *pastel.GetRawTransactionVerbose1Result, totalAmt float64, percent float64) error {
+	inRange := func(val float64, reqVal float64, slackPercent float64) bool {
+		lower := reqVal - (reqVal * slackPercent / 100)
+		//upper := reqVal + (reqVal * slackPercent / 100)
+
+		return val >= lower
+	}
+
+	log.WithContext(ctx).Debug("Verifying Burn Txn")
+	isTxnAmountOk := false
+	isTxnAddressOk := false
+
+	reqBurnAmount := totalAmt * percent / 100
+	for _, vout := range txn.Vout {
+		if inRange(vout.Value, reqBurnAmount, 2.0) {
+			isTxnAmountOk = true
+			for _, addr := range vout.ScriptPubKey.Addresses {
+				if addr == pt.GetBurnAddress() {
+					isTxnAddressOk = true
+				}
+			}
+		}
+	}
+
+	if !isTxnAmountOk {
+		return fmt.Errorf("invalid txn amount: %v, required amount: %f", txn.Vout, reqBurnAmount)
+	}
+
+	if !isTxnAddressOk {
+		return fmt.Errorf("invalid txn address %s", pt.GetBurnAddress())
+	}
+
+	return nil
+}
+
+// WaitConfirmation wait for specific number of confirmations of some blockchain transaction by txid
+func (pt *PastelHandler) WaitConfirmation(ctx context.Context, txid string, minConfirmation int64,
+	interval time.Duration, verifyBurnAmt bool, totalAmt float64, percent float64) <-chan error {
+	ch := make(chan error)
+	log.WithContext(ctx).Info("waiting for txn confirmation")
+	go func(ctx context.Context, txid string, ch chan error) {
+		defer close(ch)
+		blockTracker := blocktracker.New(pt.PastelClient)
+		baseBlkCnt, err := blockTracker.GetBlockCount()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("failed to get block count")
+			ch <- err
+			return
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				// context cancelled or abort by caller so no need to return anything
+				log.WithContext(ctx).Infof("context done while waiting for confirmation: %s", ctx.Err())
+				ch <- ctx.Err()
+				return
+			case <-time.After(interval):
+				gctx, cancel := context.WithCancel(ctx)
+				defer cancel()
+
+				go func() {
+					<-gctx.Done()
+				}()
+
+				txResult, err := pt.PastelClient.GetRawTransactionVerbose1(gctx, txid)
+				if err != nil {
+					log.WithContext(ctx).WithError(err).WithField("txid", txid).Error("GetRawTransactionVerbose1 err")
+				} else {
+					if txResult.Confirmations >= minConfirmation {
+						if verifyBurnAmt {
+							if err := pt.verifyTxn(ctx, txResult, totalAmt, percent); err != nil {
+								log.WithContext(ctx).WithError(err).Error("txn verification failed")
+								ch <- err
+								return
+							}
+						}
+
+						log.WithContext(ctx).Info("transaction confirmed")
+						ch <- nil
+						return
+					}
+				}
+
+				currentBlkCnt, err := blockTracker.GetBlockCount()
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Error("failed to get block count")
+					continue
+				}
+
+				if currentBlkCnt-baseBlkCnt >= int32(minConfirmation)+2 {
+					ch <- errors.Errorf("timeout when waiting for confirmation of transaction %s", txid)
+					return
+				}
+			}
+
+		}
+	}(ctx, txid, ch)
+
+	return ch
 }

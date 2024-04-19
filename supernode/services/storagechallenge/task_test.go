@@ -114,7 +114,7 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 			task := SCTask{
 				SuperNodeTask: tt.fields.SuperNodeTask,
 				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, defaultChallengeStateLogging{}, nil, nil),
-				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
+				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir, nil),
 				stateStorage:  defaultChallengeStateLogging{},
 			}
 
@@ -235,7 +235,7 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 			task := SCTask{
 				SuperNodeTask: tt.fields.SuperNodeTask,
 				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, defaultChallengeStateLogging{}, nil, nil),
-				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
+				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir, nil),
 				stateStorage:  defaultChallengeStateLogging{},
 			}
 
@@ -680,7 +680,7 @@ func TestVerifyStorageChallenge(t *testing.T) {
 			task := SCTask{
 				SuperNodeTask: tt.fields.SuperNodeTask,
 				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, defaultChallengeStateLogging{}, nil, nil),
-				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir),
+				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir, nil),
 				stateStorage:  defaultChallengeStateLogging{},
 			}
 			task.config.IsTestConfig = true

@@ -93,28 +93,8 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 	// know when derived context was cancelled and log it
 	go func() {
 		<-connCtx.Done()
-		log.Println("Conn context 'connCtx' in run func was cancelled:", connCtx.Err())
 	}()
 
-	log.WithContext(ctx).Info("checking collection verification")
-	err := task.IsValidForCollection(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("ticket is not valid to be added in collection")
-		return err
-	}
-
-	log.WithContext(ctx).Info("validating burn transaction")
-	task.UpdateStatus(common.StatusValidateBurnTxn)
-	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.Request.BurnTxID, 3,
-		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
-
-		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
-		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
-	}
-	task.UpdateStatus(common.StatusBurnTxnValidated)
-	log.WithContext(ctx).Info("burn txn has been validated")
-
-	// calculate hash of data
 	imgBytes, err := task.Request.Image.Bytes()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error converting image to bytes")
@@ -122,6 +102,32 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		task.UpdateStatus(common.StatusErrorConvertingImageBytes)
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
+
+	fee, err := task.service.pastelHandler.GetEstimatedSenseFee(ctx, utils.GetFileSizeInMB(imgBytes))
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error getting estimated sense fee")
+		return errors.Errorf("getting estimated fee %w", err)
+	}
+	task.registrationFee = int64(fee)
+	task.StatusLog[common.FieldFee] = fee
+
+	log.WithContext(ctx).Info("checking collection verification")
+	if err := task.IsValidForCollection(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("ticket is not valid to be added in collection")
+		return err
+	}
+
+	log.WithContext(ctx).Info("validating burn transaction")
+	task.UpdateStatus(common.StatusValidateBurnTxn)
+	if err := task.service.pastelHandler.ValidateBurnTxID(ctx, task.Request.BurnTxID, fee); err != nil {
+
+		log.WithContext(ctx).WithError(err).Error("error getting confirmations on burn txn")
+		return errors.Errorf("waiting on burn txn confirmations failed: %w", err)
+	}
+
+	task.UpdateStatus(common.StatusBurnTxnValidated)
+	log.WithContext(ctx).Info("burn txn has been validated")
+
 	if task.dataHash, err = utils.Sha3256hash(imgBytes); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error converting bytes to hash")
 
@@ -226,15 +232,6 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	log.WithContext(ctx).Info("fingerprints have been generated")
 
-	fee, err := task.service.pastelHandler.GetEstimatedSenseFee(ctx, utils.GetFileSizeInMB(imgBytes))
-	if err != nil {
-		closeErr = err
-		log.WithContext(ctx).WithError(err).Error("error getting estimated sense fee")
-		return errors.Errorf("getting estimated fee %w", err)
-	}
-	task.registrationFee = int64(fee)
-	task.StatusLog[common.FieldFee] = fee
-
 	log.WithContext(ctx).Info("Create and sign Sense Reg Ticket")
 
 	if err := task.createSenseTicket(ctx); err != nil {
@@ -284,7 +281,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 
 	now := time.Now().UTC()
 	if task.downloadService != nil {
-		if err := common.DownloadWithRetry(ctx, task, now, now.Add(common.RetryTime*time.Minute)); err != nil {
+		if err := common.DownloadWithRetry(ctx, task, now, now.Add(common.RetryTime*time.Minute), true); err != nil {
 			log.WithContext(ctx).WithField("reg_sense_tx_id", task.regSenseTxid).WithError(err).Error("error validating sense ticket data")
 
 			task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -302,7 +299,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		}
 	}
 
-	log.WithContext(ctx).Infof("Waiting Confirmations for Sense Reg Ticket - Ticket txid: %s", task.regSenseTxid)
+	log.WithContext(ctx).Infof("Waiting for enough Confirmations for Sense Reg Ticket - Ticket txid: %s", task.regSenseTxid)
 
 	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.regSenseTxid, int64(task.service.config.SenseRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
@@ -335,7 +332,7 @@ func (task *SenseRegistrationTask) run(ctx context.Context) error {
 		IsFinalBool:   false,
 	})
 	log.WithContext(ctx).Infof("Sense ticket activated. Activation ticket txid: %s", activateTxID)
-	log.WithContext(ctx).Infof("Waiting Confirmations for Sense Activation Ticket - Ticket txid: %s", activateTxID)
+	log.WithContext(ctx).Infof("Waiting for enough Confirmations for Sense Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until activateTxID is valid
 	err = task.service.pastelHandler.WaitTxidValid(ctx, activateTxID, int64(task.service.config.SenseActTxMinConfirmations),
@@ -630,10 +627,11 @@ func (task *SenseRegistrationTask) skipPrimaryNodeTxidCheck() bool {
 }
 
 // Download downloads the data from p2p for data validation before ticket activation
-func (task *SenseRegistrationTask) Download(ctx context.Context) error {
+func (task *SenseRegistrationTask) Download(ctx context.Context, hashOnly bool) error {
 	// add the task to the worker queue, and worker will process the task in the background
 	log.WithContext(ctx).WithField("sense_tx_id", task.regSenseTxid).Info("Downloading has been started")
-	taskID := task.downloadService.AddTask(&nft.DownloadPayload{Txid: task.regSenseTxid, Pid: task.Request.AppPastelID, Key: task.Request.AppPastelIDPassphrase}, pastel.ActionTypeSense)
+	taskID := task.downloadService.AddTask(&nft.DownloadPayload{Txid: task.regSenseTxid, Pid: task.Request.AppPastelID, Key: task.Request.AppPastelIDPassphrase},
+		pastel.ActionTypeSense, hashOnly)
 	downloadTask := task.downloadService.GetTask(taskID)
 	defer downloadTask.Cancel()
 

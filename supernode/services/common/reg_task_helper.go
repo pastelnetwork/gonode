@@ -204,7 +204,6 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 
 				go func() {
 					<-gctx.Done()
-					log.Println("wait confirmation: derived context 'gctx' was cancelled:", gctx.Err())
 				}()
 
 				txResult, err := h.PastelHandler.PastelClient.GetRawTransactionVerbose1(gctx, txid)
@@ -276,60 +275,6 @@ func (h *RegTaskHelper) verifyTxn(ctx context.Context,
 	if !isTxnAddressOk {
 		return fmt.Errorf("invalid txn address %s", h.PastelHandler.GetBurnAddress())
 	}
-
-	return nil
-}
-
-func (h *RegTaskHelper) checkBurnTxID(ctx context.Context, burnTXID string) error {
-	actionTickets, err := h.PastelHandler.PastelClient.FindActionRegTicketsByLabel(ctx, burnTXID)
-	if err != nil {
-		return fmt.Errorf("action reg tickets by label: %w", err)
-	}
-
-	if len(actionTickets) > 0 {
-		return errors.New("duplicate burnTXID")
-	}
-
-	regTickets, err := h.PastelHandler.PastelClient.FindNFTRegTicketsByLabel(ctx, burnTXID)
-	if err != nil {
-		return fmt.Errorf("nft reg tickets by label: %w", err)
-	}
-
-	if len(regTickets) > 0 {
-		return errors.New("duplicate burnTXID")
-	}
-
-	return nil
-}
-
-// ValidateBurnTxID - validates the pre-burnt fee transaction created by the caller
-func (h *RegTaskHelper) ValidateBurnTxID(ctx context.Context, percentage float64) error {
-	var err error
-
-	if err := h.checkBurnTxID(ctx, h.ActionTicketRegMetadata.BurnTxID); err != nil {
-		h.UpdateStatus(StatusErrorInvalidBurnTxID)
-		log.WithContext(ctx).WithError(err).Errorf("duplicate burnTXID")
-		err = errors.Errorf("validated burnTXID :%w", err)
-		return err
-	}
-
-	confirmationChn := h.WaitConfirmation(ctx, h.ActionTicketRegMetadata.BurnTxID,
-		int64(h.preburntTxMinConfirmations), 15*time.Second, true, float64(h.ActionTicketRegMetadata.EstimatedFee), percentage)
-	log.WithContext(ctx).Debug("waiting for confirmation")
-	select {
-	case retErr := <-confirmationChn:
-		if retErr != nil {
-			h.UpdateStatus(StatusErrorInvalidBurnTxID)
-			log.WithContext(ctx).WithError(retErr).Errorf("validate preburn transaction validation")
-			err = errors.Errorf("validate preburn transaction validation :%w", retErr)
-			return err
-		}
-	case <-ctx.Done():
-		err = errors.New("context done")
-		return err
-	}
-
-	log.WithContext(ctx).Info("Burn Txn confirmed & validated")
 
 	return nil
 }

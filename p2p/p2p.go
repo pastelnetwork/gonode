@@ -12,6 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
@@ -46,6 +47,7 @@ type p2p struct {
 	running      bool          // if the kademlia network is ready
 	pastelClient pastel.Client
 	secInfo      *alts.SecInfo
+	rqstore      rqstore.Store
 }
 
 // Run the kademlia network
@@ -237,7 +239,7 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(ctx, s.store, s.metaStore, s.pastelClient, s.secInfo, kadOpts)
+	dht, err := kademlia.NewDHT(ctx, s.store, s.metaStore, s.pastelClient, s.secInfo, kadOpts, s.rqstore)
 
 	if err != nil {
 		return errors.Errorf("new kademlia dht: %w", err)
@@ -248,7 +250,7 @@ func (s *p2p) configure(ctx context.Context) error {
 }
 
 // New returns a new p2p instance.
-func New(ctx context.Context, config *Config, pastelClient pastel.Client, secInfo *alts.SecInfo) (P2P, error) {
+func New(ctx context.Context, config *Config, pastelClient pastel.Client, secInfo *alts.SecInfo, rqstore rqstore.Store) (P2P, error) {
 	store, err := sqlite.NewStore(ctx, config.DataDir, defaultReplicateInterval, defaultRepublishInterval)
 	if err != nil {
 		return nil, errors.Errorf("new kademlia store: %w", err)
@@ -265,6 +267,7 @@ func New(ctx context.Context, config *Config, pastelClient pastel.Client, secInf
 		config:       config,
 		pastelClient: pastelClient,
 		secInfo:      secInfo,
+		rqstore:      rqstore,
 	}, nil
 }
 

@@ -2,6 +2,7 @@ package download
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/storage/queries"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -67,8 +68,8 @@ func (service *NftDownloadingService) GetTask(id string) *NftDownloadingTask {
 }
 
 // AddTask adds a new task of the NFT downloading and returns its taskID.
-func (service *NftDownloadingService) AddTask(p *nft.DownloadPayload, ticketType string) string {
-	request := FromDownloadPayload(p, ticketType)
+func (service *NftDownloadingService) AddTask(p *nft.DownloadPayload, ticketType string, hashOnly bool) string {
+	request := FromDownloadPayload(p, ticketType, hashOnly)
 
 	task := NewNftDownloadTask(service, request)
 	service.Worker.AddTask(task)
@@ -77,7 +78,8 @@ func (service *NftDownloadingService) AddTask(p *nft.DownloadPayload, ticketType
 }
 
 // NewNftDownloadService returns a new Service instance.
-func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface, historyDB queries.LocalStoreInterface) *NftDownloadingService {
+func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
+	historyDB queries.LocalStoreInterface) *NftDownloadingService {
 	return &NftDownloadingService{
 		Worker:        task.NewWorker(),
 		config:        config,

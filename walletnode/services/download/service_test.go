@@ -109,7 +109,7 @@ func TestServiceAddTask(t *testing.T) {
 		Pid:  "pastelid",
 		Key:  "passphrase",
 	}
-	request := FromDownloadPayload(payload, "")
+	request := FromDownloadPayload(payload, "", false)
 
 	testCases := []struct {
 		args args
@@ -142,7 +142,7 @@ func TestServiceAddTask(t *testing.T) {
 			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
-			taskID := service.AddTask(testCase.args.payload, "")
+			taskID := service.AddTask(testCase.args.payload, "", false)
 			task := service.GetTask(taskID)
 			assert.Equal(t, testCase.want, task.Request)
 		})
@@ -212,7 +212,7 @@ func TestServiceListTasks(t *testing.T) {
 		Key:  "passphrase",
 	}
 	var requests []*NftDownloadingRequest
-	requests = append(requests, FromDownloadPayload(payload, ""))
+	requests = append(requests, FromDownloadPayload(payload, "", false))
 
 	var payloads []*nft.DownloadPayload
 	payloads = append(payloads, payload)
@@ -250,7 +250,7 @@ func TestServiceListTasks(t *testing.T) {
 			go service.Run(ctx)
 			var listTaskID []string
 			for _, ticket := range testCase.args.payloads {
-				listTaskID = append(listTaskID, service.AddTask(ticket, ""))
+				listTaskID = append(listTaskID, service.AddTask(ticket, "", false))
 			}
 
 			for i := range listTaskID {

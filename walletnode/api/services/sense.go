@@ -197,7 +197,7 @@ func (service *SenseAPIHandler) Download(ctx context.Context, p *sense.DownloadP
 	}
 
 	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
-	taskID := service.download.AddTask(&nft.DownloadPayload{Txid: p.Txid, Pid: p.Pid, Key: p.Key}, pastel.ActionTypeSense)
+	taskID := service.download.AddTask(&nft.DownloadPayload{Txid: p.Txid, Pid: p.Pid, Key: p.Key}, pastel.ActionTypeSense, false)
 	task := service.download.GetTask(taskID)
 	defer task.Cancel()
 

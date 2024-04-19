@@ -24,6 +24,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
+	commonSrvc "github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
 // this implements SN's GRPC methods that are called by WNs during Sense Registration
@@ -310,8 +311,9 @@ func (service *RegisterCascade) SendSignedActionTicket(ctx context.Context, req 
 	}
 
 	// Validate burn_txid
-	err = task.ValidateBurnTxID(ctx, 20)
+	err = task.PastelHandler.ValidateBurnTxID(ctx, task.ActionTicketRegMetadata.BurnTxID, float64(task.ActionTicketRegMetadata.EstimatedFee))
 	if err != nil {
+		task.UpdateStatus(commonSrvc.StatusErrorInvalidBurnTxID)
 		log.WithContext(ctx).WithError(err).Error("validate burn request failure")
 		return nil, errors.Errorf("pre-burn txid is bad %w", err)
 	}

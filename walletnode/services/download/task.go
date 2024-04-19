@@ -62,7 +62,14 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 		task.Filename = task.Request.Txid
 	}
 
-	task.TicketDataHash = tInfo.DataHash
+	hash := tInfo.DataHash
+	if task.Request.HashOnly {
+		hash, err = utils.Sha3256hash(tInfo.DataHash)
+		if err != nil {
+			return errors.Errorf("hash data hash: %w", err)
+		}
+	}
+	task.TicketDataHash = hash
 
 	// inetentionally verbose
 	if task.Request.Type != pastel.ActionTypeSense {
@@ -210,7 +217,7 @@ func (task *NftDownloadingTask) Download(cctx context.Context, txid, timestamp, 
 			goroutineCtx, cancel := context.WithTimeout(ctx, timeout)
 			defer cancel()
 
-			file, subErr := nftDownNode.Download(goroutineCtx, txid, timestamp, signature, ttxid, ttype)
+			file, subErr := nftDownNode.Download(goroutineCtx, txid, timestamp, signature, ttxid, ttype, task.Request.HashOnly)
 			if subErr != nil || len(file) == 0 {
 				if subErr == nil {
 					subErr = errors.New("empty file")

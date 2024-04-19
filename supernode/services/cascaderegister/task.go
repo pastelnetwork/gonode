@@ -377,7 +377,7 @@ func NewCascadeRegistrationTask(service *CascadeRegistrationService) *CascadeReg
 		SuperNodeTask:              common.NewSuperNodeTask(logPrefix, service.historyDB),
 		CascadeRegistrationService: service,
 		storage: common.NewStorageHandler(service.P2PClient, rqgrpc.NewClient(),
-			service.config.RaptorQServiceAddress, service.config.RqFilesDir),
+			service.config.RaptorQServiceAddress, service.config.RqFilesDir, service.rqstore),
 	}
 
 	task.RegTaskHelper = common.NewRegTaskHelper(task.SuperNodeTask,

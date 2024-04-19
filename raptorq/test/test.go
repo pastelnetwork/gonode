@@ -27,7 +27,7 @@ func main() {
 		RqFilesDir: "/tmp/",
 	})
 
-	_, err = service.Encode(context.Background(), data)
+	_, err = service.RQEncode(context.Background(), data, "id", nil)
 	if err != nil {
 		fmt.Printf("Encode error:%v\n", err)
 		return

@@ -115,7 +115,6 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 	// know when derived context was cancelled and log it
 	go func() {
 		<-connCtx.Done()
-		log.Printf("nft reg: conn context 'connCtx' in run func was cancelled: - err", task.ID(), connCtx.Err())
 	}()
 
 	log.WithContext(ctx).Info("checking collection verification")
@@ -369,7 +368,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	now := time.Now().UTC()
 	if task.downloadService != nil {
-		if err := common.DownloadWithRetry(ctx, task, now, now.Add(common.RetryTime*time.Minute)); err != nil {
+		if err := common.DownloadWithRetry(ctx, task, now, now.Add(common.RetryTime*time.Minute), true); err != nil {
 			log.WithContext(ctx).WithField("reg_tx_id", task.regNFTTxid).WithError(err).Error("error validating nft ticket data")
 
 			task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -391,7 +390,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 
 	//Start Step 20
 
-	log.WithContext(ctx).Info("waiting confirmations for nft-reg ticket")
+	log.WithContext(ctx).Info("waiting for enough confirmations for nft-reg ticket")
 
 	if err := task.service.pastelHandler.WaitTxidValid(ctx, task.regNFTTxid, int64(task.service.config.NFTRegTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second); err != nil {
@@ -428,7 +427,7 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 		IsFinalBool:   false,
 	})
 	log.WithContext(ctx).Infof("nft-reg ticket activated. Activation ticket txid: %s", activateTxID)
-	log.WithContext(ctx).Infof("waiting confirmations for NFT Activation Ticket - Ticket txid: %s", activateTxID)
+	log.WithContext(ctx).Infof("waiting for enough confirmations for NFT Activation Ticket - Ticket txid: %s", activateTxID)
 
 	// Wait until actTxid is valid
 	err = task.service.pastelHandler.WaitTxidValid(ctx, activateTxID,
@@ -452,10 +451,11 @@ func (task *NftRegistrationTask) run(ctx context.Context) error {
 }
 
 // Download downloads the data from p2p for data validation before ticket activation
-func (task *NftRegistrationTask) Download(ctx context.Context) error {
+func (task *NftRegistrationTask) Download(ctx context.Context, hashOnly bool) error {
 	// add the task to the worker queue, and worker will process the task in the background
 	log.WithContext(ctx).WithField("nft_tx_id", task.regNFTTxid).Info("Downloading has been started")
-	taskID := task.downloadService.AddTask(&nft.DownloadPayload{Txid: task.regNFTTxid, Pid: task.Request.CreatorPastelID, Key: task.Request.CreatorPastelIDPassphrase}, "")
+	taskID := task.downloadService.AddTask(&nft.DownloadPayload{Txid: task.regNFTTxid, Pid: task.Request.CreatorPastelID, Key: task.Request.CreatorPastelIDPassphrase},
+		"", hashOnly)
 	downloadTask := task.downloadService.GetTask(taskID)
 	defer downloadTask.Cancel()
 

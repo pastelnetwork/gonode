@@ -11,10 +11,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"math/big"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -398,4 +401,69 @@ func HighCompress(cctx context.Context, data []byte) ([]byte, error) {
 	}
 
 	return compressedData.Bytes(), nil
+}
+
+// LoadSymbols takes a directory path and a map where keys are filenames. It reads each file in the directory
+// corresponding to the keys in the map and updates the map with the content of the files as byte slices.
+func LoadSymbols(dir string, keys map[string][]byte) (map[string][]byte, error) {
+	// Iterate over the map keys which are filenames
+	for filename := range keys {
+		// Construct the full path to the file
+		fullPath := filepath.Join(dir, filename)
+
+		// Read the file content as bytes using os.ReadFile
+		data, err := os.ReadFile(fullPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file %s: %v", fullPath, err)
+		}
+
+		// Update the map with the file data
+		keys[filename] = data
+	}
+
+	// Return the updated map
+	return keys, nil
+}
+
+// DeleteSymbols takes a directory path and a map where keys are filenames. It deletes each file in the directory
+func DeleteSymbols(ctx context.Context, dir string, keys map[string][]byte) error {
+	// Iterate over the map keys which are filenames
+	for filename := range keys {
+		// Construct the full path to the file
+		fullPath := filepath.Join(dir, filename)
+
+		// Delete the file using os.Remove
+		if err := os.Remove(fullPath); err != nil {
+			log.Println("Failed to delete file", fullPath, ":", err.Error())
+		}
+	}
+	// If all files are successfully deleted, return nil indicating no error
+	return nil
+}
+
+// ReadDirFilenames reads all the filenames in a directory and returns them in a map with the filename as the key
+func ReadDirFilenames(dirPath string) (map[string][]byte, error) {
+	idMap := make(map[string][]byte) // Map to store file names
+
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return errors.Errorf("scan a path %s: %w", path, err)
+		}
+
+		if info.IsDir() {
+			return nil // Skip directories
+		}
+
+		fileID := filepath.Base(path)
+		idMap[fileID] = nil // Store the file name with a nil value in the map
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Here you might want to do something with idMap or just return it
+	return idMap, nil
 }

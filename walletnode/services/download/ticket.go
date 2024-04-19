@@ -12,14 +12,17 @@ type NftDownloadingRequest struct {
 	PastelIDPassphrase string `json:"pastel_id_passphrase"`
 	// Type
 	Type string `json:"type"`
+
+	HashOnly bool `json:"hash_only"`
 }
 
 // FromDownloadPayload is NFT Download request
-func FromDownloadPayload(payload *nft.DownloadPayload, ticketType string) *NftDownloadingRequest {
+func FromDownloadPayload(payload *nft.DownloadPayload, ticketType string, hashOnly bool) *NftDownloadingRequest {
 	return &NftDownloadingRequest{
 		Txid:               payload.Txid,
 		PastelID:           payload.Pid,
 		PastelIDPassphrase: payload.Key,
 		Type:               ticketType,
+		HashOnly:           hashOnly,
 	}
 }
