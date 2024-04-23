@@ -233,6 +233,15 @@ type AggregatedScore struct {
 	UpdatedAt                 time.Time
 }
 
+type AggregatedScoreList []AggregatedScore
+
+func (asl AggregatedScoreList) Hash() string {
+	data, _ := json.Marshal(asl)
+	hash, _ := utils.Sha3256hash(data)
+
+	return string(hash)
+}
+
 type ScoreAggregationEvent struct {
 	ChallengeID  string    `db:"challenge_id"`
 	IsAggregated bool      `db:"is_aggregated"`

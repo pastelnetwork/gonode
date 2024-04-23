@@ -60,7 +60,7 @@ func (task *HCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 		}
 
 		if store != nil {
-			err = store.BatchInsertScoreAggregationChallenges(batchOfChallengeIDs, false)
+			err = store.BatchInsertHCScoreAggregationChallenges(batchOfChallengeIDs, false)
 			if err != nil {
 				return err
 			}
@@ -68,8 +68,8 @@ func (task *HCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 	}
 
 	if err := task.scoreStore.UpsertScoreLastAggregatedAt(scorestore.HealthCheckChallengeScoreAggregationType); err != nil {
-		logger.WithError(err).Error("error storing affirmation type batch in score aggregation healthcheck-challenges")
-		return errors.Errorf("error updating aggregated til for hc")
+		logger.WithError(err).Error("error updating aggregated til for health-check-challenge score aggregation tracker")
+		return errors.Errorf("error updating aggregated til")
 	}
 
 	return nil

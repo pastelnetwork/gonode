@@ -21,6 +21,7 @@ type AggregateScScoreQueries interface {
 	UpdateScoreChallengeEvent(challengeID string) error
 	UpdateHealthCheckScoreChallengeEvent(challengeID string) error
 	BatchInsertScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error
+	BatchInsertHCScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error
 }
 
 func (s *ScoringStore) GetAccumulativeSCDataForAllNodes() ([]types.AccumulativeChallengeData, error) {
@@ -28,7 +29,7 @@ func (s *ScoringStore) GetAccumulativeSCDataForAllNodes() ([]types.AccumulativeC
         SELECT node_id, ip_address, total_challenges_as_challengers, 
                total_challenges_as_recipients, total_challenges_as_observers,
                correct_challenger_evaluations, correct_recipient_evaluations, 
-               correct_observer_evaluations, created_at, updated_at
+               correct_observer_evaluation, created_at, updated_at
         FROM accumulative_sc_data
     `)
 	if err != nil {
@@ -61,7 +62,7 @@ func (s *ScoringStore) GetAccumulativeHCDataForAllNodes() ([]types.AccumulativeC
         SELECT node_id, ip_address, total_challenges_as_challengers, 
                total_challenges_as_recipients, total_challenges_as_observers,
                correct_challenger_evaluations, correct_recipient_evaluations, 
-               correct_observer_evaluations, created_at, updated_at
+               correct_observer_evaluation, created_at, updated_at
         FROM accumulative_hc_data
     `)
 	if err != nil {
@@ -327,6 +328,37 @@ func (s *ScoringStore) BatchInsertScoreAggregationChallenges(challengeIDs []stri
 
 	stmt, err := tx.Prepare(`
         INSERT OR IGNORE INTO sc_score_aggregation_queue
+        (challenge_id, is_aggregated, created_at, updated_at)
+        VALUES (?,?,?,?)
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	for _, id := range challengeIDs {
+		now := time.Now().UTC()
+
+		_, err = stmt.Exec(id, isAggregated, now, now)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Commit the transaction
+	return tx.Commit()
+}
+
+func (s *ScoringStore) BatchInsertHCScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+        INSERT OR IGNORE INTO hc_score_aggregation_queue
         (challenge_id, is_aggregated, created_at, updated_at)
         VALUES (?,?,?,?)
     `)
