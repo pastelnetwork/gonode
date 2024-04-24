@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	loadSymbolsBatchSize = 2500
+	loadSymbolsBatchSize = 3000
 	storeSymbolsPercent  = 10
 )
 

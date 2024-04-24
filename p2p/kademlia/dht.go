@@ -33,7 +33,6 @@ var (
 	defaultDeleteDataInterval            = 11 * time.Hour
 	delKeysCountThreshold                = 10
 	lowSpaceThreshold                    = 50 // GB
-	batchStoreSize                       = 2500
 )
 
 const maxIterations = 5
@@ -213,10 +212,6 @@ func (s *DHT) Store(ctx context.Context, data []byte, typ int) (string, error) {
 
 // StoreBatch will store a batch of values with their SHA256 hash as the key
 func (s *DHT) StoreBatch(ctx context.Context, values [][]byte, typ int) error {
-	var (
-		counter int32
-	)
-
 	val := ctx.Value(log.TaskIDKey)
 	taskID := ""
 	if val != nil {
@@ -229,37 +224,9 @@ func (s *DHT) StoreBatch(ctx context.Context, values [][]byte, typ int) error {
 	}
 	log.WithContext(ctx).WithField("taskID", taskID).Info("store db batch done,store network batch begin")
 
-	// Launch the workers
-
-	var wg sync.WaitGroup
-
-	for i := 0; i < len(values); i++ {
-		// Wait until we have a free spot
-		for {
-			if atomic.LoadInt32(&counter) < int32(batchStoreSize) {
-				break
-			}
-			// Sleep for a bit to prevent 100% CPU usage
-			time.Sleep(500 * time.Millisecond)
-		}
-
-		wg.Add(1)
-		go func(val []byte, typ int) {
-			// Increment the counter
-			atomic.AddInt32(&counter, 1)
-
-			key, _ := utils.Sha3256hash(val)
-			_, err := s.iterate(ctx, IterateStore, key, val, typ)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("iterate data batch store failure")
-			}
-
-			// Decrement the counter when done
-			atomic.AddInt32(&counter, -1)
-			wg.Done()
-		}(values[i], typ)
+	if err := s.IterateBatchStore(ctx, values, typ); err != nil {
+		return fmt.Errorf("iterate batch store: %v", err)
 	}
-	wg.Wait()
 
 	log.WithContext(ctx).WithField("taskID", taskID).Info("store network batch workers done")
 
@@ -440,13 +407,6 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 
 		// wait until tasks are done
 		wg.Wait()
-
-		// delete the node which is unreachable
-		/*go func() {
-			for _, node := range removedNodes {
-				nl.DelNode(node)
-			}
-		}()*/
 
 		// close the message channel
 		close(responses)
@@ -902,39 +862,201 @@ func (s *DHT) removeNode(ctx context.Context, node *Node) {
 	}
 }
 
-func (s *DHT) startDisabledKeysCleanupWorker(ctx context.Context) error {
-	log.P2P().WithContext(ctx).Info("disabled keys cleanup worker started")
+func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) error {
+	globalClosestContacts := make(map[string]*NodeList) // This will store the global top 6 nodes for each symbol's hash
+	knownNodes := make(map[string]*Node)                // This will store the nodes we've already contacted
+	hashes := make([][]byte, len(values))
 
-	for {
-		select {
-		case <-time.After(defaultCleanupInterval):
-			s.cleanupDisabledKeys(ctx)
-		case <-ctx.Done():
-			log.P2P().WithContext(ctx).Error("closing disabled keys cleanup worker")
-			return nil
+	for i := 0; i < len(values); i++ {
+		target, _ := utils.Sha3256hash(values[i])
+		hashes[i] = target
+		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, target, nil, nil)
+
+		globalClosestContacts[base58.Encode(target)] = top6
+		for i := 0; i < len(top6.Nodes); i++ {
+			if _, ok := knownNodes[string(top6.Nodes[i].ID)]; ok {
+				continue
+			}
+			knownNodes[string(top6.Nodes[i].ID)] = top6.Nodes[i]
 		}
 	}
-}
 
-func (s *DHT) cleanupDisabledKeys(ctx context.Context) error {
-	if s.metaStore == nil {
-		return nil
-	}
+	localClosestNodes := make(map[string]*NodeList)
+	responses := s.batchFindNode(ctx, hashes, knownNodes)
+	for response := range responses {
+		if response.Error != nil {
+			log.WithContext(ctx).WithError(response.Error).Error("batch find node failed on a node")
+		}
 
-	from := time.Now().UTC().Add(-1 * defaultDisabledKeyExpirationInterval)
-	disabledKeys, err := s.metaStore.GetDisabledKeys(from)
-	if err != nil {
-		return errors.Errorf("get disabled keys: %w", err)
-	}
-
-	for i := 0; i < len(disabledKeys); i++ {
-		dec, err := hex.DecodeString(disabledKeys[i].Key)
-		if err != nil {
-			log.P2P().WithContext(ctx).WithError(err).Error("decode disabled key failed")
+		if response.Message == nil {
 			continue
 		}
-		s.metaStore.Delete(ctx, dec)
+
+		v, ok := response.Message.Data.(*BatchFindNodeResponse)
+		if ok && v.Status.Result == ResultOk {
+			for key, nodesList := range v.ClosestNodes {
+				if nodesList != nil {
+					nl, exists := localClosestNodes[key]
+					if exists {
+						nl.AddNodes(nodesList)
+						localClosestNodes[key] = nl
+					} else {
+						localClosestNodes[key] = &NodeList{Nodes: nodesList}
+					}
+				}
+			}
+		}
 	}
 
-	return nil
+	for key, nodesList := range localClosestNodes {
+		if nodesList == nil {
+			continue
+		}
+
+		nodesList.Comparator = base58.Decode(key)
+		nodesList.Sort()
+		nodesList.TopN(Alpha)
+
+		// we now need to check if the nodes in the globalClosestContacts Map are still in the top 6
+		// if yes, we can store the data to them
+		// if not, we need to send calls to the newly found nodes to inquire about the top 6 nodes
+	}
+
+	// assume at this point, we have True\Golabl top 6 nodes for each symbol's hash stored in globalClosestContacts Map
+	// we now need to store the data to these nodes
+
+	storageMap := make(map[string][]int) // This will store the index of the data in the values array that needs to be stored to the node
+	for i := 0; i < len(hashes); i++ {
+		storageNodes := globalClosestContacts[base58.Encode(hashes[i])]
+		for j := 0; j < len(storageNodes.Nodes); j++ {
+			storageMap[string(storageNodes.Nodes[j].ID)] = append(storageMap[string(storageNodes.Nodes[j].ID)], i)
+		}
+	}
+
+	requests := len(storageMap)
+	successful := 0
+
+	storeResponses := s.batchStoreNetwork(ctx, values, knownNodes, storageMap, typ)
+	for response := range storeResponses {
+		if response.Error != nil {
+			log.WithContext(ctx).WithError(response.Error).Error("batch store failed on a node")
+		}
+
+		if response.Message == nil {
+			continue
+		}
+
+		v, ok := response.Message.Data.(*StoreDataResponse)
+		if ok && v.Status.Result == ResultOk {
+			successful++
+			log.WithContext(ctx).Infof("batch store to node %s success", response.Message.Sender.String())
+		} else {
+			errMsg := "unknwon error"
+			if v != nil {
+				errMsg = v.Status.ErrMsg
+			}
+
+			log.WithContext(ctx).WithField("err", errMsg).Errorf("batch store to node %s failed", response.Message.Sender.String())
+		}
+	}
+
+	if requests > 0 {
+		successRate := float64(successful) / float64(requests) * 100
+		if successRate >= 80 {
+			log.WithContext(ctx).Infof("Successful store operations: %.2f%%", successRate)
+			return nil
+		} else {
+			log.WithContext(ctx).Infof("Failed to achieve desired success rate, only: %.2f%%", successRate)
+			return fmt.Errorf("failed to achieve desired success rate, only: %.2f%% successful", successRate)
+		}
+	}
+
+	return fmt.Errorf("no store operations were performed")
+}
+
+func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[string]*Node, storageMap map[string][]int, typ int) chan *MessageWithError {
+	responses := make(chan *MessageWithError, len(nodes))
+	semaphore := make(chan struct{}, 3) // Semaphore to limit concurrency to 3
+
+	var wg sync.WaitGroup
+
+	for key, node := range nodes {
+		wg.Add(1)
+		semaphore <- struct{}{} // Acquire semaphore
+		go func(receiver *Node, key string) {
+			defer wg.Done()
+			defer func() { <-semaphore }() // Release semaphore
+
+			select {
+			case <-ctx.Done():
+				responses <- &MessageWithError{Error: ctx.Err()}
+				return
+			default:
+				keysToStore := storageMap[key]
+				toStore := make([][]byte, len(keysToStore))
+				for i, idx := range keysToStore {
+					toStore[i] = values[idx]
+				}
+
+				payload, err := compressSymbols(toStore)
+				if err != nil {
+					log.P2P().WithContext(ctx).WithError(err).Error("compress symbols failed")
+					responses <- &MessageWithError{Error: err}
+					return
+				}
+
+				log.WithContext(ctx).WithField("keys", len(toStore)).WithField("data-size", utils.BytesIntToMB(len(payload))).Info("batch store to node payload size")
+
+				data := &BatchStoreDataRequest{Data: payload, Type: typ}
+				request := s.newMessage(BatchStoreData, receiver, data)
+				response, err := s.network.Call(ctx, request, true)
+				if err != nil {
+					log.P2P().WithContext(ctx).WithError(err).Debugf("network call batch store request %s failed", request.String())
+					responses <- &MessageWithError{Error: err, Message: response}
+					return
+				}
+
+				responses <- &MessageWithError{Message: response}
+			}
+		}(node, key)
+	}
+
+	wg.Wait()
+	close(responses)
+
+	return responses
+}
+
+func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[string]*Node) chan *MessageWithError {
+	responses := make(chan *MessageWithError, len(nodes))
+
+	var wg sync.WaitGroup
+
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(receiver *Node) {
+			defer wg.Done()
+
+			select {
+			case <-ctx.Done():
+				responses <- &MessageWithError{Error: ctx.Err()}
+				return
+			default:
+				data := &BatchFindNodeRequest{HashedTarget: payload}
+				request := s.newMessage(BatchFindNode, receiver, data)
+				response, err := s.network.Call(ctx, request, false)
+				if err != nil {
+					log.P2P().WithContext(ctx).WithError(err).Debugf("network call request %s failed", request.String())
+					responses <- &MessageWithError{Error: err, Message: response}
+					return
+				}
+				responses <- &MessageWithError{Message: response}
+			}
+		}(node)
+	}
+
+	wg.Wait()
+	close(responses)
+
+	return responses
 }

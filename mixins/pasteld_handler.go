@@ -308,7 +308,7 @@ func (pt *PastelHandler) ValidateBurnTxID(ctx context.Context, burnTxnID string,
 	}
 
 	confirmationChn := pt.WaitConfirmation(ctx, burnTxnID,
-		burnTxnConfirmations, 15*time.Second, true, estimatedFee, burnTxnPercentage)
+		burnTxnConfirmations, 5*time.Second, true, estimatedFee, burnTxnPercentage)
 	log.WithContext(ctx).Debug("waiting for confirmation")
 	select {
 	case retErr := <-confirmationChn:

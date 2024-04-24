@@ -21,6 +21,7 @@ require (
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0
 	github.com/tj/assert v0.0.3
+	github.com/vmihailenco/msgpack/v5 v5.4.1
 	go.uber.org/ratelimit v0.3.0
 	golang.org/x/sync v0.6.0
 	google.golang.org/grpc v1.62.0
@@ -48,6 +49,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect

@@ -172,7 +172,7 @@ func (service *registerCascade) UploadAsset(ctx context.Context, asset *files.Fi
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	log.WithContext(ctx).Debug("Start upload asset to node")
+	log.WithContext(ctx).Info("Start upload asset to node")
 	stream, err := service.client.UploadAsset(ctx)
 	if err != nil {
 		return errors.Errorf("open stream: %w", err)
@@ -208,7 +208,7 @@ func (service *registerCascade) UploadAsset(ctx context.Context, asset *files.Fi
 			return errors.Errorf("send image data: %w", err)
 		}
 	}
-	log.WithContext(ctx).Debugf("Encoded Asset Size :%d\n", payloadSize)
+	log.WithContext(ctx).Infof("Encoded Asset Size :%d\n", payloadSize)
 	if !lastPiece {
 		return errors.Errorf("read all asset data failed")
 	}
@@ -219,7 +219,7 @@ func (service *registerCascade) UploadAsset(ctx context.Context, asset *files.Fi
 		return errors.Errorf("compute asset hash:%w", err)
 	}
 	hash := hasher.Sum(nil)
-	log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("hash: %s", base64.URLEncoding.EncodeToString(hash))
+	log.WithContext(ctx).WithField("Filename", file.Name()).Infof("hash: %s", base64.URLEncoding.EncodeToString(hash))
 
 	metaData := &pb.UploadAssetRequest{
 		Payload: &pb.UploadAssetRequest_MetaData_{

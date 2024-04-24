@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/btcsuite/btcutil/base58"
 	json "github.com/json-iterator/go"
 
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -111,32 +112,8 @@ func (s *Network) encodeMesage(mesage *Message) ([]byte, error) {
 
 func (s *Network) handleFindNode(ctx context.Context, message *Message) (res []byte, err error) {
 	defer func() {
-		if r := recover(); r != nil {
-			// Log the error or handle it as you see fit
-			log.WithContext(ctx).Errorf("HandleFindNode Recovered from panic: %v", r)
-
-			// Convert panic to error
-			switch t := r.(type) {
-			case string:
-				err = errors.New(t)
-			case error:
-				err = t
-			default:
-				err = errors.New("unknown error")
-			}
-
-			// Create an error response
-			response := &FindNodeResponse{
-				Status: ResponseStatus{
-					Result: ResultFailed,
-					ErrMsg: err.Error(),
-				},
-			}
-
-			// Create a new response message
-			resMsg := s.dht.newMessage(FindNode, message.Sender, response)
-
-			res, _ = s.encodeMesage(resMsg) // Assuming that encoding cannot fail
+		if response, err := s.handlePanic(ctx, message.Sender, FindNode); response != nil || err != nil {
+			res = response
 		}
 	}()
 
@@ -174,49 +151,16 @@ func (s *Network) handleFindNode(ctx context.Context, message *Message) (res []b
 }
 
 func (s *Network) handleFindValue(ctx context.Context, message *Message) (res []byte, err error) {
-	// Add a defer function to recover from panic
 	defer func() {
-		if r := recover(); r != nil {
-			// Log the error or handle it as you see fit
-			log.WithContext(ctx).Errorf("HandleFindValue Recovered from panic: %v", r)
-
-			// Convert panic to error
-			switch t := r.(type) {
-			case string:
-				err = errors.New(t)
-			case error:
-				err = t
-			default:
-				err = errors.New("unknown error")
-			}
-
-			// Create an error response
-			response := &FindValueResponse{
-				Status: ResponseStatus{
-					Result: ResultFailed,
-					ErrMsg: err.Error(),
-				},
-			}
-
-			// Create a new response message
-			resMsg := s.dht.newMessage(FindValue, message.Sender, response)
-
-			res, _ = s.encodeMesage(resMsg) // Assuming that encoding cannot fail
+		if response, err := s.handlePanic(ctx, message.Sender, FindValue); response != nil || err != nil {
+			res = response
 		}
 	}()
 
 	request, ok := message.Data.(*FindValueRequest)
 	if !ok {
 		err := errors.New("invalid FindValueRequest")
-		response := &FindValueResponse{
-			Status: ResponseStatus{
-				Result: ResultFailed,
-				ErrMsg: err.Error(),
-			},
-		}
-		// new a response message
-		resMsg := s.dht.newMessage(FindValue, message.Sender, response)
-		return s.encodeMesage(resMsg)
+		return s.generateResponseMessage(FindValue, message.Sender, ResultFailed, err.Error())
 	}
 
 	// add the sender to queries hash table
@@ -263,46 +207,15 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) (res []
 
 func (s *Network) handleStoreData(ctx context.Context, message *Message) (res []byte, err error) {
 	defer func() {
-		if r := recover(); r != nil {
-			// Log the error or handle it as you see fit
-			log.WithContext(ctx).Errorf("HandleStoreData Recovered from panic: %v", r)
-
-			// Convert panic to error
-			switch t := r.(type) {
-			case string:
-				err = errors.New(t)
-			case error:
-				err = t
-			default:
-				err = errors.New("unknown error")
-			}
-
-			// Create an error response
-			response := &StoreDataResponse{
-				Status: ResponseStatus{
-					Result: ResultFailed,
-					ErrMsg: err.Error(),
-				},
-			}
-			// Create a new response message
-			resMsg := s.dht.newMessage(StoreData, message.Sender, response)
-
-			res, _ = s.encodeMesage(resMsg) // Assuming that encoding cannot fail
+		if response, err := s.handlePanic(ctx, message.Sender, StoreData); response != nil || err != nil {
+			res = response
 		}
 	}()
 
 	request, ok := message.Data.(*StoreDataRequest)
 	if !ok {
 		err := errors.New("invalid StoreDataRequest")
-
-		response := &StoreDataResponse{
-			Status: ResponseStatus{
-				Result: ResultFailed,
-				ErrMsg: err.Error(),
-			},
-		}
-		resMsg := s.dht.newMessage(StoreData, message.Sender, response)
-		return s.encodeMesage(resMsg)
+		return s.generateResponseMessage(StoreData, message.Sender, ResultFailed, err.Error())
 	}
 
 	log.P2P().WithContext(ctx).Debugf("handle store data: %v", message.String())
@@ -318,14 +231,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) (res []
 		// store the data to queries storage
 		if err := s.dht.store.Store(ctx, key, request.Data, request.Type, false); err != nil {
 			err = errors.Errorf("store the data: %w", err)
-			response := &StoreDataResponse{
-				Status: ResponseStatus{
-					Result: ResultFailed,
-					ErrMsg: err.Error(),
-				},
-			}
-			resMsg := s.dht.newMessage(StoreData, message.Sender, response)
-			return s.encodeMesage(resMsg)
+			return s.generateResponseMessage(StoreData, message.Sender, ResultFailed, err.Error())
 		}
 	}
 
@@ -342,60 +248,21 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) (res []
 
 func (s *Network) handleReplicate(ctx context.Context, message *Message) (res []byte, err error) {
 	defer func() {
-		if r := recover(); r != nil {
-			// Log the error or handle it as you see fit
-			log.WithContext(ctx).Errorf("HandleReplicate Recovered from panic: %v", r)
-
-			// Convert panic to error
-			switch t := r.(type) {
-			case string:
-				err = errors.New(t)
-			case error:
-				err = t
-			default:
-				err = errors.New("unknown error")
-			}
-
-			// Create an error response
-			response := &ReplicateDataResponse{
-				Status: ResponseStatus{
-					Result: ResultFailed,
-					ErrMsg: err.Error(),
-				},
-			}
-
-			// Create a new response message
-			resMsg := s.dht.newMessage(Replicate, message.Sender, response)
-
-			res, _ = s.encodeMesage(resMsg) // Assuming that encoding cannot fail
+		if response, err := s.handlePanic(ctx, message.Sender, Replicate); response != nil || err != nil {
+			res = response
 		}
 	}()
 
 	request, ok := message.Data.(*ReplicateDataRequest)
 	if !ok {
 		err := errors.New("invalid ReplicateDataRequest")
-
-		response := &ReplicateDataResponse{
-			Status: ResponseStatus{
-				Result: ResultFailed,
-				ErrMsg: err.Error(),
-			},
-		}
-		resMsg := s.dht.newMessage(Replicate, message.Sender, response)
-		return s.encodeMesage(resMsg)
+		return s.generateResponseMessage(Replicate, message.Sender, ResultFailed, err.Error())
 	}
 
 	log.P2P().WithContext(ctx).Debugf("handle replicate data: %v", message.String())
 
 	if err := s.handleReplicateRequest(ctx, request, message.Sender.ID, message.Sender.IP, message.Sender.Port); err != nil {
-		response := &ReplicateDataResponse{
-			Status: ResponseStatus{
-				Result: ResultFailed,
-				ErrMsg: err.Error(),
-			},
-		}
-		resMsg := s.dht.newMessage(Replicate, message.Sender, response)
-		return s.encodeMesage(resMsg)
+		return s.generateResponseMessage(Replicate, message.Sender, ResultFailed, err.Error())
 	}
 
 	response := &ReplicateDataResponse{
@@ -446,13 +313,12 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 	var conn net.Conn
 	var err error
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("conn:%s->%s", rawConn.LocalAddr(), rawConn.RemoteAddr()))
-
 	// do secure handshaking
 	if s.secureHelper != nil {
 		conn, err = NewSecureServerConn(ctx, s.secureHelper, rawConn)
 		if err != nil {
 			rawConn.Close()
-			log.P2P().WithContext(ctx).WithError(err).Error("server secure establish failed")
+			log.WithContext(ctx).WithError(err).Error("server secure establish failed")
 			return
 		}
 	} else {
@@ -462,7 +328,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			conn, err = authHandshaker.ServerHandshake(ctx)
 			if err != nil {
 				rawConn.Close()
-				log.P2P().WithContext(ctx).WithError(err).Error("server authentication failed")
+				log.WithContext(ctx).WithError(err).Error("server authentication failed")
 				return
 			}
 		} else {
@@ -485,7 +351,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			if err == io.EOF {
 				return
 			}
-			log.P2P().WithContext(ctx).WithError(err).Error("read and decode failed")
+			log.WithContext(ctx).WithError(err).Error("read and decode failed")
 			return
 		}
 		reqID := uuid.New().String()
@@ -496,6 +362,13 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			encoded, err := s.handleFindNode(ctx, request)
 			if err != nil {
 				log.P2P().WithContext(ctx).WithError(err).Error("handle find node request failed")
+				return
+			}
+			response = encoded
+		case BatchFindNode:
+			encoded, err := s.handleBatchFindNode(ctx, request)
+			if err != nil {
+				log.P2P().WithContext(ctx).WithError(err).Error("handle batch find node request failed")
 				return
 			}
 			response = encoded
@@ -538,6 +411,14 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 				return
 			}
 			response = encoded
+		case BatchStoreData:
+			// handle the request for storing data
+			encoded, err := s.handleBatchStoreData(ctx, request)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("handle batch store data request failed")
+				return
+			}
+			response = encoded
 		default:
 			log.P2P().WithContext(ctx).Errorf("invalid message type: %v", request.MessageType)
 			return
@@ -576,7 +457,7 @@ func (s *Network) serve(ctx context.Context) {
 				if max := 1 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
-				log.P2P().WithContext(ctx).WithError(err).Errorf("socket accept failed, retrying in %v", tempDelay)
+				log.WithContext(ctx).WithError(err).Errorf("socket accept failed, retrying in %v", tempDelay)
 
 				time.Sleep(tempDelay)
 				continue
@@ -585,7 +466,7 @@ func (s *Network) serve(ctx context.Context) {
 				return
 			}
 
-			log.P2P().WithContext(ctx).WithError(err).Error("socket accept failed")
+			log.WithContext(ctx).WithError(err).Error("socket accept failed")
 			return
 		}
 
@@ -682,18 +563,6 @@ func (s *Network) Call(ctx context.Context, request *Message, isLong bool) (*Mes
 	return response, nil
 }
 
-func (s *Network) batchFindValuesRespMsg(sender *Node, result ResultType, errMsg string) ([]byte, error) {
-	response := &BatchFindValuesResponse{
-		Status: ResponseStatus{
-			Result: result,
-			ErrMsg: errMsg,
-		},
-	}
-
-	resMsg := s.dht.newMessage(BatchFindValues, sender, response)
-	return s.encodeMesage(resMsg)
-}
-
 func (s *Network) handleBatchFindValues(ctx context.Context, message *Message, reqID string) (res []byte, err error) {
 	// Try to acquire the semaphore, wait up to 1 minute
 	log.WithContext(ctx).Debug("Attempting to acquire semaphore immediately.")
@@ -705,7 +574,7 @@ func (s *Network) handleBatchFindValues(ctx context.Context, message *Message, r
 		if err := s.sem.Acquire(ctxWithTimeout, 1); err != nil {
 			log.WithContext(ctx).Error("Failed to acquire semaphore within 1 minute.")
 			// failed to acquire semaphore within 1 minute
-			return s.batchFindValuesRespMsg(message.Sender, ResultFailed, errorBusy)
+			return s.generateResponseMessage(BatchFindValues, message.Sender, ResultFailed, errorBusy)
 		}
 		log.WithContext(ctx).Info("Semaphore acquired after waiting.")
 	}
@@ -728,18 +597,18 @@ func (s *Network) handleBatchFindValues(ctx context.Context, message *Message, r
 				err = errors.New("unknown error")
 			}
 
-			res, _ = s.batchFindValuesRespMsg(message.Sender, ResultFailed, err.Error())
+			res, _ = s.generateResponseMessage(BatchFindValues, message.Sender, ResultFailed, err.Error())
 		}
 	}()
 
 	request, ok := message.Data.(*BatchFindValuesRequest)
 	if !ok {
-		return s.batchFindValuesRespMsg(message.Sender, ResultFailed, "invalid BatchFindValueRequest")
+		return s.generateResponseMessage(BatchFindValues, message.Sender, ResultFailed, "invalid BatchFindValueRequest")
 	}
 
 	isDone, data, err := s.handleBatchFindValuesRequest(ctx, request, message.Sender.IP, reqID)
 	if err != nil {
-		return s.batchFindValuesRespMsg(message.Sender, ResultFailed, err.Error())
+		return s.generateResponseMessage(BatchFindValues, message.Sender, ResultFailed, err.Error())
 	}
 
 	response := &BatchFindValuesResponse{
@@ -883,4 +752,126 @@ func findTopHeaviestKeys(dataMap map[string][]byte, size int) (int, []string) {
 	}
 
 	return count, topKeys
+}
+
+func (s *Network) handleBatchStoreData(ctx context.Context, message *Message) (res []byte, err error) {
+	defer func() {
+		if response, err := s.handlePanic(ctx, message.Sender, BatchStoreData); response != nil || err != nil {
+			res = response
+		}
+	}()
+
+	request, ok := message.Data.(*BatchStoreDataRequest)
+	if !ok {
+		err := errors.New("invalid BatchStoreDataRequest")
+		return s.generateResponseMessage(BatchStoreData, message.Sender, ResultFailed, err.Error())
+	}
+
+	log.P2P().WithContext(ctx).Debugf("handle batch store data: %v", message.String())
+
+	// add the sender to queries hash table
+	s.dht.addNode(ctx, message.Sender)
+
+	values, err := decompressSymbols(request.Data)
+	if err != nil {
+		err = errors.Errorf("batchStore: decompress symbols: %w", err)
+		return s.generateResponseMessage(BatchStoreData, message.Sender, ResultFailed, err.Error())
+	}
+
+	if err := s.dht.store.StoreBatch(ctx, values, 1, false); err != nil {
+		err = errors.Errorf("batch store the data: %w", err)
+		return s.generateResponseMessage(BatchStoreData, message.Sender, ResultFailed, err.Error())
+	}
+
+	response := &StoreDataResponse{
+		Status: ResponseStatus{
+			Result: ResultOk,
+		},
+	}
+
+	// new a response message
+	resMsg := s.dht.newMessage(BatchStoreData, message.Sender, response)
+	return s.encodeMesage(resMsg)
+}
+
+func (s *Network) handleBatchFindNode(ctx context.Context, message *Message) (res []byte, err error) {
+	defer func() {
+		if response, err := s.handlePanic(ctx, message.Sender, BatchFindNode); response != nil || err != nil {
+			res = response
+		}
+	}()
+
+	request, ok := message.Data.(*BatchFindNodeRequest)
+	if !ok {
+		err := errors.New("invalid FindNodeRequest")
+		return s.generateResponseMessage(BatchFindNode, message.Sender, ResultFailed, err.Error())
+	}
+
+	// add the sender to queries hash table
+	s.dht.addNode(ctx, message.Sender)
+
+	response := &BatchFindNodeResponse{
+		Status: ResponseStatus{
+			Result: ResultOk,
+		},
+	}
+	closestMap := make(map[string][]*Node)
+
+	for _, hashedTargetID := range request.HashedTarget {
+		closest, _ := s.dht.ht.closestContacts(K, hashedTargetID, []*Node{message.Sender})
+		closestMap[base58.Encode(hashedTargetID)] = closest.Nodes
+	}
+	response.ClosestNodes = closestMap
+
+	// new a response message
+	resMsg := s.dht.newMessage(BatchFindNode, message.Sender, response)
+	return s.encodeMesage(resMsg)
+}
+
+func (s *Network) generateResponseMessage(messageType int, receiver *Node, result ResultType, errMsg string) ([]byte, error) {
+	responseStatus := ResponseStatus{
+		Result: result,
+		ErrMsg: errMsg,
+	}
+
+	var response interface{}
+
+	switch messageType {
+	case StoreData, BatchStoreData:
+		response = &StoreDataResponse{Status: responseStatus}
+	case FindNode, BatchFindNode:
+		response = &BatchFindNodeResponse{Status: responseStatus}
+	case FindValue, BatchFindValues:
+		response = &BatchFindValuesResponse{Status: responseStatus}
+	case Replicate:
+		response = &ReplicateDataResponse{Status: responseStatus}
+	default:
+		return nil, fmt.Errorf("unsupported message type %d", messageType)
+	}
+
+	resMsg := s.dht.newMessage(messageType, receiver, response)
+	return s.encodeMesage(resMsg)
+}
+
+func (s *Network) handlePanic(ctx context.Context, sender *Node, messageType int) (res []byte, err error) {
+	if r := recover(); r != nil {
+		log.WithContext(ctx).Errorf("p2p network: recovered from panic: %v", r)
+
+		switch t := r.(type) {
+		case string:
+			err = errors.New(t)
+		case error:
+			err = t
+		default:
+			err = errors.New("unknown error")
+		}
+
+		if res, err := s.generateResponseMessage(messageType, sender, ResultFailed, err.Error()); err != nil {
+			log.WithContext(ctx).Errorf("Error generating response message: %v", err)
+		} else {
+			return res, err
+		}
+	}
+
+	return nil, nil
 }

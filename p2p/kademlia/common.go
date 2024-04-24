@@ -1,11 +1,11 @@
 package kademlia
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/vmihailenco/msgpack/v5"
 
 	"github.com/pastelnetwork/gonode/common/utils"
 )
@@ -44,14 +44,12 @@ func getNodeFromKey(key string) (*Node, error) {
 }
 
 func compressKeysStr(keys []string) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-
-	if err := enc.Encode(keys); err != nil {
-		return nil, fmt.Errorf("encode error: %w", err)
+	buf, err := msgpack.Marshal(keys)
+	if err != nil {
+		return nil, fmt.Errorf("msgpack encode error: %w", err)
 	}
 
-	compressed, err := utils.Compress(buf.Bytes(), 2)
+	compressed, err := utils.Compress(buf, 2)
 	if err != nil {
 		return nil, fmt.Errorf("compression error: %w", err)
 	}
@@ -65,12 +63,37 @@ func decompressKeysStr(data []byte) ([]string, error) {
 		return nil, fmt.Errorf("decompression error: %w", err)
 	}
 
-	dec := gob.NewDecoder(bytes.NewReader(decompressed))
-
 	var keys []string
-	if err := dec.Decode(&keys); err != nil {
+	if err := msgpack.Unmarshal(decompressed, &keys); err != nil {
 		return nil, fmt.Errorf("decode error: %w", err)
 	}
 
 	return keys, nil
+}
+
+func compressSymbols(values [][]byte) ([]byte, error) {
+	buf, err := msgpack.Marshal(values)
+	if err != nil {
+		return nil, fmt.Errorf("msgpack encode error: %w", err)
+	}
+
+	compressed, err := utils.Compress(buf, 2)
+	if err != nil {
+		return nil, fmt.Errorf("compression error: %w", err)
+	}
+
+	return compressed, nil
+}
+
+func decompressSymbols(data []byte) (values [][]byte, err error) {
+	decompressed, err := utils.Decompress(data)
+	if err != nil {
+		return nil, fmt.Errorf("decompression error: %w", err)
+	}
+
+	if err := msgpack.Unmarshal(decompressed, &values); err != nil {
+		return nil, fmt.Errorf("decode error: %w", err)
+	}
+
+	return values, nil
 }

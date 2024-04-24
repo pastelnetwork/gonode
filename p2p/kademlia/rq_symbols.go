@@ -11,7 +11,7 @@ import (
 
 const (
 	defaultSoreSymbolsInterval = 30 * time.Second
-	loadSymbolsBatchSize       = 2000
+	loadSymbolsBatchSize       = 1000
 )
 
 func (s *DHT) startStoreSymbolsWorker(ctx context.Context) {
