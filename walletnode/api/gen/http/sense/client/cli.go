@@ -24,7 +24,7 @@ func BuildUploadImagePayload(senseUploadImageBody string) (*sense.UploadImagePay
 	{
 		err = json.Unmarshal([]byte(senseUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"RXhwZWRpdGEgY29uc2VxdWF0dXIgdGVuZXR1ciBlYXF1ZSBxdWkgaXBzYW0gZXhwbGljYWJvLg==\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VmVsIHF1aSBub3N0cnVtIGluY2lkdW50IHZvbHVwdGF0ZW0gc2l0IHZlbGl0Lg==\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -49,7 +49,7 @@ func BuildStartProcessingPayload(senseStartProcessingBody string, senseStartProc
 	{
 		err = json.Unmarshal([]byte(senseStartProcessingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"burn_txid\": \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\",\n      \"collection_act_txid\": \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\",\n      \"open_api_group_id\": \"Aut repellat fuga ex doloribus doloremque necessitatibus.\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"burn_txid\": \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\",\n      \"collection_act_txid\": \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\",\n      \"open_api_group_id\": \"Animi rerum.\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\"\n   }'")
 		}
 		if utf8.RuneCountInString(body.BurnTxid) < 64 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", body.BurnTxid, utf8.RuneCountInString(body.BurnTxid), 64, true))

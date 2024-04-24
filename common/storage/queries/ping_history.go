@@ -31,7 +31,7 @@ func (s *SQLiteStore) UpsertPingHistory(pingInfo types.PingInfo) error {
 			avg_ping_response_time, is_online, is_on_watchlist, is_adjusted, last_seen, cumulative_response_time,
 			created_at, updated_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(supernode_id, ip_address) 
+		ON CONFLICT(supernode_id) 
 		DO UPDATE SET
 			total_pings = excluded.total_pings,
 			total_successful_pings = excluded.total_successful_pings,

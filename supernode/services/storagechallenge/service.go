@@ -39,6 +39,7 @@ const (
 	retryThreshold                             = 3
 	processStorageChallengeScoreEventsInterval = 12 * time.Minute
 	getChallengesForScoreAggregationInterval   = 10 * time.Minute
+	scoreAggregationInterval                   = 10 * time.Minute
 )
 
 // SCService keeps track of the supernode's nodeID and passes this, the pastel client,
@@ -141,6 +142,8 @@ func (service *SCService) Run(ctx context.Context) error {
 	go service.GetChallengesForScoreAggregation(ctx)
 
 	go service.ProcessAggregationChallenges(ctx)
+
+	go service.AggregateChallengeScore(ctx)
 
 	if !service.config.IsTestConfig {
 		time.Sleep(15 * time.Minute)
@@ -311,6 +314,30 @@ func (service *SCService) processStorageChallengeScoreEvents(ctx context.Context
 	}
 
 	log.WithContext(ctx).Debug("self-healing events have been processed")
+}
+
+// AggregateChallengeScore process the accumulative data for score aggregation
+func (service *SCService) AggregateChallengeScore(ctx context.Context) {
+	log.WithContext(ctx).Debug("AggregateChallengeScore worker func has been invoked")
+
+	for {
+		select {
+		case <-time.After(scoreAggregationInterval):
+			service.executeScoreAggregationWorker(ctx)
+		case <-ctx.Done():
+			log.Println("Context done being called in AggregateChallengeScore worker")
+			return
+		}
+	}
+}
+
+// executeTask executes the self-healing metric task.
+func (service *SCService) executeScoreAggregationWorker(ctx context.Context) {
+	newCtx := context.Background()
+	task := service.NewSCTask()
+	task.AggregateChallengesScore(newCtx)
+
+	log.WithContext(ctx).Debug("AggregateChallengesScore completed")
 }
 
 // NewService : Create a new storage challenge service
