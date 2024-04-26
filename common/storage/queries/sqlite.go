@@ -3,12 +3,11 @@ package queries
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/log"
+	"path/filepath"
 )
 
 const minVerifications = 3
@@ -202,6 +201,78 @@ CREATE UNIQUE INDEX IF NOT EXISTS healthcheck_challenge_metrics_unique ON health
 const alterTablePingHistoryHealthCheckColumn = `ALTER TABLE ping_history
 ADD COLUMN health_check_metrics_last_broadcast_at DATETIME NULL;`
 
+const createPingHistoryWithoutUniqueIPAddress string = `
+BEGIN TRANSACTION;
+
+CREATE TABLE IF NOT EXISTS new_ping_history (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  supernode_id TEXT UNIQUE NOT NULL,
+  ip_address TEXT NOT NULL,  -- Removed UNIQUE constraint here
+  total_pings INTEGER NOT NULL,
+  total_successful_pings INTEGER NOT NULL,
+  avg_ping_response_time FLOAT NOT NULL,
+  is_online BOOLEAN NOT NULL,
+  is_on_watchlist BOOLEAN NOT NULL,
+  is_adjusted BOOLEAN NOT NULL,
+  cumulative_response_time FLOAT NOT NULL,
+  last_seen DATETIME NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  metrics_last_broadcast_at DATETIME,  -- Assuming these columns already exist in the old table
+  generation_metrics_last_broadcast_at DATETIME,
+  execution_metrics_last_broadcast_at DATETIME,
+  health_check_metrics_last_broadcast_at DATETIME
+);
+
+-- Step 2: Copy data including all columns from the old table
+INSERT INTO new_ping_history (
+  id,
+  supernode_id,
+  ip_address,
+  total_pings,
+  total_successful_pings,
+  avg_ping_response_time,
+  is_online,
+  is_on_watchlist,
+  is_adjusted,
+  cumulative_response_time,
+  last_seen,
+  created_at,
+  updated_at,
+  metrics_last_broadcast_at,
+  generation_metrics_last_broadcast_at,
+  execution_metrics_last_broadcast_at,
+  health_check_metrics_last_broadcast_at
+)
+SELECT
+  id,
+  supernode_id,
+  ip_address,
+  total_pings,
+  total_successful_pings,
+  avg_ping_response_time,
+  is_online,
+  is_on_watchlist,
+  is_adjusted,
+  cumulative_response_time,
+  last_seen,
+  created_at,
+  updated_at,
+  metrics_last_broadcast_at,
+  generation_metrics_last_broadcast_at,
+  execution_metrics_last_broadcast_at,
+  health_check_metrics_last_broadcast_at
+FROM ping_history;
+
+-- Step 3: Drop the original table
+DROP TABLE ping_history;
+
+-- Step 4: Rename the new table to the original table's name
+ALTER TABLE new_ping_history RENAME TO ping_history;
+
+COMMIT;
+`
+
 const (
 	historyDBName = "history.db"
 	emptyString   = ""
@@ -312,6 +383,8 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 	_, _ = db.Exec(alterTablePingHistoryExecutionMetrics)
 
 	_, _ = db.Exec(alterTablePingHistoryHealthCheckColumn)
+
+	_, _ = db.Exec(createPingHistoryWithoutUniqueIPAddress)
 
 	pragmas := []string{
 		"PRAGMA synchronous=NORMAL;",

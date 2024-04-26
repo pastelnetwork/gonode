@@ -99,6 +99,7 @@ func (task *SHTask) pingNodes(ctx context.Context, nodesToPing map[string]pastel
 
 				if err := task.StorePingInfo(ctx, pi); err != nil {
 					log.WithContext(ctx).WithField("supernode_id", pi.SupernodeID).
+						WithField("ip_address", pi.IPAddress).
 						WithError(err).
 						Error("error storing ping info")
 				}
@@ -119,6 +120,7 @@ func (task *SHTask) pingNodes(ctx context.Context, nodesToPing map[string]pastel
 
 			if err := task.StorePingInfo(ctx, pi); err != nil {
 				log.WithContext(ctx).WithField("supernode_id", pi.SupernodeID).
+					WithField("ip_address", pi.IPAddress).
 					WithError(err).
 					Error("error storing ping info")
 			}
@@ -185,6 +187,7 @@ func (task *SHTask) StorePingInfo(ctx context.Context, info types.PingInfo) erro
 		if err != nil {
 			log.WithContext(ctx).
 				WithField("supernode_id", info.SupernodeID).
+				WithField("ip_address", info.IPAddress).
 				Error("error storing ping history")
 
 			return err

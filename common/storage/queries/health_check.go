@@ -28,7 +28,6 @@ type HealthCheckChallengeQueries interface {
 
 	GetDistinctHCChallengeIDsCountForScoreAggregation(after, before time.Time) (int, error)
 	GetDistinctHCChallengeIDs(after, before time.Time, batchNumber int) ([]string, error)
-	BatchInsertHCScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error
 }
 
 // GetTotalHCGeneratedAndProcessedAndEvaluated retrieves the total health-check challenges generated/processed/evaluated
@@ -428,36 +427,4 @@ func (s *SQLiteStore) GetDistinctHCChallengeIDs(after, before time.Time, batchNu
 	}
 
 	return challengeIDs, nil
-}
-
-// BatchInsertHCScoreAggregationChallenges inserts the batch of challenge ids for score aggregation
-func (s *SQLiteStore) BatchInsertHCScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return err
-	}
-
-	stmt, err := tx.Prepare(`
-        INSERT OR IGNORE INTO hc_score_aggregation_queue
-        (challenge_id, is_aggregated, created_at, updated_at)
-        VALUES (?,?,?,?)
-    `)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-	defer stmt.Close()
-
-	for _, id := range challengeIDs {
-		now := time.Now().UTC()
-
-		_, err = stmt.Exec(id, isAggregated, now, now)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	// Commit the transaction
-	return tx.Commit()
 }

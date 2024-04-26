@@ -70,7 +70,7 @@ func (service *Service) getScores(ctx context.Context, pid string, signature str
 		return nil, err
 	}
 
-	var aggregatedScores []types.AggregatedScore
+	var aggregatedScores types.AggregatedScoreList
 	for _, node := range supernodes {
 		var score *types.AggregatedScore
 

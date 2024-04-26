@@ -33,6 +33,7 @@ var (
 	defaultDeleteDataInterval            = 11 * time.Hour
 	delKeysCountThreshold                = 10
 	lowSpaceThreshold                    = 50 // GB
+	batchStoreSize                       = 2500
 )
 
 const maxIterations = 5
