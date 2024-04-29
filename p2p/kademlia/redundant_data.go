@@ -15,6 +15,43 @@ import (
 	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 )
 
+func (s *DHT) startDisabledKeysCleanupWorker(ctx context.Context) error {
+	log.P2P().WithContext(ctx).Info("disabled keys cleanup worker started")
+
+	for {
+		select {
+		case <-time.After(defaultCleanupInterval):
+			s.cleanupDisabledKeys(ctx)
+		case <-ctx.Done():
+			log.P2P().WithContext(ctx).Error("closing disabled keys cleanup worker")
+			return nil
+		}
+	}
+}
+
+func (s *DHT) cleanupDisabledKeys(ctx context.Context) error {
+	if s.metaStore == nil {
+		return nil
+	}
+
+	from := time.Now().UTC().Add(-1 * defaultDisabledKeyExpirationInterval)
+	disabledKeys, err := s.metaStore.GetDisabledKeys(from)
+	if err != nil {
+		return errors.Errorf("get disabled keys: %w", err)
+	}
+
+	for i := 0; i < len(disabledKeys); i++ {
+		dec, err := hex.DecodeString(disabledKeys[i].Key)
+		if err != nil {
+			log.P2P().WithContext(ctx).WithError(err).Error("decode disabled key failed")
+			continue
+		}
+		s.metaStore.Delete(ctx, dec)
+	}
+
+	return nil
+}
+
 func (s *DHT) startCleanupRedundantDataWorker(ctx context.Context) {
 	log.P2P().WithContext(ctx).Info("redundant data cleanup worker started")
 

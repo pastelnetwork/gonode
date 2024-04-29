@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -76,6 +77,82 @@ func TestGetNodeFromKey(t *testing.T) {
 
 			if string(got.ID) != string(tc.expected.ID) || got.IP != tc.expected.IP || got.Port != tc.expected.Port {
 				t.Errorf("expected node %+v, got %+v", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestCompressAndDecompressKeysStr(t *testing.T) {
+	tests := []struct {
+		name string
+		keys []string
+	}{
+		{
+			name: "Normal case",
+			keys: []string{"key1", "key2", "key3"},
+		},
+		{
+			name: "Empty case",
+			keys: []string{},
+		},
+		{
+			name: "Nil case",
+			keys: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			compressedData, err := compressKeysStr(tt.keys)
+			if err != nil {
+				t.Errorf("compressKeysStr failed: %v", err)
+			}
+
+			decompressedKeys, err := decompressKeysStr(compressedData)
+			if err != nil {
+				t.Errorf("decompressKeysStr failed: %v", err)
+			}
+
+			if !reflect.DeepEqual(tt.keys, decompressedKeys) {
+				t.Errorf("decompressKeysStr got = %v, want %v", decompressedKeys, tt.keys)
+			}
+		})
+	}
+}
+
+func TestCompressAndDecompressSymbols(t *testing.T) {
+	tests := []struct {
+		name   string
+		values [][]byte
+	}{
+		{
+			name:   "Normal case",
+			values: [][]byte{{0x01, 0x02, 0x03}, {0x04, 0x05, 0x06}},
+		},
+		{
+			name:   "Empty inner case",
+			values: [][]byte{{}, {}},
+		},
+		{
+			name:   "Empty case",
+			values: [][]byte{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			compressedData, err := compressSymbols(tt.values)
+			if err != nil {
+				t.Errorf("compressSymbols failed: %v", err)
+			}
+
+			decompressedValues, err := decompressSymbols(compressedData)
+			if err != nil {
+				t.Errorf("decompressSymbols failed: %v", err)
+			}
+
+			if !reflect.DeepEqual(tt.values, decompressedValues) {
+				t.Errorf("decompressSymbols got = %v, want %v", decompressedValues, tt.values)
 			}
 		})
 	}

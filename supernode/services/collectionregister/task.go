@@ -53,7 +53,7 @@ func (task *CollectionRegistrationTask) ValidatePreBurnTransaction(ctx context.C
 		task.burnTxID = txid
 
 		confirmationChn := task.WaitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations),
-			15*time.Second, true, float64(task.registrationFee), 10)
+			5*time.Second, true, float64(task.registrationFee), 10)
 
 		log.WithContext(ctx).Debug("waiting for confirmation")
 		if err = <-confirmationChn; err != nil {
