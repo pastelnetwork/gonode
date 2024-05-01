@@ -21,7 +21,7 @@ func (task *HCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 
 	logger.Info("invoked")
 
-	tracker, err := task.scoreStore.GetScoreLastAggregatedAt(scorestore.HealthCheckChallengeScoreAggregationType)
+	tracker, err := task.ScoreStore.GetScoreLastAggregatedAt(scorestore.HealthCheckChallengeScoreAggregationType)
 	if err != nil {
 		logger.WithError(err).Error("error retrieving score-aggregate tracker for healthcheck-challenges")
 		return errors.Errorf("error retrieving score-aggregate tracker for healthcheck-challenges")
@@ -67,7 +67,7 @@ func (task *HCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 		}
 	}
 
-	if err := task.scoreStore.UpsertScoreLastAggregatedAt(scorestore.HealthCheckChallengeScoreAggregationType); err != nil {
+	if err := task.ScoreStore.UpsertScoreLastAggregatedAt(scorestore.HealthCheckChallengeScoreAggregationType); err != nil {
 		logger.WithError(err).Error("error updating aggregated til for health-check-challenge score aggregation tracker")
 		return errors.Errorf("error updating aggregated til")
 	}

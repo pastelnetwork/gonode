@@ -153,7 +153,7 @@ func getCommonEvaluationResult(evaluationMap map[bool]int) bool {
 }
 
 func (task *HCTask) processChallengerEvaluation(challengerEvaluations int, challengerID string, successThreshold int, infos types.PingInfos) error {
-	aggregatedScoreData, err := task.scoreStore.GetAccumulativeHCData(challengerID)
+	aggregatedScoreData, err := task.ScoreStore.GetAccumulativeHCData(challengerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, challengerID)
@@ -173,7 +173,7 @@ func (task *HCTask) processChallengerEvaluation(challengerEvaluations int, chall
 
 	aggregatedScoreData.TotalChallengesAsChallengers = aggregatedScoreData.TotalChallengesAsChallengers + 1
 
-	if err := task.scoreStore.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
+	if err := task.ScoreStore.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
 		return err
 	}
 
@@ -181,7 +181,7 @@ func (task *HCTask) processChallengerEvaluation(challengerEvaluations int, chall
 }
 
 func (task *HCTask) processRecipientEvaluation(recipientEvaluations int, recipientID string, successThreshold int, infos types.PingInfos) error {
-	aggregatedScoreData, err := task.scoreStore.GetAccumulativeHCData(recipientID)
+	aggregatedScoreData, err := task.ScoreStore.GetAccumulativeHCData(recipientID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, recipientID)
@@ -201,7 +201,7 @@ func (task *HCTask) processRecipientEvaluation(recipientEvaluations int, recipie
 
 	aggregatedScoreData.TotalChallengesAsRecipients = aggregatedScoreData.TotalChallengesAsRecipients + 1
 
-	if err := task.scoreStore.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
+	if err := task.ScoreStore.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
 		return err
 	}
 
@@ -209,7 +209,7 @@ func (task *HCTask) processRecipientEvaluation(recipientEvaluations int, recipie
 }
 
 func (task *HCTask) processObserverEvaluation(commonEval, observerEval bool, observerID string, infos types.PingInfos) error {
-	aggregatedScoreData, err := task.scoreStore.GetAccumulativeHCData(observerID)
+	aggregatedScoreData, err := task.ScoreStore.GetAccumulativeHCData(observerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, observerID)
@@ -229,7 +229,7 @@ func (task *HCTask) processObserverEvaluation(commonEval, observerEval bool, obs
 		aggregatedScoreData.CorrectObserverEvaluations++
 	}
 
-	if err := task.scoreStore.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
+	if err := task.ScoreStore.UpsertAccumulativeHCData(aggregatedScoreData); err != nil {
 		return err
 	}
 

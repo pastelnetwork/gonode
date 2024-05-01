@@ -40,6 +40,8 @@ const (
 	processStorageChallengeScoreEventsInterval = 12 * time.Minute
 	getChallengesForScoreAggregationInterval   = 10 * time.Minute
 	scoreAggregationInterval                   = 10 * time.Minute
+	defaultTimerBlockCheckDuration             = 30 * time.Second
+	defaultLocalKeysFetchInterval              = 20 * time.Minute
 )
 
 // SCService keeps track of the supernode's nodeID and passes this, the pastel client,
@@ -57,11 +59,9 @@ type SCService struct {
 	numberOfChallengeReplicas     int
 	numberOfVerifyingNodes        int
 	historyDB                     queries.LocalStoreInterface
-	scoreStore                    scorestore.ScoreStorageInterface
+	ScoreStore                    scorestore.ScoreStorageInterface
 
 	currentBlockCount int32
-	// currently unimplemented, default always used instead.
-	challengeStatusObserver SaveChallengeState
 
 	localKeys            sync.Map
 	localKeysLastFetchAt time.Time
@@ -81,11 +81,6 @@ func (service *SCService) CheckNextBlockAvailable(ctx context.Context) bool {
 
 	return false
 }
-
-const (
-	defaultTimerBlockCheckDuration = 30 * time.Second
-	defaultLocalKeysFetchInterval  = 20 * time.Minute
-)
 
 // RunLocalKeysFetchWorker : This worker will periodically fetch the queries keys from the queries storage
 func (service *SCService) RunLocalKeysFetchWorker(ctx context.Context) {
@@ -195,7 +190,7 @@ func (service *SCService) executeMetricsBroadcastTask(ctx context.Context) {
 	log.WithContext(ctx).Debug("storage challenge metrics broadcasted")
 }
 
-// executeTask executes the self-healing metric task.
+// executeGetChallengeIDsForScoreWorker executes get challenge-ids for score workers
 func (service *SCService) executeGetChallengeIDsForScoreWorker(ctx context.Context) {
 	newCtx := context.Background()
 	task := service.NewSCTask()
@@ -273,7 +268,7 @@ func (service *SCService) processStorageChallengeScoreEvents(ctx context.Context
 	newCtx := context.Background()
 	task := service.NewSCTask()
 
-	events, err := service.scoreStore.GetStorageChallengeScoreEvents()
+	events, err := service.ScoreStore.GetStorageChallengeScoreEvents()
 	if err != nil {
 		return
 	}
@@ -283,7 +278,7 @@ func (service *SCService) processStorageChallengeScoreEvents(ctx context.Context
 		service.eventRetryMap[event.ChallengeID]++
 
 		if service.eventRetryMap[event.ChallengeID] >= retryThreshold {
-			err = service.scoreStore.UpdateScoreChallengeEvent(event.ChallengeID)
+			err = service.ScoreStore.UpdateScoreChallengeEvent(event.ChallengeID)
 			if err != nil {
 				log.WithContext(ctx).
 					WithField("score_sc_challenge_event_id", event.ChallengeID).
@@ -305,7 +300,7 @@ func (service *SCService) processStorageChallengeScoreEvents(ctx context.Context
 			continue
 		}
 
-		err = service.scoreStore.UpdateScoreChallengeEvent(event.ChallengeID)
+		err = service.ScoreStore.UpdateScoreChallengeEvent(event.ChallengeID)
 		if err != nil {
 			continue
 		}
@@ -331,7 +326,7 @@ func (service *SCService) AggregateChallengeScore(ctx context.Context) {
 	}
 }
 
-// executeTask executes the self-healing metric task.
+// executeScoreAggregationWorker executes the score-aggregation task.
 func (service *SCService) executeScoreAggregationWorker(ctx context.Context) {
 	newCtx := context.Background()
 	task := service.NewSCTask()
@@ -341,10 +336,8 @@ func (service *SCService) executeScoreAggregationWorker(ctx context.Context) {
 }
 
 // NewService : Create a new storage challenge service
-//
-//	Inheriting from SuperNodeService allows us to use common methods for pastelclient, p2p, and rqClient.
 func NewService(config *Config, fileStorage storage.FileStorageInterface, pastelClient pastel.Client, nodeClient node.ClientInterface,
-	p2p p2p.Client, challengeStatusObserver SaveChallengeState, historyDB queries.LocalStoreInterface, scoreDB scorestore.ScoreStorageInterface) *SCService {
+	p2p p2p.Client, historyDB queries.LocalStoreInterface, scoreDB scorestore.ScoreStorageInterface) *SCService {
 	return &SCService{
 		config:                        config,
 		SuperNodeService:              common.NewSuperNodeService(fileStorage, pastelClient, p2p),
@@ -354,18 +347,14 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		nodeID:                    config.PastelID,
 		numberOfChallengeReplicas: config.NumberOfChallengeReplicas,
 		numberOfVerifyingNodes:    config.NumberOfVerifyingNodes,
-		challengeStatusObserver:   challengeStatusObserver,
 		localKeys:                 sync.Map{},
 		historyDB:                 historyDB,
-		scoreStore:                scoreDB,
+		ScoreStore:                scoreDB,
 		eventRetryMap:             make(map[string]int),
 	}
 }
 
-//utils below that call pasteld or p2p - mostly just wrapping other functions in better names
-
 // ListSymbolFileKeysFromNFTAndActionTickets : Get an NFT and Action Ticket's associated raptor q ticket file id's.
-// These can then be accessed through p2p.
 func (service *SCService) ListSymbolFileKeysFromNFTAndActionTickets(ctx context.Context) ([]string, error) {
 	var keys = make([]string, 0)
 
@@ -442,18 +431,7 @@ func (service *SCService) GetSymbolFileByKey(ctx context.Context, key string, ge
 	return service.P2PClient.Retrieve(ctx, key, getFromLocalOnly)
 }
 
-// StoreSymbolFile : Wrapper for p2p file storage service - stores a file in kademlia based on its key
-func (service *SCService) StoreSymbolFile(ctx context.Context, data []byte) (key string, err error) {
-	return service.P2PClient.Store(ctx, data, common.P2PDataRaptorQSymbol)
-}
-
-// RemoveSymbolFileByKey : Wrapper for p2p file storage service - removes a file from kademlia based on its key
-func (service *SCService) RemoveSymbolFileByKey(ctx context.Context, key string) error {
-	return service.P2PClient.Delete(ctx, key)
-}
-
 // GetListOfSupernode : Access the supernode service to get a list of all supernodes, including their id's and addresses.
-// This is used to enumerate supernodes both for calculation and connection
 func (service *SCService) GetListOfSupernode(ctx context.Context) ([]string, error) {
 	var ret = make([]string, 0)
 	listMN, err := service.SuperNodeService.PastelClient.MasterNodesExtra(ctx)

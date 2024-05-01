@@ -21,7 +21,7 @@ const (
 )
 
 // VerifyEvaluationResult process the evaluation report from the challenger by the observers
-func (task *SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluationResult types.Message) (types.Message, error) {
+func (task SCTask) VerifyEvaluationResult(ctx context.Context, incomingEvaluationResult types.Message) (types.Message, error) {
 	logger := log.WithContext(ctx).WithField("method", "VerifyEvaluationResult").WithField("sc_challenge_id", incomingEvaluationResult.ChallengeID)
 
 	if err := task.validateVerifyingStorageChallengeEvaluationReport(ctx, incomingEvaluationResult); err != nil {
@@ -247,7 +247,7 @@ func (task SCTask) RetrieveChallengeMessage(ctx context.Context, challengeID str
 	return nil, nil
 }
 
-func (task *SCTask) verifyMessageSignaturesForEvaluation(ctx context.Context, challengeMessage, responseMessage types.Message) (challengeMsgSig, ResMsgSig bool, err error) {
+func (task SCTask) verifyMessageSignaturesForEvaluation(ctx context.Context, challengeMessage, responseMessage types.Message) (challengeMsgSig, ResMsgSig bool, err error) {
 	isChallengerSignatureOk, err := task.VerifyMessageSignature(ctx, challengeMessage)
 	if err != nil {
 		return false, false, errors.Errorf("error verifying challenge message signature")
@@ -261,7 +261,7 @@ func (task *SCTask) verifyMessageSignaturesForEvaluation(ctx context.Context, ch
 	return isChallengerSignatureOk, isRecipientSignatureOk, nil
 }
 
-func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challengeMessage, responseMessage, incomingEvaluationResult types.Message, evaluationMsgRecvTime time.Time) (challengeMsgTS, resMsgTS, evalMsgTS bool) {
+func (task SCTask) verifyTimestampsForEvaluation(ctx context.Context, challengeMessage, responseMessage, incomingEvaluationResult types.Message, evaluationMsgRecvTime time.Time) (challengeMsgTS, resMsgTS, evalMsgTS bool) {
 	isChallengeTSOk := task.verifyMessageTimestamps(ctx, incomingEvaluationResult.Data.Challenge.Timestamp.UTC(),
 		challengeMessage.Data.Challenge.Timestamp.UTC(), challengeMessage.CreatedAt.UTC(),
 		challengeMessage.ChallengeID, challengeMessage.MessageType)
@@ -302,7 +302,7 @@ func (task *SCTask) verifyTimestampsForEvaluation(ctx context.Context, challenge
 	return isChallengeTSOk, isResponseTSOk, isEvaluationTSOk
 }
 
-func (task *SCTask) verifyMessageTimestamps(ctx context.Context, timeWhenMsgSent, sentTimeWhenMsgReceived, timeWhenMsgStored time.Time, challengeID string, messageType types.MessageType) bool {
+func (task SCTask) verifyMessageTimestamps(ctx context.Context, timeWhenMsgSent, sentTimeWhenMsgReceived, timeWhenMsgStored time.Time, challengeID string, messageType types.MessageType) bool {
 	logger := log.WithContext(ctx).
 		WithField("challenge_id", challengeID).
 		WithField("message_type", messageType.String()).
@@ -335,7 +335,7 @@ func (task *SCTask) verifyMessageTimestamps(ctx context.Context, timeWhenMsgSent
 	return isTSOk
 }
 
-func (task *SCTask) verifyMerkelrootAndBlockNum(ctx context.Context, challengeMessage, responseMessage, incomingEvaluationResult types.Message) (isChallengeOk, isResOk bool) {
+func (task SCTask) verifyMerkelrootAndBlockNum(ctx context.Context, challengeMessage, responseMessage, incomingEvaluationResult types.Message) (isChallengeOk, isResOk bool) {
 	logger := log.WithContext(ctx).
 		WithField("challenge_id", incomingEvaluationResult.ChallengeID).
 		WithField("node_id", task.nodeID)
@@ -363,7 +363,7 @@ func (task *SCTask) verifyMerkelrootAndBlockNum(ctx context.Context, challengeMe
 	return isChallengeBlockOk && isChallengeMerkelrootOk, isResponseBlockOk && isResponseMerkelrootOk
 }
 
-func (task *SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluationResult types.Message, correctHash string) (isAffirmationOk bool, reason string) {
+func (task SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluationResult types.Message, correctHash string) (isAffirmationOk bool, reason string) {
 	logger := log.WithContext(ctx).WithField("challenge_id", incomingEvaluationResult.ChallengeID)
 
 	evaluationResultData := incomingEvaluationResult.Data
@@ -405,7 +405,7 @@ func (task *SCTask) verifyEvaluationResult(ctx context.Context, incomingEvaluati
 	return isAffirmationOk, reason
 }
 
-func (task *SCTask) validateVerifyingStorageChallengeEvaluationReport(ctx context.Context, evaluationReport types.Message) error {
+func (task SCTask) validateVerifyingStorageChallengeEvaluationReport(ctx context.Context, evaluationReport types.Message) error {
 	if evaluationReport.MessageType != types.EvaluationMessageType {
 		return fmt.Errorf("incorrect message type to verify evaluation report")
 	}
@@ -428,7 +428,7 @@ func (task *SCTask) validateVerifyingStorageChallengeEvaluationReport(ctx contex
 	return nil
 }
 
-func (task *SCTask) retrieveChallengeAndResponseMessageForEvaluationReportVerification(ctx context.Context, challengeID string) (cMsg, rMsg *types.Message, er error) {
+func (task SCTask) retrieveChallengeAndResponseMessageForEvaluationReportVerification(ctx context.Context, challengeID string) (cMsg, rMsg *types.Message, er error) {
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 15 * time.Second
 	b.InitialInterval = 1 * time.Second
