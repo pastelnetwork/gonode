@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -15,8 +14,6 @@ import (
 )
 
 const (
-	maxGoroutines              = 2000
-	resultBufSize              = 1000 // or any other appropriate value
 	restoreFileSymbolBatchSize = 9
 )
 
@@ -40,86 +37,27 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 		symbolSets[i] = symbolIDs[start:end]
 	}
 
-	// Create a buffered channel for tasks
-	taskCh := make(chan string, totalSymbols)
-
-	// Create a buffered channel for results
-	resultCh := make(chan struct {
-		Symbol []byte
-		ID     string
-		Error  error
-	}, resultBufSize)
-
-	// Create a semaphore with a maximum of 2000 tokens
-	sem := make(chan struct{}, maxGoroutines)
-
-	// Create a worker pool
-	for i := 0; i < maxGoroutines; i++ {
-		go func() {
-			for id := range taskCh {
-				// Acquire a token
-				sem <- struct{}{}
-
-				var symbol []byte
-				symbol, err := task.P2PClient.Retrieve(ctx, id)
-				if err != nil {
-					resultCh <- struct {
-						Symbol []byte
-						ID     string
-						Error  error
-					}{nil, id, err}
-					<-sem
-					continue
-				}
-				if len(symbol) == 0 {
-					resultCh <- struct {
-						Symbol []byte
-						ID     string
-						Error  error
-					}{nil, id, errors.New("symbol received from symbolid is empty")}
-					<-sem
-					continue
-				}
-
-				h := sha3.Sum256(symbol)
-				storedID := base58.Encode(h[:])
-				if storedID != id {
-					resultCh <- struct {
-						Symbol []byte
-						ID     string
-						Error  error
-					}{nil, id, errors.New("Symbol ID mismatched")}
-					<-sem
-					continue
-				}
-				resultCh <- struct {
-					Symbol []byte
-					ID     string
-					Error  error
-				}{symbol, id, nil}
-				<-sem
-			}
-		}()
-	}
-
 	// Create a map to store symbols
 	symbols := make(map[string][]byte)
 
+	// Iterate through symbol sets
 	for _, symbolSet := range symbolSets {
-		// Send tasks
-		for _, id := range symbolSet {
-			taskCh <- id
+		// Retrieve symbols for the current set
+		retrievedSymbols, err := task.P2PClient.BatchRetrieve(ctx, symbolSet, len(symbolSet))
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to retrieve symbols")
+			return nil, fmt.Errorf("failed to retrieve symbols: %w", err)
 		}
 
-		// Collect results
-		for range symbolSet {
-			result := <-resultCh
-			if result.Error != nil {
-				log.WithContext(ctx).WithError(result.Error).WithField("SymbolID", result.ID).Error("Could not retrieve symbol")
-				task.UpdateStatus(common.StatusSymbolNotFound)
-				continue
-			}
-			symbols[result.ID] = result.Symbol
+		// Check if enough symbols have been retrieved
+		if len(retrievedSymbols) >= requiredSymbols {
+			symbols = retrievedSymbols // avoid merging if all symbols are retrieved to save resources
+			break
+		}
+
+		// Merge retrieved symbols into the symbols map
+		for key, value := range retrievedSymbols {
+			symbols[key] = value
 		}
 
 		// Check if enough symbols have been retrieved
@@ -127,8 +65,6 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 			break
 		}
 	}
-
-	close(taskCh)
 
 	// Restore Nft
 	var decodeInfo *rqnode.Decode

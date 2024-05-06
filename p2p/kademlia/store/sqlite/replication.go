@@ -448,7 +448,7 @@ func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys []string, batchS
 	return nonExistingKeys, nil
 }
 
-// RetrieveBatchValues returns a list of values (hex-decoded) for the given keys (hex-encoded)
+// RetrieveBatchValues returns a list of values  for the given keys (hex-encoded)
 func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byte, int, error) {
 	placeholders := make([]string, len(keys))
 	args := make([]interface{}, len(keys))

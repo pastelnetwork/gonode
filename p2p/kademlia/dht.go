@@ -416,6 +416,240 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 	return responses
 }
 
+func (s *DHT) fetchAndAddLocalKeys(ctx context.Context, hexKeys []string, localKeysIndexes []int, result map[string][]byte) (count int, err error) {
+	// TODO: filter out the keys that are disabled
+	localKeys := make([]string, len(localKeysIndexes))
+	for i, idx := range localKeysIndexes {
+		localKeys[i] = hexKeys[idx]
+	}
+
+	// Retrieve values for the local keys
+	localValues, _, err := s.store.RetrieveBatchValues(ctx, localKeys)
+	if err != nil {
+		return 0, fmt.Errorf("retrieve batch values (local): %v", err)
+	}
+
+	// Populate the result map with the local values and count the found keys
+	for i, val := range localValues {
+		if len(val) > 0 {
+			count++
+			result[localKeys[i]] = val
+		}
+	}
+
+	return count, nil
+}
+
+// BatchRetrieve data from the networking using keys. Keys are the base58 encoded
+func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int, localOnly ...bool) (result map[string][]byte, err error) {
+	result = make(map[string][]byte)                    // the result of the batch retrieve - keys are b58 encoded (as received in request)
+	hexKeys := make([]string, len(keys))                // the hex keys keys[i] = hex.EncodeToString(base58.Decode(keys[i]))
+	globalClosestContacts := make(map[string]*NodeList) // This will store the global top 6 nodes for each symbol's hash
+	hashes := make([][]byte, len(keys))                 // the hashes of the keys - hashes[i] = base58.Decode(keys[i])
+	knownNodes := make(map[string]*Node)                // This will store the nodes we know about
+	foundValuesCount := 0                               // the number of values found so far
+
+	// populate result map with required keys
+	for _, key := range keys {
+		result[key] = nil
+	}
+
+	self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
+	self.SetHashedID()
+
+	// populate hexKeys and hashes, and knownNodes as well as globalClosestContacts (at this point, these will be local top 6 nodes)
+	for i, key := range keys {
+		decoded := base58.Decode(key)
+		if len(decoded) != B/8 {
+			return nil, fmt.Errorf("invalid key: %v", key)
+		}
+		hashes[i] = decoded
+
+		hexKeys[i] = hex.EncodeToString(decoded)
+
+		// Calculate the local top 6 nodes for each value
+		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, decoded, nil, self)
+		globalClosestContacts[key] = top6
+
+		// Add the top 6 nodes to the known nodes
+		for i := 0; i < len(top6.Nodes); i++ {
+			if _, ok := knownNodes[string(top6.Nodes[i].ID)]; ok {
+				continue
+			}
+			knownNodes[string(top6.Nodes[i].ID)] = top6.Nodes[i]
+		}
+	}
+
+	// create a fetch map where the key is the node ID and the value is a list of indexes of the keys that the node is responsible for
+	fetchMap := make(map[string][]int)
+	for i := 0; i < len(keys); i++ {
+		fetchNodes := globalClosestContacts[keys[i]].Nodes
+		for j := 0; j < len(fetchNodes); j++ {
+			fetchMap[string(fetchNodes[j].ID)] = append(fetchMap[string(fetchNodes[j].ID)], i)
+		}
+	}
+
+	// this will populate the result map with the local values that are found
+	foundValuesCount, err = s.fetchAndAddLocalKeys(ctx, hexKeys, fetchMap[string(self.ID)], result)
+	if err != nil {
+		return nil, fmt.Errorf("fetch and add local keys: %v", err)
+	}
+
+	if foundValuesCount >= required {
+		return result, nil
+	}
+
+	// iterate through the network to get the values
+	foundCount, _, err := s.iterateBatchGetValues(ctx, knownNodes, keys, hexKeys, fetchMap, result, required-foundValuesCount)
+	if err != nil {
+		return nil, fmt.Errorf("iterate batch get values: %v", err)
+	}
+	log.WithContext(ctx).WithField("network-foundCount", foundCount).WithField("local-foundCount", foundValuesCount).WithField("required", required).Info("batch find values count")
+
+	return result, nil
+}
+
+func (s *DHT) doBatchFindValuesCall(ctx context.Context, node *Node, requestKeys map[string]KeyValWithClosest) (map[string]KeyValWithClosest, error) {
+	compressedData, err := compressBatchFindValues(requestKeys)
+	if err != nil {
+		return nil, fmt.Errorf("compression error: %v", err)
+	}
+
+	request := s.newMessage(BatchFindValues, node, compressedData)
+	response, err := s.network.Call(ctx, request, true)
+	if err != nil {
+		return nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)
+	}
+
+	resp, ok := response.Data.(*BatchFindValuesResponse)
+	if !ok {
+		return nil, fmt.Errorf("invalid response type: %T", response.Data)
+	}
+
+	if resp.Status.Result != ResultOk {
+		return nil, fmt.Errorf("response status: %v", resp.Status.ErrMsg)
+	}
+
+	decompressedData, err := decompressBatchFindValues(resp.Response)
+	if err != nil {
+		return nil, fmt.Errorf("decompression error: %v", err)
+	}
+
+	return decompressedData, nil
+}
+
+func (s *DHT) iterateBatchGetValues(ctx context.Context, nodes map[string]*Node, keys []string, hexKeys []string, fetchMap map[string][]int, result map[string][]byte, req int) (int, map[string]*NodeList, error) {
+	semaphore := make(chan struct{}, 6) // Limit concurrency to 6
+	closestContacts := make(map[string]*NodeList)
+	var wg sync.WaitGroup
+	var resMap sync.Map
+	contactsMap := make(map[string]map[string][]*Node)
+	var firstErr error
+	var mu sync.Mutex // To protect the firstErr
+	foundCount := int32(0)
+
+	ctx, cancel := context.WithCancel(ctx) // Create a cancellable context
+	defer cancel()
+	for nodeID, node := range nodes {
+		contactsMap[nodeID] = make(map[string][]*Node)
+		wg.Add(1)
+		go func(node *Node, nodeID string) {
+			defer wg.Done()
+
+			select {
+			case <-ctx.Done():
+				return
+			case semaphore <- struct{}{}:
+				defer func() { <-semaphore }()
+			}
+
+			indices := fetchMap[nodeID]
+			requestKeys := make(map[string]KeyValWithClosest)
+			for _, idx := range indices {
+				if idx < len(hexKeys) && len(result[keys[idx]]) == 0 { // add keys not found in the result map
+					_, loaded := resMap.LoadOrStore(hexKeys[idx], nil) // also check if key is already there in resMap
+					if !loaded {
+						requestKeys[hexKeys[idx]] = KeyValWithClosest{}
+					}
+				}
+			}
+
+			decompressedData, err := s.doBatchFindValuesCall(ctx, node, requestKeys)
+			if err != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				mu.Unlock()
+				return
+			}
+
+			for k, v := range decompressedData {
+				if len(v.Value) > 0 {
+					_, loaded := resMap.LoadOrStore(k, v.Value)
+					if !loaded {
+						atomic.AddInt32(&foundCount, 1)
+						if atomic.LoadInt32(&foundCount) >= int32(req) {
+							cancel() // Cancel context to stop other goroutines
+							return
+						}
+					}
+				} else {
+					contactsMap[nodeID][k] = v.Closest
+				}
+			}
+		}(node, nodeID)
+	}
+
+	wg.Wait()
+
+	// Transfer data from resMap to result
+	resMap.Range(func(key, value interface{}) bool {
+		hexKey := key.(string)
+		valBytes := value.([]byte)
+
+		k, err := hex.DecodeString(hexKey)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).WithField("key", hexKey).Error("failed to decode hex key in resMap.Range")
+			return true
+		}
+
+		result[base58.Encode(k)] = valBytes
+
+		return true
+	})
+
+	if firstErr != nil {
+		log.WithContext(ctx).WithError(firstErr).WithField("found-count", atomic.LoadInt32(&foundCount)).Error("encountered error in iterate batch get values")
+	}
+
+	if int(foundCount) < req {
+		for _, closestNodes := range contactsMap {
+			for key, nodes := range closestNodes {
+				if _, ok := closestContacts[key]; !ok {
+					k, err := hex.DecodeString(key)
+					if err != nil {
+						log.WithContext(ctx).WithError(err).WithField("key", key).Error("failed to decode hex key in closestNodes.Range")
+						return 0, nil, err
+					}
+
+					closestContacts[key] = &NodeList{Nodes: nodes, Comparator: k}
+				} else {
+					closestContacts[key].AddNodes(nodes)
+				}
+			}
+		}
+
+		for key, nodes := range closestContacts {
+			nodes.Sort()
+			nodes.TopN(Alpha)
+			closestContacts[key] = nodes
+		}
+	}
+
+	return int(foundCount), closestContacts, firstErr
+}
+
 // Iterate does an iterative search through the kademlia network
 // - IterativeStore - used to store new information in the kademlia network
 // - IterativeFindNode - used to bootstrap the network

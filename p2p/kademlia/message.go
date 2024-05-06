@@ -28,6 +28,8 @@ const (
 	BatchStoreData
 	// BatchFindNode iterative find node in kademlia network
 	BatchFindNode
+	// BatchGetValues finds values in kademlia network
+	BatchGetValues
 )
 
 func init() {
@@ -45,6 +47,8 @@ func init() {
 	gob.Register(&BatchStoreDataRequest{})
 	gob.Register(&BatchFindNodeRequest{})
 	gob.Register(&BatchFindNodeResponse{})
+	gob.Register(&BatchGetValuesRequest{})
+	gob.Register(&BatchGetValuesResponse{})
 }
 
 type MessageWithError struct {
@@ -134,6 +138,23 @@ type BatchFindValuesResponse struct {
 	Status   ResponseStatus
 	Response []byte
 	Done     bool
+}
+
+type KeyValWithClosest struct {
+	Value   []byte
+	Closest []*Node
+}
+
+// BatchGetValuesRequest defines the request data for find value
+type BatchGetValuesRequest struct {
+	//Data map[string]KeyValWithClosest (compressed) // keys are hex encoded
+	Data []byte
+}
+
+type BatchGetValuesResponse struct {
+	//Data map[string]KeyValWithClosest // keys are hex encoded
+	Data   []byte
+	Status ResponseStatus
 }
 
 // encode the message
