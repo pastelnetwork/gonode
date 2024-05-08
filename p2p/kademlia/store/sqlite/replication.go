@@ -460,10 +460,6 @@ func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byt
 		keyToIndex[keys[i]] = i
 	}
 
-	log.WithContext(ctx).WithField("len(keys)", len(args)).WithField("len(placeholders)", len(placeholders)).
-		WithField("args[len(args)]-1", fmt.Sprint(args[len(args)-1])).WithField("args[0", fmt.Sprint(args[0])).
-		Debug("RetrieveBatchValues db operation")
-
 	query := fmt.Sprintf(`SELECT key, data FROM data WHERE key IN (%s)`, strings.Join(placeholders, ","))
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

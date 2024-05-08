@@ -147,13 +147,13 @@ type KeyValWithClosest struct {
 
 // BatchGetValuesRequest defines the request data for find value
 type BatchGetValuesRequest struct {
-	//Data map[string]KeyValWithClosest (compressed) // keys are hex encoded
-	Data []byte
+	Data map[string]KeyValWithClosest //(compressed) // keys are hex encoded
+	//Data []byte
 }
 
 type BatchGetValuesResponse struct {
-	//Data map[string]KeyValWithClosest // keys are hex encoded
-	Data   []byte
+	Data map[string]KeyValWithClosest // keys are hex encoded
+	//Data   []byte
 	Status ResponseStatus
 }
 

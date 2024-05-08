@@ -97,31 +97,3 @@ func decompressSymbols(data []byte) (values [][]byte, err error) {
 
 	return values, nil
 }
-
-func decompressBatchFindValues(data []byte) (map[string]KeyValWithClosest, error) {
-	decompressed, err := utils.Decompress(data)
-	if err != nil {
-		return nil, fmt.Errorf("decompression error: %w", err)
-	}
-
-	var keys map[string]KeyValWithClosest
-	if err := msgpack.Unmarshal(decompressed, &keys); err != nil {
-		return nil, fmt.Errorf("decode error: %w", err)
-	}
-
-	return keys, nil
-}
-
-func compressBatchFindValues(data map[string]KeyValWithClosest) ([]byte, error) {
-	buf, err := msgpack.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("msgpack encode error: %w", err)
-	}
-
-	compressed, err := utils.Compress(buf, 2)
-	if err != nil {
-		return nil, fmt.Errorf("compression error: %w", err)
-	}
-
-	return compressed, nil
-}

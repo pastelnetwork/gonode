@@ -645,20 +645,13 @@ func (s *Network) handleGetValuesRequest(ctx context.Context, message *Message, 
 		return s.generateResponseMessage(BatchGetValues, message.Sender, ResultFailed, err.Error())
 	}
 
-	log.P2P().WithContext(ctx).Debugf("handle batch get values: %v", message.String())
+	log.WithContext(ctx).Infof("batch get values request received from %s", message.Sender.String())
 
 	// add the sender to queries hash table
 	s.dht.addNode(ctx, message.Sender)
-
-	req, err := decompressBatchFindValues(request.Data)
-	if err != nil {
-		err = errors.Errorf("batchStore: decompress symbols: %w", err)
-		return s.generateResponseMessage(BatchGetValues, message.Sender, ResultFailed, err.Error())
-	}
-
-	keys := make([]string, len(req))
+	keys := make([]string, len(request.Data))
 	i := 0
-	for key := range req {
+	for key := range request.Data {
 		keys[i] = key
 		i++
 	}
@@ -667,9 +660,9 @@ func (s *Network) handleGetValuesRequest(ctx context.Context, message *Message, 
 	if err != nil {
 		err = errors.Errorf("batch find values: %w", err)
 		return s.generateResponseMessage(BatchGetValues, message.Sender, ResultFailed, err.Error())
-	} else if count == 0 {
-		return s.generateResponseMessage(BatchGetValues, message.Sender, ResultFailed, "no values found")
 	}
+
+	log.WithContext(ctx).WithField("requested-keys", len(keys)).WithField("found", count).WithField("sender", message.Sender.String()).Info("batch get values request processed")
 
 	for i, key := range keys {
 		val := KeyValWithClosest{
@@ -686,17 +679,11 @@ func (s *Network) handleGetValuesRequest(ctx context.Context, message *Message, 
 			val.Closest = nodes.Nodes
 		}
 
-		req[key] = val
-	}
-
-	data, err := compressBatchFindValues(req)
-	if err != nil {
-		err = errors.Errorf("batch find vals: compress data: %w", err)
-		return s.generateResponseMessage(BatchGetValues, message.Sender, ResultFailed, err.Error())
+		request.Data[key] = val
 	}
 
 	response := &BatchGetValuesResponse{
-		Data: data,
+		Data: request.Data,
 		Status: ResponseStatus{
 			Result: ResultOk,
 		},
