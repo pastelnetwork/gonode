@@ -35,6 +35,8 @@ var (
 	delKeysCountThreshold                = 10
 	lowSpaceThreshold                    = 50 // GB
 	batchStoreSize                       = 2500
+	storeSameSymbolsBatchConcurrency     = 1
+	storeSymbolsBatchConcurrency         = 2.0
 )
 
 const maxIterations = 5
@@ -569,10 +571,10 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 	}
 
 	// We don't have enough values locally, so we need to fetch from the network
-	batchSize := 2500
+	batchSize := batchStoreSize
 	var networkFound int32
 	totalBatches := int(math.Ceil(float64(required) / float64(batchSize)))
-	parallelBatches := int(math.Min(float64(totalBatches), 2.0))
+	parallelBatches := int(math.Min(float64(totalBatches), storeSymbolsBatchConcurrency))
 
 	semaphore := make(chan struct{}, parallelBatches)
 	var wg sync.WaitGroup
@@ -664,7 +666,7 @@ func (s *DHT) doBatchGetValuesCall(ctx context.Context, node *Node, requestKeys 
 
 func (s *DHT) iterateBatchGetValues(ctx context.Context, nodes map[string]*Node, keys []string, hexKeys []string, fetchMap map[string][]int,
 	resMap *sync.Map, req, alreadyFound int32) (int, map[string]*NodeList, error) {
-	semaphore := make(chan struct{}, 1) // Limit concurrency to 1
+	semaphore := make(chan struct{}, storeSameSymbolsBatchConcurrency) // Limit concurrency to 1
 	closestContacts := make(map[string]*NodeList)
 	var wg sync.WaitGroup
 	contactsMap := make(map[string]map[string][]*Node)
