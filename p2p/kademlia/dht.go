@@ -525,7 +525,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 		lenOfKeys = 2000
 	}
 
-	responses := s.batchFindNode(ctx, hashes[:lenOfKeys], knownNodes)
+	responses, _ := s.batchFindNode(ctx, hashes[:lenOfKeys], knownNodes, make(map[string]bool))
 	for response := range responses {
 		if response.Error != nil {
 			log.WithContext(ctx).WithError(response.Error).Error("batch find node failed on a node")
@@ -557,9 +557,6 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 
 	// remove self from the map
 	delete(knownNodes, string(self.ID))
-
-	// Check if we have enough values locally
-	log.WithContext(ctx).Info("skipping local fetch")
 
 	foundLocalCount, err = s.fetchAndAddLocalKeys(ctx, hexKeys, &resMap, required)
 	if err != nil {
@@ -667,7 +664,7 @@ func (s *DHT) doBatchGetValuesCall(ctx context.Context, node *Node, requestKeys 
 
 func (s *DHT) iterateBatchGetValues(ctx context.Context, nodes map[string]*Node, keys []string, hexKeys []string, fetchMap map[string][]int,
 	resMap *sync.Map, req, alreadyFound int32) (int, map[string]*NodeList, error) {
-	semaphore := make(chan struct{}, 1) // Limit concurrency to 2
+	semaphore := make(chan struct{}, 1) // Limit concurrency to 1
 	closestContacts := make(map[string]*NodeList)
 	var wg sync.WaitGroup
 	contactsMap := make(map[string]map[string][]*Node)
@@ -1230,6 +1227,7 @@ func (s *DHT) addKnownNodes(nodes []*Node, knownNodes map[string]*Node) {
 func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) error {
 	globalClosestContacts := make(map[string]*NodeList) // This will store the global top 6 nodes for each symbol's hash
 	knownNodes := make(map[string]*Node)                // This will store the nodes we've already contacted
+	contacted := make(map[string]bool)
 	hashes := make([][]byte, len(values))
 
 	for i := 0; i < len(values); i++ {
@@ -1241,47 +1239,73 @@ func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) e
 		s.addKnownNodes(top6.Nodes, knownNodes)
 	}
 
-	localClosestNodes := make(map[string]*NodeList)
-	responses := s.batchFindNode(ctx, hashes, knownNodes)
-	for response := range responses {
-		if response.Error != nil {
-			log.WithContext(ctx).WithError(response.Error).Error("batch find node failed on a node")
+	var changed bool
+	var i int
+	for {
+		i++
+		changed = false
+		localClosestNodes := make(map[string]*NodeList)
+		responses, atleastOneContacted := s.batchFindNode(ctx, hashes, knownNodes, contacted)
+
+		if !atleastOneContacted {
+			break
 		}
 
-		if response.Message == nil {
-			continue
-		}
+		for response := range responses {
+			if response.Error != nil {
+				log.WithContext(ctx).WithError(response.Error).Error("batch find node failed on a node")
+			}
 
-		v, ok := response.Message.Data.(*BatchFindNodeResponse)
-		if ok && v.Status.Result == ResultOk {
-			for key, nodesList := range v.ClosestNodes {
-				if nodesList != nil {
-					nl, exists := localClosestNodes[key]
-					if exists {
-						nl.AddNodes(nodesList)
-						localClosestNodes[key] = nl
-					} else {
-						localClosestNodes[key] = &NodeList{Nodes: nodesList, Comparator: base58.Decode(key)}
+			if response.Message == nil {
+				continue
+			}
+
+			v, ok := response.Message.Data.(*BatchFindNodeResponse)
+			if ok && v.Status.Result == ResultOk {
+				for key, nodesList := range v.ClosestNodes {
+					if nodesList != nil {
+						nl, exists := localClosestNodes[key]
+						if exists {
+							nl.AddNodes(nodesList)
+							localClosestNodes[key] = nl
+						} else {
+							localClosestNodes[key] = &NodeList{Nodes: nodesList, Comparator: base58.Decode(key)}
+						}
+
+						s.addKnownNodes(nodesList, knownNodes)
 					}
-
-					s.addKnownNodes(nodesList, knownNodes)
 				}
 			}
 		}
-	}
-
-	for key, nodesList := range localClosestNodes {
-		if nodesList == nil {
-			continue
-		}
-
-		nodesList.Comparator = base58.Decode(key)
-		nodesList.Sort()
-		nodesList.TopN(Alpha)
 
 		// we now need to check if the nodes in the globalClosestContacts Map are still in the top 6
 		// if yes, we can store the data to them
 		// if not, we need to send calls to the newly found nodes to inquire about the top 6 nodes
+		for key, nodesList := range localClosestNodes {
+			if nodesList == nil {
+				continue
+			}
+
+			nodesList.Comparator = base58.Decode(key)
+			nodesList.Sort()
+			nodesList.TopN(Alpha)
+			s.addKnownNodes(nodesList.Nodes, knownNodes)
+
+			if !haveAllNodes(nodesList.Nodes, globalClosestContacts[key].Nodes) {
+				log.WithContext(ctx).WithField("key", key).WithField("have", nodesList.String()).WithField("got", globalClosestContacts[key].String()).Info("global closest contacts list changed!")
+				changed = true
+			}
+
+			nodesList.AddNodes(globalClosestContacts[key].Nodes)
+			nodesList.Sort()
+			nodesList.TopN(Alpha)
+			globalClosestContacts[key] = nodesList
+		}
+
+		if !changed {
+			log.WithContext(ctx).WithField("iter", i).Info("global closest contacts list did not change, we can now store the data")
+			break
+		}
 	}
 
 	// assume at this point, we have True\Golabl top 6 nodes for each symbol's hash stored in globalClosestContacts Map
@@ -1356,10 +1380,13 @@ func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[
 			default:
 				keysToStore := storageMap[key]
 				toStore := make([][]byte, len(keysToStore))
+				totalBytes := 0
 				for i, idx := range keysToStore {
 					toStore[i] = values[idx]
+					totalBytes += len(values[idx])
 				}
 
+				log.WithContext(ctx).WithField("keys", len(toStore)).WithField("size-before-compress", utils.BytesIntToMB(totalBytes)).Info("batch store to node")
 				payload, err := compressSymbols(toStore)
 				if err != nil {
 					log.P2P().WithContext(ctx).WithError(err).Error("compress symbols failed")
@@ -1389,12 +1416,18 @@ func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[
 	return responses
 }
 
-func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[string]*Node) chan *MessageWithError {
+func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[string]*Node, contacted map[string]bool) (chan *MessageWithError, bool) {
 	responses := make(chan *MessageWithError, len(nodes))
-
+	atleastOneContacted := false
 	var wg sync.WaitGroup
 
 	for _, node := range nodes {
+		if _, ok := contacted[string(node.ID)]; ok {
+			continue
+		}
+
+		contacted[string(node.ID)] = true
+		atleastOneContacted = true
 		wg.Add(1)
 		go func(receiver *Node) {
 			defer wg.Done()
@@ -1420,5 +1453,5 @@ func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[str
 	wg.Wait()
 	close(responses)
 
-	return responses
+	return responses, atleastOneContacted
 }
