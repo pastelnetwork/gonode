@@ -65,7 +65,7 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	}
 
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("DialContext")
+		log.WithContext(ctx).WithError(err).Error("DialContext err")
 		return nil, errors.Errorf("dial address %s: %w", address, err)
 	}
 

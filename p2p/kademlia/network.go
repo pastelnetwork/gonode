@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net"
@@ -419,6 +420,14 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 				return
 			}
 			response = encoded
+		case BatchGetValues:
+			// handle the request for finding value
+			encoded, err := s.handleGetValuesRequest(ctx, request, reqID)
+			if err != nil {
+				log.WithContext(ctx).WithField("p2p-req-id", reqID).WithError(err).Error("handle batch get values request failed")
+				return
+			}
+			response = encoded
 		default:
 			log.P2P().WithContext(ctx).Errorf("invalid message type: %v", request.MessageType)
 			return
@@ -620,6 +629,68 @@ func (s *Network) handleBatchFindValues(ctx context.Context, message *Message, r
 	}
 
 	resMsg := s.dht.newMessage(BatchFindValues, message.Sender, response)
+	return s.encodeMesage(resMsg)
+}
+
+func (s *Network) handleGetValuesRequest(ctx context.Context, message *Message, reqID string) (res []byte, err error) {
+	defer func() {
+		if response, err := s.handlePanic(ctx, message.Sender, BatchGetValues); response != nil || err != nil {
+			res = response
+		}
+	}()
+
+	request, ok := message.Data.(*BatchGetValuesRequest)
+	if !ok {
+		err := errors.New("invalid BatchGetValuesRequest")
+		return s.generateResponseMessage(BatchGetValues, message.Sender, ResultFailed, err.Error())
+	}
+
+	log.WithContext(ctx).Infof("batch get values request received from %s", message.Sender.String())
+
+	// add the sender to queries hash table
+	s.dht.addNode(ctx, message.Sender)
+	keys := make([]string, len(request.Data))
+	i := 0
+	for key := range request.Data {
+		keys[i] = key
+		i++
+	}
+
+	values, count, err := s.dht.store.RetrieveBatchValues(ctx, keys)
+	if err != nil {
+		err = errors.Errorf("batch find values: %w", err)
+		return s.generateResponseMessage(BatchGetValues, message.Sender, ResultFailed, err.Error())
+	}
+
+	log.WithContext(ctx).WithField("requested-keys", len(keys)).WithField("found", count).WithField("sender", message.Sender.String()).Info("batch get values request processed")
+
+	for i, key := range keys {
+		val := KeyValWithClosest{
+			Value: values[i],
+		}
+		if val.Value == nil {
+			decodedKey, err := hex.DecodeString(keys[i])
+			if err != nil {
+				err = errors.Errorf("batch find vals: decode key: %w - key %s", err, keys[i])
+				return s.generateResponseMessage(BatchGetValues, message.Sender, ResultFailed, err.Error())
+			}
+
+			nodes, _ := s.dht.ht.closestContacts(Alpha, decodedKey, []*Node{message.Sender})
+			val.Closest = nodes.Nodes
+		}
+
+		request.Data[key] = val
+	}
+
+	response := &BatchGetValuesResponse{
+		Data: request.Data,
+		Status: ResponseStatus{
+			Result: ResultOk,
+		},
+	}
+
+	// new a response message
+	resMsg := s.dht.newMessage(BatchGetValues, message.Sender, response)
 	return s.encodeMesage(resMsg)
 }
 
@@ -845,6 +916,8 @@ func (s *Network) generateResponseMessage(messageType int, receiver *Node, resul
 		response = &BatchFindValuesResponse{Status: responseStatus}
 	case Replicate:
 		response = &ReplicateDataResponse{Status: responseStatus}
+	case BatchGetValues:
+		response = &BatchGetValuesResponse{Status: responseStatus}
 	default:
 		return nil, fmt.Errorf("unsupported message type %d", messageType)
 	}

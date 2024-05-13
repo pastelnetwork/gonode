@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -15,9 +14,8 @@ import (
 )
 
 const (
-	maxGoroutines              = 2000
-	resultBufSize              = 1000 // or any other appropriate value
-	restoreFileSymbolBatchSize = 9
+	requiredSymbolPercent = 9
+	maxBatchSize          = 2500
 )
 
 func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rqService rqnode.RaptorQ, symbolIDs []string, rqOti []byte,
@@ -26,110 +24,103 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 	sort.Strings(symbolIDs) // Sort the keys alphabetically because we store the symbols in p2p in a sorted order
 
 	totalSymbols := len(symbolIDs)
-	requiredSymbols := (totalSymbols + (restoreFileSymbolBatchSize - 1)) / restoreFileSymbolBatchSize
+	requiredSymbols := totalSymbols * requiredSymbolPercent / 100
 
-	// Divide symbols into ten equal sets
-	symbolSets := make([][]string, restoreFileSymbolBatchSize)
-	partSize := totalSymbols / restoreFileSymbolBatchSize
-	for i := 0; i < restoreFileSymbolBatchSize; i++ {
-		start := i * partSize
-		end := start + partSize
-		if i == (restoreFileSymbolBatchSize - 1) {
-			end = totalSymbols
+	log.WithContext(ctx).WithField("total-symbols", totalSymbols).WithField("required-symbols", requiredSymbols).WithField("txid", txid).Info("Symbols to be retrieved")
+
+	/*
+		// Divide symbols into sets
+		symbolSets := make([][]string, restoreFileSymbolBatchSize)
+		partSize := totalSymbols / restoreFileSymbolBatchSize
+		for i := 0; i < restoreFileSymbolBatchSize; i++ {
+			start := i * partSize
+			end := start + partSize
+			if i == (restoreFileSymbolBatchSize - 1) {
+				end = totalSymbols
+			}
+			symbolSets[i] = symbolIDs[start:end]
 		}
-		symbolSets[i] = symbolIDs[start:end]
-	}
 
-	// Create a buffered channel for tasks
-	taskCh := make(chan string, totalSymbols)
+		// Create a map to store symbols
+		symbols := make(map[string][]byte)
 
-	// Create a buffered channel for results
-	resultCh := make(chan struct {
-		Symbol []byte
-		ID     string
-		Error  error
-	}, resultBufSize)
+		// Iterate through symbol sets
+		for _, symbolSet := range symbolSets {
+			// If the symbol set has more than 2000 keys, split it into batches of 2000 keys
+			if len(symbolSet) > maxBatchSize {
+				symbolSetBatches := splitSymbolSet(symbolSet, maxBatchSize)
 
-	// Create a semaphore with a maximum of 2000 tokens
-	sem := make(chan struct{}, maxGoroutines)
+				log.WithContext(ctx).WithField("len-batches", len(symbolSetBatches)).Info("Symbol set split into batches")
+				for i, batch := range symbolSetBatches {
+					log.WithContext(ctx).WithField("batch", i).WithField("len-batch", len(batch)).Info("Batch")
+				}
 
-	// Create a worker pool
-	for i := 0; i < maxGoroutines; i++ {
-		go func() {
-			for id := range taskCh {
-				// Acquire a token
-				sem <- struct{}{}
+				var wg sync.WaitGroup
+				batchResults := make(chan map[string][]byte, len(symbolSetBatches))
 
-				var symbol []byte
-				symbol, err := task.P2PClient.Retrieve(ctx, id)
+				// Launch a goroutine for each batch to retrieve symbols concurrently
+				for _, batch := range symbolSetBatches {
+					wg.Add(1)
+					go func(batch []string) {
+						defer wg.Done()
+						retrievedSymbols, err := task.P2PClient.BatchRetrieve(ctx, batch, len(batch))
+						if err != nil {
+							log.WithContext(ctx).WithError(err).Error("Failed to retrieve symbols")
+							return
+						}
+						batchResults <- retrievedSymbols
+					}(batch)
+				}
+
+				// Wait for all goroutines to finish and collect results
+				go func() {
+					wg.Wait()
+					close(batchResults)
+				}()
+
+				// Merge symbols from all batches into the symbols map
+				for batchResult := range batchResults {
+					for key, value := range batchResult {
+						symbols[key] = value
+					}
+					// Check if enough symbols have been retrieved
+					if len(symbols) >= requiredSymbols {
+						break
+					}
+				}
+				// Check if enough symbols have been retrieved
+				if len(symbols) >= requiredSymbols {
+					break
+				}
+			} else {
+				// Retrieve symbols for the current set
+				retrievedSymbols, err := task.P2PClient.BatchRetrieve(ctx, symbolSet, len(symbolSet))
 				if err != nil {
-					resultCh <- struct {
-						Symbol []byte
-						ID     string
-						Error  error
-					}{nil, id, err}
-					<-sem
-					continue
-				}
-				if len(symbol) == 0 {
-					resultCh <- struct {
-						Symbol []byte
-						ID     string
-						Error  error
-					}{nil, id, errors.New("symbol received from symbolid is empty")}
-					<-sem
-					continue
+					log.WithContext(ctx).WithError(err).Error("Failed to retrieve symbols")
+					return nil, fmt.Errorf("failed to retrieve symbols: %w", err)
 				}
 
-				h := sha3.Sum256(symbol)
-				storedID := base58.Encode(h[:])
-				if storedID != id {
-					resultCh <- struct {
-						Symbol []byte
-						ID     string
-						Error  error
-					}{nil, id, errors.New("Symbol ID mismatched")}
-					<-sem
-					continue
+				// Merge retrieved symbols into the symbols map
+				for key, value := range retrievedSymbols {
+					if len(value) > 0 {
+						symbols[key] = value
+					}
 				}
-				resultCh <- struct {
-					Symbol []byte
-					ID     string
-					Error  error
-				}{symbol, id, nil}
-				<-sem
+
+				// Check if enough symbols have been retrieved
+				if len(symbols) >= requiredSymbols {
+					break
+				}
 			}
-		}()
+		}*/
+
+	symbols, err := task.P2PClient.BatchRetrieve(ctx, symbolIDs, requiredSymbols)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to retrieve symbols")
+		return nil, fmt.Errorf("failed to retrieve symbols: %w", err)
 	}
 
-	// Create a map to store symbols
-	symbols := make(map[string][]byte)
-
-	for _, symbolSet := range symbolSets {
-		// Send tasks
-		for _, id := range symbolSet {
-			taskCh <- id
-		}
-
-		// Collect results
-		for range symbolSet {
-			result := <-resultCh
-			if result.Error != nil {
-				log.WithContext(ctx).WithError(result.Error).WithField("SymbolID", result.ID).Error("Could not retrieve symbol")
-				task.UpdateStatus(common.StatusSymbolNotFound)
-				continue
-			}
-			symbols[result.ID] = result.Symbol
-		}
-
-		// Check if enough symbols have been retrieved
-		if len(symbols) >= requiredSymbols {
-			break
-		}
-	}
-
-	close(taskCh)
-
+	log.WithContext(ctx).WithField("len-symbols-found", len(symbols)).WithField("req-symbols", requiredSymbols).WithField("txid", txid).Info("Symbols retrieved")
 	// Restore Nft
 	var decodeInfo *rqnode.Decode
 	encodeInfo := rqnode.Encode{
@@ -161,6 +152,19 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 	return decodeInfo.File, nil
 }
 
+// Helper function to split a symbol set into batches of maxBatchSize
+func splitSymbolSet(symbolSet []string, batchSize int) [][]string {
+	var batches [][]string
+	for i := 0; i < len(symbolSet); i += batchSize {
+		end := i + batchSize
+		if end > len(symbolSet) {
+			end = len(symbolSet)
+		}
+		batches = append(batches, symbolSet[i:end])
+	}
+
+	return batches
+}
 func (task *NftDownloadingTask) getSymbolIDsFromMetadataFile(ctx context.Context, id string, txid string) (symbolIDs []string, err error) {
 	var rqIDsData []byte
 	log.WithContext(ctx).WithField("id", id).WithField("txid", txid).Debug("Retrieving symbol IDs from metadata file")
