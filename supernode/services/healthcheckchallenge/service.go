@@ -38,7 +38,7 @@ type HCService struct {
 	numberOfChallengeReplicas         int
 	numberOfVerifyingNodes            int
 	historyDB                         queries.LocalStoreInterface
-	scoreStore                        scorestore.ScoreStorageInterface
+	ScoreStore                        scorestore.ScoreStorageInterface
 
 	currentBlockCount int32
 	// currently unimplemented, default always used instead.
@@ -291,7 +291,7 @@ func NewService(config *Config, fileStorage storage.FileStorageInterface, pastel
 		challengeStatusObserver:   challengeStatusObserver,
 		localKeys:                 sync.Map{},
 		historyDB:                 historyDB,
-		scoreStore:                scoreDB,
+		ScoreStore:                scoreDB,
 		eventRetryMap:             make(map[string]int),
 	}
 }

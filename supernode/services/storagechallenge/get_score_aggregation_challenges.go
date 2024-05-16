@@ -69,7 +69,7 @@ func (task *SCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 		}
 	}
 
-	if err := task.scoreStore.UpsertScoreLastAggregatedAt(scorestore.StorageChallengeScoreAggregationType); err != nil {
+	if err := task.ScoreStore.UpsertScoreLastAggregatedAt(scorestore.StorageChallengeScoreAggregationType); err != nil {
 		logger.WithError(err).Error("error updating aggregated til for storage-challenge score aggregation tracker")
 		return errors.Errorf("error updating aggregated til")
 	}
@@ -78,7 +78,7 @@ func (task *SCTask) GetScoreAggregationChallenges(ctx context.Context) error {
 }
 
 func (task *SCTask) getStorageChallengeTracker(ctx context.Context) (scorestore.ScoreAggregationTracker, error) {
-	tracker, err := task.scoreStore.GetScoreLastAggregatedAt(scorestore.StorageChallengeScoreAggregationType)
+	tracker, err := task.ScoreStore.GetScoreLastAggregatedAt(scorestore.StorageChallengeScoreAggregationType)
 	if err != nil {
 		return scorestore.ScoreAggregationTracker{}, err
 	}

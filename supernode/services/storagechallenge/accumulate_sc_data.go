@@ -139,7 +139,7 @@ func getCorrectHash(hashMap map[string]int) (correctHash string) {
 }
 
 func (task *SCTask) processChallengerEvaluation(ctx context.Context, challengerEvaluations int, challengerID string, successThreshold int, infos types.PingInfos) error {
-	aggregatedScoreData, err := task.scoreStore.GetAccumulativeSCData(challengerID)
+	aggregatedScoreData, err := task.ScoreStore.GetAccumulativeSCData(challengerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, challengerID)
@@ -158,7 +158,7 @@ func (task *SCTask) processChallengerEvaluation(ctx context.Context, challengerE
 		aggregatedScoreData.CorrectChallengerEvaluations = aggregatedScoreData.CorrectChallengerEvaluations + 1
 	}
 
-	if err := task.scoreStore.UpsertAccumulativeSCData(aggregatedScoreData); err != nil {
+	if err := task.ScoreStore.UpsertAccumulativeSCData(aggregatedScoreData); err != nil {
 		return err
 	}
 
@@ -166,7 +166,7 @@ func (task *SCTask) processChallengerEvaluation(ctx context.Context, challengerE
 }
 
 func (task *SCTask) processRecipientEvaluation(ctx context.Context, recipientEvaluations int, recipientID string, successThreshold int, infos types.PingInfos) error {
-	aggregatedScoreData, err := task.scoreStore.GetAccumulativeSCData(recipientID)
+	aggregatedScoreData, err := task.ScoreStore.GetAccumulativeSCData(recipientID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, recipientID)
@@ -186,7 +186,7 @@ func (task *SCTask) processRecipientEvaluation(ctx context.Context, recipientEva
 
 	aggregatedScoreData.TotalChallengesAsRecipients = aggregatedScoreData.TotalChallengesAsRecipients + 1
 
-	if err := task.scoreStore.UpsertAccumulativeSCData(aggregatedScoreData); err != nil {
+	if err := task.ScoreStore.UpsertAccumulativeSCData(aggregatedScoreData); err != nil {
 		return err
 	}
 
@@ -194,7 +194,7 @@ func (task *SCTask) processRecipientEvaluation(ctx context.Context, recipientEva
 }
 
 func (task *SCTask) processObserverEvaluation(ctx context.Context, commonHash string, observerTrueHash, observerID string, infos types.PingInfos) error {
-	aggregatedScoreData, err := task.scoreStore.GetAccumulativeSCData(observerID)
+	aggregatedScoreData, err := task.ScoreStore.GetAccumulativeSCData(observerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			nodeID, nodeIP := getNodeInfo(infos, observerID)
@@ -213,7 +213,7 @@ func (task *SCTask) processObserverEvaluation(ctx context.Context, commonHash st
 		aggregatedScoreData.CorrectObserverEvaluations++
 	}
 
-	if err := task.scoreStore.UpsertAccumulativeSCData(aggregatedScoreData); err != nil {
+	if err := task.ScoreStore.UpsertAccumulativeSCData(aggregatedScoreData); err != nil {
 		return err
 	}
 

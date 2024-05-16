@@ -23,7 +23,7 @@ import (
 //	Identifying the proper validators,
 //	Sending the response to all other supernodes
 //	Saving challenge state
-func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage types.Message) (*pb.StorageChallengeMessage, error) {
+func (task SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage types.Message) (*pb.StorageChallengeMessage, error) {
 	logger := log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").
 		WithField("sc_challenge_id", incomingChallengeMessage.ChallengeID)
 
@@ -159,7 +159,7 @@ func (task *SCTask) ProcessStorageChallenge(ctx context.Context, incomingChallen
 	return nil, nil
 }
 
-func (task *SCTask) validateProcessingStorageChallengeIncomingData(ctx context.Context, incomingChallengeMessage types.Message) error {
+func (task SCTask) validateProcessingStorageChallengeIncomingData(ctx context.Context, incomingChallengeMessage types.Message) error {
 	if incomingChallengeMessage.MessageType != types.ChallengeMessageType {
 		return fmt.Errorf("incorrect message type to processing storage challenge")
 	}
@@ -182,7 +182,7 @@ func (task *SCTask) validateProcessingStorageChallengeIncomingData(ctx context.C
 	return nil
 }
 
-func (task *SCTask) computeHashOfFileSlice(fileData []byte, challengeSliceStartIndex, challengeSliceEndIndex int) string {
+func (task SCTask) computeHashOfFileSlice(fileData []byte, challengeSliceStartIndex, challengeSliceEndIndex int) string {
 	if len(fileData) < challengeSliceStartIndex || len(fileData) < challengeSliceEndIndex {
 		return ""
 	}
@@ -194,7 +194,7 @@ func (task *SCTask) computeHashOfFileSlice(fileData []byte, challengeSliceStartI
 }
 
 // Send our verification message to (default 10) other supernodes that might host this file.
-func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMessage types.Message) error {
+func (task SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMessage types.Message) error {
 	nodesToConnect, err := task.GetNodesAddressesToConnect(ctx, challengeMessage)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("unable to find nodes to connect for send verify storage challenge")
@@ -259,7 +259,7 @@ func (task *SCTask) sendVerifyStorageChallenge(ctx context.Context, challengeMes
 	return nil
 }
 
-func (task *SCTask) isObserver(sliceOfObservers []string) bool {
+func (task SCTask) isObserver(sliceOfObservers []string) bool {
 	for _, ob := range sliceOfObservers {
 		if ob == task.nodeID {
 			return true

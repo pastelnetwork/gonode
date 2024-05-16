@@ -113,9 +113,8 @@ func TestTaskGenerateStorageChallenges(t *testing.T) {
 
 			task := SCTask{
 				SuperNodeTask: tt.fields.SuperNodeTask,
-				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, defaultChallengeStateLogging{}, nil, nil),
+				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, nil, nil),
 				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir, nil),
-				stateStorage:  defaultChallengeStateLogging{},
 			}
 
 			if err := task.GenerateStorageChallenges(context.Background()); (err != nil) != tt.wantErr {
@@ -234,9 +233,8 @@ func TestTaskProcessStorageChallenge(t *testing.T) {
 
 			task := SCTask{
 				SuperNodeTask: tt.fields.SuperNodeTask,
-				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, defaultChallengeStateLogging{}, nil, nil),
+				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, nil, nil),
 				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir, nil),
-				stateStorage:  defaultChallengeStateLogging{},
 			}
 
 			if resp, err := task.ProcessStorageChallenge(context.Background(), tt.args.incomingChallengeMessage); (err != nil) != tt.wantErr {
@@ -679,9 +677,8 @@ func TestVerifyStorageChallenge(t *testing.T) {
 
 			task := SCTask{
 				SuperNodeTask: tt.fields.SuperNodeTask,
-				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, defaultChallengeStateLogging{}, nil, nil),
+				SCService:     NewService(testConfig, fsMock, pMock.Client, clientMock, p2pClientMock, nil, nil),
 				storage:       common.NewStorageHandler(p2pClientMock, rqClientMock, testConfig.RaptorQServiceAddress, testConfig.RqFilesDir, nil),
-				stateStorage:  defaultChallengeStateLogging{},
 			}
 			task.config.IsTestConfig = true
 
