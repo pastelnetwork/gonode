@@ -843,13 +843,7 @@ func (s *Network) handleBatchStoreData(ctx context.Context, message *Message) (r
 	// add the sender to queries hash table
 	s.dht.addNode(ctx, message.Sender)
 
-	values, err := decompressSymbols(request.Data)
-	if err != nil {
-		err = errors.Errorf("batchStore: decompress symbols: %w", err)
-		return s.generateResponseMessage(BatchStoreData, message.Sender, ResultFailed, err.Error())
-	}
-
-	if err := s.dht.store.StoreBatch(ctx, values, 1, false); err != nil {
+	if err := s.dht.store.StoreBatch(ctx, request.Data, 1, false); err != nil {
 		err = errors.Errorf("batch store the data: %w", err)
 		return s.generateResponseMessage(BatchStoreData, message.Sender, ResultFailed, err.Error())
 	}

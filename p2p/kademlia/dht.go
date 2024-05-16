@@ -1389,16 +1389,8 @@ func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[
 				}
 
 				log.WithContext(ctx).WithField("keys", len(toStore)).WithField("size-before-compress", utils.BytesIntToMB(totalBytes)).Info("batch store to node")
-				payload, err := compressSymbols(toStore)
-				if err != nil {
-					log.P2P().WithContext(ctx).WithError(err).Error("compress symbols failed")
-					responses <- &MessageWithError{Error: err}
-					return
-				}
 
-				log.WithContext(ctx).WithField("keys", len(toStore)).WithField("data-size", utils.BytesIntToMB(len(payload))).Info("batch store to node payload size")
-
-				data := &BatchStoreDataRequest{Data: payload, Type: typ}
+				data := &BatchStoreDataRequest{Data: toStore, Type: typ}
 				request := s.newMessage(BatchStoreData, receiver, data)
 				response, err := s.network.Call(ctx, request, true)
 				if err != nil {

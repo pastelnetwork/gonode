@@ -24,7 +24,7 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 	sort.Strings(symbolIDs) // Sort the keys alphabetically because we store the symbols in p2p in a sorted order
 
 	totalSymbols := len(symbolIDs)
-	requiredSymbols := totalSymbols * requiredSymbolPercent / 100
+	requiredSymbols := (totalSymbols*requiredSymbolPercent + 99) / 100
 
 	log.WithContext(ctx).WithField("total-symbols", totalSymbols).WithField("required-symbols", requiredSymbols).WithField("txid", txid).Info("Symbols to be retrieved")
 

@@ -219,7 +219,7 @@ func decode(conn io.Reader) (*Message, error) {
 
 // BatchStoreDataRequest defines the request data for store data
 type BatchStoreDataRequest struct {
-	Data []byte
+	Data [][]byte
 	Type int
 }
 
