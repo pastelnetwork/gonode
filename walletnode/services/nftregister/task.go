@@ -878,9 +878,13 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 		if err != nil {
 			return fmt.Errorf("burn some coins: %w", err)
 		}
+		log.WithContext(ctx).WithField("burn_txid", burnTxid).Info("burn txn has been created")
 	} else {
+		log.WithContext(ctx).WithField("burn_txid", burnTxid).Info("burn txid has been provided in the request for NFT registration")
 		burnTxid = *task.Request.BurnTxID
 	}
+
+	task.StatusLog[common.FieldBurnTxnID] = burnTxid
 
 	log.WithContext(ctx).Info("validating burn transaction")
 	task.UpdateStatus(common.StatusValidateBurnTxn)
@@ -893,7 +897,6 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 	task.UpdateStatus(common.StatusBurnTxnValidated)
 	log.WithContext(ctx).Info("burn txn has been validated")
 
-	task.StatusLog[common.FieldBurnTxnID] = burnTxid
 	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)

@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
+	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -213,7 +215,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 					if txResult.Confirmations >= minConfirmation {
 						if verifyBurnAmt {
 							if err := h.verifyTxn(ctx, txResult, totalAmt, percent); err != nil {
-								log.WithContext(ctx).WithError(err).Error("txn verification failed")
+								log.WithContext(ctx).WithField("txid", txid).WithError(err).Error("txn verification failed")
 								ch <- err
 								return
 							}
@@ -256,9 +258,11 @@ func (h *RegTaskHelper) verifyTxn(ctx context.Context,
 	isTxnAmountOk := false
 	isTxnAddressOk := false
 
+	addrs := ""
 	reqBurnAmount := totalAmt * percent / 100
 	for _, vout := range txn.Vout {
 		if inRange(vout.Value, reqBurnAmount, 2.0) {
+			addrs = strings.Join(vout.ScriptPubKey.Addresses, ",")
 			isTxnAmountOk = true
 			for _, addr := range vout.ScriptPubKey.Addresses {
 				if addr == h.PastelHandler.GetBurnAddress() {
@@ -269,11 +273,13 @@ func (h *RegTaskHelper) verifyTxn(ctx context.Context,
 	}
 
 	if !isTxnAmountOk {
-		return fmt.Errorf("invalid txn amount: %v, required amount: %f", txn.Vout, reqBurnAmount)
+		data, _ := json.Marshal(txn)
+		return fmt.Errorf("invalid txn amount: %v, required amount: %f - rawTxnData: %s", txn.Vout, reqBurnAmount, string(data))
 	}
 
 	if !isTxnAddressOk {
-		return fmt.Errorf("invalid txn address %s", h.PastelHandler.GetBurnAddress())
+		data, _ := json.Marshal(txn)
+		return fmt.Errorf("invalid txn address - got address: %s  -- correct address: %s - rawTxnData: %s", addrs, h.PastelHandler.GetBurnAddress(), string(data))
 	}
 
 	return nil

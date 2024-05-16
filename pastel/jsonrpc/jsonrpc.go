@@ -19,7 +19,8 @@ import (
 
 const (
 	jsonrpcVersion = "2.0"
-	timeout        = 50 * time.Second
+	timeout        = 70 * time.Second
+	httpTimeout    = 60 * time.Second
 )
 
 // RPCClient sends JSON-RPC requests over HTTP to the provided JSON-RPC backend.
@@ -310,8 +311,10 @@ func NewClient(endpoint string) RPCClient {
 // opts: RPCClientOpts provide custom configuration
 func NewClientWithOpts(endpoint string, opts *RPCClientOpts) RPCClient {
 	rpcClient := &rpcClient{
-		endpoint:      endpoint,
-		httpClient:    &http.Client{},
+		endpoint: endpoint,
+		httpClient: &http.Client{
+			Timeout: httpTimeout,
+		},
 		customHeaders: make(map[string]string),
 	}
 

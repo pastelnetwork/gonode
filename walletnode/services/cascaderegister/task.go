@@ -358,10 +358,18 @@ func (task *CascadeRegistrationTask) uploadImage(ctx context.Context) error {
 
 		someNode := someNode
 		if someNode == nil {
-			log.WithContext(gctx).Debug("someNode is nil")
+			return errors.New("node is found to be nil")
 		}
 
 		image := task.Request.Image
+		if image == nil {
+			return errors.New("image is found to be nil")
+		}
+
+		if cascadeNode == nil {
+			return errors.New("cascadeNode is found to be nil")
+		}
+
 		group.Go(func() error {
 			err := cascadeNode.UploadAsset(gctx, image)
 			if err != nil {

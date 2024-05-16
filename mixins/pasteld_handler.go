@@ -2,6 +2,7 @@ package mixins
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -362,10 +363,12 @@ func (pt *PastelHandler) verifyTxn(ctx context.Context,
 	isTxnAmountOk := false
 	isTxnAddressOk := false
 
+	addrs := ""
 	reqBurnAmount := totalAmt * percent / 100
 	for _, vout := range txn.Vout {
 		if inRange(vout.Value, reqBurnAmount, 2.0) {
 			isTxnAmountOk = true
+			addrs = strings.Join(vout.ScriptPubKey.Addresses, ",")
 			for _, addr := range vout.ScriptPubKey.Addresses {
 				if addr == pt.GetBurnAddress() {
 					isTxnAddressOk = true
@@ -375,11 +378,13 @@ func (pt *PastelHandler) verifyTxn(ctx context.Context,
 	}
 
 	if !isTxnAmountOk {
-		return fmt.Errorf("invalid txn amount: %v, required amount: %f", txn.Vout, reqBurnAmount)
+		data, _ := json.Marshal(txn)
+		return fmt.Errorf("invalid txn amount: %v, required amount: %f - rawTxnData: %s", txn.Vout, reqBurnAmount, string(data))
 	}
 
 	if !isTxnAddressOk {
-		return fmt.Errorf("invalid txn address %s", pt.GetBurnAddress())
+		data, _ := json.Marshal(txn)
+		return fmt.Errorf("invalid txn address - got address: %s  -- correct address: %s - rawTxnData: %s", addrs, pt.GetBurnAddress(), string(data))
 	}
 
 	return nil
@@ -422,7 +427,7 @@ func (pt *PastelHandler) WaitConfirmation(ctx context.Context, txid string, minC
 					if txResult.Confirmations >= minConfirmation {
 						if verifyBurnAmt {
 							if err := pt.verifyTxn(ctx, txResult, totalAmt, percent); err != nil {
-								log.WithContext(ctx).WithError(err).Error("txn verification failed")
+								log.WithContext(ctx).WithField("txid", txid).WithError(err).Error("txn verification failed")
 								ch <- err
 								return
 							}
