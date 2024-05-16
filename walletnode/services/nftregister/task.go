@@ -694,6 +694,10 @@ func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, f
 	task.ImageHandler.ClearHashes()
 
 	for _, someNode := range task.MeshHandler.Nodes {
+		if someNode == nil {
+			return fmt.Errorf("node is nil - list of nodes: %s", task.MeshHandler.Nodes.String())
+		}
+
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
 			//TODO: use assert here
@@ -704,7 +708,7 @@ func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, f
 		group.Go(func() error {
 			hash1, hash2, hash3, err := nftRegNode.UploadImageWithThumbnail(gctx, file, thumbnail)
 			if err != nil {
-				log.WithContext(gctx).WithError(err).WithField("node", someNode).Error("upload image with thumbnail failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode.String()).Error("upload image with thumbnail failed")
 				return err
 			}
 			task.ImageHandler.AddNewHashes(hash1, hash2, hash3, someNode.PastelID())
