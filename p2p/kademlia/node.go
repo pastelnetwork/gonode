@@ -78,6 +78,23 @@ func (s *NodeList) DelNode(node *Node) {
 	}
 }
 
+func haveAllNodes(nodesA []*Node, nodesB []*Node) bool {
+	for _, nodeA := range nodesA {
+		found := false
+		for _, nodeB := range nodesB {
+			if bytes.Equal(nodeA.ID, nodeB.ID) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Exists return true if the node is already there
 func (s *NodeList) Exists(node *Node) bool {
 	s.Mux.RLock()

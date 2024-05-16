@@ -71,6 +71,7 @@ func decompressKeysStr(data []byte) ([]string, error) {
 	return keys, nil
 }
 
+/*
 func compressSymbols(values [][]byte) ([]byte, error) {
 	buf, err := msgpack.Marshal(values)
 	if err != nil {
@@ -97,3 +98,4 @@ func decompressSymbols(data []byte) (values [][]byte, err error) {
 
 	return values, nil
 }
+*/

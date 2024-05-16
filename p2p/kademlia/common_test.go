@@ -120,6 +120,7 @@ func TestCompressAndDecompressKeysStr(t *testing.T) {
 	}
 }
 
+/*
 func TestCompressAndDecompressSymbols(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -156,4 +157,4 @@ func TestCompressAndDecompressSymbols(t *testing.T) {
 			}
 		})
 	}
-}
+}*/
