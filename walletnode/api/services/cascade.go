@@ -68,14 +68,14 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 		log.WithError(err).Error("error storing File")
 		return nil, cascade.MakeInternalServerError(err)
 	}
-	log.Infof("file has been uploaded: %s", id)
+	log.WithField("file-id", id).WithField("filename", *p.Filename).Info("file has been uploaded")
 
 	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
 		log.WithError(err).Error("error calculating fee")
 		return nil, cascade.MakeInternalServerError(err)
 	}
-	log.Infof("estimated fee has been calculated: %f", fee)
+	log.WithField("file-id", id).WithField("filename", *p.Filename).Infof("estimated fee has been calculated: %f", fee)
 
 	res = &cascade.Asset{
 		FileID:                id,

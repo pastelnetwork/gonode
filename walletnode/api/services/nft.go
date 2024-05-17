@@ -89,7 +89,7 @@ func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 		return nil, nft.MakeInternalServerError(err)
 	}
 
-	log.Infof("file has been uploaded: %s", id)
+	log.WithField("file-id", id).WithField("filename", *p.Filename).Info("file has been uploaded")
 
 	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
@@ -97,7 +97,7 @@ func (service *NftAPIHandler) UploadImage(ctx context.Context, p *nft.UploadImag
 		return nil, nft.MakeInternalServerError(err)
 	}
 
-	log.Infof("estimated fee has been calculated: %f", fee)
+	log.WithField("file-id", id).WithField("filename", *p.Filename).Infof("estimated fee has been calculated: %f", fee)
 
 	res = &nft.ImageRes{
 		ImageID:      id,

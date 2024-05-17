@@ -2,6 +2,7 @@ package cascaderegister
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -350,6 +351,10 @@ func (task *CascadeRegistrationTask) uploadImage(ctx context.Context) error {
 	group, gctx := errgroup.WithContext(ctx)
 
 	for _, someNode := range task.MeshHandler.Nodes {
+		if someNode == nil {
+			return fmt.Errorf("node is nil - list of nodes: %s", task.MeshHandler.Nodes.String())
+		}
+
 		cascadeNode, ok := someNode.SuperNodeAPIInterface.(*CascadeRegistrationNode)
 		if !ok {
 			//TODO: use assert here
@@ -357,15 +362,20 @@ func (task *CascadeRegistrationTask) uploadImage(ctx context.Context) error {
 		}
 
 		someNode := someNode
-		if someNode == nil {
-			log.WithContext(gctx).Debug("someNode is nil")
-		}
 
 		image := task.Request.Image
+		if image == nil {
+			return errors.New("image is found to be nil")
+		}
+
+		if cascadeNode == nil {
+			return errors.New("cascadeNode is found to be nil")
+		}
+
 		group.Go(func() error {
 			err := cascadeNode.UploadAsset(gctx, image)
 			if err != nil {
-				log.WithContext(gctx).WithError(err).WithField("node", cascadeNode).Error("upload image with thumbnail failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode.String()).Error("upload image with thumbnail failed")
 				return err
 			}
 			return nil

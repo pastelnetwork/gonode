@@ -181,7 +181,7 @@ func (service *registerCascade) UploadAsset(ctx context.Context, asset *files.Fi
 
 	file, err := asset.Open()
 	if err != nil {
-		return errors.Errorf("open file %q: %w", file.Name(), err)
+		return errors.Errorf("error opening file %q: %w", asset.Name(), err)
 	}
 	defer file.Close()
 

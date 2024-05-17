@@ -2,6 +2,7 @@ package mixins
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -309,11 +310,12 @@ func (pt *PastelHandler) ValidateBurnTxID(ctx context.Context, burnTxnID string,
 
 	confirmationChn := pt.WaitConfirmation(ctx, burnTxnID,
 		burnTxnConfirmations, 15*time.Second, true, estimatedFee, burnTxnPercentage)
-	log.WithContext(ctx).Debug("waiting for confirmation")
+
 	select {
 	case retErr := <-confirmationChn:
 		if retErr != nil {
-			log.WithContext(ctx).WithError(retErr).Errorf("validate preburn transaction validation")
+			log.WithContext(ctx).WithError(retErr).WithField("txn-id", burnTxnID).WithField("fee", estimatedFee).
+				WithField("percentage", burnTxnPercentage).Error("validate preburn transaction validation")
 			err = errors.Errorf("validate preburn transaction validation :%w", retErr)
 			return err
 		}
@@ -359,27 +361,30 @@ func (pt *PastelHandler) verifyTxn(ctx context.Context,
 	}
 
 	log.WithContext(ctx).Debug("Verifying Burn Txn")
-	isTxnAmountOk := false
 	isTxnAddressOk := false
 
 	reqBurnAmount := totalAmt * percent / 100
 	for _, vout := range txn.Vout {
-		if inRange(vout.Value, reqBurnAmount, 2.0) {
-			isTxnAmountOk = true
-			for _, addr := range vout.ScriptPubKey.Addresses {
-				if addr == pt.GetBurnAddress() {
-					isTxnAddressOk = true
-				}
+		for _, addr := range vout.ScriptPubKey.Addresses {
+			if addr == pt.GetBurnAddress() {
+				isTxnAddressOk = true
 			}
+		}
+
+		if isTxnAddressOk {
+			if !inRange(vout.Value, reqBurnAmount, 2.0) {
+				data, _ := json.Marshal(txn)
+				return fmt.Errorf("invalid transaction amount: %v, required minimum amount: %f - raw transaction details: %s", vout.Value, reqBurnAmount, string(data))
+			}
+
+			break
 		}
 	}
 
-	if !isTxnAmountOk {
-		return fmt.Errorf("invalid txn amount: %v, required amount: %f", txn.Vout, reqBurnAmount)
-	}
-
 	if !isTxnAddressOk {
-		return fmt.Errorf("invalid txn address %s", pt.GetBurnAddress())
+		data, _ := json.Marshal(txn)
+		return fmt.Errorf("invalid txn address -- correct address: %s - rawTxnData: %s - total-amount: %f - req-burn-amount: %f",
+			pt.GetBurnAddress(), string(data), totalAmt, reqBurnAmount)
 	}
 
 	return nil
@@ -422,7 +427,7 @@ func (pt *PastelHandler) WaitConfirmation(ctx context.Context, txid string, minC
 					if txResult.Confirmations >= minConfirmation {
 						if verifyBurnAmt {
 							if err := pt.verifyTxn(ctx, txResult, totalAmt, percent); err != nil {
-								log.WithContext(ctx).WithError(err).Error("txn verification failed")
+								log.WithContext(ctx).WithField("txid", txid).WithError(err).Error("txn verification failed")
 								ch <- err
 								return
 							}

@@ -694,6 +694,10 @@ func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, f
 	task.ImageHandler.ClearHashes()
 
 	for _, someNode := range task.MeshHandler.Nodes {
+		if someNode == nil {
+			return fmt.Errorf("node is nil - list of nodes: %s", task.MeshHandler.Nodes.String())
+		}
+
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)
 		if !ok {
 			//TODO: use assert here
@@ -704,7 +708,7 @@ func (task *NftRegistrationTask) uploadImageWithThumbnail(ctx context.Context, f
 		group.Go(func() error {
 			hash1, hash2, hash3, err := nftRegNode.UploadImageWithThumbnail(gctx, file, thumbnail)
 			if err != nil {
-				log.WithContext(gctx).WithError(err).WithField("node", someNode).Error("upload image with thumbnail failed")
+				log.WithContext(gctx).WithError(err).WithField("node", someNode.String()).Error("upload image with thumbnail failed")
 				return err
 			}
 			task.ImageHandler.AddNewHashes(hash1, hash2, hash3, someNode.PastelID())
@@ -878,9 +882,13 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 		if err != nil {
 			return fmt.Errorf("burn some coins: %w", err)
 		}
+		log.WithContext(ctx).WithField("burn_txid", burnTxid).Info("burn txn has been created")
 	} else {
+		log.WithContext(ctx).WithField("burn_txid", burnTxid).Info("burn txid has been provided in the request for NFT registration")
 		burnTxid = *task.Request.BurnTxID
 	}
+
+	task.StatusLog[common.FieldBurnTxnID] = burnTxid
 
 	log.WithContext(ctx).Info("validating burn transaction")
 	task.UpdateStatus(common.StatusValidateBurnTxn)
@@ -893,7 +901,6 @@ func (task *NftRegistrationTask) preburnRegistrationFeeGetTicketTxid(ctx context
 	task.UpdateStatus(common.StatusBurnTxnValidated)
 	log.WithContext(ctx).Info("burn txn has been validated")
 
-	task.StatusLog[common.FieldBurnTxnID] = burnTxid
 	group, gctx := errgroup.WithContext(ctx)
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftRegNode, ok := someNode.SuperNodeAPIInterface.(*NftRegistrationNode)

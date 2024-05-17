@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	json "github.com/json-iterator/go"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -213,7 +214,7 @@ func (h *RegTaskHelper) WaitConfirmation(ctx context.Context, txid string, minCo
 					if txResult.Confirmations >= minConfirmation {
 						if verifyBurnAmt {
 							if err := h.verifyTxn(ctx, txResult, totalAmt, percent); err != nil {
-								log.WithContext(ctx).WithError(err).Error("txn verification failed")
+								log.WithContext(ctx).WithField("txid", txid).WithError(err).Error("txn verification failed")
 								ch <- err
 								return
 							}
@@ -252,28 +253,29 @@ func (h *RegTaskHelper) verifyTxn(ctx context.Context,
 		return val >= lower
 	}
 
-	log.WithContext(ctx).Debug("Verifying Burn Txn")
-	isTxnAmountOk := false
 	isTxnAddressOk := false
-
 	reqBurnAmount := totalAmt * percent / 100
 	for _, vout := range txn.Vout {
-		if inRange(vout.Value, reqBurnAmount, 2.0) {
-			isTxnAmountOk = true
-			for _, addr := range vout.ScriptPubKey.Addresses {
-				if addr == h.PastelHandler.GetBurnAddress() {
-					isTxnAddressOk = true
-				}
+		for _, addr := range vout.ScriptPubKey.Addresses {
+			if addr == h.PastelHandler.GetBurnAddress() {
+				isTxnAddressOk = true
 			}
+		}
+
+		if isTxnAddressOk {
+			if !inRange(vout.Value, reqBurnAmount, 2.0) {
+				data, _ := json.Marshal(txn)
+				return fmt.Errorf("invalid transaction amount: %v, required minimum amount : %f - raw transaction details: %s", vout.Value, reqBurnAmount, string(data))
+			}
+
+			break
 		}
 	}
 
-	if !isTxnAmountOk {
-		return fmt.Errorf("invalid txn amount: %v, required amount: %f", txn.Vout, reqBurnAmount)
-	}
-
 	if !isTxnAddressOk {
-		return fmt.Errorf("invalid txn address %s", h.PastelHandler.GetBurnAddress())
+		data, _ := json.Marshal(txn)
+		return fmt.Errorf("invalid txn address -- correct address: %s - rawTxnData: %s  - total-amount: %f - req-burn-amount: %f",
+			h.PastelHandler.GetBurnAddress(), string(data), totalAmt, reqBurnAmount)
 	}
 
 	return nil

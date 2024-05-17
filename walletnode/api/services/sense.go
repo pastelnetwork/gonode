@@ -64,14 +64,14 @@ func (service *SenseAPIHandler) UploadImage(ctx context.Context, p *sense.Upload
 		log.WithError(err).Error("error storing file")
 		return nil, sense.MakeInternalServerError(err)
 	}
-	log.Infof("file has been uploaded: %s", id)
+	log.WithField("file-id", id).WithField("filename", *p.Filename).Info("file has been uploaded")
 
 	fee, err := service.register.CalculateFee(ctx, id)
 	if err != nil {
 		log.WithError(err).Error("error calculating fee")
 		return nil, sense.MakeInternalServerError(err)
 	}
-	log.Infof("estimated fee has been calculated: %f", fee)
+	log.WithField("file-id", id).WithField("filename", *p.Filename).Infof("estimated fee has been calculated: %f", fee)
 
 	res = &sense.Image{
 		ImageID:               id,
