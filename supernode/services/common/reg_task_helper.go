@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -254,32 +253,29 @@ func (h *RegTaskHelper) verifyTxn(ctx context.Context,
 		return val >= lower
 	}
 
-	log.WithContext(ctx).Debug("Verifying Burn Txn")
-	isTxnAmountOk := false
 	isTxnAddressOk := false
-
-	addrs := ""
 	reqBurnAmount := totalAmt * percent / 100
 	for _, vout := range txn.Vout {
-		if inRange(vout.Value, reqBurnAmount, 2.0) {
-			addrs = strings.Join(vout.ScriptPubKey.Addresses, ",")
-			isTxnAmountOk = true
-			for _, addr := range vout.ScriptPubKey.Addresses {
-				if addr == h.PastelHandler.GetBurnAddress() {
-					isTxnAddressOk = true
-				}
+		for _, addr := range vout.ScriptPubKey.Addresses {
+			if addr == h.PastelHandler.GetBurnAddress() {
+				isTxnAddressOk = true
 			}
 		}
-	}
 
-	if !isTxnAmountOk {
-		data, _ := json.Marshal(txn)
-		return fmt.Errorf("invalid txn amount: %v, required amount: %f - rawTxnData: %s", txn.Vout, reqBurnAmount, string(data))
+		if isTxnAddressOk {
+			if !inRange(vout.Value, reqBurnAmount, 2.0) {
+				data, _ := json.Marshal(txn)
+				return fmt.Errorf("invalid transaction amount: %v, required minimum amount : %f - raw transaction details: %s", vout.Value, reqBurnAmount, string(data))
+			}
+
+			break
+		}
 	}
 
 	if !isTxnAddressOk {
 		data, _ := json.Marshal(txn)
-		return fmt.Errorf("invalid txn address - got address: %s  -- correct address: %s - rawTxnData: %s", addrs, h.PastelHandler.GetBurnAddress(), string(data))
+		return fmt.Errorf("invalid txn address -- correct address: %s - rawTxnData: %s  - total-amount: %f - req-burn-amount: %f",
+			h.PastelHandler.GetBurnAddress(), string(data), totalAmt, reqBurnAmount)
 	}
 
 	return nil

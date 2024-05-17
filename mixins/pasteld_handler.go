@@ -310,11 +310,12 @@ func (pt *PastelHandler) ValidateBurnTxID(ctx context.Context, burnTxnID string,
 
 	confirmationChn := pt.WaitConfirmation(ctx, burnTxnID,
 		burnTxnConfirmations, 15*time.Second, true, estimatedFee, burnTxnPercentage)
-	log.WithContext(ctx).Debug("waiting for confirmation")
+
 	select {
 	case retErr := <-confirmationChn:
 		if retErr != nil {
-			log.WithContext(ctx).WithError(retErr).Errorf("validate preburn transaction validation")
+			log.WithContext(ctx).WithError(retErr).WithField("txn-id", burnTxnID).WithField("fee", estimatedFee).
+				WithField("percentage", burnTxnPercentage).Error("validate preburn transaction validation")
 			err = errors.Errorf("validate preburn transaction validation :%w", retErr)
 			return err
 		}
@@ -360,31 +361,30 @@ func (pt *PastelHandler) verifyTxn(ctx context.Context,
 	}
 
 	log.WithContext(ctx).Debug("Verifying Burn Txn")
-	isTxnAmountOk := false
 	isTxnAddressOk := false
 
-	addrs := ""
 	reqBurnAmount := totalAmt * percent / 100
 	for _, vout := range txn.Vout {
-		if inRange(vout.Value, reqBurnAmount, 2.0) {
-			isTxnAmountOk = true
-			addrs = strings.Join(vout.ScriptPubKey.Addresses, ",")
-			for _, addr := range vout.ScriptPubKey.Addresses {
-				if addr == pt.GetBurnAddress() {
-					isTxnAddressOk = true
-				}
+		for _, addr := range vout.ScriptPubKey.Addresses {
+			if addr == pt.GetBurnAddress() {
+				isTxnAddressOk = true
 			}
 		}
-	}
 
-	if !isTxnAmountOk {
-		data, _ := json.Marshal(txn)
-		return fmt.Errorf("invalid txn amount: %v, required amount: %f - rawTxnData: %s", txn.Vout, reqBurnAmount, string(data))
+		if isTxnAddressOk {
+			if !inRange(vout.Value, reqBurnAmount, 2.0) {
+				data, _ := json.Marshal(txn)
+				return fmt.Errorf("invalid transaction amount: %v, required minimum amount: %f - raw transaction details: %s", vout.Value, reqBurnAmount, string(data))
+			}
+
+			break
+		}
 	}
 
 	if !isTxnAddressOk {
 		data, _ := json.Marshal(txn)
-		return fmt.Errorf("invalid txn address - got address: %s  -- correct address: %s - rawTxnData: %s", addrs, pt.GetBurnAddress(), string(data))
+		return fmt.Errorf("invalid txn address -- correct address: %s - rawTxnData: %s - total-amount: %f - req-burn-amount: %f",
+			pt.GetBurnAddress(), string(data), totalAmt, reqBurnAmount)
 	}
 
 	return nil
