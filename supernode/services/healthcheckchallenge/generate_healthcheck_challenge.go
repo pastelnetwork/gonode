@@ -172,7 +172,8 @@ func (task *HCTask) sendProcessHealthCheckChallenge(ctx context.Context, challen
 			logger := logger.WithField("node_address", node.ExtAddress)
 
 			if err := task.SendMessage(ctx, &msg, node.ExtAddress); err != nil {
-				logger.WithError(err).Error("error sending healthcheck challenge message for processing")
+				log.WithField("node_address", recipientNode.ExtAddress).
+					Debug("error sending healthcheck challenge message for processing")
 				return
 			}
 
@@ -183,7 +184,8 @@ func (task *HCTask) sendProcessHealthCheckChallenge(ctx context.Context, challen
 	logger.WithField("hc_challenge_id", challengeMessage.ChallengeID).Debug("health-check challenge message has been sent to observers")
 
 	if err := task.SendMessage(ctx, &msg, recipientNode.ExtAddress); err != nil {
-		logger.WithField("node_address", recipientNode.ExtAddress).WithError(err).Error("error sending healthcheck challenge message to recipient for processing")
+		log.WithField("node_address", recipientNode.ExtAddress).WithError(err).
+			Debug("error sending healthcheck challenge message to recipient for processing")
 		return err
 	}
 	logger.WithField("hc_challenge_id", challengeMessage.ChallengeID).
@@ -291,11 +293,10 @@ func (task *HCTask) SendMessage(ctx context.Context, challengeMessage *pb.Health
 	logger.Debug("Sending health-check challenge to processing supernode address: " + processingSupernodeAddr)
 
 	//Connect over grpc
-	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(ctx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
-		logger.WithField("hc_challenge_id", challengeMessage.ChallengeId).Warn(err.Error())
-		return err
+		logError(ctx, "HealthCheckChallenge", err)
+		return fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
 	}
 	defer nodeClientConn.Close()
 

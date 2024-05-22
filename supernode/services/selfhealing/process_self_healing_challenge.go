@@ -717,7 +717,7 @@ func (task *SHTask) processSelfHealingVerifications(ctx context.Context, nodesTo
 
 			verificationMsg, err := task.sendSelfHealingResponseMessage(ctx, responseMsg, node.ExtAddress)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("error sending response message for verification")
+				log.WithError(err).Debug("error sending response message for verification")
 				return
 			}
 
@@ -756,15 +756,10 @@ func (task *SHTask) sendSelfHealingResponseMessage(ctx context.Context, challeng
 		Debug("Sending self-healing response message to supernode address: " + processingSupernodeAddr)
 
 	//Connect over grpc
-	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(ctx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not use node client to connect to: " + processingSupernodeAddr)
-		log.WithContext(ctx).
-			WithField("trigger_id", challengeMessage.TriggerId).
-			WithField("method", "sendSelfHealingResponseMsg").
-			WithField("node_address", processingSupernodeAddr).
-			Warn(err.Error())
-		return nil, err
+		logError(ctx, "SelfHealingResponse", err)
+		return nil, fmt.Errorf("Could not use node client to connect to: " + processingSupernodeAddr)
 	}
 	defer nodeClientConn.Close()
 

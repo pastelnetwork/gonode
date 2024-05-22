@@ -56,7 +56,7 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 			for _, batch := range generationMetricBatches {
 				dataBytes, err := task.compressGenerationMetricsData(batch)
 				if err != nil {
-					logger.WithError(err).Error("error compressing generation metrics data")
+					logger.WithError(err).Debug("error compressing generation metrics data")
 					return
 				}
 
@@ -67,7 +67,7 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 				}
 
 				if err := task.SendBroadcastMessage(ctx, msg, nodeInfo.IPAddress); err != nil {
-					logger.WithError(err).Error("error broadcasting generation metrics")
+					log.WithError(err).Debug("error broadcasting generation metrics")
 					return
 				}
 
@@ -80,7 +80,7 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 			for _, batch := range executionMetricBatches {
 				dataBytes, err := task.compressExecutionMetricsData(batch)
 				if err != nil {
-					logger.WithError(err).Error("error compressing execution metrics data")
+					logger.WithError(err).Debug("error compressing execution metrics data")
 					return
 				}
 
@@ -91,7 +91,7 @@ func (task *SHTask) BroadcastSelfHealingMetrics(ctx context.Context) error {
 				}
 
 				if err := task.SendBroadcastMessage(ctx, msg, nodeInfo.IPAddress); err != nil {
-					logger.WithError(err).Error("error broadcasting execution metrics")
+					log.WithError(err).Debug("error broadcasting execution metrics")
 					return
 				}
 			}
@@ -184,17 +184,14 @@ func (task *SHTask) compressGenerationMetricsData(generationMetrics []types.Self
 
 // SendBroadcastMessage establish a connection with the processingSupernodeAddr and sends the given message to it.
 func (task *SHTask) SendBroadcastMessage(ctx context.Context, msg types.ProcessBroadcastMetricsRequest, processingSupernodeAddr string) error {
-	logger := log.WithContext(ctx).WithField("node_address", processingSupernodeAddr)
-
 	//Connect over grpc
 	newCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	nodeClientConn, err := task.nodeClient.Connect(newCtx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(newCtx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
-		logger.WithField("method", "SendMessage").Warn(err.Error())
-		return err
+		logError(ctx, "BroadcastSelfHealingMetrics", err)
+		return fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
 	}
 	defer func() {
 		if nodeClientConn != nil {

@@ -141,10 +141,10 @@ func (task *SHTask) ping(ctx context.Context, req *pb.PingRequest, supernodeAddr
 	defer cancel()
 
 	// Connect over gRPC with timeout context
-	nodeClientConn, err := task.nodeClient.Connect(pingCtx, supernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(pingCtx, supernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("could not use node client to connect to: %s, error: %v", supernodeAddr, err)
-		return nil, err
+		logError(ctx, "PingNodes", err)
+		return nil, fmt.Errorf("could not use node client to connect to: %s, error: %v", supernodeAddr, err)
 	}
 	defer nodeClientConn.Close()
 

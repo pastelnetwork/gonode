@@ -69,7 +69,7 @@ func (task *HCTask) BroadcastHealthCheckChallengeMetrics(ctx context.Context) er
 				}
 
 				if err := task.SendHCMetrics(ctx, msg, nodeInfo.IPAddress); err != nil {
-					logger.Error("error broadcasting HC metrics")
+					log.WithError(err).Debug("error broadcasting HC metrics")
 					return
 				}
 			}
@@ -136,11 +136,10 @@ func (task *HCTask) SendHCMetrics(ctx context.Context, msg types.ProcessBroadcas
 	newCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	nodeClientConn, err := task.nodeClient.Connect(newCtx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(newCtx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
-		logger.WithField("method", "SendMessage").Warn(err.Error())
-		return err
+		logError(ctx, "BroadcastHealthCheckChallengeMetrics", err)
+		return fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
 	}
 	defer func() {
 		if nodeClientConn != nil {

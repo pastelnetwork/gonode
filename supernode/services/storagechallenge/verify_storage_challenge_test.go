@@ -427,15 +427,15 @@ func TestVerifyStorageChallenge(t *testing.T) {
 				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult1.Sender, tt.args.verifyEvaluationResult1, nil).ConnectionInterface.On("Close").
 				Return(nil)
 
-			clientMock.ListenOnConnect("E", nil).ListenOnStorageChallengeInterface().
+			clientMock.ListenOnConnectSN("E", nil).ListenOnStorageChallengeInterface().
 				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2.Sender, tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").
 				Return(nil)
 
-			clientMock.ListenOnConnect("B", nil).ListenOnStorageChallengeInterface().
+			clientMock.ListenOnConnectSN("B", nil).ListenOnStorageChallengeInterface().
 				ListenOnVerifyEvaluationResultFunc(tt.args.verifyEvaluationResult2.Sender, tt.args.verifyEvaluationResult2, nil).ConnectionInterface.On("Close").
 				Return(nil)
 
-			clientMock.ListenOnConnect("", nil).ListenOnStorageChallengeInterface().
+			clientMock.ListenOnConnectSN("", nil).ListenOnStorageChallengeInterface().
 				ListenOnBroadcastStorageChallengeResultFunc(nil).ConnectionInterface.On("Close").
 				Return(nil)
 
