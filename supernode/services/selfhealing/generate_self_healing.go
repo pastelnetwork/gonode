@@ -530,7 +530,7 @@ func (task *SHTask) prepareAndSendSelfHealingMessage(ctx context.Context, challe
 		}
 
 		if err := task.SendMessage(ctx, shMsg, node.ExtAddress); err != nil {
-			log.WithContext(ctx).WithField("trigger_id", shMsg.TriggerID).WithError(err).Error("unable to send sh challenge msg")
+			log.WithField("trigger_id", shMsg.TriggerID).WithError(err).Debug("unable to send sh challenge msg")
 			continue
 		}
 	}
@@ -607,11 +607,10 @@ func (task *SHTask) SendMessage(ctx context.Context, challengeMessage types.Self
 	defer cancel()
 
 	//Connect over grpc
-	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(ctx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
-		log.WithContext(ctx).WithField("trigger_id", challengeMessage.TriggerID).WithField("method", "sendProcessStorageChallenge").Warn(err.Error())
-		return err
+		logError(ctx, "SelfHealing", err)
+		return fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
 	}
 	defer nodeClientConn.Close()
 

@@ -191,7 +191,7 @@ func (task SCTask) sendProcessStorageChallenge(ctx context.Context, challengeMes
 			logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
 
 			if err := task.SendMessage(ctx, &msg, node.ExtAddress); err != nil {
-				logger.WithError(err).Error("error sending generate storage challenge message for processing")
+				log.WithError(err).Debug("error sending generate storage challenge message for processing")
 				return
 			}
 
@@ -202,7 +202,7 @@ func (task SCTask) sendProcessStorageChallenge(ctx context.Context, challengeMes
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).Debug("challenge message has been sent to observers")
 
 	if err := task.SendMessage(ctx, &msg, recipientNode.ExtAddress); err != nil {
-		log.WithContext(ctx).WithField("node_address", recipientNode.ExtAddress).WithError(err).Error("error sending storage challenge message to recipient for processing")
+		log.WithField("node_address", recipientNode.ExtAddress).WithError(err).Debug("error sending storage challenge message to recipient for processing")
 		return err
 	}
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeID).

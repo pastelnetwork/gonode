@@ -177,7 +177,8 @@ func (task *HCTask) sendVerifyHealthCheckChallenge(ctx context.Context, challeng
 			logger := logger.WithField("node_address", node.ExtAddress)
 
 			if err := task.SendMessage(ctx, &msg, node.ExtAddress); err != nil {
-				logger.WithError(err).Error("error sending process healthcheck challenge message for processing")
+				log.WithError(err).WithField("node_address", challengerNode.ExtAddress).
+					Debug("error sending process healthcheck challenge message for processing")
 				return
 			}
 
@@ -188,7 +189,8 @@ func (task *HCTask) sendVerifyHealthCheckChallenge(ctx context.Context, challeng
 	logger.WithField("challenge_id", challengeMessage.ChallengeID).Debug("response message has been sent to observers")
 
 	if err := task.SendMessage(ctx, &msg, challengerNode.ExtAddress); err != nil {
-		logger.WithField("node_address", challengerNode.ExtAddress).WithError(err).Error("error sending response message to challenger for verification")
+		log.WithField("node_address", challengerNode.ExtAddress).
+			WithError(err).Debug("error sending response message to challenger for verification")
 		return err
 	}
 	logger.WithField("hc_challenge_id", challengeMessage.ChallengeID).

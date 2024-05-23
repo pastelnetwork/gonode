@@ -23,6 +23,7 @@ import (
 type ClientInterface interface {
 	// Connect connects to the server at the given address.
 	Connect(ctx context.Context, address string) (ConnectionInterface, error)
+	ConnectSN(ctx context.Context, address string) (ConnectionInterface, error)
 }
 
 // ConnectionInterface represents a client connection

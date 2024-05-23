@@ -145,7 +145,7 @@ func (task *HCTask) VerifyHealthCheckChallenge(ctx context.Context, incomingResp
 	}
 
 	if err := task.sendBroadcastingMessage(ctx, broadcastingMsg); err != nil {
-		logger.WithError(err).Error("broadcasting storage challenge result failed")
+		log.WithError(err).Debug("broadcasting storage challenge result failed")
 		return nil, err
 	}
 
@@ -263,7 +263,7 @@ func (task *HCTask) processEvaluationResults(ctx context.Context, nodesToConnect
 
 			affirmationResponse, err := task.sendEvaluationMessage(ctx, evaluationMsg, node.ExtAddress)
 			if err != nil {
-				logger.WithError(err).Error("error sending evaluation message for processing")
+				log.WithError(err).Debug("error sending evaluation message for processing")
 				return
 			}
 
@@ -306,14 +306,10 @@ func (task *HCTask) sendEvaluationMessage(ctx context.Context, challengeMessage 
 		"hc_challenge_id", challengeMessage.ChallengeId)
 
 	//Connect over grpc
-	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(ctx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not use node client to connect to: " + processingSupernodeAddr)
-		logger.
-			WithField("method", "sendEvaluationMessage").
-			WithField("node_address", processingSupernodeAddr).
-			Warn(err.Error())
-		return nil, err
+		logError(ctx, "VerifyHealthCheckChallenge", err)
+		return nil, fmt.Errorf("Could not use node client to connect to: " + processingSupernodeAddr)
 	}
 	defer nodeClientConn.Close()
 
@@ -455,14 +451,12 @@ func (task *HCTask) sendBroadcastingMessage(ctx context.Context, msg *pb.Broadca
 			sem <- struct{}{}
 			defer func() { <-sem }() // Release the token back into the channel
 
-			logger := logger.WithField("node_address", node.ExtAddress)
-
 			if msg == nil || node.ExtAddress == "" {
 				return //not the valid state
 			}
 
 			if err := task.send(ctx, msg, node.ExtAddress); err != nil {
-				logger.WithError(err).Error("error sending broadcast message for processing")
+				log.WithError(err).Debug("error sending broadcast message for processing")
 				return
 			}
 		}()
@@ -473,13 +467,10 @@ func (task *HCTask) sendBroadcastingMessage(ctx context.Context, msg *pb.Broadca
 }
 
 func (task *HCTask) send(ctx context.Context, req *pb.BroadcastHealthCheckChallengeRequest, processingSupernodeAddr string) error {
-	logger := log.WithContext(ctx).WithField("method", "VerifyHealthCheckChallenge")
-
-	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(ctx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not use nodeclient to connect to: " + processingSupernodeAddr)
-		logger.WithField("challengeID", req.ChallengeId).WithField("method", "sendBroadcastingMessage").Warn(err.Error())
-		return err
+		logError(ctx, "BroadcastHealthCheckChallengeResult", err)
+		return fmt.Errorf("Could not use node client to connect to: " + processingSupernodeAddr)
 	}
 	defer nodeClientConn.Close()
 

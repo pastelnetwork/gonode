@@ -257,7 +257,7 @@ func (task SCTask) processEvaluationResults(ctx context.Context, nodesToConnect 
 
 			affirmationResponse, err := task.sendEvaluationMessage(ctx, evaluationMsg, node.ExtAddress)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("error sending evaluation message for processing")
+				log.WithError(err).Debug("error sending evaluation message for processing")
 				return
 			}
 
@@ -299,15 +299,10 @@ func (task SCTask) sendEvaluationMessage(ctx context.Context, challengeMessage *
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Debug("Sending evaluation message to supernode address: " + processingSupernodeAddr)
 
 	//Connect over grpc
-	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(ctx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not use node client to connect to: " + processingSupernodeAddr)
-		log.WithContext(ctx).
-			WithField("challengeID", challengeMessage.ChallengeId).
-			WithField("method", "sendEvaluationMessage").
-			WithField("node_address", processingSupernodeAddr).
-			Warn(err.Error())
-		return nil, err
+		logError(ctx, "SendScEvaluationMessage", err)
+		return nil, fmt.Errorf("Could not use node client to connect to: " + processingSupernodeAddr)
 	}
 	defer nodeClientConn.Close()
 
@@ -446,14 +441,12 @@ func (task SCTask) sendBroadcastingMessage(ctx context.Context, msg *pb.Broadcas
 			sem <- struct{}{}
 			defer func() { <-sem }() // Release the token back into the channel
 
-			logger := log.WithContext(ctx).WithField("node_address", node.ExtAddress)
-
 			if msg == nil || node.ExtAddress == "" {
 				return //not the valid state
 			}
 
 			if err := task.send(ctx, msg, node.ExtAddress); err != nil {
-				logger.WithError(err).Error("error sending broadcast message for processing")
+				log.WithError(err).Debug("error sending broadcast message for processing")
 				return
 			}
 		}()
@@ -465,11 +458,10 @@ func (task SCTask) sendBroadcastingMessage(ctx context.Context, msg *pb.Broadcas
 
 func (task SCTask) send(ctx context.Context, req *pb.BroadcastStorageChallengeRequest, processingSupernodeAddr string) error {
 	//Connect over grpc
-	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(ctx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not use nodeclient to connect to: " + processingSupernodeAddr)
-		log.WithContext(ctx).WithField("challengeID", req.ChallengeId).WithField("method", "sendBroadcastingMessage").Warn(err.Error())
-		return err
+		logError(ctx, "BroadcastStorageChallengeResult", err)
+		return fmt.Errorf("Could not use nodeclient to connect to: " + processingSupernodeAddr)
 	}
 	defer nodeClientConn.Close()
 

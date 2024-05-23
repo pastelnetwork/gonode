@@ -18,6 +18,9 @@ const (
 	// ConnectMethod represent Connect name method
 	ConnectMethod = "Connect"
 
+	// ConnectSNMethod represent ConnectSN name method
+	ConnectSNMethod = "ConnectSN"
+
 	// ConnectToMethod represent Connect name method
 	ConnectToMethod = "ConnectTo"
 
@@ -76,6 +79,17 @@ func (client *Client) ListenOnConnect(addr string, returnErr error) *Client {
 		client.ClientInterface.On(ConnectMethod, mock.Anything, mock.IsType(string(""))).Return(client.ConnectionInterface, returnErr)
 	} else {
 		client.ClientInterface.On(ConnectMethod, mock.Anything, addr).Return(client.ConnectionInterface, returnErr)
+	}
+
+	return client
+}
+
+// ListenOnConnectSN listening Connect call and returns error from args
+func (client *Client) ListenOnConnectSN(addr string, returnErr error) *Client {
+	if addr == "" {
+		client.ClientInterface.On(ConnectSNMethod, mock.Anything, mock.IsType(string(""))).Return(client.ConnectionInterface, returnErr)
+	} else {
+		client.ClientInterface.On(ConnectSNMethod, mock.Anything, addr).Return(client.ConnectionInterface, returnErr)
 	}
 
 	return client

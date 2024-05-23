@@ -137,11 +137,10 @@ func (task SCTask) SendMessage(ctx context.Context, challengeMessage *pb.Storage
 	log.WithContext(ctx).WithField("challenge_id", challengeMessage.ChallengeId).Debug("Sending storage challenge to processing supernode address: " + processingSupernodeAddr)
 
 	//Connect over grpc
-	nodeClientConn, err := task.nodeClient.Connect(ctx, processingSupernodeAddr)
+	nodeClientConn, err := task.nodeClient.ConnectSN(ctx, processingSupernodeAddr)
 	if err != nil {
-		err = fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
-		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeId).WithField("method", "sendProcessStorageChallenge").Warn(err.Error())
-		return err
+		logError(ctx, "StorageChallenge", err)
+		return fmt.Errorf("Could not connect to: " + processingSupernodeAddr)
 	}
 	defer nodeClientConn.Close()
 

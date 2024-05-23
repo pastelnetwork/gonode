@@ -16,7 +16,7 @@ func (task *SHTask) ProcessBroadcastedSelfHealingMetrics(ctx context.Context, re
 	case types.GenerationSelfHealingMetricType:
 		genMetrics, err := task.decompressGenerationMetricsData(req.Data)
 		if err != nil {
-			logger.WithError(err).Error("error decompressing generation metrics data")
+			logger.WithError(err).Debug("error decompressing generation metrics data")
 			return err
 		}
 
