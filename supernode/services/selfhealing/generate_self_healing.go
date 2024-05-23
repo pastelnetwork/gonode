@@ -20,7 +20,7 @@ import (
 
 const (
 	minNodesOnWatchlistThreshold = 6
-	minTimeForWatchlistNodes     = 30 //in minutes
+	minTimeForWatchlistNodes     = 60 //in minutes
 	defaultClosestNodes          = 6
 )
 

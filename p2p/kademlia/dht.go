@@ -460,7 +460,7 @@ func (s *DHT) fetchAndAddLocalKeys(ctx context.Context, hexKeys []string, result
 }
 
 // BatchRetrieve data from the networking using keys. Keys are the base58 encoded
-func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, localOnly ...bool) (result map[string][]byte, err error) {
+func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, txID string, localOnly ...bool) (result map[string][]byte, err error) {
 	result = make(map[string][]byte) // the result of the batch retrieve - keys are b58 encoded (as received in request)
 	var resMap sync.Map              // the result of the batch retrieve - keys are b58 encoded
 	var foundLocalCount int32        // the number of values found so far
@@ -478,7 +478,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 
 			k, err := hex.DecodeString(hexKey)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("key", hexKey).Error("failed to decode hex key in resMap.Range")
+				log.WithContext(ctx).WithError(err).WithField("key", hexKey).WithField("txid", txID).Error("failed to decode hex key in resMap.Range")
 				return true
 			}
 
@@ -501,7 +501,8 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 
 	self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
 	self.SetHashedID()
-	log.WithContext(ctx).WithField("self", self.String()).Info("batch retrieve")
+	log.WithContext(ctx).WithField("self", self.String()).
+		WithField("txid", txID).Info("batch retrieve")
 
 	// populate hexKeys and hashes
 	for i, key := range keys {
@@ -512,7 +513,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 		hashes[i] = decoded
 		hexKeys[i] = hex.EncodeToString(decoded)
 	}
-	log.WithContext(ctx).WithField("self", self.String()).Info("populated keys and hashes")
+	log.WithContext(ctx).WithField("self", self.String()).WithField("txid", txID).Info("populated keys and hashes")
 
 	// Add nodes from route table to known nodes map
 	for _, node := range s.ht.nodes() {
@@ -531,7 +532,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 	responses, _ := s.batchFindNode(ctx, hashes[:lenOfKeys], knownNodes, make(map[string]bool))
 	for response := range responses {
 		if response.Error != nil {
-			log.WithContext(ctx).WithError(response.Error).Error("batch find node failed on a node")
+			log.WithContext(ctx).WithError(response.Error).WithField("txid", txID).Error("batch find node failed on a node")
 		}
 
 		if response.Message == nil {
@@ -558,7 +559,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 		s.addKnownNodes(top6.Nodes, knownNodes)
 	}
 
-	log.WithContext(ctx).Info("closest contacts populated, fetching local keys now")
+	log.WithContext(ctx).WithField("txid", txID).Info("closest contacts populated, fetching local keys now")
 
 	// remove self from the map
 	delete(knownNodes, string(self.ID))
@@ -567,7 +568,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 	if err != nil {
 		return nil, fmt.Errorf("fetch and add local keys: %v", err)
 	}
-	log.WithContext(ctx).WithField("local-foundCount", foundLocalCount).Info("batch find values count")
+	log.WithContext(ctx).WithField("txid", txID).WithField("local-foundCount", foundLocalCount).Info("batch find values count")
 
 	if foundLocalCount >= required {
 		return result, nil
@@ -586,7 +587,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 	gctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	log.WithContext(ctx).WithField("parallel batches", parallelBatches).Info("begin iterate batch get values")
+	log.WithContext(ctx).WithField("txid", txID).WithField("parallel batches", parallelBatches).Info("begin iterate batch get values")
 	// Process in batches
 	for start := 0; start < len(keys); start += batchSize {
 		end := start + batchSize
@@ -626,12 +627,12 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 			}
 
 			log.WithContext(gctx).WithField("len(fetchMap)", len(fetchMap)).WithField("len(hexKeys)", len(hexKeys)).WithField("len(keys)", len(keys)).
-				WithField("network-found", networkFound).Info("fetch map")
+				WithField("network-found", networkFound).WithField("txid", txID).Info("fetch map")
 
 			// Iterate through the network to get the values for the current batch
 			foundCount, _, batchErr := s.iterateBatchGetValues(gctx, knownNodes, batchKeys, batchHexKeys, fetchMap, &resMap, required, foundLocalCount+networkFound)
 			if batchErr != nil {
-				log.WithContext(gctx).WithError(batchErr).Error("iterate batch get values failed")
+				log.WithContext(gctx).WithError(batchErr).WithField("txid", txID).Error("iterate batch get values failed")
 			}
 
 			// Update the global counter for found values
@@ -643,9 +644,9 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 			}
 		}(batchKeys, batchHexKeys)
 	}
-	log.WithContext(ctx).Info("called iterate batch get values - waiting for workers to finish")
+	log.WithContext(ctx).WithField("txid", txID).Info("called iterate batch get values - waiting for workers to finish")
 	wg.Wait() // Wait for all goroutines to finish
-	log.WithContext(ctx).Info("iterate batch get values workers done")
+	log.WithContext(ctx).WithField("txid", txID).Info("iterate batch get values workers done")
 
 	return result, nil
 }

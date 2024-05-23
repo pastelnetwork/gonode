@@ -28,7 +28,7 @@ func (task *NftDownloadingTask) restoreFileFromSymbolIDs(ctx context.Context, rq
 
 	log.WithContext(ctx).WithField("total-symbols", totalSymbols).WithField("required-symbols", requiredSymbols).WithField("txid", txid).Info("Symbols to be retrieved")
 
-	symbols, err := task.P2PClient.BatchRetrieve(ctx, symbolIDs, requiredSymbols)
+	symbols, err := task.P2PClient.BatchRetrieve(ctx, symbolIDs, requiredSymbols, txid)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to retrieve symbols")
 		return nil, fmt.Errorf("failed to retrieve symbols: %w", err)
