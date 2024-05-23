@@ -512,6 +512,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 		hashes[i] = decoded
 		hexKeys[i] = hex.EncodeToString(decoded)
 	}
+	log.WithContext(ctx).WithField("self", self.String()).Info("populated keys and hashes")
 
 	// Add nodes from route table to known nodes map
 	for _, node := range s.ht.nodes() {
@@ -557,6 +558,8 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 		s.addKnownNodes(top6.Nodes, knownNodes)
 	}
 
+	log.WithContext(ctx).Info("closest contacts populated, fetching local keys now")
+
 	// remove self from the map
 	delete(knownNodes, string(self.ID))
 
@@ -583,6 +586,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 	gctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	log.WithContext(ctx).WithField("parallel batches", parallelBatches).Info("begin iterate batch get values")
 	// Process in batches
 	for start := 0; start < len(keys); start += batchSize {
 		end := start + batchSize
@@ -639,8 +643,9 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 			}
 		}(batchKeys, batchHexKeys)
 	}
-
+	log.WithContext(ctx).Info("called iterate batch get values - waiting for workers to finish")
 	wg.Wait() // Wait for all goroutines to finish
+	log.WithContext(ctx).Info("iterate batch get values workers done")
 
 	return result, nil
 }
@@ -1411,9 +1416,18 @@ func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[
 }
 
 func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[string]*Node, contacted map[string]bool) (chan *MessageWithError, bool) {
+	log.WithContext(ctx).WithField("nodes-count", len(nodes)).Info("batch find node begin")
+
 	responses := make(chan *MessageWithError, len(nodes))
 	atleastOneContacted := false
 	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 5)
+
+	// Function to ensure responses channel is closed once all work is done
+	go func() {
+		wg.Wait()
+		close(responses)
+	}()
 
 	for _, node := range nodes {
 		if _, ok := contacted[string(node.ID)]; ok {
@@ -1423,8 +1437,11 @@ func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[str
 		contacted[string(node.ID)] = true
 		atleastOneContacted = true
 		wg.Add(1)
+		semaphore <- struct{}{}
+
 		go func(receiver *Node) {
 			defer wg.Done()
+			defer func() { <-semaphore }()
 
 			select {
 			case <-ctx.Done():
@@ -1444,8 +1461,7 @@ func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[str
 		}(node)
 	}
 
-	wg.Wait()
-	close(responses)
+	log.WithContext(ctx).WithField("nodes-count", len(nodes)).Info("batch find node done")
 
 	return responses, atleastOneContacted
 }
