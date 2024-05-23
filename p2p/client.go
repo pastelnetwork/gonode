@@ -17,7 +17,7 @@ type Client interface {
 	// BatchRetrieve retrieve data from the kademlia network by keys
 	// reqCount is the minimum number of keys that are actually required by the caller
 	// to successfully perform the reuquired operation
-	BatchRetrieve(ctx context.Context, keys []string, reqCount int, localOnly ...bool) (map[string][]byte, error)
+	BatchRetrieve(ctx context.Context, keys []string, reqCount int, txID string, localOnly ...bool) (map[string][]byte, error)
 	// Store store data to the network, which will trigger the iterative store message
 	// - the base58 encoded identifier will be returned
 	Store(ctx context.Context, data []byte, typ int) (string, error)

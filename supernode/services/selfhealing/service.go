@@ -24,8 +24,8 @@ import (
 
 const (
 	defaultTimerBlockCheckDuration    = 5 * time.Minute
-	defaultFetchNodesPingInfoInterval = 60 * time.Second
-	defaultUpdateWatchlistInterval    = 70 * time.Second
+	defaultFetchNodesPingInfoInterval = 420 * time.Second
+	defaultUpdateWatchlistInterval    = 480 * time.Second
 	broadcastMetricRegularInterval    = 60 * time.Minute
 	processSelfHealingWorkerInterval  = 5 * time.Minute
 	selfHealingRetryThreshold         = 3

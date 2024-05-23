@@ -384,7 +384,10 @@ func OpenHistoryDB() (LocalStoreInterface, error) {
 
 	_, _ = db.Exec(alterTablePingHistoryHealthCheckColumn)
 
-	_, _ = db.Exec(createPingHistoryWithoutUniqueIPAddress)
+	_, err = db.Exec(createPingHistoryWithoutUniqueIPAddress)
+	if err != nil {
+		log.WithError(err).Error("error executing ping-history w/o unique ip-address constraint migration")
+	}
 
 	pragmas := []string{
 		"PRAGMA synchronous=NORMAL;",

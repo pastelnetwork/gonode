@@ -72,13 +72,16 @@ func (task *SHTask) pingNodes(ctx context.Context, nodesToPing map[string]pastel
 		SenderId: task.nodeID,
 	}
 
+	sem := make(chan struct{}, 5)
 	var wg sync.WaitGroup
 	for _, node := range nodesToPing {
 		node := node
-		wg.Add(1)
+		sem <- struct{}{} // Acquire semaphore
 
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer func() { <-sem }() // Release semaphore
 
 			if node.ExtAddress == "" || node.ExtKey == "" {
 				return
