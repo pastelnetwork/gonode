@@ -533,6 +533,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 	for response := range responses {
 		if response.Error != nil {
 			log.WithContext(ctx).WithError(response.Error).WithField("txid", txID).Error("batch find node failed on a node")
+			continue
 		}
 
 		if response.Message == nil {
@@ -553,7 +554,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 	// Calculate the local top 6 nodes for each value
 	for i := range keys {
 		// Calculate the local top 6 nodes for each value
-		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, hashes[i], nil, nil)
+		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, hashes[i], s.ignorelist.ToNodeList(), nil)
 		globalClosestContacts[keys[i]] = top6
 
 		s.addKnownNodes(top6.Nodes, knownNodes)
@@ -653,7 +654,7 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 
 func (s *DHT) doBatchGetValuesCall(ctx context.Context, node *Node, requestKeys map[string]KeyValWithClosest) (map[string]KeyValWithClosest, error) {
 	request := s.newMessage(BatchGetValues, node, &BatchGetValuesRequest{Data: requestKeys})
-	response, err := s.network.Call(ctx, request, true)
+	response, err := s.network.Call(ctx, request, false)
 	if err != nil {
 		return nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)
 	}
@@ -683,6 +684,11 @@ func (s *DHT) iterateBatchGetValues(ctx context.Context, nodes map[string]*Node,
 	gctx, cancel := context.WithCancel(ctx) // Create a cancellable context
 	defer cancel()
 	for nodeID, node := range nodes {
+		if s.ignorelist.Banned(node) {
+			log.WithContext(ctx).WithField("node", node.String()).Info("Ignore banned node in iterate batch get values")
+			continue
+		}
+
 		contactsMap[nodeID] = make(map[string][]*Node)
 		wg.Add(1)
 		go func(node *Node, nodeID string) {
@@ -1233,15 +1239,15 @@ func (s *DHT) addKnownNodes(nodes []*Node, knownNodes map[string]*Node) {
 }
 
 func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) error {
-	globalClosestContacts := make(map[string]*NodeList) // This will store the global top 6 nodes for each symbol's hash
-	knownNodes := make(map[string]*Node)                // This will store the nodes we've already contacted
+	globalClosestContacts := make(map[string]*NodeList)
+	knownNodes := make(map[string]*Node)
 	contacted := make(map[string]bool)
 	hashes := make([][]byte, len(values))
 
 	for i := 0; i < len(values); i++ {
 		target, _ := utils.Sha3256hash(values[i])
 		hashes[i] = target
-		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, target, nil, nil)
+		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, target, s.ignorelist.ToNodeList(), nil)
 
 		globalClosestContacts[base58.Encode(target)] = top6
 		s.addKnownNodes(top6.Nodes, knownNodes)
@@ -1262,6 +1268,7 @@ func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) e
 		for response := range responses {
 			if response.Error != nil {
 				log.WithContext(ctx).WithError(response.Error).Error("batch find node failed on a node")
+				continue
 			}
 
 			if response.Message == nil {
@@ -1375,6 +1382,11 @@ func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[
 	var wg sync.WaitGroup
 
 	for key, node := range nodes {
+		if s.ignorelist.Banned(node) {
+			log.WithContext(ctx).WithField("node", node.String()).Info("Ignoring banned node in batch store network call")
+			continue
+		}
+
 		wg.Add(1)
 		semaphore <- struct{}{} // Acquire semaphore
 		go func(receiver *Node, key string) {
@@ -1398,8 +1410,9 @@ func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[
 
 				data := &BatchStoreDataRequest{Data: toStore, Type: typ}
 				request := s.newMessage(BatchStoreData, receiver, data)
-				response, err := s.network.Call(ctx, request, true)
+				response, err := s.network.Call(ctx, request, false)
 				if err != nil {
+					s.ignorelist.IncrementCount(receiver)
 					log.P2P().WithContext(ctx).WithError(err).Debugf("network call batch store request %s failed", request.String())
 					responses <- &MessageWithError{Error: err, Message: response}
 					return
@@ -1422,16 +1435,14 @@ func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[str
 	responses := make(chan *MessageWithError, len(nodes))
 	atleastOneContacted := false
 	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, 5)
-
-	// Function to ensure responses channel is closed once all work is done
-	go func() {
-		wg.Wait()
-		close(responses)
-	}()
+	semaphore := make(chan struct{}, 10)
 
 	for _, node := range nodes {
 		if _, ok := contacted[string(node.ID)]; ok {
+			continue
+		}
+		if s.ignorelist.Banned(node) {
+			log.WithContext(ctx).WithField("node", node.String()).Info("Ignoring banned node in batch find call")
 			continue
 		}
 
@@ -1446,21 +1457,34 @@ func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[str
 
 			select {
 			case <-ctx.Done():
-				responses <- &MessageWithError{Error: ctx.Err()}
+				select {
+				case responses <- &MessageWithError{Error: ctx.Err()}:
+				default:
+				}
 				return
 			default:
 				data := &BatchFindNodeRequest{HashedTarget: payload}
 				request := s.newMessage(BatchFindNode, receiver, data)
 				response, err := s.network.Call(ctx, request, false)
 				if err != nil {
+					s.ignorelist.IncrementCount(receiver)
 					log.P2P().WithContext(ctx).WithError(err).Debugf("network call request %s failed", request.String())
-					responses <- &MessageWithError{Error: err, Message: response}
+					select {
+					case responses <- &MessageWithError{Error: err, Message: response}:
+					default:
+					}
 					return
 				}
-				responses <- &MessageWithError{Message: response}
+				select {
+				case responses <- &MessageWithError{Message: response}:
+				default:
+				}
 			}
 		}(node)
 	}
+
+	wg.Wait()
+	close(responses)
 
 	log.WithContext(ctx).WithField("nodes-count", len(nodes)).Info("batch find node done")
 

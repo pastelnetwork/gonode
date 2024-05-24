@@ -486,9 +486,13 @@ func (s *Network) serve(ctx context.Context) {
 
 // Call sends the request to target and receive the response
 func (s *Network) Call(ctx context.Context, request *Message, isLong bool) (*Message, error) {
-	timeout := 30 * time.Second
+	timeout := 45 * time.Second
+	if request.MessageType == Ping {
+		timeout = 15 * time.Second
+	}
+
 	if isLong {
-		timeout = 5 * time.Minute
+		timeout = 3 * time.Minute
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -838,7 +842,7 @@ func (s *Network) handleBatchStoreData(ctx context.Context, message *Message) (r
 		return s.generateResponseMessage(BatchStoreData, message.Sender, ResultFailed, err.Error())
 	}
 
-	log.P2P().WithContext(ctx).Debugf("handle batch store data: %v", message.String())
+	log.P2P().WithContext(ctx).Info("handle batch store data request received")
 
 	// add the sender to queries hash table
 	s.dht.addNode(ctx, message.Sender)
@@ -853,6 +857,7 @@ func (s *Network) handleBatchStoreData(ctx context.Context, message *Message) (r
 			Result: ResultOk,
 		},
 	}
+	log.P2P().WithContext(ctx).Info("handle batch store data request processed")
 
 	// new a response message
 	resMsg := s.dht.newMessage(BatchStoreData, message.Sender, response)
@@ -882,11 +887,13 @@ func (s *Network) handleBatchFindNode(ctx context.Context, message *Message) (re
 	}
 	closestMap := make(map[string][]*Node)
 
+	log.WithContext(ctx).WithField("sender", message.Sender.String()).Info("Batch Find Nodes Request Received")
 	for _, hashedTargetID := range request.HashedTarget {
 		closest, _ := s.dht.ht.closestContacts(K, hashedTargetID, []*Node{message.Sender})
 		closestMap[base58.Encode(hashedTargetID)] = closest.Nodes
 	}
 	response.ClosestNodes = closestMap
+	log.WithContext(ctx).WithField("sender", message.Sender.String()).Info("Batch Find Nodes Request Processed")
 
 	// new a response message
 	resMsg := s.dht.newMessage(BatchFindNode, message.Sender, response)

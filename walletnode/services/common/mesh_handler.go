@@ -564,6 +564,7 @@ func (m *MeshHandler) filterDDServerRequestsInWaitingQueue(ctx context.Context, 
 }
 
 // meshNodes establishes communication between supernodes.
+// meshNodes establishes communication between supernodes.
 func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesNodes SuperNodeList, primaryIndex int) (SuperNodeList, error) {
 	log.WithContext(ctx).Debug("connectToPrimarySecondary Starting...")
 
@@ -586,53 +587,62 @@ func (m *MeshHandler) connectToPrimarySecondary(ctx context.Context, candidatesN
 	}
 	log.WithContext(ctx).WithField("task", m.logRequestID).WithField("remote-sess-id", primary.SessID()).Infof("Connected to primary node %q", primary.Address())
 
-	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
-	defer nextConnCancel()
-
-	// FIXME: ugly hack here
+	// Prepare to connect to secondary nodes
 	secondariesMtx := &sync.Mutex{}
 	var secondaries SuperNodeList
-	go func() {
-		for i, someNode := range candidatesNodes {
-			sameNode := someNode
+	group, gctx := errgroup.WithContext(ctx)
 
-			if i == primaryIndex {
-				continue
-			}
-
-			select {
-			case <-nextConnCtx.Done():
-				return
-			case <-time.After(m.connectToNextNodeDelay):
-				go func() {
-					defer errors.Recover(log.Fatal)
-
-					if err := sameNode.Connect(ctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("Failed to connect to secondary node %q", sameNode.String())
-						return
-					}
-					if err := sameNode.Session(ctx, false); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("Failed to open session with secondary node %q", sameNode.String())
-						return
-					}
-					// Should not run this code in go routine
-					func() {
-						secondariesMtx.Lock()
-						defer secondariesMtx.Unlock()
-						secondaries.Add(sameNode)
-					}()
-
-					if err := sameNode.ConnectTo(ctx, types.MeshedSuperNode{
-						NodeID: primary.PastelID(),
-						SessID: primary.SessID(),
-					}); err != nil {
-						return
-					}
-					log.WithContext(ctx).WithField("task", m.logRequestID).WithField("sameNode", sameNode.SessID()).Debugf("Connected to secondry node %q", sameNode.Address())
-				}()
-			}
+	secondaryCount := 0
+	for i, someNode := range candidatesNodes {
+		if i == primaryIndex {
+			continue
 		}
-	}()
+		if secondaryCount >= 2 {
+			break
+		}
+
+		someNode := someNode
+		group.Go(func() error {
+			select {
+			case <-gctx.Done():
+				return gctx.Err()
+			case <-time.After(m.connectToNextNodeDelay):
+				if err := someNode.Connect(gctx, m.connectToNodeTimeout, secInfo, m.logRequestID); err != nil {
+					log.WithContext(gctx).WithError(err).Errorf("Failed to connect to secondary node %q", someNode.String())
+					return nil // Continue connecting to other nodes
+				}
+				if err := someNode.Session(gctx, false); err != nil {
+					log.WithContext(gctx).WithError(err).Errorf("Failed to open session with secondary node %q", someNode.String())
+					return nil // Continue connecting to other nodes
+				}
+
+				secondariesMtx.Lock()
+				secondaries.Add(someNode)
+				secondaryCount++
+				secondariesMtx.Unlock()
+
+				if err := someNode.ConnectTo(gctx, types.MeshedSuperNode{
+					NodeID: primary.PastelID(),
+					SessID: primary.SessID(),
+				}); err != nil {
+					log.WithContext(gctx).WithError(err).Errorf("Failed to mesh with primary node %q", someNode.String())
+					return nil // Continue connecting to other nodes
+				}
+
+				log.WithContext(gctx).WithField("task", m.logRequestID).WithField("sameNode", someNode.SessID()).Debugf("Connected to secondary node %q", someNode.Address())
+			}
+			return nil
+		})
+	}
+
+	if err := group.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		log.WithContext(ctx).WithError(err).Error("Error connecting to secondary nodes")
+		return nil, err
+	}
+
+	if secondaryCount < 2 {
+		return nil, fmt.Errorf("only %d secondary nodes connected, required 2", secondaryCount)
+	}
 
 	acceptCtx, acceptCancel := context.WithTimeout(ctx, m.acceptNodesTimeout)
 	defer acceptCancel()
