@@ -99,7 +99,7 @@ func (s *p2p) run(ctx context.Context) error {
 	}
 	s.running = true
 
-	log.P2P().WithContext(ctx).Info("p2p service is started")
+	log.WithContext(ctx).Info("p2p service is started")
 
 	// block until context is done
 	<-ctx.Done()
@@ -107,7 +107,7 @@ func (s *p2p) run(ctx context.Context) error {
 	// stop the node for kademlia network
 	s.dht.Stop(ctx)
 
-	log.P2P().WithContext(ctx).Info("p2p service is stopped")
+	log.WithContext(ctx).Info("p2p service is stopped")
 	return nil
 }
 

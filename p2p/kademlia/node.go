@@ -27,7 +27,9 @@ type Node struct {
 
 // SetHashedID sets hash of ID
 func (s *Node) SetHashedID() {
-	s.HashedID, _ = utils.Sha3256hash(s.ID)
+	if len(s.HashedID) == 0 {
+		s.HashedID, _ = utils.Sha3256hash(s.ID)
+	}
 }
 
 // String returns string format

@@ -8,7 +8,7 @@ const (
 	defaultConnectToNextNodeDelay       = 600 * time.Millisecond
 	defaultAcceptNodesTimeout           = 600 * time.Second // = 3 * (2* ConnectToNodeTimeout)
 	defaultConnectToNodeTimeout         = time.Second * 25
-	defaultDownloadConnectToNodeTimeout = time.Second * 15
+	defaultDownloadConnectToNodeTimeout = time.Second * 10
 	defaultHashCheckMaxRetries          = 2
 )
 

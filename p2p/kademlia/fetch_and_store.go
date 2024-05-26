@@ -278,12 +278,8 @@ func (s *DHT) GetBatchValuesFromNode(ctx context.Context, keys []string, n *Node
 	log.WithContext(ctx).WithField("node-ip", n.IP).WithField("keys", len(keys)).Info("sending batch fetch request")
 
 	messageType := BatchFindValues
-	compKeys, err := compressKeysStr(keys)
-	if err != nil {
-		return false, nil, nil, fmt.Errorf("compress keys error: %w", err)
-	}
 
-	data := &BatchFindValuesRequest{Keys: compKeys}
+	data := &BatchFindValuesRequest{Keys: keys}
 	request := s.newMessage(messageType, n, data)
 
 	var response *Message

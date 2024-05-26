@@ -80,7 +80,7 @@ const (
 
 // ReplicateDataRequest ...
 type ReplicateDataRequest struct {
-	Keys []byte
+	Keys []string
 }
 
 // ReplicateDataResponse ...
@@ -130,7 +130,7 @@ type StoreDataResponse struct {
 
 // BatchFindValuesRequest defines the request data for find value
 type BatchFindValuesRequest struct {
-	Keys []byte
+	Keys []string
 }
 
 // BatchFindValuesResponse defines the response data for find value

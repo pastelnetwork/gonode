@@ -384,7 +384,7 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
 		file, err = task.RestoreFile(ctx, info.rqIDs, info.rqOti, info.dataHash, txid)
 		if err != nil {
-			log.WithContext(ctx).WithField("txid", txid).Error("restore file failed")
+			log.WithContext(ctx).WithField("txid", txid).WithError(err).Error("restore file failed")
 			err = errors.Errorf("restore file: %w", err)
 			task.UpdateStatus(common.StatusFileRestoreFailed)
 			return nil
