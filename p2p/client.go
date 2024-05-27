@@ -23,7 +23,7 @@ type Client interface {
 	Store(ctx context.Context, data []byte, typ int) (string, error)
 
 	// StoreBatch will store a batch of values with their SHA256 hash as the key
-	StoreBatch(ctx context.Context, values [][]byte, typ int) error
+	StoreBatch(ctx context.Context, values [][]byte, typ int, taskID string) error
 
 	// Delete a key, value
 	Delete(ctx context.Context, key string) error

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
 )
 
@@ -161,6 +162,10 @@ func (s *NodeList) distance(id1, id2 []byte) *big.Int {
 
 // Sort sorts nodes
 func (s *NodeList) Sort() {
+	if len(s.Comparator) == 0 {
+		log.Warn("sort without comparator!!")
+	}
+
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	// Sort using the precomputed distances

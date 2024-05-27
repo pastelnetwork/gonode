@@ -123,14 +123,14 @@ func (s *p2p) Store(ctx context.Context, data []byte, typ int) (string, error) {
 }
 
 // StoreBatch will store a batch of values with their SHA256 hash as the key
-func (s *p2p) StoreBatch(ctx context.Context, data [][]byte, typ int) error {
+func (s *p2p) StoreBatch(ctx context.Context, data [][]byte, typ int, taskID string) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if !s.running {
 		return errors.New("p2p service is not running")
 	}
 
-	return s.dht.StoreBatch(ctx, data, typ)
+	return s.dht.StoreBatch(ctx, data, typ, taskID)
 }
 
 // Retrieve retrive the data from the kademlia network

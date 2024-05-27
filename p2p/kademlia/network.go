@@ -481,6 +481,16 @@ func (s *Network) serve(ctx context.Context) {
 // Call sends the request to target and receive the response
 func (s *Network) Call(ctx context.Context, request *Message, isLong bool) (*Message, error) {
 	timeout := 10 * time.Second
+
+	if request.MessageType == BatchStoreData {
+		timeout = 60 * time.Second
+	}
+	if request.MessageType == FindNode {
+		timeout = 30 * time.Second
+	}
+	if request.MessageType == BatchFindNode {
+		timeout = 15 * time.Second
+	}
 	if isLong {
 		timeout = 3 * time.Minute
 	}
@@ -662,7 +672,7 @@ func (s *Network) handleGetValuesRequest(ctx context.Context, message *Message, 
 		val := KeyValWithClosest{
 			Value: values[i],
 		}
-		if val.Value == nil {
+		if len(val.Value) == 0 {
 			decodedKey, err := hex.DecodeString(keys[i])
 			if err != nil {
 				err = errors.Errorf("batch find vals: decode key: %w - key %s", err, keys[i])

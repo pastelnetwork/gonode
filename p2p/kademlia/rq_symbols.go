@@ -99,7 +99,7 @@ func (s *DHT) storeSymbolsInP2P(ctx context.Context, dir string, batchKeys map[s
 	}
 
 	// Store the loaded symbols in P2P
-	if err := s.StoreBatch(ctx, result, 1); err != nil {
+	if err := s.StoreBatch(ctx, result, 1, dir); err != nil {
 		return fmt.Errorf("p2p worker: store batch raptorq symbols in p2p: %w", err)
 	}
 

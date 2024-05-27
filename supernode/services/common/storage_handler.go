@@ -75,7 +75,7 @@ func (h *StorageHandler) StoreBatch(ctx context.Context, list [][]byte, typ int)
 	}
 	log.WithContext(ctx).WithField("task_id", taskID).Info("task_id in storeList")
 
-	return h.P2PClient.StoreBatch(ctx, list, typ)
+	return h.P2PClient.StoreBatch(ctx, list, typ, taskID)
 }
 
 // GenerateRaptorQSymbols calls RQ service to produce RQ Symbols
@@ -194,6 +194,11 @@ func (h *StorageHandler) ValidateRaptorQSymbolIDs(ctx context.Context,
 }
 
 func (h *StorageHandler) storeSymbolsInP2P(ctx context.Context, dir string, batchKeys map[string][]byte) error {
+	val := ctx.Value(log.TaskIDKey)
+	taskID := ""
+	if val != nil {
+		taskID = fmt.Sprintf("%v", val)
+	}
 	// Load symbols from the database for the current batch
 	log.WithContext(ctx).WithField("count", len(batchKeys)).Info("loading batch symbols")
 	loadedSymbols, err := utils.LoadSymbols(dir, batchKeys)
@@ -212,7 +217,7 @@ func (h *StorageHandler) storeSymbolsInP2P(ctx context.Context, dir string, batc
 	}
 
 	// Store the loaded symbols in P2P
-	if err := h.P2PClient.StoreBatch(ctx, result, P2PDataRaptorQSymbol); err != nil {
+	if err := h.P2PClient.StoreBatch(ctx, result, P2PDataRaptorQSymbol, taskID); err != nil {
 		return fmt.Errorf("store batch raptorq symbols in p2p: %w", err)
 	}
 	log.WithContext(ctx).WithField("count", len(loadedSymbols)).Info("stored batch symbols")
