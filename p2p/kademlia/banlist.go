@@ -13,7 +13,7 @@ const (
 	banDuration = 3 * time.Hour
 
 	// threshold - threshold
-	threshold = 2
+	threshold = 3
 )
 
 // BanNode is the over-the-wire representation of a node

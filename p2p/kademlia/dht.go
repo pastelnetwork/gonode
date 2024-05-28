@@ -37,9 +37,10 @@ var (
 	batchStoreSize                       = 2500
 	storeSameSymbolsBatchConcurrency     = 1
 	storeSymbolsBatchConcurrency         = 2.0
+	minimumDataStoreSuccessRate          = 75.0
 )
 
-const maxIterations = 5
+const maxIterations = 4
 
 // DHT represents the state of the queries node in the distributed hash table
 type DHT struct {
@@ -215,20 +216,14 @@ func (s *DHT) Store(ctx context.Context, data []byte, typ int) (string, error) {
 }
 
 // StoreBatch will store a batch of values with their SHA256 hash as the key
-func (s *DHT) StoreBatch(ctx context.Context, values [][]byte, typ int) error {
-	val := ctx.Value(log.TaskIDKey)
-	taskID := ""
-	if val != nil {
-		taskID = fmt.Sprintf("%v", val)
-	}
-
+func (s *DHT) StoreBatch(ctx context.Context, values [][]byte, typ int, taskID string) error {
 	log.WithContext(ctx).WithField("taskID", taskID).WithField("records", len(values)).Info("store db batch begin")
 	if err := s.store.StoreBatch(ctx, values, typ, true); err != nil {
 		return fmt.Errorf("store batch: %v", err)
 	}
 	log.WithContext(ctx).WithField("taskID", taskID).Info("store db batch done,store network batch begin")
 
-	if err := s.IterateBatchStore(ctx, values, typ); err != nil {
+	if err := s.IterateBatchStore(ctx, values, typ, taskID); err != nil {
 		return fmt.Errorf("iterate batch store: %v", err)
 	}
 
@@ -501,8 +496,6 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 
 	self := &Node{ID: s.ht.self.ID, IP: s.externalIP, Port: s.ht.self.Port}
 	self.SetHashedID()
-	log.WithContext(ctx).WithField("self", self.String()).
-		WithField("txid", txID).Info("batch retrieve")
 
 	// populate hexKeys and hashes
 	for i, key := range keys {
@@ -523,40 +516,13 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 
 	}
 
-	// Do a batch find nodes call to fully populate the known nodes map and self routing table
-	lenOfKeys := len(keys)
-	if lenOfKeys > 2000 {
-		lenOfKeys = 2000
-	}
-
-	responses, _ := s.batchFindNode(ctx, hashes[:lenOfKeys], knownNodes, make(map[string]bool))
-	for response := range responses {
-		if response.Error != nil {
-			log.WithContext(ctx).WithError(response.Error).WithField("txid", txID).Error("batch find node failed on a node")
-		}
-
-		if response.Message == nil {
-			continue
-		}
-
-		v, ok := response.Message.Data.(*BatchFindNodeResponse)
-		if ok && v.Status.Result == ResultOk {
-			for _, nodesList := range v.ClosestNodes {
-				for _, node := range nodesList {
-					s.addNode(ctx, node)
-					s.addKnownNodes(nodesList, knownNodes)
-				}
-			}
-		}
-	}
-
 	// Calculate the local top 6 nodes for each value
 	for i := range keys {
 		// Calculate the local top 6 nodes for each value
-		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, hashes[i], nil, nil)
+		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, hashes[i], s.ignorelist.ToNodeList(), nil)
 		globalClosestContacts[keys[i]] = top6
 
-		s.addKnownNodes(top6.Nodes, knownNodes)
+		s.addKnownNodes(ctx, top6.Nodes, knownNodes)
 	}
 
 	log.WithContext(ctx).WithField("txid", txID).Info("closest contacts populated, fetching local keys now")
@@ -582,21 +548,16 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 
 	semaphore := make(chan struct{}, parallelBatches)
 	var wg sync.WaitGroup
-
-	// Create a cancellation context to control goroutine shutdown
 	gctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	log.WithContext(ctx).WithField("txid", txID).WithField("parallel batches", parallelBatches).Info("begin iterate batch get values")
+	log.WithContext(ctx).WithField("txid", txID).WithField("parallel batches", parallelBatches).Debug("begin iterate batch get values")
 	// Process in batches
 	for start := 0; start < len(keys); start += batchSize {
 		end := start + batchSize
 		if end > len(keys) {
 			end = len(keys)
 		}
-
-		batchKeys := keys[start:end]
-		batchHexKeys := hexKeys[start:end] // Local copy for the goroutine
 
 		// Check for early termination
 		if atomic.LoadInt32(&networkFound)+int32(foundLocalCount) >= int32(required) {
@@ -606,68 +567,89 @@ func (s *DHT) BatchRetrieve(ctx context.Context, keys []string, required int32, 
 		wg.Add(1)
 		semaphore <- struct{}{} // Acquire a semaphore slot before launching the goroutine
 
-		go func(batchKeys []string, batchHexKeys []string) {
-			defer wg.Done()
-			defer func() { <-semaphore }() // Release semaphore slot on goroutine completion
-
-			// Early check if context is done to stop processing
-			select {
-			case <-gctx.Done():
-				return
-			default:
-			}
-
-			fetchMap := make(map[string][]int)
-			for i, key := range batchKeys {
-				fetchNodes := globalClosestContacts[key].Nodes
-				for _, node := range fetchNodes {
-					nodeID := string(node.ID)
-					fetchMap[nodeID] = append(fetchMap[nodeID], i)
-				}
-			}
-
-			log.WithContext(gctx).WithField("len(fetchMap)", len(fetchMap)).WithField("len(hexKeys)", len(hexKeys)).WithField("len(keys)", len(keys)).
-				WithField("network-found", networkFound).WithField("txid", txID).Info("fetch map")
-
-			// Iterate through the network to get the values for the current batch
-			foundCount, _, batchErr := s.iterateBatchGetValues(gctx, knownNodes, batchKeys, batchHexKeys, fetchMap, &resMap, required, foundLocalCount+networkFound)
-			if batchErr != nil {
-				log.WithContext(gctx).WithError(batchErr).WithField("txid", txID).Error("iterate batch get values failed")
-			}
-
-			// Update the global counter for found values
-			atomic.AddInt32(&networkFound, int32(foundCount))
-
-			// Check and propagate early termination
-			if atomic.LoadInt32(&networkFound)+int32(foundLocalCount) >= int32(required) {
-				cancel() // Cancels the context, signaling other goroutines to stop
-			}
-		}(batchKeys, batchHexKeys)
+		go s.processBatch(gctx, keys[start:end], hexKeys[start:end], semaphore, &wg, globalClosestContacts, knownNodes, &resMap,
+			required, foundLocalCount, &networkFound, cancel, txID)
 	}
-	log.WithContext(ctx).WithField("txid", txID).Info("called iterate batch get values - waiting for workers to finish")
+
 	wg.Wait() // Wait for all goroutines to finish
 	log.WithContext(ctx).WithField("txid", txID).Info("iterate batch get values workers done")
 
 	return result, nil
 }
 
-func (s *DHT) doBatchGetValuesCall(ctx context.Context, node *Node, requestKeys map[string]KeyValWithClosest) (map[string]KeyValWithClosest, error) {
-	request := s.newMessage(BatchGetValues, node, &BatchGetValuesRequest{Data: requestKeys})
-	response, err := s.network.Call(ctx, request, true)
-	if err != nil {
-		return nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)
-	}
+func (s *DHT) processBatch(ctx context.Context, batchKeys []string, batchHexKeys []string, semaphore chan struct{}, wg *sync.WaitGroup,
+	globalClosestContacts map[string]*NodeList, knownNodes map[string]*Node, resMap *sync.Map, required int32, foundLocalCount int32, networkFound *int32,
+	cancel context.CancelFunc, txID string) {
 
-	resp, ok := response.Data.(*BatchGetValuesResponse)
-	if !ok {
-		return nil, fmt.Errorf("invalid response type: %T", response.Data)
-	}
+	defer wg.Done()
+	defer func() { <-semaphore }()
 
-	if resp.Status.Result != ResultOk {
-		return nil, fmt.Errorf("response status: %v", resp.Status.ErrMsg)
-	}
+	for i := 0; i < maxIterations; i++ {
+		// Early check if context is done to stop processing
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 
-	return resp.Data, nil
+		fetchMap := make(map[string][]int)
+		for i, key := range batchKeys {
+			fetchNodes := globalClosestContacts[key].Nodes
+			for _, node := range fetchNodes {
+				nodeID := string(node.ID)
+				fetchMap[nodeID] = append(fetchMap[nodeID], i)
+			}
+		}
+
+		// Iterate through the network to get the values for the current batch
+		foundCount, newClosestContacts, batchErr := s.iterateBatchGetValues(ctx, knownNodes, batchKeys, batchHexKeys, fetchMap, resMap, required, foundLocalCount+atomic.LoadInt32(networkFound))
+		if batchErr != nil {
+			log.WithContext(ctx).WithError(batchErr).WithField("txid", txID).Error("iterate batch get values failed")
+		}
+
+		// Update the global counter for found values
+		atomic.AddInt32(networkFound, int32(foundCount))
+
+		// Check and propagate early termination
+		if atomic.LoadInt32(networkFound)+int32(foundLocalCount) >= int32(required) {
+			cancel() // Cancels the context, signaling other goroutines to stop
+			break
+		}
+
+		// we now need to check if the nodes in the globalClosestContacts Map are still in the top 6
+		// if not, we need to send calls to the newly found nodes to inquire about the top 6 nodes
+		changed := false
+		for key, nodesList := range newClosestContacts {
+			if nodesList == nil || nodesList.Nodes == nil {
+				continue
+			}
+
+			if globalClosestContacts[key] == nil || globalClosestContacts[key].Nodes == nil {
+				log.WithContext(ctx).WithField("key", key).Warn("global contacts list doesn't have the key")
+				continue
+			}
+
+			if !haveAllNodes(nodesList.Nodes, globalClosestContacts[key].Nodes) {
+				log.WithContext(ctx).WithField("key", key).WithField("have", nodesList.String()).WithField("task-id", txID).WithField("got", globalClosestContacts[key].String()).Info("global closest contacts list changed in fetch!")
+				changed = true
+			}
+
+			nodesList.AddNodes(globalClosestContacts[key].Nodes)
+			nodesList.Sort()
+			nodesList.TopN(Alpha)
+
+			s.addKnownNodes(ctx, nodesList.Nodes, knownNodes)
+			globalClosestContacts[key] = nodesList
+		}
+
+		if !changed {
+			break
+		}
+
+		if i == maxIterations-1 {
+			log.WithContext(ctx).WithField("iter", i).WithField("task-id", txID).Warn("max iterations reached, still top 6 list was changed")
+		}
+	}
 }
 
 func (s *DHT) iterateBatchGetValues(ctx context.Context, nodes map[string]*Node, keys []string, hexKeys []string, fetchMap map[string][]int,
@@ -683,6 +665,11 @@ func (s *DHT) iterateBatchGetValues(ctx context.Context, nodes map[string]*Node,
 	gctx, cancel := context.WithCancel(ctx) // Create a cancellable context
 	defer cancel()
 	for nodeID, node := range nodes {
+		if s.ignorelist.Banned(node) {
+			log.WithContext(ctx).WithField("node", node.String()).Info("Ignore banned node in iterate batch get values")
+			continue
+		}
+
 		contactsMap[nodeID] = make(map[string][]*Node)
 		wg.Add(1)
 		go func(node *Node, nodeID string) {
@@ -749,16 +736,17 @@ func (s *DHT) iterateBatchGetValues(ctx context.Context, nodes map[string]*Node,
 
 	for _, closestNodes := range contactsMap {
 		for key, nodes := range closestNodes {
-			if _, ok := closestContacts[key]; !ok {
-				k, err := hex.DecodeString(key)
-				if err != nil {
-					log.WithContext(ctx).WithError(err).WithField("key", key).Error("failed to decode hex key in closestNodes.Range")
-					return 0, nil, err
-				}
+			comparator, err := hex.DecodeString(key)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("key", key).Error("failed to decode hex key in closestNodes.Range")
+				return 0, nil, err
+			}
+			bkey := base58.Encode(comparator)
 
-				closestContacts[key] = &NodeList{Nodes: nodes, Comparator: k}
+			if _, ok := closestContacts[bkey]; !ok {
+				closestContacts[bkey] = &NodeList{Nodes: nodes, Comparator: comparator}
 			} else {
-				closestContacts[key].AddNodes(nodes)
+				closestContacts[bkey].AddNodes(nodes)
 			}
 		}
 	}
@@ -770,6 +758,25 @@ func (s *DHT) iterateBatchGetValues(ctx context.Context, nodes map[string]*Node,
 	}
 
 	return int(foundCount), closestContacts, firstErr
+}
+
+func (s *DHT) doBatchGetValuesCall(ctx context.Context, node *Node, requestKeys map[string]KeyValWithClosest) (map[string]KeyValWithClosest, error) {
+	request := s.newMessage(BatchGetValues, node, &BatchGetValuesRequest{Data: requestKeys})
+	response, err := s.network.Call(ctx, request, false)
+	if err != nil {
+		return nil, fmt.Errorf("network call request %s failed: %w", request.String(), err)
+	}
+
+	resp, ok := response.Data.(*BatchGetValuesResponse)
+	if !ok {
+		return nil, fmt.Errorf("invalid response type: %T", response.Data)
+	}
+
+	if resp.Status.Result != ResultOk {
+		return nil, fmt.Errorf("response status: %v", resp.Status.ErrMsg)
+	}
+
+	return resp.Data, nil
 }
 
 // Iterate does an iterative search through the kademlia network
@@ -1033,23 +1040,22 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 
 	index := s.ht.bucketIndex(s.ht.self.HashedID, node.HashedID)
 
-	s.ht.mutex.Lock()
-	defer s.ht.mutex.Unlock()
-	// 1. if the node is existed, refresh the node to the end of bucket
+	if err := s.updateReplicationNode(ctx, node.ID, node.IP, node.Port, true); err != nil {
+		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("node-ip", node.IP).WithError(err).Error("update replication node failed")
+	}
+
 	if s.ht.hasBucketNode(index, node.ID) {
 		s.ht.refreshNode(node.HashedID)
 		return nil
 	}
 
-	if err := s.updateReplicationNode(ctx, node.ID, node.IP, node.Port, true); err != nil {
-		log.P2P().WithContext(ctx).WithField("node-id", string(node.ID)).WithField("node-ip", node.IP).WithError(err).Error("update replication node failed")
-	}
+	s.ht.mutex.Lock()
+	defer s.ht.mutex.Unlock()
 
 	// 2. if the bucket is full, ping the first node
 	bucket := s.ht.routeTable[index]
 	if len(bucket) == K {
 		first := bucket[0]
-
 		// new a ping request message
 		request := s.newMessage(Ping, first, nil)
 		// new a context with timeout
@@ -1057,8 +1063,16 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 		defer cancel()
 
 		// invoke the request and handle the response
-		response, err := s.network.Call(ctx, request, false)
-		if err != nil {
+		_, err := s.network.Call(ctx, request, false)
+		if err == nil {
+			// refresh the node to the end of bucket
+			bucket = bucket[1:]
+			bucket = append(bucket, node)
+			s.ht.routeTable[index] = bucket
+			return nil
+		} else {
+
+			s.ignorelist.IncrementCount(node)
 			// the node is down, remove the node from bucket
 			bucket = append(bucket, node)
 			bucket = bucket[1:]
@@ -1066,14 +1080,9 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 			// need to reset the route table with the bucket
 			s.ht.routeTable[index] = bucket
 
-			log.P2P().WithContext(ctx).Debugf("bucket: %d, network call: %v: %v", index, request, err)
 			return first
 		}
-		log.P2P().WithContext(ctx).Debugf("ping response: %v", response.String())
 
-		// refresh the node to the end of bucket
-		bucket = bucket[1:]
-		bucket = append(bucket, node)
 	} else {
 		// 3. append the node to the end of the bucket
 		bucket = append(bucket, node)
@@ -1160,8 +1169,6 @@ func (s *DHT) storeToAlphaNodes(ctx context.Context, nl *NodeList, data []byte, 
 		<-alphaCh
 		if atomic.LoadInt32(&storeCount) >= int32(Alpha) {
 			nl.TopN(Alpha)
-			log.WithContext(ctx).WithField("task_id", taskID).WithField("skey", hex.EncodeToString(skey)).WithField("closest 6 nodes", nl.String()).
-				WithField("len-total-nodes", nl.Len()).Debug("store data to alpha nodes success")
 			return nil
 		}
 	}
@@ -1219,7 +1226,7 @@ func (s *DHT) removeNode(ctx context.Context, node *Node) {
 	}
 }
 
-func (s *DHT) addKnownNodes(nodes []*Node, knownNodes map[string]*Node) {
+func (s *DHT) addKnownNodes(ctx context.Context, nodes []*Node, knownNodes map[string]*Node) {
 	for _, node := range nodes {
 		if _, ok := knownNodes[string(node.ID)]; ok {
 			continue
@@ -1227,33 +1234,36 @@ func (s *DHT) addKnownNodes(nodes []*Node, knownNodes map[string]*Node) {
 		node.SetHashedID()
 		knownNodes[string(node.ID)] = node
 
+		s.addNode(ctx, node)
 		bucket := s.ht.bucketIndex(s.ht.self.HashedID, node.HashedID)
 		s.ht.resetRefreshTime(bucket)
 	}
 }
 
-func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) error {
-	globalClosestContacts := make(map[string]*NodeList) // This will store the global top 6 nodes for each symbol's hash
-	knownNodes := make(map[string]*Node)                // This will store the nodes we've already contacted
+func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int, id string) error {
+	globalClosestContacts := make(map[string]*NodeList)
+	knownNodes := make(map[string]*Node)
 	contacted := make(map[string]bool)
 	hashes := make([][]byte, len(values))
 
+	log.WithContext(ctx).WithField("task-id", id).WithField("keys", len(values)).Info("iterate batch store begin")
 	for i := 0; i < len(values); i++ {
 		target, _ := utils.Sha3256hash(values[i])
 		hashes[i] = target
-		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, target, nil, nil)
+		top6 := s.ht.closestContactsWithInlcudingNode(Alpha, target, s.ignorelist.ToNodeList(), nil)
 
 		globalClosestContacts[base58.Encode(target)] = top6
-		s.addKnownNodes(top6.Nodes, knownNodes)
+		s.addKnownNodes(ctx, top6.Nodes, knownNodes)
 	}
 
 	var changed bool
 	var i int
 	for {
 		i++
+		log.WithContext(ctx).WithField("task-id", id).WithField("iter", i).WithField("keys", len(values)).Debug("iterate batch store begin")
 		changed = false
 		localClosestNodes := make(map[string]*NodeList)
-		responses, atleastOneContacted := s.batchFindNode(ctx, hashes, knownNodes, contacted)
+		responses, atleastOneContacted := s.batchFindNode(ctx, hashes, knownNodes, contacted, id)
 
 		if !atleastOneContacted {
 			break
@@ -1261,7 +1271,8 @@ func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) e
 
 		for response := range responses {
 			if response.Error != nil {
-				log.WithContext(ctx).WithError(response.Error).Error("batch find node failed on a node")
+				log.WithContext(ctx).WithError(response.Error).WithField("task-id", id).Error("batch find node failed on a node")
+				continue
 			}
 
 			if response.Message == nil {
@@ -1280,7 +1291,7 @@ func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) e
 							localClosestNodes[key] = &NodeList{Nodes: nodesList, Comparator: base58.Decode(key)}
 						}
 
-						s.addKnownNodes(nodesList, knownNodes)
+						s.addKnownNodes(ctx, nodesList, knownNodes)
 					}
 				}
 			}
@@ -1289,6 +1300,7 @@ func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) e
 		// we now need to check if the nodes in the globalClosestContacts Map are still in the top 6
 		// if yes, we can store the data to them
 		// if not, we need to send calls to the newly found nodes to inquire about the top 6 nodes
+		log.WithContext(ctx).WithField("task-id", id).WithField("iter", i).WithField("keys", len(values)).Logger.Infof("check closest nodes & beign store")
 		for key, nodesList := range localClosestNodes {
 			if nodesList == nil {
 				continue
@@ -1297,10 +1309,9 @@ func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) e
 			nodesList.Comparator = base58.Decode(key)
 			nodesList.Sort()
 			nodesList.TopN(Alpha)
-			s.addKnownNodes(nodesList.Nodes, knownNodes)
+			s.addKnownNodes(ctx, nodesList.Nodes, knownNodes)
 
 			if !haveAllNodes(nodesList.Nodes, globalClosestContacts[key].Nodes) {
-				log.WithContext(ctx).WithField("key", key).WithField("have", nodesList.String()).WithField("got", globalClosestContacts[key].String()).Info("global closest contacts list changed!")
 				changed = true
 			}
 
@@ -1311,7 +1322,6 @@ func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) e
 		}
 
 		if !changed {
-			log.WithContext(ctx).WithField("iter", i).Info("global closest contacts list did not change, we can now store the data")
 			break
 		}
 	}
@@ -1327,13 +1337,18 @@ func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) e
 		}
 	}
 
-	requests := len(storageMap)
+	requests := 0
 	successful := 0
 
 	storeResponses := s.batchStoreNetwork(ctx, values, knownNodes, storageMap, typ)
 	for response := range storeResponses {
+		requests++
 		if response.Error != nil {
-			log.WithContext(ctx).WithError(response.Error).Error("batch store failed on a node")
+			sender := ""
+			if response.Message != nil && response.Message.Sender != nil {
+				sender = response.Message.Sender.String()
+			}
+			log.WithContext(ctx).WithField("node", sender).WithError(response.Error).Error("batch store failed on a node")
 		}
 
 		if response.Message == nil {
@@ -1343,24 +1358,23 @@ func (s *DHT) IterateBatchStore(ctx context.Context, values [][]byte, typ int) e
 		v, ok := response.Message.Data.(*StoreDataResponse)
 		if ok && v.Status.Result == ResultOk {
 			successful++
-			log.WithContext(ctx).Infof("batch store to node %s success", response.Message.Sender.String())
 		} else {
 			errMsg := "unknwon error"
 			if v != nil {
 				errMsg = v.Status.ErrMsg
 			}
 
-			log.WithContext(ctx).WithField("err", errMsg).Errorf("batch store to node %s failed", response.Message.Sender.String())
+			log.WithContext(ctx).WithField("err", errMsg).WithField("task-id", id).Errorf("batch store to node %s failed", response.Message.Sender.String())
 		}
 	}
 
 	if requests > 0 {
 		successRate := float64(successful) / float64(requests) * 100
-		if successRate >= 80 {
-			log.WithContext(ctx).Infof("Successful store operations: %.2f%%", successRate)
+		if successRate >= minimumDataStoreSuccessRate {
+			log.WithContext(ctx).WithField("task-id", id).Infof("Successful store operations: %.2f%%", successRate)
 			return nil
 		} else {
-			log.WithContext(ctx).Infof("Failed to achieve desired success rate, only: %.2f%%", successRate)
+			log.WithContext(ctx).WithField("task-id", id).Infof("Failed to achieve desired success rate, only: %.2f%%", successRate)
 			return fmt.Errorf("failed to achieve desired success rate, only: %.2f%% successful", successRate)
 		}
 	}
@@ -1375,6 +1389,11 @@ func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[
 	var wg sync.WaitGroup
 
 	for key, node := range nodes {
+		if s.ignorelist.Banned(node) {
+			log.WithContext(ctx).WithField("node", node.String()).Debug("Ignoring banned node in batch store network call")
+			continue
+		}
+
 		wg.Add(1)
 		semaphore <- struct{}{} // Acquire semaphore
 		go func(receiver *Node, key string) {
@@ -1394,12 +1413,13 @@ func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[
 					totalBytes += len(values[idx])
 				}
 
-				log.WithContext(ctx).WithField("keys", len(toStore)).WithField("size-before-compress", utils.BytesIntToMB(totalBytes)).Info("batch store to node")
+				log.WithContext(ctx).WithField("keys", len(toStore)).WithField("size-before-compress", utils.BytesIntToMB(totalBytes)).Debug("batch store to node")
 
 				data := &BatchStoreDataRequest{Data: toStore, Type: typ}
 				request := s.newMessage(BatchStoreData, receiver, data)
-				response, err := s.network.Call(ctx, request, true)
+				response, err := s.network.Call(ctx, request, false)
 				if err != nil {
+					s.ignorelist.IncrementCount(receiver)
 					log.P2P().WithContext(ctx).WithError(err).Debugf("network call batch store request %s failed", request.String())
 					responses <- &MessageWithError{Error: err, Message: response}
 					return
@@ -1416,22 +1436,20 @@ func (s *DHT) batchStoreNetwork(ctx context.Context, values [][]byte, nodes map[
 	return responses
 }
 
-func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[string]*Node, contacted map[string]bool) (chan *MessageWithError, bool) {
-	log.WithContext(ctx).WithField("nodes-count", len(nodes)).Info("batch find node begin")
+func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[string]*Node, contacted map[string]bool, txid string) (chan *MessageWithError, bool) {
+	log.WithContext(ctx).WithField("task-id", txid).WithField("nodes-count", len(nodes)).Debug("batch find node begin")
 
 	responses := make(chan *MessageWithError, len(nodes))
 	atleastOneContacted := false
 	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, 5)
-
-	// Function to ensure responses channel is closed once all work is done
-	go func() {
-		wg.Wait()
-		close(responses)
-	}()
+	semaphore := make(chan struct{}, 20)
 
 	for _, node := range nodes {
 		if _, ok := contacted[string(node.ID)]; ok {
+			continue
+		}
+		if s.ignorelist.Banned(node) {
+			log.WithContext(ctx).WithField("node", node.String()).WithField("txid", txid).Info("Ignoring banned node in batch find call")
 			continue
 		}
 
@@ -1453,16 +1471,19 @@ func (s *DHT) batchFindNode(ctx context.Context, payload [][]byte, nodes map[str
 				request := s.newMessage(BatchFindNode, receiver, data)
 				response, err := s.network.Call(ctx, request, false)
 				if err != nil {
-					log.P2P().WithContext(ctx).WithError(err).Debugf("network call request %s failed", request.String())
+					s.ignorelist.IncrementCount(receiver)
+					log.WithContext(ctx).WithError(err).WithField("node", receiver.String()).WithField("txid", txid).Warn("batch find node network call request failed")
 					responses <- &MessageWithError{Error: err, Message: response}
 					return
 				}
+
 				responses <- &MessageWithError{Message: response}
 			}
 		}(node)
 	}
-
-	log.WithContext(ctx).WithField("nodes-count", len(nodes)).Info("batch find node done")
+	wg.Wait()
+	close(responses)
+	log.WithContext(ctx).WithField("nodes-count", len(nodes)).WithField("len-resp", len(responses)).WithField("txid", txid).Debug("batch find node done")
 
 	return responses, atleastOneContacted
 }

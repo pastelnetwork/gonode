@@ -278,26 +278,20 @@ func (s *Network) handleReplicate(ctx context.Context, message *Message) (res []
 }
 
 func (s *Network) handleReplicateRequest(ctx context.Context, req *ReplicateDataRequest, id []byte, ip string, port int) error {
-	keys, err := decompressKeysStr(req.Keys)
+	keysToStore, err := s.dht.store.RetrieveBatchNotExist(ctx, req.Keys, 5000)
 	if err != nil {
-		log.WithContext(ctx).WithField("keys", len(req.Keys)).WithField("from-ip", ip).Errorf("unable to decode rcvd batch rep keys: %v", err)
-		return fmt.Errorf("unable to decode keys: %w", err)
-	}
-
-	keysToStore, err := s.dht.store.RetrieveBatchNotExist(ctx, keys, 5000)
-	if err != nil {
-		log.WithContext(ctx).WithField("keys", len(keys)).WithField("from-ip", ip).Errorf("unable to retrieve batch replication keys: %v", err)
+		log.WithContext(ctx).WithField("keys", len(req.Keys)).WithField("from-ip", ip).Errorf("unable to retrieve batch replication keys: %v", err)
 		return fmt.Errorf("unable to retrieve batch replication keys: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("to-store-keys", len(keysToStore)).WithField("rcvd-keys", len(keys)).WithField("from-ip", ip).Debug("store batch replication keys to be stored")
+	log.WithContext(ctx).WithField("to-store-keys", len(keysToStore)).WithField("rcvd-keys", len(req.Keys)).WithField("from-ip", ip).Debug("store batch replication keys to be stored")
 
 	if len(keysToStore) > 0 {
 		if err := s.dht.store.StoreBatchRepKeys(keysToStore, string(id), ip, port); err != nil {
 			return fmt.Errorf("unable to store batch replication keys: %w", err)
 		}
 
-		log.WithContext(ctx).WithField("to-store-keys", len(keysToStore)).WithField("rcvd-keys", len(keys)).WithField("from-ip", ip).Info("store batch replication keys stored")
+		log.WithContext(ctx).WithField("to-store-keys", len(keysToStore)).WithField("rcvd-keys", len(req.Keys)).WithField("from-ip", ip).Info("store batch replication keys stored")
 	}
 
 	return nil
@@ -486,9 +480,19 @@ func (s *Network) serve(ctx context.Context) {
 
 // Call sends the request to target and receive the response
 func (s *Network) Call(ctx context.Context, request *Message, isLong bool) (*Message, error) {
-	timeout := 30 * time.Second
+	timeout := 10 * time.Second
+
+	if request.MessageType == BatchStoreData {
+		timeout = 60 * time.Second
+	}
+	if request.MessageType == FindNode {
+		timeout = 30 * time.Second
+	}
+	if request.MessageType == BatchFindNode {
+		timeout = 15 * time.Second
+	}
 	if isLong {
-		timeout = 5 * time.Minute
+		timeout = 3 * time.Minute
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -668,7 +672,7 @@ func (s *Network) handleGetValuesRequest(ctx context.Context, message *Message, 
 		val := KeyValWithClosest{
 			Value: values[i],
 		}
-		if val.Value == nil {
+		if len(val.Value) == 0 {
 			decodedKey, err := hex.DecodeString(keys[i])
 			if err != nil {
 				err = errors.Errorf("batch find vals: decode key: %w - key %s", err, keys[i])
@@ -695,23 +699,19 @@ func (s *Network) handleGetValuesRequest(ctx context.Context, message *Message, 
 }
 
 func (s *Network) handleBatchFindValuesRequest(ctx context.Context, req *BatchFindValuesRequest, ip string, reqID string) (isDone bool, compressedData []byte, err error) {
-	keys, err := decompressKeysStr(req.Keys)
-	if err != nil {
-		return false, nil, fmt.Errorf("unable to decode keys: %w", err)
-	}
-	log.WithContext(ctx).WithField("p2p-req-id", reqID).WithField("keys", len(keys)).WithField("from-ip", ip).Info("batch find values request received")
-	if len(keys) > 0 {
-		log.WithContext(ctx).WithField("p2p-req-id", reqID).WithField("keys[0]", keys[0]).WithField("keys[len]", keys[len(keys)-1]).
+	log.WithContext(ctx).WithField("p2p-req-id", reqID).WithField("keys", len(req.Keys)).WithField("from-ip", ip).Info("batch find values request received")
+	if len(req.Keys) > 0 {
+		log.WithContext(ctx).WithField("p2p-req-id", reqID).WithField("keys[0]", req.Keys[0]).WithField("keys[len]", req.Keys[len(req.Keys)-1]).
 			WithField("from-ip", ip).Debug("first & last batch keys")
 	}
 
-	values, count, err := s.dht.store.RetrieveBatchValues(ctx, keys)
+	values, count, err := s.dht.store.RetrieveBatchValues(ctx, req.Keys)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to retrieve batch values: %w", err)
 	}
 	log.WithContext(ctx).WithField("p2p-req-id", reqID).WithField("values-len", len(values)).WithField("found", count).WithField("from-ip", ip).Info("batch find values request processed")
 
-	isDone, count, compressedData, err = findOptimalCompression(count, keys, values)
+	isDone, count, compressedData, err = findOptimalCompression(count, req.Keys, values)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to find optimal compression: %w", err)
 	}
@@ -838,7 +838,7 @@ func (s *Network) handleBatchStoreData(ctx context.Context, message *Message) (r
 		return s.generateResponseMessage(BatchStoreData, message.Sender, ResultFailed, err.Error())
 	}
 
-	log.P2P().WithContext(ctx).Debugf("handle batch store data: %v", message.String())
+	log.P2P().WithContext(ctx).Info("handle batch store data request received")
 
 	// add the sender to queries hash table
 	s.dht.addNode(ctx, message.Sender)
@@ -853,6 +853,7 @@ func (s *Network) handleBatchStoreData(ctx context.Context, message *Message) (r
 			Result: ResultOk,
 		},
 	}
+	log.P2P().WithContext(ctx).Info("handle batch store data request processed")
 
 	// new a response message
 	resMsg := s.dht.newMessage(BatchStoreData, message.Sender, response)
@@ -882,11 +883,13 @@ func (s *Network) handleBatchFindNode(ctx context.Context, message *Message) (re
 	}
 	closestMap := make(map[string][]*Node)
 
+	log.WithContext(ctx).WithField("sender", message.Sender.String()).Info("Batch Find Nodes Request Received")
 	for _, hashedTargetID := range request.HashedTarget {
 		closest, _ := s.dht.ht.closestContacts(K, hashedTargetID, []*Node{message.Sender})
 		closestMap[base58.Encode(hashedTargetID)] = closest.Nodes
 	}
 	response.ClosestNodes = closestMap
+	log.WithContext(ctx).WithField("sender", message.Sender.String()).Info("Batch Find Nodes Request Processed")
 
 	// new a response message
 	resMsg := s.dht.newMessage(BatchFindNode, message.Sender, response)

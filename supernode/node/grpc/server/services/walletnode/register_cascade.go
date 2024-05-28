@@ -105,7 +105,7 @@ func (service *RegisterCascade) AcceptedNodes(ctx context.Context, _ *pb.Accepte
 
 	nodes, err := task.NetworkHandler.AcceptedNodes(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("err from network handler.accepted-nodes: %w", err)
 	}
 
 	var peers []*pb.AcceptedNodesReply_Peer

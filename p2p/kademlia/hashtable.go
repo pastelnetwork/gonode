@@ -46,7 +46,8 @@ type HashTable struct {
 	routeTable [][]*Node // 256x20
 
 	// mutex for route table
-	mutex sync.RWMutex
+	mutex    sync.RWMutex
+	refMutex sync.RWMutex
 
 	// refresh time for every bucket
 	refreshers []time.Time
@@ -80,13 +81,16 @@ func NewHashTable(options *Options) (*HashTable, error) {
 
 // resetRefreshTime - reset the refresh time
 func (ht *HashTable) resetRefreshTime(bucket int) {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
+	ht.refMutex.Lock()
+	defer ht.refMutex.Unlock()
 	ht.refreshers[bucket] = time.Now().UTC()
 }
 
 // refreshNode makes the node to the end
 func (ht *HashTable) refreshNode(id []byte) {
+	ht.mutex.Lock()
+	defer ht.mutex.Unlock()
+
 	// bucket index of the node
 	index := ht.bucketIndex(ht.self.HashedID, id)
 	// point to the bucket
@@ -110,8 +114,8 @@ func (ht *HashTable) refreshNode(id []byte) {
 
 // refreshTime returns the refresh time for bucket
 func (ht *HashTable) refreshTime(bucket int) time.Time {
-	ht.mutex.RLock()
-	defer ht.mutex.RUnlock()
+	ht.refMutex.RLock()
+	defer ht.refMutex.RUnlock()
 
 	return ht.refreshers[bucket]
 }
@@ -161,6 +165,9 @@ func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
 
 // hasBucketNode check if the node id is existed in the bucket
 func (ht *HashTable) hasBucketNode(bucket int, id []byte) bool {
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
 	for _, node := range ht.routeTable[bucket] {
 		if bytes.Equal(node.ID, id) {
 			return true

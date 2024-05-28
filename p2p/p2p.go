@@ -99,7 +99,7 @@ func (s *p2p) run(ctx context.Context) error {
 	}
 	s.running = true
 
-	log.P2P().WithContext(ctx).Info("p2p service is started")
+	log.WithContext(ctx).Info("p2p service is started")
 
 	// block until context is done
 	<-ctx.Done()
@@ -107,7 +107,7 @@ func (s *p2p) run(ctx context.Context) error {
 	// stop the node for kademlia network
 	s.dht.Stop(ctx)
 
-	log.P2P().WithContext(ctx).Info("p2p service is stopped")
+	log.WithContext(ctx).Info("p2p service is stopped")
 	return nil
 }
 
@@ -123,14 +123,14 @@ func (s *p2p) Store(ctx context.Context, data []byte, typ int) (string, error) {
 }
 
 // StoreBatch will store a batch of values with their SHA256 hash as the key
-func (s *p2p) StoreBatch(ctx context.Context, data [][]byte, typ int) error {
+func (s *p2p) StoreBatch(ctx context.Context, data [][]byte, typ int, taskID string) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if !s.running {
 		return errors.New("p2p service is not running")
 	}
 
-	return s.dht.StoreBatch(ctx, data, typ)
+	return s.dht.StoreBatch(ctx, data, typ, taskID)
 }
 
 // Retrieve retrive the data from the kademlia network

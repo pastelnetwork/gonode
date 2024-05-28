@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -81,7 +82,7 @@ func (h *NetworkHandler) Session(_ context.Context, isPrimary bool) error {
 // AcceptedNodes waits for connection supernodes, as soon as there is the required amount returns them.
 func (h *NetworkHandler) AcceptedNodes(serverCtx context.Context) (SuperNodePeerList, error) {
 	if err := h.task.RequiredStatus(StatusPrimaryMode); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("AcceptedNodes: %w", err)
 	}
 
 	<-h.task.NewAction(func(ctx context.Context) error {
@@ -110,7 +111,7 @@ func (h *NetworkHandler) SessionNode(_ context.Context, nodeID string) error {
 	defer h.acceptedMu.Unlock()
 
 	if err := h.task.RequiredStatus(StatusPrimaryMode); err != nil {
-		return err
+		return fmt.Errorf("SessionNode: %w", err)
 	}
 
 	var err error
@@ -163,7 +164,7 @@ func (h *NetworkHandler) ConnectTo(_ context.Context, nodeID, sessID string) err
 		}
 
 		if err = someNode.Session(ctx, h.pastelID, sessID); err != nil {
-			log.WithContext(ctx).WithField("sessID", sessID).WithField("pastelID", h.pastelID).WithError(err).Errorf("handsake with peer")
+			log.WithContext(ctx).WithField("sessID", sessID).WithField("pastelID", h.pastelID).WithError(err).Errorf("handshake with peer")
 			return nil
 		}
 

@@ -224,15 +224,9 @@ func (s *DHT) Replicate(ctx context.Context) {
 			continue
 		}
 
-		data, err := compressKeysStr(closestContactKeys)
-		if err != nil {
-			logEntry.WithField("len-rep-keys", len(closestContactKeys)).WithError(err).Error("unable to compress keys - replication failed")
-			continue
-		}
-
 		// TODO: Check if data size is bigger than 32 MB
 		request := &ReplicateDataRequest{
-			Keys: data,
+			Keys: closestContactKeys,
 		}
 
 		n := &Node{ID: info.ID, IP: info.IP, Port: info.Port}
@@ -331,15 +325,9 @@ func (s *DHT) adjustNodeKeys(ctx context.Context, from time.Time, info domain.No
 			return fmt.Errorf("failed to parse node info from key: %w", err)
 		}
 
-		data, err := compressKeysStr(keys)
-		if err != nil {
-			logEntry.WithField("adjust-rep-keys", len(keys)).WithError(err).Error("unable to compress keys - adjust keys failed")
-			return fmt.Errorf("unable to compress keys - adjust keys failed: %w", err)
-		}
-
 		// TODO: Check if data size is bigger than 32 MB
 		request := &ReplicateDataRequest{
-			Keys: data,
+			Keys: keys,
 		}
 
 		b := backoff.NewExponentialBackOff()

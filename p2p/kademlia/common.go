@@ -4,10 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/vmihailenco/msgpack/v5"
-
-	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 // generateKeyFromNode to generate a key from a node object.
@@ -43,6 +39,7 @@ func getNodeFromKey(key string) (*Node, error) {
 	return &Node{ID: id, IP: ip, Port: port}, nil
 }
 
+/*
 func compressKeysStr(keys []string) ([]byte, error) {
 	buf, err := msgpack.Marshal(keys)
 	if err != nil {

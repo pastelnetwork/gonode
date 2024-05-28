@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
 )
 
@@ -27,7 +28,9 @@ type Node struct {
 
 // SetHashedID sets hash of ID
 func (s *Node) SetHashedID() {
-	s.HashedID, _ = utils.Sha3256hash(s.ID)
+	if len(s.HashedID) == 0 {
+		s.HashedID, _ = utils.Sha3256hash(s.ID)
+	}
 }
 
 // String returns string format
@@ -159,6 +162,10 @@ func (s *NodeList) distance(id1, id2 []byte) *big.Int {
 
 // Sort sorts nodes
 func (s *NodeList) Sort() {
+	if len(s.Comparator) == 0 {
+		log.Warn("sort without comparator!!")
+	}
+
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	// Sort using the precomputed distances

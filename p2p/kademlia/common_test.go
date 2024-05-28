@@ -2,7 +2,6 @@ package kademlia
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 )
 
@@ -82,6 +81,7 @@ func TestGetNodeFromKey(t *testing.T) {
 	}
 }
 
+/*
 func TestCompressAndDecompressKeysStr(t *testing.T) {
 	tests := []struct {
 		name string
