@@ -1057,9 +1057,7 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 		return nil
 	}
 
-	log.WithContext(ctx).WithField("node", node.String()).Info("waiting for mutex")
 	s.ht.mutex.Lock()
-	log.WithContext(ctx).WithField("node", node.String()).Info("unlocked mutex")
 	defer s.ht.mutex.Unlock()
 
 	// 2. if the bucket is full, ping the first node
