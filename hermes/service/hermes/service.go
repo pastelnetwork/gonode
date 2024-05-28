@@ -3,6 +3,7 @@ package hermes
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/hermes/service/hermes/logsrotator"
 	"os"
 	"reflect"
 
@@ -67,7 +68,12 @@ func (s *service) Run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize restart pastel-d service")
 	}
 
-	return runServices(ctx, chainReorgService, cleanerService, collectionService, fingerprintService, pastelBlockService, restartPastelDService)
+	logRotationService, err := logsrotator.NewLogRotationService()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to initialize restart pastel-d service")
+	}
+
+	return runServices(ctx, chainReorgService, cleanerService, collectionService, fingerprintService, pastelBlockService, restartPastelDService, logRotationService)
 }
 
 func runServices(ctx context.Context, services ...service2.SvcInterface) error {
