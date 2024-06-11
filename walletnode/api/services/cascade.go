@@ -285,6 +285,88 @@ func (service *CascadeAPIHandler) GetTaskHistory(ctx context.Context, p *cascade
 	return history, nil
 }
 
+func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *cascade.RegistrationDetailsPayload) (registrationDetail *cascade.Registration, err error) {
+	log.WithContext(ctx).WithField("file_id", rdp.FileID).Info("Registration detail api invoked")
+	defer log.WithContext(ctx).WithField("file_id", rdp.FileID).Info("Finished registration details")
+
+	baseFile, err := service.register.GetFile(rdp.FileID)
+	if err != nil {
+		return nil, cascade.MakeInternalServerError(err)
+	}
+
+	relatedFiles, err := service.register.GetFilesByBaseFileID(baseFile.FileID)
+	if err != nil {
+		return nil, cascade.MakeInternalServerError(err)
+	}
+
+	var fileDetails []*cascade.File
+	for _, relatedFile := range relatedFiles {
+		relatedFileActivationAttempts, err := service.register.GetActivationAttemptsByFileID(relatedFile.FileID)
+		if err != nil {
+			return nil, cascade.MakeInternalServerError(err)
+		}
+
+		relatedFileRegistrationAttempts, err := service.register.GetRegistrationAttemptsByFileID(relatedFile.FileID)
+		if err != nil {
+			return nil, cascade.MakeInternalServerError(err)
+		}
+
+		var activationAttempts []*cascade.ActivationAttempt
+		for _, aAttempt := range relatedFileActivationAttempts {
+			activationAttempts = append(activationAttempts, &cascade.ActivationAttempt{
+				ID:                  aAttempt.ID,
+				FileID:              aAttempt.FileID,
+				ActivationAttemptAt: aAttempt.ActivationAttemptAt.String(),
+				IsSuccessful:        &aAttempt.IsSuccessful,
+				ErrorMessage:        &aAttempt.ErrorMessage,
+			})
+		}
+
+		var registrationAttempts []*cascade.RegistrationAttempt
+		for _, rAttempt := range relatedFileRegistrationAttempts {
+			registrationAttempts = append(registrationAttempts, &cascade.RegistrationAttempt{
+				ID:           rAttempt.ID,
+				FileID:       rAttempt.FileID,
+				RegStartedAt: rAttempt.RegStartedAt.String(),
+				FinishedAt:   rAttempt.FinishedAt.String(),
+				IsSuccessful: &rAttempt.IsSuccessful,
+				ErrorMessage: &rAttempt.ErrorMessage,
+				ProcessorSns: &rAttempt.ProcessorSNS,
+			})
+		}
+
+		fileDetails = append(fileDetails, &cascade.File{
+			FileID:                       relatedFile.FileID,
+			UploadTimestamp:              relatedFile.UploadTimestamp.String(),
+			Path:                         &relatedFile.Path,
+			FileIndex:                    &relatedFile.FileIndex,
+			BaseFileID:                   relatedFile.BaseFileID,
+			TaskID:                       relatedFile.TaskID,
+			RegTxid:                      &relatedFile.RegTxid,
+			ActivationTxid:               &relatedFile.ActivationTxid,
+			ReqBurnTxnAmount:             relatedFile.ReqBurnTxnAmount,
+			BurnTxnID:                    &relatedFile.BurnTxnID,
+			ReqAmount:                    relatedFile.ReqAmount,
+			IsConcluded:                  &relatedFile.IsConcluded,
+			CascadeMetadataTicketID:      relatedFile.CascadeMetadataTicketID,
+			UUIDKey:                      &relatedFile.UUIDKey,
+			HashOfOriginalBigFile:        relatedFile.HashOfOriginalBigFile,
+			NameOfOriginalBigFileWithExt: relatedFile.NameOfOriginalBigFileWithExt,
+			SizeOfOriginalBigFile:        relatedFile.SizeOfOriginalBigFile,
+			DataTypeOfOriginalBigFile:    relatedFile.DataTypeOfOriginalBigFile,
+			StartBlock:                   &relatedFile.StartBlock,
+			DoneBlock:                    &relatedFile.DoneBlock,
+
+			ActivationAttempts:   activationAttempts,
+			RegistrationAttempts: registrationAttempts,
+		})
+	}
+
+	return &cascade.Registration{
+		Files: fileDetails,
+	}, nil
+}
+
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.
 func NewCascadeAPIHandler(config *Config, filesMap *sync.Map, register *cascaderegister.CascadeRegistrationService, download *download.NftDownloadingService) *CascadeAPIHandler {
 	return &CascadeAPIHandler{

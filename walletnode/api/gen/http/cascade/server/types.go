@@ -77,6 +77,13 @@ type DownloadResponseBody struct {
 	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
 }
 
+// RegistrationDetailsResponseBody is the type of the "cascade" service
+// "registrationDetails" endpoint HTTP response body.
+type RegistrationDetailsResponseBody struct {
+	// List of files
+	Files []*FileResponseBody `form:"files" json:"files" xml:"files"`
+}
+
 // UploadAssetBadRequestResponseBody is the type of the "cascade" service
 // "uploadAsset" endpoint HTTP response body for the "BadRequest" error.
 type UploadAssetBadRequestResponseBody struct {
@@ -297,6 +304,63 @@ type DownloadInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// RegistrationDetailsUnAuthorizedResponseBody is the type of the "cascade"
+// service "registrationDetails" endpoint HTTP response body for the
+// "UnAuthorized" error.
+type RegistrationDetailsUnAuthorizedResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegistrationDetailsBadRequestResponseBody is the type of the "cascade"
+// service "registrationDetails" endpoint HTTP response body for the
+// "BadRequest" error.
+type RegistrationDetailsBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegistrationDetailsInternalServerErrorResponseBody is the type of the
+// "cascade" service "registrationDetails" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegistrationDetailsInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // TaskHistoryResponse is used to define fields on response body types.
 type TaskHistoryResponse struct {
 	// Timestamp of the status creation
@@ -315,6 +379,88 @@ type DetailsResponse struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 	// important fields regarding status history
 	Fields map[string]any `form:"fields,omitempty" json:"fields,omitempty" xml:"fields,omitempty"`
+}
+
+// FileResponseBody is used to define fields on response body types.
+type FileResponseBody struct {
+	// File ID
+	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
+	// Upload Timestamp in datetime format
+	UploadTimestamp string `form:"upload_timestamp" json:"upload_timestamp" xml:"upload_timestamp"`
+	// Path to the file
+	Path *string `form:"path,omitempty" json:"path,omitempty" xml:"path,omitempty"`
+	// Index of the file
+	FileIndex *string `form:"file_index,omitempty" json:"file_index,omitempty" xml:"file_index,omitempty"`
+	// Base File ID
+	BaseFileID string `form:"base_file_id" json:"base_file_id" xml:"base_file_id"`
+	// Task ID
+	TaskID string `form:"task_id" json:"task_id" xml:"task_id"`
+	// Registration Transaction ID
+	RegTxid *string `form:"reg_txid,omitempty" json:"reg_txid,omitempty" xml:"reg_txid,omitempty"`
+	// Activation Transaction ID
+	ActivationTxid *string `form:"activation_txid,omitempty" json:"activation_txid,omitempty" xml:"activation_txid,omitempty"`
+	// Required Burn Transaction Amount
+	ReqBurnTxnAmount float64 `form:"req_burn_txn_amount" json:"req_burn_txn_amount" xml:"req_burn_txn_amount"`
+	// Burn Transaction ID
+	BurnTxnID *string `form:"burn_txn_id,omitempty" json:"burn_txn_id,omitempty" xml:"burn_txn_id,omitempty"`
+	// Required Amount
+	ReqAmount float64 `form:"req_amount" json:"req_amount" xml:"req_amount"`
+	// Indicates if the process is concluded
+	IsConcluded *bool `form:"is_concluded,omitempty" json:"is_concluded,omitempty" xml:"is_concluded,omitempty"`
+	// Cascade Metadata Ticket ID
+	CascadeMetadataTicketID string `form:"cascade_metadata_ticket_id" json:"cascade_metadata_ticket_id" xml:"cascade_metadata_ticket_id"`
+	// UUID Key
+	UUIDKey *string `form:"uuid_key,omitempty" json:"uuid_key,omitempty" xml:"uuid_key,omitempty"`
+	// Hash of the Original Big File
+	HashOfOriginalBigFile string `form:"hash_of_original_big_file" json:"hash_of_original_big_file" xml:"hash_of_original_big_file"`
+	// Name of the Original Big File with Extension
+	NameOfOriginalBigFileWithExt string `form:"name_of_original_big_file_with_ext" json:"name_of_original_big_file_with_ext" xml:"name_of_original_big_file_with_ext"`
+	// Size of the Original Big File
+	SizeOfOriginalBigFile float64 `form:"size_of_original_big_file" json:"size_of_original_big_file" xml:"size_of_original_big_file"`
+	// Data Type of the Original Big File
+	DataTypeOfOriginalBigFile string `form:"data_type_of_original_big_file" json:"data_type_of_original_big_file" xml:"data_type_of_original_big_file"`
+	// Start Block
+	StartBlock *int32 `form:"start_block,omitempty" json:"start_block,omitempty" xml:"start_block,omitempty"`
+	// Done Block
+	DoneBlock *int `form:"done_block,omitempty" json:"done_block,omitempty" xml:"done_block,omitempty"`
+	// List of registration attempts
+	RegistrationAttempts []*RegistrationAttemptResponseBody `form:"registration_attempts" json:"registration_attempts" xml:"registration_attempts"`
+	// List of activation attempts
+	ActivationAttempts []*ActivationAttemptResponseBody `form:"activation_attempts" json:"activation_attempts" xml:"activation_attempts"`
+}
+
+// RegistrationAttemptResponseBody is used to define fields on response body
+// types.
+type RegistrationAttemptResponseBody struct {
+	// ID
+	ID int `form:"id" json:"id" xml:"id"`
+	// File ID
+	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
+	// Registration Started At in datetime format
+	RegStartedAt string `form:"reg_started_at" json:"reg_started_at" xml:"reg_started_at"`
+	// Processor SNS
+	ProcessorSns *string `form:"processor_sns,omitempty" json:"processor_sns,omitempty" xml:"processor_sns,omitempty"`
+	// Finished At in datetime format
+	FinishedAt string `form:"finished_at" json:"finished_at" xml:"finished_at"`
+	// Indicates if the registration was successful
+	IsSuccessful *bool `form:"is_successful,omitempty" json:"is_successful,omitempty" xml:"is_successful,omitempty"`
+	// Error Message
+	ErrorMessage *string `form:"error_message,omitempty" json:"error_message,omitempty" xml:"error_message,omitempty"`
+}
+
+// ActivationAttemptResponseBody is used to define fields on response body
+// types.
+type ActivationAttemptResponseBody struct {
+	// ID
+	ID int `form:"id" json:"id" xml:"id"`
+	// File ID
+	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
+	// Activation Attempt At in datetime format
+	ActivationAttemptAt string `form:"activation_attempt_at" json:"activation_attempt_at" xml:"activation_attempt_at"`
+	// Indicates if the activation was successful
+	IsSuccessful *bool `form:"is_successful,omitempty" json:"is_successful,omitempty" xml:"is_successful,omitempty"`
+	// Error Message
+	ErrorMessage *string `form:"error_message,omitempty" json:"error_message,omitempty" xml:"error_message,omitempty"`
 }
 
 // NewUploadAssetResponseBody builds the HTTP response body from the result of
@@ -368,6 +514,21 @@ func NewGetTaskHistoryResponseBody(res []*cascade.TaskHistory) GetTaskHistoryRes
 func NewDownloadResponseBody(res *cascade.FileDownloadResult) *DownloadResponseBody {
 	body := &DownloadResponseBody{
 		FileID: res.FileID,
+	}
+	return body
+}
+
+// NewRegistrationDetailsResponseBody builds the HTTP response body from the
+// result of the "registrationDetails" endpoint of the "cascade" service.
+func NewRegistrationDetailsResponseBody(res *cascadeviews.RegistrationView) *RegistrationDetailsResponseBody {
+	body := &RegistrationDetailsResponseBody{}
+	if res.Files != nil {
+		body.Files = make([]*FileResponseBody, len(res.Files))
+		for i, val := range res.Files {
+			body.Files[i] = marshalCascadeviewsFileViewToFileResponseBody(val)
+		}
+	} else {
+		body.Files = []*FileResponseBody{}
 	}
 	return body
 }
@@ -543,6 +704,51 @@ func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *Download
 	return body
 }
 
+// NewRegistrationDetailsUnAuthorizedResponseBody builds the HTTP response body
+// from the result of the "registrationDetails" endpoint of the "cascade"
+// service.
+func NewRegistrationDetailsUnAuthorizedResponseBody(res *goa.ServiceError) *RegistrationDetailsUnAuthorizedResponseBody {
+	body := &RegistrationDetailsUnAuthorizedResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegistrationDetailsBadRequestResponseBody builds the HTTP response body
+// from the result of the "registrationDetails" endpoint of the "cascade"
+// service.
+func NewRegistrationDetailsBadRequestResponseBody(res *goa.ServiceError) *RegistrationDetailsBadRequestResponseBody {
+	body := &RegistrationDetailsBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegistrationDetailsInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "registrationDetails" endpoint of the
+// "cascade" service.
+func NewRegistrationDetailsInternalServerErrorResponseBody(res *goa.ServiceError) *RegistrationDetailsInternalServerErrorResponseBody {
+	body := &RegistrationDetailsInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewUploadAssetPayload builds a cascade service uploadAsset endpoint payload.
 func NewUploadAssetPayload(body *UploadAssetRequestBody) *cascade.UploadAssetPayload {
 	v := &cascade.UploadAssetPayload{
@@ -597,6 +803,15 @@ func NewDownloadPayload(txid string, pid string, key string) *cascade.DownloadPa
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key
+
+	return v
+}
+
+// NewRegistrationDetailsPayload builds a cascade service registrationDetails
+// endpoint payload.
+func NewRegistrationDetailsPayload(fileID string) *cascade.RegistrationDetailsPayload {
+	v := &cascade.RegistrationDetailsPayload{}
+	v.FileID = fileID
 
 	return v
 }

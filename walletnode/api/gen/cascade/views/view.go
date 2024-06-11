@@ -30,6 +30,14 @@ type StartProcessingResult struct {
 	View string
 }
 
+// Registration is the viewed result type that is projected based on a view.
+type Registration struct {
+	// Type to project
+	Projected *RegistrationView
+	// View to render
+	View string
+}
+
 // AssetView is a type that runs validations on a projected type.
 type AssetView struct {
 	// Uploaded file ID
@@ -49,6 +57,92 @@ type StartProcessingResultView struct {
 	TaskID *string
 }
 
+// RegistrationView is a type that runs validations on a projected type.
+type RegistrationView struct {
+	// List of files
+	Files []*FileView
+}
+
+// FileView is a type that runs validations on a projected type.
+type FileView struct {
+	// File ID
+	FileID *string
+	// Upload Timestamp in datetime format
+	UploadTimestamp *string
+	// Path to the file
+	Path *string
+	// Index of the file
+	FileIndex *string
+	// Base File ID
+	BaseFileID *string
+	// Task ID
+	TaskID *string
+	// Registration Transaction ID
+	RegTxid *string
+	// Activation Transaction ID
+	ActivationTxid *string
+	// Required Burn Transaction Amount
+	ReqBurnTxnAmount *float64
+	// Burn Transaction ID
+	BurnTxnID *string
+	// Required Amount
+	ReqAmount *float64
+	// Indicates if the process is concluded
+	IsConcluded *bool
+	// Cascade Metadata Ticket ID
+	CascadeMetadataTicketID *string
+	// UUID Key
+	UUIDKey *string
+	// Hash of the Original Big File
+	HashOfOriginalBigFile *string
+	// Name of the Original Big File with Extension
+	NameOfOriginalBigFileWithExt *string
+	// Size of the Original Big File
+	SizeOfOriginalBigFile *float64
+	// Data Type of the Original Big File
+	DataTypeOfOriginalBigFile *string
+	// Start Block
+	StartBlock *int32
+	// Done Block
+	DoneBlock *int
+	// List of registration attempts
+	RegistrationAttempts []*RegistrationAttemptView
+	// List of activation attempts
+	ActivationAttempts []*ActivationAttemptView
+}
+
+// RegistrationAttemptView is a type that runs validations on a projected type.
+type RegistrationAttemptView struct {
+	// ID
+	ID *int
+	// File ID
+	FileID *string
+	// Registration Started At in datetime format
+	RegStartedAt *string
+	// Processor SNS
+	ProcessorSns *string
+	// Finished At in datetime format
+	FinishedAt *string
+	// Indicates if the registration was successful
+	IsSuccessful *bool
+	// Error Message
+	ErrorMessage *string
+}
+
+// ActivationAttemptView is a type that runs validations on a projected type.
+type ActivationAttemptView struct {
+	// ID
+	ID *int
+	// File ID
+	FileID *string
+	// Activation Attempt At in datetime format
+	ActivationAttemptAt *string
+	// Indicates if the activation was successful
+	IsSuccessful *bool
+	// Error Message
+	ErrorMessage *string
+}
+
 var (
 	// AssetMap is a map indexing the attribute names of Asset by view name.
 	AssetMap = map[string][]string{
@@ -64,6 +158,13 @@ var (
 	StartProcessingResultMap = map[string][]string{
 		"default": {
 			"task_id",
+		},
+	}
+	// RegistrationMap is a map indexing the attribute names of Registration by
+	// view name.
+	RegistrationMap = map[string][]string{
+		"default": {
+			"files",
 		},
 	}
 )
@@ -85,6 +186,18 @@ func ValidateStartProcessingResult(result *StartProcessingResult) (err error) {
 	switch result.View {
 	case "default", "":
 		err = ValidateStartProcessingResultView(result.Projected)
+	default:
+		err = goa.InvalidEnumValueError("view", result.View, []any{"default"})
+	}
+	return
+}
+
+// ValidateRegistration runs the validations defined on the viewed result type
+// Registration.
+func ValidateRegistration(result *Registration) (err error) {
+	switch result.View {
+	case "default", "":
+		err = ValidateRegistrationView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []any{"default"})
 	}
@@ -144,6 +257,125 @@ func ValidateStartProcessingResultView(result *StartProcessingResultView) (err e
 		if utf8.RuneCountInString(*result.TaskID) > 8 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, false))
 		}
+	}
+	return
+}
+
+// ValidateRegistrationView runs the validations defined on RegistrationView
+// using the "default" view.
+func ValidateRegistrationView(result *RegistrationView) (err error) {
+	if result.Files == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("files", "result"))
+	}
+	for _, e := range result.Files {
+		if e != nil {
+			if err2 := ValidateFileView(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateFileView runs the validations defined on FileView.
+func ValidateFileView(result *FileView) (err error) {
+	if result.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "result"))
+	}
+	if result.TaskID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("task_id", "result"))
+	}
+	if result.UploadTimestamp == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("upload_timestamp", "result"))
+	}
+	if result.BaseFileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("base_file_id", "result"))
+	}
+	if result.RegistrationAttempts == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("registration_attempts", "result"))
+	}
+	if result.ActivationAttempts == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("activation_attempts", "result"))
+	}
+	if result.ReqBurnTxnAmount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("req_burn_txn_amount", "result"))
+	}
+	if result.ReqAmount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("req_amount", "result"))
+	}
+	if result.CascadeMetadataTicketID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("cascade_metadata_ticket_id", "result"))
+	}
+	if result.HashOfOriginalBigFile == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("hash_of_original_big_file", "result"))
+	}
+	if result.NameOfOriginalBigFileWithExt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name_of_original_big_file_with_ext", "result"))
+	}
+	if result.SizeOfOriginalBigFile == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("size_of_original_big_file", "result"))
+	}
+	if result.DataTypeOfOriginalBigFile == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("data_type_of_original_big_file", "result"))
+	}
+	if result.UploadTimestamp != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("result.upload_timestamp", *result.UploadTimestamp, goa.FormatDateTime))
+	}
+	for _, e := range result.RegistrationAttempts {
+		if e != nil {
+			if err2 := ValidateRegistrationAttemptView(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	for _, e := range result.ActivationAttempts {
+		if e != nil {
+			if err2 := ValidateActivationAttemptView(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateRegistrationAttemptView runs the validations defined on
+// RegistrationAttemptView.
+func ValidateRegistrationAttemptView(result *RegistrationAttemptView) (err error) {
+	if result.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "result"))
+	}
+	if result.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "result"))
+	}
+	if result.RegStartedAt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("reg_started_at", "result"))
+	}
+	if result.FinishedAt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("finished_at", "result"))
+	}
+	if result.RegStartedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("result.reg_started_at", *result.RegStartedAt, goa.FormatDateTime))
+	}
+	if result.FinishedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("result.finished_at", *result.FinishedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateActivationAttemptView runs the validations defined on
+// ActivationAttemptView.
+func ValidateActivationAttemptView(result *ActivationAttemptView) (err error) {
+	if result.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "result"))
+	}
+	if result.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "result"))
+	}
+	if result.ActivationAttemptAt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("activation_attempt_at", "result"))
+	}
+	if result.ActivationAttemptAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("result.activation_attempt_at", *result.ActivationAttemptAt, goa.FormatDateTime))
 	}
 	return
 }

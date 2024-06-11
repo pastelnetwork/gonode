@@ -7,6 +7,7 @@ import (
 type RegistrationAttemptsQueries interface {
 	UpsertRegistrationAttempt(attempt types.RegistrationAttempt) error
 	GetRegistrationAttemptByID(id int) (*types.RegistrationAttempt, error)
+	GetRegistrationAttemptsByFileID(fileID string) ([]*types.RegistrationAttempt, error)
 }
 
 // UpsertRegistrationAttempt upsert a new registration attempt into the registration_attempts table
@@ -53,4 +54,37 @@ func (s *TicketStore) GetRegistrationAttemptByID(id int) (*types.RegistrationAtt
 	}
 
 	return &attempt, nil
+}
+
+// GetRegistrationAttemptsByFileID retrieves registration attempts by file_id from the registration_attempts table
+func (s *TicketStore) GetRegistrationAttemptsByFileID(fileID string) ([]*types.RegistrationAttempt, error) {
+	const selectQuery = `
+        SELECT id, file_id, reg_started_at, processor_sns, finished_at, 
+               is_successful, error_message
+        FROM registration_attempts
+        WHERE file_id = ?;`
+
+	rows, err := s.db.Query(selectQuery, fileID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var attempts []*types.RegistrationAttempt
+	for rows.Next() {
+		var attempt types.RegistrationAttempt
+		err := rows.Scan(
+			&attempt.ID, &attempt.FileID, &attempt.RegStartedAt, &attempt.ProcessorSNS,
+			&attempt.FinishedAt, &attempt.IsSuccessful, &attempt.ErrorMessage)
+		if err != nil {
+			return nil, err
+		}
+		attempts = append(attempts, &attempt)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return attempts, nil
 }

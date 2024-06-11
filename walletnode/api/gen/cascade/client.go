@@ -15,21 +15,23 @@ import (
 
 // Client is the "cascade" service client.
 type Client struct {
-	UploadAssetEndpoint       goa.Endpoint
-	StartProcessingEndpoint   goa.Endpoint
-	RegisterTaskStateEndpoint goa.Endpoint
-	GetTaskHistoryEndpoint    goa.Endpoint
-	DownloadEndpoint          goa.Endpoint
+	UploadAssetEndpoint         goa.Endpoint
+	StartProcessingEndpoint     goa.Endpoint
+	RegisterTaskStateEndpoint   goa.Endpoint
+	GetTaskHistoryEndpoint      goa.Endpoint
+	DownloadEndpoint            goa.Endpoint
+	RegistrationDetailsEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "cascade" service client given the endpoints.
-func NewClient(uploadAsset, startProcessing, registerTaskState, getTaskHistory, download goa.Endpoint) *Client {
+func NewClient(uploadAsset, startProcessing, registerTaskState, getTaskHistory, download, registrationDetails goa.Endpoint) *Client {
 	return &Client{
-		UploadAssetEndpoint:       uploadAsset,
-		StartProcessingEndpoint:   startProcessing,
-		RegisterTaskStateEndpoint: registerTaskState,
-		GetTaskHistoryEndpoint:    getTaskHistory,
-		DownloadEndpoint:          download,
+		UploadAssetEndpoint:         uploadAsset,
+		StartProcessingEndpoint:     startProcessing,
+		RegisterTaskStateEndpoint:   registerTaskState,
+		GetTaskHistoryEndpoint:      getTaskHistory,
+		DownloadEndpoint:            download,
+		RegistrationDetailsEndpoint: registrationDetails,
 	}
 }
 
@@ -113,4 +115,21 @@ func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res *FileDow
 		return
 	}
 	return ires.(*FileDownloadResult), nil
+}
+
+// RegistrationDetails calls the "registrationDetails" endpoint of the
+// "cascade" service.
+// RegistrationDetails may return the following errors:
+//   - "UnAuthorized" (type *goa.ServiceError)
+//   - "BadRequest" (type *goa.ServiceError)
+//   - "NotFound" (type *goa.ServiceError)
+//   - "InternalServerError" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) RegistrationDetails(ctx context.Context, p *RegistrationDetailsPayload) (res *Registration, err error) {
+	var ires any
+	ires, err = c.RegistrationDetailsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*Registration), nil
 }

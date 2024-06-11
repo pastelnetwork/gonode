@@ -8,7 +8,7 @@ type File struct {
 	FileID                       string
 	UploadTimestamp              time.Time
 	Path                         string
-	Index                        string
+	FileIndex                    string
 	BaseFileID                   string
 	TaskID                       string
 	RegTxid                      string
@@ -38,7 +38,7 @@ type RegistrationAttempt struct {
 }
 
 type ActivationAttempt struct {
-	ID                  string
+	ID                  int
 	FileID              string
 	ActivationAttemptAt time.Time
 	IsSuccessful        bool

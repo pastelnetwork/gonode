@@ -7,6 +7,7 @@ import (
 type ActivationAttemptsQueries interface {
 	UpsertActivationAttempt(attempt types.ActivationAttempt) error
 	GetActivationAttemptByID(id string) (*types.ActivationAttempt, error)
+	GetActivationAttemptsByFileID(fileID string) ([]*types.ActivationAttempt, error)
 }
 
 // UpsertActivationAttempt upsert a new activation attempt into the activation_attempts table
@@ -50,4 +51,36 @@ func (s *TicketStore) GetActivationAttemptByID(id string) (*types.ActivationAtte
 	}
 
 	return &attempt, nil
+}
+
+// GetActivationAttemptsByFileID retrieves activation attempts by file_id from the activation_attempts table
+func (s *TicketStore) GetActivationAttemptsByFileID(fileID string) ([]*types.ActivationAttempt, error) {
+	const selectQuery = `
+        SELECT id, file_id, activation_attempt_at, is_successful, error_message
+        FROM activation_attempts
+        WHERE file_id = ?;`
+
+	rows, err := s.db.Query(selectQuery, fileID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var attempts []*types.ActivationAttempt
+	for rows.Next() {
+		var attempt types.ActivationAttempt
+		err := rows.Scan(
+			&attempt.ID, &attempt.FileID, &attempt.ActivationAttemptAt,
+			&attempt.IsSuccessful, &attempt.ErrorMessage)
+		if err != nil {
+			return nil, err
+		}
+		attempts = append(attempts, &attempt)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return attempts, nil
 }

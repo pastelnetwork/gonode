@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS files (
     file_id TEXT NOT NULL PRIMARY KEY,
     upload_timestamp DATETIME,
     path TEXT,
-    index TEXT,
+    file_index TEXT,
     base_file_id TEXT,
     task_id TEXT,
     reg_txid TEXT,
@@ -30,8 +30,7 @@ CREATE TABLE IF NOT EXISTS files (
     size_of_original_big_file FLOAT,
     data_type_of_original_big_file TEXT,
     start_block INTEGER,
-    done_block INTEGER,
-    FOREIGN KEY (base_file_id) REFERENCES files(file_id)
+    done_block INTEGER
 );
 `
 
@@ -43,8 +42,7 @@ CREATE TABLE IF NOT EXISTS registration_attempts (
     processor_sns TEXT,
     finished_at DATETIME,
     is_successful BOOLEAN,
-    error_message TEXT,
-    FOREIGN KEY (file_id) REFERENCES files(file_id)
+    error_message TEXT
 );
 `
 
@@ -54,8 +52,7 @@ CREATE TABLE IF NOT EXISTS activation_attempts (
     file_id TEXT NOT NULL,
     activation_attempt_at DATETIME,
     is_successful BOOLEAN,
-    error_message TEXT,
-    FOREIGN KEY (file_id) REFERENCES files(file_id)
+    error_message TEXT
 );
 `
 

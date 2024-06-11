@@ -75,6 +75,13 @@ type DownloadResponseBody struct {
 	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
 }
 
+// RegistrationDetailsResponseBody is the type of the "cascade" service
+// "registrationDetails" endpoint HTTP response body.
+type RegistrationDetailsResponseBody struct {
+	// List of files
+	Files []*FileResponseBody `form:"files,omitempty" json:"files,omitempty" xml:"files,omitempty"`
+}
+
 // UploadAssetBadRequestResponseBody is the type of the "cascade" service
 // "uploadAsset" endpoint HTTP response body for the "BadRequest" error.
 type UploadAssetBadRequestResponseBody struct {
@@ -295,6 +302,63 @@ type DownloadInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// RegistrationDetailsUnAuthorizedResponseBody is the type of the "cascade"
+// service "registrationDetails" endpoint HTTP response body for the
+// "UnAuthorized" error.
+type RegistrationDetailsUnAuthorizedResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// RegistrationDetailsBadRequestResponseBody is the type of the "cascade"
+// service "registrationDetails" endpoint HTTP response body for the
+// "BadRequest" error.
+type RegistrationDetailsBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// RegistrationDetailsInternalServerErrorResponseBody is the type of the
+// "cascade" service "registrationDetails" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegistrationDetailsInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
 // TaskHistoryResponse is used to define fields on response body types.
 type TaskHistoryResponse struct {
 	// Timestamp of the status creation
@@ -313,6 +377,88 @@ type DetailsResponse struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 	// important fields regarding status history
 	Fields map[string]any `form:"fields,omitempty" json:"fields,omitempty" xml:"fields,omitempty"`
+}
+
+// FileResponseBody is used to define fields on response body types.
+type FileResponseBody struct {
+	// File ID
+	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
+	// Upload Timestamp in datetime format
+	UploadTimestamp *string `form:"upload_timestamp,omitempty" json:"upload_timestamp,omitempty" xml:"upload_timestamp,omitempty"`
+	// Path to the file
+	Path *string `form:"path,omitempty" json:"path,omitempty" xml:"path,omitempty"`
+	// Index of the file
+	FileIndex *string `form:"file_index,omitempty" json:"file_index,omitempty" xml:"file_index,omitempty"`
+	// Base File ID
+	BaseFileID *string `form:"base_file_id,omitempty" json:"base_file_id,omitempty" xml:"base_file_id,omitempty"`
+	// Task ID
+	TaskID *string `form:"task_id,omitempty" json:"task_id,omitempty" xml:"task_id,omitempty"`
+	// Registration Transaction ID
+	RegTxid *string `form:"reg_txid,omitempty" json:"reg_txid,omitempty" xml:"reg_txid,omitempty"`
+	// Activation Transaction ID
+	ActivationTxid *string `form:"activation_txid,omitempty" json:"activation_txid,omitempty" xml:"activation_txid,omitempty"`
+	// Required Burn Transaction Amount
+	ReqBurnTxnAmount *float64 `form:"req_burn_txn_amount,omitempty" json:"req_burn_txn_amount,omitempty" xml:"req_burn_txn_amount,omitempty"`
+	// Burn Transaction ID
+	BurnTxnID *string `form:"burn_txn_id,omitempty" json:"burn_txn_id,omitempty" xml:"burn_txn_id,omitempty"`
+	// Required Amount
+	ReqAmount *float64 `form:"req_amount,omitempty" json:"req_amount,omitempty" xml:"req_amount,omitempty"`
+	// Indicates if the process is concluded
+	IsConcluded *bool `form:"is_concluded,omitempty" json:"is_concluded,omitempty" xml:"is_concluded,omitempty"`
+	// Cascade Metadata Ticket ID
+	CascadeMetadataTicketID *string `form:"cascade_metadata_ticket_id,omitempty" json:"cascade_metadata_ticket_id,omitempty" xml:"cascade_metadata_ticket_id,omitempty"`
+	// UUID Key
+	UUIDKey *string `form:"uuid_key,omitempty" json:"uuid_key,omitempty" xml:"uuid_key,omitempty"`
+	// Hash of the Original Big File
+	HashOfOriginalBigFile *string `form:"hash_of_original_big_file,omitempty" json:"hash_of_original_big_file,omitempty" xml:"hash_of_original_big_file,omitempty"`
+	// Name of the Original Big File with Extension
+	NameOfOriginalBigFileWithExt *string `form:"name_of_original_big_file_with_ext,omitempty" json:"name_of_original_big_file_with_ext,omitempty" xml:"name_of_original_big_file_with_ext,omitempty"`
+	// Size of the Original Big File
+	SizeOfOriginalBigFile *float64 `form:"size_of_original_big_file,omitempty" json:"size_of_original_big_file,omitempty" xml:"size_of_original_big_file,omitempty"`
+	// Data Type of the Original Big File
+	DataTypeOfOriginalBigFile *string `form:"data_type_of_original_big_file,omitempty" json:"data_type_of_original_big_file,omitempty" xml:"data_type_of_original_big_file,omitempty"`
+	// Start Block
+	StartBlock *int32 `form:"start_block,omitempty" json:"start_block,omitempty" xml:"start_block,omitempty"`
+	// Done Block
+	DoneBlock *int `form:"done_block,omitempty" json:"done_block,omitempty" xml:"done_block,omitempty"`
+	// List of registration attempts
+	RegistrationAttempts []*RegistrationAttemptResponseBody `form:"registration_attempts,omitempty" json:"registration_attempts,omitempty" xml:"registration_attempts,omitempty"`
+	// List of activation attempts
+	ActivationAttempts []*ActivationAttemptResponseBody `form:"activation_attempts,omitempty" json:"activation_attempts,omitempty" xml:"activation_attempts,omitempty"`
+}
+
+// RegistrationAttemptResponseBody is used to define fields on response body
+// types.
+type RegistrationAttemptResponseBody struct {
+	// ID
+	ID *int `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// File ID
+	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
+	// Registration Started At in datetime format
+	RegStartedAt *string `form:"reg_started_at,omitempty" json:"reg_started_at,omitempty" xml:"reg_started_at,omitempty"`
+	// Processor SNS
+	ProcessorSns *string `form:"processor_sns,omitempty" json:"processor_sns,omitempty" xml:"processor_sns,omitempty"`
+	// Finished At in datetime format
+	FinishedAt *string `form:"finished_at,omitempty" json:"finished_at,omitempty" xml:"finished_at,omitempty"`
+	// Indicates if the registration was successful
+	IsSuccessful *bool `form:"is_successful,omitempty" json:"is_successful,omitempty" xml:"is_successful,omitempty"`
+	// Error Message
+	ErrorMessage *string `form:"error_message,omitempty" json:"error_message,omitempty" xml:"error_message,omitempty"`
+}
+
+// ActivationAttemptResponseBody is used to define fields on response body
+// types.
+type ActivationAttemptResponseBody struct {
+	// ID
+	ID *int `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// File ID
+	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
+	// Activation Attempt At in datetime format
+	ActivationAttemptAt *string `form:"activation_attempt_at,omitempty" json:"activation_attempt_at,omitempty" xml:"activation_attempt_at,omitempty"`
+	// Indicates if the activation was successful
+	IsSuccessful *bool `form:"is_successful,omitempty" json:"is_successful,omitempty" xml:"is_successful,omitempty"`
+	// Error Message
+	ErrorMessage *string `form:"error_message,omitempty" json:"error_message,omitempty" xml:"error_message,omitempty"`
 }
 
 // NewUploadAssetRequestBody builds the HTTP request body from the payload of
@@ -566,6 +712,63 @@ func NewDownloadNotFound(body *DownloadNotFoundResponseBody) *goa.ServiceError {
 // NewDownloadInternalServerError builds a cascade service download endpoint
 // InternalServerError error.
 func NewDownloadInternalServerError(body *DownloadInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewRegistrationDetailsRegistrationCreated builds a "cascade" service
+// "registrationDetails" endpoint result from a HTTP "Created" response.
+func NewRegistrationDetailsRegistrationCreated(body *RegistrationDetailsResponseBody) *cascadeviews.RegistrationView {
+	v := &cascadeviews.RegistrationView{}
+	v.Files = make([]*cascadeviews.FileView, len(body.Files))
+	for i, val := range body.Files {
+		v.Files[i] = unmarshalFileResponseBodyToCascadeviewsFileView(val)
+	}
+
+	return v
+}
+
+// NewRegistrationDetailsUnAuthorized builds a cascade service
+// registrationDetails endpoint UnAuthorized error.
+func NewRegistrationDetailsUnAuthorized(body *RegistrationDetailsUnAuthorizedResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewRegistrationDetailsBadRequest builds a cascade service
+// registrationDetails endpoint BadRequest error.
+func NewRegistrationDetailsBadRequest(body *RegistrationDetailsBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewRegistrationDetailsInternalServerError builds a cascade service
+// registrationDetails endpoint InternalServerError error.
+func NewRegistrationDetailsInternalServerError(body *RegistrationDetailsInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -892,11 +1095,186 @@ func ValidateDownloadInternalServerErrorResponseBody(body *DownloadInternalServe
 	return
 }
 
+// ValidateRegistrationDetailsUnAuthorizedResponseBody runs the validations
+// defined on registrationDetails_UnAuthorized_response_body
+func ValidateRegistrationDetailsUnAuthorizedResponseBody(body *RegistrationDetailsUnAuthorizedResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateRegistrationDetailsBadRequestResponseBody runs the validations
+// defined on registrationDetails_BadRequest_response_body
+func ValidateRegistrationDetailsBadRequestResponseBody(body *RegistrationDetailsBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateRegistrationDetailsInternalServerErrorResponseBody runs the
+// validations defined on registrationDetails_InternalServerError_response_body
+func ValidateRegistrationDetailsInternalServerErrorResponseBody(body *RegistrationDetailsInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
 // ValidateTaskHistoryResponse runs the validations defined on
 // TaskHistoryResponse
 func ValidateTaskHistoryResponse(body *TaskHistoryResponse) (err error) {
 	if body.Status == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	return
+}
+
+// ValidateFileResponseBody runs the validations defined on FileResponseBody
+func ValidateFileResponseBody(body *FileResponseBody) (err error) {
+	if body.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "body"))
+	}
+	if body.TaskID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("task_id", "body"))
+	}
+	if body.UploadTimestamp == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("upload_timestamp", "body"))
+	}
+	if body.BaseFileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("base_file_id", "body"))
+	}
+	if body.RegistrationAttempts == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("registration_attempts", "body"))
+	}
+	if body.ActivationAttempts == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("activation_attempts", "body"))
+	}
+	if body.ReqBurnTxnAmount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("req_burn_txn_amount", "body"))
+	}
+	if body.ReqAmount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("req_amount", "body"))
+	}
+	if body.CascadeMetadataTicketID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("cascade_metadata_ticket_id", "body"))
+	}
+	if body.HashOfOriginalBigFile == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("hash_of_original_big_file", "body"))
+	}
+	if body.NameOfOriginalBigFileWithExt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name_of_original_big_file_with_ext", "body"))
+	}
+	if body.SizeOfOriginalBigFile == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("size_of_original_big_file", "body"))
+	}
+	if body.DataTypeOfOriginalBigFile == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("data_type_of_original_big_file", "body"))
+	}
+	if body.UploadTimestamp != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.upload_timestamp", *body.UploadTimestamp, goa.FormatDateTime))
+	}
+	for _, e := range body.RegistrationAttempts {
+		if e != nil {
+			if err2 := ValidateRegistrationAttemptResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	for _, e := range body.ActivationAttempts {
+		if e != nil {
+			if err2 := ValidateActivationAttemptResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateRegistrationAttemptResponseBody runs the validations defined on
+// RegistrationAttemptResponseBody
+func ValidateRegistrationAttemptResponseBody(body *RegistrationAttemptResponseBody) (err error) {
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "body"))
+	}
+	if body.RegStartedAt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("reg_started_at", "body"))
+	}
+	if body.FinishedAt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("finished_at", "body"))
+	}
+	if body.RegStartedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.reg_started_at", *body.RegStartedAt, goa.FormatDateTime))
+	}
+	if body.FinishedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.finished_at", *body.FinishedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateActivationAttemptResponseBody runs the validations defined on
+// ActivationAttemptResponseBody
+func ValidateActivationAttemptResponseBody(body *ActivationAttemptResponseBody) (err error) {
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "body"))
+	}
+	if body.ActivationAttemptAt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("activation_attempt_at", "body"))
+	}
+	if body.ActivationAttemptAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.activation_attempt_at", *body.ActivationAttemptAt, goa.FormatDateTime))
 	}
 	return
 }

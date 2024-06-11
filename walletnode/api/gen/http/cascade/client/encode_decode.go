@@ -606,6 +606,121 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 	}
 }
 
+// BuildRegistrationDetailsRequest instantiates a HTTP request object with
+// method and path set to call the "cascade" service "registrationDetails"
+// endpoint
+func (c *Client) BuildRegistrationDetailsRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		fileID string
+	)
+	{
+		p, ok := v.(*cascade.RegistrationDetailsPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("cascade", "registrationDetails", "*cascade.RegistrationDetailsPayload", v)
+		}
+		fileID = p.FileID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegistrationDetailsCascadePath(fileID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("cascade", "registrationDetails", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// DecodeRegistrationDetailsResponse returns a decoder for responses returned
+// by the cascade registrationDetails endpoint. restoreBody controls whether
+// the response body should be restored after having been read.
+// DecodeRegistrationDetailsResponse may return the following errors:
+//   - "UnAuthorized" (type *goa.ServiceError): http.StatusUnauthorized
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
+func DecodeRegistrationDetailsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body RegistrationDetailsResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "registrationDetails", err)
+			}
+			p := NewRegistrationDetailsRegistrationCreated(&body)
+			view := "default"
+			vres := &cascadeviews.Registration{Projected: p, View: view}
+			if err = cascadeviews.ValidateRegistration(vres); err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "registrationDetails", err)
+			}
+			res := cascade.NewRegistration(vres)
+			return res, nil
+		case http.StatusUnauthorized:
+			var (
+				body RegistrationDetailsUnAuthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "registrationDetails", err)
+			}
+			err = ValidateRegistrationDetailsUnAuthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "registrationDetails", err)
+			}
+			return nil, NewRegistrationDetailsUnAuthorized(&body)
+		case http.StatusBadRequest:
+			var (
+				body RegistrationDetailsBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "registrationDetails", err)
+			}
+			err = ValidateRegistrationDetailsBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "registrationDetails", err)
+			}
+			return nil, NewRegistrationDetailsBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body RegistrationDetailsInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "registrationDetails", err)
+			}
+			err = ValidateRegistrationDetailsInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "registrationDetails", err)
+			}
+			return nil, NewRegistrationDetailsInternalServerError(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("cascade", "registrationDetails", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // unmarshalTaskHistoryResponseToCascadeTaskHistory builds a value of type
 // *cascade.TaskHistory from a value of type *TaskHistoryResponse.
 func unmarshalTaskHistoryResponseToCascadeTaskHistory(v *TaskHistoryResponse) *cascade.TaskHistory {
@@ -637,6 +752,75 @@ func unmarshalDetailsResponseToCascadeDetails(v *DetailsResponse) *cascade.Detai
 			tv := val
 			res.Fields[tk] = tv
 		}
+	}
+
+	return res
+}
+
+// unmarshalFileResponseBodyToCascadeviewsFileView builds a value of type
+// *cascadeviews.FileView from a value of type *FileResponseBody.
+func unmarshalFileResponseBodyToCascadeviewsFileView(v *FileResponseBody) *cascadeviews.FileView {
+	res := &cascadeviews.FileView{
+		FileID:                       v.FileID,
+		UploadTimestamp:              v.UploadTimestamp,
+		Path:                         v.Path,
+		FileIndex:                    v.FileIndex,
+		BaseFileID:                   v.BaseFileID,
+		TaskID:                       v.TaskID,
+		RegTxid:                      v.RegTxid,
+		ActivationTxid:               v.ActivationTxid,
+		ReqBurnTxnAmount:             v.ReqBurnTxnAmount,
+		BurnTxnID:                    v.BurnTxnID,
+		ReqAmount:                    v.ReqAmount,
+		IsConcluded:                  v.IsConcluded,
+		CascadeMetadataTicketID:      v.CascadeMetadataTicketID,
+		UUIDKey:                      v.UUIDKey,
+		HashOfOriginalBigFile:        v.HashOfOriginalBigFile,
+		NameOfOriginalBigFileWithExt: v.NameOfOriginalBigFileWithExt,
+		SizeOfOriginalBigFile:        v.SizeOfOriginalBigFile,
+		DataTypeOfOriginalBigFile:    v.DataTypeOfOriginalBigFile,
+		StartBlock:                   v.StartBlock,
+		DoneBlock:                    v.DoneBlock,
+	}
+	res.RegistrationAttempts = make([]*cascadeviews.RegistrationAttemptView, len(v.RegistrationAttempts))
+	for i, val := range v.RegistrationAttempts {
+		res.RegistrationAttempts[i] = unmarshalRegistrationAttemptResponseBodyToCascadeviewsRegistrationAttemptView(val)
+	}
+	res.ActivationAttempts = make([]*cascadeviews.ActivationAttemptView, len(v.ActivationAttempts))
+	for i, val := range v.ActivationAttempts {
+		res.ActivationAttempts[i] = unmarshalActivationAttemptResponseBodyToCascadeviewsActivationAttemptView(val)
+	}
+
+	return res
+}
+
+// unmarshalRegistrationAttemptResponseBodyToCascadeviewsRegistrationAttemptView
+// builds a value of type *cascadeviews.RegistrationAttemptView from a value of
+// type *RegistrationAttemptResponseBody.
+func unmarshalRegistrationAttemptResponseBodyToCascadeviewsRegistrationAttemptView(v *RegistrationAttemptResponseBody) *cascadeviews.RegistrationAttemptView {
+	res := &cascadeviews.RegistrationAttemptView{
+		ID:           v.ID,
+		FileID:       v.FileID,
+		RegStartedAt: v.RegStartedAt,
+		ProcessorSns: v.ProcessorSns,
+		FinishedAt:   v.FinishedAt,
+		IsSuccessful: v.IsSuccessful,
+		ErrorMessage: v.ErrorMessage,
+	}
+
+	return res
+}
+
+// unmarshalActivationAttemptResponseBodyToCascadeviewsActivationAttemptView
+// builds a value of type *cascadeviews.ActivationAttemptView from a value of
+// type *ActivationAttemptResponseBody.
+func unmarshalActivationAttemptResponseBodyToCascadeviewsActivationAttemptView(v *ActivationAttemptResponseBody) *cascadeviews.ActivationAttemptView {
+	res := &cascadeviews.ActivationAttemptView{
+		ID:                  v.ID,
+		FileID:              v.FileID,
+		ActivationAttemptAt: v.ActivationAttemptAt,
+		IsSuccessful:        v.IsSuccessful,
+		ErrorMessage:        v.ErrorMessage,
 	}
 
 	return res

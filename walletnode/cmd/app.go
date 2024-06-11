@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,7 +17,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/storage/queries"
-	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -196,7 +196,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 	defer hDB.CloseHistoryDB(ctx)
 
-	//Initialize ticket DB
 	tDB, err := ticketstore.OpenTicketingDb()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error connecting ticket db..")

@@ -24,7 +24,7 @@ func BuildUploadAssetPayload(cascadeUploadAssetBody string) (*cascade.UploadAsse
 	{
 		err = json.Unmarshal([]byte(cascadeUploadAssetBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"U2VkIGVuaW0gc2l0IGVzdCBpbiBvZGl0Lg==\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VmVybyB1bmRlIGVuaW0gcGxhY2VhdCBxdWkgbnVtcXVhbS4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -201,6 +201,26 @@ func BuildDownloadPayload(cascadeDownloadTxid string, cascadeDownloadPid string,
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key
+
+	return v, nil
+}
+
+// BuildRegistrationDetailsPayload builds the payload for the cascade
+// registrationDetails endpoint from CLI flags.
+func BuildRegistrationDetailsPayload(cascadeRegistrationDetailsFileID string) (*cascade.RegistrationDetailsPayload, error) {
+	var err error
+	var fileID string
+	{
+		fileID = cascadeRegistrationDetailsFileID
+		if utf8.RuneCountInString(fileID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &cascade.RegistrationDetailsPayload{}
+	v.FileID = fileID
 
 	return v, nil
 }
