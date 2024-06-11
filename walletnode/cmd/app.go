@@ -16,6 +16,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/storage/queries"
+	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -195,6 +196,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 	defer hDB.CloseHistoryDB(ctx)
 
+	//Initialize ticket DB
+	tDB, err := ticketstore.OpenTicketingDb()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error connecting ticket db..")
+	}
+	defer tDB.CloseTicketDB(ctx)
+
 	//Set minimum confirmation requirements for transactions to ensure completion
 	if config.RegTxMinConfirmations > 0 {
 		config.NftRegister.NFTRegTxMinConfirmations = config.RegTxMinConfirmations
@@ -225,7 +233,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nftSearch := nftsearch.NewNftSearchService(&config.NftSearch, pastelClient, nodeClient, hDB)
 	nftDownload := download.NewNftDownloadService(&config.NftDownload, pastelClient, nodeClient, hDB)
 
-	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, *nftDownload, hDB)
+	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, pastelClient, nodeClient, fileStorage, db, *nftDownload, hDB, tDB)
 	senseRegister := senseregister.NewService(&config.SenseRegister, pastelClient, nodeClient, fileStorage, nftDownload, db, hDB)
 	nftRegister := nftregister.NewService(&config.NftRegister, pastelClient, nodeClient, fileStorage, db, nftDownload, hDB)
 	collectionRegister := collectionregister.NewService(&config.CollectionRegister, pastelClient, nodeClient, hDB)
