@@ -2,8 +2,12 @@ package cascaderegister
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/common/storage/queries"
+	"github.com/google/uuid"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/storage/queries"
+	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
+	"github.com/pastelnetwork/gonode/common/types"
 
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 
@@ -45,6 +49,7 @@ type CascadeRegistrationService struct {
 
 	downloadHandler download.NftDownloadingService
 	historyDB       queries.LocalStoreInterface
+	ticketDB        ticketstore.TicketStorageInterface
 }
 
 // Run starts worker.
@@ -124,11 +129,48 @@ func (service *CascadeRegistrationService) CalculateFee(ctx context.Context, fil
 	return service.pastelHandler.GetEstimatedCascadeFee(ctx, utils.GetFileSizeInMB(fileData))
 }
 
+type FileMetadata struct {
+	TaskID            string
+	TotalEstimatedFee float64
+	ReqPreBurnAmount  float64
+	UploadAssetReq    *cascade.UploadAssetPayload
+}
+
+// StoreFileMetadata stores file metadata into the ticket db
+func (service *CascadeRegistrationService) StoreFileMetadata(ctx context.Context, m FileMetadata) error {
+	blockCount, err := service.pastelHandler.PastelClient.GetBlockCount(ctx)
+	if err != nil {
+		return errors.Errorf("cannot get block count: %w", err)
+	}
+
+	basefileID := uuid.NewString()
+	err = service.ticketDB.UpsertFile(types.File{
+		FileID:                       basefileID,
+		UploadTimestamp:              time.Now().UTC(),
+		Index:                        "00",
+		BaseFileID:                   basefileID,
+		TaskID:                       m.TaskID,
+		ReqBurnTxnAmount:             m.ReqPreBurnAmount,
+		ReqAmount:                    m.TotalEstimatedFee,
+		UUIDKey:                      basefileID,
+		HashOfOriginalBigFile:        utils.GetHashStringFromBytes(m.UploadAssetReq.Bytes),
+		NameOfOriginalBigFileWithExt: *m.UploadAssetReq.Filename,
+		SizeOfOriginalBigFile:        utils.GetFileSizeInMB(m.UploadAssetReq.Bytes),
+		StartBlock:                   blockCount,
+	})
+	if err != nil {
+		return errors.Errorf("error upsert for file data: %w", err)
+	}
+
+	return nil
+}
+
 // NewService returns a new Service instance
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface, db storage.KeyValue,
 	downloadService download.NftDownloadingService,
 	historyDB queries.LocalStoreInterface,
+	ticketDB ticketstore.TicketStorageInterface,
 ) *CascadeRegistrationService {
 	return &CascadeRegistrationService{
 		Worker:          task.NewWorker(),
@@ -139,5 +181,6 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Clie
 		rqClient:        rqgrpc.NewClient(),
 		downloadHandler: downloadService,
 		historyDB:       historyDB,
+		ticketDB:        ticketDB,
 	}
 }

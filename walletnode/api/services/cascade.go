@@ -25,6 +25,10 @@ import (
 	"goa.design/goa/v3/security"
 )
 
+const (
+	maxFileSize = 350 * 1024 * 1024 // 350MB in bytes
+)
+
 // CascadeAPIHandler - CascadeAPIHandler service
 type CascadeAPIHandler struct {
 	*Common
@@ -63,6 +67,12 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 		return nil, cascade.MakeBadRequest(errors.New("file not specified"))
 	}
 
+	fileSize := utils.GetFileSizeInMB(p.Bytes)
+	if fileSize > maxFileSize {
+		log.WithError(err).Error("file size exceeds than 350Mb, please use V2 endpoint for uploading the file")
+		return nil, cascade.MakeInternalServerError(err)
+	}
+
 	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
 		log.WithError(err).Error("error storing File")
@@ -77,11 +87,25 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 	}
 	log.WithField("file-id", id).WithField("filename", *p.Filename).Infof("estimated fee has been calculated: %f", fee)
 
+	totalEstimatedFee := fee + 10.0
+	reqPreBurnAmount := fee * 0.2
+
+	err = service.register.StoreFileMetadata(ctx, cascaderegister.FileMetadata{
+		TaskID:            id,
+		TotalEstimatedFee: totalEstimatedFee,
+		ReqPreBurnAmount:  reqPreBurnAmount,
+		UploadAssetReq:    p,
+	})
+	if err != nil {
+		log.WithError(err).Error(err)
+		return nil, cascade.MakeInternalServerError(err)
+	}
+
 	res = &cascade.Asset{
 		FileID:                id,
 		ExpiresIn:             expiry,
-		TotalEstimatedFee:     fee + 10.0, // 10 is activation ticket fee
-		RequiredPreburnAmount: fee * 0.2,
+		TotalEstimatedFee:     totalEstimatedFee,
+		RequiredPreburnAmount: reqPreBurnAmount,
 	}
 
 	return res, nil
