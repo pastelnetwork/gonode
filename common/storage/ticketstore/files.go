@@ -7,6 +7,7 @@ import (
 type FilesQueries interface {
 	UpsertFile(file types.File) error
 	GetFileByID(fileID string) (*types.File, error)
+	GetFilesByBaseFileID(baseFileID string) ([]*types.File, error)
 }
 
 // UpsertFile inserts a new file into the files table
@@ -24,7 +25,7 @@ func (s *TicketStore) UpsertFile(file types.File) error {
         DO UPDATE SET
             upload_timestamp = excluded.upload_timestamp,
             path = excluded.path,
-            index = excluded.index,
+            file_index = excluded.index,
             base_file_id = excluded.base_file_id,
             task_id = excluded.task_id,
             reg_txid = excluded.reg_txid,
@@ -43,7 +44,7 @@ func (s *TicketStore) UpsertFile(file types.File) error {
             done_block = excluded.done_block;`
 
 	_, err := s.db.Exec(upsertQuery,
-		file.FileID, file.UploadTimestamp, file.Path, file.Index, file.BaseFileID, file.TaskID,
+		file.FileID, file.UploadTimestamp, file.Path, file.FileIndex, file.BaseFileID, file.TaskID,
 		file.RegTxid, file.ActivationTxid, file.ReqBurnTxnAmount, file.BurnTxnID,
 		file.ReqAmount, file.IsConcluded, file.CascadeMetadataTicketID, file.UUIDKey,
 		file.HashOfOriginalBigFile, file.NameOfOriginalBigFileWithExt,
@@ -59,7 +60,7 @@ func (s *TicketStore) UpsertFile(file types.File) error {
 // GetFileByID retrieves a file by its ID from the files table
 func (s *TicketStore) GetFileByID(fileID string) (*types.File, error) {
 	const selectQuery = `
-        SELECT file_id, upload_timestamp, path, index, base_file_id, task_id, 
+        SELECT file_id, upload_timestamp, path, file_index, base_file_id, task_id, 
                reg_txid, activation_txid, req_burn_txn_amount, burn_txn_id, 
                req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
                hash_of_original_big_file, name_of_original_big_file_with_ext, 
@@ -72,7 +73,7 @@ func (s *TicketStore) GetFileByID(fileID string) (*types.File, error) {
 
 	var file types.File
 	err := row.Scan(
-		&file.FileID, &file.UploadTimestamp, &file.Path, &file.Index, &file.BaseFileID, &file.TaskID,
+		&file.FileID, &file.UploadTimestamp, &file.Path, &file.FileIndex, &file.BaseFileID, &file.TaskID,
 		&file.RegTxid, &file.ActivationTxid, &file.ReqBurnTxnAmount, &file.BurnTxnID,
 		&file.ReqAmount, &file.IsConcluded, &file.CascadeMetadataTicketID, &file.UUIDKey,
 		&file.HashOfOriginalBigFile, &file.NameOfOriginalBigFileWithExt,
@@ -83,4 +84,45 @@ func (s *TicketStore) GetFileByID(fileID string) (*types.File, error) {
 	}
 
 	return &file, nil
+}
+
+// GetFilesByBaseFileID retrieves files by base_file_id from the files table
+func (s *TicketStore) GetFilesByBaseFileID(baseFileID string) ([]*types.File, error) {
+	const selectQuery = `
+        SELECT file_id, upload_timestamp, path, file_index, base_file_id, task_id, 
+               reg_txid, activation_txid, req_burn_txn_amount, burn_txn_id, 
+               req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
+               hash_of_original_big_file, name_of_original_big_file_with_ext, 
+               size_of_original_big_file, data_type_of_original_big_file, 
+               start_block, done_block
+        FROM files
+        WHERE base_file_id = ?;`
+
+	rows, err := s.db.Query(selectQuery, baseFileID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []*types.File
+	for rows.Next() {
+		var file types.File
+		err := rows.Scan(
+			&file.FileID, &file.UploadTimestamp, &file.Path, &file.FileIndex, &file.BaseFileID, &file.TaskID,
+			&file.RegTxid, &file.ActivationTxid, &file.ReqBurnTxnAmount, &file.BurnTxnID,
+			&file.ReqAmount, &file.IsConcluded, &file.CascadeMetadataTicketID, &file.UUIDKey,
+			&file.HashOfOriginalBigFile, &file.NameOfOriginalBigFileWithExt,
+			&file.SizeOfOriginalBigFile, &file.DataTypeOfOriginalBigFile,
+			&file.StartBlock, &file.DoneBlock)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, &file)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }

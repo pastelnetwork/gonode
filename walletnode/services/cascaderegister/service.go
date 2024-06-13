@@ -147,7 +147,7 @@ func (service *CascadeRegistrationService) StoreFileMetadata(ctx context.Context
 	err = service.ticketDB.UpsertFile(types.File{
 		FileID:                       basefileID,
 		UploadTimestamp:              time.Now().UTC(),
-		Index:                        "00",
+		FileIndex:                    "00",
 		BaseFileID:                   basefileID,
 		TaskID:                       m.TaskID,
 		ReqBurnTxnAmount:             m.ReqPreBurnAmount,
@@ -163,6 +163,38 @@ func (service *CascadeRegistrationService) StoreFileMetadata(ctx context.Context
 	}
 
 	return nil
+}
+
+func (service *CascadeRegistrationService) GetFile(fileID string) (*types.File, error) {
+	file, err := service.ticketDB.GetFileByID(fileID)
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+func (service *CascadeRegistrationService) GetFilesByBaseFileID(fileID string) ([]*types.File, error) {
+	files, err := service.ticketDB.GetFilesByBaseFileID(fileID)
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+func (service *CascadeRegistrationService) GetActivationAttemptsByFileID(fileID string) ([]*types.ActivationAttempt, error) {
+	activationAttempts, err := service.ticketDB.GetActivationAttemptsByFileID(fileID)
+	if err != nil {
+		return nil, err
+	}
+	return activationAttempts, nil
+}
+
+func (service *CascadeRegistrationService) GetRegistrationAttemptsByFileID(fileID string) ([]*types.RegistrationAttempt, error) {
+	registrationAttempts, err := service.ticketDB.GetRegistrationAttemptsByFileID(fileID)
+	if err != nil {
+		return nil, err
+	}
+	return registrationAttempts, nil
 }
 
 // NewService returns a new Service instance

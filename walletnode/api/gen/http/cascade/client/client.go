@@ -41,6 +41,10 @@ type Client struct {
 	// endpoint.
 	DownloadDoer goahttp.Doer
 
+	// RegistrationDetails Doer is the HTTP client used to make requests to the
+	// registrationDetails endpoint.
+	RegistrationDetailsDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -75,19 +79,20 @@ func NewClient(
 		cfn = &ConnConfigurer{}
 	}
 	return &Client{
-		UploadAssetDoer:       doer,
-		StartProcessingDoer:   doer,
-		RegisterTaskStateDoer: doer,
-		GetTaskHistoryDoer:    doer,
-		DownloadDoer:          doer,
-		CORSDoer:              doer,
-		RestoreResponseBody:   restoreBody,
-		scheme:                scheme,
-		host:                  host,
-		decoder:               dec,
-		encoder:               enc,
-		dialer:                dialer,
-		configurer:            cfn,
+		UploadAssetDoer:         doer,
+		StartProcessingDoer:     doer,
+		RegisterTaskStateDoer:   doer,
+		GetTaskHistoryDoer:      doer,
+		DownloadDoer:            doer,
+		RegistrationDetailsDoer: doer,
+		CORSDoer:                doer,
+		RestoreResponseBody:     restoreBody,
+		scheme:                  scheme,
+		host:                    host,
+		decoder:                 dec,
+		encoder:                 enc,
+		dialer:                  dialer,
+		configurer:              cfn,
 	}
 }
 
@@ -214,6 +219,25 @@ func (c *Client) Download() goa.Endpoint {
 		resp, err := c.DownloadDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("cascade", "download", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// RegistrationDetails returns an endpoint that makes HTTP requests to the
+// cascade service registrationDetails server.
+func (c *Client) RegistrationDetails() goa.Endpoint {
+	var (
+		decodeResponse = DecodeRegistrationDetailsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildRegistrationDetailsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.RegistrationDetailsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("cascade", "registrationDetails", err)
 		}
 		return decodeResponse(resp)
 	}

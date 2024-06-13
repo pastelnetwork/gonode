@@ -35,3 +35,8 @@ func GetTaskHistoryCascadePath(taskID string) string {
 func DownloadCascadePath() string {
 	return "/openapi/cascade/download"
 }
+
+// RegistrationDetailsCascadePath returns the URL path to the cascade service registrationDetails HTTP endpoint.
+func RegistrationDetailsCascadePath(fileID string) string {
+	return fmt.Sprintf("/openapi/cascade/registration_details/%v", fileID)
+}

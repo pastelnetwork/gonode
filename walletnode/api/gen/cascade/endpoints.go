@@ -16,11 +16,12 @@ import (
 
 // Endpoints wraps the "cascade" service endpoints.
 type Endpoints struct {
-	UploadAsset       goa.Endpoint
-	StartProcessing   goa.Endpoint
-	RegisterTaskState goa.Endpoint
-	GetTaskHistory    goa.Endpoint
-	Download          goa.Endpoint
+	UploadAsset         goa.Endpoint
+	StartProcessing     goa.Endpoint
+	RegisterTaskState   goa.Endpoint
+	GetTaskHistory      goa.Endpoint
+	Download            goa.Endpoint
+	RegistrationDetails goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -38,11 +39,12 @@ func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		UploadAsset:       NewUploadAssetEndpoint(s),
-		StartProcessing:   NewStartProcessingEndpoint(s, a.APIKeyAuth),
-		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
-		GetTaskHistory:    NewGetTaskHistoryEndpoint(s),
-		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
+		UploadAsset:         NewUploadAssetEndpoint(s),
+		StartProcessing:     NewStartProcessingEndpoint(s, a.APIKeyAuth),
+		RegisterTaskState:   NewRegisterTaskStateEndpoint(s),
+		GetTaskHistory:      NewGetTaskHistoryEndpoint(s),
+		Download:            NewDownloadEndpoint(s, a.APIKeyAuth),
+		RegistrationDetails: NewRegistrationDetailsEndpoint(s),
 	}
 }
 
@@ -53,6 +55,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.RegisterTaskState = m(e.RegisterTaskState)
 	e.GetTaskHistory = m(e.GetTaskHistory)
 	e.Download = m(e.Download)
+	e.RegistrationDetails = m(e.RegistrationDetails)
 }
 
 // NewUploadAssetEndpoint returns an endpoint function that calls the method
@@ -127,5 +130,19 @@ func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.En
 			return nil, err
 		}
 		return s.Download(ctx, p)
+	}
+}
+
+// NewRegistrationDetailsEndpoint returns an endpoint function that calls the
+// method "registrationDetails" of service "cascade".
+func NewRegistrationDetailsEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*RegistrationDetailsPayload)
+		res, err := s.RegistrationDetails(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedRegistration(res, "default")
+		return vres, nil
 	}
 }

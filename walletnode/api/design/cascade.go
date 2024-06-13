@@ -124,6 +124,29 @@ var _ = Service("cascade", func() {
 			Response(StatusOK)
 		})
 	})
+
+	Method("registrationDetails", func() {
+		Description("Get the file registration details")
+		Meta("swagger:summary", "Get the file registration details")
+
+		Payload(func() {
+			Extend(FileRegistrationDetailPayload)
+		})
+		Result(FileRegistrationDetailResult)
+
+		HTTP(func() {
+			GET("/registration_details/{file_id}")
+			Params(func() {
+				Param("file_id", String)
+			})
+
+			// Define error HTTP statuses.
+			Response("UnAuthorized", StatusUnauthorized)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusCreated)
+		})
+	})
 })
 
 // AssetUploadPayload represents a payload for uploading asset
@@ -217,4 +240,81 @@ var StartCascadeProcessingPayload = Type("StartCascadeProcessingPayload", func()
 	})
 
 	Required("file_id", "burn_txid", "app_pastelid", "key")
+})
+
+// FileRegistrationDetailPayload - Payload for registration detail
+var FileRegistrationDetailPayload = Type("FileRegistrationDetailPayload", func() {
+	Description("File registration details")
+	Attribute("file_id", String, func() {
+		Description("file ID")
+		MaxLength(8)
+		Example("VK7mpAqZ")
+	})
+
+	Required("file_id")
+})
+
+// FileRegistrationDetailResult is registration detail result.
+var FileRegistrationDetailResult = ResultType("application/vnd.cascade.registration-detail", func() {
+	TypeName("Registration")
+	Attributes(func() {
+		Attribute("files", ArrayOf(File), "List of files")
+	})
+	Required("files")
+})
+
+var File = Type("File", func() {
+	Attribute("file_id", String, "File ID")
+	Attribute("upload_timestamp", String, "Upload Timestamp in datetime format", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("path", String, "Path to the file")
+	Attribute("file_index", String, "Index of the file")
+	Attribute("base_file_id", String, "Base File ID")
+	Attribute("task_id", String, "Task ID")
+	Attribute("reg_txid", String, "Registration Transaction ID")
+	Attribute("activation_txid", String, "Activation Transaction ID")
+	Attribute("req_burn_txn_amount", Float64, "Required Burn Transaction Amount")
+	Attribute("burn_txn_id", String, "Burn Transaction ID")
+	Attribute("req_amount", Float64, "Required Amount")
+	Attribute("is_concluded", Boolean, "Indicates if the process is concluded")
+	Attribute("cascade_metadata_ticket_id", String, "Cascade Metadata Ticket ID")
+	Attribute("uuid_key", String, "UUID Key")
+	Attribute("hash_of_original_big_file", String, "Hash of the Original Big File")
+	Attribute("name_of_original_big_file_with_ext", String, "Name of the Original Big File with Extension")
+	Attribute("size_of_original_big_file", Float64, "Size of the Original Big File")
+	Attribute("data_type_of_original_big_file", String, "Data Type of the Original Big File")
+	Attribute("start_block", Int32, "Start Block")
+	Attribute("done_block", Int, "Done Block")
+	Attribute("registration_attempts", ArrayOf(RegistrationAttempt), "List of registration attempts")
+	Attribute("activation_attempts", ArrayOf(ActivationAttempt), "List of activation attempts")
+	Required("file_id", "task_id", "upload_timestamp", "base_file_id", "registration_attempts", "activation_attempts",
+		"req_burn_txn_amount", "req_amount", "cascade_metadata_ticket_id", "hash_of_original_big_file", "name_of_original_big_file_with_ext",
+		"size_of_original_big_file", "data_type_of_original_big_file")
+})
+
+var RegistrationAttempt = Type("RegistrationAttempt", func() {
+	Attribute("id", Int, "ID")
+	Attribute("file_id", String, "File ID")
+	Attribute("reg_started_at", String, "Registration Started At in datetime format", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("processor_sns", String, "Processor SNS")
+	Attribute("finished_at", String, "Finished At in datetime format", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("is_successful", Boolean, "Indicates if the registration was successful")
+	Attribute("error_message", String, "Error Message")
+	Required("id", "file_id", "reg_started_at", "finished_at")
+})
+
+var ActivationAttempt = Type("ActivationAttempt", func() {
+	Attribute("id", Int, "ID")
+	Attribute("file_id", String, "File ID")
+	Attribute("activation_attempt_at", String, "Activation Attempt At in datetime format", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("is_successful", Boolean, "Indicates if the activation was successful")
+	Attribute("error_message", String, "Error Message")
+	Required("id", "file_id", "activation_attempt_at")
 })
