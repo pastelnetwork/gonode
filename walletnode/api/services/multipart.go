@@ -3,14 +3,19 @@ package services
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 
+	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/storage/files"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 
@@ -74,10 +79,10 @@ func CascadeUploadAssetDecoderFunc(ctx context.Context, service *CascadeAPIHandl
 	return func(reader *multipart.Reader, p **cascade.UploadAssetPayload) error {
 		var res cascade.UploadAssetPayload
 
-		filename, errType, err := handleUploadImage(ctx, reader, service.register.ImageHandler.FileStorage, false)
+		filename, err := handleUploadFile(ctx, reader)
 		if err != nil {
 			return &goa.ServiceError{
-				Name:    errType,
+				Name:    "",
 				ID:      goa.NewErrorID(),
 				Message: err.Error(),
 			}
@@ -146,4 +151,73 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 	}
 
 	return filename, "", nil
+}
+
+const (
+	chunkSize = 350 * 1024 * 1024 // 350 MB
+	baseDir   = "/home/matee/.pastel/files"
+)
+
+func handleUploadFile(ctx context.Context, reader *multipart.Reader) (string, error) {
+	id, err := random.String(8, random.Base62Chars)
+	if err != nil {
+		return "", err
+	}
+
+	dirPath := filepath.Join(baseDir, id)
+
+	// Create the directory
+	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
+		return "", errors.New("could not create directory: " + err.Error())
+	}
+
+	var filename, outputFilePath string
+	var fileSize int64
+
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", errors.New("could not read next part: " + err.Error())
+		}
+
+		if part.FormName() != imagePartName {
+			continue
+		}
+
+		filename = part.FileName()
+		fmt.Printf("Upload image %q\n", filename)
+		outputFilePath = filepath.Join(dirPath, filename)
+		outputFile, err := os.Create(outputFilePath)
+		if err != nil {
+			return "", errors.New("could not create file: " + err.Error())
+		}
+
+		n, err := io.Copy(outputFile, part)
+		fileSize += n
+		outputFile.Close()
+
+		if err != nil {
+			return "", errors.New("error writing file: " + err.Error())
+		}
+		break // Assuming single file upload for simplicity
+	}
+
+	fs := common.FileSplitter{PartSizeMB: 350}
+	if fileSize > chunkSize {
+		// Use 7z to split the file
+		err := fs.SplitFile(outputFilePath)
+		if err != nil {
+			return "", err
+		}
+		// Remove the original file after splitting
+		if err := os.Remove(outputFilePath); err != nil {
+			return "", errors.New("could not remove original file: " + err.Error())
+		}
+	}
+
+	fmt.Printf("Uploaded image to %q\n", dirPath)
+	return id, nil
 }

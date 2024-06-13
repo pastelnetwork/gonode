@@ -3,10 +3,11 @@ package ticketstore
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/log"
-	"path/filepath"
 )
 
 const createFilesTable string = `
