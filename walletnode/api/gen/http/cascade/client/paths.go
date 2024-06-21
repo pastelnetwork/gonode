@@ -16,6 +16,11 @@ func UploadAssetCascadePath() string {
 	return "/openapi/cascade/upload"
 }
 
+// UploadAssetV2CascadePath returns the URL path to the cascade service uploadAssetV2 HTTP endpoint.
+func UploadAssetV2CascadePath() string {
+	return "/openapi/cascade/v2/upload"
+}
+
 // StartProcessingCascadePath returns the URL path to the cascade service startProcessing HTTP endpoint.
 func StartProcessingCascadePath(fileID string) string {
 	return fmt.Sprintf("/openapi/cascade/start/%v", fileID)

@@ -19,6 +19,9 @@ import (
 type Service interface {
 	// Upload the asset file
 	UploadAsset(context.Context, *UploadAssetPayload) (res *Asset, err error)
+	// Upload the asset file - This endpoint is for the new version of the upload
+	// endpoint that supports larger files as well.
+	UploadAssetV2(context.Context, *UploadAssetV2Payload) (res *AssetV2, err error)
 	// Start processing the image
 	StartProcessing(context.Context, *StartProcessingPayload) (res *StartProcessingResult, err error)
 	// Streams the state of the registration process.
@@ -51,7 +54,7 @@ const ServiceName = "cascade"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [6]string{"uploadAsset", "startProcessing", "registerTaskState", "getTaskHistory", "download", "registrationDetails"}
+var MethodNames = [7]string{"uploadAsset", "uploadAssetV2", "startProcessing", "registerTaskState", "getTaskHistory", "download", "registrationDetails"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -92,6 +95,16 @@ type Asset struct {
 	TotalEstimatedFee float64
 	// The amount that's required to be preburned
 	RequiredPreburnAmount float64
+}
+
+// AssetV2 is the result type of the cascade service uploadAssetV2 method.
+type AssetV2 struct {
+	// Uploaded file ID
+	FileID string
+	// Estimated fee
+	TotalEstimatedFee float64
+	// The amounts that's required to be preburned - one per transaction
+	RequiredPreburnTransactionAmounts []float64
 }
 
 type Details struct {
@@ -259,6 +272,23 @@ type UploadAssetPayload struct {
 	Bytes []byte
 	// For internal use
 	Filename *string
+	// For internal use
+	Hash *string
+	// For internal use
+	Size *int64
+}
+
+// UploadAssetV2Payload is the payload type of the cascade service
+// uploadAssetV2 method.
+type UploadAssetV2Payload struct {
+	// File to upload
+	Bytes []byte
+	// -For internal use-
+	Filename *string
+	// For internal use
+	Hash *string
+	// For internal use
+	Size *int64
 }
 
 // MakeUnAuthorized builds a goa.ServiceError from an error.
@@ -291,6 +321,18 @@ func NewAsset(vres *cascadeviews.Asset) *Asset {
 func NewViewedAsset(res *Asset, view string) *cascadeviews.Asset {
 	p := newAssetView(res)
 	return &cascadeviews.Asset{Projected: p, View: "default"}
+}
+
+// NewAssetV2 initializes result type AssetV2 from viewed result type AssetV2.
+func NewAssetV2(vres *cascadeviews.AssetV2) *AssetV2 {
+	return newAssetV2(vres.Projected)
+}
+
+// NewViewedAssetV2 initializes viewed result type AssetV2 from result type
+// AssetV2 using the given view.
+func NewViewedAssetV2(res *AssetV2, view string) *cascadeviews.AssetV2 {
+	p := newAssetV2View(res)
+	return &cascadeviews.AssetV2{Projected: p, View: "default"}
 }
 
 // NewStartProcessingResult initializes result type StartProcessingResult from
@@ -352,6 +394,43 @@ func newAssetView(res *Asset) *cascadeviews.AssetView {
 		ExpiresIn:             &res.ExpiresIn,
 		TotalEstimatedFee:     &res.TotalEstimatedFee,
 		RequiredPreburnAmount: &res.RequiredPreburnAmount,
+	}
+	return vres
+}
+
+// newAssetV2 converts projected type AssetV2 to service type AssetV2.
+func newAssetV2(vres *cascadeviews.AssetV2View) *AssetV2 {
+	res := &AssetV2{}
+	if vres.FileID != nil {
+		res.FileID = *vres.FileID
+	}
+	if vres.TotalEstimatedFee != nil {
+		res.TotalEstimatedFee = *vres.TotalEstimatedFee
+	}
+	if vres.TotalEstimatedFee == nil {
+		res.TotalEstimatedFee = 1
+	}
+	if vres.RequiredPreburnTransactionAmounts != nil {
+		res.RequiredPreburnTransactionAmounts = make([]float64, len(vres.RequiredPreburnTransactionAmounts))
+		for i, val := range vres.RequiredPreburnTransactionAmounts {
+			res.RequiredPreburnTransactionAmounts[i] = val
+		}
+	}
+	return res
+}
+
+// newAssetV2View projects result type AssetV2 to projected type AssetV2View
+// using the "default" view.
+func newAssetV2View(res *AssetV2) *cascadeviews.AssetV2View {
+	vres := &cascadeviews.AssetV2View{
+		FileID:            &res.FileID,
+		TotalEstimatedFee: &res.TotalEstimatedFee,
+	}
+	if res.RequiredPreburnTransactionAmounts != nil {
+		vres.RequiredPreburnTransactionAmounts = make([]float64, len(res.RequiredPreburnTransactionAmounts))
+		for i, val := range res.RequiredPreburnTransactionAmounts {
+			vres.RequiredPreburnTransactionAmounts[i] = val
+		}
 	}
 	return vres
 }

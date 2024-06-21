@@ -14,7 +14,7 @@ type FilesQueries interface {
 func (s *TicketStore) UpsertFile(file types.File) error {
 	const upsertQuery = `
         INSERT INTO files (
-            file_id, upload_timestamp, path, index, base_file_id, task_id, 
+            file_id, upload_timestamp, path, file_index, base_file_id, task_id, 
             reg_txid, activation_txid, req_burn_txn_amount, burn_txn_id, 
             req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
             hash_of_original_big_file, name_of_original_big_file_with_ext, 
@@ -25,7 +25,7 @@ func (s *TicketStore) UpsertFile(file types.File) error {
         DO UPDATE SET
             upload_timestamp = excluded.upload_timestamp,
             path = excluded.path,
-            file_index = excluded.index,
+            file_index = excluded.file_index,
             base_file_id = excluded.base_file_id,
             task_id = excluded.task_id,
             reg_txid = excluded.reg_txid,

@@ -21,6 +21,14 @@ type Asset struct {
 	View string
 }
 
+// AssetV2 is the viewed result type that is projected based on a view.
+type AssetV2 struct {
+	// Type to project
+	Projected *AssetV2View
+	// View to render
+	View string
+}
+
 // StartProcessingResult is the viewed result type that is projected based on a
 // view.
 type StartProcessingResult struct {
@@ -48,6 +56,16 @@ type AssetView struct {
 	TotalEstimatedFee *float64
 	// The amount that's required to be preburned
 	RequiredPreburnAmount *float64
+}
+
+// AssetV2View is a type that runs validations on a projected type.
+type AssetV2View struct {
+	// Uploaded file ID
+	FileID *string
+	// Estimated fee
+	TotalEstimatedFee *float64
+	// The amounts that's required to be preburned - one per transaction
+	RequiredPreburnTransactionAmounts []float64
 }
 
 // StartProcessingResultView is a type that runs validations on a projected
@@ -153,6 +171,14 @@ var (
 			"required_preburn_amount",
 		},
 	}
+	// AssetV2Map is a map indexing the attribute names of AssetV2 by view name.
+	AssetV2Map = map[string][]string{
+		"default": {
+			"file_id",
+			"total_estimated_fee",
+			"required_preburn_transaction_amounts",
+		},
+	}
 	// StartProcessingResultMap is a map indexing the attribute names of
 	// StartProcessingResult by view name.
 	StartProcessingResultMap = map[string][]string{
@@ -174,6 +200,18 @@ func ValidateAsset(result *Asset) (err error) {
 	switch result.View {
 	case "default", "":
 		err = ValidateAssetView(result.Projected)
+	default:
+		err = goa.InvalidEnumValueError("view", result.View, []any{"default"})
+	}
+	return
+}
+
+// ValidateAssetV2 runs the validations defined on the viewed result type
+// AssetV2.
+func ValidateAssetV2(result *AssetV2) (err error) {
+	switch result.View {
+	case "default", "":
+		err = ValidateAssetV2View(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []any{"default"})
 	}
@@ -237,6 +275,33 @@ func ValidateAssetView(result *AssetView) (err error) {
 	if result.RequiredPreburnAmount != nil {
 		if *result.RequiredPreburnAmount < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("result.required_preburn_amount", *result.RequiredPreburnAmount, 1e-05, true))
+		}
+	}
+	return
+}
+
+// ValidateAssetV2View runs the validations defined on AssetV2View using the
+// "default" view.
+func ValidateAssetV2View(result *AssetV2View) (err error) {
+	if result.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "result"))
+	}
+	if result.TotalEstimatedFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_estimated_fee", "result"))
+	}
+	if result.FileID != nil {
+		if utf8.RuneCountInString(*result.FileID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.file_id", *result.FileID, utf8.RuneCountInString(*result.FileID), 8, true))
+		}
+	}
+	if result.FileID != nil {
+		if utf8.RuneCountInString(*result.FileID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.file_id", *result.FileID, utf8.RuneCountInString(*result.FileID), 8, false))
+		}
+	}
+	if result.TotalEstimatedFee != nil {
+		if *result.TotalEstimatedFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.total_estimated_fee", *result.TotalEstimatedFee, 1e-05, true))
 		}
 	}
 	return

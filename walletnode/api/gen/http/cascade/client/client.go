@@ -25,6 +25,10 @@ type Client struct {
 	// endpoint.
 	UploadAssetDoer goahttp.Doer
 
+	// UploadAssetV2 Doer is the HTTP client used to make requests to the
+	// uploadAssetV2 endpoint.
+	UploadAssetV2Doer goahttp.Doer
+
 	// StartProcessing Doer is the HTTP client used to make requests to the
 	// startProcessing endpoint.
 	StartProcessingDoer goahttp.Doer
@@ -64,6 +68,10 @@ type Client struct {
 // the "cascade" service "uploadAsset" endpoint.
 type CascadeUploadAssetEncoderFunc func(*multipart.Writer, *cascade.UploadAssetPayload) error
 
+// CascadeUploadAssetV2EncoderFunc is the type to encode multipart request for
+// the "cascade" service "uploadAssetV2" endpoint.
+type CascadeUploadAssetV2EncoderFunc func(*multipart.Writer, *cascade.UploadAssetV2Payload) error
+
 // NewClient instantiates HTTP clients for all the cascade service servers.
 func NewClient(
 	scheme string,
@@ -80,6 +88,7 @@ func NewClient(
 	}
 	return &Client{
 		UploadAssetDoer:         doer,
+		UploadAssetV2Doer:       doer,
 		StartProcessingDoer:     doer,
 		RegisterTaskStateDoer:   doer,
 		GetTaskHistoryDoer:      doer,
@@ -115,6 +124,30 @@ func (c *Client) UploadAsset(cascadeUploadAssetEncoderFn CascadeUploadAssetEncod
 		resp, err := c.UploadAssetDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("cascade", "uploadAsset", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UploadAssetV2 returns an endpoint that makes HTTP requests to the cascade
+// service uploadAssetV2 server.
+func (c *Client) UploadAssetV2(cascadeUploadAssetV2EncoderFn CascadeUploadAssetV2EncoderFunc) goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUploadAssetV2Request(NewCascadeUploadAssetV2Encoder(cascadeUploadAssetV2EncoderFn))
+		decodeResponse = DecodeUploadAssetV2Response(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUploadAssetV2Request(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UploadAssetV2Doer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("cascade", "uploadAssetV2", err)
 		}
 		return decodeResponse(resp)
 	}
