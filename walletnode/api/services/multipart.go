@@ -79,7 +79,7 @@ func CascadeUploadAssetDecoderFunc(ctx context.Context, service *CascadeAPIHandl
 	return func(reader *multipart.Reader, p **cascade.UploadAssetPayload) error {
 		var res cascade.UploadAssetPayload
 
-		filename, err := handleUploadFile(ctx, reader)
+		filename, err := handleUploadFile(ctx, reader, service.config.CascadeFilesDir, true)
 		if err != nil {
 			return &goa.ServiceError{
 				Name:    "",
@@ -154,11 +154,10 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *f
 }
 
 const (
-	chunkSize = 350 * 1024 * 1024 // 350 MB
-	baseDir   = "/home/matee/.pastel/files"
+	chunkSize = 300 * 1024 * 1024 // 300 MB
 )
 
-func handleUploadFile(ctx context.Context, reader *multipart.Reader) (string, error) {
+func handleUploadFile(ctx context.Context, reader *multipart.Reader, baseDir string, putMaxCap bool) (string, error) {
 	id, err := random.String(8, random.Base62Chars)
 	if err != nil {
 		return "", err
@@ -205,8 +204,12 @@ func handleUploadFile(ctx context.Context, reader *multipart.Reader) (string, er
 		break // Assuming single file upload for simplicity
 	}
 
-	fs := common.FileSplitter{PartSizeMB: 350}
+	fs := common.FileSplitter{PartSizeMB: 300}
 	if fileSize > chunkSize {
+		if putMaxCap {
+			return "", errors.New("file size exceeds the maximum allowed size - Please use API V2 to upload large files")
+		}
+
 		// Use 7z to split the file
 		err := fs.SplitFile(outputFilePath)
 		if err != nil {

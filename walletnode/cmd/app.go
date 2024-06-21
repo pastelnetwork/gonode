@@ -3,11 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -51,6 +52,7 @@ var (
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
 	defaultStaticFilesDir   = filepath.Join(defaultPath, staticFilesDir)
+	defaultCascadeFilesDir  = filepath.Join(defaultPath, "files")
 )
 
 // NewApp configures our app by parsing command line flags, config files, and setting up logging and temporary directories
@@ -166,6 +168,14 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		}
 	}
 
+	if _, err := os.Stat(defaultCascadeFilesDir); os.IsNotExist(err) {
+		// directory does not exist, create it
+		errDir := os.MkdirAll(defaultCascadeFilesDir, 0755)
+		if errDir != nil {
+			log.Fatal(err)
+		}
+	}
+
 	// pastelClient reads in the json-formatted hostname, port, username, and password and
 	//  connects over gRPC to cNode for access to Blockchain, Masternodes, Tickets, and PastelID databases
 	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
@@ -221,10 +231,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	//  Since the API Server has access to the services, this is what finally exposes useful methods like
 	//  "NftGet" and "Download".
 	apiSrcvConf := &services.Config{
-		StaticFilesDir: defaultStaticFilesDir,
+		StaticFilesDir:  defaultStaticFilesDir,
+		CascadeFilesDir: defaultCascadeFilesDir,
 	}
 	config.API.StaticFilesDir = defaultStaticFilesDir
+	config.API.CascadeFilesDir = defaultCascadeFilesDir
 	config.NftDownload.StaticDir = defaultStaticFilesDir
+	config.NftDownload.CascadeFilesDir = defaultCascadeFilesDir
 
 	// These services connect the different clients and configs together to provide tasking and handling for
 	//  the required functionality.  These services aren't started with these declarations, they will be run

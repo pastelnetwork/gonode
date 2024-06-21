@@ -67,12 +67,6 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 		return nil, cascade.MakeBadRequest(errors.New("file not specified"))
 	}
 
-	fileSize := utils.GetFileSizeInMB(p.Bytes)
-	if fileSize > maxFileSize {
-		log.WithError(err).Error("file size exceeds than 350Mb, please use V2 endpoint for uploading the file")
-		return nil, cascade.MakeInternalServerError(err)
-	}
-
 	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
 	if err != nil {
 		log.WithError(err).Error("error storing File")

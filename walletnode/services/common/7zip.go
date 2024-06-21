@@ -83,14 +83,5 @@ func (fs *FileSplitter) JoinFiles(dirPath string) error {
 		}
 	}
 
-	// Extract the original file from the joined .7z archive
-	cmd = exec.Command(sevenZPath, "x", "-aoa", "-o"+dirPath, reassembledPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	fmt.Println("Executing extract command:", cmd)
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("7zip extract error: %v", err)
-	}
-
 	return nil
 }
