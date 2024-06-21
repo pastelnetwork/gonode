@@ -2,9 +2,13 @@ package cascaderegister
 
 import (
 	"context"
-	"github.com/google/uuid"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -137,32 +141,81 @@ type FileMetadata struct {
 }
 
 // StoreFileMetadata stores file metadata into the ticket db
-func (service *CascadeRegistrationService) StoreFileMetadata(ctx context.Context, m FileMetadata) error {
+func (service *CascadeRegistrationService) StoreFileMetadata(ctx context.Context, dir string, hash string, size int64) (fee float64, preburn []float64, err error) {
 	blockCount, err := service.pastelHandler.PastelClient.GetBlockCount(ctx)
 	if err != nil {
-		return errors.Errorf("cannot get block count: %w", err)
+		return fee, preburn, errors.Errorf("cannot get block count: %w", err)
 	}
 
-	basefileID := uuid.NewString()
-	err = service.ticketDB.UpsertFile(types.File{
-		FileID:                       basefileID,
-		UploadTimestamp:              time.Now().UTC(),
-		FileIndex:                    "00",
-		BaseFileID:                   basefileID,
-		TaskID:                       m.TaskID,
-		ReqBurnTxnAmount:             m.ReqPreBurnAmount,
-		ReqAmount:                    m.TotalEstimatedFee,
-		UUIDKey:                      basefileID,
-		HashOfOriginalBigFile:        utils.GetHashStringFromBytes(m.UploadAssetReq.Bytes),
-		NameOfOriginalBigFileWithExt: *m.UploadAssetReq.Filename,
-		SizeOfOriginalBigFile:        utils.GetFileSizeInMB(m.UploadAssetReq.Bytes),
-		StartBlock:                   blockCount,
-	})
+	files, err := os.ReadDir(dir)
 	if err != nil {
-		return errors.Errorf("error upsert for file data: %w", err)
+		return fee, preburn, err
 	}
 
-	return nil
+	type fileMetadata struct {
+		Name string
+		Fee  float64
+		Hash []byte
+	}
+	var metadataList []fileMetadata
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		filePath := filepath.Join(dir, file.Name())
+		fileData, err := os.ReadFile(filePath)
+		if err != nil {
+			return fee, preburn, err
+		}
+
+		fee, err := service.pastelHandler.GetEstimatedCascadeFee(ctx, utils.GetFileSizeInMB(fileData))
+		if err != nil {
+			return fee, preburn, err
+		}
+
+		hash, err := utils.Sha3256hash(fileData)
+		if err != nil {
+			return fee, preburn, err
+		}
+
+		metadataList = append(metadataList, fileMetadata{
+			Name: file.Name(),
+			Fee:  fee,
+			Hash: hash,
+		})
+	}
+
+	now := time.Now().UTC()
+	// Print the metadata list or handle it as needed
+	for i, metadata := range metadataList {
+		localFee := metadata.Fee + 10.0
+		localPreburn := localFee * 0.2
+
+		fee += localFee
+		preburn = append(preburn, localPreburn)
+
+		err = service.ticketDB.UpsertFile(types.File{
+			FileID:                       metadata.Name,
+			UploadTimestamp:              now,
+			FileIndex:                    strconv.Itoa(i),
+			BaseFileID:                   filepath.Base(dir),
+			TaskID:                       "",
+			ReqBurnTxnAmount:             localPreburn,
+			ReqAmount:                    localFee,
+			UUIDKey:                      uuid.NewString(),
+			HashOfOriginalBigFile:        hash,
+			NameOfOriginalBigFileWithExt: strings.Split(metadata.Name, ".7z")[0],
+			SizeOfOriginalBigFile:        float64(size),
+			StartBlock:                   blockCount,
+		})
+		if err != nil {
+			return fee, preburn, errors.Errorf("error upsert for file data: %w", err)
+		}
+	}
+
+	return fee, preburn, nil
 }
 
 func (service *CascadeRegistrationService) GetFile(fileID string) (*types.File, error) {

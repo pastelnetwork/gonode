@@ -44,6 +44,26 @@ var _ = Service("cascade", func() {
 		})
 	})
 
+	Method("uploadAssetV2", func() {
+		Description("Upload the asset file - This endpoint is for the new version of the upload endpoint that supports larger files as well.")
+		Meta("swagger:summary", "Uploads Cascade File")
+
+		Payload(func() {
+			Extend(AssetUploadPayloadV2)
+		})
+		Result(AssetUploadResultV2)
+
+		HTTP(func() {
+			POST("/v2/upload")
+			MultipartRequest()
+
+			// Define error HTTP statuses.
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusCreated)
+		})
+	})
+
 	Method("startProcessing", func() {
 		Description("Start processing the image")
 		Meta("swagger:summary", "Starts processing the image")
@@ -160,6 +180,42 @@ var AssetUploadPayload = Type("AssetUploadPayload", func() {
 		Meta("swagger:example", "false")
 		Description("For internal use")
 	})
+
+	Attribute("hash", String, func() {
+		Meta("swagger:example", "false")
+		Description("For internal use")
+	})
+
+	Attribute("size", Int64, func() {
+		Meta("swagger:example", "false")
+		Description("For internal use")
+	})
+
+	Required("file")
+})
+
+// AssetUploadPayload represents a payload for uploading asset
+var AssetUploadPayloadV2 = Type("AssetUploadPayloadV2", func() {
+	Description("Asset upload payload")
+	Attribute("file", Bytes, func() {
+		Meta("struct:field:name", "Bytes")
+		Description("File to upload")
+	})
+	Attribute("filename", String, func() {
+		Meta("swagger:example", "false")
+		Description("-For internal use-")
+	})
+
+	Attribute("hash", String, func() {
+		Meta("swagger:example", "false")
+		Description("For internal use")
+	})
+
+	Attribute("size", Int64, func() {
+		Meta("swagger:example", "false")
+		Description("For internal use")
+	})
+
 	Required("file")
 })
 
@@ -194,6 +250,31 @@ var AssetUploadResult = ResultType("application/vnd.cascade.upload-file", func()
 		})
 	})
 	Required("file_id", "expires_in", "total_estimated_fee")
+})
+
+var AssetUploadResultV2 = ResultType("application/vnd.cascade.upload-file-v2", func() {
+	TypeName("AssetV2")
+	Attributes(func() {
+		Attribute("file_id", String, func() {
+			Description("Uploaded file ID")
+			MinLength(8)
+			MaxLength(8)
+			Example("VK7mpAqZ")
+		})
+
+		Attribute("total_estimated_fee", Float64, func() {
+			Description("Estimated fee")
+			Minimum(0.00001)
+			Default(1)
+			Example(100)
+		})
+
+		Attribute("required_preburn_transaction_amounts", ArrayOf(Float64), func() {
+			Description("The amounts that's required to be preburned - one per transaction")
+		})
+	})
+
+	Required("file_id", "total_estimated_fee")
 })
 
 // StartCascadeProcessingPayload - Payload for starting processing

@@ -5,6 +5,7 @@ import (
 	"container/heap"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -177,6 +178,21 @@ func GetHashFromString(inputString string) string {
 	h := sha3.New256()
 	h.Write([]byte(inputString))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func ComputeSHA256HashOfFile(filePath string) ([]byte, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return nil, err
+	}
+
+	return hasher.Sum(nil), nil
 }
 
 // XORBytes returns the XOR of two same-length byte slices.

@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/storage/files"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -79,7 +81,7 @@ func CascadeUploadAssetDecoderFunc(ctx context.Context, service *CascadeAPIHandl
 	return func(reader *multipart.Reader, p **cascade.UploadAssetPayload) error {
 		var res cascade.UploadAssetPayload
 
-		filename, err := handleUploadFile(ctx, reader, service.config.CascadeFilesDir, true)
+		filename, hash, size, err := handleUploadFile(ctx, reader, service.config.CascadeFilesDir, true)
 		if err != nil {
 			return &goa.ServiceError{
 				Name:    "",
@@ -89,6 +91,30 @@ func CascadeUploadAssetDecoderFunc(ctx context.Context, service *CascadeAPIHandl
 		}
 
 		res.Filename = &filename
+		res.Hash = &hash
+		res.Size = &size
+		*p = &res
+		return nil
+	}
+}
+
+// CascadeUploadAssetV2DecoderFunc decodes image uploaded from request
+func CascadeUploadAssetV2DecoderFunc(ctx context.Context, service *CascadeAPIHandler) cassrv.CascadeUploadAssetV2DecoderFunc {
+	return func(reader *multipart.Reader, p **cascade.UploadAssetV2Payload) error {
+		var res cascade.UploadAssetV2Payload
+
+		filename, hash, size, err := handleUploadFile(ctx, reader, service.config.CascadeFilesDir, false)
+		if err != nil {
+			return &goa.ServiceError{
+				Name:    "",
+				ID:      goa.NewErrorID(),
+				Message: err.Error(),
+			}
+		}
+
+		res.Filename = &filename
+		res.Hash = &hash
+		res.Size = &size
 		*p = &res
 		return nil
 	}
@@ -157,20 +183,20 @@ const (
 	chunkSize = 300 * 1024 * 1024 // 300 MB
 )
 
-func handleUploadFile(ctx context.Context, reader *multipart.Reader, baseDir string, putMaxCap bool) (string, error) {
+func handleUploadFile(ctx context.Context, reader *multipart.Reader, baseDir string, putMaxCap bool) (string, string, int64, error) {
 	id, err := random.String(8, random.Base62Chars)
 	if err != nil {
-		return "", err
+		return "", "", 0, err
 	}
 
 	dirPath := filepath.Join(baseDir, id)
 
 	// Create the directory
 	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
-		return "", errors.New("could not create directory: " + err.Error())
+		return "", "", 0, errors.New("could not create directory: " + err.Error())
 	}
 
-	var filename, outputFilePath string
+	var filename, outputFilePath, hash string
 	var fileSize int64
 
 	for {
@@ -179,7 +205,7 @@ func handleUploadFile(ctx context.Context, reader *multipart.Reader, baseDir str
 			break
 		}
 		if err != nil {
-			return "", errors.New("could not read next part: " + err.Error())
+			return "", "", 0, errors.New("could not read next part: " + err.Error())
 		}
 
 		if part.FormName() != imagePartName {
@@ -191,7 +217,7 @@ func handleUploadFile(ctx context.Context, reader *multipart.Reader, baseDir str
 		outputFilePath = filepath.Join(dirPath, filename)
 		outputFile, err := os.Create(outputFilePath)
 		if err != nil {
-			return "", errors.New("could not create file: " + err.Error())
+			return "", "", 0, errors.New("could not create file: " + err.Error())
 		}
 
 		n, err := io.Copy(outputFile, part)
@@ -199,28 +225,33 @@ func handleUploadFile(ctx context.Context, reader *multipart.Reader, baseDir str
 		outputFile.Close()
 
 		if err != nil {
-			return "", errors.New("error writing file: " + err.Error())
+			return "", "", 0, errors.New("error writing file: " + err.Error())
 		}
 		break // Assuming single file upload for simplicity
 	}
 
+	hashB, err := utils.ComputeSHA256HashOfFile(outputFilePath)
+	if err != nil {
+		return "", "", 0, errors.New("could not compute hash: " + err.Error())
+	}
+	hash = hex.EncodeToString(hashB)
+
 	fs := common.FileSplitter{PartSizeMB: 300}
 	if fileSize > chunkSize {
 		if putMaxCap {
-			return "", errors.New("file size exceeds the maximum allowed size - Please use API V2 to upload large files")
+			return "", "", 0, errors.New("file size exceeds the maximum allowed size - Please use API V2 to upload large files")
 		}
 
 		// Use 7z to split the file
 		err := fs.SplitFile(outputFilePath)
 		if err != nil {
-			return "", err
+			return "", "", 0, err
 		}
 		// Remove the original file after splitting
 		if err := os.Remove(outputFilePath); err != nil {
-			return "", errors.New("could not remove original file: " + err.Error())
+			return "", "", 0, errors.New("could not remove original file: " + err.Error())
 		}
 	}
 
-	fmt.Printf("Uploaded image to %q\n", dirPath)
-	return id, nil
+	return id, hash, fileSize, nil
 }

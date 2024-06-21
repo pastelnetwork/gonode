@@ -16,6 +16,7 @@ import (
 // Client is the "cascade" service client.
 type Client struct {
 	UploadAssetEndpoint         goa.Endpoint
+	UploadAssetV2Endpoint       goa.Endpoint
 	StartProcessingEndpoint     goa.Endpoint
 	RegisterTaskStateEndpoint   goa.Endpoint
 	GetTaskHistoryEndpoint      goa.Endpoint
@@ -24,9 +25,10 @@ type Client struct {
 }
 
 // NewClient initializes a "cascade" service client given the endpoints.
-func NewClient(uploadAsset, startProcessing, registerTaskState, getTaskHistory, download, registrationDetails goa.Endpoint) *Client {
+func NewClient(uploadAsset, uploadAssetV2, startProcessing, registerTaskState, getTaskHistory, download, registrationDetails goa.Endpoint) *Client {
 	return &Client{
 		UploadAssetEndpoint:         uploadAsset,
+		UploadAssetV2Endpoint:       uploadAssetV2,
 		StartProcessingEndpoint:     startProcessing,
 		RegisterTaskStateEndpoint:   registerTaskState,
 		GetTaskHistoryEndpoint:      getTaskHistory,
@@ -49,6 +51,22 @@ func (c *Client) UploadAsset(ctx context.Context, p *UploadAssetPayload) (res *A
 		return
 	}
 	return ires.(*Asset), nil
+}
+
+// UploadAssetV2 calls the "uploadAssetV2" endpoint of the "cascade" service.
+// UploadAssetV2 may return the following errors:
+//   - "UnAuthorized" (type *goa.ServiceError)
+//   - "BadRequest" (type *goa.ServiceError)
+//   - "NotFound" (type *goa.ServiceError)
+//   - "InternalServerError" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) UploadAssetV2(ctx context.Context, p *UploadAssetV2Payload) (res *AssetV2, err error) {
+	var ires any
+	ires, err = c.UploadAssetV2Endpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*AssetV2), nil
 }
 
 // StartProcessing calls the "startProcessing" endpoint of the "cascade"

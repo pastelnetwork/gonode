@@ -25,10 +25,6 @@ import (
 	"goa.design/goa/v3/security"
 )
 
-const (
-	maxFileSize = 350 * 1024 * 1024 // 350MB in bytes
-)
-
 // CascadeAPIHandler - CascadeAPIHandler service
 type CascadeAPIHandler struct {
 	*Common
@@ -51,6 +47,7 @@ func (service *CascadeAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) 
 		&websocket.Upgrader{},
 		nil,
 		CascadeUploadAssetDecoderFunc(ctx, service),
+		CascadeUploadAssetV2DecoderFunc(ctx, service),
 	)
 	server.Mount(mux, srv)
 
@@ -60,6 +57,28 @@ func (service *CascadeAPIHandler) Mount(ctx context.Context, mux goahttp.Muxer) 
 	return srv
 }
 
+// UploadAssetV2 - Uploads an asset file and return unique file id
+func (service *CascadeAPIHandler) UploadAssetV2(ctx context.Context, p *cascade.UploadAssetV2Payload) (res *cascade.AssetV2, err error) {
+	if p.Filename == nil {
+		log.Error("file not specified")
+		return nil, cascade.MakeBadRequest(errors.New("file not specified"))
+	}
+
+	fee, preburn, err := service.register.StoreFileMetadata(ctx, filepath.Join(service.config.CascadeFilesDir, *p.Filename), *p.Hash, *p.Size)
+	if err != nil {
+		log.WithError(err).Error(err)
+		return nil, cascade.MakeInternalServerError(err)
+	}
+
+	res = &cascade.AssetV2{
+		FileID:                            *p.Filename,
+		TotalEstimatedFee:                 fee,
+		RequiredPreburnTransactionAmounts: preburn,
+	}
+
+	return res, nil
+}
+
 // UploadAsset - Uploads an asset file and return unique file id
 func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.UploadAssetPayload) (res *cascade.Asset, err error) {
 	if p.Filename == nil {
@@ -67,39 +86,16 @@ func (service *CascadeAPIHandler) UploadAsset(ctx context.Context, p *cascade.Up
 		return nil, cascade.MakeBadRequest(errors.New("file not specified"))
 	}
 
-	id, expiry, err := service.register.StoreFile(ctx, p.Filename)
-	if err != nil {
-		log.WithError(err).Error("error storing File")
-		return nil, cascade.MakeInternalServerError(err)
-	}
-	log.WithField("file-id", id).WithField("filename", *p.Filename).Info("file has been uploaded")
-
-	fee, err := service.register.CalculateFee(ctx, id)
-	if err != nil {
-		log.WithError(err).Error("error calculating fee")
-		return nil, cascade.MakeInternalServerError(err)
-	}
-	log.WithField("file-id", id).WithField("filename", *p.Filename).Infof("estimated fee has been calculated: %f", fee)
-
-	totalEstimatedFee := fee + 10.0
-	reqPreBurnAmount := fee * 0.2
-
-	err = service.register.StoreFileMetadata(ctx, cascaderegister.FileMetadata{
-		TaskID:            id,
-		TotalEstimatedFee: totalEstimatedFee,
-		ReqPreBurnAmount:  reqPreBurnAmount,
-		UploadAssetReq:    p,
-	})
+	fee, preburn, err := service.register.StoreFileMetadata(ctx, filepath.Join(service.config.CascadeFilesDir, *p.Filename), *p.Hash, *p.Size)
 	if err != nil {
 		log.WithError(err).Error(err)
 		return nil, cascade.MakeInternalServerError(err)
 	}
 
 	res = &cascade.Asset{
-		FileID:                id,
-		ExpiresIn:             expiry,
-		TotalEstimatedFee:     totalEstimatedFee,
-		RequiredPreburnAmount: reqPreBurnAmount,
+		FileID:                *p.Filename,
+		TotalEstimatedFee:     fee,
+		RequiredPreburnAmount: preburn[0],
 	}
 
 	return res, nil

@@ -106,6 +106,91 @@ func EncodeUploadAssetError(encoder func(context.Context, http.ResponseWriter) g
 	}
 }
 
+// EncodeUploadAssetV2Response returns an encoder for responses returned by the
+// cascade uploadAssetV2 endpoint.
+func EncodeUploadAssetV2Response(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res := v.(*cascadeviews.AssetV2)
+		enc := encoder(ctx, w)
+		body := NewUploadAssetV2ResponseBody(res.Projected)
+		w.WriteHeader(http.StatusCreated)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeUploadAssetV2Request returns a decoder for requests sent to the
+// cascade uploadAssetV2 endpoint.
+func DecodeUploadAssetV2Request(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+	return func(r *http.Request) (any, error) {
+		var payload *cascade.UploadAssetV2Payload
+		if err := decoder(r).Decode(&payload); err != nil {
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+
+		return payload, nil
+	}
+}
+
+// NewCascadeUploadAssetV2Decoder returns a decoder to decode the multipart
+// request for the "cascade" service "uploadAssetV2" endpoint.
+func NewCascadeUploadAssetV2Decoder(mux goahttp.Muxer, cascadeUploadAssetV2DecoderFn CascadeUploadAssetV2DecoderFunc) func(r *http.Request) goahttp.Decoder {
+	return func(r *http.Request) goahttp.Decoder {
+		return goahttp.EncodingFunc(func(v any) error {
+			mr, merr := r.MultipartReader()
+			if merr != nil {
+				return merr
+			}
+			p := v.(**cascade.UploadAssetV2Payload)
+			if err := cascadeUploadAssetV2DecoderFn(mr, p); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+}
+
+// EncodeUploadAssetV2Error returns an encoder for errors returned by the
+// uploadAssetV2 cascade endpoint.
+func EncodeUploadAssetV2Error(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "BadRequest":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUploadAssetV2BadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUploadAssetV2InternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeStartProcessingResponse returns an encoder for responses returned by
 // the cascade startProcessing endpoint.
 func EncodeStartProcessingResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {

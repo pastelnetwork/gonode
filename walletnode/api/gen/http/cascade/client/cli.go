@@ -36,6 +36,35 @@ func BuildUploadAssetPayload(cascadeUploadAssetBody string) (*cascade.UploadAsse
 	v := &cascade.UploadAssetPayload{
 		Bytes:    body.Bytes,
 		Filename: body.Filename,
+		Hash:     body.Hash,
+		Size:     body.Size,
+	}
+
+	return v, nil
+}
+
+// BuildUploadAssetV2Payload builds the payload for the cascade uploadAssetV2
+// endpoint from CLI flags.
+func BuildUploadAssetV2Payload(cascadeUploadAssetV2Body string) (*cascade.UploadAssetV2Payload, error) {
+	var err error
+	var body UploadAssetV2RequestBody
+	{
+		err = json.Unmarshal([]byte(cascadeUploadAssetV2Body), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"Q29ycnVwdGkgcXVpYSBlbmltIGFsaXF1aWQgYXNwZXJpb3Jlcy4=\"\n   }'")
+		}
+		if body.Bytes == nil {
+			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &cascade.UploadAssetV2Payload{
+		Bytes:    body.Bytes,
+		Filename: body.Filename,
+		Hash:     body.Hash,
+		Size:     body.Size,
 	}
 
 	return v, nil

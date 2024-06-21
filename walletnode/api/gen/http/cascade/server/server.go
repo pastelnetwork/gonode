@@ -22,6 +22,7 @@ import (
 type Server struct {
 	Mounts              []*MountPoint
 	UploadAsset         http.Handler
+	UploadAssetV2       http.Handler
 	StartProcessing     http.Handler
 	RegisterTaskState   http.Handler
 	GetTaskHistory      http.Handler
@@ -45,6 +46,10 @@ type MountPoint struct {
 // the "cascade" service "uploadAsset" endpoint.
 type CascadeUploadAssetDecoderFunc func(*multipart.Reader, **cascade.UploadAssetPayload) error
 
+// CascadeUploadAssetV2DecoderFunc is the type to decode multipart request for
+// the "cascade" service "uploadAssetV2" endpoint.
+type CascadeUploadAssetV2DecoderFunc func(*multipart.Reader, **cascade.UploadAssetV2Payload) error
+
 // New instantiates HTTP handlers for all the cascade service endpoints using
 // the provided encoder and decoder. The handlers are mounted on the given mux
 // using the HTTP verb and path defined in the design. errhandler is called
@@ -61,6 +66,7 @@ func New(
 	upgrader goahttp.Upgrader,
 	configurer *ConnConfigurer,
 	cascadeUploadAssetDecoderFn CascadeUploadAssetDecoderFunc,
+	cascadeUploadAssetV2DecoderFn CascadeUploadAssetV2DecoderFunc,
 ) *Server {
 	if configurer == nil {
 		configurer = &ConnConfigurer{}
@@ -68,12 +74,14 @@ func New(
 	return &Server{
 		Mounts: []*MountPoint{
 			{"UploadAsset", "POST", "/openapi/cascade/upload"},
+			{"UploadAssetV2", "POST", "/openapi/cascade/v2/upload"},
 			{"StartProcessing", "POST", "/openapi/cascade/start/{file_id}"},
 			{"RegisterTaskState", "GET", "/openapi/cascade/start/{taskId}/state"},
 			{"GetTaskHistory", "GET", "/openapi/cascade/{taskId}/history"},
 			{"Download", "GET", "/openapi/cascade/download"},
 			{"RegistrationDetails", "GET", "/openapi/cascade/registration_details/{file_id}"},
 			{"CORS", "OPTIONS", "/openapi/cascade/upload"},
+			{"CORS", "OPTIONS", "/openapi/cascade/v2/upload"},
 			{"CORS", "OPTIONS", "/openapi/cascade/start/{file_id}"},
 			{"CORS", "OPTIONS", "/openapi/cascade/start/{taskId}/state"},
 			{"CORS", "OPTIONS", "/openapi/cascade/{taskId}/history"},
@@ -81,6 +89,7 @@ func New(
 			{"CORS", "OPTIONS", "/openapi/cascade/registration_details/{file_id}"},
 		},
 		UploadAsset:         NewUploadAssetHandler(e.UploadAsset, mux, NewCascadeUploadAssetDecoder(mux, cascadeUploadAssetDecoderFn), encoder, errhandler, formatter),
+		UploadAssetV2:       NewUploadAssetV2Handler(e.UploadAssetV2, mux, NewCascadeUploadAssetV2Decoder(mux, cascadeUploadAssetV2DecoderFn), encoder, errhandler, formatter),
 		StartProcessing:     NewStartProcessingHandler(e.StartProcessing, mux, decoder, encoder, errhandler, formatter),
 		RegisterTaskState:   NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
 		GetTaskHistory:      NewGetTaskHistoryHandler(e.GetTaskHistory, mux, decoder, encoder, errhandler, formatter),
@@ -96,6 +105,7 @@ func (s *Server) Service() string { return "cascade" }
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.UploadAsset = m(s.UploadAsset)
+	s.UploadAssetV2 = m(s.UploadAssetV2)
 	s.StartProcessing = m(s.StartProcessing)
 	s.RegisterTaskState = m(s.RegisterTaskState)
 	s.GetTaskHistory = m(s.GetTaskHistory)
@@ -110,6 +120,7 @@ func (s *Server) MethodNames() []string { return cascade.MethodNames[:] }
 // Mount configures the mux to serve the cascade endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountUploadAssetHandler(mux, h.UploadAsset)
+	MountUploadAssetV2Handler(mux, h.UploadAssetV2)
 	MountStartProcessingHandler(mux, h.StartProcessing)
 	MountRegisterTaskStateHandler(mux, h.RegisterTaskState)
 	MountGetTaskHistoryHandler(mux, h.GetTaskHistory)
@@ -153,6 +164,57 @@ func NewUploadAssetHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "uploadAsset")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "cascade")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountUploadAssetV2Handler configures the mux to serve the "cascade" service
+// "uploadAssetV2" endpoint.
+func MountUploadAssetV2Handler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := HandleCascadeOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/openapi/cascade/v2/upload", f)
+}
+
+// NewUploadAssetV2Handler creates a HTTP handler which loads the HTTP request
+// and calls the "cascade" service "uploadAssetV2" endpoint.
+func NewUploadAssetV2Handler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeUploadAssetV2Request(mux, decoder)
+		encodeResponse = EncodeUploadAssetV2Response(encoder)
+		encodeError    = EncodeUploadAssetV2Error(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "uploadAssetV2")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "cascade")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -449,6 +511,7 @@ func NewRegistrationDetailsHandler(
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	h = HandleCascadeOrigin(h)
 	mux.Handle("OPTIONS", "/openapi/cascade/upload", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/openapi/cascade/v2/upload", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/start/{file_id}", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/start/{taskId}/state", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/{taskId}/history", h.ServeHTTP)

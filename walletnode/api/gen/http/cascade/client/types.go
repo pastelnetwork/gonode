@@ -20,6 +20,23 @@ type UploadAssetRequestBody struct {
 	Bytes []byte `form:"file" json:"file" xml:"file"`
 	// For internal use
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
+	// For internal use
+	Hash *string `form:"hash,omitempty" json:"hash,omitempty" xml:"hash,omitempty"`
+	// For internal use
+	Size *int64 `form:"size,omitempty" json:"size,omitempty" xml:"size,omitempty"`
+}
+
+// UploadAssetV2RequestBody is the type of the "cascade" service
+// "uploadAssetV2" endpoint HTTP request body.
+type UploadAssetV2RequestBody struct {
+	// File to upload
+	Bytes []byte `form:"file" json:"file" xml:"file"`
+	// -For internal use-
+	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
+	// For internal use
+	Hash *string `form:"hash,omitempty" json:"hash,omitempty" xml:"hash,omitempty"`
+	// For internal use
+	Size *int64 `form:"size,omitempty" json:"size,omitempty" xml:"size,omitempty"`
 }
 
 // StartProcessingRequestBody is the type of the "cascade" service
@@ -46,6 +63,17 @@ type UploadAssetResponseBody struct {
 	TotalEstimatedFee *float64 `form:"total_estimated_fee,omitempty" json:"total_estimated_fee,omitempty" xml:"total_estimated_fee,omitempty"`
 	// The amount that's required to be preburned
 	RequiredPreburnAmount *float64 `form:"required_preburn_amount,omitempty" json:"required_preburn_amount,omitempty" xml:"required_preburn_amount,omitempty"`
+}
+
+// UploadAssetV2ResponseBody is the type of the "cascade" service
+// "uploadAssetV2" endpoint HTTP response body.
+type UploadAssetV2ResponseBody struct {
+	// Uploaded file ID
+	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
+	// Estimated fee
+	TotalEstimatedFee *float64 `form:"total_estimated_fee,omitempty" json:"total_estimated_fee,omitempty" xml:"total_estimated_fee,omitempty"`
+	// The amounts that's required to be preburned - one per transaction
+	RequiredPreburnTransactionAmounts []float64 `form:"required_preburn_transaction_amounts,omitempty" json:"required_preburn_transaction_amounts,omitempty" xml:"required_preburn_transaction_amounts,omitempty"`
 }
 
 // StartProcessingResponseBody is the type of the "cascade" service
@@ -104,6 +132,43 @@ type UploadAssetBadRequestResponseBody struct {
 // service "uploadAsset" endpoint HTTP response body for the
 // "InternalServerError" error.
 type UploadAssetInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// UploadAssetV2BadRequestResponseBody is the type of the "cascade" service
+// "uploadAssetV2" endpoint HTTP response body for the "BadRequest" error.
+type UploadAssetV2BadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// UploadAssetV2InternalServerErrorResponseBody is the type of the "cascade"
+// service "uploadAssetV2" endpoint HTTP response body for the
+// "InternalServerError" error.
+type UploadAssetV2InternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -467,6 +532,20 @@ func NewUploadAssetRequestBody(p *cascade.UploadAssetPayload) *UploadAssetReques
 	body := &UploadAssetRequestBody{
 		Bytes:    p.Bytes,
 		Filename: p.Filename,
+		Hash:     p.Hash,
+		Size:     p.Size,
+	}
+	return body
+}
+
+// NewUploadAssetV2RequestBody builds the HTTP request body from the payload of
+// the "uploadAssetV2" endpoint of the "cascade" service.
+func NewUploadAssetV2RequestBody(p *cascade.UploadAssetV2Payload) *UploadAssetV2RequestBody {
+	body := &UploadAssetV2RequestBody{
+		Bytes:    p.Bytes,
+		Filename: p.Filename,
+		Hash:     p.Hash,
+		Size:     p.Size,
 	}
 	return body
 }
@@ -520,6 +599,53 @@ func NewUploadAssetBadRequest(body *UploadAssetBadRequestResponseBody) *goa.Serv
 // NewUploadAssetInternalServerError builds a cascade service uploadAsset
 // endpoint InternalServerError error.
 func NewUploadAssetInternalServerError(body *UploadAssetInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewUploadAssetV2AssetV2Created builds a "cascade" service "uploadAssetV2"
+// endpoint result from a HTTP "Created" response.
+func NewUploadAssetV2AssetV2Created(body *UploadAssetV2ResponseBody) *cascadeviews.AssetV2View {
+	v := &cascadeviews.AssetV2View{
+		FileID:            body.FileID,
+		TotalEstimatedFee: body.TotalEstimatedFee,
+	}
+	if body.RequiredPreburnTransactionAmounts != nil {
+		v.RequiredPreburnTransactionAmounts = make([]float64, len(body.RequiredPreburnTransactionAmounts))
+		for i, val := range body.RequiredPreburnTransactionAmounts {
+			v.RequiredPreburnTransactionAmounts[i] = val
+		}
+	}
+
+	return v
+}
+
+// NewUploadAssetV2BadRequest builds a cascade service uploadAssetV2 endpoint
+// BadRequest error.
+func NewUploadAssetV2BadRequest(body *UploadAssetV2BadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewUploadAssetV2InternalServerError builds a cascade service uploadAssetV2
+// endpoint InternalServerError error.
+func NewUploadAssetV2InternalServerError(body *UploadAssetV2InternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -834,6 +960,54 @@ func ValidateUploadAssetBadRequestResponseBody(body *UploadAssetBadRequestRespon
 // ValidateUploadAssetInternalServerErrorResponseBody runs the validations
 // defined on uploadAsset_InternalServerError_response_body
 func ValidateUploadAssetInternalServerErrorResponseBody(body *UploadAssetInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateUploadAssetV2BadRequestResponseBody runs the validations defined on
+// uploadAssetV2_BadRequest_response_body
+func ValidateUploadAssetV2BadRequestResponseBody(body *UploadAssetV2BadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateUploadAssetV2InternalServerErrorResponseBody runs the validations
+// defined on uploadAssetV2_InternalServerError_response_body
+func ValidateUploadAssetV2InternalServerErrorResponseBody(body *UploadAssetV2InternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

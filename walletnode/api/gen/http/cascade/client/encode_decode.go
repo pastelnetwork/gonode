@@ -143,6 +143,128 @@ func DecodeUploadAssetResponse(decoder func(*http.Response) goahttp.Decoder, res
 	}
 }
 
+// BuildUploadAssetV2Request instantiates a HTTP request object with method and
+// path set to call the "cascade" service "uploadAssetV2" endpoint
+func (c *Client) BuildUploadAssetV2Request(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UploadAssetV2CascadePath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("cascade", "uploadAssetV2", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUploadAssetV2Request returns an encoder for requests sent to the
+// cascade uploadAssetV2 server.
+func EncodeUploadAssetV2Request(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*cascade.UploadAssetV2Payload)
+		if !ok {
+			return goahttp.ErrInvalidType("cascade", "uploadAssetV2", "*cascade.UploadAssetV2Payload", v)
+		}
+		if err := encoder(req).Encode(p); err != nil {
+			return goahttp.ErrEncodingError("cascade", "uploadAssetV2", err)
+		}
+		return nil
+	}
+}
+
+// NewCascadeUploadAssetV2Encoder returns an encoder to encode the multipart
+// request for the "cascade" service "uploadAssetV2" endpoint.
+func NewCascadeUploadAssetV2Encoder(encoderFn CascadeUploadAssetV2EncoderFunc) func(r *http.Request) goahttp.Encoder {
+	return func(r *http.Request) goahttp.Encoder {
+		body := &bytes.Buffer{}
+		mw := multipart.NewWriter(body)
+		return goahttp.EncodingFunc(func(v any) error {
+			p := v.(*cascade.UploadAssetV2Payload)
+			if err := encoderFn(mw, p); err != nil {
+				return err
+			}
+			r.Body = io.NopCloser(body)
+			r.Header.Set("Content-Type", mw.FormDataContentType())
+			return mw.Close()
+		})
+	}
+}
+
+// DecodeUploadAssetV2Response returns a decoder for responses returned by the
+// cascade uploadAssetV2 endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeUploadAssetV2Response may return the following errors:
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
+func DecodeUploadAssetV2Response(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body UploadAssetV2ResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "uploadAssetV2", err)
+			}
+			p := NewUploadAssetV2AssetV2Created(&body)
+			view := "default"
+			vres := &cascadeviews.AssetV2{Projected: p, View: view}
+			if err = cascadeviews.ValidateAssetV2(vres); err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "uploadAssetV2", err)
+			}
+			res := cascade.NewAssetV2(vres)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body UploadAssetV2BadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "uploadAssetV2", err)
+			}
+			err = ValidateUploadAssetV2BadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "uploadAssetV2", err)
+			}
+			return nil, NewUploadAssetV2BadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UploadAssetV2InternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "uploadAssetV2", err)
+			}
+			err = ValidateUploadAssetV2InternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "uploadAssetV2", err)
+			}
+			return nil, NewUploadAssetV2InternalServerError(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("cascade", "uploadAssetV2", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildStartProcessingRequest instantiates a HTTP request object with method
 // and path set to call the "cascade" service "startProcessing" endpoint
 func (c *Client) BuildStartProcessingRequest(ctx context.Context, v any) (*http.Request, error) {

@@ -17,6 +17,7 @@ import (
 // Endpoints wraps the "cascade" service endpoints.
 type Endpoints struct {
 	UploadAsset         goa.Endpoint
+	UploadAssetV2       goa.Endpoint
 	StartProcessing     goa.Endpoint
 	RegisterTaskState   goa.Endpoint
 	GetTaskHistory      goa.Endpoint
@@ -40,6 +41,7 @@ func NewEndpoints(s Service) *Endpoints {
 	a := s.(Auther)
 	return &Endpoints{
 		UploadAsset:         NewUploadAssetEndpoint(s),
+		UploadAssetV2:       NewUploadAssetV2Endpoint(s),
 		StartProcessing:     NewStartProcessingEndpoint(s, a.APIKeyAuth),
 		RegisterTaskState:   NewRegisterTaskStateEndpoint(s),
 		GetTaskHistory:      NewGetTaskHistoryEndpoint(s),
@@ -51,6 +53,7 @@ func NewEndpoints(s Service) *Endpoints {
 // Use applies the given middleware to all the "cascade" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UploadAsset = m(e.UploadAsset)
+	e.UploadAssetV2 = m(e.UploadAssetV2)
 	e.StartProcessing = m(e.StartProcessing)
 	e.RegisterTaskState = m(e.RegisterTaskState)
 	e.GetTaskHistory = m(e.GetTaskHistory)
@@ -68,6 +71,20 @@ func NewUploadAssetEndpoint(s Service) goa.Endpoint {
 			return nil, err
 		}
 		vres := NewViewedAsset(res, "default")
+		return vres, nil
+	}
+}
+
+// NewUploadAssetV2Endpoint returns an endpoint function that calls the method
+// "uploadAssetV2" of service "cascade".
+func NewUploadAssetV2Endpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UploadAssetV2Payload)
+		res, err := s.UploadAssetV2(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedAssetV2(res, "default")
 		return vres, nil
 	}
 }
