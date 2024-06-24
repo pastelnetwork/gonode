@@ -27,6 +27,8 @@ type File struct {
 	DoneBlock                    int
 }
 
+type Files []*File
+
 type RegistrationAttempt struct {
 	ID           int
 	FileID       string
@@ -43,4 +45,14 @@ type ActivationAttempt struct {
 	ActivationAttemptAt time.Time
 	IsSuccessful        bool
 	ErrorMessage        string
+}
+
+func (fs Files) GetBase() *File {
+	for _, f := range fs {
+		if f.FileIndex == "0" {
+			return f
+		}
+	}
+
+	return nil
 }

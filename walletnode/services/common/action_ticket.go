@@ -1,8 +1,6 @@
 package common
 
-import (
-	"github.com/pastelnetwork/gonode/common/storage/files"
-)
+import "github.com/pastelnetwork/gonode/common/storage/files"
 
 // ActionRegistrationRequest represents a request for the registration sense
 type ActionRegistrationRequest struct {
@@ -24,4 +22,8 @@ type ActionRegistrationRequest struct {
 	GroupID string `json:"group_id"`
 	// SpendableAddress to use for registration fee
 	SpendableAddress string `json:"spendable_address"`
+	// FileID to be use for registration and activation requests update
+	FileID string `json:"file_id"`
+
+	RegAttemptID int64
 }

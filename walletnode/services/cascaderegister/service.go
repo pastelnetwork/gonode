@@ -95,22 +95,35 @@ func (service *CascadeRegistrationService) ValidateUser(ctx context.Context, id 
 }
 
 // AddTask create ticket request and start a new task with the given payload
-func (service *CascadeRegistrationService) AddTask(p *cascade.StartProcessingPayload) (string, error) {
+func (service *CascadeRegistrationService) AddTask(p *cascade.StartProcessingPayload, regAttemptID int64, filename string) (string, error) {
 	request := FromStartProcessingPayload(p)
+	request.RegAttemptID = regAttemptID
+	request.FileID = filename
 
 	// get image filename from storage based on image_id
-	filename, err := service.ImageHandler.FileDb.Get(p.FileID)
+	filePath := filepath.Join(service.config.CascadeFilesDir, p.FileID, filename)
+	fileData, err := os.ReadFile(filePath)
 	if err != nil {
-		return "", errors.Errorf("get image filename from storage: %w", err)
+		return "", err
 	}
 
-	// get image data from storage
-	file, err := service.ImageHandler.FileStorage.File(string(filename))
-	if err != nil {
-		return "", errors.Errorf("get image data: %v", err)
+	file := service.ImageHandler.FileStorage.NewFile()
+	if file == nil {
+		return "", errors.Errorf("unable to create new file instance for %s", filename)
 	}
+
+	// Write the []byte data to the file
+	if _, err := file.Write(fileData); err != nil {
+		return "", errors.Errorf("write image data to file: %v", err)
+	}
+
+	// Set the file format based on the filename extension
+	if err := file.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
+		return "", errors.Errorf("set file format: %v", err)
+	}
+
+	// Assign the newly created File instance to the request
 	request.Image = file
-	request.FileName = string(filename)
 
 	task := NewCascadeRegisterTask(service, request)
 	service.Worker.AddTask(task)
@@ -148,9 +161,6 @@ func (service *CascadeRegistrationService) StoreFileMetadata(ctx context.Context
 	}
 
 	files, err := os.ReadDir(dir)
-	if err != nil {
-		return fee, preburn, err
-	}
 
 	type fileMetadata struct {
 		Name string
@@ -226,11 +236,20 @@ func (service *CascadeRegistrationService) GetFile(fileID string) (*types.File, 
 	return file, nil
 }
 
-func (service *CascadeRegistrationService) GetFilesByBaseFileID(fileID string) ([]*types.File, error) {
+func (service *CascadeRegistrationService) GetFileByTaskID(taskID string) (*types.File, error) {
+	file, err := service.ticketDB.GetFileByTaskID(taskID)
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+func (service *CascadeRegistrationService) GetFilesByBaseFileID(fileID string) (types.Files, error) {
 	files, err := service.ticketDB.GetFilesByBaseFileID(fileID)
 	if err != nil {
 		return nil, err
 	}
+
 	return files, nil
 }
 
@@ -248,6 +267,62 @@ func (service *CascadeRegistrationService) GetRegistrationAttemptsByFileID(fileI
 		return nil, err
 	}
 	return registrationAttempts, nil
+}
+
+func (service *CascadeRegistrationService) GetRegistrationAttemptsByID(attemptID int) (*types.RegistrationAttempt, error) {
+	registrationAttempt, err := service.ticketDB.GetRegistrationAttemptByID(attemptID)
+	if err != nil {
+		return nil, err
+	}
+	return registrationAttempt, nil
+}
+
+func (service *CascadeRegistrationService) GetActivationAttemptByID(attemptID int) (*types.ActivationAttempt, error) {
+	actAttempt, err := service.ticketDB.GetActivationAttemptByID(attemptID)
+	if err != nil {
+		return nil, err
+	}
+	return actAttempt, nil
+}
+
+func (service *CascadeRegistrationService) InsertRegistrationAttempts(regAttempt types.RegistrationAttempt) (int64, error) {
+	id, err := service.ticketDB.InsertRegistrationAttempt(regAttempt)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (service *CascadeRegistrationService) UpdateRegistrationAttempts(regAttempt types.RegistrationAttempt) (int64, error) {
+	id, err := service.ticketDB.UpdateRegistrationAttempt(regAttempt)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (service *CascadeRegistrationService) InsertActivationAttempt(actAttempt types.ActivationAttempt) (int64, error) {
+	id, err := service.ticketDB.InsertActivationAttempt(actAttempt)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (service *CascadeRegistrationService) UpdateActivationAttempts(actAttempt types.ActivationAttempt) (int64, error) {
+	id, err := service.ticketDB.UpdateActivationAttempt(actAttempt)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (service *CascadeRegistrationService) UpsertFile(file types.File) error {
+	err := service.ticketDB.UpsertFile(file)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // NewService returns a new Service instance
