@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/types"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,6 +24,11 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	goahttp "goa.design/goa/v3/http"
 	"goa.design/goa/v3/security"
+)
+
+const (
+	maxFileSize                 = 350 * 1024 * 1024 // 350MB in bytes
+	maxFileRegistrationAttempts = 3
 )
 
 // CascadeAPIHandler - CascadeAPIHandler service
@@ -107,23 +113,69 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 		return nil, cascade.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
 	}
 
-	taskID, err := service.register.AddTask(p)
+	relatedFiles, err := service.register.GetFilesByBaseFileID(p.FileID)
 	if err != nil {
-		log.WithError(err).Error("unable to add task")
+		return nil, cascade.MakeInternalServerError(err)
+	}
+	log.WithContext(ctx).WithField("total_volumes", len(relatedFiles)).Info("related volumes retrieved from the base file-id")
+
+	baseFile := relatedFiles.GetBase()
+	if baseFile == nil {
 		return nil, cascade.MakeInternalServerError(err)
 	}
 
-	res = &cascade.StartProcessingResult{
-		TaskID: taskID,
-	}
+	switch {
+	case len(relatedFiles) == 1:
+		switch {
+		case baseFile.IsConcluded:
+			return nil, cascade.MakeInternalServerError(errors.New("ticket has already been registered & activated"))
 
-	fileName, err := service.register.ImageHandler.FileDb.Get(p.FileID)
-	if err != nil {
-		return nil, cascade.MakeBadRequest(errors.New("file not found, please re-upload and try again"))
-	}
+		case baseFile.RegTxid == "":
+			baseFileRegistrationAttempts, err := service.register.GetRegistrationAttemptsByFileID(baseFile.FileID)
+			if err != nil {
+				return nil, cascade.MakeInternalServerError(err)
+			}
 
-	log.WithField("task_id", taskID).WithField("file_id", p.FileID).WithField("file_name", string(fileName)).
-		Info("task has been added")
+			switch {
+			case len(baseFileRegistrationAttempts) > maxFileRegistrationAttempts:
+				return nil, cascade.MakeInternalServerError(errors.New("ticket registration attempts have been exceeded"))
+			default:
+				regAttemptID, err := service.register.InsertRegistrationAttempts(types.RegistrationAttempt{
+					FileID:       p.FileID,
+					RegStartedAt: time.Now().UTC(),
+				})
+				if err != nil {
+					log.WithContext(ctx).WithField("file_id", p.FileID).WithError(err).Error("error inserting registration attempt")
+					return nil, err
+				}
+
+				taskID, err := service.register.AddTask(p, regAttemptID, baseFile.FileID)
+				if err != nil {
+					log.WithError(err).Error("unable to add task")
+					return nil, cascade.MakeInternalServerError(err)
+				}
+
+				res = &cascade.StartProcessingResult{
+					TaskID: taskID,
+				}
+
+				baseFile.TaskID = taskID
+				baseFile.BurnTxnID = p.BurnTxid
+				err = service.register.UpsertFile(*baseFile)
+				if err != nil {
+					log.WithField("task_id", taskID).WithField("file_id", p.FileID).
+						WithField("burn_txid", p.BurnTxid).
+						WithField("file_name", baseFile.FileID).
+						Errorf("Error in file upsert: %v", err.Error())
+					return nil, cascade.MakeInternalServerError(errors.New("Error in file upsert"))
+				}
+			}
+		default:
+			// Activation code
+		}
+	case len(relatedFiles) > 1:
+
+	}
 
 	return res, nil
 }

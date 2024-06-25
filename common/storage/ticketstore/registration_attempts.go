@@ -5,34 +5,53 @@ import (
 )
 
 type RegistrationAttemptsQueries interface {
-	UpsertRegistrationAttempt(attempt types.RegistrationAttempt) error
+	InsertRegistrationAttempt(attempt types.RegistrationAttempt) (int64, error)
+	UpdateRegistrationAttempt(attempt types.RegistrationAttempt) (int64, error)
 	GetRegistrationAttemptByID(id int) (*types.RegistrationAttempt, error)
 	GetRegistrationAttemptsByFileID(fileID string) ([]*types.RegistrationAttempt, error)
 }
 
-// UpsertRegistrationAttempt upsert a new registration attempt into the registration_attempts table
-func (s *TicketStore) UpsertRegistrationAttempt(attempt types.RegistrationAttempt) error {
-	const upsertQuery = `
+// InsertRegistrationAttempt insert a new registration attempt into the registration_attempts table
+func (s *TicketStore) InsertRegistrationAttempt(attempt types.RegistrationAttempt) (int64, error) {
+	const insertQuery = `
         INSERT INTO registration_attempts (
-            id, file_id, reg_started_at, processor_sns, finished_at, is_successful, error_message
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) 
-        DO UPDATE SET
-            file_id = excluded.file_id,
-            reg_started_at = excluded.reg_started_at,
-            processor_sns = excluded.processor_sns,
-            finished_at = excluded.finished_at,
-            is_successful = excluded.is_successful,
-            error_message = excluded.error_message;`
+            file_id, reg_started_at, processor_sns, finished_at, is_successful, error_message
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        RETURNING id;`
 
-	_, err := s.db.Exec(upsertQuery,
-		attempt.ID, attempt.FileID, attempt.RegStartedAt, attempt.ProcessorSNS,
-		attempt.FinishedAt, attempt.IsSuccessful, attempt.ErrorMessage)
+	var id int64
+	err := s.db.QueryRow(insertQuery,
+		attempt.FileID, attempt.RegStartedAt, attempt.ProcessorSNS,
+		attempt.FinishedAt, attempt.IsSuccessful, attempt.ErrorMessage).Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return id, nil
+}
+
+// UpdateRegistrationAttempt update a new registration attempt into the registration_attempts table
+func (s *TicketStore) UpdateRegistrationAttempt(attempt types.RegistrationAttempt) (int64, error) {
+	const updateQuery = `
+        UPDATE registration_attempts
+        SET reg_started_at = ?,
+            processor_sns = ?,
+            finished_at = ?,
+            is_successful = ?,
+            error_message = ?
+        WHERE id = ? AND file_id = ?
+        RETURNING id;`
+
+	var id int64
+	err := s.db.QueryRow(updateQuery,
+		attempt.RegStartedAt, attempt.ProcessorSNS, attempt.FinishedAt,
+		attempt.IsSuccessful, attempt.ErrorMessage,
+		attempt.ID, attempt.FileID).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
 
 // GetRegistrationAttemptByID retrieves a registration attempt by its ID from the registration_attempts table
@@ -43,7 +62,7 @@ func (s *TicketStore) GetRegistrationAttemptByID(id int) (*types.RegistrationAtt
         FROM registration_attempts
         WHERE id = ?;`
 
-	row := s.db.QueryRow(selectQuery, id)
+	row := s.db.QueryRow(selectQuery, int64(id))
 
 	var attempt types.RegistrationAttempt
 	err := row.Scan(

@@ -76,6 +76,7 @@ func (s *TicketStore) CloseTicketDB(ctx context.Context) {
 // OpenTicketingDb opens ticket DB
 func OpenTicketingDb() (TicketStorageInterface, error) {
 	dbFile := filepath.Join(configurer.DefaultPath(), ticketDBName)
+
 	db, err := sqlx.Connect("sqlite3", dbFile)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open sqlite database: %w", err)
