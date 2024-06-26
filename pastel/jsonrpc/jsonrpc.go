@@ -15,12 +15,14 @@ import (
 	"time"
 
 	"encoding/json"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
 	jsonrpcVersion = "2.0"
 	timeout        = 70 * time.Second
 	httpTimeout    = 60 * time.Second
+	maxConcurrentRequests := int64(250)
 )
 
 // RPCClient sends JSON-RPC requests over HTTP to the provided JSON-RPC backend.
@@ -246,6 +248,7 @@ type rpcClient struct {
 	endpoint      string
 	httpClient    *http.Client
 	customHeaders map[string]string
+	sem 		 *semaphore.Weighted
 }
 
 // RPCClientOpts can be provided to NewClientWithOpts() to change configuration of RPCClient.
@@ -320,6 +323,7 @@ func NewClientWithOpts(endpoint string, opts *RPCClientOpts) RPCClient {
 				IdleConnTimeout:     60 * time.Second,
 			},
 		},
+		sem: semaphore.NewWeighted(maxConcurrentRequests),
 		customHeaders: make(map[string]string),
 	}
 
@@ -449,6 +453,12 @@ func (client *rpcClient) newRequest(ctx context.Context, req interface{}) (*http
 }
 
 func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*RPCResponse, error) {
+	err := client.sem.Acquire(cctx, 1)
+    if err != nil {
+        return nil, fmt.Errorf("waiting for semaphore on rpc call on %v", err.Error())
+    }
+    defer client.sem.Release(1)
+
 	ctx, cancel := context.WithTimeout(cctx, timeout)
 	defer cancel()
 
@@ -497,11 +507,17 @@ func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*
 }
 
 func (client *rpcClient) doBatchCall(rpcRequest []*RPCRequest) ([]*RPCResponse, error) {
+	err := client.sem.Acquire(context.Background(), 1)
+    if err != nil {
+        return nil, fmt.Errorf("waiting for semaphore on rpc batch call on %v", err.Error())
+    }
+    defer client.sem.Release(1)
+
 	httpRequest, err := client.newRequest(context.Background(), rpcRequest)
 	if err != nil {
 		return nil, fmt.Errorf("rpc batch call on %v: %v", client.endpoint, err.Error())
 	}
-	
+
 	httpResponse, err := client.httpClient.Do(httpRequest)
 	if err != nil {
 		return nil, fmt.Errorf("rpc batch call on %v: %v", httpRequest.URL.String(), err.Error())
