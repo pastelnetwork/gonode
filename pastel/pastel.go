@@ -239,4 +239,7 @@ type Client interface {
 	//NFTStorageFee returns the fee of NFT storage
 	//Command `tickets tools estimatenftstoragefee <sizeInMB>`
 	NFTStorageFee(ctx context.Context, sizeInMB int) (*NFTStorageFeeEstimate, error)
+
+	// RegisterCascadeMultiVolumeTicket registers a cascade multi-volume ticket
+	RegisterCascadeMultiVolumeTicket(ctx context.Context, ticket CascadeMultiVolumeTicket) (string, error)
 }

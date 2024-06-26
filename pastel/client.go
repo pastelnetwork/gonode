@@ -3,6 +3,7 @@ package pastel
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 const (
@@ -529,6 +531,32 @@ func (client *client) RegisterActionTicket(ctx context.Context, request Register
 		return "", errors.Errorf("failed to call register action ticket: %w", err)
 	}
 	return txID.TxID, nil
+}
+
+func (client *client) RegisterCascadeMultiVolumeTicket(ctx context.Context, ticket CascadeMultiVolumeTicket) (string, error){
+	ticketJSON, err := json.Marshal(ticket)
+    if err != nil {
+        return "", errors.Errorf("failed to call register action ticket: %w", err)
+    }
+    ticketBlob := base64.StdEncoding.EncodeToString(ticketJSON)
+
+	hash, _ := utils.Sha3256hash(ticketJSON)
+    // Assuming some additional data or parameters are needed, similar to the RegisterNFTRequest example
+    params := []interface{}{
+        "register",
+        "contract",
+        ticketBlob,
+		ticket.ID,
+        hash,
+    }
+
+	resp := make(map[string]interface{})
+    if err := client.callFor(ctx, &resp, "tickets", params...); err != nil {
+        return "", errors.Errorf("failed to call register contract: %w", err)
+    }
+	log.WithContext(ctx).WithField("resp", resp).WithField("txid", ticket.ID).Info("RegisterCascadeMultiVolumeTicket Response")
+
+	return ticket.ID, nil
 }
 
 func (client *client) ActivateActionTicket(ctx context.Context, request ActivateActionRequest) (string, error) {
