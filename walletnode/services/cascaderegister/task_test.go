@@ -2,9 +2,11 @@ package cascaderegister
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 	"image"
 	"image/png"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -48,6 +50,20 @@ func newTestImageFile() (*files.File, error) {
 }
 
 func TestTaskRun(t *testing.T) {
+	homeDir, _ := os.UserHomeDir()
+	basePath := filepath.Join(homeDir, ".pastel")
+
+	// Make sure base path exists
+	if err := os.MkdirAll(basePath, 0755); err != nil {
+		t.Fatalf("Failed to create base path: %v", err)
+	}
+
+	tempDir, err := createTempDirInPath(basePath)
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir) // clean up after test
+
 	type fields struct {
 		Request *common.ActionRegistrationRequest
 	}
@@ -194,8 +210,11 @@ func TestTaskRun(t *testing.T) {
 			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 			rqClientMock.ListenOnConnect(testCase.args.connectErr)
 
+			ticketDB, err := ticketstore.OpenTicketingDb()
+			assert.NoError(t, err)
+
 			downloadService := download.NewNftDownloadService(download.NewConfig(), pastelClientMock, nodeClient, nil)
-			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, *downloadService, nil, nil)
+			service := NewService(NewConfig(), pastelClientMock, nodeClient, nil, nil, *downloadService, nil, ticketDB)
 			service.rqClient = rqClientMock
 			service.config.WaitTxnValidInterval = 1
 
@@ -218,4 +237,12 @@ func TestTaskRun(t *testing.T) {
 			}
 		})
 	}
+}
+
+func createTempDirInPath(basePath string) (string, error) {
+	dir, err := os.MkdirTemp(basePath, ".pastel")
+	if err != nil {
+		return "", err
+	}
+	return dir, nil
 }

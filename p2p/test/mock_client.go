@@ -93,7 +93,7 @@ func (client *Client) ListenOnNClosestNodesWithIncludingNodelist(retArr []string
 
 // ListenOnStoreBatch listening on StoreBatch
 func (client *Client) ListenOnStoreBatch(err error) *Client {
-	client.On(StoreBatch, mock.Anything, mock.Anything, mock.Anything).Return(err)
+	client.On(StoreBatch, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(err)
 	return client
 }
 
