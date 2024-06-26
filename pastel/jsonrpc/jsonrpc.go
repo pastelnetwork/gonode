@@ -314,6 +314,11 @@ func NewClientWithOpts(endpoint string, opts *RPCClientOpts) RPCClient {
 		endpoint: endpoint,
 		httpClient: &http.Client{
 			Timeout: httpTimeout,
+			Transport: &http.Transport{
+				DisableKeepAlives: false, // explicitly enable keep-alives - although its the default behavior
+				MaxIdleConnsPerHost: 75,  // increase the number of idle connections per host as we are connecting to the same host
+				IdleConnTimeout:     60 * time.Second,
+			},
 		},
 		customHeaders: make(map[string]string),
 	}
