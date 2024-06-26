@@ -314,6 +314,11 @@ func NewClientWithOpts(endpoint string, opts *RPCClientOpts) RPCClient {
 		endpoint: endpoint,
 		httpClient: &http.Client{
 			Timeout: httpTimeout,
+			Transport: &http.Transport{
+				DisableKeepAlives: false, // explicitly enable keep-alives - although its the default behavior
+				MaxIdleConnsPerHost: 75,  // increase the number of idle connections per host as we are connecting to the same host
+				IdleConnTimeout:     60 * time.Second,
+			},
 		},
 		customHeaders: make(map[string]string),
 	}
@@ -451,7 +456,7 @@ func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*
 	if err != nil {
 		return nil, fmt.Errorf("rpc call %v() on %v: %v", RPCRequest.Method, client.endpoint, err.Error())
 	}
-	httpRequest.Close = true
+	
 	httpResponse, err := client.httpClient.Do(httpRequest)
 	if err != nil {
 		return nil, fmt.Errorf("rpc call %v() on %v: %v", RPCRequest.Method, httpRequest.URL.String(), err.Error())
@@ -496,7 +501,7 @@ func (client *rpcClient) doBatchCall(rpcRequest []*RPCRequest) ([]*RPCResponse, 
 	if err != nil {
 		return nil, fmt.Errorf("rpc batch call on %v: %v", client.endpoint, err.Error())
 	}
-	httpRequest.Close = true
+	
 	httpResponse, err := client.httpClient.Do(httpRequest)
 	if err != nil {
 		return nil, fmt.Errorf("rpc batch call on %v: %v", httpRequest.URL.String(), err.Error())
