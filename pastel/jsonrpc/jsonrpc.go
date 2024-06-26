@@ -22,7 +22,7 @@ const (
 	jsonrpcVersion = "2.0"
 	timeout        = 70 * time.Second
 	httpTimeout    = 60 * time.Second
-	maxConcurrentRequests := int64(250)
+	maxConcurrentRequests = int64(350)
 )
 
 // RPCClient sends JSON-RPC requests over HTTP to the provided JSON-RPC backend.
@@ -453,8 +453,7 @@ func (client *rpcClient) newRequest(ctx context.Context, req interface{}) (*http
 }
 
 func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*RPCResponse, error) {
-	err := client.sem.Acquire(cctx, 1)
-    if err != nil {
+	if err := client.sem.Acquire(cctx, 1); err != nil {
         return nil, fmt.Errorf("waiting for semaphore on rpc call on %v", err.Error())
     }
     defer client.sem.Release(1)
@@ -507,8 +506,7 @@ func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*
 }
 
 func (client *rpcClient) doBatchCall(rpcRequest []*RPCRequest) ([]*RPCResponse, error) {
-	err := client.sem.Acquire(context.Background(), 1)
-    if err != nil {
+	if err := client.sem.Acquire(context.Background(), 1); err != nil {
         return nil, fmt.Errorf("waiting for semaphore on rpc batch call on %v", err.Error())
     }
     defer client.sem.Release(1)
