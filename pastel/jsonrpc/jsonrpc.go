@@ -456,7 +456,7 @@ func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*
 	if err != nil {
 		return nil, fmt.Errorf("rpc call %v() on %v: %v", RPCRequest.Method, client.endpoint, err.Error())
 	}
-	httpRequest.Close = true
+	
 	httpResponse, err := client.httpClient.Do(httpRequest)
 	if err != nil {
 		return nil, fmt.Errorf("rpc call %v() on %v: %v", RPCRequest.Method, httpRequest.URL.String(), err.Error())
@@ -501,7 +501,7 @@ func (client *rpcClient) doBatchCall(rpcRequest []*RPCRequest) ([]*RPCResponse, 
 	if err != nil {
 		return nil, fmt.Errorf("rpc batch call on %v: %v", client.endpoint, err.Error())
 	}
-	httpRequest.Close = true
+	
 	httpResponse, err := client.httpClient.Do(httpRequest)
 	if err != nil {
 		return nil, fmt.Errorf("rpc batch call on %v: %v", httpRequest.URL.String(), err.Error())
