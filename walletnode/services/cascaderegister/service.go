@@ -2,6 +2,7 @@ package cascaderegister
 
 import (
 	"context"
+	"database/sql"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -9,6 +10,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 	"github.com/pastelnetwork/gonode/common/types"
@@ -322,6 +325,72 @@ func (service *CascadeRegistrationService) UpsertFile(file types.File) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (service *CascadeRegistrationService) HandleTaskRegistrationErrorAttempts(ctx context.Context, taskID, regTxid, actTxid string, regAttemptID int64, actAttemptID int64, taskError error) error {
+	doneBlock, err := service.pastelHandler.PastelClient.GetBlockCount(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithField("task_id", taskID).WithError(err).Error("error retrieving block count")
+		return err
+	}
+
+	switch {
+	case regTxid == "":
+		ra, err := service.GetRegistrationAttemptsByID(int(regAttemptID))
+		if err != nil {
+			log.WithContext(ctx).WithField("task_id", taskID).WithError(err).Error("error retrieving file reg attempt")
+			return err
+		}
+
+		ra.FinishedAt = time.Now().UTC()
+		ra.IsSuccessful = false
+		ra.ErrorMessage = taskError.Error()
+		_, err = service.UpdateRegistrationAttempts(*ra)
+		if err != nil {
+			log.WithContext(ctx).WithField("task_id", taskID).WithError(err).Error("error updating file reg attempt")
+			return err
+		}
+
+		return nil
+	case actTxid == "":
+		file, err := service.GetFileByTaskID(taskID)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error retrieving file")
+			return nil
+		}
+
+		file.DoneBlock = int(doneBlock)
+		file.RegTxid = regTxid
+		file.IsConcluded = false
+		err = service.ticketDB.UpsertFile(*file)
+		if err != nil {
+			log.Errorf("Error in file upsert: %v", err.Error())
+			return nil
+		}
+
+		actAttempt, err := service.GetActivationAttemptByID(int(actAttemptID))
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			log.Errorf("Error retrieving file act attempt: %v", err.Error())
+			return err
+		}
+
+		if actAttempt == nil {
+			return nil
+		}
+
+		actAttempt.IsSuccessful = false
+		actAttempt.ActivationAttemptAt = time.Now().UTC()
+		actAttempt.ErrorMessage = taskError.Error()
+		_, err = service.UpdateActivationAttempts(*actAttempt)
+		if err != nil {
+			log.Errorf("Error in activation attempts upsert: %v", err.Error())
+			return err
+		}
+
+		return err
+	}
+
 	return nil
 }
 

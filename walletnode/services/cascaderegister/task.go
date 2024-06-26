@@ -63,6 +63,11 @@ func (task *CascadeRegistrationTask) Run(ctx context.Context) error {
 func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	regTxid, actTxid, err := task.runTicketRegActTask(ctx)
 	if err != nil {
+		attemptErr := task.service.HandleTaskRegistrationErrorAttempts(ctx, task.ID(), regTxid, actTxid, task.Request.RegAttemptID, task.actAttemptID, err)
+		if attemptErr != nil {
+			return attemptErr
+		}
+
 		return err
 	}
 
@@ -350,6 +355,10 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 		FileID:              task.Request.FileID,
 		ActivationAttemptAt: time.Now().UTC(),
 	})
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error inserting activation attempt")
+		return task.regCascadeTxid, "", errors.Errorf("error inserting activation attempt: %w", err)
+	}
 	task.actAttemptID = id
 	// activate cascade ticket registered at previous step by SN
 	activateTxID, err := task.activateActionTicket(ctx)

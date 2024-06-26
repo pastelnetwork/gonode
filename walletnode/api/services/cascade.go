@@ -141,11 +141,11 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 				return nil, cascade.MakeInternalServerError(errors.New("ticket registration attempts have been exceeded"))
 			default:
 				regAttemptID, err := service.register.InsertRegistrationAttempts(types.RegistrationAttempt{
-					FileID:       p.FileID,
+					FileID:       baseFile.FileID,
 					RegStartedAt: time.Now().UTC(),
 				})
 				if err != nil {
-					log.WithContext(ctx).WithField("file_id", p.FileID).WithError(err).Error("error inserting registration attempt")
+					log.WithContext(ctx).WithField("file_id", baseFile.FileID).WithError(err).Error("error inserting registration attempt")
 					return nil, err
 				}
 
