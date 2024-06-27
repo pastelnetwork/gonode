@@ -12,8 +12,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 )
 
 const (
@@ -25,7 +25,12 @@ const (
 	TicketTypeInactive RegTicketsFilter = "inactive"
 	// TicketTypeAll is all filter for tickets
 	TicketTypeAll RegTicketsFilter = "all"
+
+	// CascadeMultiVolumeMetadata is the only contract type currently available
+	CascadeMultiVolumeMetadata ContractType = "cascade_multi_volume_metadata"
 )
+
+type ContractType string
 
 // RegTicketsFilter is filter for retrieving action & nft registration tickets
 type RegTicketsFilter string
@@ -290,6 +295,16 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 	return ticket, nil
 }
 
+func (client *client) GetContractTicket(ctx context.Context, txid string) (Contract, error) {
+	ticket := Contract{}
+
+	if err := client.callFor(ctx, &ticket, "tickets", "get", txid); err != nil {
+		return ticket, errors.Errorf("failed to get contract ticket %s: %w", txid, err)
+	}
+
+	return ticket, nil
+}
+
 // ActionRegTicket implements pastel.Client.RegTicket
 func (client *client) ActionRegTicket(ctx context.Context, regTxid string) (ActionRegTicket, error) {
 	ticket := ActionRegTicket{}
@@ -533,30 +548,41 @@ func (client *client) RegisterActionTicket(ctx context.Context, request Register
 	return txID.TxID, nil
 }
 
-func (client *client) RegisterCascadeMultiVolumeTicket(ctx context.Context, ticket CascadeMultiVolumeTicket) (string, error){
-	ticketJSON, err := json.Marshal(ticket)
-    if err != nil {
-        return "", errors.Errorf("failed to call register action ticket: %w", err)
-    }
-    ticketBlob := base64.StdEncoding.EncodeToString(ticketJSON)
+func (client *client) RegisterCascadeMultiVolumeTicket(ctx context.Context, ticket CascadeMultiVolumeTicket) (string, error) {
+	return client.registerContract(ctx, ticket, CascadeMultiVolumeMetadata)
+}
+
+func (client *client) registerContract(ctx context.Context, data interface{}, contractType ContractType) (string, error) {
+	ticketJSON, err := json.Marshal(data)
+	if err != nil {
+		return "", errors.Errorf("failed to call register action ticket: %w", err)
+	}
+	ticketBlob := base64.StdEncoding.EncodeToString(ticketJSON)
 
 	hash, _ := utils.Sha3256hash(ticketJSON)
-    // Assuming some additional data or parameters are needed, similar to the RegisterNFTRequest example
-    params := []interface{}{
-        "register",
-        "contract",
-        ticketBlob,
-		ticket.ID,
-        hash,
-    }
+	// Assuming some additional data or parameters are needed, similar to the RegisterNFTRequest example
+	params := []interface{}{
+		"register",
+		"contract",
+		ticketBlob,
+		contractType,
+		hash,
+	}
 
-	resp := make(map[string]interface{})
-    if err := client.callFor(ctx, &resp, "tickets", params...); err != nil {
-        return "", errors.Errorf("failed to call register contract: %w", err)
-    }
-	log.WithContext(ctx).WithField("resp", resp).WithField("txid", ticket.ID).Info("RegisterCascadeMultiVolumeTicket Response")
+	type ContractResponse struct {
+		TxID string `json:"txid"`
+		Key  string `json:"key"`
+	}
+	resp := ContractResponse{}
 
-	return ticket.ID, nil
+	if err := client.callFor(ctx, &resp, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call register contract: %w", err)
+	}
+	if resp.TxID == "" {
+		return "", errors.Errorf("failed to call register contract (no txid rcvd.): %w", err)
+	}
+
+	return resp.TxID, nil
 }
 
 func (client *client) ActivateActionTicket(ctx context.Context, request ActivateActionRequest) (string, error) {
