@@ -292,6 +292,12 @@ var StartCascadeProcessingPayload = Type("StartCascadeProcessingPayload", func()
 		MaxLength(64)
 		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
 	})
+	Attribute("burn_txids", ArrayOf(String), func() {
+		Description("List of Burn transaction IDs for multi-volume registration")
+		Example([]string{
+			"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58",
+		})
+	})
 	Attribute("app_pastelid", String, func() {
 		Meta("struct:field:name", "AppPastelID")
 		Description("App PastelID")
@@ -320,7 +326,7 @@ var StartCascadeProcessingPayload = Type("StartCascadeProcessingPayload", func()
 		Example("Basic abcdef12345")
 	})
 
-	Required("file_id", "burn_txid", "app_pastelid", "key")
+	Required("file_id", "app_pastelid", "key")
 })
 
 // FileRegistrationDetailPayload - Payload for registration detail

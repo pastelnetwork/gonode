@@ -78,13 +78,17 @@ func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStart
 	{
 		err = json.Unmarshal([]byte(cascadeStartProcessingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"burn_txid\": \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\",\n      \"make_publicly_accessible\": false,\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"burn_txid\": \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\",\n      \"burn_txids\": [\n         \"576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58\"\n      ],\n      \"make_publicly_accessible\": false,\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\"\n   }'")
 		}
-		if utf8.RuneCountInString(body.BurnTxid) < 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", body.BurnTxid, utf8.RuneCountInString(body.BurnTxid), 64, true))
+		if body.BurnTxid != nil {
+			if utf8.RuneCountInString(*body.BurnTxid) < 64 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, true))
+			}
 		}
-		if utf8.RuneCountInString(body.BurnTxid) > 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", body.BurnTxid, utf8.RuneCountInString(body.BurnTxid), 64, false))
+		if body.BurnTxid != nil {
+			if utf8.RuneCountInString(*body.BurnTxid) > 64 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.burn_txid", *body.BurnTxid, utf8.RuneCountInString(*body.BurnTxid), 64, false))
+			}
 		}
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.app_pastelid", body.AppPastelID, "^[a-zA-Z0-9]+$"))
 		if utf8.RuneCountInString(body.AppPastelID) < 86 {
@@ -132,6 +136,12 @@ func BuildStartProcessingPayload(cascadeStartProcessingBody string, cascadeStart
 		AppPastelID:            body.AppPastelID,
 		MakePubliclyAccessible: body.MakePubliclyAccessible,
 		SpendableAddress:       body.SpendableAddress,
+	}
+	if body.BurnTxids != nil {
+		v.BurnTxids = make([]string, len(body.BurnTxids))
+		for i, val := range body.BurnTxids {
+			v.BurnTxids[i] = val
+		}
 	}
 	{
 		var zero bool

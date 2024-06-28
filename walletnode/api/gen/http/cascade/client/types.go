@@ -43,7 +43,9 @@ type UploadAssetV2RequestBody struct {
 // "startProcessing" endpoint HTTP request body.
 type StartProcessingRequestBody struct {
 	// Burn transaction ID
-	BurnTxid string `form:"burn_txid" json:"burn_txid" xml:"burn_txid"`
+	BurnTxid *string `form:"burn_txid,omitempty" json:"burn_txid,omitempty" xml:"burn_txid,omitempty"`
+	// List of Burn transaction IDs for multi-volume registration
+	BurnTxids []string `form:"burn_txids,omitempty" json:"burn_txids,omitempty" xml:"burn_txids,omitempty"`
 	// App PastelID
 	AppPastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
 	// To make it publicly accessible
@@ -558,6 +560,12 @@ func NewStartProcessingRequestBody(p *cascade.StartProcessingPayload) *StartProc
 		AppPastelID:            p.AppPastelID,
 		MakePubliclyAccessible: p.MakePubliclyAccessible,
 		SpendableAddress:       p.SpendableAddress,
+	}
+	if p.BurnTxids != nil {
+		body.BurnTxids = make([]string, len(p.BurnTxids))
+		for i, val := range p.BurnTxids {
+			body.BurnTxids[i] = val
+		}
 	}
 	{
 		var zero bool

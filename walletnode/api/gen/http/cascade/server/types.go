@@ -46,6 +46,8 @@ type UploadAssetV2RequestBody struct {
 type StartProcessingRequestBody struct {
 	// Burn transaction ID
 	BurnTxid *string `form:"burn_txid,omitempty" json:"burn_txid,omitempty" xml:"burn_txid,omitempty"`
+	// List of Burn transaction IDs for multi-volume registration
+	BurnTxids []string `form:"burn_txids,omitempty" json:"burn_txids,omitempty" xml:"burn_txids,omitempty"`
 	// App PastelID
 	AppPastelID *string `form:"app_pastelid,omitempty" json:"app_pastelid,omitempty" xml:"app_pastelid,omitempty"`
 	// To make it publicly accessible
@@ -888,12 +890,18 @@ func NewUploadAssetV2Payload(body *UploadAssetV2RequestBody) *cascade.UploadAsse
 // payload.
 func NewStartProcessingPayload(body *StartProcessingRequestBody, fileID string, key string) *cascade.StartProcessingPayload {
 	v := &cascade.StartProcessingPayload{
-		BurnTxid:         *body.BurnTxid,
+		BurnTxid:         body.BurnTxid,
 		AppPastelID:      *body.AppPastelID,
 		SpendableAddress: body.SpendableAddress,
 	}
 	if body.MakePubliclyAccessible != nil {
 		v.MakePubliclyAccessible = *body.MakePubliclyAccessible
+	}
+	if body.BurnTxids != nil {
+		v.BurnTxids = make([]string, len(body.BurnTxids))
+		for i, val := range body.BurnTxids {
+			v.BurnTxids[i] = val
+		}
 	}
 	if body.MakePubliclyAccessible == nil {
 		v.MakePubliclyAccessible = false
@@ -962,9 +970,6 @@ func ValidateUploadAssetV2RequestBody(body *UploadAssetV2RequestBody) (err error
 // ValidateStartProcessingRequestBody runs the validations defined on
 // StartProcessingRequestBody
 func ValidateStartProcessingRequestBody(body *StartProcessingRequestBody) (err error) {
-	if body.BurnTxid == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("burn_txid", "body"))
-	}
 	if body.AppPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("app_pastelid", "body"))
 	}
