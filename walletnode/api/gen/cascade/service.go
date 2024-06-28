@@ -228,7 +228,9 @@ type StartProcessingPayload struct {
 	// Uploaded asset file ID
 	FileID string
 	// Burn transaction ID
-	BurnTxid string
+	BurnTxid *string
+	// List of Burn transaction IDs for multi-volume registration
+	BurnTxids []string
 	// App PastelID
 	AppPastelID string
 	// To make it publicly accessible

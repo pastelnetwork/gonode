@@ -8,7 +8,7 @@ import (
 // FromStartProcessingPayload convert StartProcessingPayload to ActionRegistrationRequest
 func FromStartProcessingPayload(payload *cascade.StartProcessingPayload) *common.ActionRegistrationRequest {
 	req := &common.ActionRegistrationRequest{
-		BurnTxID:               payload.BurnTxid,
+		BurnTxID:               *payload.BurnTxid,
 		AppPastelID:            payload.AppPastelID,
 		AppPastelIDPassphrase:  payload.Key,
 		MakePubliclyAccessible: payload.MakePubliclyAccessible,

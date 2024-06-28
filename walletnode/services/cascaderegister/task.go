@@ -73,58 +73,10 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 
 	taskID := task.ID()
 	if regTxid != "" && actTxid != "" {
-		doneBlock, err := task.service.pastelHandler.PastelClient.GetBlockCount(ctx)
+		err := task.service.HandleTaskRegSuccess(ctx, taskID, regTxid, actTxid, int(task.Request.RegAttemptID), int(task.actAttemptID))
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("error retrieving block-count")
 			return err
 		}
-
-		file, err := task.service.GetFileByTaskID(taskID)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("error retrieving file")
-			return nil
-		}
-
-		file.DoneBlock = int(doneBlock)
-		file.RegTxid = regTxid
-		file.ActivationTxid = actTxid
-		file.IsConcluded = true
-		err = task.service.ticketDB.UpsertFile(*file)
-		if err != nil {
-			log.Errorf("Error in file upsert: %v", err.Error())
-			return nil
-		}
-
-		// Upsert registration attempts
-
-		ra, err := task.service.GetRegistrationAttemptsByID(int(task.Request.RegAttemptID))
-		if err != nil {
-			log.Errorf("Error retrieving file reg attempt: %v", err.Error())
-			return nil
-		}
-
-		ra.FinishedAt = time.Now().UTC()
-		ra.IsSuccessful = true
-		_, err = task.service.UpdateRegistrationAttempts(*ra)
-		if err != nil {
-			log.Errorf("Error in registration attempts upsert: %v", err.Error())
-			return nil
-		}
-
-		actAttempt, err := task.service.GetActivationAttemptByID(int(task.actAttemptID))
-		if err != nil {
-			log.Errorf("Error retrieving file act attempt: %v", err.Error())
-			return nil
-		}
-
-		actAttempt.IsSuccessful = true
-		_, err = task.service.UpdateActivationAttempts(*actAttempt)
-		if err != nil {
-			log.Errorf("Error in activation attempts upsert: %v", err.Error())
-			return nil
-		}
-
-		return nil
 	}
 
 	return nil
@@ -361,7 +313,7 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 	}
 	task.actAttemptID = id
 	// activate cascade ticket registered at previous step by SN
-	activateTxID, err := task.activateActionTicket(ctx)
+	activateTxID, err := task.ActivateActionTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error activating action ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -581,7 +533,7 @@ func (task *CascadeRegistrationTask) uploadSignedTicket(ctx context.Context) err
 	return err
 }
 
-func (task *CascadeRegistrationTask) activateActionTicket(ctx context.Context) (string, error) {
+func (task *CascadeRegistrationTask) ActivateActionTicket(ctx context.Context) (string, error) {
 	request := pastel.ActivateActionRequest{
 		RegTxID:          task.regCascadeTxid,
 		BlockNum:         task.creatorBlockHeight,

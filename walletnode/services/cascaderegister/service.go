@@ -3,8 +3,10 @@ package cascaderegister
 import (
 	"context"
 	"database/sql"
+	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -39,8 +41,10 @@ import (
 )
 
 const (
-	logPrefix       = "cascade"
-	defaultImageTTL = time.Second * 3600 // 1 hour
+	logPrefix                   = "cascade"
+	defaultImageTTL             = time.Second * 3600 // 1 hour
+	maxFileRegistrationAttempts = 3
+	maxFileActAttempts          = 3
 )
 
 // CascadeRegistrationService represents a service for Cascade Open API
@@ -48,6 +52,7 @@ type CascadeRegistrationService struct {
 	*task.Worker
 	config *Config
 
+	task          *CascadeRegistrationTask
 	ImageHandler  *mixins.FilesHandler
 	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface
@@ -118,11 +123,6 @@ func (service *CascadeRegistrationService) AddTask(p *cascade.StartProcessingPay
 	// Write the []byte data to the file
 	if _, err := file.Write(fileData); err != nil {
 		return "", errors.Errorf("write image data to file: %v", err)
-	}
-
-	// Set the file format based on the filename extension
-	if err := file.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
-		return "", errors.Errorf("set file format: %v", err)
 	}
 
 	// Assign the newly created File instance to the request
@@ -354,44 +354,195 @@ func (service *CascadeRegistrationService) HandleTaskRegistrationErrorAttempts(c
 
 		return nil
 	case actTxid == "":
-		file, err := service.GetFileByTaskID(taskID)
+		err := service.HandleTaskActError(ctx, taskID, regTxid, int(actAttemptID), doneBlock, taskError)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("error retrieving file")
-			return nil
-		}
-
-		file.DoneBlock = int(doneBlock)
-		file.RegTxid = regTxid
-		file.IsConcluded = false
-		err = service.ticketDB.UpsertFile(*file)
-		if err != nil {
-			log.Errorf("Error in file upsert: %v", err.Error())
-			return nil
-		}
-
-		actAttempt, err := service.GetActivationAttemptByID(int(actAttemptID))
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			log.Errorf("Error retrieving file act attempt: %v", err.Error())
 			return err
 		}
 
-		if actAttempt == nil {
-			return nil
-		}
-
-		actAttempt.IsSuccessful = false
-		actAttempt.ActivationAttemptAt = time.Now().UTC()
-		actAttempt.ErrorMessage = taskError.Error()
-		_, err = service.UpdateActivationAttempts(*actAttempt)
-		if err != nil {
-			log.Errorf("Error in activation attempts upsert: %v", err.Error())
-			return err
-		}
-
-		return err
+		return nil
 	}
 
 	return nil
+}
+
+func (service *CascadeRegistrationService) HandleTaskActError(ctx context.Context, taskID string, regTxid string, actAttemptID int, doneBlock int32, err error) error {
+	file, err := service.GetFileByTaskID(taskID)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving file")
+		return nil
+	}
+
+	file.DoneBlock = int(doneBlock)
+	file.RegTxid = regTxid
+	file.IsConcluded = false
+	err = service.ticketDB.UpsertFile(*file)
+	if err != nil {
+		log.Errorf("Error in file upsert: %v", err.Error())
+		return nil
+	}
+
+	actAttempt, err := service.GetActivationAttemptByID(int(actAttemptID))
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Errorf("Error retrieving file act attempt: %v", err.Error())
+		return err
+	}
+
+	if actAttempt == nil {
+		return nil
+	}
+
+	actAttempt.IsSuccessful = false
+	actAttempt.ActivationAttemptAt = time.Now().UTC()
+	actAttempt.ErrorMessage = err.Error()
+	_, err = service.UpdateActivationAttempts(*actAttempt)
+	if err != nil {
+		log.Errorf("Error in activation attempts upsert: %v", err.Error())
+		return err
+	}
+
+	return err
+}
+
+func (service *CascadeRegistrationService) HandleTaskRegSuccess(ctx context.Context, taskID string, regTxid string, actTxid string, regAttemptID int, actAttemptID int) error {
+	doneBlock, err := service.pastelHandler.PastelClient.GetBlockCount(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving block-count")
+		return err
+	}
+
+	file, err := service.GetFileByTaskID(taskID)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving file")
+		return nil
+	}
+
+	file.DoneBlock = int(doneBlock)
+	file.RegTxid = regTxid
+	file.ActivationTxid = actTxid
+	file.IsConcluded = true
+	err = service.ticketDB.UpsertFile(*file)
+	if err != nil {
+		log.Errorf("Error in file upsert: %v", err.Error())
+		return nil
+	}
+
+	// Upsert registration attempts
+
+	ra, err := service.GetRegistrationAttemptsByID(regAttemptID)
+	if err != nil {
+		log.Errorf("Error retrieving file reg attempt: %v", err.Error())
+		return nil
+	}
+
+	ra.FinishedAt = time.Now().UTC()
+	ra.IsSuccessful = true
+	_, err = service.UpdateRegistrationAttempts(*ra)
+	if err != nil {
+		log.Errorf("Error in registration attempts upsert: %v", err.Error())
+		return nil
+	}
+
+	actAttempt, err := service.GetActivationAttemptByID(actAttemptID)
+	if err != nil {
+		log.Errorf("Error retrieving file act attempt: %v", err.Error())
+		return nil
+	}
+
+	actAttempt.IsSuccessful = true
+	_, err = service.UpdateActivationAttempts(*actAttempt)
+	if err != nil {
+		log.Errorf("Error in activation attempts upsert: %v", err.Error())
+		return nil
+	}
+
+	return nil
+}
+
+func (service *CascadeRegistrationService) ProcessFile(ctx context.Context, file types.File, p *cascade.StartProcessingPayload) (taskID string, err error) {
+	log.WithContext(ctx).WithField("file_id", file.FileID).WithField("base_file_id", file.BaseFileID).Infof("Processing started for file")
+
+	switch {
+	case file.IsConcluded:
+		return "", cascade.MakeInternalServerError(errors.New("ticket has already been registered & activated"))
+
+	case file.RegTxid == "":
+		baseFileRegistrationAttempts, err := service.GetRegistrationAttemptsByFileID(file.FileID)
+		if err != nil {
+			return "", cascade.MakeInternalServerError(err)
+		}
+
+		switch {
+		case len(baseFileRegistrationAttempts) > maxFileRegistrationAttempts:
+			return "", cascade.MakeInternalServerError(errors.New("ticket registration attempts have been exceeded"))
+		default:
+			regAttemptID, err := service.InsertRegistrationAttempts(types.RegistrationAttempt{
+				FileID:       file.FileID,
+				RegStartedAt: time.Now().UTC(),
+			})
+			if err != nil {
+				log.WithContext(ctx).WithField("file_id", file.FileID).WithError(err).Error("error inserting registration attempt")
+				return "", err
+			}
+
+			taskID, err = service.AddTask(p, regAttemptID, file.FileID)
+			if err != nil {
+				log.WithError(err).Error("unable to add task")
+				return "", cascade.MakeInternalServerError(err)
+			}
+
+			file.TaskID = taskID
+			file.BurnTxnID = *p.BurnTxid
+			err = service.UpsertFile(file)
+			if err != nil {
+				log.WithField("task_id", taskID).WithField("file_id", p.FileID).
+					WithField("burn_txid", p.BurnTxid).
+					WithField("file_name", file.FileID).
+					Errorf("Error in file upsert: %v", err.Error())
+				return "", cascade.MakeInternalServerError(errors.New("Error in file upsert"))
+			}
+		}
+
+		return taskID, nil
+	default:
+		// Activation code
+	}
+
+	return taskID, nil
+}
+
+func (service *CascadeRegistrationService) SortBurnTxIDs(ctx context.Context, burnTxIDs []string) ([]string, error) {
+	type Txn struct {
+		ID     string
+		Amount float64
+	}
+	var txns []Txn
+
+	for _, burnTxID := range burnTxIDs {
+		txnDetails, err := service.pastelHandler.PastelClient.GetTransaction(ctx, burnTxID)
+		if err != nil {
+			return []string{}, err
+		}
+		txns = append(txns, Txn{ID: burnTxID, Amount: txnDetails.Amount})
+	}
+
+	sort.SliceStable(txns, func(i, j int) bool {
+		return math.Abs(txns[i].Amount) > math.Abs(txns[j].Amount)
+	})
+
+	sortedBurnTxIDs := make([]string, len(txns))
+	for i, txn := range txns {
+		sortedBurnTxIDs[i] = txn.ID
+	}
+
+	return sortedBurnTxIDs, nil
+}
+
+func (service *CascadeRegistrationService) SortFilesWithHigherAmounts(files types.Files) types.Files {
+	sort.SliceStable(files, func(i, j int) bool {
+		return files[i].ReqBurnTxnAmount > files[j].ReqBurnTxnAmount
+	})
+
+	return files
 }
 
 // NewService returns a new Service instance

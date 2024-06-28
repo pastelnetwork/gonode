@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/types"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,11 +23,6 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	goahttp "goa.design/goa/v3/http"
 	"goa.design/goa/v3/security"
-)
-
-const (
-	maxFileSize                 = 350 * 1024 * 1024 // 350MB in bytes
-	maxFileRegistrationAttempts = 3
 )
 
 // CascadeAPIHandler - CascadeAPIHandler service
@@ -113,68 +107,63 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 		return nil, cascade.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
 	}
 
+	// Get related files
 	relatedFiles, err := service.register.GetFilesByBaseFileID(p.FileID)
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(err)
 	}
-	log.WithContext(ctx).WithField("total_volumes", len(relatedFiles)).Info("related volumes retrieved from the base file-id")
-
-	baseFile := relatedFiles.GetBase()
-	if baseFile == nil {
-		return nil, cascade.MakeInternalServerError(err)
-	}
+	log.WithContext(ctx).WithField("total_volumes", len(relatedFiles)).Info("Related volumes retrieved from the base file-id")
 
 	switch {
 	case len(relatedFiles) == 1:
-		switch {
-		case baseFile.IsConcluded:
-			return nil, cascade.MakeInternalServerError(errors.New("ticket has already been registered & activated"))
-
-		case baseFile.RegTxid == "":
-			baseFileRegistrationAttempts, err := service.register.GetRegistrationAttemptsByFileID(baseFile.FileID)
-			if err != nil {
-				return nil, cascade.MakeInternalServerError(err)
-			}
-
-			switch {
-			case len(baseFileRegistrationAttempts) > maxFileRegistrationAttempts:
-				return nil, cascade.MakeInternalServerError(errors.New("ticket registration attempts have been exceeded"))
-			default:
-				regAttemptID, err := service.register.InsertRegistrationAttempts(types.RegistrationAttempt{
-					FileID:       baseFile.FileID,
-					RegStartedAt: time.Now().UTC(),
-				})
-				if err != nil {
-					log.WithContext(ctx).WithField("file_id", baseFile.FileID).WithError(err).Error("error inserting registration attempt")
-					return nil, err
-				}
-
-				taskID, err := service.register.AddTask(p, regAttemptID, baseFile.FileID)
-				if err != nil {
-					log.WithError(err).Error("unable to add task")
-					return nil, cascade.MakeInternalServerError(err)
-				}
-
-				res = &cascade.StartProcessingResult{
-					TaskID: taskID,
-				}
-
-				baseFile.TaskID = taskID
-				baseFile.BurnTxnID = p.BurnTxid
-				err = service.register.UpsertFile(*baseFile)
-				if err != nil {
-					log.WithField("task_id", taskID).WithField("file_id", p.FileID).
-						WithField("burn_txid", p.BurnTxid).
-						WithField("file_name", baseFile.FileID).
-						Errorf("Error in file upsert: %v", err.Error())
-					return nil, cascade.MakeInternalServerError(errors.New("Error in file upsert"))
-				}
-			}
-		default:
-			// Activation code
+		baseFile := relatedFiles.GetBase()
+		if baseFile == nil {
+			return nil, cascade.MakeInternalServerError(err)
 		}
-	case len(relatedFiles) > 1:
 
+		taskID, err := service.register.ProcessFile(ctx, *baseFile, p)
+		if err != nil {
+			return nil, cascade.MakeBadRequest(err)
+		}
+
+		return &cascade.StartProcessingResult{
+			TaskID: taskID,
+		}, nil
+
+	case len(relatedFiles) > 1:
+		log.WithContext(ctx).Info("multi-volume registration...")
+
+		if len(p.BurnTxids) != len(relatedFiles) {
+			log.WithContext(ctx).WithField("related_volumes", len(relatedFiles)).
+				WithField("burn_txids", len(p.BurnTxids)).
+				Info("no of provided burn txids and volumes are not equal")
+			return nil, cascade.MakeBadRequest(errors.New("provided burn txids and no of volumes are not equal"))
+		}
+
+		sortedBurnTxids, err := service.register.SortBurnTxIDs(ctx, p.BurnTxids)
+		if err != nil {
+			return nil, cascade.MakeInternalServerError(err)
+		}
+		sortedRelatedFiles := service.register.SortFilesWithHigherAmounts(relatedFiles)
+
+		var taskIDs []string
+		for index, file := range sortedRelatedFiles {
+			burnTxID := sortedBurnTxids[index]
+			p.BurnTxid = &burnTxID
+			taskID, err := service.register.ProcessFile(ctx, *file, p)
+			if err != nil {
+				log.WithContext(ctx).WithField("file_id", file.FileID).WithError(err).Error("error processing volume")
+				continue
+			}
+
+			if taskID != "" {
+				taskIDs = append(taskIDs, taskID)
+			}
+		}
+
+		return &cascade.StartProcessingResult{
+			TaskID: strings.Join(taskIDs, ","),
+		}, nil
 	}
 
 	return res, nil
