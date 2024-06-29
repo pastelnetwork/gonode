@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,9 +21,16 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/cascade/server"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/nft"
 	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 	goahttp "goa.design/goa/v3/http"
 	"goa.design/goa/v3/security"
+)
+
+const (
+	maxFileSize                 = 350 * 1024 * 1024 // 350MB in bytes
+	maxFileRegistrationAttempts = 3
+	downloadDeadline            = 30 * time.Minute
 )
 
 // CascadeAPIHandler - CascadeAPIHandler service
@@ -214,73 +222,145 @@ func (service *CascadeAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 	return ctx, nil
 }
 
-// Download registered NFT
+func (service *CascadeAPIHandler) getTxIDs(ctx context.Context, txID string) (txIDs []string, ticket pastel.CascadeMultiVolumeTicket) {
+	c, err := service.download.CheckForMultiVolumeCascadeTicket(ctx, txID)
+	if err == nil {
+		ticket, err = c.GetCascadeMultiVolumeMetadataTicket()
+		if err == nil {
+			for _, volumeTxID := range ticket.Volumes {
+				txIDs = append(txIDs, volumeTxID)
+			}
+
+			return
+		}
+	}
+	txIDs = append(txIDs, txID)
+
+	return
+}
+
+// Download registered cascade file - also supports multi-volume files
 func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) (*cascade.FileDownloadResult, error) {
 	log.WithContext(ctx).WithField("txid", p.Txid).Info("Start downloading")
 
 	if !service.register.ValidateUser(ctx, p.Pid, p.Key) {
-		return nil, nft.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+		return nil, cascade.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
+
+	txIDs, ticket := service.getTxIDs(ctx, p.Txid)
+	isMultiVolume := len(txIDs) > 1
+
+	type DownloadResult struct {
+		File     []byte
+		Filename string
+		Txid     string
 	}
 
-	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
-	taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: p.Txid}, pastel.ActionTypeCascade, false)
-	task := service.download.GetTask(taskID)
-	defer task.Cancel()
+	// Channel to control the concurrency of downloads
+	sem := make(chan struct{}, 3) // Max 3 concurrent downloads
+	taskResults := make(chan *DownloadResult)
+	errorsChan := make(chan error)
 
-	sub := task.SubscribeStatus()
+	ctx, cancel := context.WithTimeout(ctx, downloadDeadline)
+	defer cancel()
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, cascade.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
-		case status := <-sub():
-			if status.IsFailure() {
-				if strings.Contains(utils.SafeErrStr(task.Error()), "validate ticket") {
-					return nil, cascade.MakeBadRequest(errors.New("ticket not found. Please make sure you are using correct registration ticket TXID"))
-				}
+	// Starting multiple download tasks
+	for _, txID := range txIDs {
+		go func(txID string) {
+			sem <- struct{}{}        // Acquiring the semaphore
+			defer func() { <-sem }() // Releasing the semaphore
 
-				if strings.Contains(utils.SafeErrStr(task.Error()), "ticket ownership") {
-					return nil, cascade.MakeBadRequest(errors.New("failed to verify ownership"))
-				}
+			taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: txID}, pastel.ActionTypeCascade, false)
+			task := service.download.GetTask(taskID)
+			defer task.Cancel()
 
-				errStr := fmt.Errorf("internal processing error: %s", status.String())
-				if task.Error() != nil {
-					errStr = task.Error()
-				}
-				return nil, cascade.MakeInternalServerError(errStr)
-			}
+			sub := task.SubscribeStatus()
 
-			if status.IsFinal() {
-				if len(task.File) == 0 {
-					return nil, cascade.MakeInternalServerError(errors.New("unable to download file"))
-				}
+			for {
+				select {
+				case <-ctx.Done():
+					errorsChan <- cascade.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
+					return
+				case status := <-sub():
+					if status.IsFailure() {
+						if strings.Contains(utils.SafeErrStr(task.Error()), "validate ticket") {
+							errorsChan <- cascade.MakeBadRequest(errors.New("ticket not found. Please make sure you are using correct registration ticket TXID"))
+							return
+						}
 
-				log.WithContext(ctx).WithField("size in KB", len(task.File)/1000).WithField("txid", p.Txid).Info("File downloaded")
+						if strings.Contains(utils.SafeErrStr(task.Error()), "ticket ownership") {
+							errorsChan <- cascade.MakeBadRequest(errors.New("failed to verify ownership"))
+							return
+						}
 
-				// Create directory with p.Txid
-				folderPath := filepath.Join(service.config.StaticFilesDir, p.Txid)
-				if _, err := os.Stat(folderPath); os.IsNotExist(err) {
-					err = os.MkdirAll(folderPath, os.ModePerm)
-					if err != nil {
-						return nil, err
+						errStr := fmt.Errorf("internal processing error: %s", status.String())
+						if task.Error() != nil {
+							errStr = task.Error()
+						}
+						errorsChan <- cascade.MakeInternalServerError(errStr)
+						return
+					}
+
+					if status.IsFinal() {
+						taskResults <- &DownloadResult{File: task.File, Filename: task.Filename, Txid: txID}
+						return
 					}
 				}
-
-				// Generate a unique ID and map it to the saved file's path
-				uniqueID := randIDFunc()
-				filePath := filepath.Join(folderPath, task.Filename)
-				err := os.WriteFile(filePath, task.File, 0644)
-				if err != nil {
-					return nil, cascade.MakeInternalServerError(errors.New("unable to write file"))
-				}
-				service.fileMappings.Store(uniqueID, filePath)
-
-				return &cascade.FileDownloadResult{
-					FileID: uniqueID,
-				}, nil
 			}
+		}(txID)
+	}
+
+	// Create directory with p.Txid
+	folderPath := filepath.Join(service.config.StaticFilesDir, p.Txid)
+	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
+			cancel()
+			return nil, err
 		}
 	}
+
+	var filePath string
+	for i := 0; i < len(txIDs); i++ {
+		select {
+		case res := <-taskResults:
+			filePath = filepath.Join(folderPath, res.Filename)
+			if err := os.WriteFile(filePath, res.File, 0644); err != nil {
+				cancel()
+				return nil, cascade.MakeInternalServerError(errors.New("unable to write file"))
+			}
+		case err := <-errorsChan:
+			cancel()
+			return nil, err
+		}
+	}
+
+	if isMultiVolume {
+		fsp := common.FileSplitter{PartSizeMB: partSizeMB}
+		if err := fsp.JoinFiles(folderPath); err != nil {
+			return nil, cascade.MakeInternalServerError(errors.New("unable to join files"))
+		}
+
+		filePath = filepath.Join(folderPath, ticket.NameOfOriginalFile)
+
+		// Check if the hash of the file matches the hash in the ticket
+		hash, err := utils.ComputeSHA256HashOfFile(filePath)
+		if err != nil {
+			return nil, cascade.MakeInternalServerError(errors.New("unable to compute hash"))
+		}
+
+		if hex.EncodeToString(hash) != ticket.SHA3256HashOfOriginalFile {
+			return nil, cascade.MakeInternalServerError(errors.New("hash mismatch"))
+		}
+	}
+
+	// generating a single unique ID
+	uniqueID := randIDFunc()
+	service.fileMappings.Store(uniqueID, filePath)
+
+	return &cascade.FileDownloadResult{
+		FileID: uniqueID,
+	}, nil
 }
 
 // GetTaskHistory - Gets a task's history

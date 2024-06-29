@@ -77,6 +77,11 @@ func (service *NftDownloadingService) AddTask(p *nft.DownloadPayload, ticketType
 	return task.ID()
 }
 
+// CheckForMultiVolumeCascadeTicket checks and returns contract if ticket is a multi-volume file
+func (service *NftDownloadingService) CheckForMultiVolumeCascadeTicket(ctx context.Context, txid string) (c pastel.Contract, err error) {
+	return service.pastelHandler.PastelClient.GetContractTicket(ctx, txid)
+}
+
 // NewNftDownloadService returns a new Service instance.
 func NewNftDownloadService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
 	historyDB queries.LocalStoreInterface) *NftDownloadingService {
