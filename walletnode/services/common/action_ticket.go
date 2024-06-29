@@ -24,6 +24,8 @@ type ActionRegistrationRequest struct {
 	SpendableAddress string `json:"spendable_address"`
 	// FileID to be use for registration and activation requests update
 	FileID string `json:"file_id"`
+	// BaseFileID is the index value of the multi volume file
+	BaseFileID string `json:"base_file_id"`
 
 	RegAttemptID int64
 }

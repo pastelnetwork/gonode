@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -74,6 +75,11 @@ func (task *CascadeRegistrationTask) run(ctx context.Context) error {
 	taskID := task.ID()
 	if regTxid != "" && actTxid != "" {
 		err := task.service.HandleTaskRegSuccess(ctx, taskID, regTxid, actTxid, int(task.Request.RegAttemptID), int(task.actAttemptID))
+		if err != nil {
+			return err
+		}
+
+		_, err = task.RegisterVolumeTicket(ctx, task.Request.BaseFileID)
 		if err != nil {
 			return err
 		}
@@ -594,6 +600,69 @@ func (task *CascadeRegistrationTask) Download(ctx context.Context, hashOnly bool
 
 		}
 	}
+}
+
+func (task *CascadeRegistrationTask) RegisterVolumeTicket(ctx context.Context, baseFileID string) (string, error) {
+	log.WithContext(ctx).WithField("base_file_id", baseFileID).Info("Register volumes ticket started")
+
+	relatedFiles, err := task.service.GetFilesByBaseFileID(baseFileID)
+	if err != nil {
+		return "", err
+	}
+
+	if len(relatedFiles) <= 1 {
+		return "", errors.New("related files must be greater than 1")
+	}
+
+	concludedCount := 0
+	requiredConcludedCount := len(relatedFiles)
+	for _, rf := range relatedFiles {
+		if rf.IsConcluded {
+			concludedCount += 1
+		}
+	}
+
+	if concludedCount < requiredConcludedCount || concludedCount > requiredConcludedCount {
+		log.WithContext(ctx).WithField("base_file_id", baseFileID).
+			WithField("related_files", relatedFiles).WithField("concluded_count", concludedCount).
+			WithField("required_concluded_count", requiredConcludedCount).Info("all volumes are not registered or activated yet")
+		return "", nil
+	}
+
+	volumes := make(map[int]string)
+	var sizeOfOriginalFileMB int
+	var nameOfOriginalFile string
+	var sha3256HashOfOriginalFile string
+
+	nameOfOriginalFile = relatedFiles[0].NameOfOriginalBigFileWithExt
+	sizeOfOriginalFileMB = int(relatedFiles[0].SizeOfOriginalBigFile)
+	sha3256HashOfOriginalFile = relatedFiles[0].HashOfOriginalBigFile
+
+	for _, relatedFile := range relatedFiles {
+		fileIndexInt, err := strconv.Atoi(relatedFile.FileIndex)
+		if err != nil {
+			return "", errors.Errorf("error converting file index to int from string")
+		}
+
+		volumes[fileIndexInt] = relatedFile.RegTxid
+	}
+
+	txID, err := task.service.pastelHandler.PastelClient.RegisterCascadeMultiVolumeTicket(ctx, pastel.CascadeMultiVolumeTicket{
+		NameOfOriginalFile:        nameOfOriginalFile,
+		SizeOfOriginalFileMB:      sizeOfOriginalFileMB,
+		SHA3256HashOfOriginalFile: sha3256HashOfOriginalFile,
+		Volumes:                   volumes,
+	})
+	if err != nil {
+		log.WithContext(ctx).WithField("base_file_id", baseFileID).
+			WithField("related_files", relatedFiles).WithField("concluded_count", concludedCount).
+			WithField("required_concluded_count", requiredConcludedCount).Error("Error in pastel register volume cascade ticket")
+		return txID, err
+	}
+
+	log.WithContext(ctx).WithField("base_file_id", baseFileID).WithField("txID", txID).Info("volume registration has been completed")
+
+	return txID, nil
 }
 
 // NewCascadeRegisterTask returns a new CascadeRegistrationTask instance.

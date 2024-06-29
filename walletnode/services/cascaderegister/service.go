@@ -103,10 +103,11 @@ func (service *CascadeRegistrationService) ValidateUser(ctx context.Context, id 
 }
 
 // AddTask create ticket request and start a new task with the given payload
-func (service *CascadeRegistrationService) AddTask(p *cascade.StartProcessingPayload, regAttemptID int64, filename string) (string, error) {
+func (service *CascadeRegistrationService) AddTask(p *cascade.StartProcessingPayload, regAttemptID int64, filename string, baseFileID string) (string, error) {
 	request := FromStartProcessingPayload(p)
 	request.RegAttemptID = regAttemptID
 	request.FileID = filename
+	request.BaseFileID = baseFileID
 
 	// get image filename from storage based on image_id
 	filePath := filepath.Join(service.config.CascadeFilesDir, p.FileID, filename)
@@ -484,7 +485,7 @@ func (service *CascadeRegistrationService) ProcessFile(ctx context.Context, file
 				return "", err
 			}
 
-			taskID, err = service.AddTask(p, regAttemptID, file.FileID)
+			taskID, err = service.AddTask(p, regAttemptID, file.FileID, file.BaseFileID)
 			if err != nil {
 				log.WithError(err).Error("unable to add task")
 				return "", cascade.MakeInternalServerError(err)
