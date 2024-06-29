@@ -222,6 +222,23 @@ func (service *CascadeAPIHandler) APIKeyAuth(ctx context.Context, _ string, _ *s
 	return ctx, nil
 }
 
+func (service *CascadeAPIHandler) getTxIDs(ctx context.Context, txID string) (txIDs []string, ticket pastel.CascadeMultiVolumeTicket) {
+	c, err := service.download.CheckForMultiVolumeCascadeTicket(ctx, txID)
+	if err == nil {
+		ticket, err = c.GetCascadeMultiVolumeMetadataTicket()
+		if err == nil {
+			for _, volumeTxID := range ticket.Volumes {
+				txIDs = append(txIDs, volumeTxID)
+			}
+
+			return
+		}
+	}
+	txIDs = append(txIDs, txID)
+
+	return
+}
+
 // Download registered cascade file - also supports multi-volume files
 func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.DownloadPayload) (*cascade.FileDownloadResult, error) {
 	log.WithContext(ctx).WithField("txid", p.Txid).Info("Start downloading")
@@ -231,23 +248,8 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	}
 	defer log.WithContext(ctx).WithField("txid", p.Txid).Info("Finished downloading")
 
-	var txIDs []string
-	isMultiVolume := false
-	var ticket pastel.CascadeMultiVolumeTicket
-	c, err := service.download.CheckForMultiVolumeCascadeTicket(ctx, p.Txid)
-	if err == nil {
-		ticket, err = c.GetCascadeMultiVolumeMetadataTicket()
-		if err == nil {
-			for _, volumeTxID := range ticket.Volumes {
-				isMultiVolume = true
-				txIDs = append(txIDs, volumeTxID)
-			}
-		} else {
-			txIDs = append(txIDs, p.Txid)
-		}
-	} else {
-		txIDs = append(txIDs, p.Txid)
-	}
+	txIDs, ticket := service.getTxIDs(ctx, p.Txid)
+	isMultiVolume := len(txIDs) > 1
 
 	type DownloadResult struct {
 		File     []byte
@@ -334,7 +336,7 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	}
 
 	if isMultiVolume {
-		fsp := common.FileSplitter{PartSizeMB: 300}
+		fsp := common.FileSplitter{PartSizeMB: partSizeMB}
 		if err := fsp.JoinFiles(folderPath); err != nil {
 			return nil, cascade.MakeInternalServerError(errors.New("unable to join files"))
 		}
