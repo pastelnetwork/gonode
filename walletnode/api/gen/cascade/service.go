@@ -218,8 +218,8 @@ type RegistrationAttempt struct {
 // RegistrationDetailsPayload is the payload type of the cascade service
 // registrationDetails method.
 type RegistrationDetailsPayload struct {
-	// file ID
-	FileID string
+	// Base file ID
+	BaseFileID string
 }
 
 // StartProcessingPayload is the payload type of the cascade service

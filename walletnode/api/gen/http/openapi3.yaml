@@ -1961,7 +1961,7 @@ paths:
                                 $ref: '#/components/schemas/Error'
             security:
                 - api_key_header_Authorization: []
-    /openapi/cascade/registration_details/{file_id}:
+    /openapi/cascade/registration_details/{base_file_id}:
         get:
             tags:
                 - cascade
@@ -1969,13 +1969,13 @@ paths:
             description: Get the file registration details
             operationId: cascade#registrationDetails
             parameters:
-                - name: file_id
+                - name: base_file_id
                   in: path
-                  description: file ID
+                  description: Base file ID
                   required: true
                   schema:
                     type: string
-                    description: file ID
+                    description: Base file ID
                     example: VK7mpAqZ
                     maxLength: 8
                   example: VK7mpAqZ

@@ -79,14 +79,14 @@ func New(
 			{"RegisterTaskState", "GET", "/openapi/cascade/start/{taskId}/state"},
 			{"GetTaskHistory", "GET", "/openapi/cascade/{taskId}/history"},
 			{"Download", "GET", "/openapi/cascade/download"},
-			{"RegistrationDetails", "GET", "/openapi/cascade/registration_details/{file_id}"},
+			{"RegistrationDetails", "GET", "/openapi/cascade/registration_details/{base_file_id}"},
 			{"CORS", "OPTIONS", "/openapi/cascade/upload"},
 			{"CORS", "OPTIONS", "/openapi/cascade/v2/upload"},
 			{"CORS", "OPTIONS", "/openapi/cascade/start/{file_id}"},
 			{"CORS", "OPTIONS", "/openapi/cascade/start/{taskId}/state"},
 			{"CORS", "OPTIONS", "/openapi/cascade/{taskId}/history"},
 			{"CORS", "OPTIONS", "/openapi/cascade/download"},
-			{"CORS", "OPTIONS", "/openapi/cascade/registration_details/{file_id}"},
+			{"CORS", "OPTIONS", "/openapi/cascade/registration_details/{base_file_id}"},
 		},
 		UploadAsset:         NewUploadAssetHandler(e.UploadAsset, mux, NewCascadeUploadAssetDecoder(mux, cascadeUploadAssetDecoderFn), encoder, errhandler, formatter),
 		UploadAssetV2:       NewUploadAssetV2Handler(e.UploadAssetV2, mux, NewCascadeUploadAssetV2Decoder(mux, cascadeUploadAssetV2DecoderFn), encoder, errhandler, formatter),
@@ -464,7 +464,7 @@ func MountRegistrationDetailsHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/openapi/cascade/registration_details/{file_id}", f)
+	mux.Handle("GET", "/openapi/cascade/registration_details/{base_file_id}", f)
 }
 
 // NewRegistrationDetailsHandler creates a HTTP handler which loads the HTTP
@@ -516,7 +516,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("OPTIONS", "/openapi/cascade/start/{taskId}/state", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/{taskId}/history", h.ServeHTTP)
 	mux.Handle("OPTIONS", "/openapi/cascade/download", h.ServeHTTP)
-	mux.Handle("OPTIONS", "/openapi/cascade/registration_details/{file_id}", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/openapi/cascade/registration_details/{base_file_id}", h.ServeHTTP)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 204 response.

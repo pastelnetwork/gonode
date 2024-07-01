@@ -42,6 +42,6 @@ func DownloadCascadePath() string {
 }
 
 // RegistrationDetailsCascadePath returns the URL path to the cascade service registrationDetails HTTP endpoint.
-func RegistrationDetailsCascadePath(fileID string) string {
-	return fmt.Sprintf("/openapi/cascade/registration_details/%v", fileID)
+func RegistrationDetailsCascadePath(baseFileID string) string {
+	return fmt.Sprintf("/openapi/cascade/registration_details/%v", baseFileID)
 }

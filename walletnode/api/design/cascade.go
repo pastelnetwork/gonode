@@ -155,9 +155,9 @@ var _ = Service("cascade", func() {
 		Result(FileRegistrationDetailResult)
 
 		HTTP(func() {
-			GET("/registration_details/{file_id}")
+			GET("/registration_details/{base_file_id}")
 			Params(func() {
-				Param("file_id", String)
+				Param("base_file_id", String)
 			})
 
 			// Define error HTTP statuses.
@@ -332,13 +332,13 @@ var StartCascadeProcessingPayload = Type("StartCascadeProcessingPayload", func()
 // FileRegistrationDetailPayload - Payload for registration detail
 var FileRegistrationDetailPayload = Type("FileRegistrationDetailPayload", func() {
 	Description("File registration details")
-	Attribute("file_id", String, func() {
-		Description("file ID")
+	Attribute("base_file_id", String, func() {
+		Description("Base file ID")
 		MaxLength(8)
 		Example("VK7mpAqZ")
 	})
 
-	Required("file_id")
+	Required("base_file_id")
 })
 
 // FileRegistrationDetailResult is registration detail result.

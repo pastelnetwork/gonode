@@ -590,19 +590,19 @@ func EncodeRegistrationDetailsResponse(encoder func(context.Context, http.Respon
 func DecodeRegistrationDetailsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
-			fileID string
-			err    error
+			baseFileID string
+			err        error
 
 			params = mux.Vars(r)
 		)
-		fileID = params["file_id"]
-		if utf8.RuneCountInString(fileID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 8, false))
+		baseFileID = params["base_file_id"]
+		if utf8.RuneCountInString(baseFileID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("base_file_id", baseFileID, utf8.RuneCountInString(baseFileID), 8, false))
 		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewRegistrationDetailsPayload(fileID)
+		payload := NewRegistrationDetailsPayload(baseFileID)
 
 		return payload, nil
 	}
