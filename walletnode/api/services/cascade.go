@@ -338,6 +338,7 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	if isMultiVolume {
 		fsp := common.FileSplitter{PartSizeMB: partSizeMB}
 		if err := fsp.JoinFiles(folderPath); err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to join files")
 			return nil, cascade.MakeInternalServerError(errors.New("unable to join files"))
 		}
 
