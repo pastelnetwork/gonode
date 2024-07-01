@@ -108,6 +108,7 @@ func (service *CascadeRegistrationService) AddTask(p *cascade.StartProcessingPay
 	request.RegAttemptID = regAttemptID
 	request.FileID = filename
 	request.BaseFileID = baseFileID
+	request.FileName = filename
 
 	// get image filename from storage based on image_id
 	filePath := filepath.Join(service.config.CascadeFilesDir, p.FileID, filename)
