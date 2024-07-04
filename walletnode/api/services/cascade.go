@@ -398,15 +398,10 @@ func (service *CascadeAPIHandler) GetTaskHistory(ctx context.Context, p *cascade
 }
 
 func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *cascade.RegistrationDetailsPayload) (registrationDetail *cascade.Registration, err error) {
-	log.WithContext(ctx).WithField("file_id", rdp.FileID).Info("Registration detail api invoked")
-	defer log.WithContext(ctx).WithField("file_id", rdp.FileID).Info("Finished registration details")
+	log.WithContext(ctx).WithField("base_file_id", rdp.BaseFileID).Info("Registration detail api invoked")
+	defer log.WithContext(ctx).WithField("base_file_id", rdp.BaseFileID).Info("Finished registration details")
 
-	baseFile, err := service.register.GetFile(rdp.FileID)
-	if err != nil {
-		return nil, cascade.MakeInternalServerError(err)
-	}
-
-	relatedFiles, err := service.register.GetFilesByBaseFileID(baseFile.FileID)
+	relatedFiles, err := service.register.GetFilesByBaseFileID(rdp.BaseFileID)
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(err)
 	}

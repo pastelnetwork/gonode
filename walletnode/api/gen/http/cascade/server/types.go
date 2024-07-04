@@ -942,9 +942,9 @@ func NewDownloadPayload(txid string, pid string, key string) *cascade.DownloadPa
 
 // NewRegistrationDetailsPayload builds a cascade service registrationDetails
 // endpoint payload.
-func NewRegistrationDetailsPayload(fileID string) *cascade.RegistrationDetailsPayload {
+func NewRegistrationDetailsPayload(baseFileID string) *cascade.RegistrationDetailsPayload {
 	v := &cascade.RegistrationDetailsPayload{}
-	v.FileID = fileID
+	v.BaseFileID = baseFileID
 
 	return v
 }

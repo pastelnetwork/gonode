@@ -733,16 +733,16 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 // endpoint
 func (c *Client) BuildRegistrationDetailsRequest(ctx context.Context, v any) (*http.Request, error) {
 	var (
-		fileID string
+		baseFileID string
 	)
 	{
 		p, ok := v.(*cascade.RegistrationDetailsPayload)
 		if !ok {
 			return nil, goahttp.ErrInvalidType("cascade", "registrationDetails", "*cascade.RegistrationDetailsPayload", v)
 		}
-		fileID = p.FileID
+		baseFileID = p.BaseFileID
 	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegistrationDetailsCascadePath(fileID)}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegistrationDetailsCascadePath(baseFileID)}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, goahttp.ErrInvalidURL("cascade", "registrationDetails", u.String(), err)

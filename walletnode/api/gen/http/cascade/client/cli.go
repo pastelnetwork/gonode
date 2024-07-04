@@ -246,20 +246,20 @@ func BuildDownloadPayload(cascadeDownloadTxid string, cascadeDownloadPid string,
 
 // BuildRegistrationDetailsPayload builds the payload for the cascade
 // registrationDetails endpoint from CLI flags.
-func BuildRegistrationDetailsPayload(cascadeRegistrationDetailsFileID string) (*cascade.RegistrationDetailsPayload, error) {
+func BuildRegistrationDetailsPayload(cascadeRegistrationDetailsBaseFileID string) (*cascade.RegistrationDetailsPayload, error) {
 	var err error
-	var fileID string
+	var baseFileID string
 	{
-		fileID = cascadeRegistrationDetailsFileID
-		if utf8.RuneCountInString(fileID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 8, false))
+		baseFileID = cascadeRegistrationDetailsBaseFileID
+		if utf8.RuneCountInString(baseFileID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("base_file_id", baseFileID, utf8.RuneCountInString(baseFileID), 8, false))
 		}
 		if err != nil {
 			return nil, err
 		}
 	}
 	v := &cascade.RegistrationDetailsPayload{}
-	v.FileID = fileID
+	v.BaseFileID = baseFileID
 
 	return v, nil
 }
