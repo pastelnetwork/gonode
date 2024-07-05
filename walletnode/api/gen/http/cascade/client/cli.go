@@ -263,3 +263,68 @@ func BuildRegistrationDetailsPayload(cascadeRegistrationDetailsBaseFileID string
 
 	return v, nil
 }
+
+// BuildRestorePayload builds the payload for the cascade restore endpoint from
+// CLI flags.
+func BuildRestorePayload(cascadeRestoreBody string, cascadeRestoreBaseFileID string, cascadeRestoreKey string) (*cascade.RestorePayload, error) {
+	var err error
+	var body RestoreRequestBody
+	{
+		err = json.Unmarshal([]byte(cascadeRestoreBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"app_pastelId\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"make_publicly_accessible\": false,\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\"\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.app_pastelId", body.AppPastelID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.AppPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.app_pastelId", body.AppPastelID, utf8.RuneCountInString(body.AppPastelID), 86, true))
+		}
+		if utf8.RuneCountInString(body.AppPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.app_pastelId", body.AppPastelID, utf8.RuneCountInString(body.AppPastelID), 86, false))
+		}
+		if body.SpendableAddress != nil {
+			err = goa.MergeErrors(err, goa.ValidatePattern("body.spendable_address", *body.SpendableAddress, "^[a-zA-Z0-9]+$"))
+		}
+		if body.SpendableAddress != nil {
+			if utf8.RuneCountInString(*body.SpendableAddress) < 35 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, true))
+			}
+		}
+		if body.SpendableAddress != nil {
+			if utf8.RuneCountInString(*body.SpendableAddress) > 35 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, false))
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var baseFileID string
+	{
+		baseFileID = cascadeRestoreBaseFileID
+		if utf8.RuneCountInString(baseFileID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("base_file_id", baseFileID, utf8.RuneCountInString(baseFileID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var key string
+	{
+		key = cascadeRestoreKey
+	}
+	v := &cascade.RestorePayload{
+		AppPastelID:            body.AppPastelID,
+		MakePubliclyAccessible: body.MakePubliclyAccessible,
+		SpendableAddress:       body.SpendableAddress,
+	}
+	{
+		var zero bool
+		if v.MakePubliclyAccessible == zero {
+			v.MakePubliclyAccessible = false
+		}
+	}
+	v.BaseFileID = baseFileID
+	v.Key = key
+
+	return v, nil
+}

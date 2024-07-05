@@ -54,6 +54,17 @@ type StartProcessingRequestBody struct {
 	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
 }
 
+// RestoreRequestBody is the type of the "cascade" service "restore" endpoint
+// HTTP request body.
+type RestoreRequestBody struct {
+	// App PastelID
+	AppPastelID string `form:"app_pastelId" json:"app_pastelId" xml:"app_pastelId"`
+	// To make it publicly accessible
+	MakePubliclyAccessible bool `form:"make_publicly_accessible" json:"make_publicly_accessible" xml:"make_publicly_accessible"`
+	// Address to use for registration fee
+	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
+}
+
 // UploadAssetResponseBody is the type of the "cascade" service "uploadAsset"
 // endpoint HTTP response body.
 type UploadAssetResponseBody struct {
@@ -110,6 +121,23 @@ type DownloadResponseBody struct {
 type RegistrationDetailsResponseBody struct {
 	// List of files
 	Files []*FileResponseBody `form:"files,omitempty" json:"files,omitempty" xml:"files,omitempty"`
+}
+
+// RestoreResponseBody is the type of the "cascade" service "restore" endpoint
+// HTTP response body.
+type RestoreResponseBody struct {
+	// Total volumes of selected file
+	TotalVolumes *int `form:"total_volumes,omitempty" json:"total_volumes,omitempty" xml:"total_volumes,omitempty"`
+	// Total registered volumes
+	RegisteredVolumes *int `form:"registered_volumes,omitempty" json:"registered_volumes,omitempty" xml:"registered_volumes,omitempty"`
+	// Total volumes with pending registration
+	VolumesWithPendingRegistration *int `form:"volumes_with_pending_registration,omitempty" json:"volumes_with_pending_registration,omitempty" xml:"volumes_with_pending_registration,omitempty"`
+	// Total volumes with in-progress registration
+	VolumesRegistrationInProgress *int `form:"volumes_registration_in_progress,omitempty" json:"volumes_registration_in_progress,omitempty" xml:"volumes_registration_in_progress,omitempty"`
+	// Total volumes that are activated
+	ActivatedVolumes *int `form:"activated_volumes,omitempty" json:"activated_volumes,omitempty" xml:"activated_volumes,omitempty"`
+	// Total volumes that are activated in restore process
+	VolumesActivatedInRecoveryFlow *int `form:"volumes_activated_in_recovery_flow,omitempty" json:"volumes_activated_in_recovery_flow,omitempty" xml:"volumes_activated_in_recovery_flow,omitempty"`
 }
 
 // UploadAssetBadRequestResponseBody is the type of the "cascade" service
@@ -426,6 +454,60 @@ type RegistrationDetailsInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// RestoreUnAuthorizedResponseBody is the type of the "cascade" service
+// "restore" endpoint HTTP response body for the "UnAuthorized" error.
+type RestoreUnAuthorizedResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// RestoreBadRequestResponseBody is the type of the "cascade" service "restore"
+// endpoint HTTP response body for the "BadRequest" error.
+type RestoreBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// RestoreInternalServerErrorResponseBody is the type of the "cascade" service
+// "restore" endpoint HTTP response body for the "InternalServerError" error.
+type RestoreInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
 // TaskHistoryResponse is used to define fields on response body types.
 type TaskHistoryResponse struct {
 	// Timestamp of the status creation
@@ -566,6 +648,23 @@ func NewStartProcessingRequestBody(p *cascade.StartProcessingPayload) *StartProc
 		for i, val := range p.BurnTxids {
 			body.BurnTxids[i] = val
 		}
+	}
+	{
+		var zero bool
+		if body.MakePubliclyAccessible == zero {
+			body.MakePubliclyAccessible = false
+		}
+	}
+	return body
+}
+
+// NewRestoreRequestBody builds the HTTP request body from the payload of the
+// "restore" endpoint of the "cascade" service.
+func NewRestoreRequestBody(p *cascade.RestorePayload) *RestoreRequestBody {
+	body := &RestoreRequestBody{
+		AppPastelID:            p.AppPastelID,
+		MakePubliclyAccessible: p.MakePubliclyAccessible,
+		SpendableAddress:       p.SpendableAddress,
 	}
 	{
 		var zero bool
@@ -903,6 +1002,66 @@ func NewRegistrationDetailsBadRequest(body *RegistrationDetailsBadRequestRespons
 // NewRegistrationDetailsInternalServerError builds a cascade service
 // registrationDetails endpoint InternalServerError error.
 func NewRegistrationDetailsInternalServerError(body *RegistrationDetailsInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewRestoreFileViewCreated builds a "cascade" service "restore" endpoint
+// result from a HTTP "Created" response.
+func NewRestoreFileViewCreated(body *RestoreResponseBody) *cascadeviews.RestoreFileView {
+	v := &cascadeviews.RestoreFileView{
+		TotalVolumes:                   body.TotalVolumes,
+		RegisteredVolumes:              body.RegisteredVolumes,
+		VolumesWithPendingRegistration: body.VolumesWithPendingRegistration,
+		VolumesRegistrationInProgress:  body.VolumesRegistrationInProgress,
+		ActivatedVolumes:               body.ActivatedVolumes,
+		VolumesActivatedInRecoveryFlow: body.VolumesActivatedInRecoveryFlow,
+	}
+
+	return v
+}
+
+// NewRestoreUnAuthorized builds a cascade service restore endpoint
+// UnAuthorized error.
+func NewRestoreUnAuthorized(body *RestoreUnAuthorizedResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewRestoreBadRequest builds a cascade service restore endpoint BadRequest
+// error.
+func NewRestoreBadRequest(body *RestoreBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewRestoreInternalServerError builds a cascade service restore endpoint
+// InternalServerError error.
+func NewRestoreInternalServerError(body *RestoreInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -1328,6 +1487,78 @@ func ValidateRegistrationDetailsBadRequestResponseBody(body *RegistrationDetails
 // ValidateRegistrationDetailsInternalServerErrorResponseBody runs the
 // validations defined on registrationDetails_InternalServerError_response_body
 func ValidateRegistrationDetailsInternalServerErrorResponseBody(body *RegistrationDetailsInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateRestoreUnAuthorizedResponseBody runs the validations defined on
+// restore_UnAuthorized_response_body
+func ValidateRestoreUnAuthorizedResponseBody(body *RestoreUnAuthorizedResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateRestoreBadRequestResponseBody runs the validations defined on
+// restore_BadRequest_response_body
+func ValidateRestoreBadRequestResponseBody(body *RestoreBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateRestoreInternalServerErrorResponseBody runs the validations defined
+// on restore_InternalServerError_response_body
+func ValidateRestoreInternalServerErrorResponseBody(body *RestoreInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

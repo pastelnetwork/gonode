@@ -2,6 +2,7 @@ package ticketstore
 
 import (
 	"github.com/pastelnetwork/gonode/common/types"
+	"time"
 )
 
 type RegistrationAttemptsQueries interface {
@@ -15,14 +16,14 @@ type RegistrationAttemptsQueries interface {
 func (s *TicketStore) InsertRegistrationAttempt(attempt types.RegistrationAttempt) (int64, error) {
 	const insertQuery = `
         INSERT INTO registration_attempts (
-            file_id, reg_started_at, processor_sns, finished_at, is_successful, error_message
-        ) VALUES (?, ?, ?, ?, ?, ?)
+            file_id, reg_started_at, processor_sns, finished_at, is_successful, error_message, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id;`
 
 	var id int64
 	err := s.db.QueryRow(insertQuery,
 		attempt.FileID, attempt.RegStartedAt, attempt.ProcessorSNS,
-		attempt.FinishedAt, attempt.IsSuccessful, attempt.ErrorMessage).Scan(&id)
+		attempt.FinishedAt, attempt.IsSuccessful, attempt.ErrorMessage, time.Now().UTC(), time.Now().UTC()).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -38,14 +39,15 @@ func (s *TicketStore) UpdateRegistrationAttempt(attempt types.RegistrationAttemp
             processor_sns = ?,
             finished_at = ?,
             is_successful = ?,
-            error_message = ?
+            error_message = ?,
+        	updated_at = ?
         WHERE id = ? AND file_id = ?
         RETURNING id;`
 
 	var id int64
 	err := s.db.QueryRow(updateQuery,
 		attempt.RegStartedAt, attempt.ProcessorSNS, attempt.FinishedAt,
-		attempt.IsSuccessful, attempt.ErrorMessage,
+		attempt.IsSuccessful, attempt.ErrorMessage, time.Now().UTC(),
 		attempt.ID, attempt.FileID).Scan(&id)
 	if err != nil {
 		return 0, err

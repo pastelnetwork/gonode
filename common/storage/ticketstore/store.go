@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS files (
     size_of_original_big_file FLOAT,
     data_type_of_original_big_file TEXT,
     start_block INTEGER,
-    done_block INTEGER
+    done_block INTEGER,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
 );
 `
 
@@ -43,7 +45,9 @@ CREATE TABLE IF NOT EXISTS registration_attempts (
     processor_sns TEXT,
     finished_at DATETIME,
     is_successful BOOLEAN,
-    error_message TEXT
+    error_message TEXT,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
 );
 `
 
@@ -53,7 +57,19 @@ CREATE TABLE IF NOT EXISTS activation_attempts (
     file_id TEXT NOT NULL,
     activation_attempt_at DATETIME,
     is_successful BOOLEAN,
-    error_message TEXT
+    error_message TEXT,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+`
+
+const createMultiVolCascadeTicketTxIDMap string = `
+CREATE TABLE IF NOT EXISTS multi_vol_cascade_tickets_txid_map (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    base_file_id TEXT NOT NULL,
+    multi_vol_cascade_ticket_txid TEXT NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL                                                          
 );
 `
 
@@ -93,6 +109,8 @@ func OpenTicketingDb() (TicketStorageInterface, error) {
 	if _, err := db.Exec(createActivationAttemptsTable); err != nil {
 		return nil, fmt.Errorf("cannot create table(s): %w", err)
 	}
+
+	_, _ = db.Exec(createMultiVolCascadeTicketTxIDMap)
 
 	pragmas := []string{
 		"PRAGMA synchronous=NORMAL;",

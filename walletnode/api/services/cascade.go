@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/types"
 	"os"
 	"path/filepath"
 	"strings"
@@ -129,7 +130,23 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 			return nil, cascade.MakeInternalServerError(err)
 		}
 
-		taskID, err := service.register.ProcessFile(ctx, *baseFile, p)
+		if p.BurnTxid == nil {
+			return nil, cascade.MakeInternalServerError(errors.New("BurnTxId must not be null for single related file"))
+		}
+
+		addTaskPayload := &common.AddTaskPayload{
+			FileID:                 p.FileID,
+			BurnTxid:               p.BurnTxid,
+			AppPastelID:            p.AppPastelID,
+			MakePubliclyAccessible: p.MakePubliclyAccessible,
+			Key:                    p.Key,
+		}
+
+		if p.SpendableAddress != nil {
+			addTaskPayload.SpendableAddress = p.SpendableAddress
+		}
+
+		taskID, err := service.register.ProcessFile(ctx, *baseFile, addTaskPayload)
 		if err != nil {
 			return nil, cascade.MakeBadRequest(err)
 		}
@@ -158,7 +175,20 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 		for index, file := range sortedRelatedFiles {
 			burnTxID := sortedBurnTxids[index]
 			p.BurnTxid = &burnTxID
-			taskID, err := service.register.ProcessFile(ctx, *file, p)
+
+			addTaskPayload := &common.AddTaskPayload{
+				FileID:                 file.FileID,
+				BurnTxid:               p.BurnTxid,
+				AppPastelID:            p.AppPastelID,
+				MakePubliclyAccessible: p.MakePubliclyAccessible,
+				Key:                    p.Key,
+			}
+
+			if p.SpendableAddress != nil {
+				addTaskPayload.SpendableAddress = p.SpendableAddress
+			}
+
+			taskID, err := service.register.ProcessFile(ctx, *file, addTaskPayload)
 			if err != nil {
 				log.WithContext(ctx).WithField("file_id", file.FileID).WithError(err).Error("error processing volume")
 				continue
@@ -406,6 +436,12 @@ func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *
 		return nil, cascade.MakeInternalServerError(err)
 	}
 
+	var metadataTicketTxID string
+	cascadeMultiVolTicketTxIDMap, err := service.register.GetMultiVolTicketTxIDMap(rdp.BaseFileID)
+	if cascadeMultiVolTicketTxIDMap != nil {
+		metadataTicketTxID = cascadeMultiVolTicketTxIDMap.MultiVolCascadeTicketTxid
+	}
+
 	var fileDetails []*cascade.File
 	for _, relatedFile := range relatedFiles {
 		relatedFileActivationAttempts, err := service.register.GetActivationAttemptsByFileID(relatedFile.FileID)
@@ -455,7 +491,7 @@ func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *
 			BurnTxnID:                    &relatedFile.BurnTxnID,
 			ReqAmount:                    relatedFile.ReqAmount,
 			IsConcluded:                  &relatedFile.IsConcluded,
-			CascadeMetadataTicketID:      relatedFile.CascadeMetadataTicketID,
+			CascadeMetadataTicketID:      metadataTicketTxID,
 			UUIDKey:                      &relatedFile.UUIDKey,
 			HashOfOriginalBigFile:        relatedFile.HashOfOriginalBigFile,
 			NameOfOriginalBigFileWithExt: relatedFile.NameOfOriginalBigFileWithExt,
@@ -471,6 +507,129 @@ func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *
 
 	return &cascade.Registration{
 		Files: fileDetails,
+	}, nil
+}
+
+// Restore - to recover files registration and activation that was missed in initial file registration.
+func (service *CascadeAPIHandler) Restore(ctx context.Context, p *cascade.RestorePayload) (res *cascade.RestoreFile, err error) {
+	if !service.register.ValidateUser(ctx, p.AppPastelID, p.Key) {
+		return nil, cascade.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
+	// Get Concluded volumes
+	concludedVolumes, err := service.register.GetConcludedVolumesByBaseFileID(p.BaseFileID)
+	if err != nil {
+		return nil, cascade.MakeInternalServerError(err)
+	}
+	log.WithContext(ctx).WithField("total_concluded_volumes", len(concludedVolumes)).
+		Info("Related concluded volumes retrieved from the base file-id")
+
+	// Get UnConcluded volumes
+	unConcludedVolumes, err := service.register.GetUnConcludedVolumesByBaseFileID(p.BaseFileID)
+	if err != nil {
+		return nil, cascade.MakeInternalServerError(err)
+	}
+	log.WithContext(ctx).WithField("total_un_concluded_volumes", len(unConcludedVolumes)).
+		Info("Related un-concluded volumes retrieved from the base file-id")
+
+	// check if volumes already concluded
+	if len(unConcludedVolumes) == 0 {
+		log.WithContext(ctx).
+			Info("All volumes are already concluded")
+		return &cascade.RestoreFile{
+			TotalVolumes:                   len(concludedVolumes),
+			RegisteredVolumes:              len(concludedVolumes),
+			VolumesWithPendingRegistration: 0,
+			VolumesRegistrationInProgress:  0,
+			ActivatedVolumes:               len(concludedVolumes),
+			VolumesActivatedInRecoveryFlow: 0,
+		}, nil
+	}
+
+	var registeredVolumes int
+	var volumesWithInProgressRegCount int
+	var volumesActivatedInRecoveryFlow int
+
+	// Get BurnTxId by file amount and process un-concluded files that are un-registered or un-activated
+
+	logger := log.WithContext(ctx).WithField("base_file_id", p.BaseFileID)
+
+	for _, unConcludedVolume := range unConcludedVolumes {
+		if unConcludedVolume.RegTxid == "" {
+			logger.WithField("volume_name", unConcludedVolume.FileID).Info("find a volume with no registration, trying again...")
+
+			burnTxId, err := service.register.GetBurnTxIdByAmount(ctx, int64(unConcludedVolume.ReqBurnTxnAmount))
+			if err != nil {
+				log.WithContext(ctx).WithField("amount", int64(unConcludedVolume.ReqBurnTxnAmount)).WithError(err).Error("error getting burn TxId for amount")
+				return nil, cascade.MakeInternalServerError(err)
+			}
+			logger.WithField("volume_name", unConcludedVolume.FileID).Info("estimated fee has been burned, sending for registration")
+
+			addTaskPayload := &common.AddTaskPayload{
+				FileID:                 unConcludedVolume.FileID,
+				BurnTxid:               &burnTxId,
+				AppPastelID:            p.AppPastelID,
+				MakePubliclyAccessible: p.MakePubliclyAccessible,
+				Key:                    p.Key,
+			}
+
+			if p.SpendableAddress != nil {
+				addTaskPayload.SpendableAddress = p.SpendableAddress
+			}
+
+			_, err = service.register.ProcessFile(ctx, *unConcludedVolume, addTaskPayload)
+			if err != nil {
+				log.WithContext(ctx).WithField("file_id", unConcludedVolume.FileID).WithError(err).Error("error processing un-concluded volume")
+				continue
+			}
+			logger.WithField("volume_name", unConcludedVolume.FileID).Info("task added for registration recovery")
+
+			volumesWithInProgressRegCount += 1
+		} else if unConcludedVolume.ActivationTxid == "" {
+			registeredVolumes += 1
+			logger.WithField("volume_name", unConcludedVolume.FileID).Info("find a volume with no activation, trying again...")
+
+			// activation code
+			actAttemptId, err := service.register.InsertActivationAttempt(types.ActivationAttempt{
+				FileID:              unConcludedVolume.FileID,
+				ActivationAttemptAt: time.Now().UTC(),
+			})
+			if err != nil {
+				log.WithContext(ctx).WithField("file_id", unConcludedVolume.FileID).WithError(err).Error("error inserting activation attempt")
+				continue
+			}
+
+			activateActReq := pastel.ActivateActionRequest{
+				RegTxID:    unConcludedVolume.RegTxid,
+				Fee:        int64(unConcludedVolume.ReqAmount) - 10,
+				PastelID:   p.AppPastelID,
+				Passphrase: p.Key,
+			}
+
+			err = service.register.ActivateActionTicketAndRegisterVolumeTicket(ctx, activateActReq, *unConcludedVolume, actAttemptId)
+			if err != nil {
+				log.WithContext(ctx).WithField("file_id", unConcludedVolume.FileID).WithError(err).Error("error activating or registering un-concluded volume")
+				continue
+			}
+			logger.WithField("volume_name", unConcludedVolume.FileID).Info("request has been sent for activation")
+
+			volumesActivatedInRecoveryFlow += 1
+		}
+	}
+
+	// only set base file txId return by pastel register all else remains nil
+	_, err = service.register.RegisterVolumeTicket(ctx, p.BaseFileID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cascade.RestoreFile{
+		TotalVolumes:                   len(concludedVolumes) + len(unConcludedVolumes),
+		RegisteredVolumes:              len(concludedVolumes) + registeredVolumes,
+		VolumesWithPendingRegistration: volumesWithInProgressRegCount,
+		VolumesRegistrationInProgress:  volumesWithInProgressRegCount,
+		ActivatedVolumes:               len(unConcludedVolumes) + volumesActivatedInRecoveryFlow,
+		VolumesActivatedInRecoveryFlow: volumesActivatedInRecoveryFlow,
 	}, nil
 }
 

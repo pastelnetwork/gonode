@@ -45,3 +45,8 @@ func DownloadCascadePath() string {
 func RegistrationDetailsCascadePath(baseFileID string) string {
 	return fmt.Sprintf("/openapi/cascade/registration_details/%v", baseFileID)
 }
+
+// RestoreCascadePath returns the URL path to the cascade service restore HTTP endpoint.
+func RestoreCascadePath(baseFileID string) string {
+	return fmt.Sprintf("/openapi/cascade/restore/%v", baseFileID)
+}

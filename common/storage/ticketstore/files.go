@@ -2,6 +2,7 @@ package ticketstore
 
 import (
 	"github.com/pastelnetwork/gonode/common/types"
+	"time"
 )
 
 type FilesQueries interface {
@@ -9,6 +10,7 @@ type FilesQueries interface {
 	GetFileByID(fileID string) (*types.File, error)
 	GetFilesByBaseFileID(baseFileID string) ([]*types.File, error)
 	GetFileByTaskID(taskID string) (*types.File, error)
+	GetFilesByBaseFileIDAndConcludedCheck(baseFileID string, isConcluded bool) ([]*types.File, error)
 }
 
 // UpsertFile inserts a new file into the files table
@@ -20,8 +22,8 @@ func (s *TicketStore) UpsertFile(file types.File) error {
             req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
             hash_of_original_big_file, name_of_original_big_file_with_ext, 
             size_of_original_big_file, data_type_of_original_big_file, 
-            start_block, done_block
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            start_block, done_block, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(file_id) 
         DO UPDATE SET
             upload_timestamp = COALESCE(excluded.upload_timestamp, files.upload_timestamp),
@@ -50,7 +52,7 @@ func (s *TicketStore) UpsertFile(file types.File) error {
 		file.ReqAmount, file.IsConcluded, file.CascadeMetadataTicketID, file.UUIDKey,
 		file.HashOfOriginalBigFile, file.NameOfOriginalBigFileWithExt,
 		file.SizeOfOriginalBigFile, file.DataTypeOfOriginalBigFile,
-		file.StartBlock, file.DoneBlock)
+		file.StartBlock, file.DoneBlock, time.Now().UTC(), time.Now().UTC())
 	if err != nil {
 		return err
 	}
@@ -129,6 +131,47 @@ func (s *TicketStore) GetFilesByBaseFileID(baseFileID string) ([]*types.File, er
         WHERE base_file_id = ?;`
 
 	rows, err := s.db.Query(selectQuery, baseFileID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []*types.File
+	for rows.Next() {
+		var file types.File
+		err := rows.Scan(
+			&file.FileID, &file.UploadTimestamp, &file.Path, &file.FileIndex, &file.BaseFileID, &file.TaskID,
+			&file.RegTxid, &file.ActivationTxid, &file.ReqBurnTxnAmount, &file.BurnTxnID,
+			&file.ReqAmount, &file.IsConcluded, &file.CascadeMetadataTicketID, &file.UUIDKey,
+			&file.HashOfOriginalBigFile, &file.NameOfOriginalBigFileWithExt,
+			&file.SizeOfOriginalBigFile, &file.DataTypeOfOriginalBigFile,
+			&file.StartBlock, &file.DoneBlock)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, &file)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
+// GetFilesByBaseFileIDAndConcludedCheck retrieves un-concluded files by base_file_id and is_concluded check from the files table.
+func (s *TicketStore) GetFilesByBaseFileIDAndConcludedCheck(baseFileID string, isConcluded bool) ([]*types.File, error) {
+	const selectQuery = `
+        SELECT file_id, upload_timestamp, path, file_index, base_file_id, task_id, 
+               reg_txid, activation_txid, req_burn_txn_amount, burn_txn_id, 
+               req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
+               hash_of_original_big_file, name_of_original_big_file_with_ext, 
+               size_of_original_big_file, data_type_of_original_big_file, 
+               start_block, done_block
+        FROM files
+        WHERE base_file_id = ? AND is_concluded = ?;`
+
+	rows, err := s.db.Query(selectQuery, baseFileID, isConcluded)
 	if err != nil {
 		return nil, err
 	}

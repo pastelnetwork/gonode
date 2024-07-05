@@ -22,10 +22,11 @@ type Client struct {
 	GetTaskHistoryEndpoint      goa.Endpoint
 	DownloadEndpoint            goa.Endpoint
 	RegistrationDetailsEndpoint goa.Endpoint
+	RestoreEndpoint             goa.Endpoint
 }
 
 // NewClient initializes a "cascade" service client given the endpoints.
-func NewClient(uploadAsset, uploadAssetV2, startProcessing, registerTaskState, getTaskHistory, download, registrationDetails goa.Endpoint) *Client {
+func NewClient(uploadAsset, uploadAssetV2, startProcessing, registerTaskState, getTaskHistory, download, registrationDetails, restore goa.Endpoint) *Client {
 	return &Client{
 		UploadAssetEndpoint:         uploadAsset,
 		UploadAssetV2Endpoint:       uploadAssetV2,
@@ -34,6 +35,7 @@ func NewClient(uploadAsset, uploadAssetV2, startProcessing, registerTaskState, g
 		GetTaskHistoryEndpoint:      getTaskHistory,
 		DownloadEndpoint:            download,
 		RegistrationDetailsEndpoint: registrationDetails,
+		RestoreEndpoint:             restore,
 	}
 }
 
@@ -150,4 +152,20 @@ func (c *Client) RegistrationDetails(ctx context.Context, p *RegistrationDetails
 		return
 	}
 	return ires.(*Registration), nil
+}
+
+// Restore calls the "restore" endpoint of the "cascade" service.
+// Restore may return the following errors:
+//   - "UnAuthorized" (type *goa.ServiceError)
+//   - "BadRequest" (type *goa.ServiceError)
+//   - "NotFound" (type *goa.ServiceError)
+//   - "InternalServerError" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) Restore(ctx context.Context, p *RestorePayload) (res *RestoreFile, err error) {
+	var ires any
+	ires, err = c.RestoreEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*RestoreFile), nil
 }

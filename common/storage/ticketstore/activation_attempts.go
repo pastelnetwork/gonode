@@ -2,6 +2,7 @@ package ticketstore
 
 import (
 	"github.com/pastelnetwork/gonode/common/types"
+	"time"
 )
 
 type ActivationAttemptsQueries interface {
@@ -15,14 +16,14 @@ type ActivationAttemptsQueries interface {
 func (s *TicketStore) InsertActivationAttempt(attempt types.ActivationAttempt) (int64, error) {
 	const insertQuery = `
         INSERT INTO activation_attempts (
-            file_id, activation_attempt_at, is_successful, error_message
-        ) VALUES (?, ?, ?, ?)
+            file_id, activation_attempt_at, is_successful, error_message, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?)
         RETURNING id;`
 
 	var id int64
 	err := s.db.QueryRow(insertQuery,
 		attempt.FileID, attempt.ActivationAttemptAt,
-		attempt.IsSuccessful, attempt.ErrorMessage).Scan(&id)
+		attempt.IsSuccessful, attempt.ErrorMessage, time.Now().UTC(), time.Now().UTC()).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -34,7 +35,7 @@ func (s *TicketStore) InsertActivationAttempt(attempt types.ActivationAttempt) (
 func (s *TicketStore) UpdateActivationAttempt(attempt types.ActivationAttempt) (int64, error) {
 	const updateQuery = `
         UPDATE activation_attempts
-        SET activation_attempt_at = ?, is_successful = ?, error_message = ?
+        SET activation_attempt_at = ?, is_successful = ?, error_message = ?, updated_at = ?
         WHERE id = ? AND file_id = ?
         RETURNING id`
 
@@ -43,6 +44,7 @@ func (s *TicketStore) UpdateActivationAttempt(attempt types.ActivationAttempt) (
 		attempt.ActivationAttemptAt,
 		attempt.IsSuccessful,
 		attempt.ErrorMessage,
+		time.Now().UTC(),
 		attempt.ID,
 		attempt.FileID).Scan(&id)
 	if err != nil {

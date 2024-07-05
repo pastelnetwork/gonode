@@ -46,6 +46,14 @@ type Registration struct {
 	View string
 }
 
+// RestoreFile is the viewed result type that is projected based on a view.
+type RestoreFile struct {
+	// Type to project
+	Projected *RestoreFileView
+	// View to render
+	View string
+}
+
 // AssetView is a type that runs validations on a projected type.
 type AssetView struct {
 	// Uploaded file ID
@@ -161,6 +169,22 @@ type ActivationAttemptView struct {
 	ErrorMessage *string
 }
 
+// RestoreFileView is a type that runs validations on a projected type.
+type RestoreFileView struct {
+	// Total volumes of selected file
+	TotalVolumes *int
+	// Total registered volumes
+	RegisteredVolumes *int
+	// Total volumes with pending registration
+	VolumesWithPendingRegistration *int
+	// Total volumes with in-progress registration
+	VolumesRegistrationInProgress *int
+	// Total volumes that are activated
+	ActivatedVolumes *int
+	// Total volumes that are activated in restore process
+	VolumesActivatedInRecoveryFlow *int
+}
+
 var (
 	// AssetMap is a map indexing the attribute names of Asset by view name.
 	AssetMap = map[string][]string{
@@ -191,6 +215,18 @@ var (
 	RegistrationMap = map[string][]string{
 		"default": {
 			"files",
+		},
+	}
+	// RestoreFileMap is a map indexing the attribute names of RestoreFile by view
+	// name.
+	RestoreFileMap = map[string][]string{
+		"default": {
+			"total_volumes",
+			"registered_volumes",
+			"volumes_with_pending_registration",
+			"volumes_registration_in_progress",
+			"activated_volumes",
+			"volumes_activated_in_recovery_flow",
 		},
 	}
 )
@@ -236,6 +272,18 @@ func ValidateRegistration(result *Registration) (err error) {
 	switch result.View {
 	case "default", "":
 		err = ValidateRegistrationView(result.Projected)
+	default:
+		err = goa.InvalidEnumValueError("view", result.View, []any{"default"})
+	}
+	return
+}
+
+// ValidateRestoreFile runs the validations defined on the viewed result type
+// RestoreFile.
+func ValidateRestoreFile(result *RestoreFile) (err error) {
+	switch result.View {
+	case "default", "":
+		err = ValidateRestoreFileView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []any{"default"})
 	}
@@ -441,6 +489,30 @@ func ValidateActivationAttemptView(result *ActivationAttemptView) (err error) {
 	}
 	if result.ActivationAttemptAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.activation_attempt_at", *result.ActivationAttemptAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateRestoreFileView runs the validations defined on RestoreFileView
+// using the "default" view.
+func ValidateRestoreFileView(result *RestoreFileView) (err error) {
+	if result.TotalVolumes == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_volumes", "result"))
+	}
+	if result.RegisteredVolumes == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("registered_volumes", "result"))
+	}
+	if result.VolumesWithPendingRegistration == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("volumes_with_pending_registration", "result"))
+	}
+	if result.VolumesRegistrationInProgress == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("volumes_registration_in_progress", "result"))
+	}
+	if result.ActivatedVolumes == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("activated_volumes", "result"))
+	}
+	if result.VolumesActivatedInRecoveryFlow == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("volumes_activated_in_recovery_flow", "result"))
 	}
 	return
 }

@@ -32,6 +32,8 @@ type Service interface {
 	Download(context.Context, *DownloadPayload) (res *FileDownloadResult, err error)
 	// Get the file registration details
 	RegistrationDetails(context.Context, *RegistrationDetailsPayload) (res *Registration, err error)
+	// Restore the files cascade registration
+	Restore(context.Context, *RestorePayload) (res *RestoreFile, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -54,7 +56,7 @@ const ServiceName = "cascade"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [7]string{"uploadAsset", "uploadAssetV2", "startProcessing", "registerTaskState", "getTaskHistory", "download", "registrationDetails"}
+var MethodNames = [8]string{"uploadAsset", "uploadAssetV2", "startProcessing", "registerTaskState", "getTaskHistory", "download", "registrationDetails", "restore"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -222,6 +224,36 @@ type RegistrationDetailsPayload struct {
 	BaseFileID string
 }
 
+// RestoreFile is the result type of the cascade service restore method.
+type RestoreFile struct {
+	// Total volumes of selected file
+	TotalVolumes int
+	// Total registered volumes
+	RegisteredVolumes int
+	// Total volumes with pending registration
+	VolumesWithPendingRegistration int
+	// Total volumes with in-progress registration
+	VolumesRegistrationInProgress int
+	// Total volumes that are activated
+	ActivatedVolumes int
+	// Total volumes that are activated in restore process
+	VolumesActivatedInRecoveryFlow int
+}
+
+// RestorePayload is the payload type of the cascade service restore method.
+type RestorePayload struct {
+	// Base file ID
+	BaseFileID string
+	// App PastelID
+	AppPastelID string
+	// Passphrase of the owner's PastelID
+	Key string
+	// To make it publicly accessible
+	MakePubliclyAccessible bool
+	// Address to use for registration fee
+	SpendableAddress *string
+}
+
 // StartProcessingPayload is the payload type of the cascade service
 // startProcessing method.
 type StartProcessingPayload struct {
@@ -364,6 +396,19 @@ func NewViewedRegistration(res *Registration, view string) *cascadeviews.Registr
 	return &cascadeviews.Registration{Projected: p, View: "default"}
 }
 
+// NewRestoreFile initializes result type RestoreFile from viewed result type
+// RestoreFile.
+func NewRestoreFile(vres *cascadeviews.RestoreFile) *RestoreFile {
+	return newRestoreFile(vres.Projected)
+}
+
+// NewViewedRestoreFile initializes viewed result type RestoreFile from result
+// type RestoreFile using the given view.
+func NewViewedRestoreFile(res *RestoreFile, view string) *cascadeviews.RestoreFile {
+	p := newRestoreFileView(res)
+	return &cascadeviews.RestoreFile{Projected: p, View: "default"}
+}
+
 // newAsset converts projected type Asset to service type Asset.
 func newAsset(vres *cascadeviews.AssetView) *Asset {
 	res := &Asset{}
@@ -480,6 +525,45 @@ func newRegistrationView(res *Registration) *cascadeviews.RegistrationView {
 		}
 	} else {
 		vres.Files = []*cascadeviews.FileView{}
+	}
+	return vres
+}
+
+// newRestoreFile converts projected type RestoreFile to service type
+// RestoreFile.
+func newRestoreFile(vres *cascadeviews.RestoreFileView) *RestoreFile {
+	res := &RestoreFile{}
+	if vres.TotalVolumes != nil {
+		res.TotalVolumes = *vres.TotalVolumes
+	}
+	if vres.RegisteredVolumes != nil {
+		res.RegisteredVolumes = *vres.RegisteredVolumes
+	}
+	if vres.VolumesWithPendingRegistration != nil {
+		res.VolumesWithPendingRegistration = *vres.VolumesWithPendingRegistration
+	}
+	if vres.VolumesRegistrationInProgress != nil {
+		res.VolumesRegistrationInProgress = *vres.VolumesRegistrationInProgress
+	}
+	if vres.ActivatedVolumes != nil {
+		res.ActivatedVolumes = *vres.ActivatedVolumes
+	}
+	if vres.VolumesActivatedInRecoveryFlow != nil {
+		res.VolumesActivatedInRecoveryFlow = *vres.VolumesActivatedInRecoveryFlow
+	}
+	return res
+}
+
+// newRestoreFileView projects result type RestoreFile to projected type
+// RestoreFileView using the "default" view.
+func newRestoreFileView(res *RestoreFile) *cascadeviews.RestoreFileView {
+	vres := &cascadeviews.RestoreFileView{
+		TotalVolumes:                   &res.TotalVolumes,
+		RegisteredVolumes:              &res.RegisteredVolumes,
+		VolumesWithPendingRegistration: &res.VolumesWithPendingRegistration,
+		VolumesRegistrationInProgress:  &res.VolumesRegistrationInProgress,
+		ActivatedVolumes:               &res.ActivatedVolumes,
+		VolumesActivatedInRecoveryFlow: &res.VolumesActivatedInRecoveryFlow,
 	}
 	return vres
 }
