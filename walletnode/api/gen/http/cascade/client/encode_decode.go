@@ -843,6 +843,140 @@ func DecodeRegistrationDetailsResponse(decoder func(*http.Response) goahttp.Deco
 	}
 }
 
+// BuildRestoreRequest instantiates a HTTP request object with method and path
+// set to call the "cascade" service "restore" endpoint
+func (c *Client) BuildRestoreRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		baseFileID string
+	)
+	{
+		p, ok := v.(*cascade.RestorePayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("cascade", "restore", "*cascade.RestorePayload", v)
+		}
+		baseFileID = p.BaseFileID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RestoreCascadePath(baseFileID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("cascade", "restore", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeRestoreRequest returns an encoder for requests sent to the cascade
+// restore server.
+func EncodeRestoreRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*cascade.RestorePayload)
+		if !ok {
+			return goahttp.ErrInvalidType("cascade", "restore", "*cascade.RestorePayload", v)
+		}
+		{
+			head := p.Key
+			req.Header.Set("Authorization", head)
+		}
+		body := NewRestoreRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("cascade", "restore", err)
+		}
+		return nil
+	}
+}
+
+// DecodeRestoreResponse returns a decoder for responses returned by the
+// cascade restore endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeRestoreResponse may return the following errors:
+//   - "UnAuthorized" (type *goa.ServiceError): http.StatusUnauthorized
+//   - "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//   - "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
+func DecodeRestoreResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body RestoreResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "restore", err)
+			}
+			p := NewRestoreFileViewCreated(&body)
+			view := "default"
+			vres := &cascadeviews.RestoreFile{Projected: p, View: view}
+			if err = cascadeviews.ValidateRestoreFile(vres); err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "restore", err)
+			}
+			res := cascade.NewRestoreFile(vres)
+			return res, nil
+		case http.StatusUnauthorized:
+			var (
+				body RestoreUnAuthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "restore", err)
+			}
+			err = ValidateRestoreUnAuthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "restore", err)
+			}
+			return nil, NewRestoreUnAuthorized(&body)
+		case http.StatusBadRequest:
+			var (
+				body RestoreBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "restore", err)
+			}
+			err = ValidateRestoreBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "restore", err)
+			}
+			return nil, NewRestoreBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body RestoreInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("cascade", "restore", err)
+			}
+			err = ValidateRestoreInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("cascade", "restore", err)
+			}
+			return nil, NewRestoreInternalServerError(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("cascade", "restore", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // unmarshalTaskHistoryResponseToCascadeTaskHistory builds a value of type
 // *cascade.TaskHistory from a value of type *TaskHistoryResponse.
 func unmarshalTaskHistoryResponseToCascadeTaskHistory(v *TaskHistoryResponse) *cascade.TaskHistory {

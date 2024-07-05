@@ -23,6 +23,7 @@ type Endpoints struct {
 	GetTaskHistory      goa.Endpoint
 	Download            goa.Endpoint
 	RegistrationDetails goa.Endpoint
+	Restore             goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -47,6 +48,7 @@ func NewEndpoints(s Service) *Endpoints {
 		GetTaskHistory:      NewGetTaskHistoryEndpoint(s),
 		Download:            NewDownloadEndpoint(s, a.APIKeyAuth),
 		RegistrationDetails: NewRegistrationDetailsEndpoint(s),
+		Restore:             NewRestoreEndpoint(s, a.APIKeyAuth),
 	}
 }
 
@@ -59,6 +61,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetTaskHistory = m(e.GetTaskHistory)
 	e.Download = m(e.Download)
 	e.RegistrationDetails = m(e.RegistrationDetails)
+	e.Restore = m(e.Restore)
 }
 
 // NewUploadAssetEndpoint returns an endpoint function that calls the method
@@ -160,6 +163,30 @@ func NewRegistrationDetailsEndpoint(s Service) goa.Endpoint {
 			return nil, err
 		}
 		vres := NewViewedRegistration(res, "default")
+		return vres, nil
+	}
+}
+
+// NewRestoreEndpoint returns an endpoint function that calls the method
+// "restore" of service "cascade".
+func NewRestoreEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*RestorePayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
+		res, err := s.Restore(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedRestoreFile(res, "default")
 		return vres, nil
 	}
 }

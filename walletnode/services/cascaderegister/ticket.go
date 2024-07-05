@@ -1,12 +1,11 @@
 package cascaderegister
 
 import (
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/cascade"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
-// FromStartProcessingPayload convert StartProcessingPayload to ActionRegistrationRequest
-func FromStartProcessingPayload(payload *cascade.StartProcessingPayload) *common.ActionRegistrationRequest {
+// FromTaskPayload convert TaskPayload to ActionRegistrationRequest
+func FromTaskPayload(payload *common.AddTaskPayload) *common.ActionRegistrationRequest {
 	req := &common.ActionRegistrationRequest{
 		BurnTxID:               *payload.BurnTxid,
 		AppPastelID:            payload.AppPastelID,

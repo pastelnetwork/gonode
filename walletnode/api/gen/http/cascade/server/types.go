@@ -56,6 +56,17 @@ type StartProcessingRequestBody struct {
 	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
 }
 
+// RestoreRequestBody is the type of the "cascade" service "restore" endpoint
+// HTTP request body.
+type RestoreRequestBody struct {
+	// App PastelID
+	AppPastelID *string `form:"app_pastelId,omitempty" json:"app_pastelId,omitempty" xml:"app_pastelId,omitempty"`
+	// To make it publicly accessible
+	MakePubliclyAccessible *bool `form:"make_publicly_accessible,omitempty" json:"make_publicly_accessible,omitempty" xml:"make_publicly_accessible,omitempty"`
+	// Address to use for registration fee
+	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
+}
+
 // UploadAssetResponseBody is the type of the "cascade" service "uploadAsset"
 // endpoint HTTP response body.
 type UploadAssetResponseBody struct {
@@ -112,6 +123,23 @@ type DownloadResponseBody struct {
 type RegistrationDetailsResponseBody struct {
 	// List of files
 	Files []*FileResponseBody `form:"files" json:"files" xml:"files"`
+}
+
+// RestoreResponseBody is the type of the "cascade" service "restore" endpoint
+// HTTP response body.
+type RestoreResponseBody struct {
+	// Total volumes of selected file
+	TotalVolumes int `form:"total_volumes" json:"total_volumes" xml:"total_volumes"`
+	// Total registered volumes
+	RegisteredVolumes int `form:"registered_volumes" json:"registered_volumes" xml:"registered_volumes"`
+	// Total volumes with pending registration
+	VolumesWithPendingRegistration int `form:"volumes_with_pending_registration" json:"volumes_with_pending_registration" xml:"volumes_with_pending_registration"`
+	// Total volumes with in-progress registration
+	VolumesRegistrationInProgress int `form:"volumes_registration_in_progress" json:"volumes_registration_in_progress" xml:"volumes_registration_in_progress"`
+	// Total volumes that are activated
+	ActivatedVolumes int `form:"activated_volumes" json:"activated_volumes" xml:"activated_volumes"`
+	// Total volumes that are activated in restore process
+	VolumesActivatedInRecoveryFlow int `form:"volumes_activated_in_recovery_flow" json:"volumes_activated_in_recovery_flow" xml:"volumes_activated_in_recovery_flow"`
 }
 
 // UploadAssetBadRequestResponseBody is the type of the "cascade" service
@@ -428,6 +456,60 @@ type RegistrationDetailsInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// RestoreUnAuthorizedResponseBody is the type of the "cascade" service
+// "restore" endpoint HTTP response body for the "UnAuthorized" error.
+type RestoreUnAuthorizedResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RestoreBadRequestResponseBody is the type of the "cascade" service "restore"
+// endpoint HTTP response body for the "BadRequest" error.
+type RestoreBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RestoreInternalServerErrorResponseBody is the type of the "cascade" service
+// "restore" endpoint HTTP response body for the "InternalServerError" error.
+type RestoreInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // TaskHistoryResponse is used to define fields on response body types.
 type TaskHistoryResponse struct {
 	// Timestamp of the status creation
@@ -612,6 +694,20 @@ func NewRegistrationDetailsResponseBody(res *cascadeviews.RegistrationView) *Reg
 		}
 	} else {
 		body.Files = []*FileResponseBody{}
+	}
+	return body
+}
+
+// NewRestoreResponseBody builds the HTTP response body from the result of the
+// "restore" endpoint of the "cascade" service.
+func NewRestoreResponseBody(res *cascadeviews.RestoreFileView) *RestoreResponseBody {
+	body := &RestoreResponseBody{
+		TotalVolumes:                   *res.TotalVolumes,
+		RegisteredVolumes:              *res.RegisteredVolumes,
+		VolumesWithPendingRegistration: *res.VolumesWithPendingRegistration,
+		VolumesRegistrationInProgress:  *res.VolumesRegistrationInProgress,
+		ActivatedVolumes:               *res.ActivatedVolumes,
+		VolumesActivatedInRecoveryFlow: *res.VolumesActivatedInRecoveryFlow,
 	}
 	return body
 }
@@ -861,6 +957,48 @@ func NewRegistrationDetailsInternalServerErrorResponseBody(res *goa.ServiceError
 	return body
 }
 
+// NewRestoreUnAuthorizedResponseBody builds the HTTP response body from the
+// result of the "restore" endpoint of the "cascade" service.
+func NewRestoreUnAuthorizedResponseBody(res *goa.ServiceError) *RestoreUnAuthorizedResponseBody {
+	body := &RestoreUnAuthorizedResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRestoreBadRequestResponseBody builds the HTTP response body from the
+// result of the "restore" endpoint of the "cascade" service.
+func NewRestoreBadRequestResponseBody(res *goa.ServiceError) *RestoreBadRequestResponseBody {
+	body := &RestoreBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRestoreInternalServerErrorResponseBody builds the HTTP response body from
+// the result of the "restore" endpoint of the "cascade" service.
+func NewRestoreInternalServerErrorResponseBody(res *goa.ServiceError) *RestoreInternalServerErrorResponseBody {
+	body := &RestoreInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewUploadAssetPayload builds a cascade service uploadAsset endpoint payload.
 func NewUploadAssetPayload(body *UploadAssetRequestBody) *cascade.UploadAssetPayload {
 	v := &cascade.UploadAssetPayload{
@@ -949,6 +1087,24 @@ func NewRegistrationDetailsPayload(baseFileID string) *cascade.RegistrationDetai
 	return v
 }
 
+// NewRestorePayload builds a cascade service restore endpoint payload.
+func NewRestorePayload(body *RestoreRequestBody, baseFileID string, key string) *cascade.RestorePayload {
+	v := &cascade.RestorePayload{
+		AppPastelID:      *body.AppPastelID,
+		SpendableAddress: body.SpendableAddress,
+	}
+	if body.MakePubliclyAccessible != nil {
+		v.MakePubliclyAccessible = *body.MakePubliclyAccessible
+	}
+	if body.MakePubliclyAccessible == nil {
+		v.MakePubliclyAccessible = false
+	}
+	v.BaseFileID = baseFileID
+	v.Key = key
+
+	return v
+}
+
 // ValidateUploadAssetRequestBody runs the validations defined on
 // UploadAssetRequestBody
 func ValidateUploadAssetRequestBody(body *UploadAssetRequestBody) (err error) {
@@ -994,6 +1150,40 @@ func ValidateStartProcessingRequestBody(body *StartProcessingRequestBody) (err e
 	if body.AppPastelID != nil {
 		if utf8.RuneCountInString(*body.AppPastelID) > 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.app_pastelid", *body.AppPastelID, utf8.RuneCountInString(*body.AppPastelID), 86, false))
+		}
+	}
+	if body.SpendableAddress != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.spendable_address", *body.SpendableAddress, "^[a-zA-Z0-9]+$"))
+	}
+	if body.SpendableAddress != nil {
+		if utf8.RuneCountInString(*body.SpendableAddress) < 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, true))
+		}
+	}
+	if body.SpendableAddress != nil {
+		if utf8.RuneCountInString(*body.SpendableAddress) > 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, false))
+		}
+	}
+	return
+}
+
+// ValidateRestoreRequestBody runs the validations defined on RestoreRequestBody
+func ValidateRestoreRequestBody(body *RestoreRequestBody) (err error) {
+	if body.AppPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("app_pastelId", "body"))
+	}
+	if body.AppPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.app_pastelId", *body.AppPastelID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.AppPastelID != nil {
+		if utf8.RuneCountInString(*body.AppPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.app_pastelId", *body.AppPastelID, utf8.RuneCountInString(*body.AppPastelID), 86, true))
+		}
+	}
+	if body.AppPastelID != nil {
+		if utf8.RuneCountInString(*body.AppPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.app_pastelId", *body.AppPastelID, utf8.RuneCountInString(*body.AppPastelID), 86, false))
 		}
 	}
 	if body.SpendableAddress != nil {

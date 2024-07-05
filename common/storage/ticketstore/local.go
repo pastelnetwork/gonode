@@ -11,4 +11,5 @@ type TicketStorageInterface interface {
 	FilesQueries
 	ActivationAttemptsQueries
 	RegistrationAttemptsQueries
+	MultiVolCascadeTicketMapQueries
 }

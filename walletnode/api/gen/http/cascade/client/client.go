@@ -49,6 +49,10 @@ type Client struct {
 	// registrationDetails endpoint.
 	RegistrationDetailsDoer goahttp.Doer
 
+	// Restore Doer is the HTTP client used to make requests to the restore
+	// endpoint.
+	RestoreDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -94,6 +98,7 @@ func NewClient(
 		GetTaskHistoryDoer:      doer,
 		DownloadDoer:            doer,
 		RegistrationDetailsDoer: doer,
+		RestoreDoer:             doer,
 		CORSDoer:                doer,
 		RestoreResponseBody:     restoreBody,
 		scheme:                  scheme,
@@ -271,6 +276,30 @@ func (c *Client) RegistrationDetails() goa.Endpoint {
 		resp, err := c.RegistrationDetailsDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("cascade", "registrationDetails", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// Restore returns an endpoint that makes HTTP requests to the cascade service
+// restore server.
+func (c *Client) Restore() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeRestoreRequest(c.encoder)
+		decodeResponse = DecodeRestoreResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildRestoreRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.RestoreDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("cascade", "restore", err)
 		}
 		return decodeResponse(resp)
 	}

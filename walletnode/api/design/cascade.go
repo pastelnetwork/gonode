@@ -167,6 +167,31 @@ var _ = Service("cascade", func() {
 			Response(StatusCreated)
 		})
 	})
+
+	Method("restore", func() {
+		Description("Restore the files cascade registration")
+		Meta("swagger:summary", "Restore the file details for registration, activation and multi-volume pastel")
+
+		Security(APIKeyAuth)
+
+		Payload(func() {
+			Extend(RestoreFilePayload)
+		})
+		Result(RestoreFileResult)
+
+		HTTP(func() {
+			POST("/restore/{base_file_id}")
+			Params(func() {
+				Param("base_file_id", String)
+			})
+
+			// Define error HTTP statuses.
+			Response("UnAuthorized", StatusUnauthorized)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusCreated)
+		})
+	})
 })
 
 // AssetUploadPayload represents a payload for uploading asset
@@ -341,6 +366,45 @@ var FileRegistrationDetailPayload = Type("FileRegistrationDetailPayload", func()
 	Required("base_file_id")
 })
 
+// RestoreFilePayload - Payload for restore file details.
+var RestoreFilePayload = Type("RestoreFilePayload", func() {
+	Description("Restore file details")
+	Attribute("base_file_id", String, func() {
+		Description("Base file ID")
+		MaxLength(8)
+		Example("VK7mpAqZ")
+	})
+	Attribute("app_pastelId", String, func() {
+		Meta("struct:field:name", "AppPastelID")
+		Description("App PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+	APIKey("api_key", "key", String, func() {
+		Description("Passphrase of the owner's PastelID")
+		Example("Basic abcdef12345")
+	})
+	Attribute("make_publicly_accessible", Boolean, func() {
+		Meta("struct:field:name", "MakePubliclyAccessible")
+		Description("To make it publicly accessible")
+		Example(false)
+		Default(false)
+
+	})
+	Attribute("spendable_address", String, func() {
+		Meta("struct:field:name", "SpendableAddress")
+		Description("Address to use for registration fee ")
+		MinLength(35)
+		MaxLength(35)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j")
+	})
+
+	Required("base_file_id", "app_pastelId", "key")
+})
+
 // FileRegistrationDetailResult is registration detail result.
 var FileRegistrationDetailResult = ResultType("application/vnd.cascade.registration-detail", func() {
 	TypeName("Registration")
@@ -348,6 +412,20 @@ var FileRegistrationDetailResult = ResultType("application/vnd.cascade.registrat
 		Attribute("files", ArrayOf(File), "List of files")
 	})
 	Required("files")
+})
+
+// RestoreFileResult is return type for restore file details.
+var RestoreFileResult = ResultType("application/vnd.cascade.restore-files", func() {
+	TypeName("RestoreFile")
+	Attribute("total_volumes", Int, "Total volumes of selected file")
+	Attribute("registered_volumes", Int, "Total registered volumes")
+	Attribute("volumes_with_pending_registration", Int, "Total volumes with pending registration")
+	Attribute("volumes_registration_in_progress", Int, "Total volumes with in-progress registration")
+	Attribute("activated_volumes", Int, "Total volumes that are activated")
+	Attribute("volumes_activated_in_recovery_flow", Int, "Total volumes that are activated in restore process")
+
+	Required("total_volumes", "registered_volumes", "volumes_with_pending_registration",
+		"volumes_registration_in_progress", "activated_volumes", "volumes_activated_in_recovery_flow")
 })
 
 var File = Type("File", func() {

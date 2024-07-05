@@ -17,3 +17,13 @@ func IsPastelIDTicketRegistered(ctx context.Context, pc pastel.Client, id string
 	idTicket, err := pc.FindTicketByID(ctx, id)
 	return err == nil && idTicket.PastelID == id
 }
+
+type AddTaskPayload struct {
+	FileID                 string
+	BurnTxid               *string
+	BurnTxids              []string
+	AppPastelID            string
+	MakePubliclyAccessible bool
+	SpendableAddress       *string
+	Key                    string
+}

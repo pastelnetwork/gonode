@@ -103,15 +103,15 @@ func (service *CascadeRegistrationService) ValidateUser(ctx context.Context, id 
 }
 
 // AddTask create ticket request and start a new task with the given payload
-func (service *CascadeRegistrationService) AddTask(p *cascade.StartProcessingPayload, regAttemptID int64, filename string, baseFileID string) (string, error) {
-	request := FromStartProcessingPayload(p)
+func (service *CascadeRegistrationService) AddTask(p *common.AddTaskPayload, regAttemptID int64, filename string, baseFileID string) (string, error) {
+	request := FromTaskPayload(p)
 	request.RegAttemptID = regAttemptID
 	request.FileID = filename
 	request.BaseFileID = baseFileID
 	request.FileName = filename
 
 	// get image filename from storage based on image_id
-	filePath := filepath.Join(service.config.CascadeFilesDir, p.FileID, filename)
+	filePath := filepath.Join(service.config.CascadeFilesDir, baseFileID, filename)
 	fileData, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", err
@@ -330,6 +330,26 @@ func (service *CascadeRegistrationService) UpsertFile(file types.File) error {
 	return nil
 }
 
+func (service *CascadeRegistrationService) InsertMultiVolCascadeTicketTxIDMap(m types.MultiVolCascadeTicketTxIDMap) error {
+	err := service.ticketDB.InsertMultiVolCascadeTicketTxIDMap(m)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (service *CascadeRegistrationService) GetMultiVolTicketTxIDMap(baseFileID string) (*types.MultiVolCascadeTicketTxIDMap, error) {
+	txIDMapping, err := service.ticketDB.GetMultiVolCascadeTicketTxIDMap(baseFileID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return txIDMapping, nil
+}
+
 func (service *CascadeRegistrationService) HandleTaskRegistrationErrorAttempts(ctx context.Context, taskID, regTxid, actTxid string, regAttemptID int64, actAttemptID int64, taskError error) error {
 	doneBlock, err := service.pastelHandler.PastelClient.GetBlockCount(ctx)
 	if err != nil {
@@ -460,7 +480,7 @@ func (service *CascadeRegistrationService) HandleTaskRegSuccess(ctx context.Cont
 	return nil
 }
 
-func (service *CascadeRegistrationService) ProcessFile(ctx context.Context, file types.File, p *cascade.StartProcessingPayload) (taskID string, err error) {
+func (service *CascadeRegistrationService) ProcessFile(ctx context.Context, file types.File, p *common.AddTaskPayload) (taskID string, err error) {
 	log.WithContext(ctx).WithField("file_id", file.FileID).WithField("base_file_id", file.BaseFileID).Infof("Processing started for file")
 
 	switch {
@@ -545,6 +565,153 @@ func (service *CascadeRegistrationService) SortFilesWithHigherAmounts(files type
 	})
 
 	return files
+}
+
+func (service *CascadeRegistrationService) GetConcludedVolumesByBaseFileID(BaseFileID string) (types.Files, error) {
+	concludedVolumes, err := service.ticketDB.GetFilesByBaseFileIDAndConcludedCheck(BaseFileID, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return concludedVolumes, nil
+}
+
+func (service *CascadeRegistrationService) GetUnConcludedVolumesByBaseFileID(BaseFileID string) (types.Files, error) {
+
+	UnConcludedVolumes, err := service.ticketDB.GetFilesByBaseFileIDAndConcludedCheck(BaseFileID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return UnConcludedVolumes, nil
+}
+
+func (service *CascadeRegistrationService) GetBurnTxIdByAmount(ctx context.Context, amount int64) (string, error) {
+	txID, err := service.pastelHandler.PastelClient.SendToAddress(ctx, service.pastelHandler.GetBurnAddress(), amount)
+	if err != nil {
+		return "", err
+	}
+
+	return txID, nil
+}
+
+func (service *CascadeRegistrationService) ActivateActionTicketAndRegisterVolumeTicket(ctx context.Context, aar pastel.ActivateActionRequest, baseFile types.File, actAttemptId int64) error {
+	blockCount, err := service.pastelHandler.PastelClient.GetBlockCount(ctx)
+	if err != nil {
+		return err
+	}
+	aar.BlockNum = int(blockCount)
+
+	actTxId, err := service.pastelHandler.PastelClient.ActivateActionTicket(ctx, aar)
+	if err != nil {
+		return err
+	}
+
+	baseFile.ActivationTxid = actTxId
+	err = service.UpsertFile(baseFile)
+	if err != nil {
+		return err
+	}
+
+	actAttempt, err := service.GetActivationAttemptByID(int(actAttemptId))
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Errorf("Error retrieving file act attempt: %v", err.Error())
+		return err
+	}
+
+	actAttempt.IsSuccessful = true
+	actAttempt.ActivationAttemptAt = time.Now().UTC()
+	_, err = service.UpdateActivationAttempts(*actAttempt)
+	if err != nil {
+		log.Errorf("Error in activation attempts upsert: %v", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Context, baseFileID string) (string, error) {
+	log.WithContext(ctx).WithField("base_file_id", baseFileID).Info("Register volumes ticket started")
+
+	multiVolCascadeTicketMap, err := service.GetMultiVolTicketTxIDMap(baseFileID)
+	if err != nil {
+		return "", errors.New("errors retrieving multi-vol-ticket txid map")
+	}
+
+	if multiVolCascadeTicketMap != nil {
+		log.WithContext(ctx).WithField("multi_vol_cascade_ticket_txid", multiVolCascadeTicketMap.MultiVolCascadeTicketTxid).
+			Info("multi-vol-ticket has already been created")
+		return "", nil
+	}
+
+	relatedFiles, err := service.GetFilesByBaseFileID(baseFileID)
+	if err != nil {
+		return "", err
+	}
+
+	if len(relatedFiles) <= 1 {
+		return "", errors.New("related files must be greater than 1")
+	}
+
+	concludedCount := 0
+	requiredConcludedCount := len(relatedFiles)
+	for _, rf := range relatedFiles {
+		if rf.IsConcluded {
+			concludedCount += 1
+		}
+	}
+
+	if concludedCount < requiredConcludedCount || concludedCount > requiredConcludedCount {
+		log.WithContext(ctx).WithField("base_file_id", baseFileID).
+			WithField("related_files", relatedFiles).WithField("concluded_count", concludedCount).
+			WithField("required_concluded_count", requiredConcludedCount).Info("all volumes are not registered or activated yet")
+		return "", nil
+	}
+
+	volumes := make(map[int]string)
+	var sizeOfOriginalFileMB int
+	var nameOfOriginalFile string
+	var sha3256HashOfOriginalFile string
+
+	nameOfOriginalFile = relatedFiles[0].NameOfOriginalBigFileWithExt
+	sizeOfOriginalFileMB = int(relatedFiles[0].SizeOfOriginalBigFile)
+	sha3256HashOfOriginalFile = relatedFiles[0].HashOfOriginalBigFile
+
+	for _, relatedFile := range relatedFiles {
+		fileIndexInt, err := strconv.Atoi(relatedFile.FileIndex)
+		if err != nil {
+			return "", errors.Errorf("error converting file index to int from string")
+		}
+
+		volumes[fileIndexInt] = relatedFile.RegTxid
+	}
+
+	txID, err := service.pastelHandler.PastelClient.RegisterCascadeMultiVolumeTicket(ctx, pastel.CascadeMultiVolumeTicket{
+		NameOfOriginalFile:        nameOfOriginalFile,
+		SizeOfOriginalFileMB:      sizeOfOriginalFileMB,
+		SHA3256HashOfOriginalFile: sha3256HashOfOriginalFile,
+		Volumes:                   volumes,
+	})
+	if err != nil {
+		log.WithContext(ctx).WithField("base_file_id", baseFileID).
+			WithField("related_files", relatedFiles).WithField("concluded_count", concludedCount).
+			WithField("required_concluded_count", requiredConcludedCount).Error("Error in pastel register volume cascade ticket")
+		return txID, err
+	}
+
+	err = service.InsertMultiVolCascadeTicketTxIDMap(types.MultiVolCascadeTicketTxIDMap{
+		MultiVolCascadeTicketTxid: txID,
+		BaseFileID:                baseFileID,
+	})
+	if err != nil {
+		log.WithContext(ctx).WithField("base_file_id", baseFileID).
+			WithField("related_files", relatedFiles).WithField("concluded_count", concludedCount).
+			WithField("required_concluded_count", requiredConcludedCount).Error("Error in storing txId in db after pastel volume registration")
+		return txID, err
+	}
+	log.WithContext(ctx).WithField("base_file_id", baseFileID).WithField("txID", txID).Info("cascade multi-volume registration has been completed")
+
+	return txID, nil
 }
 
 // NewService returns a new Service instance

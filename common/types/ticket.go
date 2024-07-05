@@ -56,3 +56,9 @@ func (fs Files) GetBase() *File {
 
 	return nil
 }
+
+type MultiVolCascadeTicketTxIDMap struct {
+	ID                        int64
+	MultiVolCascadeTicketTxid string
+	BaseFileID                string
+}
