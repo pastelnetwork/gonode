@@ -165,6 +165,13 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 			return nil, cascade.MakeBadRequest(errors.New("provided burn txids and no of volumes are not equal"))
 		}
 
+		if isDuplicateExists(p.BurnTxids) {
+			log.WithContext(ctx).WithField("related_volumes", len(relatedFiles)).
+				WithField("burn_txids", len(p.BurnTxids)).
+				Error("duplicate burn tx-ids exist")
+			return nil, cascade.MakeBadRequest(errors.New("duplicate burn tx-ids exist"))
+		}
+
 		sortedBurnTxids, err := service.register.SortBurnTxIDs(ctx, p.BurnTxids)
 		if err != nil {
 			return nil, cascade.MakeInternalServerError(err)
@@ -205,6 +212,22 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 	}
 
 	return res, nil
+}
+
+func isDuplicateExists(burnTxIDs []string) bool {
+	duplicateBurnTxIDMap := make(map[string]int)
+
+	for _, burnTxID := range burnTxIDs {
+		duplicateBurnTxIDMap[burnTxID]++
+	}
+
+	for _, count := range duplicateBurnTxIDMap {
+		if count > 1 {
+			return true
+		}
+	}
+
+	return false
 }
 
 // RegisterTaskState - Registers a task state
@@ -444,12 +467,12 @@ func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *
 
 	var fileDetails []*cascade.File
 	for _, relatedFile := range relatedFiles {
-		relatedFileActivationAttempts, err := service.register.GetActivationAttemptsByFileID(relatedFile.FileID)
+		relatedFileActivationAttempts, err := service.register.GetActivationAttemptsByFileIDAndBaseFileID(relatedFile.FileID, relatedFile.BaseFileID)
 		if err != nil {
 			return nil, cascade.MakeInternalServerError(err)
 		}
 
-		relatedFileRegistrationAttempts, err := service.register.GetRegistrationAttemptsByFileID(relatedFile.FileID)
+		relatedFileRegistrationAttempts, err := service.register.GetRegistrationAttemptsByFileIDAndBaseFileID(relatedFile.FileID, relatedFile.BaseFileID)
 		if err != nil {
 			return nil, cascade.MakeInternalServerError(err)
 		}
@@ -481,7 +504,6 @@ func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *
 		fileDetails = append(fileDetails, &cascade.File{
 			FileID:                       relatedFile.FileID,
 			UploadTimestamp:              relatedFile.UploadTimestamp.String(),
-			Path:                         &relatedFile.Path,
 			FileIndex:                    &relatedFile.FileIndex,
 			BaseFileID:                   relatedFile.BaseFileID,
 			TaskID:                       relatedFile.TaskID,
@@ -496,7 +518,6 @@ func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *
 			HashOfOriginalBigFile:        relatedFile.HashOfOriginalBigFile,
 			NameOfOriginalBigFileWithExt: relatedFile.NameOfOriginalBigFileWithExt,
 			SizeOfOriginalBigFile:        relatedFile.SizeOfOriginalBigFile,
-			DataTypeOfOriginalBigFile:    relatedFile.DataTypeOfOriginalBigFile,
 			StartBlock:                   &relatedFile.StartBlock,
 			DoneBlock:                    &relatedFile.DoneBlock,
 
@@ -517,56 +538,64 @@ func (service *CascadeAPIHandler) Restore(ctx context.Context, p *cascade.Restor
 	}
 
 	// Get Concluded volumes
-	concludedVolumes, err := service.register.GetConcludedVolumesByBaseFileID(p.BaseFileID)
+	volumes, err := service.register.GetFilesByBaseFileID(p.BaseFileID)
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(err)
 	}
-	log.WithContext(ctx).WithField("total_concluded_volumes", len(concludedVolumes)).
-		Info("Related concluded volumes retrieved from the base file-id")
 
-	// Get UnConcluded volumes
-	unConcludedVolumes, err := service.register.GetUnConcludedVolumesByBaseFileID(p.BaseFileID)
+	if len(volumes) == 0 {
+		return nil, cascade.MakeInternalServerError(errors.New("no volumes associated with the base-file-id to recover"))
+	}
+
+	log.WithContext(ctx).WithField("total_volumes", len(volumes)).
+		Info("total volumes retrieved from the base file-id")
+
+	unConcludedVolumes, err := volumes.GetUnconcludedFiles()
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(err)
 	}
-	log.WithContext(ctx).WithField("total_un_concluded_volumes", len(unConcludedVolumes)).
-		Info("Related un-concluded volumes retrieved from the base file-id")
 
 	// check if volumes already concluded
 	if len(unConcludedVolumes) == 0 {
 		log.WithContext(ctx).
 			Info("All volumes are already concluded")
 		return &cascade.RestoreFile{
-			TotalVolumes:                   len(concludedVolumes),
-			RegisteredVolumes:              len(concludedVolumes),
+			TotalVolumes:                   len(volumes),
+			RegisteredVolumes:              len(volumes),
 			VolumesWithPendingRegistration: 0,
 			VolumesRegistrationInProgress:  0,
-			ActivatedVolumes:               len(concludedVolumes),
+			ActivatedVolumes:               len(volumes),
 			VolumesActivatedInRecoveryFlow: 0,
 		}, nil
+
 	}
 
-	var registeredVolumes int
-	var volumesWithInProgressRegCount int
-	var volumesActivatedInRecoveryFlow int
+	var (
+		registeredVolumes              int
+		volumesWithInProgressRegCount  int
+		volumesWithPendingRegistration int
+		volumesActivatedInRecoveryFlow int
+		activatedVolumes               int
+	)
 
 	// Get BurnTxId by file amount and process un-concluded files that are un-registered or un-activated
 
 	logger := log.WithContext(ctx).WithField("base_file_id", p.BaseFileID)
 
-	for _, unConcludedVolume := range unConcludedVolumes {
-		if unConcludedVolume.RegTxid == "" {
-			logger.WithField("volume_name", unConcludedVolume.FileID).Info("find a volume with no registration, trying again...")
+	for _, v := range volumes {
+		if v.RegTxid == "" {
+			volumesWithPendingRegistration++
+			logger.WithField("volume_name", v.FileID).Info("find a volume with no registration, trying again...")
 
-			burnTxId, err := service.register.GetBurnTxIdByAmount(ctx, int64(unConcludedVolume.ReqBurnTxnAmount))
+			burnTxId, err := service.register.GetBurnTxIdByAmount(ctx, int64(v.ReqBurnTxnAmount))
 			if err != nil {
-				log.WithContext(ctx).WithField("amount", int64(unConcludedVolume.ReqBurnTxnAmount)).WithError(err).Error("error getting burn TxId for amount")
+				log.WithContext(ctx).WithField("amount", int64(v.ReqBurnTxnAmount)).WithError(err).Error("error getting burn TxId for amount")
 				return nil, cascade.MakeInternalServerError(err)
 			}
-			logger.WithField("volume_name", unConcludedVolume.FileID).Info("estimated fee has been burned, sending for registration")
+			logger.WithField("volume_name", v.FileID).Info("estimated fee has been burned, sending for registration")
 
 			addTaskPayload := &common.AddTaskPayload{
-				FileID:                 unConcludedVolume.FileID,
+				FileID:                 v.FileID,
 				BurnTxid:               &burnTxId,
 				AppPastelID:            p.AppPastelID,
 				MakePubliclyAccessible: p.MakePubliclyAccessible,
@@ -577,43 +606,49 @@ func (service *CascadeAPIHandler) Restore(ctx context.Context, p *cascade.Restor
 				addTaskPayload.SpendableAddress = p.SpendableAddress
 			}
 
-			_, err = service.register.ProcessFile(ctx, *unConcludedVolume, addTaskPayload)
+			_, err = service.register.ProcessFile(ctx, *v, addTaskPayload)
 			if err != nil {
-				log.WithContext(ctx).WithField("file_id", unConcludedVolume.FileID).WithError(err).Error("error processing un-concluded volume")
+				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error processing un-registered volume")
 				continue
 			}
-			logger.WithField("volume_name", unConcludedVolume.FileID).Info("task added for registration recovery")
+			logger.WithField("volume_name", v.FileID).Info("task added for registration recovery")
 
 			volumesWithInProgressRegCount += 1
-		} else if unConcludedVolume.ActivationTxid == "" {
-			registeredVolumes += 1
-			logger.WithField("volume_name", unConcludedVolume.FileID).Info("find a volume with no activation, trying again...")
+		} else if v.ActivationTxid == "" {
+			logger.WithField("volume_name", v.FileID).Info("find a volume with no activation, trying again...")
 
 			// activation code
 			actAttemptId, err := service.register.InsertActivationAttempt(types.ActivationAttempt{
-				FileID:              unConcludedVolume.FileID,
+				FileID:              v.FileID,
 				ActivationAttemptAt: time.Now().UTC(),
 			})
 			if err != nil {
-				log.WithContext(ctx).WithField("file_id", unConcludedVolume.FileID).WithError(err).Error("error inserting activation attempt")
+				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error inserting activation attempt")
 				continue
 			}
 
 			activateActReq := pastel.ActivateActionRequest{
-				RegTxID:    unConcludedVolume.RegTxid,
-				Fee:        int64(unConcludedVolume.ReqAmount) - 10,
+				RegTxID:    v.RegTxid,
+				Fee:        int64(v.ReqAmount) - 10,
 				PastelID:   p.AppPastelID,
 				Passphrase: p.Key,
 			}
 
-			err = service.register.ActivateActionTicketAndRegisterVolumeTicket(ctx, activateActReq, *unConcludedVolume, actAttemptId)
+			err = service.register.ActivateActionTicketAndRegisterVolumeTicket(ctx, activateActReq, *v, actAttemptId)
 			if err != nil {
-				log.WithContext(ctx).WithField("file_id", unConcludedVolume.FileID).WithError(err).Error("error activating or registering un-concluded volume")
+				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error activating or registering un-concluded volume")
 				continue
 			}
-			logger.WithField("volume_name", unConcludedVolume.FileID).Info("request has been sent for activation")
+			logger.WithField("volume_name", v.FileID).Info("request has been sent for activation")
 
 			volumesActivatedInRecoveryFlow += 1
+		} else {
+			if v.RegTxid != "" {
+				registeredVolumes += 1
+			}
+			if v.ActivationTxid != "" {
+				activatedVolumes += 1
+			}
 		}
 	}
 
@@ -624,11 +659,11 @@ func (service *CascadeAPIHandler) Restore(ctx context.Context, p *cascade.Restor
 	}
 
 	return &cascade.RestoreFile{
-		TotalVolumes:                   len(concludedVolumes) + len(unConcludedVolumes),
-		RegisteredVolumes:              len(concludedVolumes) + registeredVolumes,
-		VolumesWithPendingRegistration: volumesWithInProgressRegCount,
+		TotalVolumes:                   len(volumes),
+		RegisteredVolumes:              registeredVolumes,
+		VolumesWithPendingRegistration: volumesWithPendingRegistration,
 		VolumesRegistrationInProgress:  volumesWithInProgressRegCount,
-		ActivatedVolumes:               len(unConcludedVolumes) + volumesActivatedInRecoveryFlow,
+		ActivatedVolumes:               activatedVolumes,
 		VolumesActivatedInRecoveryFlow: volumesActivatedInRecoveryFlow,
 	}, nil
 }

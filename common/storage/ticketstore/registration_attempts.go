@@ -9,20 +9,20 @@ type RegistrationAttemptsQueries interface {
 	InsertRegistrationAttempt(attempt types.RegistrationAttempt) (int64, error)
 	UpdateRegistrationAttempt(attempt types.RegistrationAttempt) (int64, error)
 	GetRegistrationAttemptByID(id int) (*types.RegistrationAttempt, error)
-	GetRegistrationAttemptsByFileID(fileID string) ([]*types.RegistrationAttempt, error)
+	GetRegistrationAttemptsByFileIDAndBaseFileID(fileID, baseFileID string) ([]*types.RegistrationAttempt, error)
 }
 
 // InsertRegistrationAttempt insert a new registration attempt into the registration_attempts table
 func (s *TicketStore) InsertRegistrationAttempt(attempt types.RegistrationAttempt) (int64, error) {
 	const insertQuery = `
         INSERT INTO registration_attempts (
-            file_id, reg_started_at, processor_sns, finished_at, is_successful, error_message, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            file_id, base_file_id, reg_started_at, processor_sns, finished_at, is_successful, error_message, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id;`
 
 	var id int64
 	err := s.db.QueryRow(insertQuery,
-		attempt.FileID, attempt.RegStartedAt, attempt.ProcessorSNS,
+		attempt.FileID, attempt.BaseFileID, attempt.RegStartedAt, attempt.ProcessorSNS,
 		attempt.FinishedAt, attempt.IsSuccessful, attempt.ErrorMessage, time.Now().UTC(), time.Now().UTC()).Scan(&id)
 	if err != nil {
 		return 0, err
@@ -40,6 +40,7 @@ func (s *TicketStore) UpdateRegistrationAttempt(attempt types.RegistrationAttemp
             finished_at = ?,
             is_successful = ?,
             error_message = ?,
+            is_confirmed=?,
         	updated_at = ?
         WHERE id = ? AND file_id = ?
         RETURNING id;`
@@ -47,7 +48,7 @@ func (s *TicketStore) UpdateRegistrationAttempt(attempt types.RegistrationAttemp
 	var id int64
 	err := s.db.QueryRow(updateQuery,
 		attempt.RegStartedAt, attempt.ProcessorSNS, attempt.FinishedAt,
-		attempt.IsSuccessful, attempt.ErrorMessage, time.Now().UTC(),
+		attempt.IsSuccessful, attempt.ErrorMessage, attempt.IsConfirmed, time.Now().UTC(),
 		attempt.ID, attempt.FileID).Scan(&id)
 	if err != nil {
 		return 0, err
@@ -77,15 +78,15 @@ func (s *TicketStore) GetRegistrationAttemptByID(id int) (*types.RegistrationAtt
 	return &attempt, nil
 }
 
-// GetRegistrationAttemptsByFileID retrieves registration attempts by file_id from the registration_attempts table
-func (s *TicketStore) GetRegistrationAttemptsByFileID(fileID string) ([]*types.RegistrationAttempt, error) {
+// GetRegistrationAttemptsByFileIDAndBaseFileID retrieves registration attempts by file_id and baseFileID from the registration_attempts table
+func (s *TicketStore) GetRegistrationAttemptsByFileIDAndBaseFileID(fileID, baseFileID string) ([]*types.RegistrationAttempt, error) {
 	const selectQuery = `
-        SELECT id, file_id, reg_started_at, processor_sns, finished_at, 
+        SELECT id, file_id, base_file_id, reg_started_at, processor_sns, finished_at, 
                is_successful, error_message
         FROM registration_attempts
-        WHERE file_id = ?;`
+        WHERE file_id = ? and base_file_id=?;`
 
-	rows, err := s.db.Query(selectQuery, fileID)
+	rows, err := s.db.Query(selectQuery, fileID, baseFileID)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +96,7 @@ func (s *TicketStore) GetRegistrationAttemptsByFileID(fileID string) ([]*types.R
 	for rows.Next() {
 		var attempt types.RegistrationAttempt
 		err := rows.Scan(
-			&attempt.ID, &attempt.FileID, &attempt.RegStartedAt, &attempt.ProcessorSNS,
+			&attempt.ID, &attempt.FileID, &attempt.BaseFileID, &attempt.RegStartedAt, &attempt.ProcessorSNS,
 			&attempt.FinishedAt, &attempt.IsSuccessful, &attempt.ErrorMessage)
 		if err != nil {
 			return nil, err

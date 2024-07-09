@@ -41,10 +41,12 @@ const createRegistrationAttemptsTable string = `
 CREATE TABLE IF NOT EXISTS registration_attempts (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     file_id TEXT NOT NULL,
+    base_file_id TEXT NOT NULL,
     reg_started_at DATETIME,
     processor_sns TEXT,
     finished_at DATETIME,
     is_successful BOOLEAN,
+    is_confirmed BOOLEAN,
     error_message TEXT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL
@@ -55,8 +57,10 @@ const createActivationAttemptsTable string = `
 CREATE TABLE IF NOT EXISTS activation_attempts (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     file_id TEXT NOT NULL,
+    base_file_id TEXT NOT NULL,
     activation_attempt_at DATETIME,
     is_successful BOOLEAN,
+    is_confirmed BOOLEAN,
     error_message TEXT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL

@@ -258,16 +258,16 @@ func (service *CascadeRegistrationService) GetFilesByBaseFileID(fileID string) (
 	return files, nil
 }
 
-func (service *CascadeRegistrationService) GetActivationAttemptsByFileID(fileID string) ([]*types.ActivationAttempt, error) {
-	activationAttempts, err := service.ticketDB.GetActivationAttemptsByFileID(fileID)
+func (service *CascadeRegistrationService) GetActivationAttemptsByFileIDAndBaseFileID(fileID, baseFileID string) ([]*types.ActivationAttempt, error) {
+	activationAttempts, err := service.ticketDB.GetActivationAttemptsByFileIDAndBaseFileID(fileID, baseFileID)
 	if err != nil {
 		return nil, err
 	}
 	return activationAttempts, nil
 }
 
-func (service *CascadeRegistrationService) GetRegistrationAttemptsByFileID(fileID string) ([]*types.RegistrationAttempt, error) {
-	registrationAttempts, err := service.ticketDB.GetRegistrationAttemptsByFileID(fileID)
+func (service *CascadeRegistrationService) GetRegistrationAttemptsByFileIDAndBaseFileID(fileID, baseFileID string) ([]*types.RegistrationAttempt, error) {
+	registrationAttempts, err := service.ticketDB.GetRegistrationAttemptsByFileIDAndBaseFileID(fileID, baseFileID)
 	if err != nil {
 		return nil, err
 	}
@@ -456,8 +456,7 @@ func (service *CascadeRegistrationService) HandleTaskRegSuccess(ctx context.Cont
 		return nil
 	}
 
-	ra.FinishedAt = time.Now().UTC()
-	ra.IsSuccessful = true
+	ra.IsConfirmed = true
 	_, err = service.UpdateRegistrationAttempts(*ra)
 	if err != nil {
 		log.Errorf("Error in registration attempts upsert: %v", err.Error())
@@ -470,7 +469,7 @@ func (service *CascadeRegistrationService) HandleTaskRegSuccess(ctx context.Cont
 		return nil
 	}
 
-	actAttempt.IsSuccessful = true
+	actAttempt.IsConfirmed = true
 	_, err = service.UpdateActivationAttempts(*actAttempt)
 	if err != nil {
 		log.Errorf("Error in activation attempts upsert: %v", err.Error())
@@ -488,7 +487,7 @@ func (service *CascadeRegistrationService) ProcessFile(ctx context.Context, file
 		return "", cascade.MakeInternalServerError(errors.New("ticket has already been registered & activated"))
 
 	case file.RegTxid == "":
-		baseFileRegistrationAttempts, err := service.GetRegistrationAttemptsByFileID(file.FileID)
+		baseFileRegistrationAttempts, err := service.GetRegistrationAttemptsByFileIDAndBaseFileID(file.FileID, file.BaseFileID)
 		if err != nil {
 			return "", cascade.MakeInternalServerError(err)
 		}
@@ -498,6 +497,7 @@ func (service *CascadeRegistrationService) ProcessFile(ctx context.Context, file
 			return "", cascade.MakeInternalServerError(errors.New("ticket registration attempts have been exceeded"))
 		default:
 			regAttemptID, err := service.InsertRegistrationAttempts(types.RegistrationAttempt{
+				BaseFileID:   file.BaseFileID,
 				FileID:       file.FileID,
 				RegStartedAt: time.Now().UTC(),
 			})

@@ -32,19 +32,34 @@ type Files []*File
 type RegistrationAttempt struct {
 	ID           int
 	FileID       string
+	BaseFileID   string
 	RegStartedAt time.Time
 	ProcessorSNS string
 	FinishedAt   time.Time
 	IsSuccessful bool
+	IsConfirmed  bool
 	ErrorMessage string
 }
 
 type ActivationAttempt struct {
 	ID                  int
 	FileID              string
+	BaseFileID          string
 	ActivationAttemptAt time.Time
 	IsSuccessful        bool
+	IsConfirmed         bool
 	ErrorMessage        string
+}
+
+func (fs Files) GetUnconcludedFiles() (Files, error) {
+	var unconcludedFiles Files
+	for _, f := range fs {
+		if !f.IsConcluded {
+			unconcludedFiles = append(unconcludedFiles, f)
+		}
+	}
+
+	return unconcludedFiles, nil
 }
 
 func (fs Files) GetBase() *File {

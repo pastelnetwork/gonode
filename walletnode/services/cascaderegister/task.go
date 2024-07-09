@@ -184,6 +184,17 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 
 	log.WithContext(ctx).Info("Sending Metdata to Supernodes")
 
+	ra, err := task.service.GetRegistrationAttemptsByID(int(task.Request.RegAttemptID))
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving reg attempt")
+	}
+
+	ra.ProcessorSNS = task.MeshHandler.Nodes.String()
+	_, err = task.service.UpdateRegistrationAttempts(*ra)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error updating processor-sns for reg-attempt")
+	}
+
 	// send registration metadata
 	if err := task.sendActionMetadata(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error sending action metadata")
@@ -264,6 +275,8 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 	})
 	log.WithContext(ctx).Info("Cascade Registration Ticket accepted & registrated by Supernodes, downloading data for validation..")
 
+	task.updateRegSuccess(ctx, task.Request.RegAttemptID)
+
 	// don't need SNs anymore
 	err = task.MeshHandler.CloseSNsConnections(ctx, nodesDone)
 	if err != nil {
@@ -309,6 +322,7 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 	log.WithContext(ctx).Info("Cascade Registrtion Ticket confirmed, now activating it..")
 
 	id, err := task.service.InsertActivationAttempt(types.ActivationAttempt{
+		BaseFileID:          task.Request.BaseFileID,
 		FileID:              task.Request.FileID,
 		ActivationAttemptAt: time.Now().UTC(),
 	})
@@ -333,7 +347,9 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 		IsFinalBool:   false,
 	})
 	log.WithContext(ctx).Infof("Cascade Ticket activated. Activation ticket txid: %s, waiting for confirmations now", activateTxID)
-	// Wait until activateTxID is valid
+
+	task.updateActSuccess(ctx, task.actAttemptID, activateTxID)
+
 	err = task.service.pastelHandler.WaitTxidValid(ctx, activateTxID, int64(task.service.config.CascadeActTxMinConfirmations),
 		time.Duration(task.service.config.WaitTxnValidInterval)*time.Second)
 	if err != nil {
@@ -351,6 +367,59 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 
 	return task.regCascadeTxid, activateTxID, nil
 
+}
+
+func (task *CascadeRegistrationTask) updateRegSuccess(ctx context.Context, regAttemptID int64) {
+	file, err := task.service.GetFileByTaskID(task.ID())
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving file")
+	}
+
+	file.RegTxid = task.regCascadeTxid
+	err = task.service.ticketDB.UpsertFile(*file)
+	if err != nil {
+		log.WithContext(ctx).Errorf("Error in file upsert: %v", err.Error())
+	}
+
+	ra, err := task.service.GetRegistrationAttemptsByID(int(regAttemptID))
+	if err != nil {
+		log.Errorf("Error retrieving file reg attempt: %v", err.Error())
+	}
+
+	ra.FinishedAt = time.Now().UTC()
+	ra.IsSuccessful = true
+	_, err = task.service.UpdateRegistrationAttempts(*ra)
+	if err != nil {
+		log.Errorf("Error in registration attempts upsert: %v", err.Error())
+	}
+
+	return
+}
+
+func (task *CascadeRegistrationTask) updateActSuccess(ctx context.Context, actAttemptID int64, actTxID string) {
+	file, err := task.service.GetFileByTaskID(task.ID())
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error retrieving file")
+	}
+
+	file.ActivationTxid = actTxID
+	err = task.service.ticketDB.UpsertFile(*file)
+	if err != nil {
+		log.WithContext(ctx).Errorf("Error in file upsert: %v", err.Error())
+	}
+
+	ra, err := task.service.GetActivationAttemptByID(int(actAttemptID))
+	if err != nil {
+		log.Errorf("Error retrieving file reg attempt: %v", err.Error())
+	}
+
+	ra.IsSuccessful = true
+	_, err = task.service.UpdateActivationAttempts(*ra)
+	if err != nil {
+		log.Errorf("Error in registration attempts upsert: %v", err.Error())
+	}
+
+	return
 }
 
 // sendActionMetadata sends Action Ticket metadata to supernodes
