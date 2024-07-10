@@ -178,6 +178,15 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 		}
 		sortedRelatedFiles := service.register.SortFilesWithHigherAmounts(relatedFiles)
 
+		err = service.checkBurnTxIDsValidForRegistration(ctx, sortedBurnTxids, sortedRelatedFiles)
+		if err != nil {
+			log.WithContext(ctx).WithField("related_volumes", len(relatedFiles)).
+				WithError(err).
+				WithField("burn_txids", len(p.BurnTxids)).
+				Error("given burn-tx-ids are not valid")
+			return nil, cascade.MakeBadRequest(errors.New("given burn txids are not valid"))
+		}
+
 		var taskIDs []string
 		for index, file := range sortedRelatedFiles {
 			burnTxID := sortedBurnTxids[index]
@@ -587,12 +596,21 @@ func (service *CascadeAPIHandler) Restore(ctx context.Context, p *cascade.Restor
 			volumesWithPendingRegistration++
 			logger.WithField("volume_name", v.FileID).Info("find a volume with no registration, trying again...")
 
-			burnTxId, err := service.register.GetBurnTxIdByAmount(ctx, int64(v.ReqBurnTxnAmount))
-			if err != nil {
-				log.WithContext(ctx).WithField("amount", int64(v.ReqBurnTxnAmount)).WithError(err).Error("error getting burn TxId for amount")
-				return nil, cascade.MakeInternalServerError(err)
+			var burnTxId string
+			if service.IsBurnTxIDValidForRecovery(ctx, v.BurnTxnID, v.ReqAmount-10) {
+				log.WithContext(ctx).WithField("burn_txid", v.BurnTxnID).Info("existing burn-txid is valid")
+				burnTxId = v.BurnTxnID
+			} else {
+				log.WithContext(ctx).WithField("burn_txid", v.BurnTxnID).Info("existing burn-txid is not valid, burning the new txid")
+
+				burnTxId, err = service.register.GetBurnTxIdByAmount(ctx, int64(v.ReqBurnTxnAmount))
+				if err != nil {
+					log.WithContext(ctx).WithField("amount", int64(v.ReqBurnTxnAmount)).WithError(err).Error("error getting burn TxId for amount")
+					return nil, cascade.MakeInternalServerError(err)
+				}
+
+				logger.WithField("volume_name", v.FileID).Info("estimated fee has been burned, sending for registration")
 			}
-			logger.WithField("volume_name", v.FileID).Info("estimated fee has been burned, sending for registration")
 
 			addTaskPayload := &common.AddTaskPayload{
 				FileID:                 v.FileID,
@@ -666,6 +684,40 @@ func (service *CascadeAPIHandler) Restore(ctx context.Context, p *cascade.Restor
 		ActivatedVolumes:               activatedVolumes,
 		VolumesActivatedInRecoveryFlow: volumesActivatedInRecoveryFlow,
 	}, nil
+}
+
+func (service *CascadeAPIHandler) checkBurnTxIDsValidForRegistration(ctx context.Context, burnTxIDs []string, files types.Files) error {
+	if isDuplicateExists(burnTxIDs) {
+		return errors.New("duplicate burn-tx-ids provided")
+	}
+
+	for _, bid := range burnTxIDs {
+		if err := service.register.CheckBurnTxIDTicketDuplication(ctx, bid); err != nil {
+			return err
+		}
+	}
+
+	for i := 0; i < len(files); i++ {
+		err := service.register.ValidBurnTxnAmount(ctx, burnTxIDs[i], files[i].ReqBurnTxnAmount)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (service *CascadeAPIHandler) IsBurnTxIDValidForRecovery(ctx context.Context, burnTxID string, estimatedFee float64) bool {
+	if err := service.register.CheckBurnTxIDTicketDuplication(ctx, burnTxID); err != nil {
+		return false
+	}
+
+	err := service.register.ValidateBurnTxn(ctx, burnTxID, estimatedFee)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.

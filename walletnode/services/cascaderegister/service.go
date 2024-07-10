@@ -714,6 +714,35 @@ func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Cont
 	return txID, nil
 }
 
+func (service *CascadeRegistrationService) CheckBurnTxIDTicketDuplication(ctx context.Context, burnTxID string) error {
+	err := service.pastelHandler.CheckBurnTxID(ctx, burnTxID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *CascadeRegistrationService) ValidBurnTxnAmount(ctx context.Context, burnTxID string, estimatedFee float64) error {
+	txnDetail, err := service.pastelHandler.PastelClient.GetTransaction(ctx, burnTxID)
+	if err != nil {
+		return err
+	}
+
+	burnTxnAmount := math.Round(math.Abs(txnDetail.Amount)*100) / 100
+	estimatedFeeAmount := math.Round(estimatedFee*100) / 100
+
+	if burnTxnAmount >= estimatedFeeAmount {
+		return nil
+	}
+
+	return errors.New("the amounts are not equal")
+}
+
+func (service *CascadeRegistrationService) ValidateBurnTxn(ctx context.Context, burnTxID string, estimatedFee float64) error {
+	return service.pastelHandler.ValidateBurnTxID(ctx, burnTxID, estimatedFee)
+}
+
 // NewService returns a new Service instance
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface, db storage.KeyValue,

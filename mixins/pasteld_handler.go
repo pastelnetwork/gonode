@@ -302,7 +302,7 @@ func (pt *PastelHandler) GetBurnAddress() string {
 func (pt *PastelHandler) ValidateBurnTxID(ctx context.Context, burnTxnID string, estimatedFee float64) error {
 	var err error
 
-	if err := pt.checkBurnTxID(ctx, burnTxnID); err != nil {
+	if err := pt.CheckBurnTxID(ctx, burnTxnID); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("duplicate burnTXID")
 		err = errors.Errorf("validated burnTXID :%w", err)
 		return err
@@ -329,7 +329,7 @@ func (pt *PastelHandler) ValidateBurnTxID(ctx context.Context, burnTxnID string,
 	return nil
 }
 
-func (pt *PastelHandler) checkBurnTxID(ctx context.Context, burnTXID string) error {
+func (pt *PastelHandler) CheckBurnTxID(ctx context.Context, burnTXID string) error {
 	actionTickets, err := pt.PastelClient.FindActionRegTicketsByLabel(ctx, burnTXID)
 	if err != nil {
 		return fmt.Errorf("action reg tickets by label: %w", err)
