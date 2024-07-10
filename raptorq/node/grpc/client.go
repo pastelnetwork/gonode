@@ -14,7 +14,7 @@ import (
 
 const (
 	logPrefix             = "grpc-raptorqClient"
-	defaultConnectTimeout = 45 * time.Second
+	defaultConnectTimeout = 120 * time.Second
 )
 
 type client struct{}

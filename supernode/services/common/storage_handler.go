@@ -23,6 +23,7 @@ import (
 const (
 	loadSymbolsBatchSize = 2500
 	storeSymbolsPercent  = 10
+	concurrency          = 2
 )
 
 // StorageHandler provides common logic for RQ and P2P operations
@@ -36,7 +37,8 @@ type StorageHandler struct {
 	TaskID string
 	TxID   string
 
-	store rqstore.Store
+	store     rqstore.Store
+	semaphore chan struct{}
 }
 
 // NewStorageHandler creates instance of StorageHandler
@@ -49,6 +51,7 @@ func NewStorageHandler(p2p p2p.Client, rq rqnode.ClientInterface,
 		rqAddress: rqAddress,
 		rqDir:     rqDir,
 		store:     store,
+		semaphore: make(chan struct{}, concurrency),
 	}
 }
 
@@ -86,7 +89,7 @@ func (h *StorageHandler) GenerateRaptorQSymbols(ctx context.Context, data []byte
 	}
 
 	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 2 * time.Minute
+	b.MaxElapsedTime = 3 * time.Minute
 	b.InitialInterval = 200 * time.Millisecond
 
 	var conn rqnode.Connection
@@ -111,9 +114,19 @@ func (h *StorageHandler) GenerateRaptorQSymbols(ctx context.Context, data []byte
 		RqFilesDir: h.rqDir,
 	})
 
-	encodeResp, err := rqService.RQEncode(ctx, data, h.TxID, h.store)
-	if err != nil {
-		return nil, errors.Errorf("create raptorq symbol from data %s: %w", name, err)
+	b.Reset()
+
+	encodeResp := &rqnode.Encode{}
+	if err := backoff.Retry(backoff.Operation(func() error {
+		var err error
+		encodeResp, err = rqService.RQEncode(ctx, data, h.TxID, h.store)
+		if err != nil {
+			return errors.Errorf("create raptorq symbol from data %s: %w", name, err)
+		}
+
+		return nil
+	}), b); err != nil {
+		return nil, fmt.Errorf("retry do rqencode service: %w", err)
 	}
 
 	return encodeResp.Symbols, nil
@@ -122,15 +135,15 @@ func (h *StorageHandler) GenerateRaptorQSymbols(ctx context.Context, data []byte
 // GetRaptorQEncodeInfo calls RQ service to get Encoding info and list of RQIDs
 func (h *StorageHandler) GetRaptorQEncodeInfo(ctx context.Context,
 	data []byte, num uint32, hash string, pastelID string,
-) (*rqnode.EncodeInfo, error) {
+) (encodeInfo *rqnode.EncodeInfo, err error) {
 	if h.RqClient == nil {
 		log.WithContext(ctx).Warnf("RQ Server is not initialized")
 		return nil, errors.Errorf("RQ Server is not initialized")
 	}
 
 	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 2 * time.Minute
-	b.InitialInterval = 200 * time.Millisecond
+	b.MaxElapsedTime = 3 * time.Minute
+	b.InitialInterval = 500 * time.Millisecond
 
 	var conn rqnode.Connection
 	if err := backoff.Retry(backoff.Operation(func() error {
@@ -154,9 +167,16 @@ func (h *StorageHandler) GetRaptorQEncodeInfo(ctx context.Context,
 		RqFilesDir: h.rqDir,
 	})
 
-	encodeInfo, err := rqService.EncodeInfo(ctx, data, num, hash, pastelID)
-	if err != nil {
-		return nil, errors.Errorf("get raptorq encode info: %w", err)
+	b.Reset()
+	if err := backoff.Retry(backoff.Operation(func() error {
+		var err error
+		encodeInfo, err = rqService.EncodeInfo(ctx, data, num, hash, pastelID)
+		if err != nil {
+			return errors.Errorf("get raptorq encode info: %w", err)
+		}
+		return nil
+	}), b); err != nil {
+		return nil, fmt.Errorf("retry do encode info on raptorq service: %w", err)
 	}
 
 	return encodeInfo, nil
@@ -231,6 +251,11 @@ func (h *StorageHandler) storeSymbolsInP2P(ctx context.Context, dir string, batc
 }
 
 func (h *StorageHandler) StoreRaptorQSymbolsIntoP2P(ctx context.Context, data []byte, name string) error {
+	h.semaphore <- struct{}{} // Acquire slot
+	defer func() {
+		<-h.semaphore // Release the semaphore slot
+	}()
+
 	// Generate the keys for RaptorQ symbols, with empty values
 	log.WithContext(ctx).Info("generating RaptorQ symbols")
 	keysMap, err := h.GenerateRaptorQSymbols(ctx, data, name)

@@ -15,14 +15,15 @@ import (
 	"time"
 
 	"encoding/json"
+
 	"golang.org/x/sync/semaphore"
 )
 
 const (
-	jsonrpcVersion = "2.0"
-	timeout        = 70 * time.Second
-	httpTimeout    = 60 * time.Second
-	maxConcurrentRequests = int64(350)
+	jsonrpcVersion        = "2.0"
+	timeout               = 70 * time.Second
+	httpTimeout           = 60 * time.Second
+	maxConcurrentRequests = int64(650)
 )
 
 // RPCClient sends JSON-RPC requests over HTTP to the provided JSON-RPC backend.
@@ -248,7 +249,7 @@ type rpcClient struct {
 	endpoint      string
 	httpClient    *http.Client
 	customHeaders map[string]string
-	sem 		 *semaphore.Weighted
+	sem           *semaphore.Weighted
 }
 
 // RPCClientOpts can be provided to NewClientWithOpts() to change configuration of RPCClient.
@@ -318,12 +319,12 @@ func NewClientWithOpts(endpoint string, opts *RPCClientOpts) RPCClient {
 		httpClient: &http.Client{
 			Timeout: httpTimeout,
 			Transport: &http.Transport{
-				DisableKeepAlives: false, // explicitly enable keep-alives - although its the default behavior
-				MaxIdleConnsPerHost: 75,  // increase the number of idle connections per host as we are connecting to the same host
-				IdleConnTimeout:     60 * time.Second,
+				DisableKeepAlives:   false, // explicitly enable keep-alives - although its the default behavior
+				MaxIdleConnsPerHost: 250,   // increase the number of idle connections per host as we are connecting to the same host
+				IdleConnTimeout:     30 * time.Second,
 			},
 		},
-		sem: semaphore.NewWeighted(maxConcurrentRequests),
+		sem:           semaphore.NewWeighted(maxConcurrentRequests),
 		customHeaders: make(map[string]string),
 	}
 
@@ -454,9 +455,9 @@ func (client *rpcClient) newRequest(ctx context.Context, req interface{}) (*http
 
 func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*RPCResponse, error) {
 	if err := client.sem.Acquire(cctx, 1); err != nil {
-        return nil, fmt.Errorf("waiting for semaphore on rpc call on %v", err.Error())
-    }
-    defer client.sem.Release(1)
+		return nil, fmt.Errorf("waiting for semaphore on rpc call on %v", err.Error())
+	}
+	defer client.sem.Release(1)
 
 	ctx, cancel := context.WithTimeout(cctx, timeout)
 	defer cancel()
@@ -465,7 +466,7 @@ func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*
 	if err != nil {
 		return nil, fmt.Errorf("rpc call %v() on %v: %v", RPCRequest.Method, client.endpoint, err.Error())
 	}
-	
+
 	httpResponse, err := client.httpClient.Do(httpRequest)
 	if err != nil {
 		return nil, fmt.Errorf("rpc call %v() on %v: %v", RPCRequest.Method, httpRequest.URL.String(), err.Error())
@@ -507,9 +508,9 @@ func (client *rpcClient) doCall(cctx context.Context, RPCRequest *RPCRequest) (*
 
 func (client *rpcClient) doBatchCall(rpcRequest []*RPCRequest) ([]*RPCResponse, error) {
 	if err := client.sem.Acquire(context.Background(), 1); err != nil {
-        return nil, fmt.Errorf("waiting for semaphore on rpc batch call on %v", err.Error())
-    }
-    defer client.sem.Release(1)
+		return nil, fmt.Errorf("waiting for semaphore on rpc batch call on %v", err.Error())
+	}
+	defer client.sem.Release(1)
 
 	httpRequest, err := client.newRequest(context.Background(), rpcRequest)
 	if err != nil {

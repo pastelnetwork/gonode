@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/pastelnetwork/gonode/common/types"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/types"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -29,7 +30,7 @@ import (
 )
 
 const (
-	maxFileSize                 = 350 * 1024 * 1024 // 350MB in bytes
+	maxFileSize                 = 300 * 1024 * 1024 // 300MB in bytes
 	maxFileRegistrationAttempts = 3
 	downloadDeadline            = 30 * time.Minute
 )
@@ -287,6 +288,14 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 		Txid     string
 	}
 
+	// Create directory with p.Txid
+	folderPath := filepath.Join(service.config.StaticFilesDir, p.Txid)
+	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
+			return nil, err
+		}
+	}
+
 	// Channel to control the concurrency of downloads
 	sem := make(chan struct{}, 3) // Max 3 concurrent downloads
 	taskResults := make(chan *DownloadResult)
@@ -296,7 +305,26 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	defer cancel()
 
 	// Starting multiple download tasks
+	tasks := 0
 	for _, txID := range txIDs {
+
+		filename, size, err := service.download.GetFilenameAndSize(ctx, txID)
+		if err != nil {
+			return nil, err
+		}
+
+		// check if file already exists
+		filePath := filepath.Join(folderPath, filename)
+		if fileinfo, err := os.Stat(filePath); err == nil {
+			if fileinfo.Size() == int64(size) {
+				log.WithContext(ctx).WithField("filename", filename).WithField("txid", txID).Info("skipping file download as it already exists")
+				continue
+			} else {
+				log.WithContext(ctx).WithField("filename", filename).WithField("txid", txID).Warn("file exists but downloading again due to size mismatch")
+			}
+		}
+
+		tasks++
 		go func(txID string) {
 			sem <- struct{}{}        // Acquiring the semaphore
 			defer func() { <-sem }() // Releasing the semaphore
@@ -341,17 +369,8 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 		}(txID)
 	}
 
-	// Create directory with p.Txid
-	folderPath := filepath.Join(service.config.StaticFilesDir, p.Txid)
-	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
-		if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
-			cancel()
-			return nil, err
-		}
-	}
-
 	var filePath string
-	for i := 0; i < len(txIDs); i++ {
+	for i := 0; i < tasks; i++ {
 		select {
 		case res := <-taskResults:
 			filePath = filepath.Join(folderPath, res.Filename)

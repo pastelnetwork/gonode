@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -19,6 +20,37 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 )
+
+const (
+	maxConcurrentRegistrationsPerBlock = 5
+	uploadDataConcurrency              = 3
+)
+
+// BlockRegistrations tracks ongoing registrations per block
+var BlockRegistrations = struct {
+	sync.RWMutex
+	Counts map[int]int
+}{Counts: make(map[int]int)}
+
+// CheckAndWait ensures no more than 3 registrations per block
+func CheckAndWait(ctx context.Context, pastelClient pastel.Client) (int, error) {
+	for {
+		blockNum, err := pastelClient.GetBlockCount(ctx)
+		if err != nil {
+			return 0, err
+		}
+
+		BlockRegistrations.Lock()
+		if BlockRegistrations.Counts[int(blockNum)] < maxConcurrentRegistrationsPerBlock {
+			BlockRegistrations.Counts[int(blockNum)]++
+			BlockRegistrations.Unlock()
+			return int(blockNum), nil
+		}
+		BlockRegistrations.Unlock()
+
+		time.Sleep(5 * time.Second) // Check again after 5 seconds
+	}
+}
 
 // CascadeRegistrationTask is the task of registering new nft.
 type CascadeRegistrationTask struct {
@@ -52,7 +84,8 @@ type CascadeRegistrationTask struct {
 	regCascadeFinishedAt time.Time
 	regCascadeStartedAt  time.Time
 
-	actAttemptID int64
+	actAttemptID  int64
+	uploadDataSem chan struct{}
 }
 
 // Run starts the task
@@ -134,6 +167,16 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 	task.UpdateStatus(common.StatusBurnTxnValidated)
 	log.WithContext(ctx).Info("Pre-Burn Transaction validated successfully, hashing data now..")
 
+	blockNum, err := CheckAndWait(ctx, task.service.pastelHandler.PastelClient)
+	if err != nil {
+		return "", "", errors.Errorf("block check failed: %w", err)
+	}
+	defer func() {
+		BlockRegistrations.Lock()
+		BlockRegistrations.Counts[blockNum]--
+		BlockRegistrations.Unlock()
+	}()
+
 	task.originalFileSizeInBytes = len(nftBytes)
 	//Detect the file type
 	task.fileType = mimetype.Detect(nftBytes).String()
@@ -145,7 +188,7 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 		return "", "", errors.Errorf("hash encoded image: %w", err)
 	}
 
-	key := append(nftBytes, []byte(task.WalletNodeTask.ID())...)
+	key := []byte(task.Request.BurnTxID)
 	sortKey, _ := utils.Sha3256hash(key)
 
 	log.WithContext(ctx).Info("Setting up mesh with Top Supernodes")
@@ -245,7 +288,7 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 		return "", "", errors.Errorf("sign cascade ticket: %w", err)
 	}
 
-	log.WithContext(ctx).Info("Cascade Ticket sent to Supernodes for validation & registration - waiting for Supernodes to respond..")
+	log.WithContext(ctx).WithField("primary-node", task.MeshHandler.Nodes[0].Address()).Info("Cascade Ticket sent to Supernodes for validation & registration - waiting for Supernodes to respond..")
 	if err := task.uploadSignedTicket(ctx); err != nil {
 		log.WithContext(ctx).WithError(err).Error("error uploading signed ticket")
 		task.StatusLog[common.FieldErrorDetail] = err.Error()
@@ -289,6 +332,13 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 			return task.regCascadeTxid, "", errors.Errorf("error validating cascade ticket data")
 		}
 	}
+
+	defer func() {
+		BlockRegistrations.Lock()
+		BlockRegistrations.Counts[blockNum]--
+		BlockRegistrations.Unlock()
+	}()
+
 	log.WithContext(ctx).Infof("Cascade Registration Ticket validated through Download - Its registered with txid: %s", task.regCascadeTxid)
 
 	log.WithContext(ctx).Infof("Waiting for enough Confirmations for Cascade Registration Ticket - Ticket txid: %s", task.regCascadeTxid)
@@ -394,6 +444,11 @@ func (task *CascadeRegistrationTask) sendActionMetadata(ctx context.Context) err
 }
 
 func (task *CascadeRegistrationTask) uploadImage(ctx context.Context) error {
+	task.uploadDataSem <- struct{}{} // Acquire a semaphore slot
+	defer func() {
+		<-task.uploadDataSem // Release the semaphore slot
+	}()
+
 	group, gctx := errgroup.WithContext(ctx)
 
 	for _, someNode := range task.MeshHandler.Nodes {
@@ -643,6 +698,7 @@ func NewCascadeRegisterTask(service *CascadeRegistrationService, request *common
 		service:         service,
 		Request:         request,
 		MeshHandler:     common.NewMeshHandler(meshHandlerOpts),
+		uploadDataSem:   make(chan struct{}, uploadDataConcurrency),
 		RqHandler: mixins.NewRQHandler(service.rqClient, service.pastelHandler,
 			service.config.RaptorQServiceAddress, service.config.RqFilesDir,
 			service.config.NumberRQIDSFiles, service.config.RQIDsMax),

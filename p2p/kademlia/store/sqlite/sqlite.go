@@ -556,7 +556,7 @@ func (s *Store) updateKeyReplication(key []byte, replicatedAt time.Time) error {
 	keyStr := hex.EncodeToString(key)
 	_, err := s.db.Exec(`UPDATE data SET replicatedAt = ? WHERE key = ?`, replicatedAt, keyStr)
 	if err != nil {
-		return fmt.Errorf("failed to update replicated records: %v", err)
+		return fmt.Errorf("failed to update key replication: %v", err)
 	}
 
 	return err

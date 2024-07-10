@@ -29,6 +29,14 @@ type File struct {
 
 type Files []*File
 
+func (f Files) Names() []string {
+	names := make([]string, 0, len(f))
+	for _, file := range f {
+		names = append(names, file.FileID)
+	}
+	return names
+}
+
 type RegistrationAttempt struct {
 	ID           int
 	FileID       string

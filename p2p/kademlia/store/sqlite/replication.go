@@ -324,7 +324,7 @@ func (s *Store) UpdateReplicationInfo(_ context.Context, rep domain.NodeReplicat
 	_, err := s.db.Exec(`UPDATE replication_info SET ip = ?, is_active = ?, is_adjusted = ?, lastReplicatedAt = ?, updatedAt =?, port = ?, last_seen = ? WHERE id = ?`,
 		rep.IP, rep.Active, rep.IsAdjusted, rep.LastReplicatedAt, rep.UpdatedAt, rep.Port, string(rep.ID), rep.LastSeen)
 	if err != nil {
-		return fmt.Errorf("failed to update replicated records: %v", err)
+		return fmt.Errorf("failed to update replication info: %v", err)
 	}
 
 	return err

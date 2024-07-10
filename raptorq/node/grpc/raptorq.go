@@ -23,7 +23,7 @@ const (
 	inputEncodeFileName = "input.data"
 	symbolIDFileSubDir  = "meta"
 	symbolFileSubdir    = "symbols"
-	concurrency         = 4
+	concurrency         = 1
 )
 
 type raptorQ struct {
