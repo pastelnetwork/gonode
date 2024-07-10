@@ -1019,7 +1019,6 @@ func unmarshalFileResponseBodyToCascadeviewsFileView(v *FileResponseBody) *casca
 	res := &cascadeviews.FileView{
 		FileID:                       v.FileID,
 		UploadTimestamp:              v.UploadTimestamp,
-		Path:                         v.Path,
 		FileIndex:                    v.FileIndex,
 		BaseFileID:                   v.BaseFileID,
 		TaskID:                       v.TaskID,
@@ -1034,7 +1033,6 @@ func unmarshalFileResponseBodyToCascadeviewsFileView(v *FileResponseBody) *casca
 		HashOfOriginalBigFile:        v.HashOfOriginalBigFile,
 		NameOfOriginalBigFileWithExt: v.NameOfOriginalBigFileWithExt,
 		SizeOfOriginalBigFile:        v.SizeOfOriginalBigFile,
-		DataTypeOfOriginalBigFile:    v.DataTypeOfOriginalBigFile,
 		StartBlock:                   v.StartBlock,
 		DoneBlock:                    v.DoneBlock,
 	}

@@ -820,7 +820,6 @@ func marshalCascadeviewsFileViewToFileResponseBody(v *cascadeviews.FileView) *Fi
 	res := &FileResponseBody{
 		FileID:                       *v.FileID,
 		UploadTimestamp:              *v.UploadTimestamp,
-		Path:                         v.Path,
 		FileIndex:                    v.FileIndex,
 		BaseFileID:                   *v.BaseFileID,
 		TaskID:                       *v.TaskID,
@@ -835,7 +834,6 @@ func marshalCascadeviewsFileViewToFileResponseBody(v *cascadeviews.FileView) *Fi
 		HashOfOriginalBigFile:        *v.HashOfOriginalBigFile,
 		NameOfOriginalBigFileWithExt: *v.NameOfOriginalBigFileWithExt,
 		SizeOfOriginalBigFile:        *v.SizeOfOriginalBigFile,
-		DataTypeOfOriginalBigFile:    *v.DataTypeOfOriginalBigFile,
 		StartBlock:                   v.StartBlock,
 		DoneBlock:                    v.DoneBlock,
 	}

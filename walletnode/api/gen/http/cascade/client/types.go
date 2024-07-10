@@ -534,8 +534,6 @@ type FileResponseBody struct {
 	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
 	// Upload Timestamp in datetime format
 	UploadTimestamp *string `form:"upload_timestamp,omitempty" json:"upload_timestamp,omitempty" xml:"upload_timestamp,omitempty"`
-	// Path to the file
-	Path *string `form:"path,omitempty" json:"path,omitempty" xml:"path,omitempty"`
 	// Index of the file
 	FileIndex *string `form:"file_index,omitempty" json:"file_index,omitempty" xml:"file_index,omitempty"`
 	// Base File ID
@@ -564,8 +562,6 @@ type FileResponseBody struct {
 	NameOfOriginalBigFileWithExt *string `form:"name_of_original_big_file_with_ext,omitempty" json:"name_of_original_big_file_with_ext,omitempty" xml:"name_of_original_big_file_with_ext,omitempty"`
 	// Size of the Original Big File
 	SizeOfOriginalBigFile *float64 `form:"size_of_original_big_file,omitempty" json:"size_of_original_big_file,omitempty" xml:"size_of_original_big_file,omitempty"`
-	// Data Type of the Original Big File
-	DataTypeOfOriginalBigFile *string `form:"data_type_of_original_big_file,omitempty" json:"data_type_of_original_big_file,omitempty" xml:"data_type_of_original_big_file,omitempty"`
 	// Start Block
 	StartBlock *int32 `form:"start_block,omitempty" json:"start_block,omitempty" xml:"start_block,omitempty"`
 	// Done Block
@@ -1626,9 +1622,6 @@ func ValidateFileResponseBody(body *FileResponseBody) (err error) {
 	}
 	if body.SizeOfOriginalBigFile == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("size_of_original_big_file", "body"))
-	}
-	if body.DataTypeOfOriginalBigFile == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("data_type_of_original_big_file", "body"))
 	}
 	if body.UploadTimestamp != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.upload_timestamp", *body.UploadTimestamp, goa.FormatDateTime))

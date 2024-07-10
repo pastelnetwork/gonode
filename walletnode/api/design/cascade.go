@@ -433,7 +433,6 @@ var File = Type("File", func() {
 	Attribute("upload_timestamp", String, "Upload Timestamp in datetime format", func() {
 		Format(FormatDateTime)
 	})
-	Attribute("path", String, "Path to the file")
 	Attribute("file_index", String, "Index of the file")
 	Attribute("base_file_id", String, "Base File ID")
 	Attribute("task_id", String, "Task ID")
@@ -448,14 +447,13 @@ var File = Type("File", func() {
 	Attribute("hash_of_original_big_file", String, "Hash of the Original Big File")
 	Attribute("name_of_original_big_file_with_ext", String, "Name of the Original Big File with Extension")
 	Attribute("size_of_original_big_file", Float64, "Size of the Original Big File")
-	Attribute("data_type_of_original_big_file", String, "Data Type of the Original Big File")
 	Attribute("start_block", Int32, "Start Block")
 	Attribute("done_block", Int, "Done Block")
 	Attribute("registration_attempts", ArrayOf(RegistrationAttempt), "List of registration attempts")
 	Attribute("activation_attempts", ArrayOf(ActivationAttempt), "List of activation attempts")
 	Required("file_id", "task_id", "upload_timestamp", "base_file_id", "registration_attempts", "activation_attempts",
 		"req_burn_txn_amount", "req_amount", "cascade_metadata_ticket_id", "hash_of_original_big_file", "name_of_original_big_file_with_ext",
-		"size_of_original_big_file", "data_type_of_original_big_file")
+		"size_of_original_big_file")
 })
 
 var RegistrationAttempt = Type("RegistrationAttempt", func() {

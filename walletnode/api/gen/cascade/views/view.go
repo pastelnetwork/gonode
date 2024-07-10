@@ -95,8 +95,6 @@ type FileView struct {
 	FileID *string
 	// Upload Timestamp in datetime format
 	UploadTimestamp *string
-	// Path to the file
-	Path *string
 	// Index of the file
 	FileIndex *string
 	// Base File ID
@@ -125,8 +123,6 @@ type FileView struct {
 	NameOfOriginalBigFileWithExt *string
 	// Size of the Original Big File
 	SizeOfOriginalBigFile *float64
-	// Data Type of the Original Big File
-	DataTypeOfOriginalBigFile *string
 	// Start Block
 	StartBlock *int32
 	// Done Block
@@ -427,9 +423,6 @@ func ValidateFileView(result *FileView) (err error) {
 	}
 	if result.SizeOfOriginalBigFile == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("size_of_original_big_file", "result"))
-	}
-	if result.DataTypeOfOriginalBigFile == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("data_type_of_original_big_file", "result"))
 	}
 	if result.UploadTimestamp != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.upload_timestamp", *result.UploadTimestamp, goa.FormatDateTime))

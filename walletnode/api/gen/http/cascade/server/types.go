@@ -536,8 +536,6 @@ type FileResponseBody struct {
 	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
 	// Upload Timestamp in datetime format
 	UploadTimestamp string `form:"upload_timestamp" json:"upload_timestamp" xml:"upload_timestamp"`
-	// Path to the file
-	Path *string `form:"path,omitempty" json:"path,omitempty" xml:"path,omitempty"`
 	// Index of the file
 	FileIndex *string `form:"file_index,omitempty" json:"file_index,omitempty" xml:"file_index,omitempty"`
 	// Base File ID
@@ -566,8 +564,6 @@ type FileResponseBody struct {
 	NameOfOriginalBigFileWithExt string `form:"name_of_original_big_file_with_ext" json:"name_of_original_big_file_with_ext" xml:"name_of_original_big_file_with_ext"`
 	// Size of the Original Big File
 	SizeOfOriginalBigFile float64 `form:"size_of_original_big_file" json:"size_of_original_big_file" xml:"size_of_original_big_file"`
-	// Data Type of the Original Big File
-	DataTypeOfOriginalBigFile string `form:"data_type_of_original_big_file" json:"data_type_of_original_big_file" xml:"data_type_of_original_big_file"`
 	// Start Block
 	StartBlock *int32 `form:"start_block,omitempty" json:"start_block,omitempty" xml:"start_block,omitempty"`
 	// Done Block

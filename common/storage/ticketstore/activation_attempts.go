@@ -9,20 +9,20 @@ type ActivationAttemptsQueries interface {
 	InsertActivationAttempt(attempt types.ActivationAttempt) (int64, error)
 	UpdateActivationAttempt(attempt types.ActivationAttempt) (int64, error)
 	GetActivationAttemptByID(id int) (*types.ActivationAttempt, error)
-	GetActivationAttemptsByFileID(fileID string) ([]*types.ActivationAttempt, error)
+	GetActivationAttemptsByFileIDAndBaseFileID(fileID, baseFileID string) ([]*types.ActivationAttempt, error)
 }
 
 // InsertActivationAttempt insert a new activation attempt into the activation_attempts table
 func (s *TicketStore) InsertActivationAttempt(attempt types.ActivationAttempt) (int64, error) {
 	const insertQuery = `
         INSERT INTO activation_attempts (
-            file_id, activation_attempt_at, is_successful, error_message, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?)
+            file_id, base_file_id, activation_attempt_at, is_successful, error_message, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         RETURNING id;`
 
 	var id int64
 	err := s.db.QueryRow(insertQuery,
-		attempt.FileID, attempt.ActivationAttemptAt,
+		attempt.FileID, attempt.BaseFileID, attempt.ActivationAttemptAt,
 		attempt.IsSuccessful, attempt.ErrorMessage, time.Now().UTC(), time.Now().UTC()).Scan(&id)
 	if err != nil {
 		return 0, err
@@ -35,7 +35,7 @@ func (s *TicketStore) InsertActivationAttempt(attempt types.ActivationAttempt) (
 func (s *TicketStore) UpdateActivationAttempt(attempt types.ActivationAttempt) (int64, error) {
 	const updateQuery = `
         UPDATE activation_attempts
-        SET activation_attempt_at = ?, is_successful = ?, error_message = ?, updated_at = ?
+        SET activation_attempt_at = ?, is_successful = ?, error_message = ?, updated_at = ?, is_confirmed=?
         WHERE id = ? AND file_id = ?
         RETURNING id`
 
@@ -45,6 +45,7 @@ func (s *TicketStore) UpdateActivationAttempt(attempt types.ActivationAttempt) (
 		attempt.IsSuccessful,
 		attempt.ErrorMessage,
 		time.Now().UTC(),
+		attempt.IsConfirmed,
 		attempt.ID,
 		attempt.FileID).Scan(&id)
 	if err != nil {
@@ -74,14 +75,14 @@ func (s *TicketStore) GetActivationAttemptByID(id int) (*types.ActivationAttempt
 	return &attempt, nil
 }
 
-// GetActivationAttemptsByFileID retrieves activation attempts by file_id from the activation_attempts table
-func (s *TicketStore) GetActivationAttemptsByFileID(fileID string) ([]*types.ActivationAttempt, error) {
+// GetActivationAttemptsByFileIDAndBaseFileID retrieves activation attempts by file_id from the activation_attempts table
+func (s *TicketStore) GetActivationAttemptsByFileIDAndBaseFileID(fileID, baseFileID string) ([]*types.ActivationAttempt, error) {
 	const selectQuery = `
         SELECT id, file_id, activation_attempt_at, is_successful, error_message
         FROM activation_attempts
-        WHERE file_id = ?;`
+        WHERE file_id = ? and base_file_id=?;`
 
-	rows, err := s.db.Query(selectQuery, fileID)
+	rows, err := s.db.Query(selectQuery, fileID, baseFileID)
 	if err != nil {
 		return nil, err
 	}

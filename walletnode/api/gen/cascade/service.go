@@ -131,8 +131,6 @@ type File struct {
 	FileID string
 	// Upload Timestamp in datetime format
 	UploadTimestamp string
-	// Path to the file
-	Path *string
 	// Index of the file
 	FileIndex *string
 	// Base File ID
@@ -161,8 +159,6 @@ type File struct {
 	NameOfOriginalBigFileWithExt string
 	// Size of the Original Big File
 	SizeOfOriginalBigFile float64
-	// Data Type of the Original Big File
-	DataTypeOfOriginalBigFile string
 	// Start Block
 	StartBlock *int32
 	// Done Block
@@ -577,7 +573,6 @@ func transformCascadeviewsFileViewToFile(v *cascadeviews.FileView) *File {
 	res := &File{
 		FileID:                       *v.FileID,
 		UploadTimestamp:              *v.UploadTimestamp,
-		Path:                         v.Path,
 		FileIndex:                    v.FileIndex,
 		BaseFileID:                   *v.BaseFileID,
 		TaskID:                       *v.TaskID,
@@ -592,7 +587,6 @@ func transformCascadeviewsFileViewToFile(v *cascadeviews.FileView) *File {
 		HashOfOriginalBigFile:        *v.HashOfOriginalBigFile,
 		NameOfOriginalBigFileWithExt: *v.NameOfOriginalBigFileWithExt,
 		SizeOfOriginalBigFile:        *v.SizeOfOriginalBigFile,
-		DataTypeOfOriginalBigFile:    *v.DataTypeOfOriginalBigFile,
 		StartBlock:                   v.StartBlock,
 		DoneBlock:                    v.DoneBlock,
 	}
@@ -654,7 +648,6 @@ func transformFileToCascadeviewsFileView(v *File) *cascadeviews.FileView {
 	res := &cascadeviews.FileView{
 		FileID:                       &v.FileID,
 		UploadTimestamp:              &v.UploadTimestamp,
-		Path:                         v.Path,
 		FileIndex:                    v.FileIndex,
 		BaseFileID:                   &v.BaseFileID,
 		TaskID:                       &v.TaskID,
@@ -669,7 +662,6 @@ func transformFileToCascadeviewsFileView(v *File) *cascadeviews.FileView {
 		HashOfOriginalBigFile:        &v.HashOfOriginalBigFile,
 		NameOfOriginalBigFileWithExt: &v.NameOfOriginalBigFileWithExt,
 		SizeOfOriginalBigFile:        &v.SizeOfOriginalBigFile,
-		DataTypeOfOriginalBigFile:    &v.DataTypeOfOriginalBigFile,
 		StartBlock:                   v.StartBlock,
 		DoneBlock:                    v.DoneBlock,
 	}
