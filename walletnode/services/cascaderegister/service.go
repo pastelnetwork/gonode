@@ -663,8 +663,8 @@ func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Cont
 
 	if concludedCount < requiredConcludedCount || concludedCount > requiredConcludedCount {
 		log.WithContext(ctx).WithField("base_file_id", baseFileID).
-			WithField("related_files", relatedFiles).WithField("concluded_count", concludedCount).
-			WithField("required_concluded_count", requiredConcludedCount).Info("all volumes are not registered or activated yet")
+			WithField("related_files", relatedFiles.Names()).WithField("no_of_volumes_registered", concludedCount).
+			WithField("total_volumes_count", requiredConcludedCount).Info("all volumes are not registered or activated yet")
 		return "", nil
 	}
 
@@ -694,8 +694,8 @@ func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Cont
 	})
 	if err != nil {
 		log.WithContext(ctx).WithField("base_file_id", baseFileID).
-			WithField("related_files", relatedFiles).WithField("concluded_count", concludedCount).
-			WithField("required_concluded_count", requiredConcludedCount).Error("Error in pastel register volume cascade ticket")
+			WithField("related_files", relatedFiles.Names()).WithField("no_of_volumes_registered", concludedCount).
+			WithField("total_volumes_count", requiredConcludedCount).Error("Error in pastel register volume cascade ticket")
 		return txID, err
 	}
 
@@ -705,8 +705,8 @@ func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Cont
 	})
 	if err != nil {
 		log.WithContext(ctx).WithField("base_file_id", baseFileID).
-			WithField("related_files", relatedFiles).WithField("concluded_count", concludedCount).
-			WithField("required_concluded_count", requiredConcludedCount).Error("Error in storing txId in db after pastel volume registration")
+			WithField("related_files", relatedFiles.Names()).WithField("no_of_volumes_registered", concludedCount).
+			WithField("total_volumes_count", requiredConcludedCount).Error("Error in storing txId in db after pastel volume registration")
 		return txID, err
 	}
 	log.WithContext(ctx).WithField("base_file_id", baseFileID).WithField("txID", txID).Info("cascade multi-volume registration has been completed")

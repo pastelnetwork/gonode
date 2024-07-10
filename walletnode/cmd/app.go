@@ -42,6 +42,7 @@ const (
 	appUsage       = "WalletNode" // TODO: Write a clear description.
 	rqFilesDir     = "rqfiles"
 	staticFilesDir = "files"
+	cascadeFiles   = "cascadefiles"
 )
 
 var (
@@ -52,7 +53,7 @@ var (
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
 	defaultStaticFilesDir   = filepath.Join(defaultPath, staticFilesDir)
-	defaultCascadeFilesDir  = filepath.Join(defaultPath, "files")
+	defaultCascadeFilesDir  = filepath.Join(defaultPath, cascadeFiles)
 )
 
 // NewApp configures our app by parsing command line flags, config files, and setting up logging and temporary directories

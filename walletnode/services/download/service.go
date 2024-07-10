@@ -2,6 +2,7 @@ package download
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/storage/queries"
 
@@ -65,6 +66,21 @@ func (service *NftDownloadingService) GetTask(id string) *NftDownloadingTask {
 		return t.(*NftDownloadingTask)
 	}
 	return nil
+}
+
+// GetFilename return filename of the original file
+func (service *NftDownloadingService) GetFilenameAndSize(ctx context.Context, txid string) (filename string, size int, err error) {
+	ticket, err := service.pastelHandler.PastelClient.ActionRegTicket(ctx, txid)
+	if err != nil {
+		return "", 0, fmt.Errorf("unable to get action ticket: %w", err)
+	}
+
+	casacdeTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
+	if err != nil {
+		return "", 0, fmt.Errorf("unable to get cascade ticket: %w", err)
+	}
+
+	return casacdeTicket.FileName, casacdeTicket.OriginalFileSizeInBytes, nil
 }
 
 // AddTask adds a new task of the NFT downloading and returns its taskID.

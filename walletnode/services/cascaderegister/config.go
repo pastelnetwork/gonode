@@ -1,9 +1,10 @@
 package cascaderegister
 
 import (
+	"path/filepath"
+
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
-	"path/filepath"
 )
 
 const (
@@ -17,7 +18,7 @@ const (
 )
 
 var (
-	defaultCascadeFilesDir = filepath.Join(configurer.DefaultPath(), "files")
+	defaultCascadeFilesDir = filepath.Join(configurer.DefaultPath(), "cascadefiles")
 )
 
 // Config contains settings of the registering nft.

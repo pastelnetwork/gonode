@@ -241,7 +241,7 @@ func (task *SenseRegistrationTask) ValidateAndRegister(_ context.Context, ticket
 		log.WithContext(ctx).Infof("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
 		if err = task.signAndSendSenseTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("sign and send Sense ticket")
-			err = errors.Errorf("signed and send NFT ticket")
+			err = errors.Errorf("signed and send Sense ticket")
 			return nil
 		}
 

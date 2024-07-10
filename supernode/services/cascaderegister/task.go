@@ -105,7 +105,7 @@ func (task *CascadeRegistrationTask) ValidateAndRegister(_ context.Context, tick
 		log.WithContext(ctx).Infof("isPrimary: %t", task.NetworkHandler.ConnectedTo == nil)
 		if err = task.signAndSendCascadeTicket(ctx, task.NetworkHandler.ConnectedTo == nil); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("signed and send Cascade ticket")
-			err = errors.Errorf("signed and send NFT ticket: %w", err)
+			err = errors.Errorf("signed and send Cascade ticket: %w", err)
 			return nil
 		}
 
