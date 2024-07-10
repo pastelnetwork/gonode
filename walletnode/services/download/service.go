@@ -74,6 +74,11 @@ func (service *NftDownloadingService) GetFilenameAndSize(ctx context.Context, tx
 	if err != nil {
 		return "", 0, fmt.Errorf("unable to get action ticket: %w", err)
 	}
+	actionTicket, err := pastel.DecodeActionTicket([]byte(ticket.ActionTicketData.ActionTicket))
+	if err != nil {
+		return "", 0, fmt.Errorf("unable to decode action ticket: %w", err)
+	}
+	ticket.ActionTicketData.ActionTicketData = *actionTicket
 
 	casacdeTicket, err := ticket.ActionTicketData.ActionTicketData.APICascadeTicket()
 	if err != nil {

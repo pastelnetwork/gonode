@@ -33,6 +33,7 @@ const (
 	maxFileSize                 = 300 * 1024 * 1024 // 300MB in bytes
 	maxFileRegistrationAttempts = 3
 	downloadDeadline            = 30 * time.Minute
+	downloadConcurrency         = 1
 )
 
 // CascadeAPIHandler - CascadeAPIHandler service
@@ -320,7 +321,7 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	}
 
 	// Channel to control the concurrency of downloads
-	sem := make(chan struct{}, 3) // Max 3 concurrent downloads
+	sem := make(chan struct{}, downloadConcurrency) // Max 3 concurrent downloads
 	taskResults := make(chan *DownloadResult)
 	errorsChan := make(chan error)
 

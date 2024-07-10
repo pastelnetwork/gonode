@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -23,7 +24,7 @@ import (
 
 const (
 	maxConcurrentRegistrationsPerBlock = 5
-	uploadDataConcurrency              = 3
+	uploadDataConcurrency              = 4
 )
 
 // BlockRegistrations tracks ongoing registrations per block
@@ -361,6 +362,12 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 		log.WithContext(ctx).WithError(err).Error("error waiting for Reg TXID confirmations")
 		return task.regCascadeTxid, "", errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
+
+	filePath := filepath.Join(task.service.config.CascadeFilesDir, task.Request.BaseFileID, task.Request.FileID)
+	if err := os.Remove(filePath); err != nil {
+		log.WithContext(ctx).WithField("file", filePath).WithError(err).Error("error removing file")
+	}
+
 	task.UpdateStatus(common.StatusTicketRegistered)
 	task.UpdateStatus(&common.EphemeralStatus{
 		StatusTitle:   "Validated Cascade Reg TXID: ",
