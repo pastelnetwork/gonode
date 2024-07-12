@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -39,6 +40,7 @@ func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signa
 	defer stream.CloseSend()
 
 	// Receive file
+	init := 0
 	for {
 		var resp *pb.DownloadReply
 		resp, err = stream.Recv()
@@ -50,6 +52,10 @@ func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signa
 			return
 		}
 		file = append(file, resp.File...)
+		if utils.BytesIntToMB(len(file)) > init+10 {
+			log.WithContext(ctx).WithField("total-recieved", utils.BytesIntToMB(len(file))).Info("received 10 MB file chunk")
+			init = init + 10
+		}
 	}
 
 	return

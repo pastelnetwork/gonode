@@ -283,12 +283,12 @@ func (task *NftDownloadingTask) Download(ctx context.Context, txid, timestamp, s
 
 	<-task.NewAction(func(ctx context.Context) error {
 		log.WithContext(ctx).WithField("txid", txid).WithField("ttype", ttype).Info("Downloading File request received")
-		// Validate timestamp is not older than 10 minutes
+		// Validate timestamp is not older than 30 minutes
 		now := time.Now().UTC()
-		lastTenMinutes := now.Add(time.Duration(-10) * time.Minute)
+		lastTenMinutes := now.Add(time.Duration(-30) * time.Minute)
 		requestTime, _ := time.Parse(time.RFC3339, timestamp)
 		if lastTenMinutes.After(requestTime) {
-			err = errors.New("request time is older than 10 minutes")
+			err = errors.New("request time is older than 30 minutes")
 			task.UpdateStatus(common.StatusRequestTooLate)
 			return nil
 		}
