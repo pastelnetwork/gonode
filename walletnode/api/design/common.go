@@ -68,6 +68,17 @@ var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
 	Required("taskId")
 })
 
+// DownloadTaskStatePayload represents a payload for returning task.
+var DownloadTaskStatePayload = Type("DownloadTaskStatePayload", func() {
+	Attribute("file_id", String, "File ID returned by Download V2 API", func() {
+		TypeName("file_id")
+		MinLength(8)
+		MaxLength(8)
+		Example("n6Qn6TFM")
+	})
+	Required("file_id")
+})
+
 // RegisterTaskState is task streaming of the NFT registration.
 var RegisterTaskState = Type("TaskState", func() {
 	Attribute("date", String, func() {
@@ -220,6 +231,15 @@ var FileDownloadResult = Type("FileDownloadResult", func() {
 	Description("Asset download response")
 	Attribute("file_id", String, func() {
 		Description("File path")
+	})
+	Required("file_id")
+})
+
+// FileDownloadV2Result is Asset download result.
+var FileDownloadV2Result = Type("FileDownloadV2Result", func() {
+	Description("Asset download response V2 - returns task_id for the download task")
+	Attribute("file_id", String, func() {
+		Description("Task ID for the download task - caller can check the status of the download task using this task_id")
 	})
 	Required("file_id")
 })

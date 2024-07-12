@@ -244,6 +244,72 @@ func BuildDownloadPayload(cascadeDownloadTxid string, cascadeDownloadPid string,
 	return v, nil
 }
 
+// BuildDownloadV2Payload builds the payload for the cascade downloadV2
+// endpoint from CLI flags.
+func BuildDownloadV2Payload(cascadeDownloadV2Txid string, cascadeDownloadV2Pid string, cascadeDownloadV2Key string) (*cascade.DownloadPayload, error) {
+	var err error
+	var txid string
+	{
+		txid = cascadeDownloadV2Txid
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
+		}
+		if utf8.RuneCountInString(txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var pid string
+	{
+		pid = cascadeDownloadV2Pid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var key string
+	{
+		key = cascadeDownloadV2Key
+	}
+	v := &cascade.DownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
+
+	return v, nil
+}
+
+// BuildGetDownloadTaskStatePayload builds the payload for the cascade
+// getDownloadTaskState endpoint from CLI flags.
+func BuildGetDownloadTaskStatePayload(cascadeGetDownloadTaskStateFileID string) (*cascade.GetDownloadTaskStatePayload, error) {
+	var err error
+	var fileID string
+	{
+		fileID = cascadeGetDownloadTaskStateFileID
+		if utf8.RuneCountInString(fileID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 8, true))
+		}
+		if utf8.RuneCountInString(fileID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &cascade.GetDownloadTaskStatePayload{}
+	v.FileID = fileID
+
+	return v, nil
+}
+
 // BuildRegistrationDetailsPayload builds the payload for the cascade
 // registrationDetails endpoint from CLI flags.
 func BuildRegistrationDetailsPayload(cascadeRegistrationDetailsBaseFileID string) (*cascade.RegistrationDetailsPayload, error) {

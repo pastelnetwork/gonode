@@ -145,6 +145,44 @@ var _ = Service("cascade", func() {
 		})
 	})
 
+	Method("downloadV2", func() {
+		Description("Starts downloading cascade Artifact.")
+		Meta("swagger:summary", "Downloads cascade artifact")
+
+		Security(APIKeyAuth)
+
+		Payload(DownloadPayload)
+		Result(FileDownloadV2Result)
+
+		HTTP(func() {
+			GET("/v2/download")
+			Param("txid")
+			Param("pid")
+
+			Response("UnAuthorized", StatusUnauthorized)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("getDownloadTaskState", func() {
+		Description("Gets the state of download task")
+		Meta("swagger:summary", "Get history of states as a json string with a list of state objects.")
+
+		Payload(func() {
+			Extend(DownloadTaskStatePayload)
+		})
+		Result(ArrayOf(TaskHistory))
+
+		HTTP(func() {
+			GET("/downloads/{file_id}/status")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
 	Method("registrationDetails", func() {
 		Description("Get the file registration details")
 		Meta("swagger:summary", "Get the file registration details")

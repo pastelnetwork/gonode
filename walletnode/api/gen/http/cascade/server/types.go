@@ -118,6 +118,18 @@ type DownloadResponseBody struct {
 	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
 }
 
+// DownloadV2ResponseBody is the type of the "cascade" service "downloadV2"
+// endpoint HTTP response body.
+type DownloadV2ResponseBody struct {
+	// Task ID for the download task - caller can check the status of the download
+	// task using this task_id
+	FileID string `form:"file_id" json:"file_id" xml:"file_id"`
+}
+
+// GetDownloadTaskStateResponseBody is the type of the "cascade" service
+// "getDownloadTaskState" endpoint HTTP response body.
+type GetDownloadTaskStateResponseBody []*TaskHistoryResponse
+
 // RegistrationDetailsResponseBody is the type of the "cascade" service
 // "registrationDetails" endpoint HTTP response body.
 type RegistrationDetailsResponseBody struct {
@@ -384,6 +396,99 @@ type DownloadNotFoundResponseBody struct {
 // DownloadInternalServerErrorResponseBody is the type of the "cascade" service
 // "download" endpoint HTTP response body for the "InternalServerError" error.
 type DownloadInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DownloadV2UnAuthorizedResponseBody is the type of the "cascade" service
+// "downloadV2" endpoint HTTP response body for the "UnAuthorized" error.
+type DownloadV2UnAuthorizedResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DownloadV2NotFoundResponseBody is the type of the "cascade" service
+// "downloadV2" endpoint HTTP response body for the "NotFound" error.
+type DownloadV2NotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DownloadV2InternalServerErrorResponseBody is the type of the "cascade"
+// service "downloadV2" endpoint HTTP response body for the
+// "InternalServerError" error.
+type DownloadV2InternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// GetDownloadTaskStateNotFoundResponseBody is the type of the "cascade"
+// service "getDownloadTaskState" endpoint HTTP response body for the
+// "NotFound" error.
+type GetDownloadTaskStateNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// GetDownloadTaskStateInternalServerErrorResponseBody is the type of the
+// "cascade" service "getDownloadTaskState" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetDownloadTaskStateInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -679,6 +784,25 @@ func NewDownloadResponseBody(res *cascade.FileDownloadResult) *DownloadResponseB
 	return body
 }
 
+// NewDownloadV2ResponseBody builds the HTTP response body from the result of
+// the "downloadV2" endpoint of the "cascade" service.
+func NewDownloadV2ResponseBody(res *cascade.FileDownloadV2Result) *DownloadV2ResponseBody {
+	body := &DownloadV2ResponseBody{
+		FileID: res.FileID,
+	}
+	return body
+}
+
+// NewGetDownloadTaskStateResponseBody builds the HTTP response body from the
+// result of the "getDownloadTaskState" endpoint of the "cascade" service.
+func NewGetDownloadTaskStateResponseBody(res []*cascade.TaskHistory) GetDownloadTaskStateResponseBody {
+	body := make([]*TaskHistoryResponse, len(res))
+	for i, val := range res {
+		body[i] = marshalCascadeTaskHistoryToTaskHistoryResponse(val)
+	}
+	return body
+}
+
 // NewRegistrationDetailsResponseBody builds the HTTP response body from the
 // result of the "registrationDetails" endpoint of the "cascade" service.
 func NewRegistrationDetailsResponseBody(res *cascadeviews.RegistrationView) *RegistrationDetailsResponseBody {
@@ -908,6 +1032,78 @@ func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *Download
 	return body
 }
 
+// NewDownloadV2UnAuthorizedResponseBody builds the HTTP response body from the
+// result of the "downloadV2" endpoint of the "cascade" service.
+func NewDownloadV2UnAuthorizedResponseBody(res *goa.ServiceError) *DownloadV2UnAuthorizedResponseBody {
+	body := &DownloadV2UnAuthorizedResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewDownloadV2NotFoundResponseBody builds the HTTP response body from the
+// result of the "downloadV2" endpoint of the "cascade" service.
+func NewDownloadV2NotFoundResponseBody(res *goa.ServiceError) *DownloadV2NotFoundResponseBody {
+	body := &DownloadV2NotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewDownloadV2InternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "downloadV2" endpoint of the "cascade" service.
+func NewDownloadV2InternalServerErrorResponseBody(res *goa.ServiceError) *DownloadV2InternalServerErrorResponseBody {
+	body := &DownloadV2InternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetDownloadTaskStateNotFoundResponseBody builds the HTTP response body
+// from the result of the "getDownloadTaskState" endpoint of the "cascade"
+// service.
+func NewGetDownloadTaskStateNotFoundResponseBody(res *goa.ServiceError) *GetDownloadTaskStateNotFoundResponseBody {
+	body := &GetDownloadTaskStateNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewGetDownloadTaskStateInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "getDownloadTaskState" endpoint of the
+// "cascade" service.
+func NewGetDownloadTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) *GetDownloadTaskStateInternalServerErrorResponseBody {
+	body := &GetDownloadTaskStateInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewRegistrationDetailsUnAuthorizedResponseBody builds the HTTP response body
 // from the result of the "registrationDetails" endpoint of the "cascade"
 // service.
@@ -1070,6 +1266,26 @@ func NewDownloadPayload(txid string, pid string, key string) *cascade.DownloadPa
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key
+
+	return v
+}
+
+// NewDownloadV2DownloadPayload builds a cascade service downloadV2 endpoint
+// payload.
+func NewDownloadV2DownloadPayload(txid string, pid string, key string) *cascade.DownloadPayload {
+	v := &cascade.DownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
+
+	return v
+}
+
+// NewGetDownloadTaskStatePayload builds a cascade service getDownloadTaskState
+// endpoint payload.
+func NewGetDownloadTaskStatePayload(fileID string) *cascade.GetDownloadTaskStatePayload {
+	v := &cascade.GetDownloadTaskStatePayload{}
+	v.FileID = fileID
 
 	return v
 }

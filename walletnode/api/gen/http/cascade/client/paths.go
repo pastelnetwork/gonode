@@ -41,6 +41,16 @@ func DownloadCascadePath() string {
 	return "/openapi/cascade/download"
 }
 
+// DownloadV2CascadePath returns the URL path to the cascade service downloadV2 HTTP endpoint.
+func DownloadV2CascadePath() string {
+	return "/openapi/cascade/v2/download"
+}
+
+// GetDownloadTaskStateCascadePath returns the URL path to the cascade service getDownloadTaskState HTTP endpoint.
+func GetDownloadTaskStateCascadePath(fileID string) string {
+	return fmt.Sprintf("/openapi/cascade/downloads/%v/status", fileID)
+}
+
 // RegistrationDetailsCascadePath returns the URL path to the cascade service registrationDetails HTTP endpoint.
 func RegistrationDetailsCascadePath(baseFileID string) string {
 	return fmt.Sprintf("/openapi/cascade/registration_details/%v", baseFileID)

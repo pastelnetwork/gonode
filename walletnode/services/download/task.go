@@ -188,7 +188,6 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 
 // Download downloads the file from supernodes.
 func (task *NftDownloadingTask) Download(cctx context.Context, txid, ttxid, ttype string, timeout time.Duration) ([]error, []string, error) {
-	var wg sync.WaitGroup
 	errChan := make(chan error, len(task.MeshHandler.Nodes))
 	var badNodes []string
 	var badMtx sync.Mutex
@@ -197,14 +196,6 @@ func (task *NftDownloadingTask) Download(cctx context.Context, txid, ttxid, ttyp
 	ctx, cancel := context.WithCancel(cctx)
 	defer cancel()
 
-	// Create a buffered channel to communicate successful downloads
-	successes := make(chan struct{}, requiredSuccessfulCount)
-
-	// Semaphore channel to limit concurrent downloads to 3
-	semaphore := make(chan struct{}, concurrentDownloads)
-
-	defer close(successes)
-
 	for _, someNode := range task.MeshHandler.Nodes {
 		nftDownNode, ok := someNode.SuperNodeAPIInterface.(*NftDownloadingNode)
 		if !ok {
@@ -212,69 +203,49 @@ func (task *NftDownloadingTask) Download(cctx context.Context, txid, ttxid, ttyp
 		}
 
 		someNode := someNode
-		wg.Add(1)
 
-		semaphore <- struct{}{}
-		go func() {
-			defer wg.Done()
-			defer func() { <-semaphore }() // Release semaphore when goroutine finishes
+		// Create a new context with a timeout for this goroutine
+		goroutineCtx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 
-			// Create a new context with a timeout for this goroutine
-			goroutineCtx, cancel := context.WithTimeout(ctx, timeout)
-			defer cancel()
+		timestamp := time.Now().UTC().Format(time.RFC3339)
+		signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, pastel.SignAlgorithmED448)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
+			errChan <- err
+		}
 
-			timestamp := time.Now().UTC().Format(time.RFC3339)
-			signature, err := task.service.pastelHandler.PastelClient.Sign(ctx, []byte(timestamp), task.Request.PastelID, task.Request.PastelIDPassphrase, pastel.SignAlgorithmED448)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
-				errChan <- err
+		log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).Info("Downloading from supernode")
+		file, subErr := nftDownNode.Download(goroutineCtx, txid, timestamp, string(signature), ttxid, ttype, task.Request.HashOnly)
+		if subErr != nil || len(file) == 0 {
+			if subErr == nil {
+				subErr = errors.New("empty file")
 			}
-			log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).Info("Downloading from supernode")
-			file, subErr := nftDownNode.Download(goroutineCtx, txid, timestamp, string(signature), ttxid, ttype, task.Request.HashOnly)
-			if subErr != nil || len(file) == 0 {
-				if subErr == nil {
-					subErr = errors.New("empty file")
-				}
 
-				if !strings.Contains(subErr.Error(), "context canceled") {
-					log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).WithError(subErr).Error("Could not download from supernode")
-
-					func() {
-						badMtx.Lock()
-						defer badMtx.Unlock()
-
-						badNodes = append(badNodes, someNode.PastelID())
-					}()
-				}
-
-				errChan <- subErr
-			} else {
-				log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).WithField("len", len(file)).Info("Downloaded from supernode")
+			if !strings.Contains(subErr.Error(), "context canceled") {
+				log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).WithError(subErr).Error("Could not download from supernode")
 
 				func() {
-					task.mtx.Lock()
-					defer task.mtx.Unlock()
-					task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
+					badMtx.Lock()
+					defer badMtx.Unlock()
+
+					badNodes = append(badNodes, someNode.PastelID())
 				}()
-
-				// Signal a successful download
-				successes <- struct{}{}
 			}
-		}()
-	}
 
-	// Wait for 3 successful downloads, then cancel the context
-	go func() {
-		for i := 0; i < requiredSuccessfulCount; i++ {
-			select {
-			case <-successes:
-			case <-ctx.Done():
-				return
-			}
+			errChan <- subErr
+		} else {
+			log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).WithField("len", len(file)).Info("Downloaded from supernode")
+
+			func() {
+				task.mtx.Lock()
+				defer task.mtx.Unlock()
+				task.files = append(task.files, downFile{file: file, pastelID: someNode.PastelID()})
+			}()
+
+			return nil, badNodes, nil
 		}
-		cancel()
-	}()
-	wg.Wait()
+	}
 
 	close(errChan)
 
@@ -299,16 +270,13 @@ func (task *NftDownloadingTask) MatchFiles() (int, []string, error) {
 		log.Debugf("file of node %s - content: %q", task.files[i].pastelID, task.files[i].file)
 
 		for j := 0; j < len(task.files); j++ {
-			if i == j {
-				continue
-			}
 
 			if bytes.Equal(task.files[i].file, task.files[j].file) {
 				matches++
 			}
 		}
 
-		if matches >= 2 {
+		if matches >= requiredSuccessfulCount {
 			return i, badNodes, nil
 		}
 

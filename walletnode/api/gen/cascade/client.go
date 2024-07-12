@@ -15,27 +15,31 @@ import (
 
 // Client is the "cascade" service client.
 type Client struct {
-	UploadAssetEndpoint         goa.Endpoint
-	UploadAssetV2Endpoint       goa.Endpoint
-	StartProcessingEndpoint     goa.Endpoint
-	RegisterTaskStateEndpoint   goa.Endpoint
-	GetTaskHistoryEndpoint      goa.Endpoint
-	DownloadEndpoint            goa.Endpoint
-	RegistrationDetailsEndpoint goa.Endpoint
-	RestoreEndpoint             goa.Endpoint
+	UploadAssetEndpoint          goa.Endpoint
+	UploadAssetV2Endpoint        goa.Endpoint
+	StartProcessingEndpoint      goa.Endpoint
+	RegisterTaskStateEndpoint    goa.Endpoint
+	GetTaskHistoryEndpoint       goa.Endpoint
+	DownloadEndpoint             goa.Endpoint
+	DownloadV2Endpoint           goa.Endpoint
+	GetDownloadTaskStateEndpoint goa.Endpoint
+	RegistrationDetailsEndpoint  goa.Endpoint
+	RestoreEndpoint              goa.Endpoint
 }
 
 // NewClient initializes a "cascade" service client given the endpoints.
-func NewClient(uploadAsset, uploadAssetV2, startProcessing, registerTaskState, getTaskHistory, download, registrationDetails, restore goa.Endpoint) *Client {
+func NewClient(uploadAsset, uploadAssetV2, startProcessing, registerTaskState, getTaskHistory, download, downloadV2, getDownloadTaskState, registrationDetails, restore goa.Endpoint) *Client {
 	return &Client{
-		UploadAssetEndpoint:         uploadAsset,
-		UploadAssetV2Endpoint:       uploadAssetV2,
-		StartProcessingEndpoint:     startProcessing,
-		RegisterTaskStateEndpoint:   registerTaskState,
-		GetTaskHistoryEndpoint:      getTaskHistory,
-		DownloadEndpoint:            download,
-		RegistrationDetailsEndpoint: registrationDetails,
-		RestoreEndpoint:             restore,
+		UploadAssetEndpoint:          uploadAsset,
+		UploadAssetV2Endpoint:        uploadAssetV2,
+		StartProcessingEndpoint:      startProcessing,
+		RegisterTaskStateEndpoint:    registerTaskState,
+		GetTaskHistoryEndpoint:       getTaskHistory,
+		DownloadEndpoint:             download,
+		DownloadV2Endpoint:           downloadV2,
+		GetDownloadTaskStateEndpoint: getDownloadTaskState,
+		RegistrationDetailsEndpoint:  registrationDetails,
+		RestoreEndpoint:              restore,
 	}
 }
 
@@ -135,6 +139,39 @@ func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res *FileDow
 		return
 	}
 	return ires.(*FileDownloadResult), nil
+}
+
+// DownloadV2 calls the "downloadV2" endpoint of the "cascade" service.
+// DownloadV2 may return the following errors:
+//   - "UnAuthorized" (type *goa.ServiceError)
+//   - "BadRequest" (type *goa.ServiceError)
+//   - "NotFound" (type *goa.ServiceError)
+//   - "InternalServerError" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) DownloadV2(ctx context.Context, p *DownloadPayload) (res *FileDownloadV2Result, err error) {
+	var ires any
+	ires, err = c.DownloadV2Endpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*FileDownloadV2Result), nil
+}
+
+// GetDownloadTaskState calls the "getDownloadTaskState" endpoint of the
+// "cascade" service.
+// GetDownloadTaskState may return the following errors:
+//   - "UnAuthorized" (type *goa.ServiceError)
+//   - "BadRequest" (type *goa.ServiceError)
+//   - "NotFound" (type *goa.ServiceError)
+//   - "InternalServerError" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) GetDownloadTaskState(ctx context.Context, p *GetDownloadTaskStatePayload) (res []*TaskHistory, err error) {
+	var ires any
+	ires, err = c.GetDownloadTaskStateEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.([]*TaskHistory), nil
 }
 
 // RegistrationDetails calls the "registrationDetails" endpoint of the
