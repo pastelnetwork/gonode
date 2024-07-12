@@ -3,6 +3,7 @@ package cascaderegister
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"math"
 	"os"
 	"path/filepath"
@@ -44,7 +45,6 @@ const (
 	logPrefix                   = "cascade"
 	defaultImageTTL             = time.Second * 3600 // 1 hour
 	maxFileRegistrationAttempts = 3
-	maxFileActAttempts          = 3
 )
 
 // CascadeRegistrationService represents a service for Cascade Open API
@@ -56,6 +56,7 @@ type CascadeRegistrationService struct {
 	ImageHandler  *mixins.FilesHandler
 	pastelHandler *mixins.PastelHandler
 	nodeClient    node.ClientInterface
+	restore       *RestoreService
 
 	rqClient rqnode.ClientInterface
 
@@ -76,6 +77,12 @@ func (service *CascadeRegistrationService) Run(ctx context.Context) error {
 	group.Go(func() error {
 		return service.Worker.Run(ctx)
 	})
+
+	// Run restore volume worker
+	group.Go(func() error {
+		return service.restore.Run(ctx, *service)
+	})
+
 	return group.Wait()
 }
 
@@ -231,14 +238,6 @@ func (service *CascadeRegistrationService) StoreFileMetadata(ctx context.Context
 	}
 
 	return fee, preburn, nil
-}
-
-func (service *CascadeRegistrationService) GetFile(fileID string) (*types.File, error) {
-	file, err := service.ticketDB.GetFileByID(fileID)
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
 }
 
 func (service *CascadeRegistrationService) GetFileByTaskID(taskID string) (*types.File, error) {
@@ -514,6 +513,8 @@ func (service *CascadeRegistrationService) ProcessFile(ctx context.Context, file
 
 			file.TaskID = taskID
 			file.BurnTxnID = *p.BurnTxid
+			file.PastelID = p.AppPastelID
+			file.Passphrase = base64.StdEncoding.EncodeToString([]byte(p.Key))
 			err = service.UpsertFile(file)
 			if err != nil {
 				log.WithField("task_id", taskID).WithField("file_id", p.FileID).
@@ -596,11 +597,11 @@ func (service *CascadeRegistrationService) GetBurnTxIdByAmount(ctx context.Conte
 }
 
 func (service *CascadeRegistrationService) ActivateActionTicketAndRegisterVolumeTicket(ctx context.Context, aar pastel.ActivateActionRequest, baseFile types.File, actAttemptId int64) error {
-	blockCount, err := service.pastelHandler.PastelClient.GetBlockCount(ctx)
+	regTicket, err := service.pastelHandler.PastelClient.ActionRegTicket(ctx, aar.RegTxID)
 	if err != nil {
 		return err
 	}
-	aar.BlockNum = int(blockCount)
+	aar.BlockNum = regTicket.Height
 
 	actTxId, err := service.pastelHandler.PastelClient.ActivateActionTicket(ctx, aar)
 	if err != nil {
@@ -743,6 +744,177 @@ func (service *CascadeRegistrationService) ValidateBurnTxn(ctx context.Context, 
 	return service.pastelHandler.ValidateBurnTxID(ctx, burnTxID, estimatedFee)
 }
 
+func (service *CascadeRegistrationService) GetUnCompletedFiles() ([]*types.File, error) {
+	uCFiles, err := service.ticketDB.GetUnCompletedFiles()
+	if err != nil {
+		return []*types.File{}, err
+	}
+
+	return uCFiles, nil
+}
+
+func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *cascade.RestorePayload) (res *cascade.RestoreFile, err error) {
+	volumes, err := service.GetFilesByBaseFileID(p.BaseFileID)
+	if err != nil {
+		return nil, cascade.MakeInternalServerError(err)
+	}
+
+	if len(volumes) == 0 {
+		return nil, cascade.MakeInternalServerError(errors.New("no volumes associated with the base-file-id to recover"))
+	}
+
+	log.WithContext(ctx).WithField("total_volumes", len(volumes)).
+		Info("total volumes retrieved from the base file-id")
+
+	unConcludedVolumes, err := volumes.GetUnconcludedFiles()
+	if err != nil {
+		return nil, cascade.MakeInternalServerError(err)
+	}
+
+	// check if volumes already concluded
+	if len(unConcludedVolumes) == 0 {
+		log.WithContext(ctx).
+			Info("All volumes are already concluded")
+		return &cascade.RestoreFile{
+			TotalVolumes:                   len(volumes),
+			RegisteredVolumes:              len(volumes),
+			VolumesWithPendingRegistration: 0,
+			VolumesRegistrationInProgress:  0,
+			ActivatedVolumes:               len(volumes),
+			VolumesActivatedInRecoveryFlow: 0,
+		}, nil
+
+	}
+
+	var (
+		registeredVolumes              int
+		volumesWithInProgressRegCount  int
+		volumesWithPendingRegistration int
+		volumesActivatedInRecoveryFlow int
+		activatedVolumes               int
+	)
+	logger := log.WithContext(ctx).WithField("base_file_id", p.BaseFileID)
+
+	runningTasks := service.Worker.Tasks()
+	runningTaskIDs := make(map[string]struct{}, len(runningTasks))
+	for _, rt := range runningTasks {
+		runningTaskIDs[rt.ID()] = struct{}{}
+	}
+
+	for _, v := range volumes {
+		if _, exists := runningTaskIDs[v.TaskID]; exists {
+			log.WithContext(ctx).WithField("task_id", v.TaskID).WithField("base_file_id", v.BaseFileID).
+				Info("current task is already in-progress can't execute the recovery-flow")
+			continue
+		}
+
+		if v.RegTxid == "" {
+			volumesWithPendingRegistration++
+			logger.WithField("volume_name", v.FileID).Info("find a volume with no registration, trying again...")
+
+			var burnTxId string
+			if v.BurnTxnID != "" && service.IsBurnTxIDValidForRecovery(ctx, v.BurnTxnID, v.ReqAmount-10) {
+				log.WithContext(ctx).WithField("burn_txid", v.BurnTxnID).Info("existing burn-txid is valid")
+				burnTxId = v.BurnTxnID
+			} else {
+				log.WithContext(ctx).WithField("burn_txid", v.BurnTxnID).Info("existing burn-txid is not valid, burning the new txid")
+
+				burnTxId, err = service.GetBurnTxIdByAmount(ctx, int64(v.ReqBurnTxnAmount))
+				if err != nil {
+					log.WithContext(ctx).WithField("amount", int64(v.ReqBurnTxnAmount)).WithError(err).Error("error getting burn TxId for amount")
+					return nil, cascade.MakeInternalServerError(err)
+				}
+
+				logger.WithField("volume_name", v.FileID).Info("estimated fee has been burned, sending for registration")
+			}
+
+			addTaskPayload := &common.AddTaskPayload{
+				FileID:                 v.FileID,
+				BurnTxid:               &burnTxId,
+				AppPastelID:            p.AppPastelID,
+				MakePubliclyAccessible: p.MakePubliclyAccessible,
+				Key:                    p.Key,
+			}
+
+			if p.SpendableAddress != nil {
+				addTaskPayload.SpendableAddress = p.SpendableAddress
+			}
+
+			_, err = service.ProcessFile(ctx, *v, addTaskPayload)
+			if err != nil {
+				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error processing un-registered volume")
+				continue
+			}
+			logger.WithField("volume_name", v.FileID).Info("task added for registration recovery")
+
+			volumesWithInProgressRegCount += 1
+		} else if v.ActivationTxid == "" {
+			logger.WithField("volume_name", v.FileID).Info("find a volume with no activation, trying again...")
+
+			// activation code
+			actAttemptId, err := service.InsertActivationAttempt(types.ActivationAttempt{
+				FileID:              v.FileID,
+				ActivationAttemptAt: time.Now().UTC(),
+			})
+			if err != nil {
+				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error inserting activation attempt")
+				continue
+			}
+
+			activateActReq := pastel.ActivateActionRequest{
+				RegTxID:    v.RegTxid,
+				Fee:        int64(v.ReqAmount) - 10,
+				PastelID:   p.AppPastelID,
+				Passphrase: p.Key,
+			}
+
+			err = service.ActivateActionTicketAndRegisterVolumeTicket(ctx, activateActReq, *v, actAttemptId)
+			if err != nil {
+				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error activating or registering un-concluded volume")
+				continue
+			}
+			logger.WithField("volume_name", v.FileID).Info("request has been sent for activation")
+
+			volumesActivatedInRecoveryFlow += 1
+		} else {
+			if v.RegTxid != "" {
+				registeredVolumes += 1
+			}
+			if v.ActivationTxid != "" {
+				activatedVolumes += 1
+			}
+		}
+	}
+
+	// only set base file txId return by pastel register all else remains nil
+	_, err = service.RegisterVolumeTicket(ctx, p.BaseFileID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cascade.RestoreFile{
+		TotalVolumes:                   len(volumes),
+		RegisteredVolumes:              registeredVolumes,
+		VolumesWithPendingRegistration: volumesWithPendingRegistration,
+		VolumesRegistrationInProgress:  volumesWithInProgressRegCount,
+		ActivatedVolumes:               activatedVolumes,
+		VolumesActivatedInRecoveryFlow: volumesActivatedInRecoveryFlow,
+	}, nil
+}
+
+func (service *CascadeRegistrationService) IsBurnTxIDValidForRecovery(ctx context.Context, burnTxID string, estimatedFee float64) bool {
+	if err := service.CheckBurnTxIDTicketDuplication(ctx, burnTxID); err != nil {
+		return false
+	}
+
+	err := service.ValidateBurnTxn(ctx, burnTxID, estimatedFee)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 // NewService returns a new Service instance
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.ClientInterface,
 	fileStorage storage.FileStorageInterface, db storage.KeyValue,
@@ -757,6 +929,7 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Clie
 		ImageHandler:    mixins.NewFilesHandler(fileStorage, db, defaultImageTTL),
 		pastelHandler:   mixins.NewPastelHandler(pastelClient),
 		rqClient:        rqgrpc.NewClient(),
+		restore:         NewRestoreService(),
 		downloadHandler: downloadService,
 		historyDB:       historyDB,
 		ticketDB:        ticketDB,

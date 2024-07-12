@@ -1,8 +1,9 @@
 package ticketstore
 
 import (
-	"github.com/pastelnetwork/gonode/common/types"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/types"
 )
 
 type FilesQueries interface {
@@ -11,6 +12,7 @@ type FilesQueries interface {
 	GetFilesByBaseFileID(baseFileID string) ([]*types.File, error)
 	GetFileByTaskID(taskID string) (*types.File, error)
 	GetFilesByBaseFileIDAndConcludedCheck(baseFileID string, isConcluded bool) ([]*types.File, error)
+	GetUnCompletedFiles() ([]*types.File, error)
 }
 
 // UpsertFile inserts a new file into the files table
@@ -22,9 +24,9 @@ func (s *TicketStore) UpsertFile(file types.File) error {
             req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
             hash_of_original_big_file, name_of_original_big_file_with_ext, 
             size_of_original_big_file, data_type_of_original_big_file, 
-            start_block, done_block, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(file_id) 
+            start_block, done_block, pastel_id, passphrase, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(file_id, base_file_id) 
         DO UPDATE SET
             upload_timestamp = COALESCE(excluded.upload_timestamp, files.upload_timestamp),
             path = COALESCE(excluded.path, files.path),
@@ -44,7 +46,9 @@ func (s *TicketStore) UpsertFile(file types.File) error {
             size_of_original_big_file = COALESCE(excluded.size_of_original_big_file, files.size_of_original_big_file),
             data_type_of_original_big_file = COALESCE(excluded.data_type_of_original_big_file, files.data_type_of_original_big_file),
             start_block = COALESCE(excluded.start_block, files.start_block),
-            done_block = COALESCE(excluded.done_block, files.done_block);`
+            done_block = COALESCE(excluded.done_block, files.done_block),
+            pastel_id = COALESCE(excluded.pastel_id, files.pastel_id),
+            passphrase = COALESCE(excluded.passphrase, files.passphrase);`
 
 	_, err := s.db.Exec(upsertQuery,
 		file.FileID, file.UploadTimestamp, file.Path, file.FileIndex, file.BaseFileID, file.TaskID,
@@ -52,7 +56,7 @@ func (s *TicketStore) UpsertFile(file types.File) error {
 		file.ReqAmount, file.IsConcluded, file.CascadeMetadataTicketID, file.UUIDKey,
 		file.HashOfOriginalBigFile, file.NameOfOriginalBigFileWithExt,
 		file.SizeOfOriginalBigFile, file.DataTypeOfOriginalBigFile,
-		file.StartBlock, file.DoneBlock, time.Now().UTC(), time.Now().UTC())
+		file.StartBlock, file.DoneBlock, file.PastelID, file.Passphrase, time.Now().UTC(), time.Now().UTC())
 	if err != nil {
 		return err
 	}
@@ -186,6 +190,46 @@ func (s *TicketStore) GetFilesByBaseFileIDAndConcludedCheck(baseFileID string, i
 			&file.ReqAmount, &file.IsConcluded, &file.CascadeMetadataTicketID, &file.UUIDKey,
 			&file.HashOfOriginalBigFile, &file.NameOfOriginalBigFileWithExt,
 			&file.SizeOfOriginalBigFile, &file.DataTypeOfOriginalBigFile,
+			&file.StartBlock, &file.DoneBlock)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, &file)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
+func (s *TicketStore) GetUnCompletedFiles() ([]*types.File, error) {
+	const selectQuery = `
+        SELECT file_id, upload_timestamp, path, file_index, base_file_id, task_id, 
+               reg_txid, activation_txid, req_burn_txn_amount, burn_txn_id, 
+               req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
+               hash_of_original_big_file, name_of_original_big_file_with_ext, 
+               size_of_original_big_file, data_type_of_original_big_file, 
+               pastel_id, passphrase, start_block, done_block
+        FROM files
+        WHERE is_concluded = false;`
+
+	rows, err := s.db.Query(selectQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []*types.File
+	for rows.Next() {
+		var file types.File
+		err := rows.Scan(
+			&file.FileID, &file.UploadTimestamp, &file.Path, &file.FileIndex, &file.BaseFileID, &file.TaskID,
+			&file.RegTxid, &file.ActivationTxid, &file.ReqBurnTxnAmount, &file.BurnTxnID,
+			&file.ReqAmount, &file.IsConcluded, &file.CascadeMetadataTicketID, &file.UUIDKey,
+			&file.HashOfOriginalBigFile, &file.NameOfOriginalBigFileWithExt,
+			&file.SizeOfOriginalBigFile, &file.DataTypeOfOriginalBigFile, &file.PastelID, &file.Passphrase,
 			&file.StartBlock, &file.DoneBlock)
 		if err != nil {
 			return nil, err

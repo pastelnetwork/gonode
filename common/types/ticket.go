@@ -25,6 +25,8 @@ type File struct {
 	DataTypeOfOriginalBigFile    string
 	StartBlock                   int32
 	DoneBlock                    int
+	PastelID                     string
+	Passphrase                   string
 }
 
 type Files []*File
