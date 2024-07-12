@@ -16,14 +16,16 @@ import (
 
 // Endpoints wraps the "cascade" service endpoints.
 type Endpoints struct {
-	UploadAsset         goa.Endpoint
-	UploadAssetV2       goa.Endpoint
-	StartProcessing     goa.Endpoint
-	RegisterTaskState   goa.Endpoint
-	GetTaskHistory      goa.Endpoint
-	Download            goa.Endpoint
-	RegistrationDetails goa.Endpoint
-	Restore             goa.Endpoint
+	UploadAsset          goa.Endpoint
+	UploadAssetV2        goa.Endpoint
+	StartProcessing      goa.Endpoint
+	RegisterTaskState    goa.Endpoint
+	GetTaskHistory       goa.Endpoint
+	Download             goa.Endpoint
+	DownloadV2           goa.Endpoint
+	GetDownloadTaskState goa.Endpoint
+	RegistrationDetails  goa.Endpoint
+	Restore              goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -41,14 +43,16 @@ func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		UploadAsset:         NewUploadAssetEndpoint(s),
-		UploadAssetV2:       NewUploadAssetV2Endpoint(s),
-		StartProcessing:     NewStartProcessingEndpoint(s, a.APIKeyAuth),
-		RegisterTaskState:   NewRegisterTaskStateEndpoint(s),
-		GetTaskHistory:      NewGetTaskHistoryEndpoint(s),
-		Download:            NewDownloadEndpoint(s, a.APIKeyAuth),
-		RegistrationDetails: NewRegistrationDetailsEndpoint(s),
-		Restore:             NewRestoreEndpoint(s, a.APIKeyAuth),
+		UploadAsset:          NewUploadAssetEndpoint(s),
+		UploadAssetV2:        NewUploadAssetV2Endpoint(s),
+		StartProcessing:      NewStartProcessingEndpoint(s, a.APIKeyAuth),
+		RegisterTaskState:    NewRegisterTaskStateEndpoint(s),
+		GetTaskHistory:       NewGetTaskHistoryEndpoint(s),
+		Download:             NewDownloadEndpoint(s, a.APIKeyAuth),
+		DownloadV2:           NewDownloadV2Endpoint(s, a.APIKeyAuth),
+		GetDownloadTaskState: NewGetDownloadTaskStateEndpoint(s),
+		RegistrationDetails:  NewRegistrationDetailsEndpoint(s),
+		Restore:              NewRestoreEndpoint(s, a.APIKeyAuth),
 	}
 }
 
@@ -60,6 +64,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.RegisterTaskState = m(e.RegisterTaskState)
 	e.GetTaskHistory = m(e.GetTaskHistory)
 	e.Download = m(e.Download)
+	e.DownloadV2 = m(e.DownloadV2)
+	e.GetDownloadTaskState = m(e.GetDownloadTaskState)
 	e.RegistrationDetails = m(e.RegistrationDetails)
 	e.Restore = m(e.Restore)
 }
@@ -150,6 +156,34 @@ func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.En
 			return nil, err
 		}
 		return s.Download(ctx, p)
+	}
+}
+
+// NewDownloadV2Endpoint returns an endpoint function that calls the method
+// "downloadV2" of service "cascade".
+func NewDownloadV2Endpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*DownloadPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.DownloadV2(ctx, p)
+	}
+}
+
+// NewGetDownloadTaskStateEndpoint returns an endpoint function that calls the
+// method "getDownloadTaskState" of service "cascade".
+func NewGetDownloadTaskStateEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetDownloadTaskStatePayload)
+		return s.GetDownloadTaskState(ctx, p)
 	}
 }
 

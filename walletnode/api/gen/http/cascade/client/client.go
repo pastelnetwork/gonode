@@ -45,6 +45,14 @@ type Client struct {
 	// endpoint.
 	DownloadDoer goahttp.Doer
 
+	// DownloadV2 Doer is the HTTP client used to make requests to the downloadV2
+	// endpoint.
+	DownloadV2Doer goahttp.Doer
+
+	// GetDownloadTaskState Doer is the HTTP client used to make requests to the
+	// getDownloadTaskState endpoint.
+	GetDownloadTaskStateDoer goahttp.Doer
+
 	// RegistrationDetails Doer is the HTTP client used to make requests to the
 	// registrationDetails endpoint.
 	RegistrationDetailsDoer goahttp.Doer
@@ -91,22 +99,24 @@ func NewClient(
 		cfn = &ConnConfigurer{}
 	}
 	return &Client{
-		UploadAssetDoer:         doer,
-		UploadAssetV2Doer:       doer,
-		StartProcessingDoer:     doer,
-		RegisterTaskStateDoer:   doer,
-		GetTaskHistoryDoer:      doer,
-		DownloadDoer:            doer,
-		RegistrationDetailsDoer: doer,
-		RestoreDoer:             doer,
-		CORSDoer:                doer,
-		RestoreResponseBody:     restoreBody,
-		scheme:                  scheme,
-		host:                    host,
-		decoder:                 dec,
-		encoder:                 enc,
-		dialer:                  dialer,
-		configurer:              cfn,
+		UploadAssetDoer:          doer,
+		UploadAssetV2Doer:        doer,
+		StartProcessingDoer:      doer,
+		RegisterTaskStateDoer:    doer,
+		GetTaskHistoryDoer:       doer,
+		DownloadDoer:             doer,
+		DownloadV2Doer:           doer,
+		GetDownloadTaskStateDoer: doer,
+		RegistrationDetailsDoer:  doer,
+		RestoreDoer:              doer,
+		CORSDoer:                 doer,
+		RestoreResponseBody:      restoreBody,
+		scheme:                   scheme,
+		host:                     host,
+		decoder:                  dec,
+		encoder:                  enc,
+		dialer:                   dialer,
+		configurer:               cfn,
 	}
 }
 
@@ -257,6 +267,49 @@ func (c *Client) Download() goa.Endpoint {
 		resp, err := c.DownloadDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("cascade", "download", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DownloadV2 returns an endpoint that makes HTTP requests to the cascade
+// service downloadV2 server.
+func (c *Client) DownloadV2() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDownloadV2Request(c.encoder)
+		decodeResponse = DecodeDownloadV2Response(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDownloadV2Request(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DownloadV2Doer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("cascade", "downloadV2", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetDownloadTaskState returns an endpoint that makes HTTP requests to the
+// cascade service getDownloadTaskState server.
+func (c *Client) GetDownloadTaskState() goa.Endpoint {
+	var (
+		decodeResponse = DecodeGetDownloadTaskStateResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetDownloadTaskStateRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetDownloadTaskStateDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("cascade", "getDownloadTaskState", err)
 		}
 		return decodeResponse(resp)
 	}

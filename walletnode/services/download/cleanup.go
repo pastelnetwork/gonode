@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	defaultFileTTL       = 1 * time.Hour
-	defaultCheckInterval = 1 * time.Minute
+	defaultFileTTL       = 12 * time.Hour
+	defaultCheckInterval = 5 * time.Minute
 )
 
 // CleanupService cleans up the static dir periodically.

@@ -116,6 +116,18 @@ type DownloadResponseBody struct {
 	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
 }
 
+// DownloadV2ResponseBody is the type of the "cascade" service "downloadV2"
+// endpoint HTTP response body.
+type DownloadV2ResponseBody struct {
+	// Task ID for the download task - caller can check the status of the download
+	// task using this task_id
+	FileID *string `form:"file_id,omitempty" json:"file_id,omitempty" xml:"file_id,omitempty"`
+}
+
+// GetDownloadTaskStateResponseBody is the type of the "cascade" service
+// "getDownloadTaskState" endpoint HTTP response body.
+type GetDownloadTaskStateResponseBody []*TaskHistoryResponse
+
 // RegistrationDetailsResponseBody is the type of the "cascade" service
 // "registrationDetails" endpoint HTTP response body.
 type RegistrationDetailsResponseBody struct {
@@ -382,6 +394,99 @@ type DownloadNotFoundResponseBody struct {
 // DownloadInternalServerErrorResponseBody is the type of the "cascade" service
 // "download" endpoint HTTP response body for the "InternalServerError" error.
 type DownloadInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DownloadV2UnAuthorizedResponseBody is the type of the "cascade" service
+// "downloadV2" endpoint HTTP response body for the "UnAuthorized" error.
+type DownloadV2UnAuthorizedResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DownloadV2NotFoundResponseBody is the type of the "cascade" service
+// "downloadV2" endpoint HTTP response body for the "NotFound" error.
+type DownloadV2NotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DownloadV2InternalServerErrorResponseBody is the type of the "cascade"
+// service "downloadV2" endpoint HTTP response body for the
+// "InternalServerError" error.
+type DownloadV2InternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetDownloadTaskStateNotFoundResponseBody is the type of the "cascade"
+// service "getDownloadTaskState" endpoint HTTP response body for the
+// "NotFound" error.
+type GetDownloadTaskStateNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetDownloadTaskStateInternalServerErrorResponseBody is the type of the
+// "cascade" service "getDownloadTaskState" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetDownloadTaskStateInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -953,6 +1058,102 @@ func NewDownloadInternalServerError(body *DownloadInternalServerErrorResponseBod
 	return v
 }
 
+// NewDownloadV2FileDownloadV2ResultOK builds a "cascade" service "downloadV2"
+// endpoint result from a HTTP "OK" response.
+func NewDownloadV2FileDownloadV2ResultOK(body *DownloadV2ResponseBody) *cascade.FileDownloadV2Result {
+	v := &cascade.FileDownloadV2Result{
+		FileID: *body.FileID,
+	}
+
+	return v
+}
+
+// NewDownloadV2UnAuthorized builds a cascade service downloadV2 endpoint
+// UnAuthorized error.
+func NewDownloadV2UnAuthorized(body *DownloadV2UnAuthorizedResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewDownloadV2NotFound builds a cascade service downloadV2 endpoint NotFound
+// error.
+func NewDownloadV2NotFound(body *DownloadV2NotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewDownloadV2InternalServerError builds a cascade service downloadV2
+// endpoint InternalServerError error.
+func NewDownloadV2InternalServerError(body *DownloadV2InternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetDownloadTaskStateTaskHistoryOK builds a "cascade" service
+// "getDownloadTaskState" endpoint result from a HTTP "OK" response.
+func NewGetDownloadTaskStateTaskHistoryOK(body []*TaskHistoryResponse) []*cascade.TaskHistory {
+	v := make([]*cascade.TaskHistory, len(body))
+	for i, val := range body {
+		v[i] = unmarshalTaskHistoryResponseToCascadeTaskHistory(val)
+	}
+
+	return v
+}
+
+// NewGetDownloadTaskStateNotFound builds a cascade service
+// getDownloadTaskState endpoint NotFound error.
+func NewGetDownloadTaskStateNotFound(body *GetDownloadTaskStateNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetDownloadTaskStateInternalServerError builds a cascade service
+// getDownloadTaskState endpoint InternalServerError error.
+func NewGetDownloadTaskStateInternalServerError(body *GetDownloadTaskStateInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // NewRegistrationDetailsRegistrationCreated builds a "cascade" service
 // "registrationDetails" endpoint result from a HTTP "Created" response.
 func NewRegistrationDetailsRegistrationCreated(body *RegistrationDetailsResponseBody) *cascadeviews.RegistrationView {
@@ -1090,6 +1291,15 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 // ValidateDownloadResponseBody runs the validations defined on
 // DownloadResponseBody
 func ValidateDownloadResponseBody(body *DownloadResponseBody) (err error) {
+	if body.FileID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "body"))
+	}
+	return
+}
+
+// ValidateDownloadV2ResponseBody runs the validations defined on
+// DownloadV2ResponseBody
+func ValidateDownloadV2ResponseBody(body *DownloadV2ResponseBody) (err error) {
 	if body.FileID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "body"))
 	}
@@ -1411,6 +1621,126 @@ func ValidateDownloadNotFoundResponseBody(body *DownloadNotFoundResponseBody) (e
 // ValidateDownloadInternalServerErrorResponseBody runs the validations defined
 // on download_InternalServerError_response_body
 func ValidateDownloadInternalServerErrorResponseBody(body *DownloadInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDownloadV2UnAuthorizedResponseBody runs the validations defined on
+// downloadV2_UnAuthorized_response_body
+func ValidateDownloadV2UnAuthorizedResponseBody(body *DownloadV2UnAuthorizedResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDownloadV2NotFoundResponseBody runs the validations defined on
+// downloadV2_NotFound_response_body
+func ValidateDownloadV2NotFoundResponseBody(body *DownloadV2NotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDownloadV2InternalServerErrorResponseBody runs the validations
+// defined on downloadV2_InternalServerError_response_body
+func ValidateDownloadV2InternalServerErrorResponseBody(body *DownloadV2InternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetDownloadTaskStateNotFoundResponseBody runs the validations
+// defined on getDownloadTaskState_NotFound_response_body
+func ValidateGetDownloadTaskStateNotFoundResponseBody(body *GetDownloadTaskStateNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetDownloadTaskStateInternalServerErrorResponseBody runs the
+// validations defined on getDownloadTaskState_InternalServerError_response_body
+func ValidateGetDownloadTaskStateInternalServerErrorResponseBody(body *GetDownloadTaskStateInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

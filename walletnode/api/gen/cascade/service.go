@@ -30,6 +30,10 @@ type Service interface {
 	GetTaskHistory(context.Context, *GetTaskHistoryPayload) (res []*TaskHistory, err error)
 	// Download cascade Artifact.
 	Download(context.Context, *DownloadPayload) (res *FileDownloadResult, err error)
+	// Starts downloading cascade Artifact.
+	DownloadV2(context.Context, *DownloadPayload) (res *FileDownloadV2Result, err error)
+	// Gets the state of download task
+	GetDownloadTaskState(context.Context, *GetDownloadTaskStatePayload) (res []*TaskHistory, err error)
 	// Get the file registration details
 	RegistrationDetails(context.Context, *RegistrationDetailsPayload) (res *Registration, err error)
 	// Restore the files cascade registration
@@ -56,7 +60,7 @@ const ServiceName = "cascade"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [8]string{"uploadAsset", "uploadAssetV2", "startProcessing", "registerTaskState", "getTaskHistory", "download", "registrationDetails", "restore"}
+var MethodNames = [10]string{"uploadAsset", "uploadAssetV2", "startProcessing", "registerTaskState", "getTaskHistory", "download", "downloadV2", "getDownloadTaskState", "registrationDetails", "restore"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -172,6 +176,21 @@ type File struct {
 // FileDownloadResult is the result type of the cascade service download method.
 type FileDownloadResult struct {
 	// File path
+	FileID string
+}
+
+// FileDownloadV2Result is the result type of the cascade service downloadV2
+// method.
+type FileDownloadV2Result struct {
+	// Task ID for the download task - caller can check the status of the download
+	// task using this task_id
+	FileID string
+}
+
+// GetDownloadTaskStatePayload is the payload type of the cascade service
+// getDownloadTaskState method.
+type GetDownloadTaskStatePayload struct {
+	// File ID returned by Download V2 API
 	FileID string
 }
 
