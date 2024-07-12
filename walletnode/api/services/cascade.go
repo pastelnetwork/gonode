@@ -167,13 +167,6 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 			return nil, cascade.MakeBadRequest(errors.New("provided burn txids and no of volumes are not equal"))
 		}
 
-		if isDuplicateExists(p.BurnTxids) {
-			log.WithContext(ctx).WithField("related_volumes", len(relatedFiles)).
-				WithField("burn_txids", len(p.BurnTxids)).
-				Error("duplicate burn tx-ids exist")
-			return nil, cascade.MakeBadRequest(errors.New("duplicate burn tx-ids exist"))
-		}
-
 		sortedBurnTxids, err := service.register.SortBurnTxIDs(ctx, p.BurnTxids)
 		if err != nil {
 			return nil, cascade.MakeInternalServerError(err)
@@ -566,144 +559,12 @@ func (service *CascadeAPIHandler) Restore(ctx context.Context, p *cascade.Restor
 		return nil, cascade.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
 	}
 
-	// Get Concluded volumes
-	volumes, err := service.register.GetFilesByBaseFileID(p.BaseFileID)
-	if err != nil {
-		return nil, cascade.MakeInternalServerError(err)
-	}
-
-	if len(volumes) == 0 {
-		return nil, cascade.MakeInternalServerError(errors.New("no volumes associated with the base-file-id to recover"))
-	}
-
-	log.WithContext(ctx).WithField("total_volumes", len(volumes)).
-		Info("total volumes retrieved from the base file-id")
-
-	unConcludedVolumes, err := volumes.GetUnconcludedFiles()
-	if err != nil {
-		return nil, cascade.MakeInternalServerError(err)
-	}
-
-	// check if volumes already concluded
-	if len(unConcludedVolumes) == 0 {
-		log.WithContext(ctx).
-			Info("All volumes are already concluded")
-		return &cascade.RestoreFile{
-			TotalVolumes:                   len(volumes),
-			RegisteredVolumes:              len(volumes),
-			VolumesWithPendingRegistration: 0,
-			VolumesRegistrationInProgress:  0,
-			ActivatedVolumes:               len(volumes),
-			VolumesActivatedInRecoveryFlow: 0,
-		}, nil
-
-	}
-
-	var (
-		registeredVolumes              int
-		volumesWithInProgressRegCount  int
-		volumesWithPendingRegistration int
-		volumesActivatedInRecoveryFlow int
-		activatedVolumes               int
-	)
-
-	// Get BurnTxId by file amount and process un-concluded files that are un-registered or un-activated
-
-	logger := log.WithContext(ctx).WithField("base_file_id", p.BaseFileID)
-
-	for _, v := range volumes {
-		if v.RegTxid == "" {
-			volumesWithPendingRegistration++
-			logger.WithField("volume_name", v.FileID).Info("find a volume with no registration, trying again...")
-
-			var burnTxId string
-			if service.IsBurnTxIDValidForRecovery(ctx, v.BurnTxnID, v.ReqAmount-10) {
-				log.WithContext(ctx).WithField("burn_txid", v.BurnTxnID).Info("existing burn-txid is valid")
-				burnTxId = v.BurnTxnID
-			} else {
-				log.WithContext(ctx).WithField("burn_txid", v.BurnTxnID).Info("existing burn-txid is not valid, burning the new txid")
-
-				burnTxId, err = service.register.GetBurnTxIdByAmount(ctx, int64(v.ReqBurnTxnAmount))
-				if err != nil {
-					log.WithContext(ctx).WithField("amount", int64(v.ReqBurnTxnAmount)).WithError(err).Error("error getting burn TxId for amount")
-					return nil, cascade.MakeInternalServerError(err)
-				}
-
-				logger.WithField("volume_name", v.FileID).Info("estimated fee has been burned, sending for registration")
-			}
-
-			addTaskPayload := &common.AddTaskPayload{
-				FileID:                 v.FileID,
-				BurnTxid:               &burnTxId,
-				AppPastelID:            p.AppPastelID,
-				MakePubliclyAccessible: p.MakePubliclyAccessible,
-				Key:                    p.Key,
-			}
-
-			if p.SpendableAddress != nil {
-				addTaskPayload.SpendableAddress = p.SpendableAddress
-			}
-
-			_, err = service.register.ProcessFile(ctx, *v, addTaskPayload)
-			if err != nil {
-				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error processing un-registered volume")
-				continue
-			}
-			logger.WithField("volume_name", v.FileID).Info("task added for registration recovery")
-
-			volumesWithInProgressRegCount += 1
-		} else if v.ActivationTxid == "" {
-			logger.WithField("volume_name", v.FileID).Info("find a volume with no activation, trying again...")
-
-			// activation code
-			actAttemptId, err := service.register.InsertActivationAttempt(types.ActivationAttempt{
-				FileID:              v.FileID,
-				ActivationAttemptAt: time.Now().UTC(),
-			})
-			if err != nil {
-				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error inserting activation attempt")
-				continue
-			}
-
-			activateActReq := pastel.ActivateActionRequest{
-				RegTxID:    v.RegTxid,
-				Fee:        int64(v.ReqAmount) - 10,
-				PastelID:   p.AppPastelID,
-				Passphrase: p.Key,
-			}
-
-			err = service.register.ActivateActionTicketAndRegisterVolumeTicket(ctx, activateActReq, *v, actAttemptId)
-			if err != nil {
-				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error activating or registering un-concluded volume")
-				continue
-			}
-			logger.WithField("volume_name", v.FileID).Info("request has been sent for activation")
-
-			volumesActivatedInRecoveryFlow += 1
-		} else {
-			if v.RegTxid != "" {
-				registeredVolumes += 1
-			}
-			if v.ActivationTxid != "" {
-				activatedVolumes += 1
-			}
-		}
-	}
-
-	// only set base file txId return by pastel register all else remains nil
-	_, err = service.register.RegisterVolumeTicket(ctx, p.BaseFileID)
+	restoreFile, err := service.register.RestoreFile(ctx, p)
 	if err != nil {
 		return nil, err
 	}
 
-	return &cascade.RestoreFile{
-		TotalVolumes:                   len(volumes),
-		RegisteredVolumes:              registeredVolumes,
-		VolumesWithPendingRegistration: volumesWithPendingRegistration,
-		VolumesRegistrationInProgress:  volumesWithInProgressRegCount,
-		ActivatedVolumes:               activatedVolumes,
-		VolumesActivatedInRecoveryFlow: volumesActivatedInRecoveryFlow,
-	}, nil
+	return restoreFile, nil
 }
 
 func (service *CascadeAPIHandler) checkBurnTxIDsValidForRegistration(ctx context.Context, burnTxIDs []string, files types.Files) error {
@@ -725,19 +586,6 @@ func (service *CascadeAPIHandler) checkBurnTxIDsValidForRegistration(ctx context
 	}
 
 	return nil
-}
-
-func (service *CascadeAPIHandler) IsBurnTxIDValidForRecovery(ctx context.Context, burnTxID string, estimatedFee float64) bool {
-	if err := service.register.CheckBurnTxIDTicketDuplication(ctx, burnTxID); err != nil {
-		return false
-	}
-
-	err := service.register.ValidateBurnTxn(ctx, burnTxID, estimatedFee)
-	if err != nil {
-		return false
-	}
-
-	return true
 }
 
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.

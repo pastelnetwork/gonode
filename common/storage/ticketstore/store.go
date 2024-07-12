@@ -77,6 +77,20 @@ CREATE TABLE IF NOT EXISTS multi_vol_cascade_tickets_txid_map (
 );
 `
 
+const alterFilesTablePastelID string = ` 
+ALTER TABLE files
+ADD COLUMN pastel_id TEXT;
+`
+
+const alterFilesTablePassphrase string = `
+ALTER TABLE files
+ADD COLUMN passphrase TEXT;
+`
+
+const addUniqueConstraint string = `
+CREATE UNIQUE INDEX IF NOT EXISTS files_unique ON files(file_id, base_file_id);
+`
+
 const (
 	ticketDBName = "ticket.db"
 )
@@ -115,6 +129,9 @@ func OpenTicketingDb() (TicketStorageInterface, error) {
 	}
 
 	_, _ = db.Exec(createMultiVolCascadeTicketTxIDMap)
+	_, _ = db.Exec(alterFilesTablePastelID)
+	_, _ = db.Exec(alterFilesTablePassphrase)
+	_, _ = db.Exec(addUniqueConstraint)
 
 	pragmas := []string{
 		"PRAGMA synchronous=NORMAL;",
