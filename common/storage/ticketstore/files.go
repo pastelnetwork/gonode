@@ -72,7 +72,7 @@ func (s *TicketStore) GetFileByID(fileID string) (*types.File, error) {
                req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
                hash_of_original_big_file, name_of_original_big_file_with_ext, 
                size_of_original_big_file, data_type_of_original_big_file, 
-               start_block, done_block
+               start_block, done_block, pastel_id, passphrase
         FROM files
         WHERE file_id = ?;`
 
@@ -85,7 +85,7 @@ func (s *TicketStore) GetFileByID(fileID string) (*types.File, error) {
 		&file.ReqAmount, &file.IsConcluded, &file.CascadeMetadataTicketID, &file.UUIDKey,
 		&file.HashOfOriginalBigFile, &file.NameOfOriginalBigFileWithExt,
 		&file.SizeOfOriginalBigFile, &file.DataTypeOfOriginalBigFile,
-		&file.StartBlock, &file.DoneBlock)
+		&file.StartBlock, &file.DoneBlock, &file.PastelID, &file.Passphrase)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *TicketStore) GetFileByTaskID(taskID string) (*types.File, error) {
                req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
                hash_of_original_big_file, name_of_original_big_file_with_ext, 
                size_of_original_big_file, data_type_of_original_big_file, 
-               start_block, done_block
+               start_block, done_block, pastel_id, passphrase
         FROM files
         WHERE task_id = ?;`
 
@@ -114,7 +114,7 @@ func (s *TicketStore) GetFileByTaskID(taskID string) (*types.File, error) {
 		&file.ReqAmount, &file.IsConcluded, &file.CascadeMetadataTicketID, &file.UUIDKey,
 		&file.HashOfOriginalBigFile, &file.NameOfOriginalBigFileWithExt,
 		&file.SizeOfOriginalBigFile, &file.DataTypeOfOriginalBigFile,
-		&file.StartBlock, &file.DoneBlock)
+		&file.StartBlock, &file.DoneBlock, &file.PastelID, &file.Passphrase)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (s *TicketStore) GetFilesByBaseFileID(baseFileID string) ([]*types.File, er
                req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
                hash_of_original_big_file, name_of_original_big_file_with_ext, 
                size_of_original_big_file, data_type_of_original_big_file, 
-               start_block, done_block
+               start_block, done_block, pastel_id, passphrase
         FROM files
         WHERE base_file_id = ?;`
 
@@ -149,7 +149,7 @@ func (s *TicketStore) GetFilesByBaseFileID(baseFileID string) ([]*types.File, er
 			&file.ReqAmount, &file.IsConcluded, &file.CascadeMetadataTicketID, &file.UUIDKey,
 			&file.HashOfOriginalBigFile, &file.NameOfOriginalBigFileWithExt,
 			&file.SizeOfOriginalBigFile, &file.DataTypeOfOriginalBigFile,
-			&file.StartBlock, &file.DoneBlock)
+			&file.StartBlock, &file.DoneBlock, &file.PastelID, &file.Passphrase)
 		if err != nil {
 			return nil, err
 		}
@@ -171,7 +171,7 @@ func (s *TicketStore) GetFilesByBaseFileIDAndConcludedCheck(baseFileID string, i
                req_amount, is_concluded, cascade_metadata_ticket_id, uuid_key, 
                hash_of_original_big_file, name_of_original_big_file_with_ext, 
                size_of_original_big_file, data_type_of_original_big_file, 
-               start_block, done_block
+               start_block, done_block, pastel_id, passphrase
         FROM files
         WHERE base_file_id = ? AND is_concluded = ?;`
 
@@ -190,7 +190,7 @@ func (s *TicketStore) GetFilesByBaseFileIDAndConcludedCheck(baseFileID string, i
 			&file.ReqAmount, &file.IsConcluded, &file.CascadeMetadataTicketID, &file.UUIDKey,
 			&file.HashOfOriginalBigFile, &file.NameOfOriginalBigFileWithExt,
 			&file.SizeOfOriginalBigFile, &file.DataTypeOfOriginalBigFile,
-			&file.StartBlock, &file.DoneBlock)
+			&file.StartBlock, &file.DoneBlock, &file.PastelID, &file.Passphrase)
 		if err != nil {
 			return nil, err
 		}
