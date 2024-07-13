@@ -133,6 +133,11 @@ func OpenTicketingDb() (TicketStorageInterface, error) {
 	_, _ = db.Exec(alterFilesTablePassphrase)
 	_, _ = db.Exec(addUniqueConstraint)
 
+	err = removePrimaryKeyMigration(*db)
+	if err != nil {
+		log.WithContext(context.Background()).WithError(err).Error("error removing primary-key from file-id")
+	}
+
 	pragmas := []string{
 		"PRAGMA synchronous=NORMAL;",
 		"PRAGMA cache_size=-262144;",
