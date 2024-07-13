@@ -568,25 +568,6 @@ func (service *CascadeRegistrationService) SortFilesWithHigherAmounts(files type
 	return files
 }
 
-func (service *CascadeRegistrationService) GetConcludedVolumesByBaseFileID(BaseFileID string) (types.Files, error) {
-	concludedVolumes, err := service.ticketDB.GetFilesByBaseFileIDAndConcludedCheck(BaseFileID, true)
-	if err != nil {
-		return nil, err
-	}
-
-	return concludedVolumes, nil
-}
-
-func (service *CascadeRegistrationService) GetUnConcludedVolumesByBaseFileID(BaseFileID string) (types.Files, error) {
-
-	UnConcludedVolumes, err := service.ticketDB.GetFilesByBaseFileIDAndConcludedCheck(BaseFileID, false)
-	if err != nil {
-		return nil, err
-	}
-
-	return UnConcludedVolumes, nil
-}
-
 func (service *CascadeRegistrationService) GetBurnTxIdByAmount(ctx context.Context, amount int64) (string, error) {
 	txID, err := service.pastelHandler.PastelClient.SendToAddress(ctx, service.pastelHandler.GetBurnAddress(), amount)
 	if err != nil {
