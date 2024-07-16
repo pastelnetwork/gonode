@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultRestoreVolumeInterval = 60 * time.Minute
+	defaultRestoreVolumeInterval = 3 * time.Minute
 )
 
 // RestoreService restore the missed volume file
@@ -34,7 +34,7 @@ func (service *RestoreService) Run(ctx context.Context, cascadeRegistrationServi
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("Error restoring files")
 			}
-			log.WithContext(ctx).WithField("restoring_files_res", restoringFilesRes).Info("successfully called restored files function")
+			log.WithContext(ctx).WithField("restoring_files_res", restoringFilesRes).Debug("successfully called restored files function")
 		}
 	}
 }
@@ -62,13 +62,13 @@ func (service *RestoreService) restore(ctx context.Context, cascadeRegistrationS
 	for _, ucFile := range ucFiles {
 		if ucFile.TaskID == "" || ucFile.PastelID == "" || ucFile.Passphrase == "" {
 			log.WithContext(ctx).WithField("file_id", ucFile.FileID).
-				Info("un-concluded volume without task-id, pastel-id & passphrase, cannot proceed with recovery")
+				Debug("un-concluded volume without task-id, pastel-id & passphrase, cannot proceed with recovery")
 			continue
 		}
 
 		if _, exists := runningTaskIDs[ucFile.TaskID]; exists {
 			log.WithContext(ctx).WithField("task_id", ucFile.TaskID).WithField("base_file_id", ucFile.BaseFileID).
-				Info("current task is already in-progress can't execute the recovery-flow")
+				Debug("current task is already in-progress can't execute the recovery-flow")
 			continue
 		}
 

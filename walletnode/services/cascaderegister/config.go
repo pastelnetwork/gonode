@@ -1,9 +1,6 @@
 package cascaderegister
 
 import (
-	"path/filepath"
-
-	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
@@ -15,10 +12,6 @@ const (
 	defaultWaitTxnValidInterval         = 5
 
 	defaultRQIDsMax = 50
-)
-
-var (
-	defaultCascadeFilesDir = filepath.Join(configurer.DefaultPath(), "cascadefiles")
 )
 
 // Config contains settings of the registering nft.
@@ -34,8 +27,10 @@ type Config struct {
 
 	// raptorq service
 	RaptorQServiceAddress string `mapstructure:"-" json:"-"`
-	RqFilesDir            string
-	CascadeFilesDir       string
+	RqFilesDir            string `mapstructure:"rq_files_dir" json:"rq_files_dir,omitempty"`
+	StaticFilesDir        string `mapstructure:"static_files_dir" json:"static_files_dir,omitempty"`
+	CascadeFilesDir       string `mapstructure:"cascade_files_dir" json:"cascade_files_dir,omitempty"`
+	MultiVolumeChunkSize  int    `mapstructure:"multi_volume_chunk_size" json:"multi_volume_chunk_size,omitempty"`
 }
 
 // NewConfig returns a new Config instance.
@@ -47,6 +42,5 @@ func NewConfig() *Config {
 		WaitTxnValidInterval:         defaultWaitTxnValidInterval,
 		RQIDsMax:                     defaultRQIDsMax,
 		NumberRQIDSFiles:             defaultNumberRQIDSFiles,
-		CascadeFilesDir:              defaultCascadeFilesDir,
 	}
 }

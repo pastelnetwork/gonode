@@ -11,8 +11,9 @@ var randIDGen = rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
 
 // Config represents a config for the common service.
 type Config struct {
-	StaticFilesDir  string `mapstructure:"static_files_dir" json:"static_files_dir,omitempty"`
-	CascadeFilesDir string `mapstructure:"cascade_files_dir" json:"cascade_files_dir,omitempty"`
+	StaticFilesDir       string `mapstructure:"static_files_dir" json:"static_files_dir,omitempty"`
+	CascadeFilesDir      string `mapstructure:"cascade_files_dir" json:"cascade_files_dir,omitempty"`
+	MultiVolumeChunkSize int    `mapstructure:"multi_volume_chunk_size" json:"multi_volume_chunk_size,omitempty"`
 }
 
 // Common represents common service.

@@ -33,7 +33,7 @@ type Service interface {
 	// Starts downloading cascade Artifact.
 	DownloadV2(context.Context, *DownloadPayload) (res *FileDownloadV2Result, err error)
 	// Gets the state of download task
-	GetDownloadTaskState(context.Context, *GetDownloadTaskStatePayload) (res []*TaskHistory, err error)
+	GetDownloadTaskState(context.Context, *GetDownloadTaskStatePayload) (res *DownloadTaskStatus, err error)
 	// Get the file registration details
 	RegistrationDetails(context.Context, *RegistrationDetailsPayload) (res *Registration, err error)
 	// Restore the files cascade registration
@@ -128,6 +128,31 @@ type DownloadPayload struct {
 	Pid string
 	// Passphrase of the owner's PastelID
 	Key string
+}
+
+// DownloadTaskStatus is the result type of the cascade service
+// getDownloadTaskState method.
+type DownloadTaskStatus struct {
+	// Total Volumes
+	TotalVolumes int
+	// Number of volumes successfully downloaded
+	DownloadedVolumes int
+	// Number of volumes currently being downloaded
+	VolumesDownloadInProgress int
+	// Number of volumes awaiting schedule
+	VolumesPendingDownload int
+	// Number of volumes failed to download
+	VolumesDownloadFailed int
+	// Status of the operation
+	TaskStatus string
+	// size of the file in megabytes
+	SizeOfTheFileMegabytes int
+	// data downloaded in megabytes so far
+	DataDownloadedMegabytes int
+	// message string (if any)
+	Message *string
+	// details of the status
+	Details *Details
 }
 
 type File struct {

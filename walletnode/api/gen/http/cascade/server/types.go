@@ -128,7 +128,28 @@ type DownloadV2ResponseBody struct {
 
 // GetDownloadTaskStateResponseBody is the type of the "cascade" service
 // "getDownloadTaskState" endpoint HTTP response body.
-type GetDownloadTaskStateResponseBody []*TaskHistoryResponse
+type GetDownloadTaskStateResponseBody struct {
+	// Total Volumes
+	TotalVolumes int `form:"total_volumes" json:"total_volumes" xml:"total_volumes"`
+	// Number of volumes successfully downloaded
+	DownloadedVolumes int `form:"downloaded_volumes" json:"downloaded_volumes" xml:"downloaded_volumes"`
+	// Number of volumes currently being downloaded
+	VolumesDownloadInProgress int `form:"volumes_download_in_progress" json:"volumes_download_in_progress" xml:"volumes_download_in_progress"`
+	// Number of volumes awaiting schedule
+	VolumesPendingDownload int `form:"volumes_pending_download" json:"volumes_pending_download" xml:"volumes_pending_download"`
+	// Number of volumes failed to download
+	VolumesDownloadFailed int `form:"volumes_download_failed" json:"volumes_download_failed" xml:"volumes_download_failed"`
+	// Status of the operation
+	TaskStatus string `form:"task_status" json:"task_status" xml:"task_status"`
+	// size of the file in megabytes
+	SizeOfTheFileMegabytes int `form:"size_of_the_file_megabytes" json:"size_of_the_file_megabytes" xml:"size_of_the_file_megabytes"`
+	// data downloaded in megabytes so far
+	DataDownloadedMegabytes int `form:"data_downloaded_megabytes" json:"data_downloaded_megabytes" xml:"data_downloaded_megabytes"`
+	// message string (if any)
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// details of the status
+	Details *DetailsResponseBody `form:"details" json:"details" xml:"details"`
+}
 
 // RegistrationDetailsResponseBody is the type of the "cascade" service
 // "registrationDetails" endpoint HTTP response body.
@@ -635,6 +656,14 @@ type DetailsResponse struct {
 	Fields map[string]any `form:"fields,omitempty" json:"fields,omitempty" xml:"fields,omitempty"`
 }
 
+// DetailsResponseBody is used to define fields on response body types.
+type DetailsResponseBody struct {
+	// details regarding the status
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// important fields regarding status history
+	Fields map[string]any `form:"fields,omitempty" json:"fields,omitempty" xml:"fields,omitempty"`
+}
+
 // FileResponseBody is used to define fields on response body types.
 type FileResponseBody struct {
 	// File ID
@@ -795,10 +824,20 @@ func NewDownloadV2ResponseBody(res *cascade.FileDownloadV2Result) *DownloadV2Res
 
 // NewGetDownloadTaskStateResponseBody builds the HTTP response body from the
 // result of the "getDownloadTaskState" endpoint of the "cascade" service.
-func NewGetDownloadTaskStateResponseBody(res []*cascade.TaskHistory) GetDownloadTaskStateResponseBody {
-	body := make([]*TaskHistoryResponse, len(res))
-	for i, val := range res {
-		body[i] = marshalCascadeTaskHistoryToTaskHistoryResponse(val)
+func NewGetDownloadTaskStateResponseBody(res *cascade.DownloadTaskStatus) *GetDownloadTaskStateResponseBody {
+	body := &GetDownloadTaskStateResponseBody{
+		TotalVolumes:              res.TotalVolumes,
+		DownloadedVolumes:         res.DownloadedVolumes,
+		VolumesDownloadInProgress: res.VolumesDownloadInProgress,
+		VolumesPendingDownload:    res.VolumesPendingDownload,
+		VolumesDownloadFailed:     res.VolumesDownloadFailed,
+		TaskStatus:                res.TaskStatus,
+		SizeOfTheFileMegabytes:    res.SizeOfTheFileMegabytes,
+		DataDownloadedMegabytes:   res.DataDownloadedMegabytes,
+		Message:                   res.Message,
+	}
+	if res.Details != nil {
+		body.Details = marshalCascadeDetailsToDetailsResponseBody(res.Details)
 	}
 	return body
 }

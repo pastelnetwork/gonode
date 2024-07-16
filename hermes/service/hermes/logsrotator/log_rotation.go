@@ -15,7 +15,7 @@ import (
 
 const (
 	runTaskInterval = 30 * time.Minute
-	maxLogSize      = 10 * 1024 * 1024 // 10 MB
+	maxLogSize      = 200 * 1024 * 1024 // 200 MB
 	destDir         = "/tmp"
 )
 

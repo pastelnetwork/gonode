@@ -126,7 +126,28 @@ type DownloadV2ResponseBody struct {
 
 // GetDownloadTaskStateResponseBody is the type of the "cascade" service
 // "getDownloadTaskState" endpoint HTTP response body.
-type GetDownloadTaskStateResponseBody []*TaskHistoryResponse
+type GetDownloadTaskStateResponseBody struct {
+	// Total Volumes
+	TotalVolumes *int `form:"total_volumes,omitempty" json:"total_volumes,omitempty" xml:"total_volumes,omitempty"`
+	// Number of volumes successfully downloaded
+	DownloadedVolumes *int `form:"downloaded_volumes,omitempty" json:"downloaded_volumes,omitempty" xml:"downloaded_volumes,omitempty"`
+	// Number of volumes currently being downloaded
+	VolumesDownloadInProgress *int `form:"volumes_download_in_progress,omitempty" json:"volumes_download_in_progress,omitempty" xml:"volumes_download_in_progress,omitempty"`
+	// Number of volumes awaiting schedule
+	VolumesPendingDownload *int `form:"volumes_pending_download,omitempty" json:"volumes_pending_download,omitempty" xml:"volumes_pending_download,omitempty"`
+	// Number of volumes failed to download
+	VolumesDownloadFailed *int `form:"volumes_download_failed,omitempty" json:"volumes_download_failed,omitempty" xml:"volumes_download_failed,omitempty"`
+	// Status of the operation
+	TaskStatus *string `form:"task_status,omitempty" json:"task_status,omitempty" xml:"task_status,omitempty"`
+	// size of the file in megabytes
+	SizeOfTheFileMegabytes *int `form:"size_of_the_file_megabytes,omitempty" json:"size_of_the_file_megabytes,omitempty" xml:"size_of_the_file_megabytes,omitempty"`
+	// data downloaded in megabytes so far
+	DataDownloadedMegabytes *int `form:"data_downloaded_megabytes,omitempty" json:"data_downloaded_megabytes,omitempty" xml:"data_downloaded_megabytes,omitempty"`
+	// message string (if any)
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// details of the status
+	Details *DetailsResponseBody `form:"details,omitempty" json:"details,omitempty" xml:"details,omitempty"`
+}
 
 // RegistrationDetailsResponseBody is the type of the "cascade" service
 // "registrationDetails" endpoint HTTP response body.
@@ -633,6 +654,14 @@ type DetailsResponse struct {
 	Fields map[string]any `form:"fields,omitempty" json:"fields,omitempty" xml:"fields,omitempty"`
 }
 
+// DetailsResponseBody is used to define fields on response body types.
+type DetailsResponseBody struct {
+	// details regarding the status
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// important fields regarding status history
+	Fields map[string]any `form:"fields,omitempty" json:"fields,omitempty" xml:"fields,omitempty"`
+}
+
 // FileResponseBody is used to define fields on response body types.
 type FileResponseBody struct {
 	// File ID
@@ -1113,13 +1142,21 @@ func NewDownloadV2InternalServerError(body *DownloadV2InternalServerErrorRespons
 	return v
 }
 
-// NewGetDownloadTaskStateTaskHistoryOK builds a "cascade" service
+// NewGetDownloadTaskStateDownloadTaskStatusOK builds a "cascade" service
 // "getDownloadTaskState" endpoint result from a HTTP "OK" response.
-func NewGetDownloadTaskStateTaskHistoryOK(body []*TaskHistoryResponse) []*cascade.TaskHistory {
-	v := make([]*cascade.TaskHistory, len(body))
-	for i, val := range body {
-		v[i] = unmarshalTaskHistoryResponseToCascadeTaskHistory(val)
+func NewGetDownloadTaskStateDownloadTaskStatusOK(body *GetDownloadTaskStateResponseBody) *cascade.DownloadTaskStatus {
+	v := &cascade.DownloadTaskStatus{
+		TotalVolumes:              *body.TotalVolumes,
+		DownloadedVolumes:         *body.DownloadedVolumes,
+		VolumesDownloadInProgress: *body.VolumesDownloadInProgress,
+		VolumesPendingDownload:    *body.VolumesPendingDownload,
+		VolumesDownloadFailed:     *body.VolumesDownloadFailed,
+		TaskStatus:                *body.TaskStatus,
+		SizeOfTheFileMegabytes:    *body.SizeOfTheFileMegabytes,
+		DataDownloadedMegabytes:   *body.DataDownloadedMegabytes,
+		Message:                   body.Message,
 	}
+	v.Details = unmarshalDetailsResponseBodyToCascadeDetails(body.Details)
 
 	return v
 }
@@ -1281,8 +1318,8 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Validated Duplicate Reg Tickets" || *body.Status == "Validating Burn Txn" || *body.Status == "Burn Txn Validated" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Preburn Registration Fee" || *body.Status == "Downloaded" || *body.Status == "Request Accepted" || *body.Status == "Request Registered" || *body.Status == "Request Activated" || *body.Status == "Error Setting up mesh of supernodes" || *body.Status == "Error Sending Reg Metadata" || *body.Status == "Error Uploading Image" || *body.Status == "Error Converting Image to Bytes" || *body.Status == "Error Encoding Image" || *body.Status == "Error Creating Ticket" || *body.Status == "Error Signing Ticket" || *body.Status == "Error Uploading Ticket" || *body.Status == "Error Activating Ticket" || *body.Status == "Error Probing Image" || *body.Status == "Error checking dd-server availability before probe image" || *body.Status == "Error Generating DD and Fingerprint IDs" || *body.Status == "Error comparing suitable storage fee with task request maximum fee" || *body.Status == "Error balance not sufficient" || *body.Status == "Error getting hash of the image" || *body.Status == "Error sending signed ticket to SNs" || *body.Status == "Error checking balance" || *body.Status == "Error burning reg fee to get reg ticket id" || *body.Status == "Error validating reg ticket txn id" || *body.Status == "Error validating activate ticket txn id" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Signatures Dont Match" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Error File Don't Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Find Responding SNs" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Error Invalid Burn TxID" || *body.Status == "Task Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []any{"Task Started", "Connected", "Validated Duplicate Reg Tickets", "Validating Burn Txn", "Burn Txn Validated", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Preburn Registration Fee", "Downloaded", "Request Accepted", "Request Registered", "Request Activated", "Error Setting up mesh of supernodes", "Error Sending Reg Metadata", "Error Uploading Image", "Error Converting Image to Bytes", "Error Encoding Image", "Error Creating Ticket", "Error Signing Ticket", "Error Uploading Ticket", "Error Activating Ticket", "Error Probing Image", "Error checking dd-server availability before probe image", "Error Generating DD and Fingerprint IDs", "Error comparing suitable storage fee with task request maximum fee", "Error balance not sufficient", "Error getting hash of the image", "Error sending signed ticket to SNs", "Error checking balance", "Error burning reg fee to get reg ticket id", "Error validating reg ticket txn id", "Error validating activate ticket txn id", "Error Insufficient Fee", "Error Signatures Dont Match", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Error File Don't Match", "Error Not Enough SuperNode", "Error Find Responding SNs", "Error Not Enough Downloaded Filed", "Error Download Failed", "Error Invalid Burn TxID", "Task Failed", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Validated Duplicate Reg Tickets" || *body.Status == "Validating Burn Txn" || *body.Status == "Burn Txn Validated" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Preburn Registration Fee" || *body.Status == "Downloaded" || *body.Status == "Request Accepted" || *body.Status == "Request Registered" || *body.Status == "Request Activated" || *body.Status == "Error Setting up mesh of supernodes" || *body.Status == "Error Sending Reg Metadata" || *body.Status == "Error Uploading Image" || *body.Status == "Error Converting Image to Bytes" || *body.Status == "Error Encoding Image" || *body.Status == "Error Creating Ticket" || *body.Status == "Error Signing Ticket" || *body.Status == "Error Uploading Ticket" || *body.Status == "Error Activating Ticket" || *body.Status == "Error Probing Image" || *body.Status == "Error checking dd-server availability before probe image" || *body.Status == "Error Generating DD and Fingerprint IDs" || *body.Status == "Error comparing suitable storage fee with task request maximum fee" || *body.Status == "Error balance not sufficient" || *body.Status == "Error getting hash of the image" || *body.Status == "Error sending signed ticket to SNs" || *body.Status == "Error checking balance" || *body.Status == "Error burning reg fee to get reg ticket id" || *body.Status == "Error validating reg ticket txn id" || *body.Status == "Error validating activate ticket txn id" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Signatures Dont Match" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Error File Don't Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Find Responding SNs" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Error Invalid Burn TxID" || *body.Status == "Error Ownership Not Match" || *body.Status == "Error Hash Mismatch" || *body.Status == "Task Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []any{"Task Started", "Connected", "Validated Duplicate Reg Tickets", "Validating Burn Txn", "Burn Txn Validated", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Preburn Registration Fee", "Downloaded", "Request Accepted", "Request Registered", "Request Activated", "Error Setting up mesh of supernodes", "Error Sending Reg Metadata", "Error Uploading Image", "Error Converting Image to Bytes", "Error Encoding Image", "Error Creating Ticket", "Error Signing Ticket", "Error Uploading Ticket", "Error Activating Ticket", "Error Probing Image", "Error checking dd-server availability before probe image", "Error Generating DD and Fingerprint IDs", "Error comparing suitable storage fee with task request maximum fee", "Error balance not sufficient", "Error getting hash of the image", "Error sending signed ticket to SNs", "Error checking balance", "Error burning reg fee to get reg ticket id", "Error validating reg ticket txn id", "Error validating activate ticket txn id", "Error Insufficient Fee", "Error Signatures Dont Match", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Error File Don't Match", "Error Not Enough SuperNode", "Error Find Responding SNs", "Error Not Enough Downloaded Filed", "Error Download Failed", "Error Invalid Burn TxID", "Error Ownership Not Match", "Error Hash Mismatch", "Task Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -1302,6 +1339,44 @@ func ValidateDownloadResponseBody(body *DownloadResponseBody) (err error) {
 func ValidateDownloadV2ResponseBody(body *DownloadV2ResponseBody) (err error) {
 	if body.FileID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("file_id", "body"))
+	}
+	return
+}
+
+// ValidateGetDownloadTaskStateResponseBody runs the validations defined on
+// GetDownloadTaskStateResponseBody
+func ValidateGetDownloadTaskStateResponseBody(body *GetDownloadTaskStateResponseBody) (err error) {
+	if body.TotalVolumes == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_volumes", "body"))
+	}
+	if body.DownloadedVolumes == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("downloaded_volumes", "body"))
+	}
+	if body.VolumesDownloadInProgress == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("volumes_download_in_progress", "body"))
+	}
+	if body.VolumesDownloadFailed == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("volumes_download_failed", "body"))
+	}
+	if body.TaskStatus == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("task_status", "body"))
+	}
+	if body.Details == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("details", "body"))
+	}
+	if body.VolumesPendingDownload == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("volumes_pending_download", "body"))
+	}
+	if body.SizeOfTheFileMegabytes == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("size_of_the_file_megabytes", "body"))
+	}
+	if body.DataDownloadedMegabytes == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("data_downloaded_megabytes", "body"))
+	}
+	if body.TaskStatus != nil {
+		if !(*body.TaskStatus == "Completed" || *body.TaskStatus == "Failed" || *body.TaskStatus == "In Progress") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.task_status", *body.TaskStatus, []any{"Completed", "Failed", "In Progress"}))
+		}
 	}
 	return
 }

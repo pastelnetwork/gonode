@@ -173,7 +173,7 @@ var _ = Service("cascade", func() {
 		Payload(func() {
 			Extend(DownloadTaskStatePayload)
 		})
-		Result(ArrayOf(TaskHistory))
+		Result(DownloadTaskStatus)
 
 		HTTP(func() {
 			GET("/downloads/{file_id}/status")

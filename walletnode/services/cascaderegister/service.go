@@ -656,7 +656,7 @@ func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Cont
 	var sha3256HashOfOriginalFile string
 
 	nameOfOriginalFile = relatedFiles[0].NameOfOriginalBigFileWithExt
-	sizeOfOriginalFileMB = int(relatedFiles[0].SizeOfOriginalBigFile)
+	sizeOfOriginalFileMB = utils.BytesIntToMB(int(relatedFiles[0].SizeOfOriginalBigFile))
 	sha3256HashOfOriginalFile = relatedFiles[0].HashOfOriginalBigFile
 
 	for _, relatedFile := range relatedFiles {
@@ -785,7 +785,7 @@ func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *c
 	for _, v := range volumes {
 		if _, exists := runningTaskIDs[v.TaskID]; exists {
 			log.WithContext(ctx).WithField("task_id", v.TaskID).WithField("base_file_id", v.BaseFileID).
-				Info("current task is already in-progress can't execute the recovery-flow")
+				Debug("current task is already in-progress can't execute the recovery-flow")
 			continue
 		}
 
