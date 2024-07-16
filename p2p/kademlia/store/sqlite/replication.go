@@ -39,32 +39,6 @@ func (n *nodeReplicationInfo) toDomain() domain.NodeReplicationInfo {
 	}
 }
 
-/*
-type repKeys struct {
-	Key       string    `db:"key"`
-	UpdatedAt time.Time `db:"updatedAt"`
-	IP        string    `db:"ip"`
-	Port      int       `db:"port"`
-	ID        string    `db:"id"`
-	Attempts  int       `db:"attempts"`
-}
-
-func (r repKeys) toDomain() (domain.ToRepKey, error) {
-	key, err := hex.DecodeString(r.Key)
-	if err != nil {
-		return domain.ToRepKey{}, fmt.Errorf("error decoding key: %w", err)
-	}
-
-	return domain.ToRepKey{
-		Key:       key,
-		UpdatedAt: r.UpdatedAt,
-		IP:        r.IP,
-		Port:      r.Port,
-		ID:        r.ID,
-		Attempts:  r.Attempts,
-	}, nil
-}*/
-
 func (s *Store) migrateReplication() error {
 	replicateQuery := `
     CREATE TABLE IF NOT EXISTS replication_info(

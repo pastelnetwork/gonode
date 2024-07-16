@@ -23,7 +23,7 @@ import (
 const (
 	loadSymbolsBatchSize = 2500
 	storeSymbolsPercent  = 10
-	concurrency          = 2
+	concurrency          = 1
 )
 
 // StorageHandler provides common logic for RQ and P2P operations

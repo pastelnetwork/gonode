@@ -288,16 +288,16 @@ func (service *CascadeAPIHandler) getTxIDs(ctx context.Context, txID string) (tx
 			}
 
 			return
-		}
-	} else {
-		filename, size, err := service.download.GetFilenameAndSize(ctx, txID)
-		if err != nil {
-			return nil, ticket
-		}
+		} else {
+			filename, size, err := service.download.GetFilenameAndSize(ctx, txID)
+			if err != nil {
+				return nil, ticket
+			}
 
-		ticket.NameOfOriginalFile = filename
-		ticket.SizeOfOriginalFileMB = utils.BytesIntToMB(size)
+			ticket.NameOfOriginalFile = filename
+			ticket.SizeOfOriginalFileMB = utils.BytesIntToMB(size)
 
+		}
 	}
 	txIDs = append(txIDs, txID)
 

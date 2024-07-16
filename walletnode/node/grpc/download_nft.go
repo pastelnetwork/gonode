@@ -53,7 +53,7 @@ func (service *downloadNft) Download(ctx context.Context, txid, timestamp, signa
 		}
 		file = append(file, resp.File...)
 		if utils.BytesIntToMB(len(file)) > init+10 {
-			log.WithContext(ctx).WithField("total-recieved", utils.BytesIntToMB(len(file))).Info("received 10 MB file chunk")
+			log.WithContext(ctx).WithField("total-recieved", utils.BytesIntToMB(len(file))).Debug("received 10 MB file chunk")
 			init = init + 10
 		}
 	}
