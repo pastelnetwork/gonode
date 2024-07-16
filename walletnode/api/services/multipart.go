@@ -33,9 +33,11 @@ import (
 const (
 	contentTypePrefix = "image/"
 	imagePartName     = "file"
-	partSizeMB        = 10
-	chunkSize         = partSizeMB * 1024 * 1024 // MB
+)
 
+var (
+	partSizeMB int
+	chunkSize  = partSizeMB * 1024 * 1024 // MB
 )
 
 // NftRegUploadImageDecoderFunc implements the multipart decoder for service "nftreg" endpoint "UploadImage".
@@ -236,7 +238,7 @@ func handleUploadFile(ctx context.Context, reader *multipart.Reader, baseDir str
 	hash = hex.EncodeToString(hashB)
 
 	fs := common.FileSplitter{PartSizeMB: partSizeMB}
-	if fileSize > chunkSize {
+	if fileSize > int64(chunkSize) {
 		if putMaxCap {
 			return "", "", 0, errors.New("file size exceeds the maximum allowed size - Please use API V2 to upload large files")
 		}

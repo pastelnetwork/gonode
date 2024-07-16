@@ -927,6 +927,9 @@ func deleteUnmatchedFiles(folderPath, name string) error {
 
 // NewCascadeAPIHandler returns the swagger OpenAPI implementation.
 func NewCascadeAPIHandler(config *Config, filesMap *sync.Map, register *cascaderegister.CascadeRegistrationService, download *download.NftDownloadingService) *CascadeAPIHandler {
+	partSizeMB = config.MultiVolumeChunkSize
+	chunkSize = config.MultiVolumeChunkSize * 1024 * 1024
+
 	return &CascadeAPIHandler{
 		Common:       NewCommon(config),
 		register:     register,

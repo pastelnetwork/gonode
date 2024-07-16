@@ -17,11 +17,14 @@ const (
 
 // Config contains configuration of all components of the WalletNode.
 type Config struct {
-	LogConfig  *LogConfig `mapstructure:"log-config" json:"log-config,omitempty"`
-	Quiet      bool       `mapstructure:"quiet" json:"quiet"`
-	TempDir    string     `mapstructure:"temp-dir" json:"temp-dir"`
-	WorkDir    string     `mapstructure:"work-dir" json:"work-dir"`
-	RqFilesDir string     `mapstructure:"rq-files-dir" json:"rq-files-dir"`
+	LogConfig            *LogConfig `mapstructure:"log-config" json:"log-config,omitempty"`
+	Quiet                bool       `mapstructure:"quiet" json:"quiet"`
+	TempDir              string     `mapstructure:"temp-dir" json:"temp-dir"`
+	WorkDir              string     `mapstructure:"work-dir" json:"work-dir"`
+	RqFilesDir           string     `mapstructure:"rq-files-dir" json:"rq-files-dir"`
+	CascadeFilesDir      string     `mapstructure:"cascade-files-dir" json:"cascade-files-dir"`
+	StaticFilesDir       string     `mapstructure:"static-files-dir" json:"static-files-dir"`
+	MultiVolumeChunkSize int        `mapstructure:"multi-volume-chunk-size" json:"multi-volume-chunk-size,omitempty"`
 
 	Node    `mapstructure:"node" json:"node,omitempty"`
 	Pastel  *pastel.Config  `mapstructure:"-" json:"-"`

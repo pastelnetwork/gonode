@@ -38,11 +38,12 @@ import (
 )
 
 const (
-	appName        = "walletnode"
-	appUsage       = "WalletNode" // TODO: Write a clear description.
-	rqFilesDir     = "rqfiles"
-	staticFilesDir = "files"
-	cascadeFiles   = "cascadefiles"
+	appName                       = "walletnode"
+	appUsage                      = "WalletNode" // TODO: Write a clear description.
+	rqFilesDir                    = "rqfiles"
+	staticFilesDir                = "files"
+	cascadeFiles                  = "cascadefiles"
+	defaultMultiVolumeChunkSizeMB = 280
 )
 
 var (
@@ -189,6 +190,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.NftRegister.RqFilesDir = config.RqFilesDir
 	config.CascadeRegister.RaptorQServiceAddress = rqAddr
 	config.CascadeRegister.RqFilesDir = config.RqFilesDir
+	config.CascadeRegister.StaticFilesDir = config.StaticFilesDir
+	config.CascadeRegister.CascadeFilesDir = config.CascadeFilesDir
+	config.CascadeRegister.MultiVolumeChunkSize = config.MultiVolumeChunkSize
 
 	// NB: As part of current dev push for Sense and Cascade, we are disabling userdata handling thru rqlite.
 
@@ -231,14 +235,28 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// The API Server takes our configured services and wraps them further with "Mount", creating the API endpoints.
 	//  Since the API Server has access to the services, this is what finally exposes useful methods like
 	//  "NftGet" and "Download".
-	apiSrcvConf := &services.Config{
-		StaticFilesDir:  defaultStaticFilesDir,
-		CascadeFilesDir: defaultCascadeFilesDir,
+	if config.CascadeRegister.CascadeFilesDir == "" {
+		config.CascadeRegister.CascadeFilesDir = defaultCascadeFilesDir
 	}
-	config.API.StaticFilesDir = defaultStaticFilesDir
-	config.API.CascadeFilesDir = defaultCascadeFilesDir
-	config.NftDownload.StaticDir = defaultStaticFilesDir
-	config.NftDownload.CascadeFilesDir = defaultCascadeFilesDir
+
+	if config.CascadeRegister.StaticFilesDir == "" {
+		config.CascadeRegister.StaticFilesDir = defaultStaticFilesDir
+	}
+
+	if config.CascadeRegister.MultiVolumeChunkSize == 0 {
+		config.CascadeRegister.MultiVolumeChunkSize = defaultMultiVolumeChunkSizeMB
+	}
+
+	apiSrcvConf := &services.Config{
+		StaticFilesDir:       config.CascadeRegister.StaticFilesDir,
+		CascadeFilesDir:      config.CascadeRegister.CascadeFilesDir,
+		MultiVolumeChunkSize: config.CascadeRegister.MultiVolumeChunkSize,
+	}
+
+	config.API.StaticFilesDir = apiSrcvConf.StaticFilesDir
+	config.API.CascadeFilesDir = apiSrcvConf.CascadeFilesDir
+	config.NftDownload.StaticDir = apiSrcvConf.StaticFilesDir
+	config.NftDownload.CascadeFilesDir = apiSrcvConf.CascadeFilesDir
 
 	// These services connect the different clients and configs together to provide tasking and handling for
 	//  the required functionality.  These services aren't started with these declarations, they will be run

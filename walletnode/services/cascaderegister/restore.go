@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultRestoreVolumeInterval = 60 * time.Minute
+	defaultRestoreVolumeInterval = 3 * time.Minute
 )
 
 // RestoreService restore the missed volume file
