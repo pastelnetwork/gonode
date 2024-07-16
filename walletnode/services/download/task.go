@@ -85,8 +85,9 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 	if !tInfo.IsTicketPublic {
 		ttxid, err = task.service.pastelHandler.PastelClient.TicketOwnership(ctx, task.Request.Txid, task.Request.PastelID, task.Request.PastelIDPassphrase)
 		if err != nil && task.Request.Type != pastel.ActionTypeSense {
-			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("pastelid", task.Request.PastelID).Error("Could not get ticket ownership")
-			return errors.Errorf("get ticket ownership: %w", err)
+			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("pastelid", task.Request.PastelID).Error("Could not validate ticket ownership")
+			task.UpdateStatus(common.StatusErrorOwnershipNotMatch)
+			return errors.Errorf("validate ticket ownership: %w", err)
 		}
 	}
 
@@ -145,7 +146,6 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 			continue
 		}
 
-		task.UpdateStatus(common.StatusDownloaded)
 		// Check files are the same
 		n, badNodes, err := task.MatchFiles()
 		if err != nil {
@@ -174,10 +174,12 @@ func (task *NftDownloadingTask) run(ctx context.Context) (err error) {
 				}
 				addSkipNodes(badNodes)
 
+				task.UpdateStatus(common.StatusErrorHashMismatch)
 				log.WithContext(ctx).WithField("txid", task.Request.Txid).Error("Hashes do not match")
 				continue
 			}
 		}
+		task.UpdateStatus(common.StatusDownloaded)
 
 		break
 	}
@@ -213,6 +215,7 @@ func (task *NftDownloadingTask) Download(cctx context.Context, txid, ttxid, ttyp
 		if err != nil {
 			log.WithContext(ctx).WithError(err).WithField("txid", task.Request.Txid).WithField("timestamp", timestamp).WithField("pastelid", task.Request.PastelID).Error("Could not sign timestamp")
 			errChan <- err
+			continue
 		}
 
 		log.WithContext(ctx).WithField("address", someNode.String()).WithField("txid", txid).Info("Downloading from supernode")

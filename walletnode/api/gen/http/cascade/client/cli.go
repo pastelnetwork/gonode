@@ -294,11 +294,11 @@ func BuildGetDownloadTaskStatePayload(cascadeGetDownloadTaskStateFileID string) 
 	var fileID string
 	{
 		fileID = cascadeGetDownloadTaskStateFileID
-		if utf8.RuneCountInString(fileID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 8, true))
+		if utf8.RuneCountInString(fileID) < 6 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 6, true))
 		}
-		if utf8.RuneCountInString(fileID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 8, false))
+		if utf8.RuneCountInString(fileID) > 6 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 6, false))
 		}
 		if err != nil {
 			return nil, err

@@ -907,17 +907,11 @@ func DecodeGetDownloadTaskStateResponse(decoder func(*http.Response) goahttp.Dec
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("cascade", "getDownloadTaskState", err)
 			}
-			for _, e := range body {
-				if e != nil {
-					if err2 := ValidateTaskHistoryResponse(e); err2 != nil {
-						err = goa.MergeErrors(err, err2)
-					}
-				}
-			}
+			err = ValidateGetDownloadTaskStateResponseBody(&body)
 			if err != nil {
 				return nil, goahttp.ErrValidationError("cascade", "getDownloadTaskState", err)
 			}
-			res := NewGetDownloadTaskStateTaskHistoryOK(body)
+			res := NewGetDownloadTaskStateDownloadTaskStatusOK(&body)
 			return res, nil
 		case http.StatusNotFound:
 			var (
@@ -1224,6 +1218,24 @@ func unmarshalDetailsResponseToCascadeDetails(v *DetailsResponse) *cascade.Detai
 	if v == nil {
 		return nil
 	}
+	res := &cascade.Details{
+		Message: v.Message,
+	}
+	if v.Fields != nil {
+		res.Fields = make(map[string]any, len(v.Fields))
+		for key, val := range v.Fields {
+			tk := key
+			tv := val
+			res.Fields[tk] = tv
+		}
+	}
+
+	return res
+}
+
+// unmarshalDetailsResponseBodyToCascadeDetails builds a value of type
+// *cascade.Details from a value of type *DetailsResponseBody.
+func unmarshalDetailsResponseBodyToCascadeDetails(v *DetailsResponseBody) *cascade.Details {
 	res := &cascade.Details{
 		Message: v.Message,
 	}

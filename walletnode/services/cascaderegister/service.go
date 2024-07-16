@@ -675,7 +675,7 @@ func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Cont
 	var sha3256HashOfOriginalFile string
 
 	nameOfOriginalFile = relatedFiles[0].NameOfOriginalBigFileWithExt
-	sizeOfOriginalFileMB = int(relatedFiles[0].SizeOfOriginalBigFile)
+	sizeOfOriginalFileMB = utils.BytesIntToMB(int(relatedFiles[0].SizeOfOriginalBigFile))
 	sha3256HashOfOriginalFile = relatedFiles[0].HashOfOriginalBigFile
 
 	for _, relatedFile := range relatedFiles {

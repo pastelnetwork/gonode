@@ -365,7 +365,11 @@ func (task *CascadeRegistrationTask) runTicketRegActTask(ctx context.Context) (r
 
 	filePath := filepath.Join(task.service.config.CascadeFilesDir, task.Request.BaseFileID, task.Request.FileID)
 	if err := os.Remove(filePath); err != nil {
-		log.WithContext(ctx).WithField("file", filePath).WithError(err).Error("error removing file")
+		if os.IsNotExist(err) {
+			log.WithContext(ctx).WithField("file", filePath).Warn("File does not exist")
+		} else {
+			log.WithContext(ctx).WithField("file", filePath).WithError(err).Error("Error removing file")
+		}
 	}
 
 	task.UpdateStatus(common.StatusTicketRegistered)

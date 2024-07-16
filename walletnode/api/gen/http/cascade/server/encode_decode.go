@@ -693,7 +693,7 @@ func EncodeDownloadV2Error(encoder func(context.Context, http.ResponseWriter) go
 // by the cascade getDownloadTaskState endpoint.
 func EncodeGetDownloadTaskStateResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
-		res, _ := v.([]*cascade.TaskHistory)
+		res, _ := v.(*cascade.DownloadTaskStatus)
 		enc := encoder(ctx, w)
 		body := NewGetDownloadTaskStateResponseBody(res)
 		w.WriteHeader(http.StatusOK)
@@ -712,11 +712,11 @@ func DecodeGetDownloadTaskStateRequest(mux goahttp.Muxer, decoder func(*http.Req
 			params = mux.Vars(r)
 		)
 		fileID = params["file_id"]
-		if utf8.RuneCountInString(fileID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 8, true))
+		if utf8.RuneCountInString(fileID) < 6 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 6, true))
 		}
-		if utf8.RuneCountInString(fileID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 8, false))
+		if utf8.RuneCountInString(fileID) > 6 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("file_id", fileID, utf8.RuneCountInString(fileID), 6, false))
 		}
 		if err != nil {
 			return nil, err
@@ -996,6 +996,24 @@ func marshalCascadeDetailsToDetailsResponse(v *cascade.Details) *DetailsResponse
 		return nil
 	}
 	res := &DetailsResponse{
+		Message: v.Message,
+	}
+	if v.Fields != nil {
+		res.Fields = make(map[string]any, len(v.Fields))
+		for key, val := range v.Fields {
+			tk := key
+			tv := val
+			res.Fields[tk] = tv
+		}
+	}
+
+	return res
+}
+
+// marshalCascadeDetailsToDetailsResponseBody builds a value of type
+// *DetailsResponseBody from a value of type *cascade.Details.
+func marshalCascadeDetailsToDetailsResponseBody(v *cascade.Details) *DetailsResponseBody {
+	res := &DetailsResponseBody{
 		Message: v.Message,
 	}
 	if v.Fields != nil {

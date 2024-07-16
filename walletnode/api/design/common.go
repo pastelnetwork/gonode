@@ -72,8 +72,8 @@ var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
 var DownloadTaskStatePayload = Type("DownloadTaskStatePayload", func() {
 	Attribute("file_id", String, "File ID returned by Download V2 API", func() {
 		TypeName("file_id")
-		MinLength(8)
-		MaxLength(8)
+		MinLength(6)
+		MaxLength(6)
 		Example("n6Qn6TFM")
 	})
 	Required("file_id")
@@ -126,6 +126,62 @@ var TaskHistory = Type("TaskHistory", func() {
 	})
 
 	Required("status")
+})
+
+// DownloadTaskStatus is status of the download task
+var DownloadTaskStatus = Type("DownloadTaskStatus", func() {
+	Attribute("total_volumes", Int, func() {
+		Description("Total Volumes")
+		Example(1)
+	})
+
+	Attribute("downloaded_volumes", Int, func() {
+		Description("Number of volumes successfully downloaded")
+		Example(1)
+	})
+
+	Attribute("volumes_download_in_progress", Int, func() {
+		Description("Number of volumes currently being downloaded")
+		Example(1)
+	})
+
+	Attribute("volumes_pending_download", Int, func() {
+		Description("Number of volumes awaiting schedule")
+		Example(1)
+	})
+
+	Attribute("volumes_download_failed", Int, func() {
+		Description("Number of volumes failed to download")
+		Example(1)
+	})
+
+	Attribute("task_status", String, func() {
+		Description("Status of the operation")
+		Example("In Progress")
+		Enum("Completed", "Failed", "In Progress")
+	})
+
+	Attribute("size_of_the_file_megabytes", Int, func() {
+		Description("size of the file in megabytes")
+		Example(1)
+	})
+
+	Attribute("data_downloaded_megabytes", Int, func() {
+		Description("data downloaded in megabytes so far")
+		Example(1)
+	})
+
+	Attribute("message", String, func() {
+		Description("message string (if any)")
+		Example("Balance less than maximum fee provied in the request, could not gather enough confirmations...")
+	})
+
+	Attribute("details", Details, func() {
+		Description("details of the status")
+	})
+
+	Required("total_volumes", "downloaded_volumes", "volumes_download_in_progress", "volumes_download_failed", "task_status", "details",
+		"volumes_pending_download", "size_of_the_file_megabytes", "data_downloaded_megabytes")
 })
 
 // ActionDetailsResult - result of posting action details

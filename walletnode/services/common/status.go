@@ -58,6 +58,8 @@ const (
 	StatusErrorNotEnoughFiles
 	StatusErrorDownloadFailed
 	StatusErrorInvalidBurnTxID
+	StatusErrorOwnershipNotMatch
+	StatusErrorHashMismatch
 
 	// Final
 	StatusTaskFailed
@@ -122,6 +124,9 @@ var statusNames = map[Status]string{
 	StatusErrorDownloadFailed:     "Error Download Failed",
 	StatusErrorInvalidBurnTxID:    "Error Invalid Burn TxID",
 
+	StatusErrorOwnershipNotMatch: "Error Ownership Not Match",
+	StatusErrorHashMismatch:      "Error Hash Mismatch",
+
 	// Final
 	StatusTaskFailed:    "Task Failed",
 	StatusTaskRejected:  "Task Rejected",
@@ -159,7 +164,9 @@ func (status Status) IsFailure() bool {
 		status == StatusErrorFindRespondingSNs ||
 		status == StatusErrorInvalidBurnTxID ||
 		status == StatusTaskRejected ||
-		status == StatusTaskFailed
+		status == StatusTaskFailed ||
+		status == StatusErrorOwnershipNotMatch ||
+		status == StatusErrorHashMismatch
 }
 
 // StatusNames returns a sorted list of status names.

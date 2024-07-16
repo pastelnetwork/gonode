@@ -30,7 +30,6 @@ import (
 )
 
 const (
-	maxFileSize                 = 300 * 1024 * 1024 // 300MB in bytes
 	maxFileRegistrationAttempts = 3
 	downloadDeadline            = 120 * time.Minute
 	downloadConcurrency         = 2
@@ -290,6 +289,15 @@ func (service *CascadeAPIHandler) getTxIDs(ctx context.Context, txID string) (tx
 
 			return
 		}
+	} else {
+		filename, size, err := service.download.GetFilenameAndSize(ctx, txID)
+		if err != nil {
+			return nil, ticket
+		}
+
+		ticket.NameOfOriginalFile = filename
+		ticket.SizeOfOriginalFileMB = utils.BytesIntToMB(size)
+
 	}
 	txIDs = append(txIDs, txID)
 
@@ -313,6 +321,9 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 
 	txIDs, ticket := service.getTxIDs(ctx, p.Txid)
 	isMultiVolume := len(txIDs) > 1
+	if isMultiVolume {
+		return nil, cascade.MakeBadRequest(errors.New("multi-volume download not supported. Please use /v2/download endpoint to download multi-volume files"))
+	}
 
 	// Create directory with p.Txid
 	folderPath := filepath.Join(service.config.StaticFilesDir, p.Txid)
@@ -439,6 +450,14 @@ func (service *CascadeAPIHandler) Download(ctx context.Context, p *cascade.Downl
 	}, nil
 }
 
+func getTxIDsKey(id string) string {
+	return fmt.Sprintf("%s_txids", id)
+}
+
+func getPrimaryTxIDKey(id string) string {
+	return fmt.Sprintf("%s_primary_txid", id)
+}
+
 // Download registered cascade file - also supports multi-volume files
 func (service *CascadeAPIHandler) DownloadV2(ctx context.Context, p *cascade.DownloadPayload) (*cascade.FileDownloadV2Result, error) {
 	log.WithContext(ctx).WithField("txid", p.Txid).Info("Download Request Received (V2)")
@@ -460,7 +479,7 @@ func (service *CascadeAPIHandler) DownloadV2(ctx context.Context, p *cascade.Dow
 	// generating a single unique ID
 	uniqueID := randIDFunc()
 	service.fileMappings.Store(uniqueID, folderPath)
-
+	service.fileMappings.Store(getPrimaryTxIDKey(uniqueID), p.Txid)
 	// Start asynchronous download process
 	go service.manageDownloads(ctx, p, txIDs, folderPath, isMultiVolume, ticket.NameOfOriginalFile, ticket.SHA3256HashOfOriginalFile, uniqueID)
 
@@ -470,12 +489,14 @@ func (service *CascadeAPIHandler) DownloadV2(ctx context.Context, p *cascade.Dow
 }
 
 func (service *CascadeAPIHandler) manageDownloads(_ context.Context, p *cascade.DownloadPayload, txIDs []string, folderPath string, isMulti bool, name string, sha string, id string) {
-	sem := make(chan struct{}, downloadConcurrency) // Max 3 concurrent downloads
+	sem := make(chan struct{}, downloadConcurrency) // Control Max concurrent downloads
 	taskResults := make(chan *DownloadResult)
 	errorsChan := make(chan error)
 
 	ctx, cancel := context.WithTimeout(context.Background(), downloadDeadline)
 	defer cancel()
+
+	service.fileMappings.Store(getTxIDsKey(id), txIDs)
 
 	// Starting multiple download tasks
 	tasks := 0
@@ -493,6 +514,8 @@ func (service *CascadeAPIHandler) manageDownloads(_ context.Context, p *cascade.
 				if len(txIDs) == 1 {
 					service.fileMappings.Store(id, filePath)
 				}
+
+				service.fileMappings.Store(txID, txID)
 				continue
 			} else {
 				log.WithContext(ctx).WithField("filename", filename).WithField("txid", txID).Warn("file exists but downloading again due to size mismatch")
@@ -505,6 +528,8 @@ func (service *CascadeAPIHandler) manageDownloads(_ context.Context, p *cascade.
 			defer func() { <-sem }() // Releasing the semaphore
 
 			taskID := service.download.AddTask(&nft.DownloadPayload{Key: p.Key, Pid: p.Pid, Txid: txID}, pastel.ActionTypeCascade, false)
+			service.fileMappings.Store(txID, taskID)
+
 			task := service.download.GetTask(taskID)
 			defer task.Cancel()
 
@@ -540,7 +565,7 @@ func (service *CascadeAPIHandler) manageDownloads(_ context.Context, p *cascade.
 	service.processDownloadResults(ctx, taskResults, errorsChan, folderPath, isMulti, tasks, sha, name, id)
 }
 
-func (service *CascadeAPIHandler) GetDownloadTaskState(ctx context.Context, p *cascade.GetDownloadTaskStatePayload) (res []*cascade.TaskHistory, err error) {
+func (service *CascadeAPIHandler) GetDownloadTaskState(ctx context.Context, p *cascade.GetDownloadTaskStatePayload) (th *cascade.DownloadTaskStatus, err error) {
 	filePath, ok := service.fileMappings.Load(p.FileID)
 	if !ok {
 		return nil, cascade.MakeNotFound(errors.New("file not found"))
@@ -552,11 +577,129 @@ func (service *CascadeAPIHandler) GetDownloadTaskState(ctx context.Context, p *c
 	}
 
 	// Check if the file exists
-	if _, err := os.Stat(filePathStr); os.IsNotExist(err) {
-		return nil, cascade.MakeNotFound(errors.New("file not found"))
+	primaryTxID, ok := service.fileMappings.Load(getPrimaryTxIDKey(p.FileID))
+	if !ok {
+		return nil, cascade.MakeNotFound(errors.New("file not found - please try requesting download again"))
 	}
 
-	return []*cascade.TaskHistory{}, nil
+	_, ticket := service.getTxIDs(ctx, primaryTxID.(string))
+	if _, err := os.Stat(filepath.Join(filePathStr, ticket.NameOfOriginalFile)); err == nil {
+		th = &cascade.DownloadTaskStatus{
+			TaskStatus: "Completed",
+		}
+
+		return th, nil
+	}
+
+	val, ok := service.fileMappings.Load(getTxIDsKey(p.FileID))
+	if !ok {
+		return nil, cascade.MakeNotFound(errors.New("No such file download in progress. Please double check the file id - Please request download again if the app was restarted"))
+	}
+
+	details := cascade.Details{
+		Fields: make(map[string]any),
+	}
+
+	type txidDetails struct {
+		Txid   string
+		TaskID string
+		Status string
+		Error  string
+	}
+
+	txids := val.([]string)
+	var success int
+	var failed int
+	var pending int
+	var dataDownloaded int
+	for _, txid := range txids {
+		_, ticket := service.getTxIDs(ctx, txid)
+		td := txidDetails{
+			Txid: txid,
+		}
+
+		taskID, ok := service.fileMappings.Load(txid)
+		if !ok || taskID == "" {
+			pending++
+			td.Status = "Pending"
+			details.Fields[txid] = td
+			continue
+
+		}
+
+		if taskID == txid {
+			td.Status = common.StatusDownloaded.String()
+			details.Fields[txid] = td
+			dataDownloaded += ticket.SizeOfOriginalFileMB
+			success++
+			continue
+		}
+
+		task := service.download.GetTask(taskID.(string))
+		if task == nil {
+			if _, err := os.Stat(filepath.Join(filePathStr, ticket.NameOfOriginalFile)); err == nil {
+				td.Status = common.StatusDownloaded.String()
+				details.Fields[txid] = td
+				success++
+				dataDownloaded += ticket.SizeOfOriginalFileMB
+				continue
+			} else {
+				return nil, cascade.MakeInternalServerError(fmt.Errorf("no such task found for txid %s - please try requesting download again", txid))
+			}
+		}
+		td.TaskID = taskID.(string)
+
+		statuses := task.StatusHistory()
+		for _, status := range statuses {
+			if status.IsFailure() {
+				failed++
+				errStr := fmt.Errorf("internal processing error: %s", status.String())
+				if task.Error() != nil {
+					errStr = task.Error()
+				}
+				td.Error = errStr.Error()
+				details.Fields[txid] = td
+
+				continue
+			}
+
+			if status.Is(common.StatusTaskCompleted) || status.Is(common.StatusDownloaded) {
+				success++
+				td.Status = common.StatusDownloaded.String()
+				dataDownloaded += ticket.SizeOfOriginalFileMB
+				details.Fields[txid] = td
+				continue
+			}
+			td.Status = "In Progress"
+			details.Fields[txid] = td
+		}
+	}
+
+	total := len(txids)
+
+	th = &cascade.DownloadTaskStatus{
+		TotalVolumes:              total,
+		DownloadedVolumes:         success,
+		VolumesDownloadFailed:     failed,
+		VolumesPendingDownload:    pending,
+		VolumesDownloadInProgress: total - success - failed - pending,
+		SizeOfTheFileMegabytes:    ticket.SizeOfOriginalFileMB,
+		DataDownloadedMegabytes:   dataDownloaded,
+	}
+
+	if total == success {
+		th.TaskStatus = "Completed"
+	} else if failed == 0 {
+		th.TaskStatus = "In Progress"
+	} else {
+		th.TaskStatus = "Failed"
+		msg := fmt.Sprintf("Download failed for %d volumes - please try requesting download again", failed)
+		th.Message = &msg
+	}
+
+	th.Details = &details
+
+	return th, nil
 }
 
 func (service *CascadeAPIHandler) processDownloadResults(ctx context.Context, taskResults chan *DownloadResult, errorsChan chan error, folderPath string,
@@ -567,7 +710,6 @@ func (service *CascadeAPIHandler) processDownloadResults(ctx context.Context, ta
 		select {
 		case res := <-taskResults:
 			filePath = filepath.Join(folderPath, res.Filename)
-			fmt.Println("file path", filePath)
 			if err := os.WriteFile(filePath, res.File, 0644); err != nil {
 				log.WithContext(ctx).WithError(err).Error("unable to write file")
 				return fmt.Errorf("unable to write file: %w", err)
@@ -598,6 +740,10 @@ func (service *CascadeAPIHandler) processDownloadResults(ctx context.Context, ta
 
 		if hex.EncodeToString(hash) != sha {
 			return fmt.Errorf("hash mismatch: %w", errors.New("hash mismatch"))
+		}
+
+		if err := deleteUnmatchedFiles(folderPath, name); err != nil {
+			log.WithContext(ctx).WithError(err).Error("unable to delete volume files")
 		}
 	}
 	if filePath != "" {
@@ -754,6 +900,28 @@ func (service *CascadeAPIHandler) checkBurnTxIDsValidForRegistration(ctx context
 		}
 	}
 
+	return nil
+}
+
+// deleteUnmatchedFiles deletes all files in the specified folderPath that do not match the given filename.
+func deleteUnmatchedFiles(folderPath, name string) error {
+	entries, err := os.ReadDir(folderPath)
+	if err != nil {
+		return fmt.Errorf("unable to read directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.Name() != name {
+			// Check if the directory entry is a file before attempting to delete
+			if !entry.IsDir() {
+				filePath := filepath.Join(folderPath, entry.Name())
+				if err := os.Remove(filePath); err != nil {
+					log.Printf("Error deleting file %s: %v", entry.Name(), err)
+					// Continue with the loop even if there's an error deleting a file
+				}
+			}
+		}
+	}
 	return nil
 }
 

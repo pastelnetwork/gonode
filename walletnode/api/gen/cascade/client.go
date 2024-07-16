@@ -165,13 +165,13 @@ func (c *Client) DownloadV2(ctx context.Context, p *DownloadPayload) (res *FileD
 //   - "NotFound" (type *goa.ServiceError)
 //   - "InternalServerError" (type *goa.ServiceError)
 //   - error: internal error
-func (c *Client) GetDownloadTaskState(ctx context.Context, p *GetDownloadTaskStatePayload) (res []*TaskHistory, err error) {
+func (c *Client) GetDownloadTaskState(ctx context.Context, p *GetDownloadTaskStatePayload) (res *DownloadTaskStatus, err error) {
 	var ires any
 	ires, err = c.GetDownloadTaskStateEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.([]*TaskHistory), nil
+	return ires.(*DownloadTaskStatus), nil
 }
 
 // RegistrationDetails calls the "registrationDetails" endpoint of the
