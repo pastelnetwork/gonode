@@ -916,7 +916,7 @@ func deleteUnmatchedFiles(folderPath, name string) error {
 			if !entry.IsDir() {
 				filePath := filepath.Join(folderPath, entry.Name())
 				if err := os.Remove(filePath); err != nil {
-					log.Printf("Error deleting file %s: %v", entry.Name(), err)
+					log.WithContext(context.Background()).WithError(err).Errorf("unable to delete file: %s", filePath)
 					// Continue with the loop even if there's an error deleting a file
 				}
 			}

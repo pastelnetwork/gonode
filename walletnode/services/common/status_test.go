@@ -63,6 +63,8 @@ func TestStatusNames(t *testing.T) {
 				StatusErrorNotEnoughFiles,
 				StatusErrorDownloadFailed,
 				StatusErrorInvalidBurnTxID,
+				StatusErrorOwnershipNotMatch,
+				StatusErrorHashMismatch,
 				// Final
 				StatusTaskFailed,
 				StatusTaskRejected,

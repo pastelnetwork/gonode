@@ -804,7 +804,7 @@ func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *c
 	for _, v := range volumes {
 		if _, exists := runningTaskIDs[v.TaskID]; exists {
 			log.WithContext(ctx).WithField("task_id", v.TaskID).WithField("base_file_id", v.BaseFileID).
-				Info("current task is already in-progress can't execute the recovery-flow")
+				Debug("current task is already in-progress can't execute the recovery-flow")
 			continue
 		}
 
