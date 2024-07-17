@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -214,7 +213,6 @@ func handleUploadFile(ctx context.Context, reader *multipart.Reader, baseDir str
 		}
 
 		filename = part.FileName()
-		fmt.Printf("Upload image %q\n", filename)
 		outputFilePath = filepath.Join(dirPath, filename)
 		outputFile, err := os.Create(outputFilePath)
 		if err != nil {
@@ -246,6 +244,9 @@ func handleUploadFile(ctx context.Context, reader *multipart.Reader, baseDir str
 		// Use 7z to split the file
 		err := fs.SplitFile(outputFilePath)
 		if err != nil {
+			if strings.Contains(err.Error(), "no such file or directory") {
+				return "", "", 0, errors.New("seems like `p7zip-full` is not installed in your system, kindly proceed after installing the package")
+			}
 			return "", "", 0, err
 		}
 		// Remove the original file after splitting
