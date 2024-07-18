@@ -131,13 +131,15 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 			return nil, cascade.MakeInternalServerError(err)
 		}
 
-		if p.BurnTxid == nil {
-			return nil, cascade.MakeInternalServerError(errors.New("BurnTxId must not be null for single related file"))
+		burnTxID, err := validateBurnTxID(p.BurnTxid, p.BurnTxids)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("error validating burn-txid from the payload")
+			return nil, cascade.MakeInternalServerError(err)
 		}
 
 		addTaskPayload := &common.AddTaskPayload{
 			FileID:                 p.FileID,
-			BurnTxid:               p.BurnTxid,
+			BurnTxid:               &burnTxID,
 			AppPastelID:            p.AppPastelID,
 			MakePubliclyAccessible: p.MakePubliclyAccessible,
 			Key:                    p.Key,
@@ -231,6 +233,18 @@ func isDuplicateExists(burnTxIDs []string) bool {
 	}
 
 	return false
+}
+
+func validateBurnTxID(burnTxID *string, burnTxIDs []string) (string, error) {
+	if burnTxID != nil {
+		return *burnTxID, nil
+	}
+
+	if len(burnTxIDs) > 0 {
+		return burnTxIDs[0], nil
+	}
+
+	return "", errors.New("burn txid should either passed in burn_txid field or as an item in burn_txids array")
 }
 
 // RegisterTaskState - Registers a task state

@@ -632,7 +632,7 @@ func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Cont
 	}
 
 	if len(relatedFiles) <= 1 {
-		return "", errors.New("related files must be greater than 1")
+		return "", errors.New("related volumes must be greater than 1 for creating multi-volume ticket")
 	}
 
 	concludedCount := 0
@@ -867,10 +867,11 @@ func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *c
 		}
 	}
 
-	// only set base file txId return by pastel register all else remains nil
-	_, err = service.RegisterVolumeTicket(ctx, p.BaseFileID)
-	if err != nil {
-		return nil, err
+	if len(volumes) > 1 {
+		_, err = service.RegisterVolumeTicket(ctx, p.BaseFileID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &cascade.RestoreFile{
