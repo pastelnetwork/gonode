@@ -33,6 +33,9 @@ const (
 	maxFileRegistrationAttempts = 3
 	downloadDeadline            = 120 * time.Minute
 	downloadConcurrency         = 2
+	statusCompleted             = "Completed"
+	statusInProgress            = "In Progress"
+	statusFailed                = "Failed"
 )
 
 // CascadeAPIHandler - CascadeAPIHandler service
@@ -585,7 +588,9 @@ func (service *CascadeAPIHandler) GetDownloadTaskState(ctx context.Context, p *c
 	_, ticket := service.getTxIDs(ctx, primaryTxID.(string))
 	if _, err := os.Stat(filepath.Join(filePathStr, ticket.NameOfOriginalFile)); err == nil {
 		th = &cascade.DownloadTaskStatus{
-			TaskStatus: "Completed",
+			TaskStatus:              statusCompleted,
+			SizeOfTheFileMegabytes:  ticket.SizeOfOriginalFileMB,
+			DataDownloadedMegabytes: ticket.SizeOfOriginalFileMB,
 		}
 
 		return th, nil
@@ -670,7 +675,7 @@ func (service *CascadeAPIHandler) GetDownloadTaskState(ctx context.Context, p *c
 				details.Fields[txid] = td
 				continue
 			}
-			td.Status = "In Progress"
+			td.Status = statusInProgress
 			details.Fields[txid] = td
 		}
 	}
@@ -688,11 +693,11 @@ func (service *CascadeAPIHandler) GetDownloadTaskState(ctx context.Context, p *c
 	}
 
 	if total == success {
-		th.TaskStatus = "Completed"
+		th.TaskStatus = statusCompleted
 	} else if failed == 0 {
-		th.TaskStatus = "In Progress"
+		th.TaskStatus = statusInProgress
 	} else {
-		th.TaskStatus = "Failed"
+		th.TaskStatus = statusFailed
 		msg := fmt.Sprintf("Download failed for %d volumes - please try requesting download again", failed)
 		th.Message = &msg
 	}
