@@ -40,7 +40,7 @@ func (service *RestoreService) Run(ctx context.Context, cascadeRegistrationServi
 }
 
 func (service *RestoreService) restore(ctx context.Context, cascadeRegistrationService CascadeRegistrationService) ([]*cascade.RestoreFile, error) {
-	log.WithContext(ctx).Info("Restore worker started")
+	log.WithContext(ctx).Debug("Restore worker started")
 
 	ucFiles, err := cascadeRegistrationService.GetUnCompletedFiles()
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -93,7 +93,7 @@ func (service *RestoreService) restore(ctx context.Context, cascadeRegistrationS
 		restoreFiles = append(restoreFiles, restoreFileRes)
 	}
 
-	log.WithContext(ctx).Info("Restore worker finished")
+	log.WithContext(ctx).Debug("Restore worker finished")
 	return restoreFiles, nil
 }
 
