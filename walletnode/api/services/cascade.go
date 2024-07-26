@@ -127,6 +127,11 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 	}
 	log.WithContext(ctx).WithField("total_volumes", len(relatedFiles)).Info("Related volumes retrieved from the base file-id")
 
+	if isProcessingStarted(relatedFiles) {
+		log.WithContext(ctx).Error("task registration is already in progress")
+		return nil, cascade.MakeInternalServerError(errors.New("task registration is already in progress"))
+	}
+
 	switch {
 	case len(relatedFiles) == 1:
 		baseFile := relatedFiles.GetBase()
@@ -231,6 +236,16 @@ func isDuplicateExists(burnTxIDs []string) bool {
 
 	for _, count := range duplicateBurnTxIDMap {
 		if count > 1 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isProcessingStarted(files types.Files) bool {
+	for _, file := range files {
+		if file.TaskID != "" {
 			return true
 		}
 	}
