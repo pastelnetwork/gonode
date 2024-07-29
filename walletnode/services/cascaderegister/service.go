@@ -631,8 +631,8 @@ func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Cont
 		return "", err
 	}
 
-	if len(relatedFiles) <= 1 {
-		return "", errors.New("related volumes must be greater than 1 for creating multi-volume ticket")
+	if len(relatedFiles) == 1 {
+		return "", nil
 	}
 
 	concludedCount := 0
