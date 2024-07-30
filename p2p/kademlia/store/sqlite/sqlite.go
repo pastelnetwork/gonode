@@ -382,20 +382,9 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to get record by key %s: %w", hkey, err)
 	}
 
+	PostAccessUpdate([]string{hkey})
+
 	return r.Data, nil
-}
-
-// RetrieveWithType will return the queries key/value if it exists
-func (s *Store) RetrieveWithType(_ context.Context, key []byte) ([]byte, int, error) {
-	hkey := hex.EncodeToString(key)
-
-	r := Record{}
-	err := s.db.Get(&r, `SELECT data,datatype FROM data WHERE key = ?`, hkey)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get record with type by key %s: %w", hkey, err)
-	}
-
-	return r.Data, r.Datatype, nil
 }
 
 // Checkpoint method for the store
@@ -446,9 +435,8 @@ func (s *Store) performJob(j Job) error {
 // storeRecord will store a key/value pair for the queries node
 func (s *Store) storeRecord(key []byte, value []byte, typ int, isOriginal bool) error {
 
+	hkey := hex.EncodeToString(key)
 	operation := func() error {
-		hkey := hex.EncodeToString(key)
-
 		now := time.Now().UTC()
 		r := Record{Key: hkey, Data: value, UpdatedAt: now, Datatype: typ, Isoriginal: isOriginal, CreatedAt: now}
 		res, err := s.db.NamedExec(`INSERT INTO data(key, data, datatype, is_original, createdAt, updatedAt) values(:key, :data, :datatype, :isoriginal, :createdat, :updatedat) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
@@ -472,12 +460,15 @@ func (s *Store) storeRecord(key []byte, value []byte, typ int, isOriginal bool) 
 	if err != nil {
 		return fmt.Errorf("error storing data: %w", err)
 	}
+	PostKeysInsert([]UpdateMessage{{Key: hkey, LastAccessTime: time.Now(), Size: len(value)}})
 
 	return nil
 }
 
 // storeBatchRecord will store a batch of values with their SHA256 hash as the key
 func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) error {
+	hkeys := make([]UpdateMessage, len(values))
+
 	operation := func() error {
 		tx, err := s.db.Beginx()
 		if err != nil {
@@ -505,6 +496,7 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 			}
 
 			hkey := hex.EncodeToString(hashed)
+			hkeys[i] = UpdateMessage{Key: hkey, LastAccessTime: now, Size: len(values[i])}
 			r := Record{Key: hkey, Data: values[i], CreatedAt: now, UpdatedAt: now, Datatype: typ, Isoriginal: isOriginal}
 
 			// Execute the insert statement
@@ -531,6 +523,8 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 	if err != nil {
 		return fmt.Errorf("error storing data: %w", err)
 	}
+
+	PostKeysInsert(hkeys)
 
 	return nil
 }

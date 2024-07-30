@@ -443,6 +443,7 @@ func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byt
 
 	values := make([][]byte, len(keys))
 	keysFound := 0
+
 	for rows.Next() {
 		var key string
 		var value []byte
@@ -453,6 +454,8 @@ func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byt
 		if idx, found := keyToIndex[key]; found {
 			values[idx] = value
 			keysFound++
+
+			PostAccessUpdate([]string{key})
 		}
 	}
 

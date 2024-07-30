@@ -97,11 +97,6 @@ func (s *Store) StoreBatch(_ context.Context, values [][]byte, _ int, _ bool) er
 	return nil
 }
 
-// RetrieveWithType will return the queries key/value if it exists
-func (s *Store) RetrieveWithType(_ context.Context, _ []byte) ([]byte, int, error) {
-	return []byte{}, 0, nil
-}
-
 // NewStore returns a new memory store
 func NewStore() *Store {
 	return &Store{
