@@ -15,9 +15,6 @@ type Store interface {
 	// Retrieve the queries key/value from store
 	Retrieve(ctx context.Context, key []byte) ([]byte, error)
 
-	// RetrieveWithType gets data with type
-	RetrieveWithType(_ context.Context, key []byte) ([]byte, int, error)
-
 	// Delete a key/value pair from the store
 	Delete(ctx context.Context, key []byte)
 
