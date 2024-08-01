@@ -167,6 +167,10 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	return s, nil
 }
 
+func (s *Store) isCloudBackupOn() bool {
+	return s.cloud != nil
+}
+
 func (s *Store) checkStore() bool {
 	query := `SELECT name FROM sqlite_master WHERE type='table' AND name='data'`
 	var name string
@@ -425,7 +429,18 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	PostAccessUpdate([]string{hkey})
 
 	if len(r.Data) == 0 && r.IsOnCloud {
+		if s.isCloudBackupOn() {
+			data, err := s.cloud.Fetch(r.Key)
+			if err != nil {
+				return nil, fmt.Errorf("failed to retrieve data from cloud: %w", err)
+			}
 
+			return data, nil
+		} else {
+			return nil, fmt.Errorf("failed to retrieve data from cloud: cloud backup is not enabled")
+		}
+	} else if !r.IsOnCloud {
+		return nil, fmt.Errorf("failed to retrieve data from cloud: data is not on cloud")
 	}
 
 	return r.Data, nil
