@@ -448,6 +448,10 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to retrieve data from cloud: %w", err)
 	}
 
+	if err := s.Store(context.Background(), key, data, r.Datatype, r.Isoriginal); err != nil {
+		return nil, fmt.Errorf("failed to store data retrieved from cloud: %w", err)
+	}
+
 	return data, nil
 }
 

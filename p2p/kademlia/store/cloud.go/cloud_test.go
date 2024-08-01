@@ -1,5 +1,6 @@
 package cloud
 
+/*
 import (
 	"fmt"
 	"os"
@@ -59,7 +60,7 @@ func SetRcloneB2Env(accountID, appKey string) error {
 	return nil
 }
 
-/*
+
 func TestRcloneStorage_FetchBatch(t *testing.T) {
 	storage := NewRcloneStorage("mybucket")
 
