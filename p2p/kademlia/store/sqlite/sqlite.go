@@ -426,24 +426,29 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get record by key %s: %w", hkey, err)
 	}
-	PostAccessUpdate([]string{hkey})
 
-	if len(r.Data) == 0 && r.IsOnCloud {
-		if s.isCloudBackupOn() {
-			data, err := s.cloud.Fetch(r.Key)
-			if err != nil {
-				return nil, fmt.Errorf("failed to retrieve data from cloud: %w", err)
-			}
-
-			return data, nil
-		} else {
-			return nil, fmt.Errorf("failed to retrieve data from cloud: cloud backup is not enabled")
-		}
-	} else if !r.IsOnCloud {
-		return nil, fmt.Errorf("failed to retrieve data from cloud: data is not on cloud")
+	if s.isCloudBackupOn() {
+		PostAccessUpdate([]string{hkey})
 	}
 
-	return r.Data, nil
+	if len(r.Data) > 0 {
+		return r.Data, nil
+	}
+
+	if !r.IsOnCloud {
+		return nil, fmt.Errorf("failed to retrieve data from cloud: data is neither on cloud nor on local - this shouldn't happen")
+	}
+
+	if !s.isCloudBackupOn() {
+		return nil, fmt.Errorf("failed to retrieve data from cloud: data is supposed to be on cloud but backup is not enabled")
+	}
+
+	data, err := s.cloud.Fetch(r.Key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve data from cloud: %w", err)
+	}
+
+	return data, nil
 }
 
 // Checkpoint method for the store
@@ -519,7 +524,10 @@ func (s *Store) storeRecord(key []byte, value []byte, typ int, isOriginal bool) 
 	if err != nil {
 		return fmt.Errorf("error storing data: %w", err)
 	}
-	PostKeysInsert([]UpdateMessage{{Key: hkey, LastAccessTime: time.Now(), Size: len(value)}})
+
+	if s.isCloudBackupOn() {
+		PostKeysInsert([]UpdateMessage{{Key: hkey, LastAccessTime: time.Now(), Size: len(value)}})
+	}
 
 	return nil
 }
@@ -583,7 +591,9 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 		return fmt.Errorf("error storing data: %w", err)
 	}
 
-	PostKeysInsert(hkeys)
+	if s.isCloudBackupOn() {
+		PostKeysInsert(hkeys)
+	}
 
 	return nil
 }
