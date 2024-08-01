@@ -434,7 +434,7 @@ func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byt
 		keyToIndex[keys[i]] = i
 	}
 
-	query := fmt.Sprintf(`SELECT key, data FROM data WHERE key IN (%s)`, strings.Join(placeholders, ","))
+	query := fmt.Sprintf(`SELECT key, data, is_on_cloud FROM data WHERE key IN (%s)`, strings.Join(placeholders, ","))
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to retrieve records: %w", err)
@@ -442,12 +442,14 @@ func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byt
 	defer rows.Close()
 
 	values := make([][]byte, len(keys))
+	var cloudKeys []string
 	keysFound := 0
 
 	for rows.Next() {
 		var key string
 		var value []byte
-		if err := rows.Scan(&key, &value); err != nil {
+		var is_on_cloud bool
+		if err := rows.Scan(&key, &value, &is_on_cloud); err != nil {
 			return nil, keysFound, fmt.Errorf("failed to scan key and value: %w", err)
 		}
 
@@ -455,12 +457,44 @@ func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byt
 			values[idx] = value
 			keysFound++
 
-			PostAccessUpdate([]string{key})
+			if s.isCloudBackupOn() {
+				if len(value) == 0 && is_on_cloud {
+					cloudKeys = append(cloudKeys, key)
+				}
+				PostAccessUpdate([]string{key})
+			}
 		}
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, keysFound, fmt.Errorf("rows processing error: %w", err)
+	}
+
+	if len(cloudKeys) > 0 {
+		// Fetch from cloud
+		cloudValues, err := s.cloud.FetchBatch(cloudKeys)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("failed to fetch from cloud")
+		}
+
+		for key, value := range cloudValues {
+			if idx, found := keyToIndex[key]; found {
+				values[idx] = value
+				keysFound++
+			}
+		}
+
+		go func() {
+			datList := make([][]byte, 0, len(cloudValues))
+			for _, v := range cloudValues {
+				datList = append(datList, v)
+			}
+
+			// Store the fetched data in the local store
+			if err := s.StoreBatch(ctx, datList, 0, false); err != nil {
+				log.WithError(err).Error("failed to store fetched data in local store")
+			}
+		}()
 	}
 
 	return values, keysFound, nil

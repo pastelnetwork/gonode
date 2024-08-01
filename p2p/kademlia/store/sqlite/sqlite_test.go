@@ -21,7 +21,7 @@ func TestStoreAndRetrieve(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	dbPath := filepath.Join(tempDir, "test.db")
-	store, err := NewStore(context.Background(), dbPath, time.Minute, time.Minute)
+	store, err := NewStore(context.Background(), dbPath, time.Minute, time.Minute, nil)
 	if err != nil {
 		t.Fatalf("failed to create store: %v", err)
 	}

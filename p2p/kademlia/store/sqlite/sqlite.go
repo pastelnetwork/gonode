@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/cloud.go"
 
 	"github.com/cenkalti/backoff"
 	"github.com/jmoiron/sqlx"
@@ -50,6 +51,7 @@ type Worker struct {
 type Store struct {
 	db     *sqlx.DB
 	worker *Worker
+	cloud  cloud.Storage
 }
 
 // Record is a data record
@@ -61,10 +63,11 @@ type Record struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	ReplicatedAt time.Time
+	IsOnCloud    bool `db:"is_on_cloud"`
 }
 
 // NewStore returns a new store
-func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Duration) (*Store, error) {
+func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Duration, cloud cloud.Storage) (*Store, error) {
 	worker := &Worker{
 		JobQueue: make(chan Job, 500),
 		quit:     make(chan bool),
@@ -90,6 +93,7 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	s := &Store{
 		worker: worker,
 		db:     db,
+		cloud:  cloud,
 	}
 
 	if !s.checkStore() {
@@ -116,6 +120,10 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 
 	if err := s.ensureAttempsColumn(); err != nil {
 		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create attemps column in p2p database")
+	}
+
+	if err := s.ensureIsOnCloudColumn(); err != nil {
+		log.WithContext(ctx).WithError(err).Error("URGENT! unable to create is_on_cloud column in p2p database")
 	}
 
 	if err := s.ensureLastSeenColumn(); err != nil {
@@ -159,11 +167,48 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	return s, nil
 }
 
+func (s *Store) isCloudBackupOn() bool {
+	return s.cloud != nil
+}
+
 func (s *Store) checkStore() bool {
 	query := `SELECT name FROM sqlite_master WHERE type='table' AND name='data'`
 	var name string
 	err := s.db.Get(&name, query)
 	return err == nil
+}
+
+func (s *Store) ensureIsOnCloudColumn() error {
+	rows, err := s.db.Query("PRAGMA table_info(data)")
+	if err != nil {
+		return fmt.Errorf("failed to fetch table 'data' info: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, dtype string
+		var dfltValue *string
+		err = rows.Scan(&cid, &name, &dtype, &notnull, &dfltValue, &pk)
+		if err != nil {
+			return fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		if name == "is_on_cloud" {
+			return nil
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error during iteration: %w", err)
+	}
+
+	_, err = s.db.Exec(`ALTER TABLE data ADD COLUMN is_on_cloud BOOL DEFAULT false`)
+	if err != nil {
+		return fmt.Errorf("failed to add column 'is_on_cloud' to table 'data': %w", err)
+	}
+
+	return nil
 }
 
 func (s *Store) ensureDatatypeColumn() error {
@@ -382,9 +427,32 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to get record by key %s: %w", hkey, err)
 	}
 
-	PostAccessUpdate([]string{hkey})
+	if s.isCloudBackupOn() {
+		PostAccessUpdate([]string{hkey})
+	}
 
-	return r.Data, nil
+	if len(r.Data) > 0 {
+		return r.Data, nil
+	}
+
+	if !r.IsOnCloud {
+		return nil, fmt.Errorf("failed to retrieve data from cloud: data is neither on cloud nor on local - this shouldn't happen")
+	}
+
+	if !s.isCloudBackupOn() {
+		return nil, fmt.Errorf("failed to retrieve data from cloud: data is supposed to be on cloud but backup is not enabled")
+	}
+
+	data, err := s.cloud.Fetch(r.Key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve data from cloud: %w", err)
+	}
+
+	if err := s.Store(context.Background(), key, data, r.Datatype, r.Isoriginal); err != nil {
+		return nil, fmt.Errorf("failed to store data retrieved from cloud: %w", err)
+	}
+
+	return data, nil
 }
 
 // Checkpoint method for the store
@@ -460,7 +528,10 @@ func (s *Store) storeRecord(key []byte, value []byte, typ int, isOriginal bool) 
 	if err != nil {
 		return fmt.Errorf("error storing data: %w", err)
 	}
-	PostKeysInsert([]UpdateMessage{{Key: hkey, LastAccessTime: time.Now(), Size: len(value)}})
+
+	if s.isCloudBackupOn() {
+		PostKeysInsert([]UpdateMessage{{Key: hkey, LastAccessTime: time.Now(), Size: len(value)}})
+	}
 
 	return nil
 }
@@ -524,7 +595,9 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 		return fmt.Errorf("error storing data: %w", err)
 	}
 
-	PostKeysInsert(hkeys)
+	if s.isCloudBackupOn() {
+		PostKeysInsert(hkeys)
+	}
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/cloud.go"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/meta"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -261,8 +262,8 @@ func (s *p2p) configure(ctx context.Context) error {
 }
 
 // New returns a new p2p instance.
-func New(ctx context.Context, config *Config, pastelClient pastel.Client, secInfo *alts.SecInfo, rqstore rqstore.Store) (P2P, error) {
-	store, err := sqlite.NewStore(ctx, config.DataDir, defaultReplicateInterval, defaultRepublishInterval)
+func New(ctx context.Context, config *Config, pastelClient pastel.Client, secInfo *alts.SecInfo, rqstore rqstore.Store, cloud cloud.Storage) (P2P, error) {
+	store, err := sqlite.NewStore(ctx, config.DataDir, defaultReplicateInterval, defaultRepublishInterval, cloud)
 	if err != nil {
 		return nil, errors.Errorf("new kademlia store: %w", err)
 	}

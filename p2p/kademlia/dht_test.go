@@ -132,7 +132,7 @@ func (ts *testSuite) SetupSuite() {
 	defaultReplicateInterval := time.Second * 3600
 	defaultRepublishInterval := time.Second * 3600 * 24
 
-	dbStore, err := sqlite.NewStore(ts.ctx, filepath.Join(workDir, "p2p"), defaultReplicateInterval, defaultRepublishInterval)
+	dbStore, err := sqlite.NewStore(ts.ctx, filepath.Join(workDir, "p2p"), defaultReplicateInterval, defaultRepublishInterval, nil)
 	if err != nil {
 		ts.T().Fatalf("new sqlite store: %v", err)
 	}
