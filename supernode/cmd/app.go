@@ -26,6 +26,7 @@ import (
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/p2p"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/cloud.go"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/debug"
@@ -224,7 +225,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
 	config.P2P.ID = config.PastelID
-	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo, rqstore)
+	cloudStorage := cloud.NewRcloneStorage("bucket", "spec")
+	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo, rqstore, cloudStorage)
 	if err != nil {
 		return errors.Errorf("could not create p2p service, %w", err)
 	}
