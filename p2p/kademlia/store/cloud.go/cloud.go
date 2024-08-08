@@ -12,11 +12,17 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 )
 
+const (
+	maxConcurrentUploads = 50
+)
+
 type Storage interface {
 	Store(key string, data []byte) (string, error)
 	Fetch(key string) ([]byte, error)
 	StoreBatch(data [][]byte) error
 	FetchBatch(keys []string) (map[string][]byte, error)
+	Upload(key string, data []byte) (string, error)
+	UploadBatch(keys []string, data [][]byte) ([]string, error)
 }
 
 type RcloneStorage struct {
@@ -57,6 +63,23 @@ func (r *RcloneStorage) Store(key string, data []byte) (string, error) {
 			log.Error("failed to delete local file", "path", filePath, "error", err)
 		}
 	}()
+
+	// Return the remote path where the file was stored
+	return remotePath, nil
+}
+
+// Upload uploads the data to the remote storage without writing to a local file
+func (r *RcloneStorage) Upload(key string, data []byte) (string, error) {
+	// Construct the remote path where the file will be stored
+	remotePath := fmt.Sprintf("%s:%s/%s", r.specName, r.bucketName, key)
+
+	// Use rclone to copy the data to the remote
+	cmd := exec.Command("rclone", "rcat", remotePath)
+	cmd.Stdin = bytes.NewReader(data) // Provide data as stdin
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("rclone command failed: %w", err)
+	}
 
 	// Return the remote path where the file was stored
 	return remotePath, nil
@@ -125,4 +148,47 @@ func (r *RcloneStorage) FetchBatch(keys []string) (map[string][]byte, error) {
 	}
 
 	return results, nil
+}
+
+func (r *RcloneStorage) UploadBatch(keys []string, data [][]byte) ([]string, error) {
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, maxConcurrentUploads) // Semaphore to limit concurrent goroutines
+
+	var mu sync.Mutex
+	var lastError error
+	successfulKeys := []string{} // Slice to store successfully uploaded keys
+
+	for i := range data {
+		wg.Add(1)
+		semaphore <- struct{}{} // Acquire semaphore
+
+		go func(key string, data []byte) {
+			defer wg.Done()
+			defer func() { <-semaphore }() // Release semaphore
+
+			if _, err := r.Upload(key, data); err != nil {
+				func() {
+					mu.Lock()
+					defer mu.Unlock()
+
+					lastError = err // Store the last error encountered
+				}()
+			} else {
+				func() {
+					mu.Lock()
+					defer mu.Unlock()
+
+					successfulKeys = append(successfulKeys, key) // Append the key if upload was successful
+				}()
+			}
+		}(keys[i], data[i])
+	}
+
+	wg.Wait() // Wait for all goroutines to complete
+
+	if lastError != nil {
+		return successfulKeys, fmt.Errorf("failed to upload some files: %w", lastError)
+	}
+
+	return successfulKeys, nil
 }

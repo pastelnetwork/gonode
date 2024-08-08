@@ -64,7 +64,7 @@ type Store interface {
 
 	RetrieveBatchNotExist(ctx context.Context, keys []string, batchSize int) ([]string, error)
 
-	RetrieveBatchValues(ctx context.Context, keys []string) ([][]byte, int, error)
+	RetrieveBatchValues(ctx context.Context, keys []string, getFromCloud bool) ([][]byte, int, error)
 
 	BatchDeleteRepKeys(keys []string) error
 

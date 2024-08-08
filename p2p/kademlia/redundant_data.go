@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"fmt"
-	"os/exec"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/domain"
 )
 
@@ -158,7 +155,7 @@ func (s *DHT) deleteRedundantData(ctx context.Context) {
 
 	for len(delKeys) > 0 {
 		// Check the available disk space
-		isLow, err := CheckDiskSpace()
+		isLow, err := utils.CheckDiskSpace(lowSpaceThreshold)
 		if err != nil {
 			log.P2P().WithContext(ctx).WithError(err).Error("check disk space failed")
 			break
@@ -190,33 +187,4 @@ func (s *DHT) deleteRedundantData(ctx context.Context) {
 		// Update the remaining keys to be deleted
 		delKeys = delKeys[batchEnd:]
 	}
-}
-
-// CheckDiskSpace checks if the available space on the disk is less than 50 GB
-func CheckDiskSpace() (bool, error) {
-	// Define the command and its arguments
-	cmd := exec.Command("bash", "-c", "df -BG --output=source,fstype,avail | egrep 'ext4|xfs' | sort -rn -k3 | awk 'NR==1 {print $3}'")
-
-	// Execute the command
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
-	if err != nil {
-		return false, fmt.Errorf("failed to execute command: %w", err)
-	}
-
-	// Process the output
-	output := strings.TrimSpace(out.String())
-	if len(output) < 2 {
-		return false, errors.New("invalid output from disk space check")
-	}
-
-	// Convert the available space to an integer
-	availSpace, err := strconv.Atoi(output[:len(output)-1])
-	if err != nil {
-		return false, fmt.Errorf("failed to parse available space: %w", err)
-	}
-
-	// Check if the available space is less than 50 GB
-	return availSpace < lowSpaceThreshold, nil
 }

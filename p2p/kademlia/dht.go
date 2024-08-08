@@ -432,7 +432,7 @@ func (s *DHT) fetchAndAddLocalKeys(ctx context.Context, hexKeys []string, result
 		}).Info("Processing batch of local keys")
 
 		// Retrieve values for the current batch of local keys
-		localValues, _, batchErr := s.store.RetrieveBatchValues(ctx, batchHexKeys)
+		localValues, _, batchErr := s.store.RetrieveBatchValues(ctx, batchHexKeys, false)
 		if batchErr != nil {
 			log.WithField("error", batchErr).Error("Failed to retrieve batch values")
 			err = fmt.Errorf("retrieve batch values (local): %v", batchErr)

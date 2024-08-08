@@ -735,6 +735,10 @@ func (s *Store) GetLocalKeys(from time.Time, to time.Time) ([]string, error) {
 
 // BatchDeleteRecords deletes a batch of records identified by their keys
 func (s *Store) BatchDeleteRecords(keys []string) error {
+	return batchDeleteRecords(s.db, keys)
+}
+
+func batchDeleteRecords(db *sqlx.DB, keys []string) error {
 	if len(keys) == 0 {
 		log.P2P().Info("no keys provided for batch delete")
 		return nil
@@ -747,7 +751,7 @@ func (s *Store) BatchDeleteRecords(keys []string) error {
 	query := fmt.Sprintf("DELETE FROM data WHERE key IN (%s)", paramStr)
 
 	// Execute the query
-	res, err := s.db.Exec(query, stringArgsToInterface(keys)...)
+	res, err := db.Exec(query, stringArgsToInterface(keys)...)
 	if err != nil {
 		return fmt.Errorf("cannot batch delete records: %w", err)
 	}

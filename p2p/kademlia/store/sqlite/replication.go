@@ -422,8 +422,12 @@ func (s *Store) RetrieveBatchNotExist(ctx context.Context, keys []string, batchS
 	return nonExistingKeys, nil
 }
 
+func (s Store) RetrieveBatchValues(ctx context.Context, keys []string, getFromCloud bool) ([][]byte, int, error) {
+	return retrieveBatchValues(ctx, s.db, keys, getFromCloud, s)
+}
+
 // RetrieveBatchValues returns a list of values  for the given keys (hex-encoded)
-func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byte, int, error) {
+func retrieveBatchValues(ctx context.Context, db *sqlx.DB, keys []string, getFromCloud bool, s Store) ([][]byte, int, error) {
 	placeholders := make([]string, len(keys))
 	args := make([]interface{}, len(keys))
 	keyToIndex := make(map[string]int)
@@ -435,7 +439,7 @@ func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byt
 	}
 
 	query := fmt.Sprintf(`SELECT key, data, is_on_cloud FROM data WHERE key IN (%s)`, strings.Join(placeholders, ","))
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to retrieve records: %w", err)
 	}
@@ -470,7 +474,7 @@ func (s *Store) RetrieveBatchValues(ctx context.Context, keys []string) ([][]byt
 		return nil, keysFound, fmt.Errorf("rows processing error: %w", err)
 	}
 
-	if len(cloudKeys) > 0 {
+	if len(cloudKeys) > 0 && getFromCloud {
 		// Fetch from cloud
 		cloudValues, err := s.cloud.FetchBatch(cloudKeys)
 		if err != nil {

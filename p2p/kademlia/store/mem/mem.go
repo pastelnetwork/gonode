@@ -159,7 +159,7 @@ func (s *Store) RetrieveBatchNotExist(_ context.Context, _ []string, _ int) ([]s
 }
 
 // RetrieveBatchValues retrieves a batch of values
-func (s *Store) RetrieveBatchValues(_ context.Context, _ []string) ([][]byte, int, error) {
+func (s *Store) RetrieveBatchValues(_ context.Context, _ []string, _ bool) ([][]byte, int, error) {
 	return nil, 0, nil
 }
 
