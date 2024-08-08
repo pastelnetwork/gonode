@@ -18,8 +18,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -482,4 +484,33 @@ func ReadDirFilenames(dirPath string) (map[string][]byte, error) {
 
 	// Here you might want to do something with idMap or just return it
 	return idMap, nil
+}
+
+// CheckDiskSpace checks if the available space on the disk is less than 50 GB
+func CheckDiskSpace(lowSpaceThreshold int) (bool, error) {
+	// Define the command and its arguments
+	cmd := exec.Command("bash", "-c", "df -BG --output=source,fstype,avail | egrep 'ext4|xfs' | sort -rn -k3 | awk 'NR==1 {print $3}'")
+
+	// Execute the command
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return false, fmt.Errorf("failed to execute command: %w", err)
+	}
+
+	// Process the output
+	output := strings.TrimSpace(out.String())
+	if len(output) < 2 {
+		return false, errors.New("invalid output from disk space check")
+	}
+
+	// Convert the available space to an integer
+	availSpace, err := strconv.Atoi(output[:len(output)-1])
+	if err != nil {
+		return false, fmt.Errorf("failed to parse available space: %w", err)
+	}
+
+	// Check if the available space is less than 50 GB
+	return availSpace < lowSpaceThreshold, nil
 }

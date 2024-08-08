@@ -660,7 +660,7 @@ func (s *Network) handleGetValuesRequest(ctx context.Context, message *Message, 
 		i++
 	}
 
-	values, count, err := s.dht.store.RetrieveBatchValues(ctx, keys)
+	values, count, err := s.dht.store.RetrieveBatchValues(ctx, keys, true)
 	if err != nil {
 		err = errors.Errorf("batch find values: %w", err)
 		return s.generateResponseMessage(BatchGetValues, message.Sender, ResultFailed, err.Error())
@@ -705,7 +705,7 @@ func (s *Network) handleBatchFindValuesRequest(ctx context.Context, req *BatchFi
 			WithField("from-ip", ip).Debug("first & last batch keys")
 	}
 
-	values, count, err := s.dht.store.RetrieveBatchValues(ctx, req.Keys)
+	values, count, err := s.dht.store.RetrieveBatchValues(ctx, req.Keys, true)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to retrieve batch values: %w", err)
 	}

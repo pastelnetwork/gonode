@@ -12,14 +12,19 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/cloud.go"
 )
 
 var (
 	commitLastAccessedInterval = 60 * time.Second
+	migrationExecutionTicker   = 12 * time.Hour
 	migrationMetaDB            = "data001-migration-meta.sqlite3"
 	accessUpdateBufferSize     = 100000
 	commitInsertsInterval      = 90 * time.Second
 	metaSyncBatchSize          = 10000
+	lowSpaceThresholdGB        = 50 // in GB
+	minKeysToMigrate           = 100
 
 	updateChannel chan UpdateMessage
 	insertChannel chan UpdateMessage
@@ -43,16 +48,18 @@ type UpdateMessage struct {
 type MigrationMetaStore struct {
 	db           *sqlx.DB
 	p2pDataStore *sqlx.DB
+	cloud        cloud.Storage
 
-	updateTicker *time.Ticker
-	insertTicker *time.Ticker
+	updateTicker             *time.Ticker
+	insertTicker             *time.Ticker
+	migrationExecutionTicker *time.Ticker
 
 	updates sync.Map
 	inserts sync.Map
 }
 
 // NewMigrationMetaStore initializes the MigrationMetaStore.
-func NewMigrationMetaStore(ctx context.Context, dataDir string) (*MigrationMetaStore, error) {
+func NewMigrationMetaStore(ctx context.Context, dataDir string, cloud cloud.Storage) (*MigrationMetaStore, error) {
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dataDir, 0750); err != nil {
 			return nil, fmt.Errorf("mkdir %q: %w", dataDir, err)
@@ -75,10 +82,12 @@ func NewMigrationMetaStore(ctx context.Context, dataDir string) (*MigrationMetaS
 	}
 
 	handler := &MigrationMetaStore{
-		db:           db,
-		p2pDataStore: p2pDataStore,
-		updateTicker: time.NewTicker(commitLastAccessedInterval),
-		insertTicker: time.NewTicker(commitInsertsInterval),
+		db:                       db,
+		p2pDataStore:             p2pDataStore,
+		updateTicker:             time.NewTicker(commitLastAccessedInterval),
+		insertTicker:             time.NewTicker(commitInsertsInterval),
+		migrationExecutionTicker: time.NewTicker(migrationExecutionTicker),
+		cloud:                    cloud,
 	}
 
 	if err := handler.migrateMeta(); err != nil {
@@ -102,6 +111,7 @@ func NewMigrationMetaStore(ctx context.Context, dataDir string) (*MigrationMetaS
 
 	go handler.startLastAccessedUpdateWorker(ctx)
 	go handler.startInsertWorker(ctx)
+	go handler.startMigrationExecutionWorker(ctx)
 
 	return handler, nil
 }
@@ -274,8 +284,9 @@ func (d *MigrationMetaStore) commitLastAccessedUpdates(ctx context.Context) {
 		return
 	}
 
-	stmt, err := tx.Prepare("UPDATE meta SET last_access_time = ? WHERE key = ?")
+	stmt, err := tx.Prepare("INSERT OR REPLACE INTO meta (key, last_access_time) VALUES (?, ?)")
 	if err != nil {
+		tx.Rollback() // Roll back the transaction on error
 		log.WithContext(ctx).WithError(err).Error("Error preparing statement (commitLastAccessedUpdates)")
 		return
 	}
@@ -392,4 +403,111 @@ func (d *MigrationMetaStore) commitInserts(ctx context.Context) {
 	}
 
 	log.WithContext(ctx).WithField("count", len(keysToUpdate)).Info("Committed inserts")
+}
+
+// startMigrationExecutionWorker starts the worker that executes a migration
+func (d *MigrationMetaStore) startMigrationExecutionWorker(ctx context.Context) {
+	for {
+		select {
+		case <-d.migrationExecutionTicker.C:
+			d.checkAndExecuteMigration(ctx)
+		case <-ctx.Done():
+			log.WithContext(ctx).Info("Shutting down data migration worker")
+			return
+		}
+	}
+}
+
+func (d *MigrationMetaStore) checkAndExecuteMigration(ctx context.Context) {
+	// Check the available disk space
+	isLow, err := utils.CheckDiskSpace(lowSpaceThresholdGB)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("migration worker: check disk space failed")
+	}
+
+	if !isLow {
+		// Disk space is sufficient, stop migration
+		return
+	}
+
+	// Step 1: Fetch pending migrations
+	var migrations []struct {
+		ID int `db:"id"`
+	}
+
+	err = d.db.Select(&migrations, `SELECT id FROM migration WHERE migration_started_at IS NULL`)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to fetch pending migrations")
+		return
+	}
+
+	// Step 2: Iterate over each migration
+	for _, migration := range migrations {
+		var keys []string
+		err := d.db.Select(&keys, `SELECT key FROM meta_migration WHERE migration_id = ?`, migration.ID)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to fetch keys for migration")
+			continue
+		}
+
+		// Step 2.1: Check if there are at least 100 records
+		if len(keys) < minKeysToMigrate {
+			continue
+		}
+
+		// Step 2.2: Update migration_started_at to current timestamp
+		_, err = d.db.Exec(`UPDATE migration SET migration_started_at = ? WHERE id = ?`, time.Now(), migration.ID)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to update migration start time")
+			continue
+		}
+
+		// Step 2.3: Retrieve data for keys
+		values, _, err := retrieveBatchValues(ctx, d.p2pDataStore, keys, false, Store{})
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to retrieve batch values")
+			continue
+		}
+
+		if err := d.uploadInBatches(ctx, keys, values); err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to migrate some data")
+			continue
+		}
+
+	}
+}
+
+func (d *MigrationMetaStore) uploadInBatches(ctx context.Context, keys []string, values [][]byte) error {
+	const batchSize = 1000
+	totalItems := len(keys)
+	batches := (totalItems + batchSize - 1) / batchSize // Calculate number of batches needed
+	var lastError error
+
+	for i := 0; i < batches; i++ {
+		start := i * batchSize
+		end := start + batchSize
+		if end > totalItems {
+			end = totalItems
+		}
+
+		batchKeys := keys[start:end]
+		batchData := values[start:end]
+
+		uploadedKeys, err := d.cloud.UploadBatch(batchKeys, batchData)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("Failed to upload batch %d", i+1)
+			lastError = err
+			continue
+		}
+
+		if err := batchDeleteRecords(d.p2pDataStore, uploadedKeys); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("Failed to delete batch %d", i+1)
+			lastError = err
+			continue
+		}
+
+		log.WithContext(ctx).Infof("Successfully uploaded and deleted records for batch %d of %d", i+1, batches)
+	}
+
+	return lastError
 }
