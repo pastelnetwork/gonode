@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"os"
@@ -284,7 +285,7 @@ func (d *MigrationMetaStore) commitLastAccessedUpdates(ctx context.Context) {
 		return
 	}
 
-	stmt, err := tx.Prepare("INSERT OR REPLACE INTO meta (key, last_access_time) VALUES (?, ?)")
+	stmt, err := tx.Prepare("INSERT OR REPLACE INTO meta (key, last_accessed) VALUES (?, ?)")
 	if err != nil {
 		tx.Rollback() // Roll back the transaction on error
 		log.WithContext(ctx).WithError(err).Error("Error preparing statement (commitLastAccessedUpdates)")
@@ -510,4 +511,116 @@ func (d *MigrationMetaStore) uploadInBatches(ctx context.Context, keys []string,
 	}
 
 	return lastError
+}
+
+type MetaStoreInterface interface {
+	GetCountOfStaleData(ctx context.Context, staleTime time.Time) (int, error)
+	GetStaleDataInBatches(ctx context.Context, batchSize, batchNumber int, duration time.Time) ([]string, error)
+	GetPendingMigrationID(ctx context.Context) (int, error)
+	CreateNewMigration(ctx context.Context) (int, error)
+	InsertMetaMigrationData(ctx context.Context, migrationID int, keys []string) error
+}
+
+// GetCountOfStaleData returns the count of stale data where last_accessed is 3 months before.
+func (d *MigrationMetaStore) GetCountOfStaleData(ctx context.Context, staleTime time.Time) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM meta WHERE last_accessed < ?`
+
+	err := d.db.GetContext(ctx, &count, query, staleTime)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get count of stale data: %w", err)
+	}
+	return count, nil
+}
+
+// GetStaleDataInBatches retrieves stale data entries in batches from the meta table.
+func (d *MigrationMetaStore) GetStaleDataInBatches(ctx context.Context, batchSize, batchNumber int, duration time.Time) ([]string, error) {
+	offset := batchNumber * batchSize
+
+	query := `
+        SELECT key 
+        FROM meta 
+        WHERE last_accessed < ? 
+        LIMIT ? OFFSET ?
+    `
+
+	rows, err := d.db.QueryxContext(ctx, query, duration, batchSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stale data in batches: %w", err)
+	}
+	defer rows.Close()
+
+	var staleData []string
+	for rows.Next() {
+		var data string
+		if err := rows.Scan(&data); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		staleData = append(staleData, data)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate over rows: %w", err)
+	}
+	return staleData, nil
+}
+
+func (d *MigrationMetaStore) GetPendingMigrationID(ctx context.Context) (int, error) {
+	var migrationID int
+	query := `SELECT id FROM migration WHERE migration_started_at IS NULL LIMIT 1`
+
+	err := d.db.GetContext(ctx, &migrationID, query)
+	if err == sql.ErrNoRows {
+		return 0, nil // No pending migrations
+	} else if err != nil {
+		return 0, fmt.Errorf("failed to get pending migration ID: %w", err)
+	}
+
+	return migrationID, nil
+}
+
+func (d *MigrationMetaStore) CreateNewMigration(ctx context.Context) (int, error) {
+	query := `INSERT INTO migration (created_at, updated_at) VALUES (?, ?)`
+	now := time.Now()
+
+	result, err := d.db.ExecContext(ctx, query, now, now)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create new migration: %w", err)
+	}
+
+	migrationID, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get last insert ID: %w", err)
+	}
+
+	return int(migrationID), nil
+}
+
+func (d *MigrationMetaStore) InsertMetaMigrationData(ctx context.Context, migrationID int, keys []string) error {
+	tx, err := d.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+
+	stmt, err := tx.Preparex(`INSERT INTO meta_migration (key, migration_id, created_at, updated_at) VALUES (?, ?, ?, ?)`)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	now := time.Now()
+	for _, key := range keys {
+		if _, err := stmt.Exec(key, migrationID, now, now); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to insert meta migration data: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
