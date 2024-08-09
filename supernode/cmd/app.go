@@ -190,6 +190,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
+
+	// Check cloud(rclone) connection
+	cloudStorage := cloud.NewRcloneStorage(config.RcloneStorageConfig.BucketName, config.RcloneStorageConfig.SpecName)
+	if err := cloudStorage.CheckCloudConnection(); err != nil {
+		return fmt.Errorf("rclone connection check failed: %w", err)
+	}
+
 	pastelClient := pastel.NewClient(config.Pastel, config.Pastel.BurnAddress())
 
 	if config.PassPhrase == "" {
@@ -225,7 +232,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
 	config.P2P.ID = config.PastelID
-	cloudStorage := cloud.NewRcloneStorage("bucket", "spec")
 	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo, rqstore, cloudStorage)
 	if err != nil {
 		return errors.Errorf("could not create p2p service, %w", err)

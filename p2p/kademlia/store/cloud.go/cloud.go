@@ -16,6 +16,11 @@ const (
 	maxConcurrentUploads = 50
 )
 
+var (
+	testKey  = "rclone_test_file.txt"
+	testData = []byte("This is a test file data to check Rclone connection.")
+)
+
 type Storage interface {
 	Store(key string, data []byte) (string, error)
 	Fetch(key string) ([]byte, error)
@@ -23,6 +28,7 @@ type Storage interface {
 	FetchBatch(keys []string) (map[string][]byte, error)
 	Upload(key string, data []byte) (string, error)
 	UploadBatch(keys []string, data [][]byte) ([]string, error)
+	CheckCloudConnection() error
 }
 
 type RcloneStorage struct {
@@ -191,4 +197,23 @@ func (r *RcloneStorage) UploadBatch(keys []string, data [][]byte) ([]string, err
 	}
 
 	return successfulKeys, nil
+}
+
+// CheckCloudConnection verifies the Rclone connection by storing and fetching a test file.
+func (r *RcloneStorage) CheckCloudConnection() error {
+
+	// Store the test file
+	_, err := r.Store(testKey, testData)
+	if err != nil {
+		return fmt.Errorf("failed to store test file: %w", err)
+	}
+
+	// Fetch the test file
+	_, err = r.Fetch(testKey)
+	if err != nil {
+		return fmt.Errorf("failed to fetch test file: %w", err)
+	}
+
+	// If both operations succeed, return nil (no error)
+	return nil
 }
