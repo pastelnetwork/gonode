@@ -182,7 +182,7 @@ func (d *MigrationMetaStore) isMetaSyncRequired() bool {
 }
 
 func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
-	query := `SELECT key, data, updated_at FROM data LIMIT ? OFFSET ?`
+	query := `SELECT key, data, updatedAt FROM data LIMIT ? OFFSET ?`
 	var offset int
 
 	for {
