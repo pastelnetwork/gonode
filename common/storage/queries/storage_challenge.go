@@ -33,6 +33,7 @@ type StorageChallengeQueries interface {
 	GetDistinctChallengeIDsCountForScoreAggregation(after, before time.Time) (int, error)
 	GetDistinctChallengeIDs(after, before time.Time, batchNumber int) ([]string, error)
 	BatchInsertScoreAggregationChallenges(challengeIDs []string, isAggregated bool) error
+	RemoveStorageChallengeStaleData(ctx context.Context, threshold string) error
 }
 
 // InsertStorageChallengeMessage inserts failed storage challenge to db
@@ -489,4 +490,20 @@ func (s *SQLiteStore) BatchInsertScoreAggregationChallenges(challengeIDs []strin
 
 	// Commit the transaction
 	return tx.Commit()
+}
+
+func (s *SQLiteStore) RemoveStorageChallengeStaleData(ctx context.Context, threshold string) error {
+
+	queries := []string{
+		"DELETE FROM storage_challenge_metrics WHERE created_at < $1",
+		"DELETE FROM storage_challenge_messages WHERE created_at < $1",
+	}
+
+	for _, query := range queries {
+		if _, err := s.db.Exec(query, threshold); err != nil {
+			return fmt.Errorf("failed to delete old metrics: %v", err)
+		}
+	}
+
+	return nil
 }
