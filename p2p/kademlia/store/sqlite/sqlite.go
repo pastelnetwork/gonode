@@ -164,6 +164,13 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	// Run WAL checkpoint worker every 5 seconds
 	go s.startCheckpointWorker(ctx)
 
+	if s.isCloudBackupOn() {
+		_, err = NewMigrationMetaStore(ctx, dataDir, cloud)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create meta store: %w", err)
+		}
+	}
+
 	return s, nil
 }
 
