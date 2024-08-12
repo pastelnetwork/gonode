@@ -8,7 +8,10 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/pastelnetwork/gonode/common/storage/rqstore"
 	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
+	"github.com/pastelnetwork/gonode/p2p"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/cloud.go"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -272,6 +275,19 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	storageChallengeService := storagechallenge.NewStorageChallengeService(pastelClient)
 	scoreService := score.NewScoreService(pastelClient)
 	healthCheckChallengeService := healthcheckchallenge.NewHealthCheckChallengeService(pastelClient)
+
+	rqstore, err := rqstore.NewSQLiteRQStore(filepath.Join(defaultPath, "rqstore.db"))
+	if err != nil {
+		return errors.Errorf("could not create rqstore, %w", err)
+	}
+	defer rqstore.Close()
+
+	// p2p service (currently using kademlia)
+	cloudStorage := cloud.NewRcloneStorage("bucket", "spec")
+	_, err = p2p.New(ctx, &p2p.Config{DataDir: "/home/matee/.pastel/p2pdata"}, pastelClient, nil, rqstore, cloudStorage)
+	if err != nil {
+		return errors.Errorf("could not create p2p service, %w", err)
+	}
 
 	fileMappings := &sync.Map{}
 	server := api.NewAPIServer(config.API, fileMappings, pastelClient,
