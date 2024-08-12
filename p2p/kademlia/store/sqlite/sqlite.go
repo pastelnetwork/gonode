@@ -157,6 +157,8 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 		}
 	}
 
+	log.WithContext(ctx).Info("p2p database successfully opened")
+
 	s.db = db
 	dbFilePath = dbFile
 
@@ -170,7 +172,7 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 			return nil, fmt.Errorf("cannot create meta store: %w", err)
 		}
 	}
-
+	log.WithContext(ctx).Info("p2p database started")
 	return s, nil
 }
 
@@ -438,6 +440,7 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		PostAccessUpdate([]string{hkey})
 	}
 
+	fmt.Println("Data from local store")
 	if len(r.Data) > 0 {
 		return r.Data, nil
 	}
@@ -514,7 +517,7 @@ func (s *Store) storeRecord(key []byte, value []byte, typ int, isOriginal bool) 
 	operation := func() error {
 		now := time.Now().UTC()
 		r := Record{Key: hkey, Data: value, UpdatedAt: now, Datatype: typ, Isoriginal: isOriginal, CreatedAt: now}
-		res, err := s.db.NamedExec(`INSERT INTO data(key, data, datatype, is_original, createdAt, updatedAt) values(:key, :data, :datatype, :isoriginal, :createdat, :updatedat) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`, r)
+		res, err := s.db.NamedExec(`INSERT INTO data(key, data, datatype, is_original, createdAt, updatedAt, is_on_cloud) values(:key, :data, :datatype, :isoriginal, :createdat, :updatedat, false) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat,is_on_cloud=false`, r)
 		if err != nil {
 			return fmt.Errorf("cannot insert or update record with key %s: %w", hkey, err)
 		}
@@ -554,7 +557,7 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 		}
 
 		// Prepare insert statement
-		stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data, datatype, is_original, createdAt, updatedAt) values(:key, :data, :datatype, :isoriginal, :createdat, :updatedat) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat`)
+		stmt, err := tx.PrepareNamed(`INSERT INTO data(key, data, datatype, is_original, createdAt, updatedAt, is_on_cloud) values(:key, :data, :datatype, :isoriginal, :createdat, :updatedat, false) ON CONFLICT(key) DO UPDATE SET data=:data,updatedAt=:updatedat,is_on_cloud=false`)
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				return fmt.Errorf("statement preparation failed, rollback failed: %v, original error: %w", rollbackErr, err)
@@ -780,4 +783,32 @@ func stringArgsToInterface(args []string) []interface{} {
 		iargs[i] = v
 	}
 	return iargs
+}
+
+func batchSetMigratedRecords(db *sqlx.DB, keys []string) error {
+	if len(keys) == 0 {
+		log.P2P().Info("no keys provided for batch update (migrated)")
+		return nil
+	}
+
+	// Create a parameter string for SQL query (?, ?, ?, ...)
+	paramStr := strings.Repeat("?,", len(keys)-1) + "?"
+
+	// Create the SQL statement
+	query := fmt.Sprintf("UPDATE data set data = X'', is_on_cloud = true WHERE key IN (%s)", paramStr)
+
+	// Execute the query
+	res, err := db.Exec(query, stringArgsToInterface(keys)...)
+	if err != nil {
+		return fmt.Errorf("cannot batch update records (migrated): %w", err)
+	}
+
+	// Optionally check rows affected
+	if rowsAffected, err := res.RowsAffected(); err != nil {
+		return fmt.Errorf("failed to get rows affected for batch update(migrated): %w", err)
+	} else if rowsAffected == 0 {
+		return fmt.Errorf("no rows affected for batch update (migrated)")
+	}
+
+	return nil
 }

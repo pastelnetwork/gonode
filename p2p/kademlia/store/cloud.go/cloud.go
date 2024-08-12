@@ -235,3 +235,41 @@ func (r *RcloneStorage) CheckCloudConnection() error {
 
 	return nil
 }
+
+// DeleteBatch deletes a batch of files from the cloud identified by their keys.
+func (r *RcloneStorage) DeleteBatch(keys []string) error {
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, maxConcurrentUploads) // Use same max concurrency as uploads
+
+	var mu sync.Mutex
+	var lastError error
+
+	for _, key := range keys {
+		wg.Add(1)
+		semaphore <- struct{}{} // Acquire semaphore to limit concurrency
+
+		go func(key string) {
+			defer wg.Done()
+			defer func() { <-semaphore }() // Ensure to release semaphore
+
+			// Construct the remote path where the file is stored
+			remotePath := fmt.Sprintf("%s:%s/%s", r.specName, r.bucketName, key)
+
+			// Use rclone to delete the file from the remote
+			cmd := exec.Command("rclone", "deletefile", remotePath)
+
+			if err := cmd.Run(); err != nil {
+				mu.Lock()
+				if lastError == nil {
+					lastError = fmt.Errorf("failed to delete some files")
+				}
+				lastError = fmt.Errorf("%v; key %s error: %v", lastError, key, err)
+				mu.Unlock()
+			}
+		}(key)
+	}
+
+	wg.Wait() // Wait for all goroutines to finish
+
+	return lastError // Return the last error encountered, if any
+}
