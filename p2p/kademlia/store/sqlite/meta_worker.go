@@ -20,13 +20,13 @@ import (
 
 var (
 	commitLastAccessedInterval = 60 * time.Second
-	migrationExecutionTicker   = 1 * time.Minute
+	migrationExecutionTicker   = 12 * time.Hour
 	migrationMetaDB            = "data001-migration-meta.sqlite3"
 	accessUpdateBufferSize     = 100000
 	commitInsertsInterval      = 90 * time.Second
 	metaSyncBatchSize          = 10000
 	lowSpaceThresholdGB        = 50 // in GB
-	minKeysToMigrate           = 5
+	minKeysToMigrate           = 100
 
 	updateChannel chan UpdateMessage
 	insertChannel chan UpdateMessage
