@@ -157,8 +157,6 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 		}
 	}
 
-	log.WithContext(ctx).Info("p2p database successfully opened")
-
 	s.db = db
 	dbFilePath = dbFile
 
@@ -172,7 +170,7 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 			return nil, fmt.Errorf("cannot create meta store: %w", err)
 		}
 	}
-	log.WithContext(ctx).Info("p2p database started")
+
 	return s, nil
 }
 
@@ -440,7 +438,6 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		PostAccessUpdate([]string{hkey})
 	}
 
-	fmt.Println("Data from local store")
 	if len(r.Data) > 0 {
 		return r.Data, nil
 	}
