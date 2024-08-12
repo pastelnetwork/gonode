@@ -35,10 +35,17 @@ type Config struct {
 	P2P    *p2p.Config    `mapstructure:"p2p" json:"p2p,omitempty"`
 	//MetaDB       *metadb.Config          `mapstructure:"metadb" json:"metadb,omitempty"`
 	//UserDB       *database.Config        `mapstructure:"userdb" json:"userdb,omitempty"`
-	DDServer     *ddclient.Config        `mapstructure:"dd-server" json:"dd-server,omitempty"`
-	RaptorQ      *raptorq.Config         `mapstructure:"raptorq" json:"raptorq,omitempty"`
-	HealthCheck  *healthcheck_lib.Config `mapstructure:"health-check" json:"health-check,omitempty"`
-	DebugService *debug.Config           `mapstructure:"debug-service" json:"debug-service,omitempty"`
+	DDServer            *ddclient.Config        `mapstructure:"dd-server" json:"dd-server,omitempty"`
+	RaptorQ             *raptorq.Config         `mapstructure:"raptorq" json:"raptorq,omitempty"`
+	HealthCheck         *healthcheck_lib.Config `mapstructure:"health-check" json:"health-check,omitempty"`
+	DebugService        *debug.Config           `mapstructure:"debug-service" json:"debug-service,omitempty"`
+	RcloneStorageConfig *RcloneStorageConfig    `mapstructure:"storage-rclone" json:"storage-rclone,omitempty"`
+}
+
+// RcloneStorageConfig contains settings for RcloneStorage
+type RcloneStorageConfig struct {
+	SpecName   string `mapstructure:"spec_name" json:"spec_name,omitempty"`
+	BucketName string `mapstructure:"bucket_name" json:"bucket_name,omitempty"`
 }
 
 // LogConfig contains log configs

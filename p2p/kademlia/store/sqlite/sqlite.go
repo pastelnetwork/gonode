@@ -164,7 +164,7 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	// Run WAL checkpoint worker every 5 seconds
 	go s.startCheckpointWorker(ctx)
 
-	if s.isCloudBackupOn() {
+	if s.IsCloudBackupOn() {
 		_, err = NewMigrationMetaStore(ctx, dataDir, cloud)
 		if err != nil {
 			return nil, fmt.Errorf("cannot create meta store: %w", err)
@@ -174,7 +174,7 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	return s, nil
 }
 
-func (s *Store) isCloudBackupOn() bool {
+func (s *Store) IsCloudBackupOn() bool {
 	return s.cloud != nil
 }
 
@@ -434,7 +434,7 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to get record by key %s: %w", hkey, err)
 	}
 
-	if s.isCloudBackupOn() {
+	if s.IsCloudBackupOn() {
 		PostAccessUpdate([]string{hkey})
 	}
 
@@ -446,7 +446,7 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to retrieve data from cloud: data is neither on cloud nor on local - this shouldn't happen")
 	}
 
-	if !s.isCloudBackupOn() {
+	if !s.IsCloudBackupOn() {
 		return nil, fmt.Errorf("failed to retrieve data from cloud: data is supposed to be on cloud but backup is not enabled")
 	}
 
@@ -536,7 +536,7 @@ func (s *Store) storeRecord(key []byte, value []byte, typ int, isOriginal bool) 
 		return fmt.Errorf("error storing data: %w", err)
 	}
 
-	if s.isCloudBackupOn() {
+	if s.IsCloudBackupOn() {
 		PostKeysInsert([]UpdateMessage{{Key: hkey, LastAccessTime: time.Now(), Size: len(value)}})
 	}
 
@@ -602,7 +602,7 @@ func (s *Store) storeBatchRecord(values [][]byte, typ int, isOriginal bool) erro
 		return fmt.Errorf("error storing data: %w", err)
 	}
 
-	if s.isCloudBackupOn() {
+	if s.IsCloudBackupOn() {
 		PostKeysInsert(hkeys)
 	}
 

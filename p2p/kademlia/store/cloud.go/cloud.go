@@ -3,12 +3,12 @@ package cloud
 import (
 	"bytes"
 	"fmt"
-
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/log"
 )
 
@@ -23,6 +23,8 @@ type Storage interface {
 	FetchBatch(keys []string) (map[string][]byte, error)
 	Upload(key string, data []byte) (string, error)
 	UploadBatch(keys []string, data [][]byte) ([]string, error)
+	CheckCloudConnection() error
+	Delete(key string) error
 }
 
 type RcloneStorage struct {
@@ -51,10 +53,11 @@ func (r *RcloneStorage) Store(key string, data []byte) (string, error) {
 
 	// Use rclone to copy the file to the remote
 	cmd := exec.Command("rclone", "copyto", filePath, remotePath)
+	cmdOutput := &bytes.Buffer{}
+	cmd.Stderr = cmdOutput // Capture standard error
 	if err := cmd.Run(); err != nil {
-		// Clean up the local file if the upload fails
 		os.Remove(filePath)
-		return "", fmt.Errorf("rclone command failed: %w", err)
+		return "", fmt.Errorf("rclone command failed: %s, error: %w", cmdOutput.String(), err)
 	}
 
 	// Delete the local file after successful upload
@@ -191,4 +194,44 @@ func (r *RcloneStorage) UploadBatch(keys []string, data [][]byte) ([]string, err
 	}
 
 	return successfulKeys, nil
+}
+
+// Delete - deletes the file from the bucket of the configured spec
+func (r *RcloneStorage) Delete(key string) error {
+	remotePath := fmt.Sprintf("%s:%s/%s", r.specName, r.bucketName, key)
+
+	cmd := exec.Command("rclone", "deletefile", remotePath)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	// Execute the command
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("rclone command failed to delete file: %s, error: %w", stderr.String(), err)
+	}
+
+	return nil
+}
+
+// CheckCloudConnection verifies the R-clone connection by storing and fetching a test file.
+func (r *RcloneStorage) CheckCloudConnection() error {
+	testKey := uuid.NewString()
+	testData := []byte("this is test data to verify cloud storage connectivity through r-clone")
+
+	_, err := r.Store(testKey, testData)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.Fetch(testKey)
+	if err != nil {
+		return err
+	}
+
+	err = r.Delete(testKey)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

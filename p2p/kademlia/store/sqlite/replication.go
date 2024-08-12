@@ -461,7 +461,7 @@ func retrieveBatchValues(ctx context.Context, db *sqlx.DB, keys []string, getFro
 			values[idx] = value
 			keysFound++
 
-			if s.isCloudBackupOn() {
+			if s.IsCloudBackupOn() {
 				if len(value) == 0 && is_on_cloud {
 					cloudKeys = append(cloudKeys, key)
 				}
