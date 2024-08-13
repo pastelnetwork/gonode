@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 
 	"io/ioutil"
 	"os"
@@ -149,13 +148,17 @@ func TestStore(t *testing.T) {
 	for _, key := range nkeys {
 		for _, k := range keys {
 			if key.Key == k.Key {
-				fmt.Println(key.LastAcccessed.String(), k.LastAcccessed.String())
+
 				if !key.LastAcccessed.After(k.LastAcccessed) {
 					t.Fatalf("last accessed time not updated")
 				}
 
 				if key.AccessCount != k.AccessCount+1 {
 					t.Fatalf("access count not updated")
+				}
+
+				if key.DataSize != len(r1) {
+					t.Fatalf("data size not updated")
 				}
 			}
 		}
