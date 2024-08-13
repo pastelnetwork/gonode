@@ -128,11 +128,7 @@ func (ts *testSuite) SetupSuite() {
 	ts.ctx, ts.cancel = context.WithCancel(context.Background())
 	ts.ctx = log.ContextWithPrefix(ts.ctx, "p2p-test")
 
-	// init the badger store
-	defaultReplicateInterval := time.Second * 3600
-	defaultRepublishInterval := time.Second * 3600 * 24
-
-	dbStore, err := sqlite.NewStore(ts.ctx, filepath.Join(workDir, "p2p"), defaultReplicateInterval, defaultRepublishInterval, nil)
+	dbStore, err := sqlite.NewStore(ts.ctx, filepath.Join(workDir, "p2p"), nil, nil)
 	if err != nil {
 		ts.T().Fatalf("new sqlite store: %v", err)
 	}

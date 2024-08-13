@@ -263,7 +263,12 @@ func (s *p2p) configure(ctx context.Context) error {
 
 // New returns a new p2p instance.
 func New(ctx context.Context, config *Config, pastelClient pastel.Client, secInfo *alts.SecInfo, rqstore rqstore.Store, cloud cloud.Storage) (P2P, error) {
-	store, err := sqlite.NewStore(ctx, config.DataDir, defaultReplicateInterval, defaultRepublishInterval, cloud)
+	mst, err := sqlite.NewMigrationMetaStore(ctx, config.DataDir, cloud)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create meta store: %w", err)
+	}
+
+	store, err := sqlite.NewStore(ctx, config.DataDir, cloud, mst)
 	if err != nil {
 		return nil, errors.Errorf("new kademlia store: %w", err)
 	}
