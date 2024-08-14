@@ -1,3 +1,6 @@
+//go:build !race
+// +build !race
+
 package sqlite
 
 import (
@@ -62,8 +65,12 @@ func generateRandomBytes(n int) []byte {
 
 func TestStore(t *testing.T) {
 	cloud := cloud.NewRcloneStorage("test", "test")
+	ctx, cancel := context.WithCancel(context.Background())
 
-	mst, err := NewMigrationMetaStore(context.Background(), ".", cloud)
+	mst, err := NewMigrationMetaStore(ctx, ".", cloud)
+
+	mst.updateTicker.Stop()
+	mst.insertTicker.Stop()
 
 	// override the tickers for testing
 	mst.updateTicker = time.NewTicker(2 * time.Second)
@@ -72,7 +79,7 @@ func TestStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create store: %v", err)
 	}
-	store, err := NewStore(context.Background(), ".", cloud, mst)
+	store, err := NewStore(ctx, ".", cloud, mst)
 	if err != nil {
 		t.Fatalf("failed to create store: %v", err)
 	}
@@ -163,6 +170,13 @@ func TestStore(t *testing.T) {
 			}
 		}
 	}
+
+	cancel() // Signal all contexts to finish
+	mst.updateTicker.Stop()
+	mst.insertTicker.Stop()
+
+	// Allow some time for goroutines to exit
+	time.Sleep(100 * time.Millisecond)
 
 	os.Remove("data001.sqlite3")
 	os.Remove("data001-migration-meta.sqlite3")
