@@ -19,11 +19,11 @@ import (
 )
 
 var (
-	commitLastAccessedInterval = 60 * time.Second
+	commitLastAccessedInterval = 90 * time.Second
 	migrationExecutionTicker   = 12 * time.Hour
 	migrationMetaDB            = "data001-migration-meta.sqlite3"
 	accessUpdateBufferSize     = 100000
-	commitInsertsInterval      = 90 * time.Second
+	commitInsertsInterval      = 60 * time.Second
 	metaSyncBatchSize          = 10000
 	lowSpaceThresholdGB        = 50 // in GB
 	minKeysToMigrate           = 100
@@ -258,7 +258,7 @@ func PostAccessUpdate(updates []string) {
 		select {
 		case updateChannel <- UpdateMessage{
 			Key:            update,
-			LastAccessTime: time.Now(),
+			LastAccessTime: time.Now().UTC(),
 		}:
 			// Inserted
 		default:
@@ -291,7 +291,13 @@ func (d *MigrationMetaStore) commitLastAccessedUpdates(ctx context.Context) {
 		return
 	}
 
-	stmt, err := tx.Prepare("INSERT OR REPLACE INTO meta (key, last_accessed) VALUES (?, ?)")
+	stmt, err := tx.Prepare(`
+	INSERT INTO meta (key, last_accessed, access_count) 
+	VALUES (?, ?, 1) 
+	ON CONFLICT(key) DO 
+	UPDATE SET 
+		last_accessed = EXCLUDED.last_accessed,
+		access_count = access_count + 1`)
 	if err != nil {
 		tx.Rollback() // Roll back the transaction on error
 		log.WithContext(ctx).WithError(err).Error("Error preparing statement (commitLastAccessedUpdates)")
@@ -309,7 +315,7 @@ func (d *MigrationMetaStore) commitLastAccessedUpdates(ctx context.Context) {
 		if !ok {
 			return false
 		}
-		_, err := stmt.Exec(v, k)
+		_, err := stmt.Exec(k, v)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).WithField("key", key).Error("Error executing statement (commitLastAccessedUpdates)")
 			return true // continue

@@ -49,9 +49,10 @@ type Worker struct {
 
 // Store is the main struct
 type Store struct {
-	db     *sqlx.DB
-	worker *Worker
-	cloud  cloud.Storage
+	db             *sqlx.DB
+	worker         *Worker
+	cloud          cloud.Storage
+	migrationStore *MigrationMetaStore
 }
 
 // Record is a data record
@@ -67,7 +68,7 @@ type Record struct {
 }
 
 // NewStore returns a new store
-func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Duration, cloud cloud.Storage) (*Store, error) {
+func NewStore(ctx context.Context, dataDir string, cloud cloud.Storage, mst *MigrationMetaStore) (*Store, error) {
 	worker := &Worker{
 		JobQueue: make(chan Job, 500),
 		quit:     make(chan bool),
@@ -165,10 +166,7 @@ func NewStore(ctx context.Context, dataDir string, _ time.Duration, _ time.Durat
 	go s.startCheckpointWorker(ctx)
 
 	if s.IsCloudBackupOn() {
-		_, err = NewMigrationMetaStore(ctx, dataDir, cloud)
-		if err != nil {
-			return nil, fmt.Errorf("cannot create meta store: %w", err)
-		}
+		s.migrationStore = mst
 	}
 
 	return s, nil
