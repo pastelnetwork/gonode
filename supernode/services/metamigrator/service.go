@@ -28,6 +28,7 @@ func (service *MetaMigratorService) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-time.After(defaultMetaMigratorDataIdentifier):
+			log.WithContext(ctx).Info("meta-migrator-worker run() has been invoked")
 
 			isLow, err := utils.CheckDiskSpace(lowSpaceThresholdGB)
 			if err != nil {
@@ -36,6 +37,7 @@ func (service *MetaMigratorService) Run(ctx context.Context) error {
 			}
 
 			if !isLow {
+				log.WithContext(ctx).Info("disk space is not lower than threshold, not proceeding further")
 				continue
 			}
 
