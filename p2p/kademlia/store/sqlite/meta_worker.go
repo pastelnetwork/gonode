@@ -608,7 +608,18 @@ type MetaStoreInterface interface {
 // GetCountOfStaleData returns the count of stale data where last_accessed is 3 months before.
 func (d *MigrationMetaStore) GetCountOfStaleData(ctx context.Context, staleTime time.Time) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM meta WHERE last_accessed < ?`
+	query := `SELECT COUNT(*)
+FROM meta m
+LEFT JOIN (
+    SELECT DISTINCT mm.key
+    FROM meta_migration mm
+    JOIN migration mg ON mm.migration_id = mg.id
+    WHERE mg.migration_started_at > $1
+    AND mm.is_migrated = true   
+       OR mm.created_at > $1
+) AS recent_migrations ON m.key = recent_migrations.key
+WHERE m.last_accessed < $1
+AND recent_migrations.key IS NULL;`
 
 	err := d.db.GetContext(ctx, &count, query, staleTime)
 	if err != nil {
@@ -622,11 +633,19 @@ func (d *MigrationMetaStore) GetStaleDataInBatches(ctx context.Context, batchSiz
 	offset := batchNumber * batchSize
 
 	query := `
-        SELECT key 
-        FROM meta 
-        WHERE last_accessed < ? 
-        LIMIT ? OFFSET ?
-    `
+SELECT m.key
+FROM meta m
+LEFT JOIN (
+    SELECT DISTINCT mm.key
+    FROM meta_migration mm
+    JOIN migration mg ON mm.migration_id = mg.id
+    WHERE mg.migration_started_at > $1 
+    AND mm.is_migrated = true   
+       OR mm.created_at > $1
+) AS recent_migrations ON m.key = recent_migrations.key
+WHERE m.last_accessed < $1
+AND recent_migrations.key IS NULL
+LIMIT $2 OFFSET $3;`
 
 	rows, err := d.db.QueryxContext(ctx, query, duration, batchSize, offset)
 	if err != nil {

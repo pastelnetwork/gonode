@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
+	"github.com/pastelnetwork/gonode/supernode/services/metamigrator"
 	"io"
 	"os"
 	"path/filepath"
@@ -225,8 +227,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.P2P.SetWorkDir(config.WorkDir)
 	config.P2P.ID = config.PastelID
 
-	cloudStorage := cloud.NewRcloneStorage(config.RcloneStorageConfig.BucketName, config.RcloneStorageConfig.SpecName)
+	var cloudStorage cloud.Storage
+
 	if config.RcloneStorageConfig.BucketName != "" && config.RcloneStorageConfig.SpecName != "" {
+		cloudStorage = cloud.NewRcloneStorage(config.RcloneStorageConfig.BucketName, config.RcloneStorageConfig.SpecName)
 		if err := cloudStorage.CheckCloudConnection(); err != nil {
 			log.WithContext(ctx).WithError(err).Fatal("error establishing connection with the cloud")
 			return fmt.Errorf("rclone connection check failed: %w", err)
@@ -234,6 +238,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 
 	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo, rqstore, cloudStorage)
+	if err != nil {
+		return errors.Errorf("could not create p2p service, %w", err)
+	}
+
+	metaMigratorStore, err := sqlite.NewMigrationMetaStore(ctx, config.P2P.DataDir, cloudStorage)
 	if err != nil {
 		return errors.Errorf("could not create p2p service, %w", err)
 	}
@@ -298,6 +307,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	storageChallenger := storagechallenge.NewService(&config.StorageChallenge, fileStorage, pastelClient, nodeClient, p2p, hDB, sDB)
 	healthCheckChallenger := healthcheckchallenge.NewService(&config.HealthCheckChallenge, fileStorage, pastelClient, nodeClient, p2p, nil, hDB, sDB)
 	selfHealing := selfhealing.NewService(&config.SelfHealingChallenge, fileStorage, pastelClient, nodeClient, p2p, hDB, nftDownload, rqstore)
+	metaMigratorWorker := metamigrator.NewService(metaMigratorStore)
 	// // ----Userdata Services----
 	// userdataNodeClient := client.New(pastelClient, secInfo)
 	// userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
@@ -340,5 +350,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		_ = http.ListenAndServe(fmt.Sprintf(":%s", profilingPort), nil)
 	}()
 
-	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger, selfHealing, collectionRegister, healthCheckChallenger)
+	return runServices(ctx, grpc, p2p, nftRegister, nftDownload, senseRegister, cascadeRegister, statsMngr, debugSerivce, storageChallenger, selfHealing, collectionRegister, healthCheckChallenger, metaMigratorWorker)
 }
