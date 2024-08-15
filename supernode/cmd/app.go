@@ -3,11 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
-	"github.com/pastelnetwork/gonode/supernode/services/metamigrator"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
+	"github.com/pastelnetwork/gonode/supernode/services/metamigrator"
 
 	"net/http"
 	_ "net/http/pprof" //profiling
@@ -227,14 +228,17 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.P2P.SetWorkDir(config.WorkDir)
 	config.P2P.ID = config.PastelID
 
-	var cloudStorage cloud.Storage
-
-	if config.RcloneStorageConfig.BucketName != "" && config.RcloneStorageConfig.SpecName != "" {
+	var cloudStorage *cloud.RcloneStorage
+	if config.RcloneStorageConfig != nil {
 		cloudStorage = cloud.NewRcloneStorage(config.RcloneStorageConfig.BucketName, config.RcloneStorageConfig.SpecName)
-		if err := cloudStorage.CheckCloudConnection(); err != nil {
-			log.WithContext(ctx).WithError(err).Fatal("error establishing connection with the cloud")
-			return fmt.Errorf("rclone connection check failed: %w", err)
+		if config.RcloneStorageConfig.BucketName != "" && config.RcloneStorageConfig.SpecName != "" {
+			if err := cloudStorage.CheckCloudConnection(); err != nil {
+				log.WithContext(ctx).WithError(err).Fatal("error establishing connection with the cloud")
+				return fmt.Errorf("rclone connection check failed: %w", err)
+			}
 		}
+	} else {
+		log.WithContext(ctx).Info("cloud backup unavailable")
 	}
 
 	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo, rqstore, cloudStorage)
