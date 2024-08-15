@@ -229,6 +229,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.P2P.ID = config.PastelID
 
 	var cloudStorage *cloud.RcloneStorage
+	var metaMigratorStore *sqlite.MigrationMetaStore
 	if config.RcloneStorageConfig != nil {
 		cloudStorage = cloud.NewRcloneStorage(config.RcloneStorageConfig.BucketName, config.RcloneStorageConfig.SpecName)
 		if config.RcloneStorageConfig.BucketName != "" && config.RcloneStorageConfig.SpecName != "" {
@@ -236,17 +237,17 @@ func runApp(ctx context.Context, config *configs.Config) error {
 				log.WithContext(ctx).WithError(err).Fatal("error establishing connection with the cloud")
 				return fmt.Errorf("rclone connection check failed: %w", err)
 			}
+
+			metaMigratorStore, err = sqlite.NewMigrationMetaStore(ctx, config.P2P.DataDir, cloudStorage)
+			if err != nil {
+				return errors.Errorf("could not create p2p service, %w", err)
+			}
 		}
 	} else {
 		log.WithContext(ctx).Info("cloud backup unavailable")
 	}
 
-	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo, rqstore, cloudStorage)
-	if err != nil {
-		return errors.Errorf("could not create p2p service, %w", err)
-	}
-
-	metaMigratorStore, err := sqlite.NewMigrationMetaStore(ctx, config.P2P.DataDir, cloudStorage)
+	p2p, err := p2p.New(ctx, config.P2P, pastelClient, secInfo, rqstore, cloudStorage, metaMigratorStore)
 	if err != nil {
 		return errors.Errorf("could not create p2p service, %w", err)
 	}

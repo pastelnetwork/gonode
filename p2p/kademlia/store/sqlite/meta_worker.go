@@ -24,7 +24,7 @@ var (
 	migrationMetaDB            = "data001-migration-meta.sqlite3"
 	accessUpdateBufferSize     = 100000
 	commitInsertsInterval      = 60 * time.Second
-	metaSyncBatchSize          = 10000
+	metaSyncBatchSize          = 5000
 	lowSpaceThresholdGB        = 50 // in GB
 	minKeysToMigrate           = 100
 
@@ -39,7 +39,7 @@ func init() {
 
 type UpdateMessages []UpdateMessage
 
-// AccessUpdate holds the key and the last accessed time.
+// UpdateMessage holds the key and the last accessed time.
 type UpdateMessage struct {
 	Key            string
 	LastAccessTime time.Time
@@ -104,12 +104,14 @@ func NewMigrationMetaStore(ctx context.Context, dataDir string, cloud cloud.Stor
 		log.P2P().WithContext(ctx).Errorf("cannot create migration table in sqlite database: %s", err.Error())
 	}
 
-	if handler.isMetaSyncRequired() {
-		err := handler.syncMetaWithData(ctx)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("error syncing meta with p2p data")
+	go func() {
+		if handler.isMetaSyncRequired() {
+			err := handler.syncMetaWithData(ctx)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("error syncing meta with p2p data")
+			}
 		}
-	}
+	}()
 
 	go handler.startLastAccessedUpdateWorker(ctx)
 	go handler.startInsertWorker(ctx)
@@ -184,8 +186,17 @@ func (d *MigrationMetaStore) isMetaSyncRequired() bool {
 }
 
 func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
-	query := `SELECT key, data, updatedAt FROM data LIMIT ? OFFSET ?`
 	var offset int
+
+	query := `SELECT key, data, updatedAt FROM data LIMIT ? OFFSET ?`
+	insertQuery := `
+	INSERT INTO meta (key, last_accessed, access_count, data_size)
+	VALUES (?, ?, 1, ?)
+	ON CONFLICT(key) DO
+	UPDATE SET
+	last_accessed = EXCLUDED.last_accessed,
+	    data_size = EXCLUDED.data_size,
+		access_count = access_count + 1`
 
 	for {
 		rows, err := d.p2pDataStore.Queryx(query, metaSyncBatchSize, offset)
@@ -194,11 +205,17 @@ func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
 			return err
 		}
 
-		log.WithContext(ctx).WithField("offset", offset).Info("Syncing meta with p2p data store")
-		var batchUpdates []UpdateMessage
-		found := false
+		var batchProcessed bool
+
+		tx, err := d.db.Beginx()
+		if err != nil {
+			rows.Close()
+			log.WithContext(ctx).WithError(err).Error("Failed to start transaction")
+			return err
+		}
+
 		for rows.Next() {
-			found = true
+			batchProcessed = true
 			var r Record
 			var t *time.Time
 
@@ -210,23 +227,35 @@ func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
 				r.UpdatedAt = *t
 			}
 
-			dataSize := len(r.Data)
-			batchUpdates = append(batchUpdates, UpdateMessage{
-				Key:            r.Key,
-				LastAccessTime: r.UpdatedAt,
-				Size:           dataSize,
-			})
+			if _, err := tx.Exec(insertQuery, r.Key, r.UpdatedAt, len(r.Data)); err != nil {
+				tx.Rollback()
+				rows.Close()
+				log.WithContext(ctx).WithError(err).Error("Failed to execute batch insert")
+				return err
+			}
 		}
-		rows.Close()
 
-		if !found {
+		if err := rows.Err(); err != nil {
+			tx.Rollback()
+			rows.Close()
+			log.WithContext(ctx).WithError(err).Error("Error iterating rows")
+			return err
+		}
+
+		if batchProcessed {
+			if err := tx.Commit(); err != nil {
+				rows.Close()
+				log.WithContext(ctx).WithError(err).Error("Failed to commit transaction")
+				return err
+			}
+		} else {
+			tx.Rollback()
+			rows.Close()
 			break
 		}
 
-		// Send batch for insertion using the existing channel-based mechanism.
-		PostKeysInsert(batchUpdates)
-
-		offset += len(batchUpdates) // Move the offset forward by the number of items processed.
+		rows.Close()
+		offset += metaSyncBatchSize
 	}
 
 	return nil
