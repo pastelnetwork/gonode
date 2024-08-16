@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/log"
 )
 
@@ -108,8 +107,8 @@ func (s *TicketStore) CloseTicketDB(ctx context.Context) {
 }
 
 // OpenTicketingDb opens ticket DB
-func OpenTicketingDb() (TicketStorageInterface, error) {
-	dbFile := filepath.Join(configurer.DefaultPath(), ticketDBName)
+func OpenTicketingDb(defaultPath string) (TicketStorageInterface, error) {
+	dbFile := filepath.Join(defaultPath, ticketDBName)
 
 	db, err := sqlx.Connect("sqlite3", dbFile)
 	if err != nil {

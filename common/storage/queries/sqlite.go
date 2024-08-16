@@ -3,11 +3,16 @@ package queries
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3" //go-sqlite3
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/log"
-	"path/filepath"
+)
+
+var (
+	DefaulthPath = configurer.DefaultPath()
 )
 
 const minVerifications = 3
@@ -292,7 +297,7 @@ func (s *SQLiteStore) CloseHistoryDB(ctx context.Context) {
 
 // OpenHistoryDB opens history DB
 func OpenHistoryDB() (LocalStoreInterface, error) {
-	dbFile := filepath.Join(configurer.DefaultPath(), historyDBName)
+	dbFile := filepath.Join(DefaulthPath, historyDBName)
 	db, err := sqlx.Connect("sqlite3", dbFile)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open sqlite database: %w", err)
