@@ -2,13 +2,15 @@ package cascaderegister
 
 import (
 	"context"
-	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 	"image"
 	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/configurer"
+	"github.com/pastelnetwork/gonode/common/storage/ticketstore"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/download"
 
@@ -210,7 +212,7 @@ func TestTaskRun(t *testing.T) {
 			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
 			rqClientMock.ListenOnConnect(testCase.args.connectErr)
 
-			ticketDB, err := ticketstore.OpenTicketingDb()
+			ticketDB, err := ticketstore.OpenTicketingDb(configurer.DefaultPath())
 			assert.NoError(t, err)
 
 			downloadService := download.NewNftDownloadService(download.NewConfig(), pastelClientMock, nodeClient, nil)

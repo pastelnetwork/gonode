@@ -582,7 +582,7 @@ func (service *CascadeRegistrationService) ActivateActionTicketAndRegisterVolume
 	if err != nil {
 		return err
 	}
-	aar.BlockNum = regTicket.Height
+	aar.BlockNum = regTicket.ActionTicketData.CalledAt
 
 	actTxId, err := service.pastelHandler.PastelClient.ActivateActionTicket(ctx, aar)
 	if err != nil {
@@ -791,7 +791,7 @@ func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *c
 
 		if v.RegTxid == "" {
 			volumesWithPendingRegistration++
-			logger.WithField("volume_name", v.FileID).Info("find a volume with no registration, trying again...")
+			logger.WithField("volume_name", v.FileID).Info("found a volume with no registration, trying again...")
 
 			var burnTxId string
 			if v.BurnTxnID != "" && service.IsBurnTxIDValidForRecovery(ctx, v.BurnTxnID, v.ReqAmount-10) {
@@ -830,7 +830,7 @@ func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *c
 
 			volumesWithInProgressRegCount += 1
 		} else if v.ActivationTxid == "" {
-			logger.WithField("volume_name", v.FileID).Info("find a volume with no activation, trying again...")
+			logger.WithField("volume_name", v.FileID).Info("found a volume with no activation, trying again...")
 
 			// activation code
 			actAttemptId, err := service.InsertActivationAttempt(types.ActivationAttempt{

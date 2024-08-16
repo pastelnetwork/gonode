@@ -23,8 +23,8 @@ var (
 	migrationExecutionTicker   = 12 * time.Hour
 	migrationMetaDB            = "data001-migration-meta.sqlite3"
 	accessUpdateBufferSize     = 100000
-	commitInsertsInterval      = 60 * time.Second
-	metaSyncBatchSize          = 5000
+	commitInsertsInterval      = 10 * time.Second
+	metaSyncBatchSize          = 10000
 	lowSpaceThresholdGB        = 50 // in GB
 	minKeysToMigrate           = 100
 
@@ -314,6 +314,27 @@ func (d *MigrationMetaStore) startLastAccessedUpdateWorker(ctx context.Context) 
 }
 
 func (d *MigrationMetaStore) commitLastAccessedUpdates(ctx context.Context) {
+	keysToUpdate := make(map[string]time.Time)
+	d.updates.Range(func(key, value interface{}) bool {
+		k, ok := key.(string)
+		if !ok {
+			log.WithContext(ctx).Error("Error converting key to string (commitLastAccessedUpdates)")
+			return false
+		}
+		v, ok := value.(time.Time)
+		if !ok {
+			log.WithContext(ctx).Error("Error converting value to time.Time (commitLastAccessedUpdates)")
+			return false
+		}
+		keysToUpdate[k] = v
+
+		return true // continue
+	})
+
+	if len(keysToUpdate) == 0 {
+		return
+	}
+
 	tx, err := d.db.BeginTxx(ctx, nil)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error starting transaction (commitLastAccessedUpdates)")
@@ -334,25 +355,12 @@ func (d *MigrationMetaStore) commitLastAccessedUpdates(ctx context.Context) {
 	}
 	defer stmt.Close()
 
-	keysToUpdate := make(map[string]time.Time)
-	d.updates.Range(func(key, value interface{}) bool {
-		k, ok := key.(string)
-		if !ok {
-			return false
-		}
-		v, ok := value.(time.Time)
-		if !ok {
-			return false
-		}
+	for k, v := range keysToUpdate {
 		_, err := stmt.Exec(k, v)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).WithField("key", key).Error("Error executing statement (commitLastAccessedUpdates)")
-			return true // continue
+			log.WithContext(ctx).WithError(err).WithField("key", k).Error("Error executing statement (commitLastAccessedUpdates)")
 		}
-		keysToUpdate[k] = v
-
-		return true // continue
-	})
+	}
 
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
@@ -396,6 +404,28 @@ func (d *MigrationMetaStore) startInsertWorker(ctx context.Context) {
 }
 
 func (d *MigrationMetaStore) commitInserts(ctx context.Context) {
+	keysToUpdate := make(map[string]UpdateMessage)
+	d.inserts.Range(func(key, value interface{}) bool {
+		k, ok := key.(string)
+		if !ok {
+			log.WithContext(ctx).Error("Error converting key to string (commitInserts)")
+			return false
+		}
+		v, ok := value.(UpdateMessage)
+		if !ok {
+			log.WithContext(ctx).Error("Error converting value to UpdateMessage (commitInserts)")
+			return false
+		}
+
+		keysToUpdate[k] = v
+
+		return true // continue
+	})
+
+	if len(keysToUpdate) == 0 {
+		return
+	}
+
 	tx, err := d.db.BeginTxx(ctx, nil)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Error starting transaction (commitInserts)")
@@ -411,27 +441,13 @@ func (d *MigrationMetaStore) commitInserts(ctx context.Context) {
 	}
 	defer stmt.Close()
 
-	keysToUpdate := make(map[string]bool)
-	d.inserts.Range(func(key, value interface{}) bool {
-		k, ok := key.(string)
-		if !ok {
-			return false
-		}
-		v, ok := value.(UpdateMessage)
-		if !ok {
-			return false
-		}
-		// Default values for access_count and data_size can be configured here
+	for k, v := range keysToUpdate {
 		accessCount := 1
 		_, err := stmt.Exec(k, v.LastAccessTime, accessCount, v.Size)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).WithField("key", k).Error("Error executing statement (commitInserts)")
-			return true // continue
 		}
-		keysToUpdate[k] = true
-
-		return true // continue
-	})
+	}
 
 	if err := tx.Commit(); err != nil {
 		tx.Rollback() // Rollback transaction if commit fails

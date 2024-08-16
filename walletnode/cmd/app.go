@@ -47,14 +47,13 @@ const (
 )
 
 var (
-	defaultPath = configurer.DefaultPath()
-
-	defaultTempDir          = filepath.Join(os.TempDir(), appName)
-	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
-	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
-	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
-	defaultStaticFilesDir   = filepath.Join(defaultPath, staticFilesDir)
-	defaultCascadeFilesDir  = filepath.Join(defaultPath, cascadeFiles)
+	defaultPath             = configurer.DefaultPath()
+	defaultTempDir          = ""
+	defaultConfigFile       = ""
+	defaultPastelConfigFile = ""
+	defaultRqFilesDir       = ""
+	defaultStaticFilesDir   = ""
+	defaultCascadeFilesDir  = ""
 )
 
 // NewApp configures our app by parsing command line flags, config files, and setting up logging and temporary directories
@@ -70,6 +69,7 @@ func NewApp() *cli.App {
 
 	app.AddFlags(
 		// Main
+		cli.NewFlag("data-dir", &defaultPath).SetUsage("Set `path` to the data directory, usually ~/.pastel in linux").SetValue(defaultPath).SetAliases("dd"),
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetValue(defaultConfigFile).SetAliases("c"),
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetValue(defaultPastelConfigFile),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
@@ -77,6 +77,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("log-level", &config.LogConfig.Level).SetUsage("Set the log `level`.").SetValue(config.LogConfig.Level),
 		cli.NewFlag("log-file", &config.LogConfig.File).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
+
 		// API
 		cli.NewFlag("swagger", &config.API.Swagger).SetUsage("Enable Swagger UI."),
 	)
@@ -85,12 +86,43 @@ func NewApp() *cli.App {
 	//Sets up configs and logging, and also returns the "app" function to main.go to be called (Run) there.
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
 		//Sets logging prefix to pastel-app
+		defaultTempDir = filepath.Join(os.TempDir(), appName)
+		defaultConfigFile = filepath.Join(defaultPath, appName+".yml")
+		defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
+		defaultRqFilesDir = filepath.Join(defaultPath, rqFilesDir)
+		defaultStaticFilesDir = filepath.Join(defaultPath, staticFilesDir)
+		defaultCascadeFilesDir = filepath.Join(defaultPath, cascadeFiles)
+
+		if config.TempDir == "" {
+			config.TempDir = defaultTempDir
+		}
+
+		if config.RqFilesDir == "" {
+			config.RqFilesDir = defaultRqFilesDir
+		}
+
+		if config.StaticFilesDir == "" {
+			config.StaticFilesDir = defaultStaticFilesDir
+		}
+
+		if config.CascadeFilesDir == "" {
+			config.CascadeFilesDir = defaultCascadeFilesDir
+		}
+
+		if configFile == "" {
+			configFile = defaultConfigFile
+		}
+
+		if pastelConfigFile == "" {
+			pastelConfigFile = defaultPastelConfigFile
+		}
+
 		ctx = log.ContextWithPrefix(ctx, "pastel-app")
 
 		//Parse config files supplied in arguments
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
-				return fmt.Errorf("error parsing walletnode config file: %v", err)
+				return fmt.Errorf("error parsing walletnode config file: %v - file: %s", err, configFile)
 			}
 		}
 
@@ -162,6 +194,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
+	queries.DefaulthPath = defaultPath
+
 	if _, err := os.Stat(defaultStaticFilesDir); os.IsNotExist(err) {
 		// directory does not exist, create it
 		errDir := os.MkdirAll(defaultStaticFilesDir, 0755)
@@ -211,7 +245,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 	defer hDB.CloseHistoryDB(ctx)
 
-	tDB, err := ticketstore.OpenTicketingDb()
+	tDB, err := ticketstore.OpenTicketingDb(defaultPath)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error connecting ticket db..")
 	}
