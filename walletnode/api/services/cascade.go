@@ -125,10 +125,16 @@ func (service *CascadeAPIHandler) StartProcessing(ctx context.Context, p *cascad
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(err)
 	}
-	log.WithContext(ctx).WithField("total_volumes", len(relatedFiles)).Info("Related volumes retrieved from the base file-id")
+
+	if len(relatedFiles) == 0 {
+		log.WithContext(ctx).WithError(err).Error("no related volumes have been found against the provided base-file-id")
+		return nil, cascade.MakeInternalServerError(errors.New("please provide valid base-file-id"))
+
+	}
+	log.WithContext(ctx).WithField("total_volumes", len(relatedFiles)).Info("related volumes retrieved from the base file-id")
 
 	if isProcessingStarted(relatedFiles) {
-		log.WithContext(ctx).Error("task registration is already in progress")
+		log.WithContext(ctx).Error("task registration is already in progress or completed")
 		return nil, cascade.MakeInternalServerError(errors.New("task registration is already in progress"))
 	}
 
@@ -822,8 +828,8 @@ func (service *CascadeAPIHandler) GetTaskHistory(ctx context.Context, p *cascade
 }
 
 func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *cascade.RegistrationDetailsPayload) (registrationDetail *cascade.Registration, err error) {
-	log.WithContext(ctx).WithField("base_file_id", rdp.BaseFileID).Info("Registration detail api invoked")
-	defer log.WithContext(ctx).WithField("base_file_id", rdp.BaseFileID).Info("Finished registration details")
+	log.WithContext(ctx).WithField("base_file_id", rdp.BaseFileID).Info("registration detail api invoked")
+	defer log.WithContext(ctx).WithField("base_file_id", rdp.BaseFileID).Info("registration details retrieved")
 
 	relatedFiles, err := service.register.GetFilesByBaseFileID(rdp.BaseFileID)
 	if err != nil {
@@ -855,6 +861,7 @@ func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *
 				FileID:              aAttempt.FileID,
 				ActivationAttemptAt: aAttempt.ActivationAttemptAt.String(),
 				IsSuccessful:        &aAttempt.IsSuccessful,
+				IsConfirmed:         &aAttempt.IsConfirmed,
 				ErrorMessage:        &aAttempt.ErrorMessage,
 			})
 		}
@@ -867,6 +874,7 @@ func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *
 				RegStartedAt: rAttempt.RegStartedAt.String(),
 				FinishedAt:   rAttempt.FinishedAt.String(),
 				IsSuccessful: &rAttempt.IsSuccessful,
+				IsConfirmed:  &rAttempt.IsConfirmed,
 				ErrorMessage: &rAttempt.ErrorMessage,
 				ProcessorSns: &rAttempt.ProcessorSNS,
 			})
@@ -906,6 +914,10 @@ func (service *CascadeAPIHandler) RegistrationDetails(ctx context.Context, rdp *
 func (service *CascadeAPIHandler) Restore(ctx context.Context, p *cascade.RestorePayload) (res *cascade.RestoreFile, err error) {
 	if !service.register.ValidateUser(ctx, p.AppPastelID, p.Key) {
 		return nil, cascade.MakeUnAuthorized(errors.New("user not authorized: invalid PastelID or Key"))
+	}
+
+	if p.BaseFileID == "" {
+		return nil, cascade.MakeUnAuthorized(errors.New("base_file_id should not be empty"))
 	}
 
 	restoreFile, err := service.register.RestoreFile(ctx, p)

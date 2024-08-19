@@ -1,8 +1,10 @@
 package ticketstore
 
 import (
-	"github.com/pastelnetwork/gonode/common/types"
+	"database/sql"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/types"
 )
 
 type RegistrationAttemptsQueries interface {
@@ -16,14 +18,14 @@ type RegistrationAttemptsQueries interface {
 func (s *TicketStore) InsertRegistrationAttempt(attempt types.RegistrationAttempt) (int64, error) {
 	const insertQuery = `
         INSERT INTO registration_attempts (
-            file_id, base_file_id, reg_started_at, processor_sns, finished_at, is_successful, error_message, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            file_id, base_file_id, reg_started_at, processor_sns, finished_at, is_successful, is_confirmed, error_message, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id;`
 
 	var id int64
 	err := s.db.QueryRow(insertQuery,
 		attempt.FileID, attempt.BaseFileID, attempt.RegStartedAt, attempt.ProcessorSNS,
-		attempt.FinishedAt, attempt.IsSuccessful, attempt.ErrorMessage, time.Now().UTC(), time.Now().UTC()).Scan(&id)
+		attempt.FinishedAt, attempt.IsSuccessful, attempt.IsConfirmed, attempt.ErrorMessage, time.Now().UTC(), time.Now().UTC()).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -61,18 +63,26 @@ func (s *TicketStore) UpdateRegistrationAttempt(attempt types.RegistrationAttemp
 func (s *TicketStore) GetRegistrationAttemptByID(id int) (*types.RegistrationAttempt, error) {
 	const selectQuery = `
         SELECT id, file_id, reg_started_at, processor_sns, finished_at, 
-               is_successful, error_message
+               is_successful, is_confirmed, error_message
         FROM registration_attempts
         WHERE id = ?;`
 
 	row := s.db.QueryRow(selectQuery, int64(id))
+	var (
+		isConfirmed sql.NullBool
+		attempt     types.RegistrationAttempt
+	)
 
-	var attempt types.RegistrationAttempt
 	err := row.Scan(
 		&attempt.ID, &attempt.FileID, &attempt.RegStartedAt, &attempt.ProcessorSNS,
-		&attempt.FinishedAt, &attempt.IsSuccessful, &attempt.ErrorMessage)
+		&attempt.FinishedAt, &attempt.IsSuccessful, &isConfirmed, &attempt.ErrorMessage)
 	if err != nil {
 		return nil, err
+	}
+
+	attempt.IsConfirmed = false
+	if isConfirmed.Valid {
+		attempt.IsConfirmed = isConfirmed.Bool
 	}
 
 	return &attempt, nil
@@ -82,7 +92,7 @@ func (s *TicketStore) GetRegistrationAttemptByID(id int) (*types.RegistrationAtt
 func (s *TicketStore) GetRegistrationAttemptsByFileIDAndBaseFileID(fileID, baseFileID string) ([]*types.RegistrationAttempt, error) {
 	const selectQuery = `
         SELECT id, file_id, base_file_id, reg_started_at, processor_sns, finished_at, 
-               is_successful, error_message
+               is_successful, is_confirmed, error_message
         FROM registration_attempts
         WHERE file_id = ? and base_file_id=?;`
 
@@ -94,13 +104,21 @@ func (s *TicketStore) GetRegistrationAttemptsByFileIDAndBaseFileID(fileID, baseF
 
 	var attempts []*types.RegistrationAttempt
 	for rows.Next() {
-		var attempt types.RegistrationAttempt
+		var (
+			attempt     types.RegistrationAttempt
+			isConfirmed sql.NullBool
+		)
 		err := rows.Scan(
 			&attempt.ID, &attempt.FileID, &attempt.BaseFileID, &attempt.RegStartedAt, &attempt.ProcessorSNS,
-			&attempt.FinishedAt, &attempt.IsSuccessful, &attempt.ErrorMessage)
+			&attempt.FinishedAt, &attempt.IsSuccessful, &isConfirmed, &attempt.ErrorMessage)
 		if err != nil {
 			return nil, err
 		}
+		attempt.IsConfirmed = false
+		if isConfirmed.Valid {
+			attempt.IsConfirmed = isConfirmed.Bool
+		}
+
 		attempts = append(attempts, &attempt)
 	}
 

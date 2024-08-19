@@ -723,6 +723,8 @@ type RegistrationAttemptResponseBody struct {
 	FinishedAt string `form:"finished_at" json:"finished_at" xml:"finished_at"`
 	// Indicates if the registration was successful
 	IsSuccessful *bool `form:"is_successful,omitempty" json:"is_successful,omitempty" xml:"is_successful,omitempty"`
+	// Indicates if the reg-tx-id is confirmed
+	IsConfirmed *bool `form:"is_confirmed,omitempty" json:"is_confirmed,omitempty" xml:"is_confirmed,omitempty"`
 	// Error Message
 	ErrorMessage *string `form:"error_message,omitempty" json:"error_message,omitempty" xml:"error_message,omitempty"`
 }
@@ -738,6 +740,8 @@ type ActivationAttemptResponseBody struct {
 	ActivationAttemptAt string `form:"activation_attempt_at" json:"activation_attempt_at" xml:"activation_attempt_at"`
 	// Indicates if the activation was successful
 	IsSuccessful *bool `form:"is_successful,omitempty" json:"is_successful,omitempty" xml:"is_successful,omitempty"`
+	// Indicates if the act-tx-id is confirmed
+	IsConfirmed *bool `form:"is_confirmed,omitempty" json:"is_confirmed,omitempty" xml:"is_confirmed,omitempty"`
 	// Error Message
 	ErrorMessage *string `form:"error_message,omitempty" json:"error_message,omitempty" xml:"error_message,omitempty"`
 }

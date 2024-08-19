@@ -63,6 +63,7 @@ type CascadeRegistrationService struct {
 	downloadHandler download.NftDownloadingService
 	historyDB       queries.LocalStoreInterface
 	ticketDB        ticketstore.TicketStorageInterface
+	restoreTasks    map[string]bool
 }
 
 // Run starts worker.
@@ -386,7 +387,7 @@ func (service *CascadeRegistrationService) HandleTaskRegistrationErrorAttempts(c
 	return nil
 }
 
-func (service *CascadeRegistrationService) HandleTaskActError(ctx context.Context, taskID string, regTxid string, actAttemptID int, doneBlock int32, err error) error {
+func (service *CascadeRegistrationService) HandleTaskActError(ctx context.Context, taskID string, regTxid string, actAttemptID int, doneBlock int32, taskErr error) error {
 	file, err := service.GetFileByTaskID(taskID)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error retrieving file")
@@ -414,7 +415,7 @@ func (service *CascadeRegistrationService) HandleTaskActError(ctx context.Contex
 
 	actAttempt.IsSuccessful = false
 	actAttempt.ActivationAttemptAt = time.Now().UTC()
-	actAttempt.ErrorMessage = err.Error()
+	actAttempt.ErrorMessage = taskErr.Error()
 	_, err = service.UpdateActivationAttempts(*actAttempt)
 	if err != nil {
 		log.Errorf("Error in activation attempts upsert: %v", err.Error())
@@ -577,7 +578,7 @@ func (service *CascadeRegistrationService) GetBurnTxIdByAmount(ctx context.Conte
 	return txID, nil
 }
 
-func (service *CascadeRegistrationService) ActivateActionTicketAndRegisterVolumeTicket(ctx context.Context, aar pastel.ActivateActionRequest, baseFile types.File, actAttemptId int64) error {
+func (service *CascadeRegistrationService) ActivateActionTicket(ctx context.Context, aar pastel.ActivateActionRequest, baseFile types.File, actAttemptId int64) error {
 	regTicket, err := service.pastelHandler.PastelClient.ActionRegTicket(ctx, aar.RegTxID)
 	if err != nil {
 		return err
@@ -588,9 +589,15 @@ func (service *CascadeRegistrationService) ActivateActionTicketAndRegisterVolume
 	if err != nil {
 		return err
 	}
+	log.WithContext(ctx).WithField("volume_name", baseFile.FileID).WithField("activation_txid", actTxId).Info("activation ticket created")
 
-	baseFile.ActivationTxid = actTxId
-	err = service.UpsertFile(baseFile)
+	bf, err := service.GetFileByTaskID(baseFile.TaskID)
+	if err != nil {
+		return err
+	}
+
+	bf.ActivationTxid = actTxId
+	err = service.UpsertFile(*bf)
 	if err != nil {
 		return err
 	}
@@ -645,7 +652,7 @@ func (service *CascadeRegistrationService) RegisterVolumeTicket(ctx context.Cont
 
 	if concludedCount < requiredConcludedCount || concludedCount > requiredConcludedCount {
 		log.WithContext(ctx).WithField("base_file_id", baseFileID).
-			WithField("related_files", relatedFiles.Names()).WithField("no_of_volumes_registered", concludedCount).
+			WithField("related_files", relatedFiles.Names()).WithField("no_of_volumes_concluded", concludedCount).
 			WithField("total_volumes_count", requiredConcludedCount).Info("all volumes are not registered or activated yet")
 		return "", nil
 	}
@@ -735,6 +742,15 @@ func (service *CascadeRegistrationService) GetUnCompletedFiles() ([]*types.File,
 }
 
 func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *cascade.RestorePayload) (res *cascade.RestoreFile, err error) {
+	if _, exists := service.restoreTasks[p.BaseFileID]; exists {
+		log.WithContext(ctx).WithField("base_file_id", p.BaseFileID).Info("volumes associated with the base-file-id already getting restore")
+		return
+	}
+	service.restoreTasks[p.BaseFileID] = true
+	defer func() {
+		delete(service.restoreTasks, p.BaseFileID)
+	}()
+
 	volumes, err := service.GetFilesByBaseFileID(p.BaseFileID)
 	if err != nil {
 		return nil, cascade.MakeInternalServerError(err)
@@ -745,7 +761,7 @@ func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *c
 	}
 
 	log.WithContext(ctx).WithField("total_volumes", len(volumes)).
-		Info("total volumes retrieved from the base file-id")
+		Info("total volumes retrieved from the base-file-id")
 
 	unConcludedVolumes, err := volumes.GetUnconcludedFiles()
 	if err != nil {
@@ -784,13 +800,15 @@ func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *c
 
 	for _, v := range volumes {
 		if _, exists := runningTaskIDs[v.TaskID]; exists {
+			volumesWithInProgressRegCount += 1
+
 			log.WithContext(ctx).WithField("task_id", v.TaskID).WithField("base_file_id", v.BaseFileID).
 				Debug("current task is already in-progress can't execute the recovery-flow")
 			continue
 		}
 
 		if v.RegTxid == "" {
-			volumesWithPendingRegistration++
+			volumesWithPendingRegistration += 1
 			logger.WithField("volume_name", v.FileID).Info("found a volume with no registration, trying again...")
 
 			var burnTxId string
@@ -830,39 +848,89 @@ func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *c
 
 			volumesWithInProgressRegCount += 1
 		} else if v.ActivationTxid == "" {
-			logger.WithField("volume_name", v.FileID).Info("found a volume with no activation, trying again...")
-
-			// activation code
-			actAttemptId, err := service.InsertActivationAttempt(types.ActivationAttempt{
-				FileID:              v.FileID,
-				ActivationAttemptAt: time.Now().UTC(),
-			})
+			regAttempts, err := service.GetRegistrationAttemptsByFileIDAndBaseFileID(v.FileID, v.BaseFileID)
 			if err != nil {
-				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error inserting activation attempt")
+				log.WithContext(ctx).WithError(err).Error("error retrieving reg-attempts by file and base-file-id")
 				continue
 			}
 
-			activateActReq := pastel.ActivateActionRequest{
-				RegTxID:    v.RegTxid,
-				Fee:        int64(v.ReqAmount) - 10,
-				PastelID:   p.AppPastelID,
-				Passphrase: p.Key,
+			for _, ra := range regAttempts {
+				if ra.IsSuccessful && !ra.IsConfirmed {
+					if err := service.pastelHandler.WaitTxidValid(ctx, v.RegTxid, int64(service.config.CascadeRegTxMinConfirmations),
+						time.Duration(service.config.WaitTxnValidInterval)*time.Second); err != nil {
+						log.WithContext(ctx).WithError(err).Error("error waiting for Reg-Txid confirmations")
+						continue
+					}
+
+					ra.IsConfirmed = true
+					service.UpdateRegistrationAttempts(*ra)
+					break
+				}
 			}
 
-			err = service.ActivateActionTicketAndRegisterVolumeTicket(ctx, activateActReq, *v, actAttemptId)
-			if err != nil {
-				log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error activating or registering un-concluded volume")
+			if err = service.restoreActivation(ctx, *v, p); err != nil {
+				log.WithContext(ctx).WithError(err).Error("error restoring activation")
 				continue
 			}
-			logger.WithField("volume_name", v.FileID).Info("request has been sent for activation")
 
+			registeredVolumes += 1
 			volumesActivatedInRecoveryFlow += 1
 		} else {
 			if v.RegTxid != "" {
 				registeredVolumes += 1
+
+				regAttempts, err := service.GetRegistrationAttemptsByFileIDAndBaseFileID(v.FileID, v.BaseFileID)
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Error("error retrieving reg-attempts by file and base-file-id")
+					continue
+				}
+
+				for _, ra := range regAttempts {
+					if ra.IsSuccessful && !ra.IsConfirmed {
+						if err := service.pastelHandler.WaitTxidValid(ctx, v.RegTxid, int64(service.config.CascadeRegTxMinConfirmations),
+							time.Duration(service.config.WaitTxnValidInterval)*time.Second); err != nil {
+							log.WithContext(ctx).WithError(err).Error("error waiting for Reg-Txid confirmations")
+							continue
+						}
+
+						ra.IsConfirmed = true
+						service.UpdateRegistrationAttempts(*ra)
+						break
+					}
+				}
 			}
+
 			if v.ActivationTxid != "" {
 				activatedVolumes += 1
+
+				actAttempts, err := service.GetActivationAttemptsByFileIDAndBaseFileID(v.FileID, v.BaseFileID)
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Error("error retrieving reg-attempts by file and base-file-id")
+					continue
+				}
+
+				for _, aa := range actAttempts {
+					if aa.IsSuccessful && !aa.IsConfirmed {
+						err = service.pastelHandler.WaitTxidValid(ctx, v.ActivationTxid, int64(service.config.CascadeActTxMinConfirmations),
+							time.Duration(service.config.WaitTxnValidInterval)*time.Second)
+						if err != nil {
+							log.WithContext(ctx).WithError(err).Error("error waiting for activated Reg TXID confirmations")
+							continue
+						}
+
+						aa.IsConfirmed = true
+						service.UpdateActivationAttempts(*aa)
+						break
+					}
+				}
+
+				bf, err := service.GetFileByTaskID(v.TaskID)
+				if err != nil {
+					log.WithContext(ctx).WithField("reg_tx_id", v.RegTxid).Error("error retrieving transaction verbose 1")
+				}
+
+				bf.IsConcluded = true
+				service.UpsertFile(*bf)
 			}
 		}
 	}
@@ -882,6 +950,63 @@ func (service *CascadeRegistrationService) RestoreFile(ctx context.Context, p *c
 		ActivatedVolumes:               activatedVolumes,
 		VolumesActivatedInRecoveryFlow: volumesActivatedInRecoveryFlow,
 	}, nil
+}
+
+func (service *CascadeRegistrationService) restoreActivation(ctx context.Context, v types.File, p *cascade.RestorePayload) error {
+	logger := log.WithContext(ctx).WithField("base_file_id", v.BaseFileID).WithField("volume_name", v.FileID)
+	logger.Info("found a volume with pending activation, trying again...")
+
+	actAttemptId, err := service.InsertActivationAttempt(types.ActivationAttempt{
+		BaseFileID:          v.BaseFileID,
+		FileID:              v.FileID,
+		ActivationAttemptAt: time.Now().UTC(),
+	})
+	if err != nil {
+		log.WithContext(ctx).WithField("file_id", v.FileID).WithError(err).Error("error inserting activation attempt")
+		return errors.Errorf("error inserting activation attempt")
+	}
+
+	activateActReq := pastel.ActivateActionRequest{
+		RegTxID:    v.RegTxid,
+		Fee:        int64(v.ReqAmount) - 10,
+		PastelID:   p.AppPastelID,
+		Passphrase: p.Key,
+	}
+
+	err = service.ActivateActionTicket(ctx, activateActReq, v, actAttemptId)
+	if err != nil {
+		logger.WithError(err).Error("error activating or registering un-concluded volume")
+		return errors.Errorf("error activating volume")
+	}
+	logger.Info("ticket has been activated")
+
+	bf, err := service.GetFileByTaskID(v.TaskID)
+	if err != nil {
+		logger.WithError(err).Error("error retrieving volume details from db")
+		return errors.Errorf("error retrieving volume details from db")
+	}
+
+	bf.IsConcluded = true
+	err = service.UpsertFile(*bf)
+	if err != nil {
+		logger.WithError(err).Error("error updating volume details in db")
+		return errors.Errorf("error updating volume details in db")
+	}
+
+	actAttempt, err := service.GetActivationAttemptByID(int(actAttemptId))
+	if err != nil {
+		logger.WithError(err).Error("error retrieving activation-attempt from db")
+		return errors.Errorf("error retrieving activation-attempt from db")
+	}
+
+	actAttempt.IsConfirmed = true
+	_, err = service.UpdateActivationAttempts(*actAttempt)
+	if err != nil {
+		logger.WithError(err).Error("error updating activation-attempt details in db")
+		return errors.Errorf("error updating activation-attempt in db")
+	}
+
+	return nil
 }
 
 func (service *CascadeRegistrationService) IsBurnTxIDValidForRecovery(ctx context.Context, burnTxID string, estimatedFee float64) bool {
@@ -915,5 +1040,6 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Clie
 		downloadHandler: downloadService,
 		historyDB:       historyDB,
 		ticketDB:        ticketDB,
+		restoreTasks:    make(map[string]bool),
 	}
 }
