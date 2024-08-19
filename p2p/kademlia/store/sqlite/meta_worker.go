@@ -24,7 +24,7 @@ var (
 	migrationMetaDB            = "data001-migration-meta.sqlite3"
 	accessUpdateBufferSize     = 100000
 	commitInsertsInterval      = 10 * time.Second
-	metaSyncBatchSize          = 10000
+	metaSyncBatchSize          = 5000
 	lowSpaceThresholdGB        = 50 // in GB
 	minKeysToMigrate           = 100
 
@@ -78,6 +78,10 @@ func NewMigrationMetaStore(ctx context.Context, dataDir string, cloud cloud.Stor
 	db.SetMaxOpenConns(20)
 	db.SetMaxIdleConns(10)
 
+	if err := setPragmas(db); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error executing pragmas")
+	}
+
 	p2pDataStore, err := connectP2PDataStore(dataDir)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("error connecting p2p store from meta-migration store")
@@ -119,6 +123,33 @@ func NewMigrationMetaStore(ctx context.Context, dataDir string, cloud cloud.Stor
 	log.WithContext(ctx).Info("MigrationMetaStore workers started")
 
 	return handler, nil
+}
+
+func setPragmas(db *sqlx.DB) error {
+	// Set journal mode to WAL
+	_, err := db.Exec("PRAGMA journal_mode=WAL;")
+	if err != nil {
+		return err
+	}
+	// Set synchronous to NORMAL
+	_, err = db.Exec("PRAGMA synchronous=NORMAL;")
+	if err != nil {
+		return err
+	}
+
+	// Set cache size
+	_, err = db.Exec("PRAGMA cache_size=-262144;")
+	if err != nil {
+		return err
+	}
+
+	// Set busy timeout
+	_, err = db.Exec("PRAGMA busy_timeout=5000;")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *MigrationMetaStore) migrateMeta() error {
@@ -205,8 +236,6 @@ func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
 			return err
 		}
 
-		var batchProcessed bool
-
 		tx, err := d.db.Beginx()
 		if err != nil {
 			rows.Close()
@@ -214,8 +243,16 @@ func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
 			return err
 		}
 
+		stmt, err := tx.Prepare(insertQuery)
+		if err != nil {
+			tx.Rollback()
+			rows.Close()
+			log.WithContext(ctx).WithError(err).Error("Failed to prepare statement")
+			return err
+		}
+
+		var batchProcessed bool
 		for rows.Next() {
-			batchProcessed = true
 			var r Record
 			var t *time.Time
 
@@ -227,14 +264,15 @@ func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
 				r.UpdatedAt = *t
 			}
 
-			if _, err := tx.Exec(insertQuery, r.Key, r.UpdatedAt, len(r.Data)); err != nil {
-				tx.Rollback()
-				rows.Close()
-				log.WithContext(ctx).WithError(err).Error("Failed to execute batch insert")
-				return err
+			if _, err := stmt.Exec(r.Key, r.UpdatedAt, len(r.Data)); err != nil {
+				log.WithContext(ctx).WithField("key", r.Key).WithError(err).Error("error inserting key to meta")
+				continue
 			}
+
+			batchProcessed = true
 		}
 
+		stmt.Close()
 		if err := rows.Err(); err != nil {
 			tx.Rollback()
 			rows.Close()
@@ -255,7 +293,12 @@ func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
 		}
 
 		rows.Close()
-		offset += metaSyncBatchSize
+		if !batchProcessed {
+			tx.Rollback()
+			log.WithContext(ctx).Info("no rows processed, rolling back and breaking.")
+			break
+		}
+		offset += metaSyncBatchSize //
 	}
 
 	return nil
