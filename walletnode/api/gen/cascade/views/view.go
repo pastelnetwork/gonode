@@ -147,6 +147,8 @@ type RegistrationAttemptView struct {
 	FinishedAt *string
 	// Indicates if the registration was successful
 	IsSuccessful *bool
+	// Indicates if the reg-tx-id is confirmed
+	IsConfirmed *bool
 	// Error Message
 	ErrorMessage *string
 }
@@ -161,6 +163,8 @@ type ActivationAttemptView struct {
 	ActivationAttemptAt *string
 	// Indicates if the activation was successful
 	IsSuccessful *bool
+	// Indicates if the act-tx-id is confirmed
+	IsConfirmed *bool
 	// Error Message
 	ErrorMessage *string
 }

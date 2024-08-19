@@ -87,6 +87,8 @@ type ActivationAttempt struct {
 	ActivationAttemptAt string
 	// Indicates if the activation was successful
 	IsSuccessful *bool
+	// Indicates if the act-tx-id is confirmed
+	IsConfirmed *bool
 	// Error Message
 	ErrorMessage *string
 }
@@ -253,6 +255,8 @@ type RegistrationAttempt struct {
 	FinishedAt string
 	// Indicates if the registration was successful
 	IsSuccessful *bool
+	// Indicates if the reg-tx-id is confirmed
+	IsConfirmed *bool
 	// Error Message
 	ErrorMessage *string
 }
@@ -665,6 +669,7 @@ func transformCascadeviewsRegistrationAttemptViewToRegistrationAttempt(v *cascad
 		ProcessorSns: v.ProcessorSns,
 		FinishedAt:   *v.FinishedAt,
 		IsSuccessful: v.IsSuccessful,
+		IsConfirmed:  v.IsConfirmed,
 		ErrorMessage: v.ErrorMessage,
 	}
 
@@ -680,6 +685,7 @@ func transformCascadeviewsActivationAttemptViewToActivationAttempt(v *cascadevie
 		FileID:              *v.FileID,
 		ActivationAttemptAt: *v.ActivationAttemptAt,
 		IsSuccessful:        v.IsSuccessful,
+		IsConfirmed:         v.IsConfirmed,
 		ErrorMessage:        v.ErrorMessage,
 	}
 
@@ -740,6 +746,7 @@ func transformRegistrationAttemptToCascadeviewsRegistrationAttemptView(v *Regist
 		ProcessorSns: v.ProcessorSns,
 		FinishedAt:   &v.FinishedAt,
 		IsSuccessful: v.IsSuccessful,
+		IsConfirmed:  v.IsConfirmed,
 		ErrorMessage: v.ErrorMessage,
 	}
 
@@ -755,6 +762,7 @@ func transformActivationAttemptToCascadeviewsActivationAttemptView(v *Activation
 		FileID:              &v.FileID,
 		ActivationAttemptAt: &v.ActivationAttemptAt,
 		IsSuccessful:        v.IsSuccessful,
+		IsConfirmed:         v.IsConfirmed,
 		ErrorMessage:        v.ErrorMessage,
 	}
 

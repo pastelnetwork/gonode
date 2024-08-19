@@ -1,8 +1,10 @@
 package ticketstore
 
 import (
-	"github.com/pastelnetwork/gonode/common/types"
+	"database/sql"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/types"
 )
 
 type ActivationAttemptsQueries interface {
@@ -16,14 +18,14 @@ type ActivationAttemptsQueries interface {
 func (s *TicketStore) InsertActivationAttempt(attempt types.ActivationAttempt) (int64, error) {
 	const insertQuery = `
         INSERT INTO activation_attempts (
-            file_id, base_file_id, activation_attempt_at, is_successful, error_message, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            file_id, base_file_id, activation_attempt_at, is_successful, is_confirmed, error_message, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id;`
 
 	var id int64
 	err := s.db.QueryRow(insertQuery,
 		attempt.FileID, attempt.BaseFileID, attempt.ActivationAttemptAt,
-		attempt.IsSuccessful, attempt.ErrorMessage, time.Now().UTC(), time.Now().UTC()).Scan(&id)
+		attempt.IsSuccessful, attempt.IsConfirmed, attempt.ErrorMessage, time.Now().UTC(), time.Now().UTC()).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -58,18 +60,26 @@ func (s *TicketStore) UpdateActivationAttempt(attempt types.ActivationAttempt) (
 // GetActivationAttemptByID retrieves an activation attempt by its ID from the activation_attempts table
 func (s *TicketStore) GetActivationAttemptByID(id int) (*types.ActivationAttempt, error) {
 	const selectQuery = `
-        SELECT id, file_id, activation_attempt_at, is_successful, error_message
+        SELECT id, file_id, activation_attempt_at, is_successful, is_confirmed, error_message
         FROM activation_attempts
         WHERE id = ?;`
 
 	row := s.db.QueryRow(selectQuery, int64(id))
 
-	var attempt types.ActivationAttempt
+	var (
+		attempt     types.ActivationAttempt
+		isConfirmed sql.NullBool
+	)
 	err := row.Scan(
 		&attempt.ID, &attempt.FileID, &attempt.ActivationAttemptAt,
-		&attempt.IsSuccessful, &attempt.ErrorMessage)
+		&attempt.IsSuccessful, &isConfirmed, &attempt.ErrorMessage)
 	if err != nil {
 		return nil, err
+	}
+
+	attempt.IsConfirmed = false
+	if isConfirmed.Valid {
+		attempt.IsConfirmed = isConfirmed.Bool
 	}
 
 	return &attempt, nil
@@ -78,7 +88,7 @@ func (s *TicketStore) GetActivationAttemptByID(id int) (*types.ActivationAttempt
 // GetActivationAttemptsByFileIDAndBaseFileID retrieves activation attempts by file_id from the activation_attempts table
 func (s *TicketStore) GetActivationAttemptsByFileIDAndBaseFileID(fileID, baseFileID string) ([]*types.ActivationAttempt, error) {
 	const selectQuery = `
-        SELECT id, file_id, activation_attempt_at, is_successful, error_message
+        SELECT id, file_id, activation_attempt_at, is_successful, is_confirmed, error_message
         FROM activation_attempts
         WHERE file_id = ? and base_file_id=?;`
 
@@ -90,13 +100,22 @@ func (s *TicketStore) GetActivationAttemptsByFileIDAndBaseFileID(fileID, baseFil
 
 	var attempts []*types.ActivationAttempt
 	for rows.Next() {
-		var attempt types.ActivationAttempt
+		var (
+			attempt     types.ActivationAttempt
+			isConfirmed sql.NullBool
+		)
 		err := rows.Scan(
 			&attempt.ID, &attempt.FileID, &attempt.ActivationAttemptAt,
-			&attempt.IsSuccessful, &attempt.ErrorMessage)
+			&attempt.IsSuccessful, &isConfirmed, &attempt.ErrorMessage)
 		if err != nil {
 			return nil, err
 		}
+
+		attempt.IsConfirmed = false
+		if isConfirmed.Valid {
+			attempt.IsConfirmed = isConfirmed.Bool
+		}
+
 		attempts = append(attempts, &attempt)
 	}
 

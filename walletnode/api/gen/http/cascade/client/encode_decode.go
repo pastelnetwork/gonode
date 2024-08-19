@@ -1297,6 +1297,7 @@ func unmarshalRegistrationAttemptResponseBodyToCascadeviewsRegistrationAttemptVi
 		ProcessorSns: v.ProcessorSns,
 		FinishedAt:   v.FinishedAt,
 		IsSuccessful: v.IsSuccessful,
+		IsConfirmed:  v.IsConfirmed,
 		ErrorMessage: v.ErrorMessage,
 	}
 
@@ -1312,6 +1313,7 @@ func unmarshalActivationAttemptResponseBodyToCascadeviewsActivationAttemptView(v
 		FileID:              v.FileID,
 		ActivationAttemptAt: v.ActivationAttemptAt,
 		IsSuccessful:        v.IsSuccessful,
+		IsConfirmed:         v.IsConfirmed,
 		ErrorMessage:        v.ErrorMessage,
 	}
 

@@ -36,6 +36,7 @@ type TicketInfo struct {
 	EstimatedDownloadTime time.Duration
 	Filename              string
 	FileType              string
+	RQIDs                 []string
 	DataHash              []byte
 }
 
@@ -422,6 +423,10 @@ func (pt *PastelHandler) WaitConfirmation(ctx context.Context, txid string, minC
 
 				txResult, err := pt.PastelClient.GetRawTransactionVerbose1(gctx, txid)
 				if err != nil {
+					if strings.Contains(err.Error(), "No such mempool or blockchain transaction") {
+						ch <- errors.Errorf("No such mempool or blockchain transaction. Use gettransaction for wallet transactions.")
+						return
+					}
 					log.WithContext(ctx).WithError(err).WithField("txid", txid).Error("GetRawTransactionVerbose1 err")
 				} else {
 					if txResult.Confirmations >= minConfirmation {

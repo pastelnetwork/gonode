@@ -24,7 +24,7 @@ func BuildUploadAssetPayload(cascadeUploadAssetBody string) (*cascade.UploadAsse
 	{
 		err = json.Unmarshal([]byte(cascadeUploadAssetBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"TmFtIGEu\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VmVybyB1bmRlIGVuaW0gcGxhY2VhdCBxdWkgbnVtcXVhbS4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -51,7 +51,7 @@ func BuildUploadAssetV2Payload(cascadeUploadAssetV2Body string) (*cascade.Upload
 	{
 		err = json.Unmarshal([]byte(cascadeUploadAssetV2Body), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"QSBldmVuaWV0IG51bXF1YW0gdmVsLg==\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"Q29ycnVwdGkgcXVpYSBlbmltIGFsaXF1aWQgYXNwZXJpb3Jlcy4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
