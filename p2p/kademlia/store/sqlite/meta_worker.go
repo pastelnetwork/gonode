@@ -3,7 +3,10 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/pastelnetwork/gonode/p2p"
 	"strings"
 
 	"os"
@@ -633,6 +636,50 @@ func (d *MigrationMetaStore) processMigrationInBatches(ctx context.Context, migr
 	}
 
 	log.WithContext(ctx).WithField("migration_id", migration.ID).WithField("tota-keys-count", totalKeys).WithField("migrated_in_current_iteration", nonMigratedKeys).Info("Migration processed successfully")
+
+	return nil
+}
+
+func (d *MigrationMetaStore) identifyKeysForMigration(ctx context.Context, p p2p.P2P, RQIDs []string) error {
+	batchSize := 5000
+	migrationID, err := d.CreateNewMigration(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create migration: %w", err)
+	}
+
+	var keys []string
+
+	for _, rqid := range RQIDs {
+		data, err := p.Retrieve(ctx, rqid, true)
+		if err != nil {
+			return fmt.Errorf("failed to retrieve data for RQID %s: %w", rqid, err)
+		}
+
+		if len(data) > 0 {
+			decodedRQID := base58.Decode(rqid)
+			key := hex.EncodeToString(decodedRQID)
+			keys = append(keys, key)
+
+			// Check if we have reached the batch size
+			if len(keys) >= batchSize {
+				if err := d.InsertMetaMigrationData(ctx, migrationID, keys); err != nil {
+					log.WithContext(ctx).Error("error inserting batch of stale data to migration-meta")
+					return fmt.Errorf("failed to insert stale data for migration %d: %w", migrationID, err)
+				}
+				// Reset keys slice for the next batch
+				keys = nil
+			}
+		}
+
+	}
+
+	// Insert any remaining keys that didn't make up a full batch
+	if len(keys) > 0 {
+		if err := d.InsertMetaMigrationData(ctx, migrationID, keys); err != nil {
+			log.WithContext(ctx).Error("error inserting batch of stale data to migration-meta")
+			return fmt.Errorf("failed to insert stale data for migration %d: %w", migrationID, err)
+		}
+	}
 
 	return nil
 }
