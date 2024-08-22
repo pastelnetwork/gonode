@@ -28,8 +28,8 @@ require (
 	github.com/mkmik/argsort v1.1.0
 	github.com/pastelnetwork/gonode/common v0.0.0-20240229105633-1f295fe18563
 	github.com/pastelnetwork/gonode/dupedetection v0.0.0-00010101000000-000000000000
-	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
-	github.com/pastelnetwork/gonode/p2p v0.0.0-00010101000000-000000000000
+	github.com/pastelnetwork/gonode/mixins v0.0.0-20240819143223-f8a1218c147d
+	github.com/pastelnetwork/gonode/p2p v0.0.0-20240819143223-f8a1218c147d
 	github.com/pastelnetwork/gonode/pastel v0.0.0-20230829114806-701c926c0c44
 	github.com/pastelnetwork/gonode/proto v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-00010101000000-000000000000

@@ -22,7 +22,7 @@ require (
 	github.com/kolesa-team/go-webp v1.0.4
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/pastelnetwork/gonode/common v0.0.0-20240229105633-1f295fe18563
-	github.com/pastelnetwork/gonode/mixins v0.0.0-00010101000000-000000000000
+	github.com/pastelnetwork/gonode/mixins v0.0.0-20240819143223-f8a1218c147d
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/proto v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0

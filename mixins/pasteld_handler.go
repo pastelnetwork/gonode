@@ -228,6 +228,12 @@ func (pt *PastelHandler) RegTicket(ctx context.Context, RegTXID string) (*pastel
 	return &regTicket, nil
 }
 
+func (pt *PastelHandler) GetRQIDs(ctx context.Context, txid string) (rqIDs []string, err error) {
+	info, err := pt.GetTicketInfo(ctx, txid, pastel.ActionTypeCascade)
+
+	return info.RQIDs, nil
+}
+
 func (pt *PastelHandler) GetTicketInfo(ctx context.Context, txid, ttype string) (info TicketInfo, err error) {
 	info.EstimatedDownloadTime = defaultDownloadTimeout
 	switch ttype {
@@ -264,6 +270,7 @@ func (pt *PastelHandler) GetTicketInfo(ctx context.Context, txid, ttype string) 
 		info.IsTicketPublic = cTicket.MakePubliclyAccessible
 		info.Filename = cTicket.FileName
 		info.FileType = cTicket.FileType
+		info.RQIDs = cTicket.RQIDs
 
 		est := getEstimatedDownloadSizeOnBytes(cTicket.OriginalFileSizeInBytes)
 		if est > defaultDownloadTimeout {
