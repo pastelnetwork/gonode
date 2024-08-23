@@ -427,7 +427,8 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	hkey := hex.EncodeToString(key)
 
 	r := Record{}
-	err := s.db.Get(&r, `SELECT data FROM data WHERE key = ?`, hkey)
+	query := `SELECT data, is_on_cloud, is_original, datatype FROM data WHERE key = ?`
+	err := s.db.QueryRow(query, hkey).Scan(&r.Data, &r.IsOnCloud, &r.Isoriginal, &r.Datatype)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get record by key %s: %w", hkey, err)
 	}
@@ -448,7 +449,7 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to retrieve data from cloud: data is supposed to be on cloud but backup is not enabled")
 	}
 
-	data, err := s.cloud.Fetch(r.Key)
+	data, err := s.cloud.Fetch(hkey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve data from cloud: %w", err)
 	}

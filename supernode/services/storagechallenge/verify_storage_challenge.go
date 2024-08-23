@@ -143,7 +143,7 @@ func (task SCTask) VerifyStorageChallenge(ctx context.Context, incomingResponseM
 
 		return nil, err
 	}
-	logger.Debug("sufficient affirmations have been received")
+	logger.Info("sufficient affirmations have been received")
 
 	if err := task.SCService.P2PClient.EnableKey(ctx, evaluationMessage.Data.Challenge.FileHash); err != nil {
 		logger.WithError(err).Error("error enabling the symbol file")

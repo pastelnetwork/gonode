@@ -561,14 +561,14 @@ func (d *MigrationMetaStore) checkAndExecuteMigration(ctx context.Context) {
 	for _, migration := range migrations {
 		log.WithContext(ctx).WithField("migration_id", migration.ID).Info("Processing migration")
 
-		if err := d.processMigrationInBatches(ctx, migration); err != nil {
+		if err := d.ProcessMigrationInBatches(ctx, migration); err != nil {
 			log.WithContext(ctx).WithError(err).WithField("migration_id", migration.ID).Error("Failed to process migration")
 			continue
 		}
 	}
 }
 
-func (d *MigrationMetaStore) processMigrationInBatches(ctx context.Context, migration Migration) error {
+func (d *MigrationMetaStore) ProcessMigrationInBatches(ctx context.Context, migration Migration) error {
 	var migKeys MigrationKeys
 	err := d.db.Select(&migKeys, `SELECT key FROM meta_migration WHERE migration_id = ?`, migration.ID)
 	if err != nil {
@@ -580,10 +580,10 @@ func (d *MigrationMetaStore) processMigrationInBatches(ctx context.Context, migr
 		return nil
 	}
 
-	if totalKeys < minKeysToMigrate {
-		log.WithContext(ctx).WithField("migration_id", migration.ID).WithField("keys-count", totalKeys).Info("Skipping migration due to insufficient keys")
-		return nil
-	}
+	//if totalKeys < minKeysToMigrate {
+	//	log.WithContext(ctx).WithField("migration_id", migration.ID).WithField("keys-count", totalKeys).Info("Skipping migration due to insufficient keys")
+	//	return nil
+	//}
 
 	migratedKeys := 0
 	var keys []string

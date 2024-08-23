@@ -251,6 +251,8 @@ func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]by
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err == nil && len(value) > 0 {
 		return value, nil
+	} else if err != nil {
+		log.WithContext(ctx).WithField("db_key", dbKey).WithError(err).Error("error retrieving key")
 	}
 
 	// if queries only option is set, do not search just return error

@@ -4,14 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
-
-	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
-	"github.com/pastelnetwork/gonode/supernode/services/metamigrator"
-
 	"net/http"
 	_ "net/http/pprof" //profiling
+	"os"
+	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -30,6 +26,7 @@ import (
 	"github.com/pastelnetwork/gonode/mixins"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/cloud.go"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/debug"
@@ -44,6 +41,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/collectionregister"
 	"github.com/pastelnetwork/gonode/supernode/services/download"
 	"github.com/pastelnetwork/gonode/supernode/services/healthcheckchallenge"
+	"github.com/pastelnetwork/gonode/supernode/services/metamigrator"
 	"github.com/pastelnetwork/gonode/supernode/services/nftregister"
 	"github.com/pastelnetwork/gonode/supernode/services/selfhealing"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
@@ -251,6 +249,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	if err != nil {
 		return errors.Errorf("could not create p2p service, %w", err)
 	}
+
+	//go func() {
+	//	if err := migrateKeys(ctx, p2p, mixins.NewPastelHandler(pastelClient), metaMigratorStore, "6222bd2307ec59730f8ab2451bf9b8d94e79bbbaac43d692695f2e6baeaf6c42"); err != nil {
+	//		log.WithContext(ctx).WithError(err).Error("error migrating keys")
+	//	}
+	//}()
 
 	rqAddr := fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	// raptorq client
