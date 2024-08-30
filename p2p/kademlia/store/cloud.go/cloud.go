@@ -44,6 +44,7 @@ func (r *RcloneStorage) Store(key string, data []byte) (string, error) {
 
 	// Write data to a temporary file using os.WriteFile
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
+		log.WithField("filePath", filePath).WithError(err).Error("Failed to write data to file")
 		return "", fmt.Errorf("failed to write data to file: %w", err)
 	}
 
@@ -56,14 +57,14 @@ func (r *RcloneStorage) Store(key string, data []byte) (string, error) {
 	cmdOutput := &bytes.Buffer{}
 	cmd.Stderr = cmdOutput // Capture standard error
 	if err := cmd.Run(); err != nil {
-		os.Remove(filePath)
+		log.WithField("key", key).WithError(err).Error("rclone command failed to upload file")
 		return "", fmt.Errorf("rclone command failed: %s, error: %w", cmdOutput.String(), err)
 	}
 
 	// Delete the local file after successful upload
 	go func() {
 		if err := os.Remove(filePath); err != nil {
-			log.Error("failed to delete local file", "path", filePath, "error", err)
+			log.WithField("filePath", filePath).WithError(err).Error("Failed to delete local file after upload")
 		}
 	}()
 
@@ -78,10 +79,13 @@ func (r *RcloneStorage) Upload(key string, data []byte) (string, error) {
 
 	// Use rclone to copy the data to the remote
 	cmd := exec.Command("rclone", "rcat", remotePath)
+	cmdOutput := &bytes.Buffer{}
+	cmd.Stderr = cmdOutput            // Capture standard error
 	cmd.Stdin = bytes.NewReader(data) // Provide data as stdin
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("rclone command failed: %w", err)
+		log.WithField("remotePath", remotePath).Errorf("rclone command failed to upload file:%s", cmdOutput.String())
+		return "", fmt.Errorf("rclone command failed: %s, error: %w", cmdOutput.String(), err)
 	}
 
 	// Return the remote path where the file was stored
@@ -93,9 +97,12 @@ func (r *RcloneStorage) Fetch(key string) ([]byte, error) {
 	cmd := exec.Command("rclone", "cat", fmt.Sprintf("%s:%s/%s", r.specName, r.bucketName, key))
 	var out bytes.Buffer
 	cmd.Stdout = &out
+	cmdOutput := &bytes.Buffer{}
+	cmd.Stderr = cmdOutput // Capture standard error
 	err := cmd.Run()
 	if err != nil {
-		return nil, fmt.Errorf("rclone command failed: %w - out %s", err, out.String())
+		log.WithField("key", key).WithError(err).Errorf("rclone command failed to fetch file:%s", cmdOutput.String())
+		return nil, fmt.Errorf("rclone command failed: %s, error: %w", cmdOutput.String(), err)
 	}
 
 	return out.Bytes(), nil
@@ -203,11 +210,14 @@ func (r *RcloneStorage) Delete(key string) error {
 	cmd := exec.Command("rclone", "deletefile", remotePath)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
+	cmdOutput := &bytes.Buffer{}
+	cmd.Stderr = cmdOutput
 
 	// Execute the command
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("rclone command failed to delete file: %s, error: %w", stderr.String(), err)
+		log.WithField("key", key).WithError(err).Errorf("rclone command failed to delete file:%s", cmdOutput.String())
+		return fmt.Errorf("rclone command failed: %s, error: %w", cmdOutput.String(), err)
 	}
 
 	return nil
@@ -257,8 +267,11 @@ func (r *RcloneStorage) DeleteBatch(keys []string) error {
 
 			// Use rclone to delete the file from the remote
 			cmd := exec.Command("rclone", "deletefile", remotePath)
+			cmdOutput := &bytes.Buffer{}
+			cmd.Stderr = cmdOutput // Capture standard error
 
 			if err := cmd.Run(); err != nil {
+				log.WithField("key", key).WithError(err).Errorf("rclone command failed to delete file:%s", cmdOutput.String())
 				mu.Lock()
 				if lastError == nil {
 					lastError = fmt.Errorf("failed to delete some files")
