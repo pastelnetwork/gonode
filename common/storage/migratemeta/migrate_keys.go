@@ -13,7 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 )
 
-func migrateKeys(ctx context.Context, p2p p2p.P2P, ph *mixins.PastelHandler, metaMigratorStore *sqlite.MigrationMetaStore, txid string) error {
+func MigrateKeys(ctx context.Context, p2p p2p.P2P, ph *mixins.PastelHandler, metaMigratorStore *sqlite.MigrationMetaStore, txid string) error {
 	time.Sleep(5 * time.Minute)
 
 	logger := log.WithContext(ctx).WithField("txid", txid)

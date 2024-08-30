@@ -433,7 +433,7 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to get record by key %s: %w", hkey, err)
 	}
 
-	if s.IsCloudBackupOn() {
+	if s.IsCloudBackupOn() && !s.migrationStore.isSyncInProgress {
 		PostAccessUpdate([]string{hkey})
 	}
 

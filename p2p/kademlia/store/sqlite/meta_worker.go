@@ -48,9 +48,10 @@ type UpdateMessage struct {
 
 // MigrationMetaStore manages database operations.
 type MigrationMetaStore struct {
-	db           *sqlx.DB
-	p2pDataStore *sqlx.DB
-	cloud        cloud.Storage
+	db               *sqlx.DB
+	p2pDataStore     *sqlx.DB
+	cloud            cloud.Storage
+	isSyncInProgress bool
 
 	updateTicker             *time.Ticker
 	insertTicker             *time.Ticker
@@ -110,10 +111,13 @@ func NewMigrationMetaStore(ctx context.Context, dataDir string, cloud cloud.Stor
 
 	go func() {
 		if handler.isMetaSyncRequired() {
+			handler.isSyncInProgress = true
 			err := handler.syncMetaWithData(ctx)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("error syncing meta with p2p data")
 			}
+
+			handler.isSyncInProgress = false
 		}
 	}()
 
@@ -229,35 +233,36 @@ func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
 	    data_size = EXCLUDED.data_size,
 		access_count = access_count + 1`
 
-	for {
+	continueProcessing := true
+	for continueProcessing {
 		rows, err := d.p2pDataStore.Queryx(query, metaSyncBatchSize, offset)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Error querying p2p data store")
-			return err
+			log.WithContext(ctx).WithError(err).Error("error querying p2p data store")
+			break
 		}
 
 		tx, err := d.db.Beginx()
 		if err != nil {
 			rows.Close()
-			log.WithContext(ctx).WithError(err).Error("Failed to start transaction")
-			return err
+			log.WithContext(ctx).WithError(err).Error("failed to start transaction")
+			continue
 		}
 
 		stmt, err := tx.Prepare(insertQuery)
 		if err != nil {
 			tx.Rollback()
 			rows.Close()
-			log.WithContext(ctx).WithError(err).Error("Failed to prepare statement")
-			return err
+			log.WithContext(ctx).WithError(err).Error("failed to prepare statement")
+			continue
 		}
 
-		var batchProcessed bool
+		var recordsProcessed int
 		for rows.Next() {
 			var r Record
 			var t *time.Time
 
 			if err := rows.Scan(&r.Key, &r.Data, &t); err != nil {
-				log.WithContext(ctx).WithError(err).Error("Error scanning row from p2p data store")
+				log.WithContext(ctx).WithError(err).Error("error scanning row from p2p data store")
 				continue
 			}
 			if t != nil {
@@ -269,36 +274,29 @@ func (d *MigrationMetaStore) syncMetaWithData(ctx context.Context) error {
 				continue
 			}
 
-			batchProcessed = true
+			recordsProcessed++
 		}
 
-		stmt.Close()
 		if err := rows.Err(); err != nil {
-			tx.Rollback()
-			rows.Close()
-			log.WithContext(ctx).WithError(err).Error("Error iterating rows")
-			return err
+			log.WithContext(ctx).WithError(err).Error("error iterating rows")
 		}
 
-		if batchProcessed {
+		if recordsProcessed > 0 {
 			if err := tx.Commit(); err != nil {
-				rows.Close()
 				log.WithContext(ctx).WithError(err).Error("Failed to commit transaction")
-				return err
 			}
 		} else {
 			tx.Rollback()
-			rows.Close()
-			break
 		}
 
 		rows.Close()
-		if !batchProcessed {
-			tx.Rollback()
-			log.WithContext(ctx).Info("no rows processed, rolling back and breaking.")
-			break
+		stmt.Close()
+
+		if recordsProcessed == 0 {
+			continueProcessing = false // No more records to process
+		} else {
+			offset += metaSyncBatchSize
 		}
-		offset += metaSyncBatchSize //
 	}
 
 	return nil
@@ -580,10 +578,10 @@ func (d *MigrationMetaStore) ProcessMigrationInBatches(ctx context.Context, migr
 		return nil
 	}
 
-	//if totalKeys < minKeysToMigrate {
-	//	log.WithContext(ctx).WithField("migration_id", migration.ID).WithField("keys-count", totalKeys).Info("Skipping migration due to insufficient keys")
-	//	return nil
-	//}
+	if totalKeys < minKeysToMigrate {
+		log.WithContext(ctx).WithField("migration_id", migration.ID).WithField("keys-count", totalKeys).Info("Skipping migration due to insufficient keys")
+		return nil
+	}
 
 	migratedKeys := 0
 	var keys []string
