@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -149,6 +150,12 @@ func runApp(ctx context.Context, conf *config.Config) error {
 
 	nodeClient := grpc.NewSNClient(pastelClient, secInfo)
 
+	hDB, err := queries.OpenHistoryDB()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("error connecting history db")
+	}
+	defer hDB.CloseHistoryDB(ctx)
+
 	hermesConfig := hermes.NewConfig()
 	hermesConfig.SNHost = conf.SNHost
 	hermesConfig.SNPort = conf.SNPort
@@ -156,7 +163,7 @@ func runApp(ctx context.Context, conf *config.Config) error {
 	hermesConfig.CreatorPastelIDPassphrase = conf.PassPhrase
 	hermesConfig.SetWorkDir(conf.DdWorkDir)
 
-	service, err := hermes.NewService(hermesConfig, pastelClient, nodeClient)
+	service, err := hermes.NewService(hermesConfig, pastelClient, nodeClient, hDB)
 	if err != nil {
 		return fmt.Errorf("start hermes: %w", err)
 	}

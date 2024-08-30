@@ -27,6 +27,7 @@ type SelfHealingQueries interface {
 	GetLastNSHChallenges(ctx context.Context, n int) (types.SelfHealingReports, error)
 	GetSHChallengeReport(ctx context.Context, challengeID string) (types.SelfHealingReports, error)
 	GetSHExecutionMetrics(ctx context.Context, from time.Time) (metrics.SHExecutionMetrics, error)
+	RemoveSelfHealingStaleData(ctx context.Context, threshold string) error
 }
 
 var (
@@ -641,4 +642,21 @@ func (s *SQLiteStore) CleanupSelfHealingChallenges() (err error) {
 	const delQuery = "DELETE FROM self_healing_challenges"
 	_, err = s.db.Exec(delQuery)
 	return err
+}
+
+func (s *SQLiteStore) RemoveSelfHealingStaleData(ctx context.Context, threshold string) error {
+	queries := []string{
+		"DELETE FROM self_healing_execution_metrics WHERE created_at < $1",
+		"DELETE FROM self_healing_generation_metrics WHERE created_at < $1",
+		"DELETE from self_healing_challenge_events where is_processed = true and created_at < $1",
+	}
+
+	for _, query := range queries {
+		if _, err := s.db.ExecContext(ctx, query, threshold); err != nil {
+			return fmt.Errorf("failed to delete old metrics: %v", err)
+		}
+	}
+
+	fmt.Println("Old metrics deleted successfully.")
+	return nil
 }
