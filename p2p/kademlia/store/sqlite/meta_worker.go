@@ -20,7 +20,7 @@ import (
 
 var (
 	commitLastAccessedInterval = 90 * time.Second
-	migrationExecutionTicker   = 12 * time.Hour
+	migrationExecutionTicker   = 30 * time.Hour
 	migrationMetaDB            = "data001-migration-meta.sqlite3"
 	accessUpdateBufferSize     = 100000
 	commitInsertsInterval      = 10 * time.Second
