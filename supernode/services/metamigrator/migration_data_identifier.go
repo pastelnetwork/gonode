@@ -45,7 +45,7 @@ func (task *MetaMigratorTask) IdentifyMigrationData(ctx context.Context) (err er
 		log.WithContext(ctx).Info("no stale data found to migrate")
 		return nil
 	}
-	log.WithContext(ctx).WithField("total_keys", totalCount).Info("total-data that needs to migrate has been identified")
+	log.WithContext(ctx).WithField("total_keys", totalCount).Info("total-data that needs to be migrated has been identified")
 
 	numOfBatches := getNumOfBatches(totalCount)
 	log.WithContext(ctx).WithField("no_of_batches", numOfBatches).Info("batches required to store migration-meta has been calculated")
@@ -65,6 +65,7 @@ func (task *MetaMigratorTask) IdentifyMigrationData(ctx context.Context) (err er
 		log.WithContext(ctx).WithField("batch", batchNo).Debug("data added to migration-meta for migration")
 	}
 
+	log.WithContext(ctx).Info("all data that needs to be migrated has been added to meta-migration")
 	return nil
 }
 

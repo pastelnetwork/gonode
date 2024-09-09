@@ -539,10 +539,10 @@ func (d *MigrationMetaStore) checkAndExecuteMigration(ctx context.Context) {
 		log.WithContext(ctx).WithError(err).Error("migration worker: check disk space failed")
 	}
 
-	//if !isLow {
-	// Disk space is sufficient, stop migration
-	//return
-	//}
+	if !isLow {
+		//Disk space is sufficient, stop migration
+		return
+	}
 
 	log.WithContext(ctx).WithField("islow", isLow).Info("Starting data migration")
 	// Step 1: Fetch pending migrations
@@ -807,8 +807,7 @@ func (d *MigrationMetaStore) InsertMetaMigrationData(ctx context.Context, migrat
 	now := time.Now()
 	for _, key := range keys {
 		if _, err := stmt.Exec(key, migrationID, now, now); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("failed to insert meta migration data: %w", err)
+			continue
 		}
 	}
 
