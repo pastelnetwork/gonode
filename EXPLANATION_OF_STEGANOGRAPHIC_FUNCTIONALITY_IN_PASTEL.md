@@ -1,4 +1,4 @@
-# A Deep Dive into Pastel's Steganography, QR Codes, and Image Fingerprinting
+# An Investigation into Pastel's Steganography, QR Codes, and Image Fingerprinting
 
 ## Introduction
 
