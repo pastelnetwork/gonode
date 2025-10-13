@@ -3,7 +3,9 @@ package hermes
 import (
 	"context"
 	"fmt"
+	"github.com/pastelnetwork/gonode/common/storage/queries"
 	"github.com/pastelnetwork/gonode/hermes/service/hermes/logsrotator"
+	"github.com/pastelnetwork/gonode/hermes/service/hermes/metricscleanup"
 	"os"
 	"reflect"
 
@@ -31,6 +33,7 @@ type service struct {
 	p2p          node.HermesP2PInterface
 	sn           node.SNClientInterface
 	store        *store.SQLiteStore
+	hDB          queries.LocalStoreInterface
 }
 
 func (s *service) Run(ctx context.Context) error {
@@ -73,7 +76,12 @@ func (s *service) Run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Error("unable to initialize restart pastel-d service")
 	}
 
-	return runServices(ctx, chainReorgService, cleanerService, collectionService, fingerprintService, pastelBlockService, restartPastelDService, logRotationService)
+	metricsCleanupSerivce, err := metricscleanup.NewMetricsCleanupService(s.hDB)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("unable to initialize restart pastel-d service")
+	}
+
+	return runServices(ctx, chainReorgService, cleanerService, collectionService, fingerprintService, pastelBlockService, restartPastelDService, logRotationService, metricsCleanupSerivce)
 }
 
 func runServices(ctx context.Context, services ...service2.SvcInterface) error {
@@ -124,7 +132,7 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 }
 
 // NewService returns a new ddscan service
-func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInterface) (service2.SvcInterface, error) {
+func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInterface, hDB queries.LocalStoreInterface) (service2.SvcInterface, error) {
 	store, err := store.NewSQLiteStore(config.DataFile)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialise database: %w", err)
@@ -148,5 +156,6 @@ func NewService(config *Config, pastelClient pastel.Client, sn node.SNClientInte
 		store:        store,
 		sn:           sn,
 		p2p:          p2p,
+		hDB:          hDB,
 	}, nil
 }
