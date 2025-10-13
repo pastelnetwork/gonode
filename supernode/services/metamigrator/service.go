@@ -12,7 +12,7 @@ import (
 
 const (
 	logPrefix                         = "MetaMigrator"
-	defaultMetaMigratorDataIdentifier = 24 * time.Hour
+	defaultMetaMigratorDataIdentifier = 120 * time.Minute
 	lowSpaceThresholdGB               = 50 // in GB
 
 )
