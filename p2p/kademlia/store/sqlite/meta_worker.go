@@ -59,6 +59,8 @@ type MigrationMetaStore struct {
 
 	updates sync.Map
 	inserts sync.Map
+
+	minKeysForMigration int
 }
 
 // NewMigrationMetaStore initializes the MigrationMetaStore.
@@ -95,6 +97,7 @@ func NewMigrationMetaStore(ctx context.Context, dataDir string, cloud cloud.Stor
 		insertTicker:             time.NewTicker(commitInsertsInterval),
 		migrationExecutionTicker: time.NewTicker(migrationExecutionTicker),
 		cloud:                    cloud,
+		minKeysForMigration:      minKeysToMigrate,
 	}
 
 	if err := handler.migrateMeta(); err != nil {
@@ -578,7 +581,7 @@ func (d *MigrationMetaStore) ProcessMigrationInBatches(ctx context.Context, migr
 		return nil
 	}
 
-	if totalKeys < minKeysToMigrate {
+	if totalKeys < d.minKeysForMigration {
 		log.WithContext(ctx).WithField("migration_id", migration.ID).WithField("keys-count", totalKeys).Info("Skipping migration due to insufficient keys")
 		return nil
 	}
